@@ -12,6 +12,9 @@ import { UNREAD } from '#src/ports/transcripts.ts';
 import type { Chunk } from '#src/ports/transcripts.ts';
 import type { ScreenResult, Screens } from '#src/ports/screens.ts';
 import { causeOf } from './fakes/cause.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { Count } from '#src/recap/domain/count.ts';
 
 const SCREEN = [
     '● I fixed the parser and the tests pass now.',
@@ -34,8 +37,8 @@ test('a screen is read without its chrome: borders, the empty prompt, key hints 
 
 class FakeScreens implements Screens {
     asked: { pane: string; lines: number }[] = [];
-    next: ScreenResult = { kind: 'screen', text: SCREEN, revision: 7, truncated: false };
-    readScreen(pane: string, lines: number): Promise<ScreenResult> {
+    next: ScreenResult = { kind: 'screen', text: brand<string, 'Text'>(SCREEN), revision: brand<number, 'Count'>(7), truncated: 'absent' };
+    readScreen(pane: PaneId, lines: Count): Promise<ScreenResult> {
         this.asked.push({ pane, lines });
         return Promise.resolve(this.next);
     }
@@ -56,10 +59,10 @@ test('ScreenTranscripts: only for the kinds asked, one source per pane, the revi
     assert.equal(first.position.cursor, 7);
     assert.match(first.position.tail ?? '', /^[0-9a-f]{16}$/);
     assert.equal(first.entries.length, 2);
-    screens.next = { kind: 'screen', text: `${SCREEN}\n`, revision: 9, truncated: false };
+    screens.next = { kind: 'screen', text: brand<string, 'Text'>(`${SCREEN}\n`), revision: brand<number, 'Count'>(9), truncated: 'absent' };
     const repainted = await reader.read('screen:w1:p3', first.position, 10_000) as Chunk;
     assert.deepEqual([repainted.grew, repainted.entries.length, repainted.position.cursor, repainted.position.tail], [false, 0, 9, first.position.tail]);
-    screens.next = { kind: 'screen', text: `${SCREEN}\n\n● Now the lint.`, revision: 11, truncated: false };
+    screens.next = { kind: 'screen', text: brand<string, 'Text'>(`${SCREEN}\n\n● Now the lint.`), revision: brand<number, 'Count'>(11), truncated: 'absent' };
     const changed = await reader.read('screen:w1:p3', repainted.position, 10_000) as Chunk;
     assert.equal(changed.grew, true);
 });
@@ -69,7 +72,7 @@ test('ScreenTranscripts: an unreadable pane is the reader\'s Unknown, and a scre
     const reader = new ScreenTranscripts(screens, () => true);
     screens.next = { kind: 'unknown', why: { why: 'unreachable', detail: causeOf('gone') } };
     assert.equal((await reader.read('screen:w1:p3', UNREAD, 100)).kind, 'unknown');
-    screens.next = { kind: 'screen', text: '────\n❯ \n', revision: 1, truncated: false };
+    screens.next = { kind: 'screen', text: brand<string, 'Text'>('────\n❯ \n'), revision: brand<number, 'Count'>(1), truncated: 'absent' };
     const empty = await reader.read('screen:w1:p3', UNREAD, 100) as Chunk;
     assert.deepEqual([empty.grew, empty.entries.length], [false, 0]);
 });

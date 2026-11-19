@@ -4,6 +4,7 @@ import { runEval } from '#src/recap/application/eval-run.ts';
 import { DEFAULT_SAMPLE } from '#src/recap/application/eval-options.ts';
 import type { Judge, JudgeTask } from '#src/ports/judge.ts';
 import { ANSWERS, GRADES, optionsOf, rig, scripted, SCORE, seed } from '#test/eval-rig.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 
 test('`eval` with no option judges the newest 20 runs that have a stored input, prints each check\'s pass rate, the failing items with their critique, and each run\'s coverage, no-filler and read-back, and stores the verdicts', async () => {
     const { store, deps, out } = rig();
@@ -22,7 +23,7 @@ test('`eval` with no option judges the newest 20 runs that have a stored input, 
     assert.equal((report.match(/coverage 100% \(1\/1\) \[added 0% \(0\/1\)\] · no-filler \d+% \(1\/\d+\) \[added 0% \(0\/3\)\] · read-back 6\/6/g) ?? []).length, 20, 'every run reports its state numbers with the added ones beside them');
     assert.match(report, /coverage 100% \(20\/20\) \[added 0% \(0\/20\)\]/, 'and the totals line adds them up');
     assert.match(report, /judge vs anchor \(0\)/);
-    assert.equal(store.inputs.runs({ tab: null, since: null, limit: 100, withInput: true }).filter((run) => store.verdicts.ofRun(run.id).length > 0).length, 20);
+    assert.equal(store.inputs.runs({ tab: null, since: null, limit: 100, withInput: true }).filter((run) => store.verdicts.ofRun(brand<string, 'RunId'>(run.id)).length > 0).length, 20);
 });
 
 test('`eval --sample 2 --tab` and `--since` narrow the runs; `--json` prints the report as JSON', async () => {

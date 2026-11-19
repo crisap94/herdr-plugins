@@ -162,7 +162,7 @@ export class HcCoreFleet implements Fleet {
         }
         const trimmed = lastLines(screen.value.text, must(parseCoreCount(lines)));
         this.screens = must(parseCount(this.screens + 1));
-        return { kind: 'screen', text: trimmed.text, revision: this.screens, truncated: trimmed.truncated };
+        return { kind: 'screen', text: must(parseText(trimmed.text)), revision: this.screens, truncated: trimmed.truncated ? 'present' : 'absent' };
     }
 
     report(): Promise<Done> {

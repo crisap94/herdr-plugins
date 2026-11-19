@@ -12,6 +12,7 @@ import { reportLines } from '#src/recap/render/eval.ts';
 import { plain } from '#src/recap/render/wrap.ts';
 import { cursor, memoryStore } from '#test/db/support.ts';
 import { oneTask } from '#test/support.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 
 const add = (section: 'done' | 'next', text: string): Operation => ({ op: 'add', section, text, why: null, ref: null, at: null, agent: null });
 const TAB = { tab: 'w1:t1', key: 't1' };
@@ -67,7 +68,7 @@ test('judging the third run: coverage and no-filler over the state (an older fac
     assert.deepEqual(result.filler, { passed: 2, total: 3 });
     assert.deepEqual(result.added, { coverage: { passed: 1, total: 3 }, filler: { passed: 1, total: 1 } }, 'only the announcement was born in this run');
     assert.equal(result.stateSize, 3);
-    const rows = store.verdicts.ofRun(run.id);
+    const rows = store.verdicts.ofRun(brand<string, 'RunId'>(run.id));
     assert.deepEqual(rows.filter((row) => row.check === 'filler').map((row) => [row.item, row.pass]), [['state/t1/done/0', true], ['state/t1/done/1', false], ['state/t1/next/0', true]], 'state rows are keyed state/…');
     assert.deepEqual(rows.filter((row) => row.check === 'I1').map((row) => [row.item, row.pass]), [['t1/next/0', true]], 'a verdict about a state key is not an item check');
     const [score, readback] = seen.map((call) => call.document);

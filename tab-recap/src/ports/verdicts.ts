@@ -1,37 +1,44 @@
-export type VerdictSource = 'judge' | 'operator';
+import type { RunId } from '#src/recap/domain/fact.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
+import type { Disagreement, Pair, Verdict } from './twins/verdicts/legacy.ts';
 
-export interface Verdict {
-    readonly run: string;
-    readonly item: string | null;
-    readonly check: string;
-    readonly pass: boolean;
-    readonly critique: string | null;
-    readonly judge: string;
-    readonly at: number;
-    readonly source: VerdictSource;
+export type { Disagreement, Pair, Verdict, VerdictSource } from './twins/verdicts/legacy.ts';
+
+export type Outcome = 'pass' | 'fail';
+
+export interface VerdictRecord {
+    readonly run: RunId;
+    readonly item: Text | null;
+    readonly check: Text;
+    readonly pass: Outcome;
+    readonly critique: Text | null;
+    readonly judge: Text;
+    readonly at: Instant;
+    readonly source: 'judge' | 'operator';
 }
 
-export interface Pair {
-    readonly check: string;
-    readonly judge: boolean;
-    readonly operator: boolean;
+export interface PairRecord {
+    readonly check: Text;
+    readonly judge: Outcome;
+    readonly operator: Outcome;
 }
 
-export interface Disagreement {
-    readonly run: string;
-    readonly item: string;
-    readonly check: string;
-    readonly judge: boolean;
-    readonly operator: boolean;
-    readonly judgeCritique: string | null;
-    readonly reason: string | null;
-    readonly at: number;
+export interface DisagreementRecord {
+    readonly run: RunId;
+    readonly item: Text;
+    readonly check: Text;
+    readonly judge: Outcome;
+    readonly operator: Outcome;
+    readonly judgeCritique: Text | null;
+    readonly reason: Text | null;
+    readonly at: Instant;
 }
 
 export interface Verdicts {
     add(verdicts: readonly Verdict[]): void;
-    ofRun(run: string): readonly Verdict[];
-    labelled(check?: string | null): ReadonlySet<string>;
+    ofRun(run: RunId): readonly Verdict[];
+    labelled(check?: Text | null): ReadonlySet<Text>;
     pairs(): readonly Pair[];
     disagreements(): readonly Disagreement[];
 }

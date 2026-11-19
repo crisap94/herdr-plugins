@@ -2,13 +2,16 @@ import { createHash } from 'node:crypto';
 import { tuiChrome } from '@stateforge-labs/harness-adapters/tui';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { cleanScreen, screenEntries, steady } from '#src/recap/application/screen-text.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
+import { must } from '#src/protocol/result.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
 import type { ScreenChrome } from '#src/recap/application/screen-text.ts';
 import { SCREEN_PREFIX } from '#src/ports/screens.ts';
 import type { Screens } from '#src/ports/screens.ts';
 import type { ChunkResult, InFlightCapability, Located, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 
-const SCREEN_LINES = 200;
+const SCREEN_LINES = must(parseCount(200));
 export const SCREEN_READER_ID = '*';
 export const CLAUDE_SCREEN_CHROME: ScreenChrome = tuiChrome('claude');
 
@@ -37,7 +40,7 @@ export class ScreenTranscripts implements Transcripts {
     }
 
     async read(source: string, was: Position, budget: number): Promise<ChunkResult> {
-        const shown = await this.screens.readScreen(source.slice(SCREEN_PREFIX.length), SCREEN_LINES);
+        const shown = await this.screens.readScreen(paneId(source.slice(SCREEN_PREFIX.length)), SCREEN_LINES);
         if (shown.kind === 'unknown') {
             return shown;
         }

@@ -1,6 +1,9 @@
 import type { Database } from 'bun:sqlite';
 import { and, asc, eq, isNotNull, sql } from 'drizzle-orm';
+import type { RunId } from '#src/recap/domain/fact.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { Disagreement, Pair, Verdict, VerdictSource, Verdicts } from '#src/ports/verdicts.ts';
+import { must } from '#src/protocol/result.ts';
 import { writeTx } from './connection.ts';
 import { verdict as verdicts } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
@@ -46,7 +49,7 @@ export class VerdictsRepository implements Verdicts {
         });
     }
 
-    ofRun(run: string): readonly Verdict[] {
+    ofRun(run: RunId): readonly Verdict[] {
         const id = idOf('run', run);
         return id === null ? [] : guarded(() => this.orm.select({
             item: verdicts.itemKey, check: verdicts.checkId, pass: verdicts.pass, critique: verdicts.critique,
@@ -58,10 +61,10 @@ export class VerdictsRepository implements Verdicts {
             })), []);
     }
 
-    labelled(check: string | null = null): ReadonlySet<string> {
-        return guarded(() => new Set(this.orm.selectDistinct({ runId: verdicts.runId, itemKey: verdicts.itemKey }).from(verdicts)
+    labelled(check: Text | null = null): ReadonlySet<Text> {
+        return guarded(() => new Set<Text>(this.orm.selectDistinct({ runId: verdicts.runId, itemKey: verdicts.itemKey }).from(verdicts)
             .where(and(eq(verdicts.source, 'operator'), isNotNull(verdicts.itemKey), check === null ? undefined : eq(verdicts.checkId, check))).all()
-            .map((row) => `${typeIdOf('run', row.runId)}|${row.itemKey}`)), new Set());
+            .map((row) => must(parseText(`${typeIdOf('run', row.runId)}|${row.itemKey}`)))), new Set<Text>());
     }
 
     pairs(): readonly Pair[] {

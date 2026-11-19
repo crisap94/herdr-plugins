@@ -265,14 +265,6 @@ export interface Judge {
     ask(task: JudgeTask, document: string): Promise<Said>;
 }
 
-export interface CheckAnchor {
-    readonly item: string;
-    readonly pass: boolean;
-    readonly reason: string;
-}
-
-export type CheckAnchors = ReadonlyMap<string, readonly CheckAnchor[]>;
-
 export interface LaneTokens {
     report(pane: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done>;
 }

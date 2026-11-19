@@ -4,6 +4,7 @@ import { runEval } from '#src/recap/application/eval-run.ts';
 import type { Judge } from '#src/ports/judge.ts';
 import type { Verdict } from '#src/ports/verdicts.ts';
 import { optionsOf, rig, seed } from '#test/eval-rig.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 
 test('`--label 3` shows the newest unlabelled items, asks again until it understands, stores one operator verdict per check, and never asks about a labelled item twice', async () => {
     const { store, deps, out, err, asked } = rig({ lines: ['maybe', 'ok', 'fail I3 done', 'too vague', 'fail S-nonsense', 'quit'] });
@@ -14,7 +15,7 @@ test('`--label 3` shows the newest unlabelled items, asks again until it underst
     assert.match(err.join('\n'), /S-NONSENSE is not a check of this item/i);
     const [run] = store.inputs.runs({ tab: null, since: null, limit: 1, withInput: false });
     assert.ok(run !== undefined);
-    const mine = store.verdicts.ofRun(run.id).filter((v) => v.source === 'operator');
+    const mine = store.verdicts.ofRun(brand<string, 'RunId'>(run.id)).filter((v) => v.source === 'operator');
     assert.equal(mine.length, 16, 'eight checks for each of the two answered items');
     assert.deepEqual(mine.filter((v) => !v.pass).map((v) => [v.item, v.check, v.critique]), [['t1/done/0', 'I3', 'too vague'], ['t1/done/0', 'S-done', 'too vague']]);
     assert.ok(mine.every((v) => v.judge === 'operator'));

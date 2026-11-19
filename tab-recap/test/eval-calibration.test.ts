@@ -9,6 +9,7 @@ import { parseEval } from '#src/recap/application/eval-options.ts';
 import type { Harness } from '#src/ports/harness.ts';
 import type { Pair, Verdict } from '#src/ports/verdicts.ts';
 import { optionsOf, rig, seed } from '#test/eval-rig.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 
 const pairs = (judge: number, operator: number, both: number, neither: number): readonly Pair[] => [
     ...Array.from({ length: judge }, () => ({ check: 'I5', judge: true, operator: false })),
@@ -79,10 +80,10 @@ test('`--label 2 --check I5` asks about the one check only, stores one operator 
     assert.equal(await runEval(optionsOf('--label', '2', '--check', 'I5'), deps), 0);
     assert.match(out.join('\n'), /t1\/goal\/0/, 'labelled on I3 only: still asked about I5');
     assert.deepEqual(asked.filter((prompt) => prompt.includes('ok /')), ['I5: ok / fail / skip / quit > ', 'I5: ok / fail / skip / quit > ']);
-    const mine = store.verdicts.ofRun(run.id).filter((v) => v.source === 'operator' && v.check === 'I5');
+    const mine = store.verdicts.ofRun(brand<string, 'RunId'>(run.id)).filter((v) => v.source === 'operator' && v.check === 'I5');
     assert.deepEqual(mine.map((v) => [v.item, v.pass, v.critique]), [['t1/goal/0', true, null], ['t1/done/0', false, 'too vague']]);
-    assert.equal(store.verdicts.ofRun(run.id).filter((v) => v.source === 'operator').length, 3, 'nothing else was labelled');
-    assert.deepEqual([...store.verdicts.labelled('I5')].toSorted(), [`${run.id}|t1/done/0`, `${run.id}|t1/goal/0`]);
+    assert.equal(store.verdicts.ofRun(brand<string, 'RunId'>(run.id)).filter((v) => v.source === 'operator').length, 3, 'nothing else was labelled');
+    assert.deepEqual([...store.verdicts.labelled(brand<string, 'Text'>('I5'))].toSorted(), [`${run.id}|t1/done/0`, `${run.id}|t1/goal/0`]);
 });
 
 test('`--check S-done` asks only about items of that section, and another check named is asked again', async () => {
