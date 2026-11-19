@@ -60,7 +60,7 @@ class Nothing implements Summarizer {
 
 export function summarizerFor(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): Summarizer {
     const id = pick(config.backend, available);
-    return id === null ? new Nothing() : new RecapWriter(MAKERS[id](config, work, runtime, jobTagFor(config, 'recapWriter'), log), { model: config.models[id], effort: config.effort });
+    return id === null ? new Nothing() : new RecapWriter(MAKERS[id](config, work, runtime, jobTagFor(config, 'recapWriter'), log), { model: config.models[id], effort: config.effort }, config.writerAnswer ?? 'text');
 }
 
 export function enumeratorFor(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): Enumerators | null {
