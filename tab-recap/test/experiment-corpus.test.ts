@@ -8,6 +8,10 @@ import { seeded, shuffled } from '#src/experiment/seeded.ts';
 import { stratify } from '#src/experiment/stratify.ts';
 import type { Candidate } from '#src/experiment/stratify.ts';
 import { onlyInRecent, verbatimLabel } from '#src/experiment/verbatim.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+
+const asText = (value: string): Text => must(parseText(value));
 
 test('seeded: the same seed gives the same order', () => {
     assert.deepEqual(shuffled([1, 2, 3, 4, 5, 6], seeded(42)), shuffled([1, 2, 3, 4, 5, 6], seeded(42)));
@@ -66,11 +70,11 @@ test('hindsight: six entries or the character budget, and the next operator prom
 });
 
 test('verbatim: a path, error line or hash only in the recent turns that the agent then uses', () => {
-    const recent = 'ran tests\nError: ENOENT no such file /srv/app/config.yaml\nfixed at 3f9a2bc1d';
-    assert.equal(verbatimLabel(recent, 'goal: ship the thing', 'now editing /srv/app/config.yaml'), 1);
-    assert.equal(verbatimLabel(recent, 'goal: ship the thing', 'moving on to a new topic'), 0);
-    assert.equal(verbatimLabel(recent, 'see /srv/app/config.yaml and 3f9a2bc1d and Error: ENOENT no such file /srv/app/config.yaml', 'now editing /srv/app/config.yaml'), 0);
-    assert.ok(onlyInRecent(recent, '').includes('3f9a2bc1d'));
+    const recent = asText('ran tests\nError: ENOENT no such file /srv/app/config.yaml\nfixed at 3f9a2bc1d');
+    assert.equal(verbatimLabel(recent, asText('goal: ship the thing'), asText('now editing /srv/app/config.yaml')), 1);
+    assert.equal(verbatimLabel(recent, asText('goal: ship the thing'), asText('moving on to a new topic')), 0);
+    assert.equal(verbatimLabel(recent, asText('see /srv/app/config.yaml and 3f9a2bc1d and Error: ENOENT no such file /srv/app/config.yaml'), asText('now editing /srv/app/config.yaml')), 0);
+    assert.ok(onlyInRecent(recent, asText('')).includes(asText('3f9a2bc1d')));
 });
 
 import { sectionsOf } from '#src/experiment/coverage.ts';

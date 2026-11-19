@@ -1,9 +1,5 @@
 {
   "src/experiment/legacy.ts": {
     "legacy": 159
-  },
-  "src/experiment/verbatim.ts": {
-    "parameter": 6,
-    "container": 2
   }
 }
