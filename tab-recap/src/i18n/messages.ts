@@ -1,9 +1,14 @@
+import type { Count } from '#src/recap/domain/count.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import type { MissedFacts, UncheckedReason } from '#src/recap/domain/autocompact.ts';
 import type { DeciderBy } from '#src/recap/domain/job.ts';
 import type { Refusal } from '#src/host/policy.mjs';
 import type { ClosedWhy } from '#src/recap/domain/fact.ts';
 import type { HandoffMessageKey } from '#src/recap/domain/handoff-outcome.ts';
 import type { ClosePoint } from '#src/recap/domain/lane-closed.ts';
+
+export type { Messages } from './legacy.ts';
 
 export type Locale = 'en' | 'es';
 
@@ -19,241 +24,241 @@ export interface LanguageSourceNames {
     readonly system: LanguageSourceName;
 }
 
-export interface BadgeMessages { readonly working: string; readonly blocked: string; readonly idle: string; readonly done: string; readonly unknown: string }
+export interface BadgeMessages { readonly working: Text; readonly blocked: Text; readonly idle: Text; readonly done: Text; readonly unknown: Text }
 
 export interface AutocompactSettingsMessages {
-    readonly ceilingOverride: (enabled: boolean) => string;
-    readonly coverageBackoff: (window: string) => string;
-    readonly missedFacts: (choice: MissedFacts) => string;
+    readonly ceilingOverride: (enabled: Presence) => Text;
+    readonly coverageBackoff: (window: Text) => Text;
+    readonly missedFacts: (choice: MissedFacts) => Text;
 }
 
-export interface GitMessages { readonly unpushed: (count: number) => string; readonly changed: (count: number) => string }
+export interface GitMessages { readonly unpushed: (count: Count) => Text; readonly changed: (count: Count) => Text }
 
-export interface HintMessages { readonly column: readonly string[]; readonly modal: readonly string[] }
+export interface HintMessages { readonly column: readonly Text[]; readonly modal: readonly Text[] }
 
-export interface ToggleChoices { readonly on: string; readonly off: string }
+export interface ToggleChoices { readonly on: Text; readonly off: Text }
 
-export interface LegendMessages { readonly current: string; readonly available: string; readonly missing: string }
+export interface LegendMessages { readonly current: Text; readonly available: Text; readonly missing: Text }
 
-export interface UiChoicesMessages { readonly auto: string; readonly en: string; readonly es: string }
+export interface UiChoicesMessages { readonly auto: Text; readonly en: Text; readonly es: Text }
 
-export interface EffortChoicesMessages { readonly low: string; readonly medium: string; readonly high: string; readonly default: string }
+export interface EffortChoicesMessages { readonly low: Text; readonly medium: Text; readonly high: Text; readonly default: Text }
 
 export interface CompactNoteChoicesMessages {
-    readonly ask: string;
-    readonly skip: string;
+    readonly ask: Text;
+    readonly skip: Text;
 }
 
-export interface AutocompactChoicesMessages { readonly off: string; readonly shadow: string; readonly on: string }
+export interface AutocompactChoicesMessages { readonly off: Text; readonly shadow: Text; readonly on: Text }
 
 export interface AutocompactStyleChoicesMessages {
-    readonly gentle: string;
-    readonly balanced: string;
-    readonly eager: string;
+    readonly gentle: Text;
+    readonly balanced: Text;
+    readonly eager: Text;
 }
 
 export type LanguageNamesMessages = {
-    readonly en: string;
-    readonly es: string;
+    readonly en: Text;
+    readonly es: Text;
 };
 
 export interface SetupTestMessages {
-    readonly running: string;
-    readonly ok: (seconds: string, cost: string) => string;
-    readonly failed: (why: string) => string;
+    readonly running: Text;
+    readonly ok: (seconds: Text, cost: Text) => Text;
+    readonly failed: (why: Text) => Text;
 }
 
 export interface SetupMessages {
-    readonly title: string;
-    readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'telemetryTags' | 'compactTarget' | 'compactNote' | 'compactHint' | 'contextWindow' | 'autocompact' | 'autocompactAt' | 'autocompactStyle' | 'autocompactMissed' | 'autocompactJob' | 'herdrEvents', string>>;
-    readonly loading: string;
-    readonly auto: (order: string) => string;
-    readonly custom: string;
+    readonly title: Text;
+    readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'telemetryTags' | 'compactTarget' | 'compactNote' | 'compactHint' | 'contextWindow' | 'autocompact' | 'autocompactAt' | 'autocompactStyle' | 'autocompactMissed' | 'autocompactJob' | 'herdrEvents', Text>>;
+    readonly loading: Text;
+    readonly auto: (order: Text) => Text;
+    readonly custom: Text;
     readonly legend: LegendMessages;
-    readonly locked: (name: string) => string;
-    readonly modelDefault: (model: string) => string;
-    readonly modelNoAgent: string;
+    readonly locked: (name: Text) => Text;
+    readonly modelDefault: (model: Text) => Text;
+    readonly modelNoAgent: Text;
     readonly uiChoices: UiChoicesMessages;
     readonly gitNoteChoices: ToggleChoices;
     readonly herdrEventsChoices: ToggleChoices;
     readonly telemetryTagsChoices: ToggleChoices;
-    readonly herdrEventsHint: string;
+    readonly herdrEventsHint: Text;
     readonly effortChoices: EffortChoicesMessages;
-    readonly recapLanguageHint: string;
-    readonly screenAgentsHint: string;
-    readonly compactTargetHint: string;
+    readonly recapLanguageHint: Text;
+    readonly screenAgentsHint: Text;
+    readonly compactTargetHint: Text;
     readonly compactNoteChoices: CompactNoteChoicesMessages;
-    readonly compactNoteHint: string;
-    readonly compactHintHint: string;
-    readonly compactHintOff: string;
-    readonly modelsHeading: string;
-    readonly jobBy: Readonly<Record<DeciderBy, string>>;
-    readonly jobByChoices: Readonly<Record<DeciderBy, string>>;
-    readonly compactModelSame: string;
-    readonly compactJobHint: string;
+    readonly compactNoteHint: Text;
+    readonly compactHintHint: Text;
+    readonly compactHintOff: Text;
+    readonly modelsHeading: Text;
+    readonly jobBy: Readonly<Record<DeciderBy, Text>>;
+    readonly jobByChoices: Readonly<Record<DeciderBy, Text>>;
+    readonly compactModelSame: Text;
+    readonly compactJobHint: Text;
     readonly autocompactChoices: AutocompactChoicesMessages;
-    readonly autocompactHint: string;
-    readonly autocompactAtHint: string;
+    readonly autocompactHint: Text;
+    readonly autocompactAtHint: Text;
     readonly autocompactStyleChoices: AutocompactStyleChoicesMessages;
-    readonly autocompactStyleHint: string;
-    readonly autocompactMissedChoices: Readonly<Record<MissedFacts, string>>;
-    readonly autocompactMissedHint: string;
-    readonly autocompactJobHint: string;
-    readonly deciderOff: string;
-    readonly judgeJobHint: string;
-    readonly judgeOffChoice: string;
-    readonly curateJobHint: string;
-    readonly curateOff: string;
-    readonly contextWindowHint: string;
-    readonly contextWindowDetected: string;
-    readonly screenNone: string;
-    readonly screenAll: string;
+    readonly autocompactStyleHint: Text;
+    readonly autocompactMissedChoices: Readonly<Record<MissedFacts, Text>>;
+    readonly autocompactMissedHint: Text;
+    readonly autocompactJobHint: Text;
+    readonly deciderOff: Text;
+    readonly judgeJobHint: Text;
+    readonly judgeOffChoice: Text;
+    readonly curateJobHint: Text;
+    readonly curateOff: Text;
+    readonly contextWindowHint: Text;
+    readonly contextWindowDetected: Text;
+    readonly screenNone: Text;
+    readonly screenAll: Text;
     readonly languageNames: LanguageNamesMessages;
-    readonly sameAsInterface: (language: string) => string;
-    readonly editHint: string;
-    readonly unsaved: string;
-    readonly saved: string;
-    readonly nothingToSave: string;
-    readonly saveFailed: (why: string) => string;
-    readonly rewriting: string;
+    readonly sameAsInterface: (language: Text) => Text;
+    readonly editHint: Text;
+    readonly unsaved: Text;
+    readonly saved: Text;
+    readonly nothingToSave: Text;
+    readonly saveFailed: (why: Text) => Text;
+    readonly rewriting: Text;
     readonly test: SetupTestMessages;
-    readonly keys: readonly string[];
-    readonly editKeys: readonly string[];
+    readonly keys: readonly Text[];
+    readonly editKeys: readonly Text[];
 }
 
 export interface CompactionFigures {
-    readonly tokens: string;
-    readonly took: string;
+    readonly tokens: Text;
+    readonly took: Text;
 }
 
 export type CompactionOutcome = 'compacted' | 'failed' | 'unconfirmed';
 
 export interface CompactionStageMessages {
-    readonly queued: (agent: string | null, clock: string) => string;
-    readonly briefing: (agent: string | null, writer: string | null, clock: string) => string;
-    readonly compacting: (agent: string | null, clock: string) => string;
-    readonly restoring: (agent: string | null) => string;
-    readonly compacted: (agent: string | null, figures: string) => string;
-    readonly template: string;
-    readonly failed: (agent: string | null, why: string | null) => string;
-    readonly unconfirmed: (agent: string | null, why: string | null) => string;
-    readonly skipped: (agent: string | null, why: string | null) => string;
-    readonly restarted: string;
-    readonly selfFailed: string;
-    readonly tokens: (before: string, after: string) => string;
-    readonly took: (seconds: number) => string;
+    readonly queued: (agent: Text | null, clock: Text) => Text;
+    readonly briefing: (agent: Text | null, writer: Text | null, clock: Text) => Text;
+    readonly compacting: (agent: Text | null, clock: Text) => Text;
+    readonly restoring: (agent: Text | null) => Text;
+    readonly compacted: (agent: Text | null, figures: Text) => Text;
+    readonly template: Text;
+    readonly failed: (agent: Text | null, why: Text | null) => Text;
+    readonly unconfirmed: (agent: Text | null, why: Text | null) => Text;
+    readonly skipped: (agent: Text | null, why: Text | null) => Text;
+    readonly restarted: Text;
+    readonly selfFailed: Text;
+    readonly tokens: (before: Text, after: Text) => Text;
+    readonly took: (seconds: Count) => Text;
 }
 
 export interface CompactionMessages {
-    readonly title: (agent: string) => string;
-    readonly noteLabel: string;
-    readonly keys: readonly string[];
-    readonly hint: (percent: number, window: string) => string;
-    readonly writing: (agent: string) => string;
-    readonly outcome: (agent: string, outcome: CompactionOutcome, retried: boolean, figures: CompactionFigures) => string;
+    readonly title: (agent: Text) => Text;
+    readonly noteLabel: Text;
+    readonly keys: readonly Text[];
+    readonly hint: (percent: Count, window: Text) => Text;
+    readonly writing: (agent: Text) => Text;
+    readonly outcome: (agent: Text, outcome: CompactionOutcome, retried: Presence, figures: CompactionFigures) => Text;
     readonly stage: CompactionStageMessages;
-    readonly started: (agent: string) => string;
-    readonly startedQueued: (agent: string) => string;
-    readonly auto: (text: string) => string;
-    readonly coverageMissed: (agent: string) => string;
-    readonly coverageCeiling: (count: number) => string;
-    readonly coverageUnchecked: Readonly<Record<UncheckedReason, string>>;
-    readonly coveragePassed: string;
-    readonly skipped: (agent: string, status: string) => string;
-    readonly joined: (agent: string, noted: boolean) => string;
-    readonly nothing: string;
-    readonly failed: (agent: string, why: string) => string;
-    readonly laneClosed: (agent: string | null, pane: string, point: ClosePoint) => string;
+    readonly started: (agent: Text) => Text;
+    readonly startedQueued: (agent: Text) => Text;
+    readonly auto: (text: Text) => Text;
+    readonly coverageMissed: (agent: Text) => Text;
+    readonly coverageCeiling: (count: Count) => Text;
+    readonly coverageUnchecked: Readonly<Record<UncheckedReason, Text>>;
+    readonly coveragePassed: Text;
+    readonly skipped: (agent: Text, status: Text) => Text;
+    readonly joined: (agent: Text, noted: Presence) => Text;
+    readonly nothing: Text;
+    readonly failed: (agent: Text, why: Text) => Text;
+    readonly laneClosed: (agent: Text | null, pane: Text, point: ClosePoint) => Text;
 }
 
 export interface CompactionOriginMessages {
-    readonly operator: (count: number) => string;
-    readonly auto: (count: number) => string;
+    readonly operator: (count: Count) => Text;
+    readonly auto: (count: Count) => Text;
 }
 
-export interface CausesMessages { readonly 'turn-ended': string; readonly focused: string; readonly requested: string }
+export interface CausesMessages { readonly 'turn-ended': Text; readonly focused: Text; readonly requested: Text }
 
 export interface ExpandedAutocompactMessages {
-    readonly label: string;
-    readonly text: (decisions: number, compacted: number, waited: number) => string;
+    readonly label: Text;
+    readonly text: (decisions: Count, compacted: Count, waited: Count) => Text;
 }
 
 export interface ExpandedMessages {
-    readonly timeline: string; readonly rules: string; readonly session: string; readonly story: string; readonly updatingStory: string;
-    readonly waiting: (amount: number, unit: AgoUnit) => string;
-    readonly closed: (why: ClosedWhy) => string;
-    readonly started: string; readonly turns: string; readonly compactions: string; readonly compactionOrigin: CompactionOriginMessages; readonly of: string; readonly repo: string; readonly branch: string; readonly files: string;
+    readonly timeline: Text; readonly rules: Text; readonly session: Text; readonly story: Text; readonly updatingStory: Text;
+    readonly waiting: (amount: Count, unit: AgoUnit) => Text;
+    readonly closed: (why: ClosedWhy) => Text;
+    readonly started: Text; readonly turns: Text; readonly compactions: Text; readonly compactionOrigin: CompactionOriginMessages; readonly of: Text; readonly repo: Text; readonly branch: Text; readonly files: Text;
     readonly causes: CausesMessages;
     readonly autocompact: ExpandedAutocompactMessages;
 }
 
 export interface ChaptersMessages {
-    readonly label: string;
-    readonly count: (chapters: number) => string;
-    readonly compacted: string;
-    readonly newSession: string;
-    readonly seconds: (seconds: number) => string;
-    readonly minutes: (minutes: number, seconds: number) => string;
+    readonly label: Text;
+    readonly count: (chapters: Count) => Text;
+    readonly compacted: Text;
+    readonly newSession: Text;
+    readonly seconds: (seconds: Count) => Text;
+    readonly minutes: (minutes: Count, seconds: Count) => Text;
 }
 
 export interface DatabaseMessages {
-    readonly newer: (backup: string | null) => string;
+    readonly newer: (backup: Text | null) => Text;
 }
 
 export interface KeyBinding {
-    readonly key: string;
-    readonly action: string;
+    readonly key: Text;
+    readonly action: Text;
 }
 
 export interface CliMessages {
-    readonly daemonRunning: (pid: number) => string;
-    readonly daemonWedged: (pid: number) => string;
-    readonly daemonStarted: (pid: string, log: string) => string;
-    readonly offIdle: string;
-    readonly offClosing: (pid: number) => string;
-    readonly tabUnknown: string;
-    readonly modalFailed: (why: string) => string;
-    readonly requested: (tab: string) => string;
-    readonly compactAsked: string;
-    readonly compactNotQueued: (why: string) => string;
-    readonly columnToggled: (tab: string) => string;
-    readonly columnsToggled: string;
-    readonly setupBusy: (command: string) => string;
-    readonly backendNow: (what: string) => string;
-    readonly usageBackend: (choices: string) => string;
-    readonly usage: (commands: string) => string;
-    readonly statusVersion: (code: string | null) => string;
-    readonly statusRuntime: (path: string, version: string) => string;
-    readonly hostRefusal: (refusal: Pick<Refusal, 'found' | 'needed' | 'steps'>, path: string) => string;
-    readonly statusKeys: (bindings: readonly KeyBinding[], configPath: string) => string;
-    readonly statusDaemon: (pid: number | null, off: boolean, version: string | null) => string;
-    readonly statusBackend: (what: string) => string;
+    readonly daemonRunning: (pid: number) => Text;
+    readonly daemonWedged: (pid: number) => Text;
+    readonly daemonStarted: (pid: Text, log: Text) => Text;
+    readonly offIdle: Text;
+    readonly offClosing: (pid: number) => Text;
+    readonly tabUnknown: Text;
+    readonly modalFailed: (why: Text) => Text;
+    readonly requested: (tab: Text) => Text;
+    readonly compactAsked: Text;
+    readonly compactNotQueued: (why: Text) => Text;
+    readonly columnToggled: (tab: Text) => Text;
+    readonly columnsToggled: Text;
+    readonly setupBusy: (command: Text) => Text;
+    readonly backendNow: (what: Text) => Text;
+    readonly usageBackend: (choices: Text) => Text;
+    readonly usage: (commands: Text) => Text;
+    readonly statusVersion: (code: Text | null) => Text;
+    readonly statusRuntime: (path: Text, version: Text) => Text;
+    readonly hostRefusal: (refusal: Pick<Refusal, 'found' | 'needed' | 'steps'>, path: Text) => Text;
+    readonly statusKeys: (bindings: readonly KeyBinding[], configPath: Text) => Text;
+    readonly statusDaemon: (pid: number | null, off: Presence, version: Text | null) => Text;
+    readonly statusBackend: (what: Text) => Text;
     readonly statusLanguage: 'language' | 'idioma  ';
     readonly statusSources: LanguageSourceNames;
-    readonly statusExtensions: (ids: string) => string;
-    readonly statusState: string;
-    readonly statusConfig: string;
-    readonly handoff: Readonly<Record<HandoffMessageKey, string>>;
-    readonly none: string;
+    readonly statusExtensions: (ids: Text) => Text;
+    readonly statusState: Text;
+    readonly statusConfig: Text;
+    readonly handoff: Readonly<Record<HandoffMessageKey, Text>>;
+    readonly none: Text;
 }
 
-export interface Messages {
+export interface Catalog {
     readonly locale: Locale;
     readonly badge: BadgeMessages;
-    readonly waitingForAgent: string;
-    readonly fromScreen: string;
-    readonly recapTitle: string;
-    readonly taskNumber: (n: number) => string;
-    readonly updating: string;
-    readonly daemonStale: (daemon: string | null) => string;
-    readonly claudeOwn: string;
-    readonly noRecapYet: string;
-    readonly noRecapShort: string;
+    readonly waitingForAgent: Text;
+    readonly fromScreen: Text;
+    readonly recapTitle: Text;
+    readonly taskNumber: (n: Count) => Text;
+    readonly updating: Text;
+    readonly daemonStale: (daemon: Text | null) => Text;
+    readonly claudeOwn: Text;
+    readonly noRecapYet: Text;
+    readonly noRecapShort: Text;
     readonly autocompactSettings: AutocompactSettingsMessages;
     readonly git: GitMessages;
-    readonly recapError: (error: string) => string;
-    readonly needsYou: (what: string) => string;
-    readonly ago: (amount: number, unit: AgoUnit) => string;
+    readonly recapError: (error: Text) => Text;
+    readonly needsYou: (what: Text) => Text;
+    readonly ago: (amount: Count, unit: AgoUnit) => Text;
     readonly hints: HintMessages;
     readonly setup: SetupMessages;
     readonly compaction: CompactionMessages;

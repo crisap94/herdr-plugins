@@ -2,7 +2,8 @@ import { en } from './en.ts';
 import { es } from './es.ts';
 import type { Locale, Messages } from './messages.ts';
 
-export type { AgoUnit, LanguageSource, Locale, Messages } from './messages.ts';
+export type { AgoUnit, Catalog, LanguageSource, Locale, Messages } from './messages.ts';
+export { catalogFor } from './catalogs.ts';
 export { languageNameOf, languageSettingOf, recapLanguageOfSetting } from './language.ts';
 export { languageName, languageSetting, recapLanguageOf } from './legacy.ts';
 
