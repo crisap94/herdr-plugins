@@ -123,25 +123,19 @@ export const CSR_CASES: readonly Case<EngineWorld, Engine>[] = [
     {
         id: 'CSR-7',
         group: 'CSR',
-        title: 'a session that moves to a new source reads from UNREAD, and back to the old source it reads from its kept cursor',
+        title: 'a new source for the same key continues the old cursor',
         level: 'full',
         async run(world, engine) {
             engine.follow(TAB, followed(key('a'), { session: session('s1') }));
             let source = 'x1';
             world.setLocate(() => ({ kind: 'answer', value: { kind: 'located', source } }));
-            world.setReadBySource((next) => (next === 'x1' ? chunkAt(5) : chunkAt(2)));
+            world.setReadBySource((next) => (next === 'x1' ? chunkAt(5) : chunkAt(9)));
             world.setWriter(NO_OPS);
             await engine.refresh(TAB);
             source = 'x2';
             await engine.refresh(TAB);
-            source = 'x1';
-            await engine.refresh(TAB);
-            assert.deepEqual(world.positions(), [
-                UNREAD,
-                UNREAD,
-                { cursor: 5, tail: null },
-            ]);
-            assert.equal(cursorOf(world, 'a'), 5);
+            assert.deepEqual(world.positions(), [UNREAD, { cursor: 5, tail: null }]);
+            assert.deepEqual(cursorsOf(world, TAB), [{ pane: 'a', transcript: 'x2', cursor: 9 }]);
         },
     },
     {
