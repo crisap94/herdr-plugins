@@ -751,6 +751,7 @@
       "src/adapters/herdr/host-check.ts",
       "src/adapters/herdr/json-object.ts",
       "src/adapters/herdr/json.ts",
+      "src/adapters/herdr/legacy.ts",
       "src/adapters/herdr/session-registry.ts",
       "src/adapters/herdr/subscriptions.ts",
       "src/adapters/herdr/token-refusal.ts",

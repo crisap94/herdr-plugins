@@ -1,126 +1,168 @@
 import { AgentStatus } from '@stateforge-labs/herdr-sdk';
-import { usePlugin } from './client.ts';
-import { str } from './json.ts';
-import { parseJson } from './json-object.ts';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { usePlugin } from './client.ts';
+import { parseJsonObject, type JsonObject } from './json-object.ts';
+import { parseAgentKind, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
-import type { Agents, AgentState, LineBehavior, PromptBehavior, PromptWait, Prompted } from '#src/ports/agents.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseMilliseconds, type Duration, type Milliseconds } from '#src/recap/domain/time.ts';
+import type { AgentLookup, LineBehavior, PromptStance, PromptWaitFor, Prompted, AgentPanes } from '#src/ports/agents.ts';
 import type { Done } from '#src/ports/columns.ts';
 import type { CompactionLine } from '#src/recap/domain/compaction-plan.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { parseText } from '#src/recap/domain/text.ts';
 
-type Json = Readonly<Record<string, unknown>>;
-export type Wire = typeof herdrWire;
+export { HerdrAgents } from './legacy.ts';
 
-const COMPACT_ENTRYPOINT = 'compact';
+export type WireMethod = 'agent.get' | 'agent.prompt' | 'pane.send_text' | 'pane.send_keys' | 'plugin.pane.open';
+export type Wire = (method: WireMethod, params: JsonObject, timeoutMs?: Milliseconds) => Promise<JsonObject>;
+
+export interface PluginRef {
+    readonly id: Text;
+    readonly stateDir: Text;
+}
+
+export type Pause = (wait: Duration) => Promise<void>;
+
+const WIRE_MARGIN_MS = 15_000;
 const POPUP_WIDTH = '90%';
 const POPUP_HEIGHT = '30%';
-const WIRE_MARGIN_MS = 15_000;
-const detail = (error: unknown): string => (error instanceof Error ? error.message : String(error));
-const codeOf = (error: unknown): unknown => (typeof error === 'object' && error !== null ? (error as { code?: unknown }).code : undefined);
+const COMPACT_ENTRYPOINT = 'compact';
 
-export class HerdrAgents implements Agents {
+const objectOf = (result: ReturnType<typeof parseJsonObject>): JsonObject => (result.kind === 'ok' ? result.value : {});
+
+export class HerdrAgentPanes implements AgentPanes {
     private readonly wire: Wire;
-    private readonly plugin: { readonly id: string; readonly stateDir: string };
+    private readonly plugin: PluginRef;
+    private readonly pause: Pause;
 
-    private readonly pause: (ms: number) => Promise<void>;
-
-    constructor(wire: Wire, plugin: { readonly id: string; readonly stateDir: string }, pause: (ms: number) => Promise<void> = sleep) {
+    constructor(wire: Wire, plugin: PluginRef, pause: Pause = (wait): Promise<void> => sleep(Number(wait))) {
         this.wire = wire;
         this.plugin = plugin;
         this.pause = pause;
     }
 
-    async status(pane: string): Promise<AgentState> {
+    async status(pane: PaneId): Promise<AgentLookup> {
         try {
-            const found = (await this.wire('agent.get', { target: pane }))['agent'];
-            const fields = typeof found === 'object' && found !== null ? (found as Json) : {};
-            return typeof fields['agent'] === 'string'
-                ? { kind: 'agent', agent: fields['agent'], status: laneStatus(typeof fields['agent_status'] === 'string' ? fields['agent_status'] : null) }
+            const fields = objectOf(parseJsonObject((await this.wire('agent.get', { target: pane }))['agent']));
+            const agent = parseAgentKind(fields['agent']);
+            const raw = parseText(fields['agent_status']);
+            return agent.kind === 'ok'
+                ? { kind: 'agent', agent: agent.value, status: laneStatus(raw.kind === 'ok' ? raw.value : null) }
                 : unknown({ why: 'unreadable', detail: causeOf(must(parseText(`agent.get of ${pane} returned no agent`))) });
         } catch (error) {
-            return codeOf(error) === 'agent_not_found' ? unknown({ why: 'not-found', what: `agent ${pane}` }) : unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
+            const code = error instanceof Object && 'code' in error ? error.code : undefined;
+            return code === 'agent_not_found'
+                ? unknown({ why: 'not-found', what: `agent ${pane}` })
+                : unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : 'herdr call failed'))) });
         }
     }
 
-    async prompt(pane: string, text: string, wait: PromptWait | undefined, behavior: PromptBehavior): Promise<Prompted> {
-        const params: Json = wait === undefined ? { target: pane, text } : { target: pane, text, wait: { until: wait.until, timeout_ms: wait.timeoutMs } };
+    async prompt(pane: PaneId, text: Text, wait: PromptWaitFor | undefined, behavior: PromptStance): Promise<Prompted> {
+        const params: JsonObject = wait === undefined
+            ? { target: pane, text }
+            : { target: pane, text, wait: { until: wait.until, timeout_ms: Number(wait.timeout) } };
+        const budget = wait === undefined ? 0 : Number(wait.timeout);
         try {
-            await this.wire('agent.prompt', params, (wait?.timeoutMs ?? 0) + WIRE_MARGIN_MS);
+            await this.wire('agent.prompt', params, must(parseMilliseconds(budget + WIRE_MARGIN_MS)));
             return { kind: 'sent' };
         } catch (error) {
-            if (codeOf(error) === 'agent_prompt_stalled' && behavior.acceptsStall) {
+            const code = error instanceof Object && 'code' in error ? error.code : undefined;
+            if (code === 'agent_prompt_stalled' && behavior.stall === 'accepts-stall') {
                 return { kind: 'sent' };
             }
-            return codeOf(error) === 'agent_blocked' ? { kind: 'blocked' } : unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
+            return code === 'agent_blocked'
+                ? { kind: 'blocked' }
+                : unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : 'herdr call failed'))) });
         }
     }
 
-    async typeLine(pane: string, line: CompactionLine, behavior: LineBehavior): Promise<Prompted> {
-        const pieces = line.pieces;
-        if (pieces.some((piece) => /[\r\n]/u.test(piece))) {
+    async typeLine(pane: PaneId, line: CompactionLine, behavior: LineBehavior): Promise<Prompted> {
+        if (line.pieces.some((piece) => /[\r\n]/u.test(piece))) {
             return unknown({ why: 'unreadable', detail: causeOf(must(parseText('a typed line has no line break'))) });
         }
         try {
-            for (const piece of pieces) {
+            for (const piece of line.pieces) {
                 await this.wire('pane.send_text', { pane_id: pane, text: piece });
             }
             await this.pause(behavior.enterDelay);
             await this.wire('pane.send_keys', { pane_id: pane, keys: ['enter'] });
             return { kind: 'sent' };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : 'herdr call failed'))) });
         }
     }
 
-    async askNote(tab: string, pane: string | null): Promise<Done> {
+    async askNote(tab: TabId, pane: PaneId | null): Promise<Done> {
         try {
             await this.wire('plugin.pane.open', {
-                plugin_id: this.plugin.id, entrypoint: COMPACT_ENTRYPOINT, placement: 'popup', width: POPUP_WIDTH, height: POPUP_HEIGHT, focus: true,
+                plugin_id: this.plugin.id,
+                entrypoint: COMPACT_ENTRYPOINT,
+                placement: 'popup',
+                width: POPUP_WIDTH,
+                height: POPUP_HEIGHT,
+                focus: true,
                 env: { TAB_RECAP_TAB: tab, TAB_RECAP_PANE: pane ?? '', TAB_RECAP_STATE: this.plugin.stateDir },
             });
             return { kind: 'done' };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : 'herdr call failed'))) });
         }
     }
 }
 
-export async function herdrWire(method: string, params: Json, timeoutMs?: number): Promise<Json> {
-    const options = timeoutMs === undefined ? undefined : { timeoutMs };
-    switch (method) {
-        case 'agent.get':
-            return parseJson(await usePlugin((client) => client.call('agent.get', { target: str(params['target']) })));
-        case 'agent.prompt': {
-            const target = str(params['target']);
-            const text = str(params['text']);
-            const wait = parseJson(params['wait']);
-            const until = Object.values(AgentStatus).filter((status) => Array.isArray(wait['until']) && wait['until'].includes(status));
-            const request = params['wait'] === undefined
-                ? { target, text }
-                : { target, text, wait: { until, timeout_ms: typeof wait['timeout_ms'] === 'number' ? wait['timeout_ms'] : null } };
-            return parseJson(await usePlugin((client) => client.call('agent.prompt', request, options)));
-        }
-        case 'pane.send_text':
-            return parseJson(await usePlugin((client) => client.call('pane.send_text', { pane_id: str(params['pane_id']), text: str(params['text']) })));
-        case 'pane.send_keys':
-            return parseJson(await usePlugin((client) => client.call('pane.send_keys', { pane_id: str(params['pane_id']), keys: Array.isArray(params['keys']) ? params['keys'].map((key) => str(key)) : [] })));
-        case 'plugin.pane.open': {
-            const env = Object.fromEntries(Object.entries(parseJson(params['env'])).flatMap(([key, item]) => (typeof item === 'string' ? [[key, item]] : [])));
-            return parseJson(await usePlugin((client) => client.call('plugin.pane.open', {
-                plugin_id: str(params['plugin_id']),
-                entrypoint: str(params['entrypoint']),
-                placement: 'popup',
-                width: str(params['width']),
-                height: str(params['height']),
-                focus: true,
-                env,
-            })));
-        }
-        default:
-            throw new Error(`herdr wire: ${method} is not an agent call`);
-    }
+const EMPTY = must(parseText(''));
+const textOf = (result: ReturnType<typeof parseText>): Text => (result.kind === 'ok' ? result.value : EMPTY);
+
+type Handler = (params: JsonObject, timeoutMs: Milliseconds | undefined) => Promise<JsonObject>;
+
+const handlers: Record<WireMethod, Handler> = {
+    'agent.get': async (params): Promise<JsonObject> => {
+        const target = textOf(parseText(params['target']));
+        return objectOf(parseJsonObject(await usePlugin((client) => client.call('agent.get', { target }))));
+    },
+    'agent.prompt': async (params, timeoutMs): Promise<JsonObject> => {
+        const target = textOf(parseText(params['target']));
+        const text = textOf(parseText(params['text']));
+        const wait = objectOf(parseJsonObject(params['wait']));
+        const waitUntil = wait['until'];
+        const until = Object.values(AgentStatus).filter((status) => Array.isArray(waitUntil) && waitUntil.includes(status));
+        const timeout = typeof wait['timeout_ms'] === 'number' ? wait['timeout_ms'] : null;
+        const request = params['wait'] === undefined ? { target, text } : { target, text, wait: { until, timeout_ms: timeout } };
+        const options = timeoutMs === undefined ? undefined : { timeoutMs: Number(timeoutMs) };
+        return objectOf(parseJsonObject(await usePlugin((client) => client.call('agent.prompt', request, options))));
+    },
+    'pane.send_text': async (params): Promise<JsonObject> => {
+        const pane = textOf(parseText(params['pane_id']));
+        const text = textOf(parseText(params['text']));
+        return objectOf(parseJsonObject(await usePlugin((client) => client.call('pane.send_text', { pane_id: pane, text }))));
+    },
+    'pane.send_keys': async (params): Promise<JsonObject> => {
+        const pane = textOf(parseText(params['pane_id']));
+        const keys = params['keys'];
+        const names = Array.isArray(keys) ? keys.map((key) => String(key)) : [];
+        return objectOf(parseJsonObject(await usePlugin((client) => client.call('pane.send_keys', { pane_id: pane, keys: names }))));
+    },
+    'plugin.pane.open': async (params): Promise<JsonObject> => {
+        const env = objectOf(parseJsonObject(params['env']));
+        const pairs = Object.entries(env).flatMap(([key, item]) => {
+            const name = parseText(key);
+            const value = parseText(item);
+            return name.kind === 'ok' && value.kind === 'ok' ? [[name.value, value.value] as const] : [];
+        });
+        return objectOf(parseJsonObject(await usePlugin((client) => client.call('plugin.pane.open', {
+            plugin_id: textOf(parseText(params['plugin_id'])),
+            entrypoint: textOf(parseText(params['entrypoint'])),
+            placement: 'popup',
+            width: textOf(parseText(params['width'])),
+            height: textOf(parseText(params['height'])),
+            focus: true,
+            env: Object.fromEntries(pairs),
+        }))));
+    },
+};
+
+export function herdrWire(method: WireMethod, params: JsonObject, timeoutMs?: Milliseconds): Promise<JsonObject> {
+    return handlers[method](params, timeoutMs);
 }

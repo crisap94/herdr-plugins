@@ -71,13 +71,6 @@
   "src/adapters/harness/legacy.ts": {
     "legacy": 12
   },
-  "src/adapters/herdr/agents.ts": {
-    "parameter": 13,
-    "return": 2,
-    "container": 4,
-    "property": 5,
-    "assertion": 2
-  },
   "src/adapters/herdr/column-panes.ts": {
     "parameter": 1,
     "return": 1,
@@ -86,7 +79,7 @@
   "src/adapters/herdr/fleet.ts": {
     "parameter": 18,
     "return": 1,
-    "container": 11,
+    "container": 7,
     "property": 1
   },
   "src/adapters/herdr/host-check.ts": {
@@ -94,13 +87,8 @@
     "return": 2,
     "property": 2
   },
-  "src/adapters/herdr/json-object.ts": {
-    "container": 2
-  },
-  "src/adapters/herdr/json.ts": {
-    "parameter": 4,
-    "return": 2,
-    "container": 9
+  "src/adapters/herdr/legacy.ts": {
+    "legacy": 20
   },
   "src/adapters/herdr/session-registry.ts": {
     "parameter": 2
