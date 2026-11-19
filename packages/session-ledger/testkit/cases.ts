@@ -4,6 +4,7 @@ import type { StoreUnderTest } from './memory-store.ts';
 import type { EngineWorld } from './world.ts';
 import { FACT_CASES } from './store-cases/facts.ts';
 import { RECORD_CASES } from './store-cases/records.ts';
+import { CARRIED_CASES } from './store-cases/carried.ts';
 import { FOL_CASES } from './engine-cases/follow.ts';
 import { TRN_CASES } from './engine-cases/turn-ended.ts';
 import { STA_CASES } from './engine-cases/session-started.ts';
@@ -22,4 +23,4 @@ import { LED_CASES } from './engine-cases/ledger.ts';
 
 export const engineCases: readonly Case<EngineWorld, Engine>[] = [...FOL_CASES, ...TRN_CASES, ...STA_CASES, ...FBY_CASES, ...EVT_CASES, ...CMP_CASES, ...CUR_CASES, ...HIS_CASES, ...REF_CASES, ...RUN_CASES, ...CSR_CASES, ...LNG_CASES, ...RDF_CASES, ...PRT_CASES, ...LED_CASES];
 
-export const storeCases: readonly Case<null, StoreUnderTest>[] = [...RECORD_CASES, ...FACT_CASES];
+export const storeCases: readonly Case<null, StoreUnderTest>[] = [...RECORD_CASES, ...CARRIED_CASES, ...FACT_CASES];
