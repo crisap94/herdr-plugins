@@ -45,7 +45,7 @@ export function outcomeText(outcome: AskOutcome): string { return outcome.kind =
 
 export type TuningReader = (key: string) => string | undefined;
 
-export interface AutocompactTuning { readonly style: AutocompactStyle; readonly verdict: Thresholds; readonly coverageAtLeast: number; readonly recheckIdleMs: number | null }
+export interface AutocompactTuning { readonly style: AutocompactStyle; readonly verdict: Thresholds; readonly coverageAtLeast: number; readonly recheckIdleMs: number | null; }
 
 export function numberIn(raw: string | undefined, min: number, max: number, whole = false): number | null {
     const text = (raw ?? '').trim().toLowerCase();
@@ -60,15 +60,15 @@ export type AutocompactReader = (key: AutocompactSetting) => string | undefined;
 
 export type JevReader = (key: JevSetting) => string | undefined;
 
-export interface GateInput { readonly kind: LaneKind; readonly kinds: AutocompactKinds; readonly shadowKinds: readonly RegisteredKind[]; readonly busy: boolean; readonly flight: Flight | null; readonly share: number; readonly minimum: number; readonly ceiling: number; readonly now: number; readonly lastBreakAt: number | null; readonly lastDecisionAt: Instant | null; readonly cooldownMs: number; readonly unchanged: boolean; readonly coverageBackoff?: boolean }
+export interface GateInput { readonly kind: LaneKind; readonly kinds: AutocompactKinds; readonly shadowKinds: readonly RegisteredKind[]; readonly busy: boolean; readonly flight: Flight | null; readonly share: number; readonly minimum: number; readonly ceiling: number; readonly now: number; readonly lastBreakAt: number | null; readonly lastDecisionAt: Instant | null; readonly cooldownMs: number; readonly unchanged: boolean; readonly coverageBackoff?: boolean; }
 
 export function backoffMs(failures: number): number { return failures <= 0 ? 0 : Math.min(BACKOFF_MAX_MS, BACKOFF_BASE_MS * 2 ** (failures - 1)); }
 
-export interface Placement { readonly pane: PaneId; readonly shape: Shape; readonly since?: number }
+export interface Placement { readonly pane: PaneId; readonly shape: Shape; readonly since?: number; }
 
-export interface HiddenState { readonly all: boolean; readonly hidden: readonly string[]; readonly shown: readonly string[] }
+export interface HiddenState { readonly all: boolean; readonly hidden: readonly string[]; readonly shown: readonly string[]; }
 
-export interface Board { readonly lanes: ReadonlyMap<PaneId, Lane>; readonly columns: ReadonlyMap<TabId, Placement>; readonly closing: ReadonlyMap<PaneId, Instant>; readonly opening: ReadonlySet<TabId>; readonly reopens: ReadonlyMap<TabId, readonly Instant[]>; readonly givenUp: ReadonlyMap<TabId, Instant>; readonly widths: ReadonlyMap<TabId, number>; readonly focused: TabId | null; readonly enabled: boolean; readonly seeded: boolean; readonly hidden: ReadonlySet<TabId>; readonly allHidden: boolean; readonly shown: ReadonlySet<TabId>; readonly persisted: readonly RestoredLane[] | null }
+export interface Board { readonly lanes: ReadonlyMap<PaneId, Lane>; readonly columns: ReadonlyMap<TabId, Placement>; readonly closing: ReadonlyMap<PaneId, Instant>; readonly opening: ReadonlySet<TabId>; readonly reopens: ReadonlyMap<TabId, readonly Instant[]>; readonly givenUp: ReadonlyMap<TabId, Instant>; readonly widths: ReadonlyMap<TabId, number>; readonly focused: TabId | null; readonly enabled: boolean; readonly seeded: boolean; readonly hidden: ReadonlySet<TabId>; readonly allHidden: boolean; readonly shown: ReadonlySet<TabId>; readonly persisted: readonly RestoredLane[] | null; }
 
 export function listsPane(board: Board, pane: PaneId): boolean { return board.lanes.has(pane); }
 
@@ -110,11 +110,11 @@ export function needsIdle(reason: string): WhileWorking {
 
 export type FollowUp = { readonly kind: 'restore-message'; readonly acceptsStall: boolean } | { readonly kind: 'none' };
 
-export interface CompactionPlan { readonly lines: readonly CompactionLine[]; readonly enterDelay: Duration; readonly confirm: Confirmation; readonly retryOnSelfFailure: boolean; readonly followUp: FollowUp; readonly whileWorking: WhileWorking }
+export interface CompactionPlan { readonly lines: readonly CompactionLine[]; readonly enterDelay: Duration; readonly confirm: Confirmation; readonly retryOnSelfFailure: boolean; readonly followUp: FollowUp; readonly whileWorking: WhileWorking; }
 
 export type CompactionPlanFactory = (guidance: string) => CompactionPlanResult;
 
-export interface NoteToken { readonly label: string; readonly value: string }
+export interface NoteToken { readonly label: string; readonly value: string; }
 
 export function plainText(raw: string): string { return collapsedText(raw, 'space'); }
 
@@ -126,13 +126,13 @@ export function notesOf(tokens: Readonly<Record<string, string>>): readonly Note
     });
 }
 
-export interface Merge { readonly id: string; readonly into: string }
+export interface Merge { readonly id: string; readonly into: string; }
 
-export interface Curation { readonly merges: readonly Merge[]; readonly story: string | null; readonly refused: readonly string[] }
+export interface Curation { readonly merges: readonly Merge[]; readonly story: string | null; readonly refused: readonly string[]; }
 
 function isObject(value: unknown): value is Readonly<Record<string, unknown>> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
 
-interface Merged { readonly ids: ReadonlySet<string>; readonly targets: ReadonlySet<string> }
+interface Merged { readonly ids: ReadonlySet<string>; readonly targets: ReadonlySet<string>; }
 
 function closeRefusal(op: Readonly<Record<string, unknown>>, open: ReadonlySet<string>, merged: Merged): string | null {
     const [id, into] = [op['id'], op['into']];
@@ -195,14 +195,14 @@ export function eventValue(seq: string, kind: EventKind, detail?: string | null)
     return `${seq}:${kind}${tail}`.slice(0, EVENT_MAX);
 }
 
-export interface SeenColumn { readonly tabId: string; readonly paneId: string; readonly shape: Shape }
+export interface SeenColumn { readonly tabId: string; readonly paneId: string; readonly shape: Shape; }
 
-export interface Reconciliation { readonly focusedTab?: string | null; readonly at?: number; readonly lanes: readonly SeenLane[]; readonly panes: readonly string[]; readonly columns: readonly SeenColumn[]; readonly widths: ReadonlyMap<string, number>; readonly tabs?: readonly TabId[] }
+export interface Reconciliation { readonly focusedTab?: string | null; readonly at?: number; readonly lanes: readonly SeenLane[]; readonly panes: readonly string[]; readonly columns: readonly SeenColumn[]; readonly widths: ReadonlyMap<string, number>; readonly tabs?: readonly TabId[]; }
 
-export interface StatusObservation { readonly kind: 'status'; readonly pane: PaneId; readonly status: string }
-export interface SessionObservation { readonly kind: 'session'; readonly pane: PaneId; readonly session: string }
-export interface ColumnOpenedObservation { readonly kind: 'column-opened'; readonly tab: TabId; readonly pane: PaneId; readonly shape: Shape; readonly at?: number }
-export interface SwitchedObservation { readonly kind: 'switched'; readonly enabled: boolean }
+export interface StatusObservation { readonly kind: 'status'; readonly pane: PaneId; readonly status: string; }
+export interface SessionObservation { readonly kind: 'session'; readonly pane: PaneId; readonly session: string; }
+export interface ColumnOpenedObservation { readonly kind: 'column-opened'; readonly tab: TabId; readonly pane: PaneId; readonly shape: Shape; readonly at?: number; }
+export interface SwitchedObservation { readonly kind: 'switched'; readonly enabled: boolean; }
 
 function okOrNull<T, E>(parsed: Result<T, E>): T | null { return parsed.kind === 'ok' ? parsed.value : null; }
 
@@ -231,7 +231,7 @@ export function handoffId(raw: string): HandoffId { return orThrow(parseHandoffI
 
 export function agentKind(raw: string): AgentKind { return orThrow(okOrNull(parseAgentKind(raw)), 'an agent kind cannot be empty'); }
 
-export interface LastRun { readonly at: number; readonly cause: LastRunCause }
+export interface LastRun { readonly at: number; readonly cause: LastRunCause; }
 
 export type NewerPrompts = { readonly kind: 'none' } | { readonly kind: 'at-least'; readonly count: number } | { readonly kind: 'unknown' };
 
@@ -249,19 +249,19 @@ export function newerPromptsOf(count: number | null): NewerPrompts {
     return count > 0 ? { kind: 'at-least', count } : { kind: 'none' };
 }
 
-export interface SettleEvidence { readonly trials: number; readonly source: string }
+export interface SettleEvidence { readonly trials: number; readonly source: string; }
 
-export interface HandoffEntry { readonly id: FactId; readonly text: HandoffText; readonly firstAt: number; readonly lastAt: number; readonly reason: HandoffText | null }
+export interface HandoffEntry { readonly id: FactId; readonly text: HandoffText; readonly firstAt: number; readonly lastAt: number; readonly reason: HandoffText | null; }
 
-export interface HandoffGroup { readonly id: HandoffGroupId; readonly entries: readonly HandoffEntry[]; readonly capped: number }
+export interface HandoffGroup { readonly id: HandoffGroupId; readonly entries: readonly HandoffEntry[]; readonly capped: number; }
 
-export interface HandoffBody { readonly kind: 'content'; readonly note: HandoffText | null; readonly freshness: Freshness; readonly worksite: WorksiteSnapshot; readonly groups: readonly HandoffGroup[]; readonly withheld: number }
+export interface HandoffBody { readonly kind: 'content'; readonly note: HandoffText | null; readonly freshness: Freshness; readonly worksite: WorksiteSnapshot; readonly groups: readonly HandoffGroup[]; readonly withheld: number; }
 
-export interface Job { readonly by: JobBy; readonly model: string; readonly effort: Effort; readonly timeoutMs?: Milliseconds; readonly answer?: JobAnswer }
+export interface Job { readonly by: JobBy; readonly model: string; readonly effort: Effort; readonly timeoutMs?: Milliseconds; readonly answer?: JobAnswer; }
 
-export interface DeciderJob { readonly by: DeciderBy; readonly model: string; readonly effort: Effort }
+export interface DeciderJob { readonly by: DeciderBy; readonly model: string; readonly effort: Effort; }
 
-export interface RecapChoices { readonly backend: BackendChoice; readonly models: Readonly<Record<BackendId, string>> }
+export interface RecapChoices { readonly backend: BackendChoice; readonly models: Readonly<Record<BackendId, string>>; }
 
 const textValue = (raw: string | undefined): Text | undefined => (raw === undefined ? undefined : must(parseText(raw)));
 
@@ -293,7 +293,7 @@ export const herdrEventsOf = (raw: string | undefined): HerdrEvents => herdrEven
 
 export const capabilityOf = (isOn: (setting: OptIn) => boolean): string => capabilityValueOf((setting) => (isOn(setting) ? 'on' : 'off'));
 
-export interface LaneFacts { readonly share: number | null; readonly recapAt: number | null; readonly needs: number }
+export interface LaneFacts { readonly share: number | null; readonly recapAt: number | null; readonly needs: number; }
 
 export type TokenValues = Readonly<Record<string, string>>;
 
@@ -307,7 +307,7 @@ export function valuesOf(facts: LaneFacts, capability: string = CAPABILITY_VALUE
     };
 }
 
-export interface Written { readonly values: TokenValues; readonly at: number }
+export interface Written { readonly values: TokenValues; readonly at: number; }
 
 export function writeDue(previous: Written | null, values: TokenValues, now: number, ttlMs: number): TokenValues | null {
     if (previous === null) {
