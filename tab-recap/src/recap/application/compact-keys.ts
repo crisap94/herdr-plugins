@@ -2,6 +2,8 @@ import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { NOTE_LIMIT } from './compaction-message.ts';
 
+export { step } from './legacy.ts';
+
 export interface NoteState {
     readonly note: Text;
 }
@@ -27,7 +29,7 @@ export const EMPTY_NOTE: NoteState = { note: must(parseText('')) };
 const ESC = String.fromCodePoint(0x1b);
 type Printability = 'printable' | 'control';
 
-const printabilityOf = (key: string): Printability => {
+const printabilityOf = (key: Text): Printability => {
     const printable = !key.startsWith(ESC) && Array.from(key).every((char) => (char.codePointAt(0) ?? 0) >= 0x20 && char !== '\u007f');
     return printable ? 'printable' : 'control';
 };
@@ -41,7 +43,7 @@ export function noteOf(typed: Text): Text | null {
     return parsed.kind === 'ok' ? parsed.value : null;
 }
 
-export function step(state: NoteState, key: string): NoteStepped {
+export function stepNote(state: NoteState, key: Text): NoteStepped {
     if (key === '\r' || key === '\n') {
         return { state, effect: { kind: 'send', note: noteOf(state.note) } };
     }
@@ -54,6 +56,6 @@ export function step(state: NoteState, key: string): NoteStepped {
     if (key === '\u0015') {
         return { state: EMPTY_NOTE, effect: null };
     }
-    const text = key.replaceAll(/[\r\n]+/g, ' ');
+    const text = must(parseText(key.replaceAll(/[\r\n]+/g, ' ')));
     return { state: printabilityOf(text) === 'printable' ? { note: must(parseText(Array.from(state.note + text).slice(0, NOTE_LIMIT).join(''))) } : state, effect: null };
 }

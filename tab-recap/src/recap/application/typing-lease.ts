@@ -2,37 +2,41 @@ import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import type { PaneTokens } from '#src/ports/pane-tokens.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
-import { instant, parseMilliseconds, type Milliseconds } from '#src/recap/domain/time.ts';
+import type { PaneId } from '#src/recap/domain/ids.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseMilliseconds, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
 import { LEASE, LEASE_TTL_MS, leaseBlocked } from '#src/recap/domain/typing-lease.ts';
 
+export { TypingLease } from './legacy.ts';
+
 export const RETRY_MS = must(parseMilliseconds(1000));
+const LEASE_WAIT_MS = must(parseMilliseconds(LEASE_TTL_MS));
 
 export type Acquired = 'taken' | 'busy' | 'unavailable';
 
-export interface TypingLeaseDeps {
+export interface PaneTypingLeaseDeps {
     readonly tokens: LaneTokens;
     readonly panes: PaneTokens;
-    readonly now: () => number;
+    readonly now: () => Instant;
     readonly pause: (ms: Milliseconds) => Promise<void>;
-    readonly log: (line: string) => void;
+    readonly log: (line: Text) => void;
 }
 
-export class TypingLease {
-    private readonly deps: TypingLeaseDeps;
+export class PaneTypingLease {
+    private readonly deps: PaneTypingLeaseDeps;
     private outage = false;
 
-    constructor(deps: TypingLeaseDeps) {
+    constructor(deps: PaneTypingLeaseDeps) {
         this.deps = deps;
     }
 
-    private async take(pane: string): Promise<Acquired> {
-        const stamp = instant(this.deps.now());
+    private async take(pane: PaneId): Promise<Acquired> {
+        const stamp = this.deps.now();
         const wrote = await this.deps.tokens.report(pane, { [LEASE]: String(stamp) }, LEASE_TTL_MS);
         if (isUnknown(wrote)) {
             return 'unavailable';
         }
-        const read = await this.deps.panes.read(paneId(pane));
+        const read = await this.deps.panes.read(pane);
         if (isUnknown(read)) {
             await this.release(pane);
             return 'unavailable';
@@ -45,11 +49,11 @@ export class TypingLease {
         return 'taken';
     }
 
-    async release(pane: string): Promise<void> {
+    async release(pane: PaneId): Promise<void> {
         await this.deps.tokens.report(pane, { [LEASE]: null }, LEASE_TTL_MS);
     }
 
-    async acquire(pane: string, waitMs: number = LEASE_TTL_MS): Promise<Acquired> {
+    async acquire(pane: PaneId, waitMs: Milliseconds = LEASE_WAIT_MS): Promise<Acquired> {
         const until = this.deps.now() + waitMs;
         let got = await this.take(pane);
         while (got === 'busy' && this.deps.now() < until) {
@@ -58,7 +62,7 @@ export class TypingLease {
         }
         if (got === 'unavailable' && !this.outage) {
             this.outage = true;
-            this.deps.log('typing lease: herdr cannot take or read it; typing without it until it can');
+            this.deps.log(must(parseText('typing lease: herdr cannot take or read it; typing without it until it can')));
         }
         return got;
     }

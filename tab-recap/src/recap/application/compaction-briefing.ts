@@ -8,7 +8,9 @@ import type { ClosePoint } from '#src/recap/domain/lane-closed.ts';
 import { type CompactionId, type DecisionId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import { parseCheckedFact, type CheckedFact, type MissedFacts } from '#src/recap/domain/autocompact.ts';
 import { MISSED_FACTS_DEFAULT } from '#src/recap/domain/autocompact.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
+import { must } from '#src/protocol/result.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { appendedBrief, checkedBrief } from './compaction-coverage.ts';
 import type { Briefed, Checked, CoverageFlow } from './compaction-coverage.ts';
@@ -51,13 +53,13 @@ export class Briefing {
         const { brief, records, ledger } = this.deps;
         const [pane, agent] = [String(lane.pane), String(lane.agent)];
         const [recent, history]: [readonly Entry[], History] = [await this.deps.recent(lane), ledger.historyOf(tab, pane)];
-        const own = [...recent.map((entry) => entry.text), ...history.flatMap((item) => [item.text, item.why ?? ''])].join('\n');
-        if (!brief.enabled()) {
+        const own = must(parseText([...recent.map((entry) => entry.text), ...history.flatMap((item) => [item.text, item.why ?? ''])].join('\n')));
+        if (brief.enabled() === 'absent') {
             return { text: null, why: null, own, history };
         }
         const label = records.readRecap(tab)?.lanes.find((each) => each.pane === pane)?.title ?? lane.title ?? '';
         const clock = { now: this.deps.now(), zone: Intl.DateTimeFormat().resolvedOptions().timeZone };
-        const document = compactionInput({ agent: { kind: agent, label, repo: null, branch: null }, note: material.note, current: material.sections, history, lastBreakAt: this.deps.boundaries.lastBreakAt(tab, pane), recent, clock });
+        const document = must(parseText(compactionInput({ agent: { kind: agent, label, repo: null, branch: null }, note: material.note, current: material.sections, history, lastBreakAt: this.deps.boundaries.lastBreakAt(tab, pane), recent, clock })));
         return { ...(await brief.write(document, own, correction)), own, history };
     }
 
@@ -65,27 +67,31 @@ export class Briefing {
         const { trigger, decision, flow } = link;
         const first = await this.briefOf(lane, tab, material);
         if (trigger === 'operator') return { kind: 'checked', checked: { brief: first, coverage: null, outcome: { kind: 'passed' }, coverageMs: duration(0), coverageCostUsd: null, why: null } };
-        if (!this.listed(lane)) return { kind: 'closed', at: 'after-writer' };
+        if (this.listed(lane) === 'absent') return { kind: 'closed', at: 'after-writer' };
         const stop: { at: ClosePoint | null } = { at: null };
         const rewrite = async (correction: Text): Promise<Briefed> => {
-            if (this.listed(lane)) return this.briefOf(lane, tab, material, correction);
+            if (this.listed(lane) === 'present') return this.briefOf(lane, tab, material, correction);
             stop.at = 'before-rewrite';
-            return { text: null, why: LANE_CLOSED, own: first.own };
+            return { text: null, why: must(parseText(LANE_CLOSED)), own: first.own };
         };
         const checked = await checkedBrief(this.deps, first, first.history, rewrite, flow);
         if (stop.at !== null) return { kind: 'closed', at: stop.at };
         const saved = this.rememberCoverage(decision, checked, first.history, flow);
+        this.recordCoverage(decision, flow, saved);
+        return { kind: 'checked', checked: saved };
+    }
+
+    private recordCoverage(decision: DecisionId | null, flow: CoverageFlow, saved: Checked): void {
         const messages = this.deps.messages();
         const blocked = blockedByCoverage(saved, flow);
-        const line = flow.appends ? coverageLog(saved.outcome, messages) : null;
-        if (line !== null) this.deps.log(`${flow.atCeiling ? 'autocompact ceiling' : 'autocompact'}: ${line}`);
-        if (decision !== null) this.deps.decisions?.amend(decision, { coverage: saved.coverage, outcome: saved.outcome, coverageMs: saved.coverageMs, coverageCostUsd: saved.coverageCostUsd, why: blocked ? saved.why : coverageWhy(saved.outcome, saved.why, messages), block: blocked });
-        return { kind: 'checked', checked: saved };
+        const line = flow.appends === 'present' ? coverageLog(saved.outcome, messages) : null;
+        if (line !== null) this.deps.log(`${flow.atCeiling === 'present' ? 'autocompact ceiling' : 'autocompact'}: ${line}`);
+        if (decision !== null) this.deps.decisions?.amend(decision, { coverage: saved.coverage === null ? null : Object.fromEntries(saved.coverage), outcome: saved.outcome, coverageMs: saved.coverageMs, coverageCostUsd: saved.coverageCostUsd, why: blocked ? saved.why : coverageWhy(saved.outcome, saved.why, messages), block: blocked });
     }
 
     private rememberCoverage(decision: DecisionId | null, checked: Checked, history: History, flow: CoverageFlow): Checked {
         const checkedFacts: readonly CheckedFact[] = factsOf(history).flatMap((fact) => { const parsed = parseCheckedFact(fact); return parsed === null ? [] : [parsed]; });
-        const appended = flow.appends && checked.outcome.kind === 'missed' && checked.brief.text !== null
+        const appended = flow.appends === 'present' && checked.outcome.kind === 'missed' && checked.brief.text !== null
             ? appendedBrief(checked.brief.text, checked.outcome.facts, checkedFacts)
             : null;
         if (decision !== null && checked.brief.text !== null) this.deps.checkedBriefs?.put(decision, checked.brief.text, appended?.indexes ?? [], checkedFacts, this.deps.now());
@@ -100,10 +106,11 @@ export class Briefing {
     private flowOf(gate: LinkedDecision['gate'] | undefined): CoverageFlow {
         const atCeiling = gate === 'ceiling' && this.deps.ceilingOverride?.() !== false;
         const missedFacts: MissedFacts = this.deps.missedFacts?.() ?? MISSED_FACTS_DEFAULT;
-        return { atCeiling, appends: atCeiling || missedFacts === 'append' };
+        const appends = atCeiling || missedFacts === 'append';
+        return { atCeiling: atCeiling ? 'present' : 'absent', appends: appends ? 'present' : 'absent' };
     }
 
-    listed(lane: Lane): boolean {
-        return this.deps.listsPane(String(lane.pane));
+    listed(lane: Lane): Presence {
+        return this.deps.listsPane(String(lane.pane)) ? 'present' : 'absent';
     }
 }

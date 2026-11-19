@@ -1,66 +1,12 @@
 {
-  "src/recap/application/ask-restart.ts": {
-    "parameter": 1,
-    "return": 4,
-    "property": 1
-  },
   "src/recap/application/async-queue.ts": {
     "container": 4,
     "property": 1,
     "assertion": 1
   },
-  "src/recap/application/autocompact-line.ts": {
-    "parameter": 1
-  },
-  "src/recap/application/autocompact-listing.ts": {
-    "parameter": 2,
-    "container": 1,
-    "property": 2
-  },
-  "src/recap/application/autocompact.ts": {
-    "parameter": 1,
-    "return": 1
-  },
-  "src/recap/application/brief-coverage.ts": {
-    "parameter": 3,
-    "return": 1,
-    "container": 7,
-    "property": 7
-  },
-  "src/recap/application/compact-keys.ts": {
-    "parameter": 2
-  },
-  "src/recap/application/compact-requests.ts": {
-    "parameter": 10,
-    "return": 3,
-    "container": 2,
-    "property": 2
-  },
-  "src/recap/application/compact-start.ts": {
-    "parameter": 7,
-    "return": 1
-  },
-  "src/recap/application/compaction-asks.ts": {
-    "parameter": 1
-  },
-  "src/recap/application/compaction-brief.ts": {
-    "parameter": 5,
-    "return": 1,
-    "property": 2
-  },
-  "src/recap/application/compaction-briefing.ts": {
-    "return": 1
-  },
-  "src/recap/application/compaction-coverage.ts": {
-    "parameter": 3,
-    "return": 3,
-    "container": 5,
-    "property": 8,
-    "assertion": 2
-  },
   "src/recap/application/compaction-deps.ts": {
-    "parameter": 9,
-    "return": 5,
+    "parameter": 8,
+    "return": 4,
     "container": 1
   },
   "src/recap/application/compaction-input.ts": {
@@ -274,6 +220,9 @@
     "return": 1,
     "container": 2
   },
+  "src/recap/application/legacy.ts": {
+    "legacy": 54
+  },
   "src/recap/application/live-prompts.ts": {
     "parameter": 1,
     "return": 1,
@@ -335,10 +284,6 @@
     "assertion": 2
   },
   "src/recap/application/transcript-tail.ts": {
-    "return": 1
-  },
-  "src/recap/application/typing-lease.ts": {
-    "parameter": 5,
     "return": 1
   },
   "src/recap/application/worksite-section.ts": {

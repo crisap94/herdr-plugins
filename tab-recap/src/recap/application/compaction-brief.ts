@@ -6,6 +6,7 @@ import { MESSAGE_LIMIT as BRIEF_LIMIT } from './compaction-message.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
 
 export { FORBIDDEN };
 
@@ -29,8 +30,7 @@ export function refusedIn(text: Text, own: Text): readonly Text[] {
 
 const clearance = (line: Text, own: Text): Clearance => (refusedIn(line, own).length === 0 ? 'clear' : 'refused');
 
-export function clean(sections: RecapSections, own: string): RecapSections {
-    const mine = must(parseText(own));
+export function clean(sections: RecapSections, mine: Text): RecapSections {
     const goal = must(parseText(sections.goal));
     return {
         goal: clearance(goal, mine) === 'clear' ? goal : EMPTY,
@@ -64,12 +64,12 @@ export function vetted(answer: Text, own: Text = EMPTY): Vetted {
 
 export interface BriefDeskDeps {
     readonly writer: () => CompactionBriefs | null;
-    log(line: string): void;
+    log(line: Text): void;
 }
 
 export interface Written {
-    readonly text: string | null;
-    readonly why: string | null;
+    readonly text: Text | null;
+    readonly why: Text | null;
 }
 
 export class BriefDesk {
@@ -79,8 +79,8 @@ export class BriefDesk {
         this.deps = deps;
     }
 
-    enabled(): boolean {
-        return this.deps.writer() !== null;
+    enabled(): Presence {
+        return this.deps.writer() === null ? 'absent' : 'present';
     }
 
     job(): Text | null {
@@ -88,17 +88,17 @@ export class BriefDesk {
         return job === null ? null : must(parseText(job));
     }
 
-    async write(document: string, own = '', correction?: string): Promise<Written> {
+    async write(document: Text, own: Text = EMPTY, correction?: Text): Promise<Written> {
         const writer = this.deps.writer();
         if (writer === null) {
             return { text: null, why: null };
         }
         const answered = await writer.write(document, correction);
-        const checked = isUnknown(answered) ? { kind: 'bad' as const, why: saying(answered.why) } : vetted(must(parseText(answered.text)), must(parseText(own)));
+        const checked = isUnknown(answered) ? { kind: 'bad' as const, why: must(parseText(saying(answered.why))) } : vetted(must(parseText(answered.text)), own);
         if (checked.kind === 'ok') {
             return { text: checked.text, why: null };
         }
-        this.deps.log(`compaction brief: ${writer.backend} gave none (${checked.why}); the template is used`);
+        this.deps.log(must(parseText(`compaction brief: ${writer.backend} gave none (${checked.why}); the template is used`)));
         return { text: null, why: checked.why };
     }
 }

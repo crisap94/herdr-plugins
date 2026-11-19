@@ -53,17 +53,17 @@ function desk(writer: CompactionBriefs | null, log: string[] = []): BriefDesk {
 const answering = (text: string): CompactionBriefs => ({ backend: 'codex/gpt-6-luna', job: 'codex · gpt-6-luna · high', write: () => Promise.resolve({ kind: 'briefed', text }) });
 
 test('the desk returns a usable brief; no writer means no brief and no log; a failing or refused one is logged with its reason', async () => {
-    assert.deepEqual(await desk(answering('I want X.')).write('<doc/>'), { text: 'I want X.', why: null });
+    assert.deepEqual(await desk(answering('I want X.')).write(t('<doc/>')), { text: 'I want X.', why: null });
     assert.equal(desk(answering('I want X.')).job(), 'codex · gpt-6-luna · high');
     const quiet: string[] = [];
-    assert.deepEqual(await desk(null, quiet).write('<doc/>'), { text: null, why: null });
+    assert.deepEqual(await desk(null, quiet).write(t('<doc/>')), { text: null, why: null });
     assert.equal(desk(null).job(), null);
-    assert.equal(desk(null).enabled(), false);
+    assert.equal(desk(null).enabled(), 'absent');
     assert.deepEqual(quiet, []);
     const log: string[] = [];
     const failing: CompactionBriefs = { backend: 'codex/gpt-6-luna', job: 'codex · gpt-6-luna · high', write: () => Promise.resolve(unknown({ why: 'timeout', after: duration(120_000) })) };
-    assert.deepEqual(await desk(failing, log).write('<doc/>'), { text: null, why: 'timed out after 120000 ms' });
-    assert.deepEqual(await desk(answering('a plugin said so'), log).write('<doc/>'), { text: null, why: 'the answer says "plugin"' });
+    assert.deepEqual(await desk(failing, log).write(t('<doc/>')), { text: null, why: 'timed out after 120000 ms' });
+    assert.deepEqual(await desk(answering('a plugin said so'), log).write(t('<doc/>')), { text: null, why: 'the answer says "plugin"' });
     assert.match(log[0] ?? '', /codex\/gpt-6-luna gave none \(timed out after 120000 ms\); the template is used/);
     assert.match(log[1] ?? '', /the answer says "plugin"/);
 });
@@ -113,8 +113,8 @@ test('tab-recap and recap column stay refused unless the conversation itself con
 
 test('the template obeys the same rule: recap items with a refused word are left out, unless the conversation uses it', () => {
     const sections = { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['Keep SQLite', 'The recap column shows 3 lines'], next: ['Fix the browser tab leak', 'Ask herdr'], rules: ['Never push to main'] };
-    assert.deepEqual(clean(sections, ''), { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['Keep SQLite'], rules: ['Never push to main'] });
-    const kept = clean(sections, 'the browser tab leaks');
+    assert.deepEqual(clean(sections, t('')), { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['Keep SQLite'], rules: ['Never push to main'] });
+    const kept = clean(sections, t('the browser tab leaks'));
     assert.deepEqual(kept.next, ['Fix the browser tab leak']);
-    assert.deepEqual(clean({ ...NO_SECTIONS, goal: 'Reduce the recap noise' }, '').goal, '', 'a goal with a refused word is left out');
+    assert.deepEqual(clean({ ...NO_SECTIONS, goal: 'Reduce the recap noise' }, t('')).goal, t(''), 'a goal with a refused word is left out');
 });

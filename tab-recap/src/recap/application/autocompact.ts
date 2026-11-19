@@ -26,13 +26,13 @@ import { QUESTIONS } from './autocompact-questions.ts';
 import { busyOf, detailOf, flightTextOf, recheckDue, unchangedOf } from './autocompact-gates.ts';
 import type { CeilingReach, Recheck } from './autocompact-gates.ts';
 import { lineOf, moneyOf, type Effect } from './autocompact-line.ts';
-import { flightOf, flightReason, holdsLane, NOT_AWAITING, NOTHING_IN_FLIGHT, awaitedNames, unreadable } from '#src/recap/domain/in-flight.ts';
-import type { Flight, Observed } from '#src/recap/domain/in-flight.ts';
-import { continuationNote } from '#src/recap/domain/continuation-note.ts';
-import type { ContinuationNote } from '#src/recap/domain/continuation-note.ts';
+import { flightOf, flightReason, holdsLane, NOT_AWAITING, NOTHING_IN_FLIGHT, awaitedNames, unreadable, type Flight, type Observed } from '#src/recap/domain/in-flight.ts';
+import { continuationNote, type ContinuationNote } from '#src/recap/domain/continuation-note.ts';
 import type { LaneEvents } from './lane-events.ts';
 import { busyDetailOf, idleMsOf, policyForLane, reachOf } from './autocompact-shapes.ts';
 import type { Asking, CoverageHold, DeciderHealth, Marks, Stop } from './autocompact-shapes.ts';
+
+type RecapState = 'recapped' | 'unrecapped';
 
 export type Waiting = { readonly kind: 'clear' } | { readonly kind: 'waiting'; readonly value: Text } | Unknown;
 
@@ -69,7 +69,7 @@ export interface AutocompactDeps {
     readonly requests: Pick<Requests, 'requestCompact'>;
     readonly claims: Pick<LaneClaims, 'has'>;
     readonly queue: CompactionQueue;
-    hasRecap(tab: TabId): 'recapped' | 'unrecapped';
+    hasRecap(tab: TabId): RecapState;
     refresh: RecapRefresh;
     lanes(tab: TabId): readonly Lane[];
     now(): Instant;
@@ -95,6 +95,8 @@ interface Found {
     readonly flight: Flight;
     readonly atCeiling: CeilingReach;
 }
+
+const shareCount = (use: ContextUse): Count => must(parseCount(shareOf(use)));
 
 const asksForCompaction = (mode: AutocompactMode, verdict: DecisionVerdict, effect: Effect): Asking => mode === 'on' && verdict === 'compact' && effect === 'may-act' ? 'asks' : 'holds';
 
@@ -193,7 +195,7 @@ export class Autocompact {
         return { gate: full.gate, effect: effectOf(full), detail: detailOf(full.gate, { ...context, flight, atCeiling: reach }), recheck, flight, atCeiling: reach };
     }
 
-    private skip(lane: Lane, gate: SkipGate, share: number | null, detail: Text | null): void {
+    private skip(lane: Lane, gate: SkipGate, share: Count | null, detail: Text | null): void {
         const { pane } = lane;
         this.deps.decisions.skip({ tab: lane.tab, pane, agent: lane.agent, at: this.deps.now(), gate, share, detail });
         if (this.skipped.get(pane) === gate) return;
@@ -211,7 +213,7 @@ export class Autocompact {
         const use = deps.contexts.of(pane);
         if (use === null) { this.skip(lane, 'no-context', null, NO_CONTEXT); return; }
         const { gate, effect, detail, flight, atCeiling } = await this.gated(lane, policy, use, tuning);
-        if (gate !== 'ask' && gate !== 'ceiling') { this.skip(lane, gate, shareOf(use), detail); return; }
+        if (gate !== 'ask' && gate !== 'ceiling') { this.skip(lane, gate, shareCount(use), detail); return; }
         if (deps.hasRecap(tab) === 'unrecapped') await deps.refresh(tab, deps.lanes(tab));
         const judged = gate === 'ceiling' ? CEILING : await this.asking(lane, tuning);
         const seen = await this.lateFlight(lane, use, flight, atCeiling);
@@ -219,7 +221,7 @@ export class Autocompact {
         const again = busyOf(deps, this.asked, tab, pane, deps.now());
         if (again.kind === 'busy') {
             const paid = judged.costUsd > 0 ? `; decider ${moneyOf(judged.costUsd)} discarded` : '';
-            this.skip(lane, 'busy', shareOf(use), must(parseText(`${again.detail}${paid}`)));
+            this.skip(lane, 'busy', shareCount(use), must(parseText(`${again.detail}${paid}`)));
             return;
         }
         this.record(lane, use, { mode: policy.mode, gate, effect, judged, flight: seen, atCeiling });
@@ -228,7 +230,7 @@ export class Autocompact {
     private async lateFlight(lane: Lane, use: ContextUse, flight: Flight, atCeiling: CeilingReach): Promise<Flight | null> {
         const seen = lateFlightOf(flight, await this.waitingOf(lane.pane));
         if (!holdsLane(seen, atCeiling === 'at-ceiling')) return seen;
-        this.skip(lane, 'in-flight', shareOf(use), flightTextOf(seen, atCeiling));
+        this.skip(lane, 'in-flight', shareCount(use), flightTextOf(seen, atCeiling));
         return null;
     }
 

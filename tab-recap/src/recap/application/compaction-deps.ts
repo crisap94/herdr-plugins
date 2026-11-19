@@ -20,11 +20,12 @@ import type { RecapRefresh } from './recap-wait.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
 import type { Duration } from '#src/recap/domain/time.ts';
 import type { Text } from '#src/recap/domain/text.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
 import type { CompactionPlans } from '#src/ports/compaction-plans.ts';
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
 import type { AskLedger } from '#src/ports/ask-ledger.ts';
 
-interface BriefPort { enabled(): boolean; job(): string | null; write(document: Text, own: string, correction?: Text): Promise<Written> }
+interface BriefPort { enabled(): Presence; job(): string | null; write(document: Text, own: Text, correction?: Text): Promise<Written> }
 
 interface CoveragePort { check(brief: string, facts: readonly CoverageFact[]): Promise<Coverage> }
 

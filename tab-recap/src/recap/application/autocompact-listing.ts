@@ -6,6 +6,7 @@ import { moneyOf } from './autocompact-line.ts';
 import type { Messages } from '#src/i18n/index.ts';
 import { must, type Result } from '#src/protocol/result.ts';
 import { parseInstant, parseMilliseconds, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
+import type { Usd } from '#src/recap/domain/usd.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 
@@ -26,7 +27,7 @@ export type ParsedListing = { readonly kind: 'options'; readonly all: Scope } | 
 
 
 
-export function parseListing(argv: readonly string[]): ParsedListing {
+export function parseListingArgs(argv: readonly Text[]): ParsedListing {
     try {
         const { values, positionals } = parseArgs({ args: [...argv], allowPositionals: true, strict: true, options: { all: { type: 'boolean' } } });
         const scope: Scope = values.all === true ? 'all' : 'latest';
@@ -62,6 +63,8 @@ function skippedRow(found: Skip, zone: Text): ListingRow {
 
 const everyOf = (ms: Milliseconds): Text => must(parseText(ms % 60_000 === 0 ? `${ms / 60_000} min` : `${Math.round(ms / 1000)} s`));
 
+export { listing, parseListing } from './legacy.ts';
+
 export function styleLine(policy: AutocompactPolicy, tuning: AutocompactTuning, settings: Messages['autocompactSettings']): Text {
     const { verdict } = tuning;
     return must(parseText([
@@ -86,16 +89,15 @@ function table(head: ListingRow, rows: readonly ListingRow[]): readonly Text[] {
 }
 
 export interface Spend {
-    readonly since: number;
-    readonly costUsd: number;
+    readonly since: Instant;
+    readonly costUsd: Usd;
 }
 
-export function listing(decisions: readonly StoredDecision[], spent: Spend, now: number, zone: string, skips: readonly Skip[] = []): readonly Text[] {
+export function listingOf(decisions: readonly StoredDecision[], spent: Spend, now: Instant, zone: Text, skips: readonly Skip[] = []): readonly Text[] {
     const inDay = decisions.filter((found) => found.at >= now - DAY_MS).length;
     const dayRecap = must(parseText(`last 24 h: ${inDay} decision${inDay === 1 ? '' : 's'}, ${moneyOf(spent.costUsd)}`));
-    const zoneName = must(parseText(zone));
     const header = ['no autocompact decisions yet'].map((line) => must(parseText(line)));
-    const decided = decisions.length === 0 ? [...header, dayRecap] : [...table(HEAD, decisions.map((found) => rowOf(found, zoneName))), EMPTY, dayRecap];
-    const stopped = skips.length === 0 ? [] : [EMPTY, ...['not decided now'].map((line) => must(parseText(line))), ...table(SKIPPED, skips.map((found) => skippedRow(found, zoneName)))];
+    const decided = decisions.length === 0 ? [...header, dayRecap] : [...table(HEAD, decisions.map((found) => rowOf(found, zone))), EMPTY, dayRecap];
+    const stopped = skips.length === 0 ? [] : [EMPTY, ...['not decided now'].map((line) => must(parseText(line))), ...table(SKIPPED, skips.map((found) => skippedRow(found, zone)))];
     return [...decided, ...stopped];
 }

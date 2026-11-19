@@ -69,7 +69,7 @@ function world(states: readonly AgentState[], answerOn: boolean, claims: LaneCla
         boundaries: { lastBreakAt: () => null },
         compactions: store.compactions,
         settling,
-        brief: { enabled: () => false, job: () => null, write: () => Promise.resolve({ text: null, why: null }) },
+        brief: { enabled: () => 'absent', job: () => null, write: () => Promise.resolve({ text: null, why: null }) },
         coverage: () => null,
         decisions: null,
         answer: (id, pane, stage): void => { if (answerOn) { handler.answer(id, pane, stage); } },

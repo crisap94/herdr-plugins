@@ -1,17 +1,21 @@
 import type { Done } from '#src/ports/columns.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
 import type { CompactNote } from '#src/recap/domain/compact-note.ts';
+import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { collapsedText } from '#src/recap/domain/text-collapse.ts';
 import { NOTE_LIMIT } from './compaction-message.ts';
 
+export { opensPopup, requestNoteOf, startCompact } from './legacy.ts';
+
 export interface CompactStart {
-    askNote(tab: string, pane: string | null): Promise<Done>;
+    askNote(tab: TabId, pane: PaneId | null): Promise<Done>;
     queue(request: CompactRequest): Done;
 }
 
-export function requestNoteOf(text: string): Text | null {
-    const note = collapsedText(text, 'remove');
+export function noteFromRequest(raw: Text): Text | null {
+    const note = collapsedText(raw, 'remove');
     if (note === '') {
         return null;
     }
@@ -19,10 +23,10 @@ export function requestNoteOf(text: string): Text | null {
     return parsed.kind === 'ok' ? parsed.value : null;
 }
 
-export const opensPopup = (note: string | null | undefined, setting: CompactNote): boolean => note === undefined && setting === 'ask';
+export const opensAskPopup = (note: Text | null | undefined, setting: CompactNote): Presence => (note === undefined && setting === 'ask' ? 'present' : 'absent');
 
-export async function startCompact(tab: string, pane: string | null, note: string | null | undefined, setting: CompactNote, start: CompactStart): Promise<Done> {
-    if (opensPopup(note, setting)) {
+export async function beginCompact(tab: TabId, pane: PaneId | null, note: Text | null | undefined, setting: CompactNote, start: CompactStart): Promise<Done> {
+    if (opensAskPopup(note, setting) === 'present') {
         return start.askNote(tab, pane);
     }
     return start.queue({ tab, pane, note: note ?? null });
