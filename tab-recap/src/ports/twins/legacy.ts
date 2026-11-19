@@ -1,3 +1,5 @@
+import type { GateStats } from '#src/recap/domain/gates/index.ts';
+import type { AgentSession, SessionId } from '#src/recap/domain/ids.ts';
 import type { CheckedFact } from '#src/recap/domain/autocompact.ts';
 import type { BoundaryKind, Trigger } from '#src/recap/domain/boundary.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
@@ -94,3 +96,48 @@ export interface FleetSource {
     snapshot(): Promise<SnapshotResult>;
     subscribe(topics: readonly Topic[]): Promise<StreamResult>;
 }
+
+export type ItemsMode = 'added' | 'state';
+
+export interface StoredRun {
+    readonly id: string;
+    readonly tab: string;
+    readonly at: number;
+    readonly language: string;
+    readonly backend: string | null;
+    readonly hasInput: boolean;
+    readonly gateStats: GateStats | null;
+}
+
+export interface RunItem {
+    readonly key: string;
+    readonly section: string;
+    readonly text: string;
+    readonly fact: string;
+    readonly born: boolean;
+    readonly anchor: string | null;
+}
+
+export interface RunQuery {
+    readonly tab: string | null;
+    readonly since: number | null;
+    readonly limit: number;
+    readonly withInput: boolean;
+}
+
+export interface GateCount {
+    readonly at: number;
+    readonly stats: GateStats;
+}
+
+export interface RunInputs {
+    runs(query: RunQuery): readonly StoredRun[];
+    document(run: string): string | null;
+    itemsOf(run: string, mode: ItemsMode): readonly RunItem[];
+    gateCounts(since: number | null): readonly GateCount[];
+    prune(before: number): number;
+}
+
+export type SessionOf = (kind: string, agentSession: AgentSession) => SessionId | null;
+
+export type WorkspacesResult = { readonly kind: 'workspaces'; readonly ids: readonly string[] } | Unknown;

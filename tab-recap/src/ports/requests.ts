@@ -107,10 +107,39 @@ const REFRESHES: readonly RefreshFirst[] = ['refresh-first', 'as-is'];
 
 const ORIGINS: readonly Origin[] = ['operator', 'auto', 'request'];
 
+function paneOf(row: Row): Result<PaneId | null, ParseFailure> {
+    return row.pane === null ? ok(null) : parsePaneId(row.pane);
+}
+
+function noteOf(row: Row): Result<Text | null, ParseFailure> {
+    return row.note === null ? ok(null) : parseText(row.note);
+}
+
+function originOf(row: Row): Result<Origin | undefined, ParseFailure> {
+    const origin = ORIGINS.find((option) => option === row.origin);
+    return row.origin !== undefined && origin === undefined ? err({ kind: 'out-of-range' }) : ok(origin);
+}
+
+function answerOf(row: Row): Result<Text | null | undefined, ParseFailure> {
+    return row.answer === undefined || row.answer === null ? ok(row.answer) : parseText(row.answer);
+}
+
+function refreshOf(row: Row): Result<RefreshFirst, ParseFailure> {
+    const refresh = REFRESHES.find((option) => option === row.refresh);
+    return refresh === undefined ? err({ kind: 'out-of-range' }) : ok(refresh);
+}
+
+function idOf(row: Row): Result<HandoffId, ParseFailure> {
+    const id = parseHandoffId(row.id);
+    return id === null ? err({ kind: 'out-of-range' }) : ok(id);
+}
+
 function sourceOf(row: Row): Result<HandoffSource, ParseFailure> {
-    if (row.kind === 'live') return ok({ kind: 'live' });
-    if (row.kind !== 'closed') return err({ kind: 'out-of-range' });
-    const closedAt = parseInstant(row.closedAt);
+    const source = row.source;
+    if (!isRow(source)) return err({ kind: 'not-a-row' });
+    if (source.kind === 'live') return ok({ kind: 'live' });
+    if (source.kind !== 'closed') return err({ kind: 'out-of-range' });
+    const closedAt = parseInstant(source.closedAt);
     if (closedAt.kind === 'err') return closedAt;
     return ok({ kind: 'closed', closedAt: closedAt.value });
 }
@@ -128,27 +157,28 @@ export function parseCompactAsk(input: unknown): Result<CompactAsk, ParseFailure
     if (!isRow(input)) return err({ kind: 'not-a-row' });
     const tab = parseTabId(input.tab);
     if (tab.kind === 'err') return tab;
-    const pane = input.pane === null ? ok(null) : parsePaneId(input.pane);
+    const pane = paneOf(input);
     if (pane.kind === 'err') return pane;
-    const note = input.note === null ? ok(null) : parseText(input.note);
+    const note = noteOf(input);
     if (note.kind === 'err') return note;
-    const origin = ORIGINS.find((option) => option === input.origin);
-    if (input.origin !== undefined && origin === undefined) return err({ kind: 'out-of-range' });
+    const origin = originOf(input);
+    if (origin.kind === 'err') return origin;
     const answer = input.answer === undefined ? ok(undefined) : parseText(input.answer);
     if (answer.kind === 'err') return answer;
     return ok({
         tab: tab.value,
         pane: pane.value,
         note: note.value,
-        ...(origin === undefined ? {} : { origin }),
+        ...(origin.value === undefined ? {} : { origin: origin.value }),
         ...(answer.value === undefined ? {} : { answer: answer.value }),
     });
 }
 
-export function parseHandoffAskRecord(input: unknown): Result<HandoffAskRecord, ParseFailure> {
-    if (!isRow(input)) return err({ kind: 'not-a-row' });
-    const id = parseHandoffId(input.id);
-    if (id === null) return err({ kind: 'out-of-range' });
+type HandoffPlace = Pick<HandoffAskRecord, 'id' | 'at' | 'tab' | 'pane' | 'toPane'>;
+
+function placeOf(input: Row): Result<HandoffPlace, ParseFailure> {
+    const id = idOf(input);
+    if (id.kind === 'err') return id;
     const at = parseInstant(input.at);
     if (at.kind === 'err') return at;
     const tab = parseTabId(input.tab);
@@ -157,23 +187,24 @@ export function parseHandoffAskRecord(input: unknown): Result<HandoffAskRecord, 
     if (pane.kind === 'err') return pane;
     const toPane = parsePaneId(input.toPane);
     if (toPane.kind === 'err') return toPane;
-    const refresh = REFRESHES.find((option) => option === input.refresh);
-    if (refresh === undefined) return err({ kind: 'out-of-range' });
-    const note = input.note === null ? ok(null) : parseText(input.note);
+    return ok({ id: id.value, at: at.value, tab: tab.value, pane: pane.value, toPane: toPane.value });
+}
+
+export function parseHandoffAskRecord(input: unknown): Result<HandoffAskRecord, ParseFailure> {
+    if (!isRow(input)) return err({ kind: 'not-a-row' });
+    const place = placeOf(input);
+    if (place.kind === 'err') return place;
+    const refresh = refreshOf(input);
+    if (refresh.kind === 'err') return refresh;
+    const note = noteOf(input);
     if (note.kind === 'err') return note;
-    const sourceRow = input.source;
-    const source: Result<HandoffSource, ParseFailure> = isRow(sourceRow) ? sourceOf(sourceRow) : err({ kind: 'not-a-row' });
+    const source = sourceOf(input);
     if (source.kind === 'err') return source;
-    const answerRow = input.answer;
-    const answer = answerRow === undefined || answerRow === null ? ok(answerRow) : parseText(answerRow);
+    const answer = answerOf(input);
     if (answer.kind === 'err') return answer;
     return ok({
-        id,
-        at: at.value,
-        tab: tab.value,
-        pane: pane.value,
-        toPane: toPane.value,
-        refresh,
+        ...place.value,
+        refresh: refresh.value,
         note: note.value,
         source: source.value,
         ...(answer.value === undefined ? {} : { answer: answer.value }),

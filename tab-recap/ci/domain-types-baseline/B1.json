@@ -1,18 +1,10 @@
 {
   "src/ports/legacy.ts": {
-    "legacy": 96
-  },
-  "src/ports/run-inputs.ts": {
-    "parameter": 4,
-    "return": 2,
-    "property": 17
+    "legacy": 99
   },
   "src/ports/screens.ts": {
     "parameter": 2,
     "property": 3
-  },
-  "src/ports/session-identity.ts": {
-    "parameter": 1
   },
   "src/ports/session-source.ts": {
     "parameter": 3,
@@ -26,7 +18,7 @@
     "property": 12
   },
   "src/ports/twins/legacy.ts": {
-    "legacy": 42
+    "legacy": 67
   },
   "src/ports/twins/runs/legacy.ts": {
     "legacy": 63
@@ -40,10 +32,6 @@
     "parameter": 2,
     "property": 3,
     "container": 1
-  },
-  "src/ports/workspace-tokens.ts": {
-    "parameter": 2,
-    "container": 2
   },
   "src/protocol/legacy.ts": {
     "legacy": 5

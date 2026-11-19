@@ -43,7 +43,7 @@ test('a compact ask keeps an absent origin and answer out of its value, and refu
 test('a handoff ask record parses its live or closed source and refuses a malformed id or refresh', () => {
     const live = parseHandoffAskRecord(handoff);
     assert.equal(live.kind, 'ok');
-    assert.deepEqual(live.kind === 'ok' ? live.value.source : null, { kind: 'live' });
+    assert.deepEqual(live.value.source, { kind: 'live' });
     const closed = parseHandoffAskRecord({ ...handoff, source: { kind: 'closed', closedAt: 50 } });
     assert.deepEqual(closed.kind === 'ok' ? closed.value.source : null, { kind: 'closed', closedAt: 50 });
     assert.equal(parseHandoffAskRecord({ ...handoff, id: 'nope' }).kind, 'err');

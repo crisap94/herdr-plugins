@@ -1,9 +1,17 @@
-import type { Done } from './columns.ts';
+import type { TokenName, TokenValue } from '#src/protocol/primitives.ts';
+import type { WorkspaceId } from '#src/recap/domain/ids.ts';
+import type { Milliseconds } from '#src/recap/domain/time.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
+import type { Done } from './columns.ts';
 
-export type WorkspacesResult = { readonly kind: 'workspaces'; readonly ids: readonly string[] } | Unknown;
+export type { WorkspacesResult } from './twins/legacy.ts';
+export type { WorkspaceTokens } from './legacy.ts';
 
-export interface WorkspaceTokens {
-    reportWorkspace(workspace: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done>;
-    workspaces(): Promise<WorkspacesResult>;
+export type WorkspaceTokenMap = ReadonlyMap<TokenName, TokenValue | null>;
+
+export type WorkspaceList = { readonly kind: 'workspaces'; readonly ids: readonly WorkspaceId[] } | Unknown;
+
+export interface WorkspaceTokenReporter {
+    reportWorkspace(workspace: WorkspaceId, tokens: WorkspaceTokenMap, ttlMs: Milliseconds): Promise<Done>;
+    workspaces(): Promise<WorkspaceList>;
 }
