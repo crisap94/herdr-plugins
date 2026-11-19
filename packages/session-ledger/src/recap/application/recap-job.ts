@@ -274,8 +274,8 @@ export class RecapJob {
     }
 
     private written(base: Omit<RecordedRun, 'tasks' | 'ops' | 'marks' | 'input' | 'gateStats'>, run: { tasks: readonly TaskShape[]; request: RecapRequest; asked: Extract<Extracted, { kind: 'ops' }>; readings: readonly Reading[]; parts: readonly Reading[] }): void {
-        const marks = marksOf(run.readings, base.at, true), before = run.tasks.flatMap((task) => this.deps.ledger.allOf({ tab: base.tab, key: task.id })), entries = run.parts.flatMap((r) => (r.chunk?.entries ?? []).filter((entry) => entry.role === 'user' && entry.queued !== true).map((entry) => ({ key: r.lane.pane, at: instant(entry.at ?? base.at) })));
+        const owner = { tab: base.tab }, marks = marksOf(run.readings, base.at, true), before = run.tasks.flatMap((task) => this.deps.ledger.allOf({ ...owner, key: task.id })), entries = run.parts.flatMap((r) => (r.chunk?.entries ?? []).filter((entry) => entry.role === 'user' && entry.queued !== true).map((entry) => ({ key: r.lane.pane, at: instant(entry.at ?? base.at) })));
         this.deps.records.recordRun({ ...base, tasks: run.tasks, ops: run.asked.tasks, gateStats: run.asked.stats, marks, ...(this.deps.keepInput?.() ?? true ? { input: writerContext(run.request) } : {}) });
-        this.deps.ran?.({ tab: base.tab, turns: entries.length, boundary: marks.length > 0, cause: base.cause, entries, established: run.tasks.flatMap((task) => this.deps.ledger.allOf({ tab: base.tab, key: task.id }).filter((fact) => fact.section === 'done' && !before.some((old) => old.id === fact.id)).map((fact) => ({ task, fact, at: instant(base.at) }))) });
+        this.deps.ran?.({ tab: base.tab, turns: entries.length, boundary: marks.length > 0, cause: base.cause, entries, established: run.tasks.flatMap((task) => this.deps.ledger.allOf({ ...owner, key: task.id }).filter((fact) => fact.section === 'done' && !before.some((old) => old.id === fact.id)).map((fact) => ({ task, fact, at: instant(base.at) }))) });
     }
 }
