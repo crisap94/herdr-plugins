@@ -1,123 +1,138 @@
-import { agentPanesIn, columnsIn } from './column-panes.ts';
-import { HerdrAgents, herdrWire } from './agents.ts';
-
-import { usePlugin, useAdmin } from './client.ts';
-import { subscribeTopics } from './subscriptions.ts';
 import { HerdrError } from '@stateforge-labs/herdr-sdk';
 import type { DecodedFrame, EventSubscription } from '@stateforge-labs/herdr-sdk';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
-import { sessionOf } from '#src/recap/application/decode.ts';
-import { sessionOfForKind } from './session-registry.ts';
+import { usePlugin, useAdmin } from './client.ts';
+import { subscribeTopics } from './subscriptions.ts';
+import { agentPanesIn, columnsIn, parseOptionalPaneId } from './column-panes.ts';
+import { list, paneTokensOf, rectOf, reconciliationOf, str } from './json.ts';
+import { parseJson, type JsonObject } from './json-object.ts';
+import { refusalOfTokens } from './token-refusal.ts';
+import { OWNERS } from '#src/recap/domain/token-registry.ts';
+import { parseAgentKind, parseTabId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import type { Milliseconds } from '#src/recap/domain/time.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { ClosedAll, Columns, Done, LayoutResult, OpenResult } from '#src/ports/columns.ts';
-import type { Harnesses, HarnessesResult } from '#src/ports/harnesses.ts';
-import type { ModalHost, SetupOpened } from '#src/ports/modal.ts';
-import type { Notified, Notifier } from '#src/ports/notifier.ts';
-import type { ScreenResult, Screens } from '#src/ports/screens.ts';
-import type { Frame, FleetSource, SnapshotResult, StreamResult, Topic } from '#src/ports/fleet-source.ts';
-import { unknown } from '#src/ports/unknowable.ts';
-import type { Unknown } from '#src/ports/unknowable.ts';
-import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import type { LaneTokens } from '#src/ports/lane-tokens.ts';
-import { PANE_WRITABLE, WORKSPACE_WRITABLE } from '#src/recap/domain/lane-tokens.ts';
-import { refusalOf } from './token-refusal.ts';
-import { layoutOf, list, paneTokensOf, reconciliationOf, str } from './json.ts';
-import { parseJson } from './json-object.ts';
-import type { Json } from './json.ts';
+import { parseTokenName, parseTokenValue, type TokenName, type TokenValue } from '#src/protocol/primitives.ts';
+import type { TokenMap } from '#src/protocol/tokens.ts';
+import { must } from '#src/protocol/result.ts';
+import { unknown } from '#src/ports/unknowable.ts';
+import type { ColumnLayoutResult, ClosedEvery, ColumnPanes, Done, OpenResult, ResizeDirection } from '#src/ports/columns.ts';
+import type { FleetFeed, FleetFrame, FleetSnapshotResult, FleetStreamResult, FleetTopic } from '#src/ports/fleet-source.ts';
+import type { HarnessDirectory, HarnessList } from '#src/ports/harnesses.ts';
+import type { LaneTokenMap, LaneTokenReporter } from '#src/ports/lane-tokens.ts';
+import type { ModalHost, SetupOpened } from '#src/ports/modal.ts';
+import type { Notice, NotifierPort } from '#src/ports/notifier.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
-import type { WorkspaceTokens, WorkspacesResult } from '#src/ports/workspace-tokens.ts';
 
 export { BAR_TITLE, COLUMN_TITLE } from './column-panes.ts';
+export { HerdrFleet, readPaneSession } from './legacy.ts';
 export const PLUGIN_ID = 'tab-recap';
 export const COLUMN_ENTRYPOINT = 'column';
 export const SETUP_ENTRYPOINT = 'setup';
 
-const detail = (error: unknown): string => (error instanceof Error ? error.message : String(error));
-
-
 const MODAL_SIZE = '96%';
+const RESIZE = must(parseText('resize'));
+const CLOSE = must(parseText('close'));
 
-const paneInfoOf = async (pane: PaneId): Promise<Json> => parseJson(parseJson(await usePlugin((client) => client.call('pane.get', { pane_id: pane })))['pane']);
+const parseOptionalTabId = (input: unknown): TabId | null => {
+    const found = parseTabId(input);
+    return found.kind === 'ok' ? found.value : null;
+};
 
-export async function readPaneTokens(pane: PaneId): Promise<PaneTokensResult> {
-    try {
-        const tokens = parseJson((await paneInfoOf(pane))['tokens']);
-        return { kind: 'tokens', tokens: new Map(Object.entries(tokens).filter((entry): entry is [string, string] => typeof entry[1] === 'string').map(([name, raw]): [Text, Text] => [must(parseText(name)), must(parseText(raw))])) };
-    } catch (error) {
-        return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
-    }
-}
+const tokenMapOf = (tokens: TokenMap): ReadonlyMap<TokenName, TokenValue> => new Map(Object.entries(tokens).flatMap(([name, value]) => {
+    const key = parseTokenName(name);
+    const raw = parseTokenValue(value);
+    return key.kind === 'ok' && raw.kind === 'ok' ? [[key.value, raw.value] as const] : [];
+}));
 
-export async function readPaneSession(pane: string): Promise<string | null | Unknown> {
-    try {
-        const info = parseJson(await usePlugin((client) => client.call('pane.get', { pane_id: pane })))['pane'];
-        return typeof info === 'object' && info !== null ? sessionOf(parseJson(info), sessionOfForKind) : null;
-    } catch (error) {
-        return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
-    }
-}
+const brandedTokens = (snapshot: JsonObject): ReadonlyMap<PaneId, ReadonlyMap<TokenName, TokenValue>> => new Map([...paneTokensOf(snapshot)].flatMap(([pane, tokens]) => {
+    const id = parseOptionalPaneId(pane);
+    return id === null ? [] : [[id, tokenMapOf(tokens)] as const];
+}));
 
-const frameOf = (frame: DecodedFrame): Frame => ({ event: frame.event, data: 'data' in frame ? parseJson(frame.data) : {} });
+const frameOf = (frame: DecodedFrame): FleetFrame => ({
+    event: must(parseText(frame.event)),
+    payload: must(parseText(JSON.stringify('data' in frame ? parseJson(frame.data) : {}))),
+});
 
-function pump(live: EventSubscription, queue: AsyncQueue<Frame>): void {
+export function pumpFrames<T>(live: EventSubscription, queue: AsyncQueue<T>, toItem: (frame: DecodedFrame) => T): void {
     (async (): Promise<void> => {
         for await (const frame of live) {
-            queue.push(frameOf(frame));
+            queue.push(toItem(frame));
         }
     })().catch(() => undefined).finally(() => { queue.end(); });
 }
 
-export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, Notifier, Screens, LaneTokens, PaneTokens, WorkspaceTokens {
-    private readonly stateDir: string;
+const paneInfoOf = async (pane: PaneId): Promise<JsonObject> => parseJson(parseJson(await usePlugin((client) => client.call('pane.get', { pane_id: pane })))['pane']);
 
-    constructor(stateDir: string) {
+export async function readPaneTokens(pane: PaneId): Promise<PaneTokensResult> {
+    try {
+        const tokens = parseJson((await paneInfoOf(pane))['tokens']);
+        return { kind: 'tokens', tokens: new Map(Object.entries(tokens).flatMap(([name, raw]) => (typeof raw === 'string' ? [[must(parseText(name)), must(parseText(raw))] as const] : []))) };
+    } catch (error) {
+        return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
+    }
+}
+
+export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, HarnessDirectory, NotifierPort, LaneTokenReporter, PaneTokens {
+    private readonly stateDir: Text;
+
+    constructor(stateDir: Text) {
         this.stateDir = stateDir;
     }
 
-    agents(): HerdrAgents {
-        return new HerdrAgents(herdrWire, { id: PLUGIN_ID, stateDir: this.stateDir });
-    }
-
-    private async rawSnapshot(): Promise<Json> {
+    async rawSnapshot(): Promise<JsonObject> {
         return parseJson(parseJson(await usePlugin((client) => client.call('session.snapshot', {})))['snapshot']);
     }
 
-    async snapshot(): Promise<SnapshotResult> {
+    async snapshot(): Promise<FleetSnapshotResult> {
         try {
             const snap = await this.rawSnapshot();
-            const focused = str(snap['focused_tab_id']);
-            return { kind: 'snapshot', seen: reconciliationOf(snap), focusedTab: focused === '' ? null : focused, paneTokens: paneTokensOf(snap) };
+            return { kind: 'snapshot', seen: reconciliationOf(snap), focusedTab: parseOptionalTabId(str(snap['focused_tab_id'])), paneTokens: brandedTokens(snap) };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
         }
     }
 
-    async subscribe(topics: readonly Topic[]): Promise<StreamResult> {
-        const queue = new AsyncQueue<Frame>();
+    async subscribe(topics: readonly FleetTopic[]): Promise<FleetStreamResult> {
+        const queue = new AsyncQueue<FleetFrame>();
         try {
-            const live = await subscribeTopics(topics);
-            pump(live, queue);
-            return { kind: 'stream', stream: { frames: (): AsyncIterable<Frame> => queue, close: (): void => { live.close(); queue.end(); } } };
+            const live = await subscribeTopics(topics.map((topic) => (topic.pane === undefined ? { type: topic.type } : { type: topic.type, pane_id: topic.pane })));
+            pumpFrames(live, queue, frameOf);
+            return { kind: 'stream', stream: { frames: (): AsyncIterable<FleetFrame> => queue, close: (): void => { live.close(); queue.end(); } } };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
         }
     }
 
-    async layout(tab: TabId): Promise<LayoutResult> {
+    async layout(tab: TabId): Promise<ColumnLayoutResult> {
         try {
-            const layout = list((await this.rawSnapshot())['layouts']).find((candidate) => candidate['tab_id'] === String(tab));
-            return layout === undefined ? unknown({ why: 'not-found', what: `the layout of ${tab}` }) : layoutOf(layout);
+            const found = list((await this.rawSnapshot())['layouts']).find((candidate) => candidate['tab_id'] === String(tab));
+            if (found === undefined) {
+                return unknown({ why: 'not-found', what: `the layout of ${tab}` });
+            }
+            const area = rectOf(found['area']);
+            const width = parseCount(area.width);
+            const height = parseCount(area.height);
+            if (width.kind !== 'ok' || height.kind !== 'ok') {
+                return unknown({ why: 'unreadable', detail: causeOf(must(parseText(`the layout of ${tab} has no size`))) });
+            }
+            return {
+                kind: 'layout',
+                width: width.value,
+                height: height.value,
+                focused: parseOptionalPaneId(str(found['focused_pane_id'])),
+                panes: list(found['panes']).map((pane) => ({ paneId: str(pane['pane_id']), rect: rectOf(pane['rect']) })),
+                splits: list(found['splits']).map((split) => ({ direction: str(split['direction']), ratio: typeof split['ratio'] === 'number' ? split['ratio'] : 0.5, rect: rectOf(split['rect']) })),
+            };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
         }
     }
 
-    async open(tab: TabId, target: string, shape: Shape): Promise<OpenResult> {
+    async open(tab: TabId, target: Text, shape: Shape): Promise<OpenResult> {
         try {
             const result = parseJson(await usePlugin((client) => client.call('plugin.pane.open', {
                 plugin_id: PLUGIN_ID,
@@ -128,10 +143,10 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
                 focus: false,
                 env: { TAB_RECAP_TAB: String(tab), TAB_RECAP_STATE: this.stateDir, TAB_RECAP_SHAPE: shape },
             })));
-            const pane = str(parseJson(parseJson(result['plugin_pane'])['pane'])['pane_id']);
-            return pane === '' ? unknown({ why: 'unreadable', detail: causeOf(must(parseText('plugin.pane.open returned no pane'))) }) : { kind: 'opened', pane: paneId(pane) };
+            const pane = parseOptionalPaneId(parseJson(parseJson(result['plugin_pane'])['pane'])['pane_id']);
+            return pane === null ? unknown({ why: 'unreadable', detail: causeOf(must(parseText('plugin.pane.open returned no pane'))) }) : { kind: 'opened', pane };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
         }
     }
 
@@ -160,88 +175,48 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
             }));
             return { kind: 'opened' };
         } catch (error) {
-            return error instanceof HerdrError && error.code === 'ui_busy' ? { kind: 'busy' } : unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
+            return error instanceof HerdrError && error.code === 'ui_busy' ? { kind: 'busy' } : unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
         }
     }
 
-    async available(): Promise<HarnessesResult> {
+    async available(): Promise<HarnessList> {
         try {
             const ids = list(parseJson(await usePlugin((client) => client.call('integration.list', {})))['integrations'])
                 .filter((entry) => entry['available'] === true)
-                .map((entry) => str(entry['target']));
+                .flatMap((entry) => {
+                    const found = parseAgentKind(entry['target']);
+                    return found.kind === 'ok' ? [found.value] : [];
+                });
             return { kind: 'available', ids };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
         }
     }
 
-    async readScreen(pane: string, lines: number): Promise<ScreenResult> {
-        try {
-            const fields = parseJson(parseJson(await usePlugin((client) => client.call('pane.read', { pane_id: pane, source: 'recent_unwrapped', lines, format: 'text' })))['read']);
-            return typeof fields['text'] === 'string'
-                ? { kind: 'screen', text: fields['text'], revision: typeof fields['revision'] === 'number' ? fields['revision'] : 0, truncated: fields['truncated'] === true }
-                : unknown({ why: 'unreadable', detail: causeOf(must(parseText(`pane.read of ${pane} returned no text`))) });
-        } catch (error) {
-            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
-        }
-    }
-
-    async report(pane: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done> {
-        const refused = refusalOf(tokens, PANE_WRITABLE);
-        return refused ?? this.call(() => usePlugin((client) => client.call('pane.report_metadata', { pane_id: pane, source: PLUGIN_ID, tokens, ttl_ms: ttlMs })));
+    async report(pane: PaneId, tokens: LaneTokenMap, ttlMs: Milliseconds): Promise<Done> {
+        const record = Object.fromEntries(tokens);
+        const refused = refusalOfTokens(tokens, OWNERS.writable);
+        return refused ?? this.call(() => usePlugin((client) => client.call('pane.report_metadata', { pane_id: pane, source: PLUGIN_ID, tokens: record, ttl_ms: Number(ttlMs) })));
     }
 
     async read(pane: PaneId): Promise<PaneTokensResult> {
         return readPaneTokens(pane);
     }
 
-    async reportWorkspace(workspace: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done> {
-        const refused = refusalOf(tokens, WORKSPACE_WRITABLE);
-        return refused ?? this.call(() => usePlugin((client) => client.call('workspace.report_metadata', { workspace_id: workspace, source: PLUGIN_ID, tokens, ttl_ms: ttlMs })));
-    }
-
-    async workspaces(): Promise<WorkspacesResult> {
-        try {
-            const found = list(parseJson(await usePlugin((client) => client.call('workspace.list', {})))['workspaces']);
-            return { kind: 'workspaces', ids: found.map((entry) => str(entry['workspace_id'])).filter((id) => id !== '') };
-        } catch (error) {
-            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
-        }
-    }
-
-    async notify(title: string, body: string): Promise<Notified> {
+    async notify(title: Text, body: Text): Promise<Notice> {
         const done = await this.call(() => usePlugin((client) => client.call('notification.show', { title, body })));
         return done.kind === 'done' ? { kind: 'shown' } : done;
     }
 
-    private async refuseAgent(verb: string, pane: string): Promise<Done | null> {
-        try {
-            const snapshot = await this.rawSnapshot();
-            const panes = list(snapshot['panes']);
-            if (!agentPanesIn(panes, list(snapshot['agents'])).has(pane)) {
-                return null;
-            }
-            const why = `refused: ${verb} ${pane} — it hosts an agent`;
-            process.stderr.write(`${new Date().toISOString()} ${why}\n`);
-            return unknown({ why: 'failed', code: 1, detail: causeOf(must(parseText(why))) });
-        } catch (error) {
-            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(`refused: ${verb} ${pane} — could not check it hosts no agent (${detail(error)})`))) });
-        }
-    }
-
-    private async guarded(verb: string, pane: string, run: () => Promise<unknown>): Promise<Done> {
-        return (await this.refuseAgent(verb, pane)) ?? this.call(run);
-    }
-
-    async resize(pane: PaneId, direction: 'left' | 'right' | 'up' | 'down', amount: number): Promise<Done> {
-        return this.guarded('resize', String(pane), () => usePlugin((client) => client.call('pane.resize', { pane_id: String(pane), direction, amount })));
+    async resize(pane: PaneId, direction: ResizeDirection, amount: Count): Promise<Done> {
+        return this.guarded(RESIZE, pane, () => usePlugin((client) => client.call('pane.resize', { pane_id: String(pane), direction, amount })));
     }
 
     async close(pane: PaneId): Promise<Done> {
-        return this.guarded('close', String(pane), () => useAdmin((client) => client.call('pane.close', { pane_id: String(pane) })));
+        return this.guarded(CLOSE, pane, () => useAdmin((client) => client.call('pane.close', { pane_id: String(pane) })));
     }
 
-    async closeEvery(): Promise<ClosedAll> {
+    async closeEvery(): Promise<ClosedEvery> {
         try {
             const snapshot = await this.rawSnapshot();
             const panes = list(snapshot['panes']);
@@ -252,18 +227,36 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
                 closed += done.kind === 'done' ? 1 : 0;
                 failed += done.kind === 'done' ? 0 : 1;
             }
-            return { kind: 'closed', closed, failed };
+            return { kind: 'closed', closed: must(parseCount(closed)), failed: must(parseCount(failed)) };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
         }
     }
 
-    private async call(run: () => Promise<unknown>): Promise<Done> {
+    async call<T>(run: () => Promise<T>): Promise<Done> {
         try {
             await run();
             return { kind: 'done' };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
         }
+    }
+
+    private async refuseAgent(verb: Text, pane: PaneId): Promise<Done | null> {
+        try {
+            const snapshot = await this.rawSnapshot();
+            if (!agentPanesIn(list(snapshot['panes']), list(snapshot['agents'])).has(pane)) {
+                return null;
+            }
+            const why = `refused: ${verb} ${pane} — it hosts an agent`;
+            process.stderr.write(`${new Date().toISOString()} ${why}\n`);
+            return unknown({ why: 'failed', code: 1, detail: causeOf(must(parseText(why))) });
+        } catch (error) {
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(`refused: ${verb} ${pane} — could not check it hosts no agent (${error instanceof Error ? error.message : String(error)})`))) });
+        }
+    }
+
+    private async guarded<T>(verb: Text, pane: PaneId, run: () => Promise<T>): Promise<Done> {
+        return (await this.refuseAgent(verb, pane)) ?? this.call(run);
     }
 }

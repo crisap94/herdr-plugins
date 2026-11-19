@@ -71,42 +71,24 @@
   "src/adapters/harness/legacy.ts": {
     "legacy": 12
   },
-  "src/adapters/herdr/agents.ts": {
-    "parameter": 13,
-    "return": 2,
-    "container": 4,
-    "property": 5,
-    "assertion": 2
-  },
   "src/adapters/herdr/column-panes.ts": {
-    "parameter": 1,
-    "return": 1,
-    "container": 8
+    "container": 1
   },
   "src/adapters/herdr/fleet.ts": {
-    "parameter": 18,
-    "return": 1,
-    "container": 11,
-    "property": 1
+    "parameter": 1,
+    "container": 3
   },
-  "src/adapters/herdr/host-check.ts": {
-    "parameter": 4,
-    "return": 2,
-    "property": 2
+  "src/adapters/herdr/host-check/legacy.ts": {
+    "legacy": 8
   },
-  "src/adapters/herdr/json-object.ts": {
-    "container": 2
+  "src/adapters/herdr/legacy.ts": {
+    "legacy": 39
   },
-  "src/adapters/herdr/json.ts": {
-    "parameter": 4,
-    "return": 2,
-    "container": 9
+  "src/adapters/herdr/session-registry/legacy.ts": {
+    "legacy": 2
   },
-  "src/adapters/herdr/session-registry.ts": {
-    "parameter": 2
-  },
-  "src/adapters/herdr/token-refusal.ts": {
-    "container": 2
+  "src/adapters/herdr/token-refusal/legacy.ts": {
+    "legacy": 2
   },
   "src/adapters/job/brief.ts": {
     "parameter": 2,
