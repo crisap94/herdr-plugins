@@ -16,7 +16,7 @@ export class CursorCarry {
 
     async cursorFor(ask: CarryAsk): Promise<LaneCursor> {
         const { session, cursors, wanted, reader } = ask;
-        const exact = cursors.find((c) => c.transcript === wanted.transcript);
+        const exact = cursors.find((c) => c.transcript === wanted.transcript && c.agent === wanted.agent);
         if (session === null) return exact ?? wanted;
         const before = this.remember(session, wanted);
         const old = before?.agent === wanted.agent ? cursors.find((c) => c.transcript === before.transcript && c.transcript !== wanted.transcript) : undefined;

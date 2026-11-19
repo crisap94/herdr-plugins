@@ -63,6 +63,12 @@ test('a source with its own stored cursor reads from that cursor', async () => {
     assert.equal((await carry.cursorFor({ session: S1, cursors: [cursorOf('x1', 3)], wanted: cursorOf('x1'), reader })).cursor, 3);
 });
 
+test('a stored cursor for the same source but another agent is not used, so the new agent reads from the start', async () => {
+    const carry = new CursorCarry();
+    const reader = readerOf([], true);
+    assert.deepEqual(await carry.cursorFor({ session: S1, cursors: [cursorOf('x1', 3)], wanted: cursorOf('x1', 0, 'codex'), reader }), cursorOf('x1', 0, 'codex'));
+});
+
 test('a followed pane keeps its current cursor and at most four old ones', async () => {
     const world = createEngineWorld();
     const engine = createEngine(world.plugs);
