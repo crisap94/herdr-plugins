@@ -4,8 +4,8 @@ import type { Break } from '#src/ports/boundaries.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
 import { regionsOf, session } from './expanded-regions.ts';
 import type { Draw, RegionId, TaskData } from './expanded-regions.ts';
-import { coloured, visibleLength, wrap } from './wrap.ts';
-import type { Style } from './wrap.ts';
+import { coloured, visibleLength, wrap } from '@stateforge-labs/recap-view/unstable/wrap.ts';
+import type { Style } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 
 export const EXPANDED_TWO_COLUMNS = 140;
 const GUTTER = 3;

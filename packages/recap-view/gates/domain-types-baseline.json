@@ -1,0 +1,25 @@
+{
+  "src/hyperlink.ts": {
+    "parameter": 5,
+    "return": 4
+  },
+  "src/linked.ts": {
+    "parameter": 1,
+    "return": 1
+  },
+  "src/links.ts": {
+    "parameter": 10,
+    "return": 9,
+    "property": 5
+  },
+  "src/model.ts": {
+    "property": 2
+  },
+  "src/wrap.ts": {
+    "parameter": 16,
+    "return": 7,
+    "container": 4,
+    "property": 1,
+    "assertion": 2
+  }
+}

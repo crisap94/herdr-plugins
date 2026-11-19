@@ -17,19 +17,6 @@
     "container": 8,
     "property": 4
   },
-  "src/recap/render/hyperlink.ts": {
-    "parameter": 5,
-    "return": 4
-  },
-  "src/recap/render/linked.ts": {
-    "parameter": 1,
-    "return": 1
-  },
-  "src/recap/render/links.ts": {
-    "parameter": 10,
-    "return": 9,
-    "property": 5
-  },
   "src/recap/render/present.ts": {
     "parameter": 24,
     "return": 13,
@@ -51,12 +38,5 @@
     "return": 5,
     "container": 2,
     "property": 3
-  },
-  "src/recap/render/wrap.ts": {
-    "parameter": 16,
-    "return": 7,
-    "container": 4,
-    "property": 1,
-    "assertion": 2
   }
 }
