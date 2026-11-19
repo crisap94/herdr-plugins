@@ -37,19 +37,8 @@
     "property": 8,
     "assertion": 5
   },
-  "src/adapters/db/imported-chapters.ts": {
-    "parameter": 2,
-    "container": 2
-  },
-  "src/adapters/db/imported.ts": {
-    "parameter": 2
-  },
-  "src/adapters/db/ledger-history.ts": {
-    "parameter": 2,
-    "return": 1
-  },
   "src/adapters/db/legacy.ts": {
-    "legacy": 43
+    "legacy": 47
   },
   "src/adapters/db/recap-read.ts": {
     "parameter": 3,

@@ -1,10 +1,14 @@
 import { existsSync } from 'node:fs';
 import type { Fact } from '#src/recap/domain/fact.ts';
+import type { FsPath } from '#src/recap/domain/fs-path.ts';
+import type { TabId } from '#src/recap/domain/ids.ts';
 import { connectReadOnly } from './connection.ts';
 import { LedgerRows } from './ledger-rows.ts';
 import { all, text } from './rows.ts';
 
-export function factsOfTab(path: string, tab: string): readonly Fact[] | null {
+export { factsOfTab } from './legacy.ts';
+
+export function factsOfTabAt(path: FsPath, tab: TabId): readonly Fact[] | null {
     if (!existsSync(path)) {
         return null;
     }

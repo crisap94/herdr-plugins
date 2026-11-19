@@ -7,12 +7,14 @@ import type { AnswerTally, AutocompactRecords, CoverageAmendment, Decision, Deci
 import type { Boundaries, BoundaryBreak, Break } from '#src/ports/boundaries.ts';
 import type { ActiveStage, BeginCompaction, CompactionEnd, CompactionRecord, CompactionRecords, CompactionRow, StageFacts } from '#src/ports/compaction-records.ts';
 import type { HandoffAnswerRow, HandoffAnswers } from '#src/ports/handoff-answers.ts';
+import type { ImportedChapter } from '#src/ports/imported-recaps.ts';
 import type { CheckAnchors } from '#src/ports/judge.ts';
 import type { ExchangeName, RequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { anchorsOf, withText } from '#src/recap/application/judge-anchors.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import type { CheckedFact } from '#src/recap/domain/autocompact.ts';
+import type { Fact } from '#src/recap/domain/fact.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseFactIndex } from '#src/recap/domain/fact-index.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
@@ -28,6 +30,8 @@ import { DecisionBriefsRepository } from './autocompact-briefs.ts';
 import { DecisionLedgerRepository } from './autocompact-records.ts';
 import { BoundaryLogRepository } from './boundary-read.ts';
 import { CompactionLogRepository } from './compaction-records.ts';
+import { importedChaptersAt } from './imported-chapters.ts';
+import { factsOfTabAt } from './imported.ts';
 import { connectReadOnly } from './connection.ts';
 import { openStoreAt, storeOver, type Store, type StoreSettings } from './database.ts';
 import { HandoffAnswerRepository } from './handoff-answers.ts';
@@ -210,4 +214,16 @@ export function operatorAnchors(path: string): CheckAnchors {
     } finally {
         db.close();
     }
+}
+
+export function importedChapters(path: string, tab: string): readonly ImportedChapter[] | null {
+    const file = parseFsPath(path);
+    const id = parseTabId(tab);
+    return file.kind === 'err' || id.kind === 'err' ? null : importedChaptersAt(file.value, id.value);
+}
+
+export function factsOfTab(path: string, tab: string): readonly Fact[] | null {
+    const file = parseFsPath(path);
+    const id = parseTabId(tab);
+    return file.kind === 'err' || id.kind === 'err' ? null : factsOfTabAt(file.value, id.value);
 }

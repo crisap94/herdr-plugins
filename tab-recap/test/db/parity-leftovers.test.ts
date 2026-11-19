@@ -8,8 +8,9 @@ import { RunInputRows, RunInputsRepository } from '#src/adapters/db/run-inputs.t
 import { typeIdOf } from '#src/adapters/db/typeid.ts';
 import { VerdictsRepository } from '#src/adapters/db/verdicts.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
+import { must } from '#src/protocol/result.ts';
 import type { ClosedLane } from '#src/recap/domain/closures.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, parsePaneId, tabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { closedDaysOf } from '../fakes/closed-days.ts';
 import { directoryOf } from '../fakes/closed-values.ts';
@@ -189,7 +190,7 @@ test('ledger history matches the old statement for two panes, sorted by last cha
     const repository = new LedgerHistory(parity.raw);
     for (const pane of ['p1', 'p2']) {
         const raw: Record<string, unknown>[] = parity.reader.prepare(OLD_HISTORY).all('t1', pane);
-        assert.deepStrictEqual(normalise(repository.read('t1', pane)), normalise(raw.map(historyOf).toSorted((a, b) => b.lastAt - a.lastAt)));
+        assert.deepStrictEqual(normalise(repository.read(tabId('t1'), must(parsePaneId(pane)))), normalise(raw.map(historyOf).toSorted((a, b) => b.lastAt - a.lastAt)));
     }
 }));
 
