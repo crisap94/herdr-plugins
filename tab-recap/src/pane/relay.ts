@@ -9,7 +9,7 @@ import { DEFAULT_TEXTS, PROTOCOL, TIMING } from '../wire/view/protocol.ts';
 import type { ClientMessage, DaemonMessage, FrameMessage, Key, StatusTexts, Welcome } from '../wire/view/protocol.ts';
 import { viewSocketPath } from '../wire/paths.ts';
 import { readDiskVersion } from './version.ts';
-import { titleOf } from './relay-env.ts';
+import { shownTitle, titleOf } from './relay-env.ts';
 import type { RelayEnv, RelayIo } from './relay-env.ts';
 
 type Status = Exclude<ConnState, 'connected'>;
@@ -58,7 +58,7 @@ class Relay {
         this.env = env;
         this.io = io;
         this.done = done;
-        this.title = titleOf(env.hello.role).title;
+        this.title = shownTitle(env, titleOf(env.hello.role)).title;
     }
 
     start(): void {
@@ -107,7 +107,7 @@ class Relay {
             return;
         }
         this.texts = message.texts;
-        this.title = message.title;
+        this.title = shownTitle(this.env, message).title;
         this.apply({ kind: 'welcome', protocol: message.protocol, version: message.version });
         this.startPing();
     }

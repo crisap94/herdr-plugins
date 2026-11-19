@@ -341,6 +341,7 @@ class RelayPlayer {
             facts: { rolledFor: this.t.settings.rolledFor },
             stateDir: urlOf(this.directory),
             pluginRoot: urlOf(this.directory),
+            opened: 'by-herdr',
         };
         this.proc = fakeProcess({ connect: this.wire.connect, scheduler: this.scheduler, cols: hello.cols, rows: hello.rows, colour: hello.colour, exec: 'replaced' });
         this.done = runRelay(env, this.proc.io);
@@ -450,7 +451,7 @@ async function withPluginDir(diskVersion: string, run: (directory: string) => Pr
 
 const welcome = (version: string, title: string): DaemonMessage => ({ t: 'welcome', protocol: PROTOCOL, version, title, texts: DEFAULT_TEXTS });
 
-const envFor = (directory: string, role: RelayEnv['hello']['role']): RelayEnv => ({ hello: { role, tab: 't1', pane: null, version: '9.9.9' }, facts: { rolledFor: null }, stateDir: urlOf(directory), pluginRoot: urlOf(directory) });
+const envFor = (directory: string, role: RelayEnv['hello']['role']): RelayEnv => ({ hello: { role, tab: 't1', pane: null, version: '9.9.9' }, facts: { rolledFor: null }, stateDir: urlOf(directory), pluginRoot: urlOf(directory), opened: 'by-herdr' });
 
 const realConnect: Connect = (path: string): Socket => new Wire(new Set(), true).connect(path);
 
@@ -498,9 +499,9 @@ test('relayEnvOf reads the role, tab, pane and roll marker from the environment 
     const home = urlOf(homedir());
     const version = relayEnvOf({}, root).hello.version;
     assert.equal(version, codeVersion(ROOT));
-    assert.deepEqual(relayEnvOf({ TAB_RECAP_TAB: 't7', TAB_RECAP_SHAPE: 'bar', HERDR_PANE_ID: 'p3', TAB_RECAP_PANE_ROLLED: '3.0.3', TAB_RECAP_STATE: '/s' }, root), { hello: { role: 'bar', tab: 't7', pane: 'p3', version }, facts: { rolledFor: '3.0.3' }, stateDir: new URL('file:///s/'), pluginRoot: root });
+    assert.deepEqual(relayEnvOf({ TAB_RECAP_TAB: 't7', TAB_RECAP_SHAPE: 'bar', HERDR_PANE_ID: 'p3', TAB_RECAP_PANE_ROLLED: '3.0.3', TAB_RECAP_STATE: '/s' }, root), { hello: { role: 'bar', tab: 't7', pane: 'p3', version }, facts: { rolledFor: '3.0.3' }, stateDir: new URL('file:///s/'), pluginRoot: root, opened: 'by-herdr' });
     assert.equal(relayEnvOf({ TAB_RECAP_MODE: 'modal', TAB_RECAP_SHAPE: 'bar' }, root).hello.role, 'modal');
-    assert.deepEqual(relayEnvOf({ HERDR_PANE_ID: '', TAB_RECAP_PANE_ROLLED: '' }, root, home), { hello: { role: 'column', tab: '', pane: null, version }, facts: { rolledFor: null }, stateDir: urlOf(xdgPaths(homedir()).stateDir), pluginRoot: root });
+    assert.deepEqual(relayEnvOf({ HERDR_PANE_ID: '', TAB_RECAP_PANE_ROLLED: '' }, root, home), { hello: { role: 'column', tab: '', pane: null, version }, facts: { rolledFor: null }, stateDir: urlOf(xdgPaths(homedir()).stateDir), pluginRoot: root, opened: 'by-herdr' });
     assert.equal(relayEnvOf({}, urlOf(join(ROOT, 'no-such-root'))).hello.version, 'unknown');
     const saved = { state: process.env['TAB_RECAP_STATE'], herdr: process.env['HERDR_PLUGIN_STATE_DIR'] };
     try {
