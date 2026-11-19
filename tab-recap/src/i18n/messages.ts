@@ -211,22 +211,22 @@ export interface KeyBinding {
 }
 
 export interface CliMessages {
-    readonly daemonRunning: (pid: number) => string;
-    readonly daemonWedged: (pid: number) => string;
-    readonly daemonStarted: (pid: string, log: string) => string;
-    readonly offIdle: string;
-    readonly offClosing: (pid: number) => string;
-    readonly tabUnknown: string;
-    readonly modalFailed: (why: string) => string;
-    readonly requested: (tab: string) => string;
-    readonly compactAsked: string;
-    readonly compactNotQueued: (why: string) => string;
-    readonly columnToggled: (tab: string) => string;
-    readonly columnsToggled: string;
-    readonly setupBusy: (command: string) => string;
-    readonly backendNow: (what: string) => string;
-    readonly usageBackend: (choices: string) => string;
-    readonly usage: (commands: string) => string;
+    readonly daemonRunning: (pid: number) => Text;
+    readonly daemonWedged: (pid: number) => Text;
+    readonly daemonStarted: (pid: Text, log: Text) => Text;
+    readonly offIdle: Text;
+    readonly offClosing: (pid: number) => Text;
+    readonly tabUnknown: Text;
+    readonly modalFailed: (why: Text) => Text;
+    readonly requested: (tab: Text) => Text;
+    readonly compactAsked: Text;
+    readonly compactNotQueued: (why: Text) => Text;
+    readonly columnToggled: (tab: Text) => Text;
+    readonly columnsToggled: Text;
+    readonly setupBusy: (command: Text) => Text;
+    readonly backendNow: (what: Text) => Text;
+    readonly usageBackend: (choices: Text) => Text;
+    readonly usage: (commands: Text) => Text;
     readonly statusVersion: (code: string | null) => string;
     readonly statusRuntime: (path: string, version: string) => string;
     readonly hostRefusal: (refusal: Pick<Refusal, 'found' | 'needed' | 'steps'>, path: string) => string;

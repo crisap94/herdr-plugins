@@ -1,20 +1,20 @@
 {
   "src/i18n/en.ts": {
-    "parameter": 23,
-    "return": 19
+    "parameter": 13,
+    "return": 7
   },
   "src/i18n/es.ts": {
-    "parameter": 23,
-    "return": 19
+    "parameter": 13,
+    "return": 7
   },
   "src/i18n/legacy.ts": {
     "legacy": 17
   },
   "src/i18n/messages.ts": {
-    "parameter": 23,
-    "return": 19,
+    "parameter": 13,
+    "return": 7,
     "container": 1,
-    "property": 9
+    "property": 5
   },
   "src/recap/render/compact.ts": {
     "parameter": 3,
