@@ -3,6 +3,8 @@ import type { Board, Placement, Shape } from './board.ts';
 import type { PaneId, TabId } from './ids.ts';
 import type { Intent } from './intent.ts';
 import { isHidden } from './visibility.ts';
+import { parseCount } from './count.ts';
+import { must } from '#src/protocol/result.ts';
 import { duration, elapsed, instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import type { Duration, Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import { REGISTERED_KINDS, kindsWith } from '@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts';
@@ -135,6 +137,6 @@ export function spend(board: Board, tab: TabId, now: Instant, policy: Policy): [
     const until = instant(now + policy.giveUpFor);
     return [
         { ...next, givenUp: put(next.givenUp, tab, until), reopens: without(next.reopens, tab) },
-        [{ kind: 'give-up', tab, reopens: history.length }],
+        [{ kind: 'give-up', tab, reopens: must(parseCount(history.length)) }],
     ];
 }

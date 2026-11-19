@@ -1,6 +1,7 @@
 import type { ClosedLane } from './closures.ts';
 import type { Lane } from './lane.ts';
 import type { HiddenState, Shape } from './board.ts';
+import type { Count } from './count.ts';
 import type { PaneId, TabId } from './ids.ts';
 import type { RecapCause } from '@stateforge-labs/session-ledger/unstable/recap/domain/recap-cause.ts';
 import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
@@ -15,7 +16,7 @@ export type Intent =
     | { readonly kind: 'publish'; readonly tab: TabId }
     | { readonly kind: 'read-prompt'; readonly lane: Lane }
     | { readonly kind: 'save-hidden'; readonly state: HiddenState }
-    | { readonly kind: 'give-up'; readonly tab: TabId; readonly reopens: number }
+    | { readonly kind: 'give-up'; readonly tab: TabId; readonly reopens: Count }
     | { readonly kind: 'lane-closed'; readonly closed: ClosedLane }
     | { readonly kind: 'tab-gone'; readonly tab: TabId; readonly at: Instant };
 

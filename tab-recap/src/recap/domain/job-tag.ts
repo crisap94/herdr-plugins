@@ -21,5 +21,5 @@ export const JOB_ATTRIBUTE_KEY = 'tab_recap.job';
 export type JobAttributes = Readonly<{ [JOB_ATTRIBUTE_KEY]: JobTag }>;
 
 export function isJobTag(value: unknown): value is JobTag {
-    return typeof value === 'string' && (JOB_TAGS as readonly string[]).includes(value);
+    return JOB_TAGS.some((tag) => tag === value);
 }

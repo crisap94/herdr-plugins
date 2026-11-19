@@ -1,14 +1,12 @@
 import type { HandoffOutcome } from './handoff-outcome.ts';
+import type { SettleEvidence } from './legacy.ts';
 import type { Duration } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+
+export type { SettleEvidence } from './legacy.ts';
 
 export type HandoffEvidence = 'transcript' | 'status' | 'either';
 
 export type LocatedBy = 'session' | 'directory';
-
-export interface SettleEvidence {
-    readonly trials: number;
-    readonly source: string;
-}
 
 export interface SettleTime {
     readonly after: Duration;
