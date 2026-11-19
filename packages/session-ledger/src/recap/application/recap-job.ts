@@ -2,8 +2,9 @@ import type { Lane, TabId } from '#src/recap/domain/lane-shape.ts';
 import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { Clock } from '#src/ports/clock.ts';
+import type { FactId } from '#src/recap/domain/fact.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
-import type { CheckedLedger, Ledger } from '#src/ports/ledger.ts';
+import type { CheckedLedger } from '#src/ports/ledger.ts';
 import { blankRecap, hasRecap, type CheckedRecapRecords, type LaneCursor, type RecordedRun, type TabRecap } from '#src/ports/recap-records.ts';
 import type { RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
 import { UNREAD, type Chunk, type Transcripts } from '#src/ports/transcripts.ts';
@@ -22,6 +23,7 @@ import { marksOf } from './boundaries.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { inputOf } from './recap-input.ts';
 import { writerContext } from './writer-context.ts';
+import { throwingLedger } from './run-fold.ts';
 
 export interface RecapJobDeps {
     readonly transcripts: TranscriptRegistry;
@@ -38,6 +40,7 @@ export interface RecapJobDeps {
     debounce?(): Debounce;
     enumerator?(): Enumerators | null;
     ran?(event: RunEvent): void;
+    mint(): FactId;
     log(line: string): void;
 }
 
@@ -58,7 +61,6 @@ interface Pending { readonly lanes: readonly Lane[]; readonly cause: RecapCause;
 
 interface Plan { readonly want: string; readonly was: string; readonly switched: boolean; readonly cause: RecapCause; readonly keys: readonly string[] }
 interface Prepared { readonly tasks: readonly TaskShape[]; readonly request: RecapRequest; readonly ground: Ground }
-function throwingLedger(ledger: CheckedLedger): Omit<Ledger, 'keysOf'> { return { ...ledger, openOf: (task) => { const found = ledger.openOf(task); if ('kind' in found) throw new Error(saying(found.why)); return found; }, recentlyClosed: (task, sinceMs) => { const found = ledger.recentlyClosed(task, sinceMs); if ('kind' in found) throw new Error(saying(found.why)); return found; } }; }
 
 interface Slot { timer: ReturnType<typeof setTimeout> | null; running: boolean; pending: Pending | null; lastStart: number | null; lastLanes: ReadonlySet<Lane['pane']>; waiting: (() => void)[] }
 
@@ -111,9 +113,7 @@ export class RecapJob {
     private readonly deps: RecapJobDeps;
     private readonly slots = new Map<string, Slot>();
 
-    constructor(deps: RecapJobDeps) {
-        this.deps = deps;
-    }
+    constructor(deps: RecapJobDeps) { this.deps = deps; }
 
     request(tab: TabId, lanes: readonly Lane[], cause: RecapCause): void {
         const key = String(tab);

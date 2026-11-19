@@ -5,6 +5,7 @@ import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
 import { recapWritten, type EventStream } from '#src/recap/application/lane-events.ts';
 import type { Curate } from '#src/recap/application/curate.ts';
 import type { Store } from '#src/adapters/db/database.ts';
+import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { Summarizer } from '#src/ports/summarizer.ts';
@@ -67,7 +68,7 @@ export function wireEngine({ store, backends, transcripts, clock, repos, curate,
     const engine = pluginEngine({
         source: { transcripts },
         store: { records: store.records, ledger: store.ledger },
-        environment: { clock, log, repos },
+        environment: { clock, log, repos, mint: mintFactId },
         models: { summarizer: (): Summarizer => backends.summarizer(), enumerator: (): Enumerators | null => backends.enumerator() },
         settings: {
             language: parseRecapLanguage,

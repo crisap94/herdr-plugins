@@ -63,6 +63,7 @@ import type { FlowWorld } from '#test/fakes/handoff-flow-harness.ts';
 import { fact } from '#test/fakes/fact-at.ts';
 import { fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import { textOf } from './fakes/decider-fixtures.ts';
+import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 
 const runtime = fakeRuntime({ scripts: {} });
 
@@ -333,7 +334,7 @@ test('gemini refuses: not compactable, `no reader for gemini` in the recap, and 
 
     const store = memoryStore();
     const writer: Summarizer = { backend: 'fake', contract: 'strict', write: (): Promise<Written> => Promise.resolve({ kind: 'written', text: '{"ops":[]}', costUsd: 0 }) };
-    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }),
+    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId,
         repos: NO_REPOS, transcripts: registryWith({}), records: store.records, ledger: store.ledger,
         clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Summarizer => writer,
         language: (): string => 'en', log: (): void => undefined,

@@ -14,6 +14,7 @@ import { FULL_WRITER_VIEW } from '#src/recap/domain/writer-view.ts';
 import { NO_REPOS } from '#test/support.ts';
 import { answer, scripted as scriptedEnumerator } from '#test/fakes/enumerator.ts';
 import { writer } from '#test/fakes/golden-writer.ts';
+import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 
 const FILE = join(import.meta.dirname, 'fixtures', 'replay-claude.jsonl');
 const LABEL = 'replay:t1';
@@ -55,7 +56,7 @@ async function golden(pipeline: Pipeline | undefined): Promise<string> {
     const enumerating = scriptedEnumerator([candidateFor]);
     const scratch = scratchStore();
     try {
-        const deps: ReplayDeps = { reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, repos: NO_REPOS, language: 'en', log: () => undefined, enumerator: () => enumerating.enumerator, ...(pipeline === undefined ? {} : { pipeline }), writerView: FULL_WRITER_VIEW };
+        const deps: ReplayDeps = { reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, mint: mintFactId, repos: NO_REPOS, language: 'en', log: () => undefined, enumerator: () => enumerating.enumerator, ...(pipeline === undefined ? {} : { pipeline }), writerView: FULL_WRITER_VIEW };
         const done = await replay(deps, FILE, LABEL, statSync(FILE).size);
         const header = section('replayed', json({ windows: done.windows, turns: done.turns, costUsd: done.costUsd, writerCalls: seen.length, enumerationCalls: enumerating.documents.length }));
         const written = seen.map((request, at) => section(`writer input ${at + 1} (language ${request.language}, previous ${request.previousLanguage}, retry ${request.retry === undefined ? 'no' : 'yes'})`, writerContext(request))).join('');

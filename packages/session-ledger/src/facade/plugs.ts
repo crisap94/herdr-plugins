@@ -1,6 +1,7 @@
 import type * as sl from './contract-names.ts';
 import { parseHarnessKind, parseScopeId, parseSessionKey, type RestoreText } from '#src/contract/ids.ts';
 import { must } from '#src/protocol/result.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { CheckedLedger, Applied } from '#src/ports/ledger.ts';
 import type { CheckedRecapRecords, RecordedRun, FailedRun, Advance, TabRecap, LastRun } from '#src/ports/recap-records.ts';
@@ -250,6 +251,7 @@ export const legacyPlugsOf = (plugs: sl.EnginePlugs): FacadePlugs => {
         environment: {
             clock: pluginClock(plugs.environment.clock),
             repos: pluginRepos(plugs.environment.workplaces),
+            mint: (): FactId => brand<string, 'FactId'>(plugs.environment.ids.next()),
             log: (line: string) => {
                 plugs.environment.log(line);
             },

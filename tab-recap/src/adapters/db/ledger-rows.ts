@@ -1,7 +1,9 @@
 import type { Database } from 'bun:sqlite';
 import { and, asc, desc, eq, gte, or } from 'drizzle-orm';
 import type { Applied } from '#src/ports/ledger.ts';
+import { must } from '#src/protocol/result.ts';
 import { isClosedWhy, isSection } from '#src/recap/domain/fact.ts';
+import { parseFactId } from '#src/recap/domain/run-ids.ts';
 import type { Fact, FactId, TaskId } from '#src/recap/domain/fact.ts';
 import { apply } from '#src/recap/domain/ops.ts';
 import type { Operation, RunRef } from '#src/recap/domain/ops.ts';
@@ -19,6 +21,8 @@ const CLOSED = 'closed';
 const FOLD_WINDOW_MS = 24 * 3_600_000;
 
 type SweepNow = 'sweep' | 'keep';
+
+export const mintFactId = (): FactId => must(parseFactId(typeIdOf('fact', ids.next())));
 
 const FACT_COLUMNS = {
     id: factTable.id, section: factTable.section, text: factTable.text, why: factTable.why, ref: factTable.ref, agent: factTable.agent, anchor: factTable.anchor,

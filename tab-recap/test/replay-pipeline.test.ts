@@ -13,6 +13,7 @@ import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { FULL_WRITER_VIEW, keepNewestOf, nextHoursOf, prunedWriterView } from '#src/recap/domain/writer-view.ts';
 import { NO_REPOS } from '#test/support.ts';
 import { answer, scripted } from '#test/fakes/enumerator.ts';
+import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 
 const FILE = join(import.meta.dirname, 'fixtures', 'replay-claude.jsonl');
 
@@ -46,7 +47,7 @@ async function run(pipeline: Pipeline | undefined, writerView: WriterView, merge
     const enumerating = scripted([candidateFor]);
     const scratch = scratchStore();
     try {
-        const deps: ReplayDeps = { reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, repos: NO_REPOS, language: 'en', log: () => undefined, enumerator: () => enumerating.enumerator, ...(pipeline === undefined ? {} : { pipeline }), writerView };
+        const deps: ReplayDeps = { reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, mint: mintFactId, repos: NO_REPOS, language: 'en', log: () => undefined, enumerator: () => enumerating.enumerator, ...(pipeline === undefined ? {} : { pipeline }), writerView };
         const done = await replay(deps, FILE, 'replay:t1', statSync(FILE).size, mergeTurns);
         return { done, seen, documents: enumerating.documents };
     } finally {
