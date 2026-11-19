@@ -1,8 +1,8 @@
+import type { GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import { join } from 'node:path';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import type { Waiting } from '#src/recap/application/autocompact.ts';
 import { RECAP_WAIT_MS } from '#src/recap/application/recap-wait.ts';
-import type { RecapRecords } from '#src/ports/recap-records.ts';
 import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
@@ -187,7 +187,7 @@ export function pauseVia(pause: (span: Duration) => Promise<void>): (ms: number)
     return (ms) => pause(duration(ms));
 }
 
-export function refreshedWithin(run: Promise<void>, records: Pick<RecapRecords, 'readRecap'>, tab: string, ms: number): Promise<RefreshStatus> {
+export function refreshedWithin(run: Promise<void>, records: Pick<GuardedRecapRecords, 'readRecap'>, tab: string, ms: number): Promise<RefreshStatus> {
     return refreshWithin(run, records, tabId(tab), duration(ms));
 }
 
@@ -199,7 +199,7 @@ export function openState(root: string, notifier: Notifier, log: (line: string) 
     return openStateAt(must(parseDirectory(root)), notifier, log);
 }
 
-export function refreshVia(recaps: Pick<TabRecaps, 'refresh'>, records: Pick<RecapRecords, 'readRecap'>): (tab: string, lanes: readonly Lane[]) => Promise<RefreshStatus> {
+export function refreshVia(recaps: Pick<TabRecaps, 'refresh'>, records: Pick<GuardedRecapRecords, 'readRecap'>): (tab: string, lanes: readonly Lane[]) => Promise<RefreshStatus> {
     return (tab, lanes) => refreshedWithin(recaps.refresh(tabId(tab), lanes), records, tab, RECAP_WAIT_MS);
 }
 

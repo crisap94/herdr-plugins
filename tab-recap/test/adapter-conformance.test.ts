@@ -1,3 +1,4 @@
+import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { test, after } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
@@ -53,7 +54,7 @@ import type { ScreenResult, Screens } from '#src/ports/screens.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import type { Chunk, ChunkResult, Located, Mark, Transcripts } from '#src/ports/transcripts.ts';
 import { NO_REPOS } from '#test/support.ts';
-import { memoryStore } from '#test/db/support.ts';
+import { memoryStore, storeRead } from '#test/db/support.ts';
 import { opencodeFixture } from '#test/opencode-fixture.ts';
 import { compactionFlow, typingFleet } from '#test/fakes/compaction-fleet.ts';
 import { echoing, leaseSpy, senderOf, worldOf } from '#test/fakes/handoff-delivery.ts';
@@ -335,12 +336,12 @@ test('gemini refuses: not compactable, `no reader for gemini` in the recap, and 
     const store = memoryStore();
     const writer: Summarizer = { backend: 'fake', contract: 'strict', write: (): Promise<Written> => Promise.resolve({ kind: 'written', text: '{"ops":[]}', costUsd: 0 }) };
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId,
-        repos: NO_REPOS, transcripts: registryWith({}), records: store.records, ledger: store.ledger,
+        repos: NO_REPOS, transcripts: registryWith({}), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger),
         clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Summarizer => writer,
         language: (): string => 'en', log: (): void => undefined,
     });
     await job.refreshNow(tabId('w1:t1'), [gemini]);
-    assert.match(store.records.readRecap('w1:t1')?.error ?? '', /w1:p5: no reader for gemini/);
+    assert.match(storeRead(store.records.readRecap('w1:t1'))?.error ?? '', /w1:p5: no reader for gemini/);
 
     assert.deepEqual(await skipOf(registryWith({}), gemini, 'gemini'), { gate: 'in-flight', detail: 'no transcript reader for gemini' });
 });

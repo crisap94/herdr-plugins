@@ -1,3 +1,4 @@
+import { storeRead } from '#test/db/support.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -104,7 +105,7 @@ test('an upgraded fixture keeps its data readable through the repositories', () 
         const opened = openDatabase(join(dir, 'tab-recap.db'), MIGRATIONS);
         assert.equal(opened.kind, 'ready');
         const store = storeOver(opened.db);
-        const recap = must(store.records.readRecap('w1:t1'));
+        const recap = must(storeRead(store.records.readRecap('w1:t1')));
         assert.equal(recap.tasks.at(0)?.sections?.goal, 'keep the fixture readable');
         assert.deepEqual(recap.tasks.at(0)?.sections?.done, ['wrote the schema']);
         assert.equal(recap.costUsd, 1.5);

@@ -1,3 +1,4 @@
+import { knownOr } from '#src/ports/guarded-reads.ts';
 import type { HandoffRequestRow } from '#src/ports/requests.ts';
 import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
@@ -165,7 +166,7 @@ export class HandoffFlow {
         if (lane === undefined) {
             return { kind: 'refused', reason: 'source-unavailable' };
         }
-        const cursor = this.deps.records.readRecap(String(request.tab))?.lanes.find((candidate) => candidate.pane === String(request.pane)) ?? null;
+        const cursor = knownOr(this.deps.records.readRecap(String(request.tab)), null)?.lanes.find((candidate) => candidate.pane === String(request.pane)) ?? null;
         return this.deps.render({ handoff: request.id, at: this.deps.now(), lane, cursor, facts: found.facts, note: request.note, refresh });
     }
 

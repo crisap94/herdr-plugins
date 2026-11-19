@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { RecapRecords, RecordedRun } from '#src/ports/recap-records.ts';
+import type { GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
+import type { RecordedRun } from '#src/ports/recap-records.ts';
 import type { TabLane, TabViews } from '#src/ports/tab-views.ts';
 import { memoryStore } from './db/support.ts';
 import { MemoryRunHistory } from './fakes/run-history.ts';
@@ -8,7 +9,7 @@ import { MemoryTabViews } from './fakes/tab-views-memory.ts';
 
 interface Subject {
     readonly name: string;
-    readonly runs: () => Pick<RecapRecords, 'recordRun' | 'failRun' | 'lastRunOf'>;
+    readonly runs: () => Pick<GuardedRecapRecords, 'recordRun' | 'failRun' | 'lastRunOf'>;
     readonly views: () => Pick<TabViews, 'writeTab' | 'tabOf'>;
 }
 

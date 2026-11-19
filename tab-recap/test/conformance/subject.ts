@@ -3,8 +3,10 @@ import * as sl from '@stateforge-labs/session-ledger';
 import { createEngineWorld, createMemoryStore, type EngineWorld, type StoreUnderTest, type Subject } from '@stateforge-labs/session-ledger/testkit';
 import { pluginEngine } from '#src/engine/engine-adapter.ts';
 import { legacyPlugsOf } from '@stateforge-labs/session-ledger/unstable/facade/plugs.ts';
-import type { Ledger } from '#src/ports/ledger.ts';
-import type { RecapRecords, RecordedRun } from '#src/ports/recap-records.ts';
+import type { GuardedLedger, GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
+import { isUnknownRead } from '#src/ports/guarded-reads.ts';
+import type { Unknown } from '#src/ports/unknowable.ts';
+import type { RecordedRun } from '#src/ports/recap-records.ts';
 import type { Fact, FactId } from '#src/recap/domain/fact.ts';
 import type { Operation, Refusal } from '#src/recap/domain/ops.ts';
 import type { Text } from '#src/recap/domain/text.ts';
@@ -38,7 +40,7 @@ const pluginRefusal = (refusal: sl.Refusal): Refusal => ({ op: pluginOperation(r
 
 const pluginRecorded = (run: sl.RecordedRun): RecordedRun => ({ ...run, changed: run.changed.map(pluginFact), refused: run.refused.map(pluginRefusal) });
 
-const ledgerRecords = (records: RecapRecords): sl.Records => ({
+const ledgerRecords = (records: GuardedRecapRecords): sl.Records => ({
     readRecap: (scope) => records.readRecap(scope),
     lastRunOf: (scope) => records.lastRunOf(scope),
     beginRun: (scope, backend, at) => {
@@ -55,10 +57,12 @@ const ledgerRecords = (records: RecapRecords): sl.Records => ({
     },
 });
 
-const ledgerFacts = (ledger: Ledger): sl.FactStore => ({
-    openOf: (task) => ledger.openOf(task).map(ledgerFact),
-    recentlyClosed: (task, sinceMs) => ledger.recentlyClosed(task, sinceMs).map(ledgerFact),
-    allOf: (task) => ledger.allOf(task).map(ledgerFact),
+const ledgerFactsOf = (read: readonly Fact[] | Unknown): readonly sl.Fact[] | sl.Unknown => (isUnknownRead(read) ? read : read.map(ledgerFact));
+
+const ledgerFacts = (ledger: GuardedLedger): sl.FactStore => ({
+    openOf: (task) => ledgerFactsOf(ledger.openOf(task)),
+    recentlyClosed: (task, sinceMs) => ledgerFactsOf(ledger.recentlyClosed(task, sinceMs)),
+    allOf: (task) => ledgerFactsOf(ledger.allOf(task)),
     keysOf: (scope) => ledger.keysOf(scope),
     historyOf: (scope, key) => ledger.historyOf(scope, key),
 });
@@ -86,6 +90,9 @@ export const sqliteStoreSubject: Subject<null, StoreUnderTest> = {
         return {
             records: ledgerRecords(store.records),
             facts: ledgerFacts(store.ledger),
+            failReads: () => {
+                store.db.close();
+            },
             marksOf: (scope) => store.boundaries.breaksOf(scope).filter((each) => each.kind === 'compacted').map((each) => ({ at: each.at })),
         };
     },

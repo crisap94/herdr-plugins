@@ -1,3 +1,4 @@
+import { storeRead } from '#test/db/support.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, rmSync } from 'node:fs';
@@ -26,7 +27,7 @@ test('the daemon starts on a state directory of the old files: it imports once, 
         }
         assert.match(lines.join('\n'), /imported 6 recaps, 3 views, 3 requests; the files are in .*legacy-files-/);
         assert.deepEqual(told, []);
-        assert.equal(store.records.readRecap('w1:t1')?.tasks.at(0)?.sections?.goal, 'ship');
+        assert.equal(storeRead(store.records.readRecap('w1:t1'))?.tasks.at(0)?.sections?.goal, 'ship');
         store.close();
         assert.ok(!existsSync(join(dir, 'recaps')));
         const again = await openState(dir, notifier, (line) => { lines.push(line); });

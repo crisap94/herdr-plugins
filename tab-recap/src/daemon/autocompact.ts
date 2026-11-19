@@ -1,3 +1,4 @@
+import { knownOr } from '#src/ports/guarded-reads.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { Autocompact, type Waiting } from '#src/recap/application/autocompact.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
@@ -50,7 +51,7 @@ export function wireAutocompact(parts: AutocompactParts): Autocompact {
     return new Autocompact({
         policy: () => read().autocompact, tuning: () => read().tuning, decider: parts.decider, contexts: parts.contexts, inFlight: (lane) => flightOf(flight, lane), awaiting: parts.awaiting ?? awaitingPane, events: parts.events, recent: (lane) => parts.recent.of(lane), startedAt: instant(Date.now() - process.uptime() * 1000),
         ledger: store.ledger, boundaries: store.boundaries, compactions: store.compactions, decisions: store.autocompact, requests: store.requests, claims: parts.claims, queue: store.requests,
-        hasRecap: (tab) => { const recap = store.records.readRecap(tab); return recap !== null && hasRecap(recap) ? 'recapped' : 'unrecapped'; },
+        hasRecap: (tab) => { const recap = knownOr(store.records.readRecap(tab), null); return recap !== null && hasRecap(recap) ? 'recapped' : 'unrecapped'; },
         refresh: refreshVia(parts.recaps, store.records),
         lanes: (tab) => lanesOf(parts.informer.current, tabId(tab)), now: () => instant(Date.now()), log: (line) => { parts.log(line); },
     });

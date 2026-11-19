@@ -1,3 +1,4 @@
+import { knownOr } from '#src/ports/guarded-reads.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
@@ -44,7 +45,7 @@ export class Briefing {
     }
 
     materialOf(tab: TabId, pane: PaneId, note: Text | null): Material {
-        const tasks = this.deps.records.readRecap(tab)?.tasks ?? [];
+        const tasks = knownOr(this.deps.records.readRecap(tab), null)?.tasks ?? [];
         const task = tasks.find((each) => each.lanes.includes(pane)) ?? tasks[0];
         return { sections: task?.sections ?? NO_SECTIONS, web: this.deps.webs.of(pane), note };
     }
@@ -57,7 +58,7 @@ export class Briefing {
         if (brief.enabled() === 'absent') {
             return { text: null, why: null, own, history };
         }
-        const label = records.readRecap(tab)?.lanes.find((each) => each.pane === pane)?.title ?? lane.title ?? '';
+        const label = knownOr(records.readRecap(tab), null)?.lanes.find((each) => each.pane === pane)?.title ?? lane.title ?? '';
         const clock = { now: this.deps.now(), zone: Intl.DateTimeFormat().resolvedOptions().timeZone };
         const document = must(parseText(compactionInput({ agent: { kind: agent, label, repo: null, branch: null }, note: material.note, current: material.sections, history, lastBreakAt: this.deps.boundaries.lastBreakAt(tab, pane), recent, clock })));
         return { ...(await brief.write(document, own, correction)), own, history };

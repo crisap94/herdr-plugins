@@ -11,7 +11,7 @@ import { parseText } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
-import { cursor, memoryStore, must as present, seed } from '#test/db/support.ts';
+import { cursor, memoryStore, must as present, seed, storeRead } from '#test/db/support.ts';
 import { fact } from '#test/fakes/fact-at.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { GUI_DIR, NOW, world } from './herdr.ts';
@@ -75,7 +75,7 @@ export function build(spec: TabSpec): Built {
     spec.facts.forEach((one) => ledger.seed(fact(one.id, one.section, one.text, NOW - one.minutesAgo * MIN, { task: { tab: spec.tab, key: 't1' }, why: one.why ?? null })));
     const deps: ExpandedDeps = { records: store.records, ledger, stories: store.stories, session: store.session, boundaries: store.boundaries, requests: { requestCurate: (): void => undefined }, edits: () => [] };
     const expanded = new ExpandedModel(deps).read(spec.tab, view, NOW);
-    const recap = present(store.records.readRecap(spec.tab));
+    const recap = present(storeRead(store.records.readRecap(spec.tab)));
     const hint = spec.hint === undefined ? null : must(parseCount(spec.hint));
     const typed = guiTabOf(recap, view, instant(NOW), { ...BLANK_READS, expanded, compactHint: hint, zone: must(parseText(ZONE)) });
     const label = spec.name === undefined ? {} : { name: spec.name };

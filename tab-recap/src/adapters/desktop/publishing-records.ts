@@ -1,23 +1,25 @@
+import type { Unknown } from '#src/ports/unknowable.ts';
+import type { GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import type { BackendId } from '#src/recap/domain/backend.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
-import type { Advance, FailedRun, LastRun, RecapRecords, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
+import type { Advance, FailedRun, LastRun, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 
-export class PublishingRecords implements RecapRecords {
-    private readonly inner: RecapRecords;
+export class PublishingRecords implements GuardedRecapRecords {
+    private readonly inner: GuardedRecapRecords;
     private readonly published: (tab: TabId) => void;
 
-    constructor(inner: RecapRecords, published: (tab: TabId) => void) {
+    constructor(inner: GuardedRecapRecords, published: (tab: TabId) => void) {
         this.inner = inner;
         this.published = published;
     }
 
-    readRecap(tab: TabId): TabRecap | null {
+    readRecap(tab: TabId): TabRecap | null | Unknown {
         return this.inner.readRecap(tab);
     }
 
-    lastRunOf(tab: TabId): LastRun | null {
+    lastRunOf(tab: TabId): LastRun | null | Unknown {
         return this.inner.lastRunOf(tab);
     }
 

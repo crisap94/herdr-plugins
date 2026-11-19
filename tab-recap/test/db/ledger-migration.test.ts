@@ -1,3 +1,4 @@
+import { storeRead } from '#test/db/support.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, rmSync } from 'node:fs';
@@ -57,7 +58,7 @@ test('a v5 database with real recaps migrates to v6: every tab\'s column is the 
         FIXTURE.forEach((_, index) => {
             const tab = `w1:t${index + 1}`;
             const before = columnBefore(opened.db, tab);
-            const after = store.records.readRecap(tab)?.tasks.at(0)?.sections;
+            const after = storeRead(store.records.readRecap(tab))?.tasks.at(0)?.sections;
             assert.ok(after !== undefined && after !== null, tab);
             assert.deepEqual({ goal: [after.goal].filter((line) => line !== ''), now: after.now, needs: after.needs, done: after.done, decisions: after.decisions, next: after.next, links: after.links, rules: after.rules }, before, tab);
         });

@@ -24,7 +24,7 @@ import { coloured, plain } from '#src/recap/render/wrap.ts';
 import type { Style } from '#src/recap/render/wrap.ts';
 import type { Role } from '#src/wire/view/protocol.ts';
 import type { TabRecap } from '#src/ports/recap-records.ts';
-import { cursor, memoryStore } from '#test/db/support.ts';
+import { cursor, memoryStore, storeRead } from '#test/db/support.ts';
 
 const NOW = 1_800_000_000_000;
 const TAB = 'w1:t1';
@@ -78,7 +78,7 @@ const viewOf = (store: Store, config: Config, style: Style): ColumnView => {
     const extensions = [storedNotes({ statuses: store.worktrees, notes: store.paneNotes, alerts: store.paneAlerts, gitNote: worktreeSwitch })];
     return {
         tab: stored,
-        recap: store.records.readRecap(TAB),
+        recap: storeRead(store.records.readRecap(TAB)),
         notes: notesOf(extensions, stored?.lanes, config.locale),
         warnings: warningsOf(extensions, config.locale),
         now: NOW,

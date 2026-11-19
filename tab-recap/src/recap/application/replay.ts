@@ -1,7 +1,6 @@
+import { checkedLedger, checkedRecords, knownOr, type GuardedLedger, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
-import type { Ledger } from '#src/ports/ledger.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
-import type { RecapRecords } from '#src/ports/recap-records.ts';
 import type { Summarizer } from '#src/ports/summarizer.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import type { ChunkResult, Entry, InFlightCapability, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
@@ -50,8 +49,8 @@ export function mergedWindows(entries: readonly Entry[], mergeTurns: PositiveCou
 export interface TypedReplayDeps {
     readonly reader: Transcripts;
     readonly summarizer: () => Summarizer;
-    readonly records: RecapRecords;
-    readonly ledger: Ledger;
+    readonly records: GuardedRecapRecords;
+    readonly ledger: GuardedLedger;
     readonly repos: LaneRepo;
     readonly language: Text;
     readonly log: (line: Text) => void;
@@ -103,7 +102,7 @@ function settingsOf(deps: TypedReplayDeps): EngineSettings {
 function engineOf(deps: TypedReplayDeps, file: SessionPath, windows: readonly (readonly Entry[])[], at: Position): TabRecaps {
     return tabRecaps(pluginEngine({
         source: { transcripts: new TranscriptRegistry({ [deps.reader.agent]: windowed(deps.reader, file, windows, at) }, null, unavailable) },
-        store: { records: deps.records, ledger: deps.ledger },
+        store: { records: checkedRecords(deps.records), ledger: checkedLedger(deps.ledger) },
         models: modelsOf(deps),
         environment: { clock: { now: (): Instant => at.now }, repos: deps.repos, log: deps.log, mint: deps.mint },
         settings: settingsOf(deps),
@@ -131,12 +130,12 @@ export async function replayFile(deps: TypedReplayDeps, file: SessionPath, label
     const engine = engineOf(deps, file, windows, at);
     const lane = laneFrom({ paneId: 'replay:p1', tabId: label, workspaceId: 'replay', agent: deps.reader.agent, session: 'replay' });
     await runWindows(engine, lane, windows, at, label);
-    const tasks = deps.records.readRecap(label)?.tasks ?? [];
+    const tasks = knownOr(deps.records.readRecap(label), null)?.tasks ?? [];
     return {
         windows: must(parseCount(windows.length)),
         turns: must(parseCount(turns.length)),
-        facts: tasks.flatMap((task) => deps.ledger.allOf({ tab: label, key: task.id })),
-        costUsd: must(parseUsd(deps.records.readRecap(label)?.costUsd ?? 0)),
+        facts: tasks.flatMap((task) => knownOr(deps.ledger.allOf({ tab: label, key: task.id }), [])),
+        costUsd: must(parseUsd(knownOr(deps.records.readRecap(label), null)?.costUsd ?? 0)),
     };
 }
 

@@ -1,6 +1,6 @@
+import { knownOr, type GuardedLedger, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import type { Boundaries } from '#src/ports/boundaries.ts';
-import type { Ledger } from '#src/ports/ledger.ts';
-import type { LaneCursor, RecapRecords } from '#src/ports/recap-records.ts';
+import type { LaneCursor } from '#src/ports/recap-records.ts';
 import type { Requests } from '#src/ports/requests.ts';
 import type { SessionSource } from '#src/ports/session-source.ts';
 import type { Stories } from '#src/ports/stories.ts';
@@ -19,8 +19,8 @@ const LABEL_CHARS = 20;
 const NO_DECISIONS: DecisionCounts = { decisions: must(parseCount(0)), compacted: must(parseCount(0)), waited: must(parseCount(0)) };
 
 export interface ExpandedDeps {
-    readonly records: RecapRecords;
-    readonly ledger: Ledger;
+    readonly records: GuardedRecapRecords;
+    readonly ledger: GuardedLedger;
     readonly stories: Stories;
     readonly session: SessionSource;
     readonly autocompact?: Pick<AutocompactRecords, 'countsFor'>;
@@ -55,7 +55,7 @@ export class ExpandedModel {
     }
 
     private taskOf(tab: string, task: TaskRef, now: number): FoundTask {
-        const facts = this.deps.ledger.allOf({ tab, key: task.id });
+        const facts = knownOr(this.deps.ledger.allOf({ tab, key: task.id }), []);
         const story = this.deps.stories.read(tab, task.id);
         const change = newestChange(facts);
         const stale = change !== null && (story === null || story.at < change);
@@ -70,7 +70,7 @@ export class ExpandedModel {
     }
 
     read(tab: string, view: TabView | null, now: number): ExpandedData {
-        const recap = this.deps.records.readRecap(tab);
+        const recap = knownOr(this.deps.records.readRecap(tab), null);
         const found = (recap?.tasks ?? []).map((task) => this.taskOf(tab, task, now));
         if (found.some((one) => one.asks)) {
             this.deps.requests.requestCurate(tab);

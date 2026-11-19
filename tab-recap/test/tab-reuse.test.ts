@@ -1,3 +1,4 @@
+import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Store } from '#src/adapters/db/database.ts';
@@ -22,7 +23,7 @@ import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
 import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
-import { memoryStore } from '#test/db/support.ts';
+import { memoryStore, storeRead } from '#test/db/support.ts';
 import { closedDaysOf } from '#test/fakes/closed-days.ts';
 import { silentClosures } from '#test/fakes/silent-closures.ts';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
@@ -52,7 +53,7 @@ async function recapOnce(store: Store, lane: Lane, at: number, ops: readonly Rec
         write: (request: RecapRequest): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: JSON.stringify({ ops }), costUsd: 0 }); },
     };
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ claude: transcripts }),
-        records: store.records, ledger: store.ledger, clock: { now: (): ReturnType<typeof instant> => instant(at) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined,
+        records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(at) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined,
     });
     await job.refreshNow(lane.tab, [lane]);
     return requests;
@@ -90,7 +91,7 @@ async function dispatched(store: Store, intents: readonly Intent[]): Promise<rea
 
 const OLD_FACTS = [add('goal', 'old payments work', 'migrate victoria'), add('now', 'migrating victoria', 'migrate victoria')];
 const NEW_FACTS = [add('goal', 'new docs work', 'write the docs')];
-const texts = (store: Store, tab: string, key: string): readonly string[] => store.ledger.allOf({ tab, key }).map((fact) => `${fact.state}:${fact.text}`);
+const texts = (store: Store, tab: string, key: string): readonly string[] => storeRead(store.ledger.allOf({ tab, key })).map((fact) => `${fact.state}:${fact.text}`);
 
 test('tab reuse: a tab id herdr hands to a new tab after its workspace closed starts from an empty ledger, and the old facts are kept apart', async () => {
     const store = memoryStore();
@@ -104,7 +105,7 @@ test('tab reuse: a tab id herdr hands to a new tab after its workspace closed st
     assert.equal(requests.length, 1);
     assert.deepEqual(requests[0]?.input.ledgers.flatMap((ledger) => ledger.facts), [], 'the writer is handed no fact of the old tab');
     assert.ok(!JSON.stringify(requests[0]).includes('old payments work'), 'no old fact text reaches the writer');
-    assert.deepEqual(store.records.readRecap(tab)?.tasks.map((task) => [task.id, task.sections?.goal]), [['t2', 'new docs work']], 'the new tab is a task of its own');
+    assert.deepEqual(storeRead(store.records.readRecap(tab))?.tasks.map((task) => [task.id, task.sections?.goal]), [['t2', 'new docs work']], 'the new tab is a task of its own');
     assert.deepEqual(texts(store, tab, 't1'), ['open:old payments work', 'open:migrating victoria'], 'the old facts are kept, nothing is deleted');
     assert.deepEqual(store.ledger.historyOf(tab, 'w2G:p1').map((fact) => fact.text), ['new docs work'], 'a compaction brief of the new tab reads only its own facts');
     const closures = store.closedLanes.listOf(tabId(tab), instant(4000));
@@ -120,7 +121,7 @@ test('tab reuse: an agent restarted in a tab that is still open keeps its ledger
     assert.deepEqual(await dispatched(store, last), []);
     const requests = await recapOnce(store, laneFrom(seenLane('w1:p1', tab, 'new')), 3000, NEW_FACTS);
     assert.deepEqual(requests[0]?.input.ledgers.flatMap((ledger) => ledger.facts.map((fact) => fact.text)), ['old payments work', 'migrating victoria'], 'the writer continues the old ledger');
-    assert.deepEqual(store.records.readRecap(tab)?.tasks.map((task) => task.id), ['t1']);
+    assert.deepEqual(storeRead(store.records.readRecap(tab))?.tasks.map((task) => task.id), ['t1']);
 });
 
 test('tab reuse: a retirement is written once, and a tab with nothing written is left alone', async () => {

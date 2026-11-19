@@ -1,3 +1,4 @@
+import { storeRead } from '#test/db/support.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -23,7 +24,7 @@ const answerPath = (id: string): string => `/v1/tabs/${encodeURIComponent(TAB)}/
 async function seeded(): Promise<{ world: World; need: string; other: string; now: string }> {
     const world = await startWorld();
     seedRun(world, Date.now() - 60_000, [add('needs', 'Which database do we use?'), add('needs', 'Who approves the release?'), add('now', 'Wiring the form')]);
-    const facts = world.store.ledger.allOf(TASK);
+    const facts = storeRead(world.store.ledger.allOf(TASK));
     const idOf = (text: string): string => facts.find((fact) => fact.text === text)?.id ?? '';
     return { world, need: idOf('Which database do we use?'), other: idOf('Who approves the release?'), now: idOf('Wiring the form') };
 }
@@ -51,9 +52,9 @@ test('answering a need closes it in the ledger, republishes the tab and the inde
         assert.equal(reply.status, 200);
         assert.deepEqual(reply.body, { answered: true, id: listed[0] });
         assert.deepEqual(apiProblems(reply.body, 'answered'), []);
-        const closed = world.store.ledger.allOf(TASK).find((fact) => fact.id === listed[0]);
+        const closed = storeRead(world.store.ledger.allOf(TASK)).find((fact) => fact.id === listed[0]);
         assert.deepEqual([closed?.state, closed?.closedWhy, typeof closed?.closedAt], ['closed', 'answered', 'number']);
-        assert.equal(world.store.ledger.openOf(TASK).filter((fact) => fact.section === 'needs').length, 1);
+        assert.equal(storeRead(world.store.ledger.openOf(TASK)).filter((fact) => fact.section === 'needs').length, 1);
         await assertRepublished(world, listed, seq);
     } finally { world.close(); }
 });
@@ -61,7 +62,7 @@ test('answering a need closes it in the ledger, republishes the tab and the inde
 test('a fact that is not a need, one already closed, one that does not exist, and a tab that is not published are refused with nothing written', async () => {
     const { world, need, now } = await seeded();
     try {
-        const rows = (): string => JSON.stringify(world.store.ledger.allOf(TASK));
+        const rows = (): string => JSON.stringify(storeRead(world.store.ledger.allOf(TASK)));
         const before = rows();
         const notNeed = await api(world, 'POST', answerPath(now));
         assert.deepEqual([notNeed.status, notNeed.body], [409, { error: 'not-a-need' }]);
@@ -83,7 +84,7 @@ test('answering needs the bearer token and a POST', async () => {
         assert.equal((await api(world, 'POST', answerPath(need), null)).status, 401);
         assert.equal((await api(world, 'POST', answerPath(need), 'wrong')).status, 401);
         assert.equal((await api(world, 'GET', answerPath(need))).status, 405);
-        assert.equal(world.store.ledger.openOf(TASK).filter((fact) => fact.section === 'needs').length, 2);
+        assert.equal(storeRead(world.store.ledger.openOf(TASK)).filter((fact) => fact.section === 'needs').length, 2);
     } finally { world.close(); }
 });
 
@@ -93,7 +94,7 @@ test('two answers at once close the need once: the second is refused as not open
         const both = await Promise.all([api(world, 'POST', answerPath(need)), api(world, 'POST', answerPath(need))]);
         assert.deepEqual(both.map((reply) => reply.status).toSorted((a, b) => a - b), [200, 409]);
         assert.deepEqual(both.find((reply) => reply.status === 409)?.body, { error: 'not-open' });
-        assert.equal(world.store.ledger.allOf(TASK).filter((fact) => fact.closedWhy === 'answered').length, 1);
+        assert.equal(storeRead(world.store.ledger.allOf(TASK)).filter((fact) => fact.closedWhy === 'answered').length, 1);
     } finally { world.close(); }
 });
 
@@ -105,10 +106,10 @@ test('the close is pure: the only row that changes is the fact itself, and no st
         world.store.db.prepare('UPDATE task SET story_text = ?, story_at = ? WHERE tab_id = ?').run('the story so far', 1_000, TAB);
         const others = (world.store.db.prepare("SELECT name FROM sqlite_schema WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name <> 'fact'").all() as { name: string }[]).map((row) => row.name);
         const before = others.map((table) => dump(world, table));
-        const untouched = world.store.ledger.allOf(TASK).filter((fact) => fact.id !== need);
+        const untouched = storeRead(world.store.ledger.allOf(TASK)).filter((fact) => fact.id !== need);
         assert.equal((await api(world, 'POST', answerPath(need))).status, 200);
         assert.deepEqual(others.map((table) => dump(world, table)), before);
-        assert.deepEqual(world.store.ledger.allOf(TASK).filter((fact) => fact.id !== need), untouched);
+        assert.deepEqual(storeRead(world.store.ledger.allOf(TASK)).filter((fact) => fact.id !== need), untouched);
         assert.deepEqual(world.store.stories.read(TAB, 't1'), { text: 'the story so far', at: 1_000 });
     } finally { world.close(); }
 });
@@ -117,10 +118,10 @@ test('a need of another tab cannot be closed through this tab, even when that ta
     const { world } = await seeded();
     try {
         seedOther(world, [add('needs', 'Foreign question?')]);
-        const foreign = world.store.ledger.allOf({ tab: OTHER_TAB, key: 't9' })[0]?.id ?? '';
+        const foreign = storeRead(world.store.ledger.allOf({ tab: OTHER_TAB, key: 't9' }))[0]?.id ?? '';
         const reply = await api(world, 'POST', answerPath(foreign));
         assert.deepEqual([reply.status, reply.body], [404, { error: 'unknown-need' }]);
-        assert.equal(world.store.ledger.openOf({ tab: OTHER_TAB, key: 't9' }).length, 1);
+        assert.equal(storeRead(world.store.ledger.openOf({ tab: OTHER_TAB, key: 't9' })).length, 1);
     } finally { world.close(); }
 });
 
@@ -128,7 +129,7 @@ test('the terminal screen and the expanded view read the same ledger: the need i
     const { world, need } = await seeded();
     try {
         assert.equal((await api(world, 'POST', answerPath(need))).status, 200);
-        const recap = world.store.records.readRecap(TAB);
+        const recap = storeRead(world.store.records.readRecap(TAB));
         assert.deepEqual(recap?.tasks[0]?.sections?.needs, ['Who approves the release?']);
         const expanded = new ExpandedModel({ records: world.store.records, ledger: world.store.ledger, stories: world.store.stories, session: world.store.session, boundaries: world.store.boundaries, requests: { requestCurate: (): void => undefined }, edits: (): [] => [] });
         const task = expanded.read(TAB, world.store.views.readTab(TAB), Date.now()).tasks[0];
@@ -140,12 +141,12 @@ test('a curator holding an older picture cannot undo the hand close: its update 
     const { world, need } = await seeded();
     try {
         assert.equal((await api(world, 'POST', answerPath(need))).status, 200);
-        const closed = world.store.ledger.allOf(TASK).find((fact) => fact.id === need);
+        const closed = storeRead(world.store.ledger.allOf(TASK)).find((fact) => fact.id === need);
         const id = closed?.id;
         assert.ok(id !== undefined);
         const run = { task: TASK, at: Date.now(), language: 'en' };
         const applied = world.store.stories.keep(run, { story: null, merges: [{ op: 'close', id, why: 'answered' }], reconciled: [{ op: 'update', id, text: 'Which database do we use now?', why: null, anchor: null }] });
         assert.deepEqual(applied.refused.map((turned) => turned.reason), ['closed', 'closed']);
-        assert.deepEqual(world.store.ledger.allOf(TASK).find((fact) => fact.id === need), closed);
+        assert.deepEqual(storeRead(world.store.ledger.allOf(TASK)).find((fact) => fact.id === need), closed);
     } finally { world.close(); }
 });

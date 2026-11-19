@@ -1,3 +1,4 @@
+import { storeRead } from '#test/db/support.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readdirSync, rmSync } from 'node:fs';
@@ -21,7 +22,7 @@ test('every historical shape imports and reads back equal to what the legacy rea
         assert.deepEqual(report.differences, []);
         assert.deepEqual([report.recaps, report.views, report.requests, report.visibility, report.hidden], [6, 3, 1, 2, true], 'the empty recap file is not a recap');
         for (const recap of legacy.recaps().map(canonicalRecap).filter(holdsAnything)) {
-            assert.deepEqual(recapDifferences(recap, store.records.readRecap(recap.tab)), [], recap.tab);
+            assert.deepEqual(recapDifferences(recap, storeRead(store.records.readRecap(recap.tab))), [], recap.tab);
         }
         for (const view of legacy.views()) {
             assert.deepEqual(viewDifferences({ ...view, column: view.column ?? null }, store.views.readTab(view.tab)), [], view.tab);
@@ -40,11 +41,11 @@ test('what the import makes of a few shapes: markdown-only tasks keep their Mark
         const store = memoryStore();
         loadAndCompare(store, new LegacyFiles(dir), 1);
         assert.equal((store.db.prepare("SELECT legacy_markdown FROM run_task rt JOIN task t ON t.id = rt.task_id WHERE t.tab_id = 'w1:t2'").get() as { legacy_markdown: string }).legacy_markdown, '## Goal\n- from the old days');
-        assert.deepEqual(store.records.readRecap('w1:t5')?.tasks, []);
-        assert.deepEqual([store.records.readRecap('w1:t5')?.error, store.records.readRecap('w1:t5')?.costUsd, store.records.readRecap('w1:t5')?.at], ['the writer failed', 0.5, null]);
-        assert.equal(store.records.readRecap('w1:t6')?.running, true);
+        assert.deepEqual(storeRead(store.records.readRecap('w1:t5'))?.tasks, []);
+        assert.deepEqual([storeRead(store.records.readRecap('w1:t5'))?.error, storeRead(store.records.readRecap('w1:t5'))?.costUsd, storeRead(store.records.readRecap('w1:t5'))?.at], ['the writer failed', 0.5, null]);
+        assert.equal(storeRead(store.records.readRecap('w1:t6'))?.running, true);
         assert.equal((store.db.prepare("SELECT DISTINCT cause FROM run").all() as { cause: string }[]).map((row) => row.cause).join(), 'imported');
-        assert.equal(store.records.readRecap('w1:t4')?.tasks.at(1)?.markdown.startsWith('## Objetivo'), true);
+        assert.equal(storeRead(store.records.readRecap('w1:t4'))?.tasks.at(1)?.markdown.startsWith('## Objetivo'), true);
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }

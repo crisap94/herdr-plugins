@@ -1,3 +1,4 @@
+import { storeRead } from '#test/db/support.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
@@ -38,8 +39,8 @@ test('print reads a database not yet upgraded to the handoff tables, and writes 
         const before = rowCounts(path);
 
         const print = openPrintStore(must(parseFsPath(path)), closedLaneDaysOf('14'));
-        assert.equal(print.records.readRecap('w1:t1')?.tab, 'w1:t1', 'the recap reads');
-        assert.deepEqual(print.records.lastRunOf('w1:t1'), { at, cause: 'focused' });
+        assert.equal(storeRead(print.records.readRecap('w1:t1'))?.tab, 'w1:t1', 'the recap reads');
+        assert.deepEqual(storeRead(print.records.lastRunOf('w1:t1')), { at, cause: 'focused' });
         assert.equal(print.views.tabOf('w1:p1'), 'w1:t1');
         assert.equal(print.views.readTab('w1:t1')?.lanes.length, 1);
         assert.throws(() => { print.views.writeTab({ tab: 'w1:t1', column: null, at: 2, lanes: [] }); }, /readonly/i, 'the handle refuses a write');

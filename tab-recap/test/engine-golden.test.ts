@@ -1,3 +1,4 @@
+import { storeRead } from '#test/db/support.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -46,9 +47,9 @@ function ledgerOf(store: Store): string {
             section(`run ${at + 1} state items`, json(store.inputs.itemsOf(id, 'state'))),
         ].join('');
     });
-    const recap = store.records.readRecap(LABEL);
-    const facts = (recap?.tasks ?? []).flatMap((task) => store.ledger.allOf({ tab: LABEL, key: task.id }));
-    return [...parts, section('recap', json(recap)), section('last run', json(store.records.lastRunOf(LABEL))), section('facts', json(facts))].join('');
+    const recap = storeRead(store.records.readRecap(LABEL));
+    const facts = (recap?.tasks ?? []).flatMap((task) => storeRead(store.ledger.allOf({ tab: LABEL, key: task.id })));
+    return [...parts, section('recap', json(recap)), section('last run', json(storeRead(store.records.lastRunOf(LABEL)))), section('facts', json(facts))].join('');
 }
 
 async function golden(pipeline: Pipeline | undefined): Promise<string> {

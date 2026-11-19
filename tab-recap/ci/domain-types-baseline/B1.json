@@ -1,4 +1,8 @@
 {
+  "src/ports/guarded-reads.ts": {
+    "parameter": 1,
+    "container": 9
+  },
   "src/ports/legacy.ts": {
     "legacy": 96
   },

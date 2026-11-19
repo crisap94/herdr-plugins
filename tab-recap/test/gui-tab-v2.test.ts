@@ -14,7 +14,7 @@ import { parseNonEmptyText, parseText } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
-import { cursor, memoryStore, must as present, seed } from '#test/db/support.ts';
+import { cursor, memoryStore, must as present, seed, storeRead } from '#test/db/support.ts';
 import { fact } from '#test/fakes/fact-at.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { NOW } from '#test/fakes/expanded-fixture.ts';
@@ -38,7 +38,7 @@ function fixture(): { document: GuiTab; expanded: ReturnType<ExpandedModel['read
         .seed(fact('x1', 'done', 'Shipped the schema', NOW - 10 * MIN));
     const deps: ExpandedDeps = { records: store.records, ledger, stories: store.stories, session: store.session, boundaries: store.boundaries, requests: { requestCurate: (): void => undefined }, edits: () => [] };
     const expanded = new ExpandedModel(deps).read('w1:t1', view, NOW);
-    const recap = present(store.records.readRecap('w1:t1'));
+    const recap = present(storeRead(store.records.readRecap('w1:t1')));
     const document = guiTabOf(recap, view, instant(NOW), { ...BLANK_READS, expanded, zone: must(parseText('UTC')) });
     return { document, expanded };
 }
