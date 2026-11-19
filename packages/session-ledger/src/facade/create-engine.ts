@@ -10,10 +10,12 @@ import { compacted } from './compacted.ts';
 import { curate } from './curate.ts';
 import { createFollowSet } from './follow-set.ts';
 import { followedBy, type FollowedBy } from './followed-by.ts';
-import { legacyPlugsOf, type FacadePlugs } from './plugs.ts';
+import { legacyPlugsOf, type FacadePlugs, type RestoreHooks } from './plugs.ts';
 import { sessionStarted, type Retired, type Started } from './session-started.ts';
 import type { Advance, LaneCursor } from '#src/ports/recap-records.ts';
 import { laneOf, tabOf, writtenOf } from './translate.ts';
+
+const NO_RESTORE: RestoreHooks = { bytes: () => undefined, render: () => undefined };
 
 const emit = (plugs: FacadePlugs, make: () => LedgerEvent | null): void => {
     try {
@@ -141,7 +143,7 @@ export function engineOver(plugs: FacadePlugs): Engine {
             const tab = tabOf(scope);
             return tab === null ? Promise.resolve() : legacy.refresh(tab, set.lanesOf(scope));
         },
-        compacted: (scope) => compacted(set, legacy, scope),
+        compacted: (scope, key) => compacted(set, legacy, plugs.restore ?? NO_RESTORE, scope, key),
         history: (scope: ScopeId, key: SessionKey): readonly HistoryFact[] => {
             const tab = tabOf(scope);
             const lane = set.find(scope, key);

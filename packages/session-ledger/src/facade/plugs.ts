@@ -1,5 +1,5 @@
 import type * as sl from './contract-names.ts';
-import { parseHarnessKind, parseScopeId, parseSessionKey } from '#src/contract/ids.ts';
+import { parseHarnessKind, parseScopeId, parseSessionKey, type RestoreText } from '#src/contract/ids.ts';
 import { must } from '#src/protocol/result.ts';
 import { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { CheckedLedger, Applied } from '#src/ports/ledger.ts';
@@ -17,11 +17,17 @@ import { parseDuration, parseInstant, type Duration } from '#src/recap/domain/ti
 import { parseFailureCause, type FailureCause } from '#src/recap/domain/failure-cause.ts';
 import { FULL_WRITER_VIEW, keepNewestOf, nextHoursOf, prunedWriterView, type HiddenCounts, type PositiveCount, type WriterView } from '#src/recap/domain/writer-view.ts';
 import type { Debounce } from '#src/recap/domain/debounce.ts';
-import type { EnginePlugs as LegacyPlugs } from '#src/recap/application/engine.ts';
+import type { EnginePlugs as LegacyPlugs, RestoreFacts as LegacyRestoreFacts } from '#src/recap/application/engine.ts';
 import { followedOf } from './translate.ts';
+
+export interface RestoreHooks {
+    readonly bytes: () => number | undefined;
+    readonly render: (facts: LegacyRestoreFacts) => RestoreText | undefined;
+}
 
 export interface FacadePlugs extends Omit<LegacyPlugs, 'ran'> {
     on?(event: sl.LedgerEvent): void;
+    restore?: RestoreHooks;
 }
 
 const isLedgerFactId = (id: FactId): id is FactId & sl.FactId => id !== '';
@@ -252,6 +258,13 @@ export const legacyPlugsOf = (plugs: sl.EnginePlugs): FacadePlugs => {
             ...(settings.keepInput === undefined ? {} : { keepInput: () => settings.keepInput?.() === true }),
             ...(settings.pipeline === undefined ? {} : { pipeline: () => settings.pipeline?.() ?? 'one' }),
             ...(settings.debounce === undefined ? {} : { debounce: () => pluginDebounce(settings.debounce?.() ?? { kind: 'off' }) }),
+        },
+        restore: {
+            bytes: () => settings.restoreBytes?.(),
+            render: (facts: LegacyRestoreFacts) => settings.restoreText?.({
+                open: facts.open.map(ledgerFact),
+                closed: facts.closed.map(ledgerFact),
+            }),
         },
         ...(plugs.on === undefined
             ? {}

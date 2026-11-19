@@ -6,6 +6,7 @@ import type { Fact } from '#src/recap/domain/fact.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { CLOSED_SHOWN_MS } from './ledger-input.ts';
 import { RecapJob, type RecapJobDeps } from './recap-job.ts';
+import { saying } from '#src/ports/unknowable.ts';
 
 export type ScopeId = TabId;
 export type FollowedSession = Lane;
@@ -42,10 +43,14 @@ export interface Engine {
 
 const heldBy = (session: FollowedSession): PaneId => session.pane;
 
-function restoreFactsOf(store: EngineStore, at: Instant, scope: ScopeId, session: FollowedSession): RestoreFacts {
+function restoreFactsOf(store: EngineStore, environment: EngineEnvironment, at: Instant, scope: ScopeId, session: FollowedSession): RestoreFacts {
     const id = String(scope);
     const recap = store.records.readRecap(id);
-    const tasks = (recap === null || 'kind' in recap ? [] : recap.tasks).filter((task) => task.lanes.includes(String(heldBy(session))));
+    if (recap !== null && 'kind' in recap) {
+        environment.log(`restore ${id}: skipped, ${saying(recap.why)}`);
+        return { at, lastRun: null, open: [], closed: [] };
+    }
+    const tasks = (recap === null ? [] : recap.tasks).filter((task) => task.lanes.includes(String(heldBy(session))));
     const facts = tasks.map((task) => {
         const owned = { tab: id, key: task.id };
         const open = store.ledger.openOf(owned);
@@ -64,6 +69,6 @@ export function createEngine(plugs: EnginePlugs): Engine {
         sessionStarted: (): void => undefined,
         compacted: (scope, sessions): Promise<void> => job.refreshNow(scope, sessions),
         history: (scope, session): readonly HistoryFact[] => store.ledger.historyOf(String(scope), String(heldBy(session))),
-        restore: (scope, session): RestoreFacts => restoreFactsOf(store, environment.clock.now(), scope, session),
+        restore: (scope, session): RestoreFacts => restoreFactsOf(store, environment, environment.clock.now(), scope, session),
     };
 }
