@@ -8,7 +8,7 @@ export interface JsonObject {
 export type Json = JsonObject;
 
 export function parseJsonObject(input: unknown): Result<JsonObject, ParseFailure> {
-    return typeof input === 'object' && input !== null ? ok<JsonObject>({ ...input }) : err<ParseFailure>({ kind: 'not-a-row' });
+    return typeof input === 'object' && input !== null && !Array.isArray(input) ? ok<JsonObject>({ ...input }) : err<ParseFailure>({ kind: 'not-a-row' });
 }
 
 export { parseJson } from './legacy.ts';

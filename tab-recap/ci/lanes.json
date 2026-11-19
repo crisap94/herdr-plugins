@@ -833,6 +833,7 @@
       "test/git-worktree-status.test.ts",
       "test/gui/brief.test.ts",
       "test/hc-sessions.test.ts",
+      "test/herdr-json-object.test.ts",
       "test/herdr-subscription-isolation.test.ts",
       "test/jev-decider.test.ts",
       "test/lane-repo.test.ts",
