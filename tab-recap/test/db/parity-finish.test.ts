@@ -108,7 +108,7 @@ describe('parity: finish (boundaries, reads, retention, session source, stories,
 
     test('retention: expired lists the tabs past the cutoff like the raw query', () => {
         withParity(seedAll, (parity) => {
-            const produced = new RetentionRepository(parity.raw).expired(30, []).map((id) => ({ id }));
+            const produced = new RetentionRepository(parity.raw).expired(instant(30), []).map((id) => ({ id }));
             expectSameRows(parity, { sql: EXPIRED, params: [30] }, produced);
         });
     });

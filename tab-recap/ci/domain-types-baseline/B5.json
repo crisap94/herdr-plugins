@@ -38,7 +38,7 @@
     "assertion": 5
   },
   "src/adapters/db/legacy.ts": {
-    "legacy": 47
+    "legacy": 52
   },
   "src/adapters/db/recap-read.ts": {
     "parameter": 3,
@@ -48,16 +48,6 @@
   },
   "src/adapters/db/recap-records.ts": {
     "assertion": 2
-  },
-  "src/adapters/db/requests.ts": {
-    "parameter": 2,
-    "return": 7,
-    "container": 14,
-    "property": 2
-  },
-  "src/adapters/db/retention.ts": {
-    "parameter": 1,
-    "return": 1
   },
   "src/adapters/db/rows/legacy.ts": {
     "legacy": 33

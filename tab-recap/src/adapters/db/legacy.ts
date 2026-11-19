@@ -25,6 +25,7 @@ import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { duration, instant, type Instant } from '#src/recap/domain/time.ts';
 import type { Usd } from '#src/recap/domain/usd.ts';
+import type { AnswerRow, CompactRequest, CompactionQueue, HandoffRequestRow, NewHandoffRequest, Requests, Visibility, VisibilityRequest } from '#src/ports/requests.ts';
 import { AskBookRepository } from './ask-ledger.ts';
 import { DecisionBriefsRepository } from './autocompact-briefs.ts';
 import { DecisionLedgerRepository } from './autocompact-records.ts';
@@ -36,6 +37,7 @@ import { connectReadOnly } from './connection.ts';
 import { openStoreAt, storeOver, type Store, type StoreSettings } from './database.ts';
 import { HandoffAnswerRepository } from './handoff-answers.ts';
 import type { NewerDatabase } from './open.ts';
+import { RequestsStore } from './requests.ts';
 import { RunInputsRepository } from './run-inputs.ts';
 import { VerdictsRepository } from './verdicts.ts';
 
@@ -226,4 +228,77 @@ export function factsOfTab(path: string, tab: string): readonly Fact[] | null {
     const file = parseFsPath(path);
     const id = parseTabId(tab);
     return file.kind === 'err' || id.kind === 'err' ? null : factsOfTabAt(file.value, id.value);
+}
+
+export class RequestsRepository implements Requests, CompactionQueue {
+    private readonly store: RequestsStore;
+
+    constructor(db: Database, now: () => number = Date.now) {
+        this.store = new RequestsStore(db, () => instant(now()));
+    }
+
+    compactQueued(tab: TabId, pane: PaneId): boolean {
+        return this.store.compactQueued(tab, pane) === 'queued';
+    }
+
+    request(tab: string): void {
+        this.store.request(tabId(tab));
+    }
+
+    requestVisibility(request: VisibilityRequest): void {
+        let visibility: Visibility = request.hidden ? 'hidden' : 'shown';
+        if (request.hidden === 'toggle') visibility = 'toggle';
+        this.store.requestVisibility({ target: paneId(request.target), visibility });
+    }
+
+    requestCompact(request: CompactRequest): void {
+        this.store.requestCompact({
+            tab: tabId(request.tab), pane: request.pane === null ? null : paneId(request.pane), note: request.note === null ? null : must(parseText(request.note)),
+            ...(request.origin === undefined ? {} : { origin: request.origin }), ...(request.answer === undefined ? {} : { answer: must(parseText(request.answer)) }),
+        });
+    }
+
+    requestCurate(tab: string): void {
+        this.store.requestCurate(tabId(tab));
+    }
+
+    requestHandoff(request: NewHandoffRequest): HandoffId {
+        return this.store.requestHandoff({
+            tab: request.tab, pane: request.pane, toPane: request.toPane, note: request.note === null ? null : must(parseText(request.note)),
+            refresh: request.refreshFirst ? 'refresh-first' : 'as-is', source: request.source, ...(request.answer === undefined ? {} : { answer: request.answer }),
+        });
+    }
+
+    withdrawHandoff(id: HandoffId): boolean {
+        return this.store.withdrawHandoff(id) === 'withdrawn';
+    }
+
+    takeHandoffs(): readonly HandoffRequestRow[] {
+        const rows: HandoffRequestRow[] = [];
+        for (const record of this.store.takeHandoffs()) rows.push({
+            id: record.id, at: record.at, tab: record.tab, pane: record.pane, toPane: record.toPane, refreshFirst: record.refresh === 'refresh-first',
+            note: record.note, source: record.source, ...(record.answer === undefined ? {} : { answer: record.answer }),
+        });
+        return rows;
+    }
+
+    takeRequests(): readonly TabId[] {
+        return this.store.takeRequests();
+    }
+
+    takeVisibility(): readonly VisibilityRequest[] {
+        return this.store.takeVisibility().map((ask) => ({ target: ask.target, hidden: ask.visibility === 'toggle' ? 'toggle' : ask.visibility === 'hidden' }));
+    }
+
+    takeCompactions(): readonly CompactRequest[] {
+        return this.store.takeCompactions();
+    }
+
+    takeCurations(): readonly TabId[] {
+        return this.store.takeCurations();
+    }
+
+    takeAnswered(): readonly AnswerRow[] {
+        return this.store.takeAnswered();
+    }
 }

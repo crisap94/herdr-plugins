@@ -1,9 +1,10 @@
 import type { Database } from 'bun:sqlite';
 import { and, asc, count, eq, gte, isNull, lt, max, sql } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
-import type { Removed, Retention, Retirement, TabRetirement } from '#src/ports/retention.ts';
+import { must } from '#src/protocol/result.ts';
+import type { RemovedCounts, RetentionPort, Retirement, TabRetirement } from '#src/ports/retention.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
-import type { Count } from '#src/recap/domain/count.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { writeTx } from './connection.ts';
@@ -18,7 +19,7 @@ export const retiredFloor = (tab: TabId): SQL<Count> => sql<Count>`COALESCE((SEL
 
 export const retiredSince = (tab: TabId): SQL<Instant> => sql<Instant>`COALESCE((SELECT MAX(c.started_at) FROM chapter c WHERE c.tab_id = ${tab} AND ${sql.raw(RETIRED)}), -1)`;
 
-export class RetentionRepository implements Retention, TabRetirement {
+export class RetentionRepository implements RetentionPort, TabRetirement {
     private readonly db: Database;
     private readonly orm: Orm;
     private readonly hasFacts: boolean;
@@ -29,7 +30,7 @@ export class RetentionRepository implements Retention, TabRetirement {
         this.hasFacts = one(db.prepare("SELECT name FROM sqlite_schema WHERE type = 'table' AND name = 'fact'")) !== null;
     }
 
-    expired(cutoff: number, protectedTabs: readonly TabId[]): readonly TabId[] {
+    expired(cutoff: Instant, protectedTabs: readonly TabId[]): readonly TabId[] {
         const kept = new Set<string>(protectedTabs);
         return this.orm.select({ id: tabs.id }).from(tabs)
             .where(and(isNull(tabs.columnPane), lt(sql`max(${tabs.lastSeen}, coalesce(${tabs.viewAt}, 0))`, cutoff)))
@@ -38,7 +39,7 @@ export class RetentionRepository implements Retention, TabRetirement {
             .filter((tab) => !kept.has(tab));
     }
 
-    remove(tab: TabId): Removed {
+    remove(tab: TabId): RemovedCounts {
         const id = tabId(tab);
         return writeTx(this.db, () => {
             const removed = this.sizeOf(id);
@@ -61,17 +62,17 @@ export class RetentionRepository implements Retention, TabRetirement {
         });
     }
 
-    private sizeOf(id: TabId): Removed {
+    private sizeOf(id: TabId): RemovedCounts {
         return {
-            runs: this.orm.select({ n: count() }).from(run).innerJoin(chapter, eq(chapter.id, run.chapterId)).where(eq(chapter.tabId, id)).get()?.n ?? 0,
-            chapters: this.orm.select({ n: count() }).from(chapter).where(eq(chapter.tabId, id)).get()?.n ?? 0,
-            boundaries: this.orm.select({ n: count() }).from(boundary).innerJoin(chapter, eq(chapter.id, boundary.chapterId)).where(eq(chapter.tabId, id)).get()?.n ?? 0,
-            compactions: this.orm.select({ n: count() }).from(compaction).where(eq(compaction.tabId, id)).get()?.n ?? 0,
+            runs: must(parseCount(this.orm.select({ n: count() }).from(run).innerJoin(chapter, eq(chapter.id, run.chapterId)).where(eq(chapter.tabId, id)).get()?.n ?? 0)),
+            chapters: must(parseCount(this.orm.select({ n: count() }).from(chapter).where(eq(chapter.tabId, id)).get()?.n ?? 0)),
+            boundaries: must(parseCount(this.orm.select({ n: count() }).from(boundary).innerJoin(chapter, eq(chapter.id, boundary.chapterId)).where(eq(chapter.tabId, id)).get()?.n ?? 0)),
+            compactions: must(parseCount(this.orm.select({ n: count() }).from(compaction).where(eq(compaction.tabId, id)).get()?.n ?? 0)),
             facts: this.factsOf(id),
         };
     }
 
-    private factsOf(id: TabId): number {
-        return this.hasFacts ? this.orm.select({ n: count() }).from(fact).where(eq(fact.tabId, id)).get()?.n ?? 0 : 0;
+    private factsOf(id: TabId): Count {
+        return must(parseCount(this.hasFacts ? this.orm.select({ n: count() }).from(fact).where(eq(fact.tabId, id)).get()?.n ?? 0 : 0));
     }
 }
