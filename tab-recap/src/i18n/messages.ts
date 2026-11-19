@@ -36,94 +36,94 @@ export interface GitMessages { readonly unpushed: (count: Count) => Text; readon
 
 export interface HintMessages { readonly column: readonly Text[]; readonly modal: readonly Text[] }
 
-export interface ToggleChoices { readonly on: string; readonly off: string }
+export interface ToggleChoices { readonly on: Text; readonly off: Text }
 
-export interface LegendMessages { readonly current: string; readonly available: string; readonly missing: string }
+export interface LegendMessages { readonly current: Text; readonly available: Text; readonly missing: Text }
 
-export interface UiChoicesMessages { readonly auto: string; readonly en: string; readonly es: string }
+export interface UiChoicesMessages { readonly auto: Text; readonly en: Text; readonly es: Text }
 
-export interface EffortChoicesMessages { readonly low: string; readonly medium: string; readonly high: string; readonly default: string }
+export interface EffortChoicesMessages { readonly low: Text; readonly medium: Text; readonly high: Text; readonly default: Text }
 
 export interface CompactNoteChoicesMessages {
-    readonly ask: string;
-    readonly skip: string;
+    readonly ask: Text;
+    readonly skip: Text;
 }
 
-export interface AutocompactChoicesMessages { readonly off: string; readonly shadow: string; readonly on: string }
+export interface AutocompactChoicesMessages { readonly off: Text; readonly shadow: Text; readonly on: Text }
 
 export interface AutocompactStyleChoicesMessages {
-    readonly gentle: string;
-    readonly balanced: string;
-    readonly eager: string;
+    readonly gentle: Text;
+    readonly balanced: Text;
+    readonly eager: Text;
 }
 
 export type LanguageNamesMessages = {
-    readonly en: string;
-    readonly es: string;
+    readonly en: Text;
+    readonly es: Text;
 };
 
 export interface SetupTestMessages {
-    readonly running: string;
-    readonly ok: (seconds: string, cost: string) => string;
-    readonly failed: (why: string) => string;
+    readonly running: Text;
+    readonly ok: (seconds: Text, cost: Text) => Text;
+    readonly failed: (why: Text) => Text;
 }
 
 export interface SetupMessages {
-    readonly title: string;
-    readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'telemetryTags' | 'compactTarget' | 'compactNote' | 'compactHint' | 'contextWindow' | 'autocompact' | 'autocompactAt' | 'autocompactStyle' | 'autocompactMissed' | 'autocompactJob' | 'herdrEvents', string>>;
-    readonly loading: string;
-    readonly auto: (order: string) => string;
-    readonly custom: string;
+    readonly title: Text;
+    readonly rows: Readonly<Record<'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'telemetryTags' | 'compactTarget' | 'compactNote' | 'compactHint' | 'contextWindow' | 'autocompact' | 'autocompactAt' | 'autocompactStyle' | 'autocompactMissed' | 'autocompactJob' | 'herdrEvents', Text>>;
+    readonly loading: Text;
+    readonly auto: (order: Text) => Text;
+    readonly custom: Text;
     readonly legend: LegendMessages;
-    readonly locked: (name: string) => string;
-    readonly modelDefault: (model: string) => string;
-    readonly modelNoAgent: string;
+    readonly locked: (name: Text) => Text;
+    readonly modelDefault: (model: Text) => Text;
+    readonly modelNoAgent: Text;
     readonly uiChoices: UiChoicesMessages;
     readonly gitNoteChoices: ToggleChoices;
     readonly herdrEventsChoices: ToggleChoices;
     readonly telemetryTagsChoices: ToggleChoices;
-    readonly herdrEventsHint: string;
+    readonly herdrEventsHint: Text;
     readonly effortChoices: EffortChoicesMessages;
-    readonly recapLanguageHint: string;
-    readonly screenAgentsHint: string;
-    readonly compactTargetHint: string;
+    readonly recapLanguageHint: Text;
+    readonly screenAgentsHint: Text;
+    readonly compactTargetHint: Text;
     readonly compactNoteChoices: CompactNoteChoicesMessages;
-    readonly compactNoteHint: string;
-    readonly compactHintHint: string;
-    readonly compactHintOff: string;
-    readonly modelsHeading: string;
-    readonly jobBy: Readonly<Record<DeciderBy, string>>;
-    readonly jobByChoices: Readonly<Record<DeciderBy, string>>;
-    readonly compactModelSame: string;
-    readonly compactJobHint: string;
+    readonly compactNoteHint: Text;
+    readonly compactHintHint: Text;
+    readonly compactHintOff: Text;
+    readonly modelsHeading: Text;
+    readonly jobBy: Readonly<Record<DeciderBy, Text>>;
+    readonly jobByChoices: Readonly<Record<DeciderBy, Text>>;
+    readonly compactModelSame: Text;
+    readonly compactJobHint: Text;
     readonly autocompactChoices: AutocompactChoicesMessages;
-    readonly autocompactHint: string;
-    readonly autocompactAtHint: string;
+    readonly autocompactHint: Text;
+    readonly autocompactAtHint: Text;
     readonly autocompactStyleChoices: AutocompactStyleChoicesMessages;
-    readonly autocompactStyleHint: string;
-    readonly autocompactMissedChoices: Readonly<Record<MissedFacts, string>>;
-    readonly autocompactMissedHint: string;
-    readonly autocompactJobHint: string;
-    readonly deciderOff: string;
-    readonly judgeJobHint: string;
-    readonly judgeOffChoice: string;
-    readonly curateJobHint: string;
-    readonly curateOff: string;
-    readonly contextWindowHint: string;
-    readonly contextWindowDetected: string;
-    readonly screenNone: string;
-    readonly screenAll: string;
+    readonly autocompactStyleHint: Text;
+    readonly autocompactMissedChoices: Readonly<Record<MissedFacts, Text>>;
+    readonly autocompactMissedHint: Text;
+    readonly autocompactJobHint: Text;
+    readonly deciderOff: Text;
+    readonly judgeJobHint: Text;
+    readonly judgeOffChoice: Text;
+    readonly curateJobHint: Text;
+    readonly curateOff: Text;
+    readonly contextWindowHint: Text;
+    readonly contextWindowDetected: Text;
+    readonly screenNone: Text;
+    readonly screenAll: Text;
     readonly languageNames: LanguageNamesMessages;
-    readonly sameAsInterface: (language: string) => string;
-    readonly editHint: string;
-    readonly unsaved: string;
-    readonly saved: string;
-    readonly nothingToSave: string;
-    readonly saveFailed: (why: string) => string;
-    readonly rewriting: string;
+    readonly sameAsInterface: (language: Text) => Text;
+    readonly editHint: Text;
+    readonly unsaved: Text;
+    readonly saved: Text;
+    readonly nothingToSave: Text;
+    readonly saveFailed: (why: Text) => Text;
+    readonly rewriting: Text;
     readonly test: SetupTestMessages;
-    readonly keys: readonly string[];
-    readonly editKeys: readonly string[];
+    readonly keys: readonly Text[];
+    readonly editKeys: readonly Text[];
 }
 
 export interface CompactionFigures {
