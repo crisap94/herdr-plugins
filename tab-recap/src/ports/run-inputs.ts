@@ -1,10 +1,13 @@
+import { err, ok, type Result } from '#src/protocol/result.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { isSection, type FactId, type RunId, type Section } from '#src/recap/domain/fact.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
-import type { FactId, RunId, Section } from '#src/recap/domain/fact.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { Count } from '#src/recap/domain/count.ts';
-import type { Presence } from '#src/recap/domain/presence.ts';
+import { parseTabId, type TabId } from '#src/recap/domain/ids.ts';
+import { parsePresence, type Presence } from '#src/recap/domain/presence.ts';
+import { parseFactId, parseRunId } from '#src/recap/domain/run-ids.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
+import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 import type { ItemsMode } from './twins/legacy.ts';
 
 export type { GateCount, ItemsMode, RunInputs, RunItem, RunQuery, StoredRun } from './twins/legacy.ts';
@@ -50,4 +53,77 @@ export interface RunInputReader {
     itemsOf(run: RunId, mode: ItemsMode): readonly RunEntry[];
     gateCounts(since: Instant | null): readonly GateTally[];
     prune(before: Instant): Count;
+}
+
+type Row = Record<string, unknown>;
+
+const isRow = (input: unknown): input is Row => typeof input === 'object' && input !== null;
+
+const BIRTHS: readonly RunBirth[] = ['born', 'carried'];
+
+export function parseRunRecord(input: unknown): Result<RunRecord, ParseFailure> {
+    if (!isRow(input)) return err({ kind: 'not-a-row' });
+    const id = parseRunId(input.id);
+    if (id.kind === 'err') return id;
+    const tab = parseTabId(input.tab);
+    if (tab.kind === 'err') return tab;
+    const at = parseInstant(input.at);
+    if (at.kind === 'err') return at;
+    const language = parseText(input.language);
+    if (language.kind === 'err') return language;
+    const backend = input.backend === null ? ok(null) : parseText(input.backend);
+    if (backend.kind === 'err') return backend;
+    const presence = parsePresence(input.input);
+    if (presence.kind === 'err') return presence;
+    const gateStats = input.gateStats === null ? ok(null) : parseGateTally({ at: input.at, stats: input.gateStats });
+    if (gateStats.kind === 'err') return gateStats;
+    return ok({
+        id: id.value,
+        tab: tab.value,
+        at: at.value,
+        language: language.value,
+        backend: backend.value,
+        input: presence.value,
+        gateStats: gateStats.value === null ? null : gateStats.value.stats,
+    });
+}
+
+export function parseRunEntry(input: unknown): Result<RunEntry, ParseFailure> {
+    if (!isRow(input)) return err({ kind: 'not-a-row' });
+    const key = parseText(input.key);
+    if (key.kind === 'err') return key;
+    const section = input.section;
+    if (!isSection(section)) return err({ kind: 'out-of-range' });
+    const text = parseText(input.text);
+    if (text.kind === 'err') return text;
+    const fact = parseFactId(input.fact);
+    if (fact.kind === 'err') return fact;
+    const birth = BIRTHS.find((option) => option === input.birth);
+    if (birth === undefined) return err({ kind: 'out-of-range' });
+    const anchor = input.anchor === null ? ok(null) : parseText(input.anchor);
+    if (anchor.kind === 'err') return anchor;
+    return ok({ key: key.value, section, text: text.value, fact: fact.value, birth, anchor: anchor.value });
+}
+
+export function parseGateTally(input: unknown): Result<GateTally, ParseFailure> {
+    if (!isRow(input)) return err({ kind: 'not-a-row' });
+    const at = parseInstant(input.at);
+    if (at.kind === 'err') return at;
+    const stats = input.stats;
+    if (!isRow(stats) || !isRow(stats.refused) || !isRow(stats.flagged)) return err({ kind: 'not-a-row' });
+    const refused: Record<string, number> = {};
+    for (const [gate, value] of Object.entries(stats.refused)) {
+        const count = parseCount(value);
+        if (count.kind === 'err') return count;
+        refused[gate] = count.value;
+    }
+    const flagged: Record<string, number> = {};
+    for (const [gate, value] of Object.entries(stats.flagged)) {
+        const count = parseCount(value);
+        if (count.kind === 'err') return count;
+        flagged[gate] = count.value;
+    }
+    const dropped = parseCount(stats.dropped);
+    if (dropped.kind === 'err') return dropped;
+    return ok({ at: at.value, stats: { refused, flagged, dropped: dropped.value } });
 }

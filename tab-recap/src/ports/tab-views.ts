@@ -1,7 +1,7 @@
 import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { ContextUse, WindowSource } from '#src/recap/domain/compaction.ts';
 import type { RestoredLane } from '#src/recap/domain/closures.ts';
-import { parseAgentKind, parsePaneId, type AgentKind, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { parseAgentKind, parsePaneId, parseTabId, type AgentKind, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
 import type { Forge } from '@stateforge-labs/session-ledger/unstable/ports/lane-repo.ts';
@@ -131,4 +131,35 @@ export function parseTabLaneRecord(input: unknown): Result<TabLaneRecord, ParseF
     const extras = extrasOf(input);
     if (extras.kind === 'err') return extras;
     return ok({ ...core.value, ...extras.value });
+}
+
+function daemonVersionOf(row: Row): Result<Text | null | undefined, ParseFailure> {
+    if (row.daemonVersion === undefined || row.daemonVersion === null) return ok(row.daemonVersion);
+    return parseText(row.daemonVersion);
+}
+
+export function parseTabViewRecord(input: unknown): Result<TabViewRecord, ParseFailure> {
+    if (!isRow(input)) return err({ kind: 'not-a-row' });
+    const tab = parseTabId(input.tab);
+    if (tab.kind === 'err') return tab;
+    const column = input.column === null ? ok(null) : parseText(input.column);
+    if (column.kind === 'err') return column;
+    if (!Array.isArray(input.lanes)) return err({ kind: 'not-a-row' });
+    const lanes: TabLaneRecord[] = [];
+    for (const lane of input.lanes) {
+        const parsed = parseTabLaneRecord(lane);
+        if (parsed.kind === 'err') return parsed;
+        lanes.push(parsed.value);
+    }
+    const at = parseInstant(input.at);
+    if (at.kind === 'err') return at;
+    const daemonVersion = daemonVersionOf(input);
+    if (daemonVersion.kind === 'err') return daemonVersion;
+    return ok({
+        tab: tab.value,
+        column: column.value,
+        lanes,
+        at: at.value,
+        ...(daemonVersion.value === undefined ? {} : { daemonVersion: daemonVersion.value }),
+    });
 }
