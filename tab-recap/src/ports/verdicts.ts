@@ -52,6 +52,22 @@ const OUTCOMES: readonly Outcome[] = ['pass', 'fail'];
 
 const SOURCES: readonly VerdictRecord['source'][] = ['judge', 'operator'];
 
+function itemOf(row: Row): Result<Text | null, ParseFailure> {
+    return row.item === null ? ok(null) : parseText(row.item);
+}
+
+function critiqueOf(row: Row): Result<Text | null, ParseFailure> {
+    return row.critique === null ? ok(null) : parseText(row.critique);
+}
+
+function judgeCritiqueOf(row: Row): Result<Text | null, ParseFailure> {
+    return row.judgeCritique === null ? ok(null) : parseText(row.judgeCritique);
+}
+
+function reasonOf(row: Row): Result<Text | null, ParseFailure> {
+    return row.reason === null ? ok(null) : parseText(row.reason);
+}
+
 export function parsePairRecord(input: unknown): Result<PairRecord, ParseFailure> {
     if (!isRow(input)) return err({ kind: 'not-a-row' });
     const check = parseText(input.check);
@@ -66,13 +82,13 @@ export function parseVerdictRecord(input: unknown): Result<VerdictRecord, ParseF
     if (!isRow(input)) return err({ kind: 'not-a-row' });
     const run = parseRunId(input.run);
     if (run.kind === 'err') return run;
-    const item = input.item === null ? ok(null) : parseText(input.item);
+    const item = itemOf(input);
     if (item.kind === 'err') return item;
     const check = parseText(input.check);
     if (check.kind === 'err') return check;
     const pass = OUTCOMES.find((option) => option === input.pass);
     if (pass === undefined) return err({ kind: 'out-of-range' });
-    const critique = input.critique === null ? ok(null) : parseText(input.critique);
+    const critique = critiqueOf(input);
     if (critique.kind === 'err') return critique;
     const judge = parseText(input.judge);
     if (judge.kind === 'err') return judge;
@@ -103,9 +119,9 @@ export function parseDisagreementRecord(input: unknown): Result<DisagreementReco
     const judge = OUTCOMES.find((option) => option === input.judge);
     const operator = OUTCOMES.find((option) => option === input.operator);
     if (judge === undefined || operator === undefined) return err({ kind: 'out-of-range' });
-    const judgeCritique = input.judgeCritique === null ? ok(null) : parseText(input.judgeCritique);
+    const judgeCritique = judgeCritiqueOf(input);
     if (judgeCritique.kind === 'err') return judgeCritique;
-    const reason = input.reason === null ? ok(null) : parseText(input.reason);
+    const reason = reasonOf(input);
     if (reason.kind === 'err') return reason;
     const at = parseInstant(input.at);
     if (at.kind === 'err') return at;

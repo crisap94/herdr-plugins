@@ -138,19 +138,25 @@ function daemonVersionOf(row: Row): Result<Text | null | undefined, ParseFailure
     return parseText(row.daemonVersion);
 }
 
+function lanesOf(row: Row): Result<readonly TabLaneRecord[], ParseFailure> {
+    if (!Array.isArray(row.lanes)) return err({ kind: 'not-a-row' });
+    const lanes: TabLaneRecord[] = [];
+    for (const lane of row.lanes) {
+        const parsed = parseTabLaneRecord(lane);
+        if (parsed.kind === 'err') return parsed;
+        lanes.push(parsed.value);
+    }
+    return ok(lanes);
+}
+
 export function parseTabViewRecord(input: unknown): Result<TabViewRecord, ParseFailure> {
     if (!isRow(input)) return err({ kind: 'not-a-row' });
     const tab = parseTabId(input.tab);
     if (tab.kind === 'err') return tab;
     const column = input.column === null ? ok(null) : parseText(input.column);
     if (column.kind === 'err') return column;
-    if (!Array.isArray(input.lanes)) return err({ kind: 'not-a-row' });
-    const lanes: TabLaneRecord[] = [];
-    for (const lane of input.lanes) {
-        const parsed = parseTabLaneRecord(lane);
-        if (parsed.kind === 'err') return parsed;
-        lanes.push(parsed.value);
-    }
+    const lanes = lanesOf(input);
+    if (lanes.kind === 'err') return lanes;
     const at = parseInstant(input.at);
     if (at.kind === 'err') return at;
     const daemonVersion = daemonVersionOf(input);
@@ -158,7 +164,7 @@ export function parseTabViewRecord(input: unknown): Result<TabViewRecord, ParseF
     return ok({
         tab: tab.value,
         column: column.value,
-        lanes,
+        lanes: lanes.value,
         at: at.value,
         ...(daemonVersion.value === undefined ? {} : { daemonVersion: daemonVersion.value }),
     });

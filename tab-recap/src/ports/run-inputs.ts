@@ -61,6 +61,39 @@ const isRow = (input: unknown): input is Row => typeof input === 'object' && inp
 
 const BIRTHS: readonly RunBirth[] = ['born', 'carried'];
 
+function backendOf(row: Row): Result<Text | null, ParseFailure> {
+    return row.backend === null ? ok(null) : parseText(row.backend);
+}
+
+function anchorOf(row: Row): Result<Text | null, ParseFailure> {
+    return row.anchor === null ? ok(null) : parseText(row.anchor);
+}
+
+function statsOf(stats: Row): Result<GateStats, ParseFailure> {
+    if (!isRow(stats.refused) || !isRow(stats.flagged)) return err({ kind: 'not-a-row' });
+    const refused: Record<string, number> = {};
+    for (const [gate, value] of Object.entries(stats.refused)) {
+        const count = parseCount(value);
+        if (count.kind === 'err') return count;
+        refused[gate] = count.value;
+    }
+    const flagged: Record<string, number> = {};
+    for (const [gate, value] of Object.entries(stats.flagged)) {
+        const count = parseCount(value);
+        if (count.kind === 'err') return count;
+        flagged[gate] = count.value;
+    }
+    const dropped = parseCount(stats.dropped);
+    if (dropped.kind === 'err') return dropped;
+    return ok({ refused, flagged, dropped: dropped.value });
+}
+
+function gateStatsOf(row: Row): Result<GateStats | null, ParseFailure> {
+    const stats = row.gateStats;
+    if (stats === null) return ok(null);
+    return isRow(stats) ? statsOf(stats) : err({ kind: 'not-a-row' });
+}
+
 export function parseRunRecord(input: unknown): Result<RunRecord, ParseFailure> {
     if (!isRow(input)) return err({ kind: 'not-a-row' });
     const id = parseRunId(input.id);
@@ -71,11 +104,11 @@ export function parseRunRecord(input: unknown): Result<RunRecord, ParseFailure> 
     if (at.kind === 'err') return at;
     const language = parseText(input.language);
     if (language.kind === 'err') return language;
-    const backend = input.backend === null ? ok(null) : parseText(input.backend);
+    const backend = backendOf(input);
     if (backend.kind === 'err') return backend;
     const presence = parsePresence(input.input);
     if (presence.kind === 'err') return presence;
-    const gateStats = input.gateStats === null ? ok(null) : parseGateTally({ at: input.at, stats: input.gateStats });
+    const gateStats = gateStatsOf(input);
     if (gateStats.kind === 'err') return gateStats;
     return ok({
         id: id.value,
@@ -84,7 +117,7 @@ export function parseRunRecord(input: unknown): Result<RunRecord, ParseFailure> 
         language: language.value,
         backend: backend.value,
         input: presence.value,
-        gateStats: gateStats.value === null ? null : gateStats.value.stats,
+        gateStats: gateStats.value,
     });
 }
 
@@ -100,7 +133,7 @@ export function parseRunEntry(input: unknown): Result<RunEntry, ParseFailure> {
     if (fact.kind === 'err') return fact;
     const birth = BIRTHS.find((option) => option === input.birth);
     if (birth === undefined) return err({ kind: 'out-of-range' });
-    const anchor = input.anchor === null ? ok(null) : parseText(input.anchor);
+    const anchor = anchorOf(input);
     if (anchor.kind === 'err') return anchor;
     return ok({ key: key.value, section, text: text.value, fact: fact.value, birth, anchor: anchor.value });
 }
@@ -110,20 +143,8 @@ export function parseGateTally(input: unknown): Result<GateTally, ParseFailure> 
     const at = parseInstant(input.at);
     if (at.kind === 'err') return at;
     const stats = input.stats;
-    if (!isRow(stats) || !isRow(stats.refused) || !isRow(stats.flagged)) return err({ kind: 'not-a-row' });
-    const refused: Record<string, number> = {};
-    for (const [gate, value] of Object.entries(stats.refused)) {
-        const count = parseCount(value);
-        if (count.kind === 'err') return count;
-        refused[gate] = count.value;
-    }
-    const flagged: Record<string, number> = {};
-    for (const [gate, value] of Object.entries(stats.flagged)) {
-        const count = parseCount(value);
-        if (count.kind === 'err') return count;
-        flagged[gate] = count.value;
-    }
-    const dropped = parseCount(stats.dropped);
-    if (dropped.kind === 'err') return dropped;
-    return ok({ at: at.value, stats: { refused, flagged, dropped: dropped.value } });
+    if (!isRow(stats)) return err({ kind: 'not-a-row' });
+    const parsed = statsOf(stats);
+    if (parsed.kind === 'err') return parsed;
+    return ok({ at: at.value, stats: parsed.value });
 }
