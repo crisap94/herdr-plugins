@@ -1,12 +1,16 @@
+import { instant, type Instant } from '#src/recap/domain/time.ts';
+
+type Ordering = -1 | 0 | 1;
+
 export interface Uuid7Sources {
-    readonly now: () => number;
+    readonly now: () => Instant;
     readonly random: (bytes: Uint8Array) => void;
 }
 
 const COUNTER_MAX = 0xfff;
 const COUNTER_SEED = 0x7ff;
 
-const SYSTEM: Uuid7Sources = { now: Date.now, random: (bytes) => { crypto.getRandomValues(bytes); } };
+const SYSTEM: Uuid7Sources = { now: (): Instant => instant(Date.now()), random: (bytes) => { crypto.getRandomValues(bytes); } };
 
 export class Uuid7Generator {
     private readonly sources: Uuid7Sources;
@@ -17,23 +21,23 @@ export class Uuid7Generator {
         this.sources = sources;
     }
 
-    private seed(): number {
+    private reseed(): void {
         const bytes = new Uint8Array(2);
         this.sources.random(bytes);
-        return (((bytes[0] ?? 0) << 8) | (bytes[1] ?? 0)) & COUNTER_SEED;
+        this.counter = (((bytes[0] ?? 0) << 8) | (bytes[1] ?? 0)) & COUNTER_SEED;
     }
 
     private tick(): void {
         const ms = this.sources.now();
         if (ms > this.lastMs) {
             this.lastMs = ms;
-            this.counter = this.seed();
+            this.reseed();
             return;
         }
         this.counter += 1;
         if (this.counter > COUNTER_MAX) {
             this.lastMs += 1;
-            this.counter = this.seed();
+            this.reseed();
         }
     }
 
@@ -52,15 +56,15 @@ export class Uuid7Generator {
     }
 }
 
-export function timeOf(id: Uint8Array): number {
-    return id.slice(0, 6).reduce((ms, byte) => ms * 256 + byte, 0);
+export function timeOf(id: Uint8Array): Instant {
+    return instant(id.slice(0, 6).reduce((ms, byte) => ms * 256 + byte, 0));
 }
 
-export function compareIds(a: Uint8Array, b: Uint8Array): number {
+export function compareIds(a: Uint8Array, b: Uint8Array): Ordering {
     for (let at = 0; at < 16; at += 1) {
         const difference = (a[at] ?? 0) - (b[at] ?? 0);
         if (difference !== 0) {
-            return difference;
+            return difference < 0 ? -1 : 1;
         }
     }
     return 0;

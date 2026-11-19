@@ -40,12 +40,6 @@
   "src/adapters/db/legacy.ts": {
     "legacy": 52
   },
-  "src/adapters/db/recap-read.ts": {
-    "parameter": 3,
-    "return": 1,
-    "container": 9,
-    "property": 2
-  },
   "src/adapters/db/recap-records.ts": {
     "assertion": 2
   },
@@ -94,12 +88,8 @@
     "parameter": 5,
     "property": 3
   },
-  "src/adapters/db/typeid.ts": {
-    "parameter": 2,
-    "return": 2
-  },
-  "src/adapters/db/uuid7.ts": {
-    "return": 4
+  "src/adapters/db/typeid/legacy.ts": {
+    "legacy": 4
   },
   "src/adapters/db/verdicts.ts": {
     "parameter": 2,

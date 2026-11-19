@@ -626,6 +626,7 @@
       "src/adapters/db/tab-views.ts",
       "src/adapters/db/transcripts.ts",
       "src/adapters/db/typeid.ts",
+      "src/adapters/db/typeid/legacy.ts",
       "src/adapters/db/uuid7.ts",
       "src/adapters/db/verdicts.ts",
       "src/adapters/db/worktree-status.ts",
