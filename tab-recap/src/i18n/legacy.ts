@@ -32,6 +32,8 @@ export interface Messages extends Omit<LooseObject<Catalog>, 'autocompactSetting
 
 const optionalText = (raw: string | undefined): Text | undefined => (raw === undefined ? undefined : must(parseText(raw)));
 
+const textOf = (raw: string): Text => must(parseText(raw));
+
 const presenceOf = (flag: boolean): Presence => (flag ? 'present' : 'absent');
 
 export function looseOf(catalog: Catalog): Messages {
@@ -39,6 +41,11 @@ export function looseOf(catalog: Catalog): Messages {
     return {
         ...loose,
         autocompactSettings: { ...loose.autocompactSettings, ceilingOverride: (enabled) => catalog.autocompactSettings.ceilingOverride(presenceOf(enabled)) },
+        compaction: {
+            ...loose.compaction,
+            outcome: (agent, outcome, retried, figures) => catalog.compaction.outcome(textOf(agent), outcome, presenceOf(retried), { tokens: textOf(figures.tokens), took: textOf(figures.took) }),
+            joined: (agent, noted) => catalog.compaction.joined(textOf(agent), presenceOf(noted)),
+        },
     };
 }
 

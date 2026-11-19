@@ -89,16 +89,16 @@ export const english: Catalog = {
         editKeys: [must(parseText('↑↓ choose · ⏎ ok · Esc cancel')), must(parseText('⏎ ok · Esc')), must(parseText('⏎ Esc'))],
     },
     compaction: {
-        title: (agent) => `Compact ${agent}`,
-        noteLabel: 'Anything it must keep? (optional)',
-        keys: ['⏎ send · Esc cancel', '⏎ · Esc'],
-        hint: (percent, window) => `compact? ${percent}%${window === '' ? '' : ` of ${window}`}`,
-        writing: (agent) => `Writing what ${agent} should keep…`,
+        title: (agent) => must(parseText(`Compact ${agent}`)),
+        noteLabel: must(parseText('Anything it must keep? (optional)')),
+        keys: [must(parseText('⏎ send · Esc cancel')), must(parseText('⏎ · Esc'))],
+        hint: (percent, window) => must(parseText(`compact? ${percent}%${window === '' ? '' : ` of ${window}`}`)),
+        writing: (agent) => must(parseText(`Writing what ${agent} should keep…`)),
         outcome: (agent, outcome, retried, figures) => {
             if (outcome === 'compacted') {
-                return `${agent} compacted${retried ? ' (on the second try)' : ''}${figures.tokens === '' ? '' : `: ${figures.tokens}`}${figures.took === '' ? '' : ` in ${figures.took}`}`;
+                return must(parseText(`${agent} compacted${(retried === 'present') ? ' (on the second try)' : ''}${figures.tokens === '' ? '' : `: ${figures.tokens}`}${figures.took === '' ? '' : ` in ${figures.took}`}`));
             }
-            return outcome === 'failed' ? `${agent} could not compact, even after trying again` : `${agent}: could not confirm the compaction — check it`;
+            return must(parseText(outcome === 'failed' ? `${agent} could not compact, even after trying again` : `${agent}: could not confirm the compaction — check it`));
         },
         stage: {
             briefing: (agent, writer, clock) => `${agent === null ? 'writing what to keep…' : `writing what ${agent} keeps…`}${agent === null && writer !== null ? ` (${writer})` : ''} ${clock}`,
@@ -115,18 +115,18 @@ export const english: Catalog = {
             tokens: (before, after) => `${before} → ${after} tokens`,
             took: (seconds) => (seconds < 60 ? `${seconds} s` : `${Math.floor(seconds / 60)} min ${seconds % 60} s`),
         },
-        started: (agent) => `Compacting ${agent}`,
-        startedQueued: (agent) => `Compacting ${agent}: queued behind the current turn`,
-        auto: (text) => `${text} (auto)`,
-        coverageMissed: (agent) => `${agent} not compacted: the brief would lose something the work needs`,
-        coverageCeiling: (count) => count === 1 ? '1 fact missed; missed fact appended' : `${count} facts missed; missed facts appended`,
-        coverageUnchecked: { 'no-decider': 'coverage unchecked: no decider is set up', 'decider-cannot-answer': 'coverage unchecked: the decider cannot answer', 'no-brief': 'coverage unchecked: no brief was written' },
-        coveragePassed: 'coverage passed',
-        skipped: (agent, status) => `${agent} is ${status}: not compacted — try again when it is idle`,
-        joined: (agent, noted) => `${agent} is already compacting: this request joins that compaction${noted ? ', and its note is not used' : ''}`,
-        nothing: 'No agent here can be compacted',
-        failed: (agent, why) => `Could not compact ${agent}: ${why}`,
-        laneClosed: (agent, pane, point) => `compaction: ${agent ?? 'lane'} ${pane} closed, skipped (${{ 'status-check': 'at the status check', 'before-writer': 'before the brief', 'after-writer': 'after the brief was written', 'before-rewrite': 'before a rewrite of the brief', 'before-typing': 'before typing' }[point]})`,
+        started: (agent) => must(parseText(`Compacting ${agent}`)),
+        startedQueued: (agent) => must(parseText(`Compacting ${agent}: queued behind the current turn`)),
+        auto: (text) => must(parseText(`${text} (auto)`)),
+        coverageMissed: (agent) => must(parseText(`${agent} not compacted: the brief would lose something the work needs`)),
+        coverageCeiling: (count) => must(parseText(count === 1 ? '1 fact missed; missed fact appended' : `${count} facts missed; missed facts appended`)),
+        coverageUnchecked: { 'no-decider': must(parseText('coverage unchecked: no decider is set up')), 'decider-cannot-answer': must(parseText('coverage unchecked: the decider cannot answer')), 'no-brief': must(parseText('coverage unchecked: no brief was written')) },
+        coveragePassed: must(parseText('coverage passed')),
+        skipped: (agent, status) => must(parseText(`${agent} is ${status}: not compacted — try again when it is idle`)),
+        joined: (agent, noted) => must(parseText(`${agent} is already compacting: this request joins that compaction${(noted === 'present') ? ', and its note is not used' : ''}`)),
+        nothing: must(parseText('No agent here can be compacted')),
+        failed: (agent, why) => must(parseText(`Could not compact ${agent}: ${why}`)),
+        laneClosed: (agent, pane, point) => must(parseText(`compaction: ${agent ?? 'lane'} ${pane} closed, skipped (${{ 'status-check': 'at the status check', 'before-writer': 'before the brief', 'after-writer': 'after the brief was written', 'before-rewrite': 'before a rewrite of the brief', 'before-typing': 'before typing' }[point]})`)),
     },
     expanded: {
         timeline: 'Timeline', rules: 'Rules', session: 'Session', story: 'Session so far', updatingStory: 'updating…',

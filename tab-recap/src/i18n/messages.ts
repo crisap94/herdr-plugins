@@ -127,8 +127,8 @@ export interface SetupMessages {
 }
 
 export interface CompactionFigures {
-    readonly tokens: string;
-    readonly took: string;
+    readonly tokens: Text;
+    readonly took: Text;
 }
 
 export type CompactionOutcome = 'compacted' | 'failed' | 'unconfirmed';
@@ -150,25 +150,25 @@ export interface CompactionStageMessages {
 }
 
 export interface CompactionMessages {
-    readonly title: (agent: string) => string;
-    readonly noteLabel: string;
-    readonly keys: readonly string[];
-    readonly hint: (percent: number, window: string) => string;
-    readonly writing: (agent: string) => string;
-    readonly outcome: (agent: string, outcome: CompactionOutcome, retried: boolean, figures: CompactionFigures) => string;
+    readonly title: (agent: Text) => Text;
+    readonly noteLabel: Text;
+    readonly keys: readonly Text[];
+    readonly hint: (percent: Count, window: Text) => Text;
+    readonly writing: (agent: Text) => Text;
+    readonly outcome: (agent: Text, outcome: CompactionOutcome, retried: Presence, figures: CompactionFigures) => Text;
     readonly stage: CompactionStageMessages;
-    readonly started: (agent: string) => string;
-    readonly startedQueued: (agent: string) => string;
-    readonly auto: (text: string) => string;
-    readonly coverageMissed: (agent: string) => string;
-    readonly coverageCeiling: (count: number) => string;
-    readonly coverageUnchecked: Readonly<Record<UncheckedReason, string>>;
-    readonly coveragePassed: string;
-    readonly skipped: (agent: string, status: string) => string;
-    readonly joined: (agent: string, noted: boolean) => string;
-    readonly nothing: string;
-    readonly failed: (agent: string, why: string) => string;
-    readonly laneClosed: (agent: string | null, pane: string, point: ClosePoint) => string;
+    readonly started: (agent: Text) => Text;
+    readonly startedQueued: (agent: Text) => Text;
+    readonly auto: (text: Text) => Text;
+    readonly coverageMissed: (agent: Text) => Text;
+    readonly coverageCeiling: (count: Count) => Text;
+    readonly coverageUnchecked: Readonly<Record<UncheckedReason, Text>>;
+    readonly coveragePassed: Text;
+    readonly skipped: (agent: Text, status: Text) => Text;
+    readonly joined: (agent: Text, noted: Presence) => Text;
+    readonly nothing: Text;
+    readonly failed: (agent: Text, why: Text) => Text;
+    readonly laneClosed: (agent: Text | null, pane: Text, point: ClosePoint) => Text;
 }
 
 export interface CompactionOriginMessages {

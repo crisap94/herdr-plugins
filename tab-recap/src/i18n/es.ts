@@ -90,16 +90,16 @@ export const spanish: Catalog = {
         editKeys: [must(parseText('↑↓ elegir · ⏎ aceptar · Esc cancelar')), must(parseText('⏎ ok · Esc')), must(parseText('⏎ Esc'))],
     },
     compaction: {
-        title: (agent) => `Compactar ${agent}`,
-        noteLabel: '¿Algo que deba conservar? (opcional)',
-        keys: ['⏎ enviar · Esc cancelar', '⏎ · Esc'],
-        hint: (percent, window) => `¿compactar? ${percent}%${window === '' ? '' : ` de ${window}`}`,
-        writing: (agent) => `Escribiendo qué debe conservar ${agent}…`,
+        title: (agent) => must(parseText(`Compactar ${agent}`)),
+        noteLabel: must(parseText('¿Algo que deba conservar? (opcional)')),
+        keys: [must(parseText('⏎ enviar · Esc cancelar')), must(parseText('⏎ · Esc'))],
+        hint: (percent, window) => must(parseText(`¿compactar? ${percent}%${window === '' ? '' : ` de ${window}`}`)),
+        writing: (agent) => must(parseText(`Escribiendo qué debe conservar ${agent}…`)),
         outcome: (agent, outcome, retried, figures) => {
             if (outcome === 'compacted') {
-                return `${agent} compactado${retried ? ' (al segundo intento)' : ''}${figures.tokens === '' ? '' : `: ${figures.tokens}`}${figures.took === '' ? '' : ` en ${figures.took}`}`;
+                return must(parseText(`${agent} compactado${(retried === 'present') ? ' (al segundo intento)' : ''}${figures.tokens === '' ? '' : `: ${figures.tokens}`}${figures.took === '' ? '' : ` en ${figures.took}`}`));
             }
-            return outcome === 'failed' ? `${agent} no pudo compactar, ni al reintentar` : `${agent}: no se pudo confirmar la compactación — revísalo`;
+            return must(parseText(outcome === 'failed' ? `${agent} no pudo compactar, ni al reintentar` : `${agent}: no se pudo confirmar la compactación — revísalo`));
         },
         stage: {
             briefing: (agent, writer, clock) => `${agent === null ? 'escribiendo qué conservar…' : `escribiendo qué conserva ${agent}…`}${agent === null && writer !== null ? ` (${writer})` : ''} ${clock}`,
@@ -116,18 +116,18 @@ export const spanish: Catalog = {
             tokens: (before, after) => `${before} → ${after} tokens`,
             took: (seconds) => (seconds < 60 ? `${seconds} s` : `${Math.floor(seconds / 60)} min ${seconds % 60} s`),
         },
-        started: (agent) => `Compactando ${agent}`,
-        startedQueued: (agent) => `Compactando ${agent}: en cola tras el turno actual`,
-        auto: (text) => `${text} (automática)`,
-        coverageMissed: (agent) => `${agent} no se compactó: el resumen perdería algo que el trabajo necesita`,
-        coverageCeiling: (count) => count === 1 ? 'Falta 1 dato; se añadió al resumen' : `Faltan ${count} datos; se añadieron al resumen`,
-        coverageUnchecked: { 'no-decider': 'cobertura sin comprobar: no hay decisor configurado', 'decider-cannot-answer': 'cobertura sin comprobar: el decisor no puede responder', 'no-brief': 'cobertura sin comprobar: no se escribió el resumen' },
-        coveragePassed: 'cobertura superada',
-        skipped: (agent, status) => `${agent} está ${status}: no se compactó — inténtalo cuando esté libre`,
-        joined: (agent, noted) => `${agent} ya se está compactando: esta petición se une a esa compactación${noted ? ', y su nota no se usa' : ''}`,
-        nothing: 'Ningún agente de aquí se puede compactar',
-        laneClosed: (agent, pane, point) => `compactación: ${agent ?? 'carril'} ${pane} se cerró, omitida (${{ 'status-check': 'al comprobar el estado', 'before-writer': 'antes del resumen', 'after-writer': 'tras escribir el resumen', 'before-rewrite': 'antes de reescribir el resumen', 'before-typing': 'antes de escribir en el agente' }[point]})`,
-        failed: (agent, why) => `No se pudo compactar ${agent}: ${why}`,
+        started: (agent) => must(parseText(`Compactando ${agent}`)),
+        startedQueued: (agent) => must(parseText(`Compactando ${agent}: en cola tras el turno actual`)),
+        auto: (text) => must(parseText(`${text} (automática)`)),
+        coverageMissed: (agent) => must(parseText(`${agent} no se compactó: el resumen perdería algo que el trabajo necesita`)),
+        coverageCeiling: (count) => must(parseText(count === 1 ? 'Falta 1 dato; se añadió al resumen' : `Faltan ${count} datos; se añadieron al resumen`)),
+        coverageUnchecked: { 'no-decider': must(parseText('cobertura sin comprobar: no hay decisor configurado')), 'decider-cannot-answer': must(parseText('cobertura sin comprobar: el decisor no puede responder')), 'no-brief': must(parseText('cobertura sin comprobar: no se escribió el resumen')) },
+        coveragePassed: must(parseText('cobertura superada')),
+        skipped: (agent, status) => must(parseText(`${agent} está ${status}: no se compactó — inténtalo cuando esté libre`)),
+        joined: (agent, noted) => must(parseText(`${agent} ya se está compactando: esta petición se une a esa compactación${(noted === 'present') ? ', y su nota no se usa' : ''}`)),
+        nothing: must(parseText('Ningún agente de aquí se puede compactar')),
+        laneClosed: (agent, pane, point) => must(parseText(`compactación: ${agent ?? 'carril'} ${pane} se cerró, omitida (${{ 'status-check': 'al comprobar el estado', 'before-writer': 'antes del resumen', 'after-writer': 'tras escribir el resumen', 'before-rewrite': 'antes de reescribir el resumen', 'before-typing': 'antes de escribir en el agente' }[point]})`)),
+        failed: (agent, why) => must(parseText(`No se pudo compactar ${agent}: ${why}`)),
     },
     expanded: {
         timeline: 'Cronología', rules: 'Reglas', session: 'Sesión', story: 'La sesión hasta ahora', updatingStory: 'actualizando…',
