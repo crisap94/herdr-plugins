@@ -1,11 +1,13 @@
 import {
     instant,
+    UNREAD,
     type Chunk,
     type Clock,
     type FollowedSession,
     type HarnessKind,
     type Ids,
     type Instant,
+    type Located,
     type Position,
     type RepoResult,
     type SessionReader,
@@ -50,9 +52,14 @@ export interface Probes {
     readonly repos: string[];
 }
 
-export const sessionsOf = (run: Run, locateOf: (session: FollowedSession) => Behaviour<LocatedAnswer>, readOf: (source: string) => Behaviour<Chunk>, probes: Probes, noReader: () => HarnessKind | null): SessionSource => {
+export interface ReaderScript {
+    noReader(): HarnessKind | null;
+    carry(from: string, to: string, at: Position): Position;
+}
+
+export const sessionsOf = (run: Run, locateOf: (session: FollowedSession) => Behaviour<LocatedAnswer>, readOf: (source: string) => Behaviour<Chunk>, probes: Probes, script: ReaderScript): SessionSource => {
     const readerFor = (harness: HarnessKind): SessionReader | undefined => {
-        if (harness === noReader()) {
+        if (harness === script.noReader()) {
             return undefined;
         }
         return {
@@ -67,6 +74,7 @@ export const sessionsOf = (run: Run, locateOf: (session: FollowedSession) => Beh
                 probes.budgets.push(budget);
                 return run(readOf(source));
             },
+            carry: (from: Located, to: Located, at: Position) => Promise.resolve(from.kind === 'located' && to.kind === 'located' ? script.carry(from.source, to.source, at) : UNREAD),
         };
     };
     return {

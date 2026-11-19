@@ -71,6 +71,7 @@ export interface Transcripts {
     readonly agent: string;
     locate(lane: Lane): Promise<Located>;
     read(source: string, was: Position, budget: number): Promise<ChunkResult>;
+    carry?(from: Located, to: Located, at: Position): Promise<Position>;
     latestPrompt(source: string, budget: number): Promise<PromptResult>;
     observed?(source: string, budget: number): Promise<ObservedResult>;
     readonly inFlight: InFlightCapability;

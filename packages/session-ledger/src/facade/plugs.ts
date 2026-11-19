@@ -6,7 +6,7 @@ import { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { CheckedLedger } from '#src/ports/ledger.ts';
 import type { CheckedRecapRecords, RecordedRun, FailedRun, Advance, TabRecap, LastRun } from '#src/ports/recap-records.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
-import type { Transcripts, Located, ChunkResult, PromptResult } from '#src/ports/transcripts.ts';
+import { UNREAD, type Transcripts, type Located, type ChunkResult, type PromptResult } from '#src/ports/transcripts.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
 import type { Unknown, Unknowable } from '#src/ports/unknowable.ts';
@@ -164,6 +164,7 @@ const transcriptsOf = (reader: sl.SessionReader): Transcripts => ({
         return pluginLocated(await reader.locate(session));
     },
     read: async (source, was, budget) => pluginChunk(await reader.read(source, was, budget)),
+    carry: (from, to, at) => (reader.carry === undefined || from.kind !== 'located' || to.kind !== 'located' ? Promise.resolve(UNREAD) : reader.carry(from, to, at)),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
 });
 

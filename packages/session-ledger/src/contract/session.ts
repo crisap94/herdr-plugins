@@ -96,6 +96,7 @@ export interface SessionReader {
     readonly harness: HarnessKind;
     locate(session: FollowedSession): Promise<Located>;
     read(source: string, was: Position, budget: number): Promise<Chunk | Unknown>;
+    carry?(from: Located, to: Located, at: Position): Promise<Position>;
 }
 export interface SessionSource {
     readerFor(harness: HarnessKind): SessionReader | undefined;

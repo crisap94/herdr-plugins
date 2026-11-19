@@ -816,6 +816,7 @@
       "src/adapters/transcripts/screen.ts",
       "src/adapters/transcripts/slice.ts",
       "src/adapters/transcripts/tool-calls.ts",
+      "test/claude-carry.test.ts",
       "test/claude-in-flight-reach.test.ts",
       "test/claude-in-flight.test.ts",
       "test/claude-prompt.test.ts",

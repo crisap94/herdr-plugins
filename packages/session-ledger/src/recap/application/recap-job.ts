@@ -1,4 +1,4 @@
-import type { Lane, SessionId, TabId } from '#src/recap/domain/lane-shape.ts';
+import type { Lane, TabId } from '#src/recap/domain/lane-shape.ts';
 import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { Clock } from '#src/ports/clock.ts';
@@ -24,6 +24,7 @@ import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { inputOf } from './recap-input.ts';
 import { writerContext } from './writer-context.ts';
 import { foldedRun, throwingLedger } from './run-fold.ts';
+import { CursorCarry } from './cursor-carry.ts';
 
 export interface RecapJobDeps {
     readonly transcripts: TranscriptRegistry;
@@ -112,7 +113,7 @@ function delayOf(start: Start, clock: () => number): number {
 export class RecapJob {
     private readonly deps: RecapJobDeps;
     private readonly slots = new Map<string, Slot>();
-    private readonly lastRead = new Map<SessionId | null, LaneCursor>();
+    private readonly carry = new CursorCarry();
 
     constructor(deps: RecapJobDeps) { this.deps = deps; }
 
@@ -170,8 +171,7 @@ export class RecapJob {
         const blank: LaneCursor = { pane: String(lane.pane), agent: String(lane.agent), transcript: '', cursor: UNREAD.cursor, tail: UNREAD.tail, title: lane.title, lastPrompt: null, claudeRecap: null };
         const found = await this.locate(lane);
         if (typeof found === 'string') return { lane, cursor: blank, chunk: null, grew: false, fresh: false, error: found };
-        const was = { ...([{ ...blank, transcript: found.source }, this.lastRead.get(lane.session)].flatMap((want) => prior.lanes.filter((c) => c.pane === want?.pane && c.transcript === want.transcript))[0] ?? blank), transcript: found.source };
-        this.lastRead.set(lane.session, was);
+        const was = await this.carry.cursorFor({ session: lane.session, cursors: prior.lanes.filter((c) => c.pane === blank.pane), wanted: { ...blank, transcript: found.source }, reader: found.reader });
         const chunk = await found.reader.read(found.source, { cursor: was.cursor, tail: was.tail }, budget);
         if (isUnknown(chunk)) return { lane, cursor: was, chunk: null, grew: false, fresh: false, error: saying(chunk.why) };
         const cursor: LaneCursor = { ...was, title: chunk.title ?? was.title, lastPrompt: chunk.lastPrompt ?? was.lastPrompt, claudeRecap: chunk.claudeRecap ?? was.claudeRecap };

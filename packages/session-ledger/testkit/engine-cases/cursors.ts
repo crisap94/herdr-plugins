@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { UNREAD, type Engine, type Recap } from '@stateforge-labs/session-ledger';
+import { UNREAD, type Engine, type Position, type Recap } from '@stateforge-labs/session-ledger';
 import type { Case } from '../run.ts';
 import { followed, harness, key, scope, session } from '../ids.ts';
 import type { Behaviour, EngineWorld, LocatedAnswer, WrittenAnswer } from '../world.ts';
@@ -123,19 +123,33 @@ export const CSR_CASES: readonly Case<EngineWorld, Engine>[] = [
     {
         id: 'CSR-7',
         group: 'CSR',
-        title: 'a new source for the same key continues the old cursor',
+        title: 'a new source for the same key continues the old cursor only when the reader confirms the same file moved; otherwise it starts at UNREAD and the old cursor is kept',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
-            let source = 'x1';
-            world.setLocate(() => ({ kind: 'answer', value: { kind: 'located', source } }));
-            world.setReadBySource((next) => (next === 'x1' ? chunkAt(5) : chunkAt(9)));
+            engine.follow(TAB, followed(key('moved'), { session: session('s1') }));
+            engine.follow(TAB, followed(key('other'), { session: session('s2') }));
+            engine.follow(TAB, followed(key('agent'), { session: session('s3') }));
+            engine.follow(TAB, followed(key('nosession')));
+            const sources = new Map([['moved', 'm1'], ['other', 'o1'], ['agent', 'a1'], ['nosession', 'n1']]);
+            const carried: string[] = [];
+            world.setLocate((target) => ({ kind: 'answer', value: { kind: 'located', source: sources.get(target.key) ?? target.key } }));
+            world.setReadBySource((next) => chunkAt(next.endsWith('1') ? 5 : 9));
+            world.setCarry((from, to, at) => {
+                carried.push(`${from}>${to}`);
+                return from === 'm1' && to === 'm2' ? at : UNREAD;
+            });
             world.setWriter(NO_OPS);
             await engine.refresh(TAB);
-            source = 'x2';
+            engine.follow(TAB, followed(key('agent'), { session: session('s3'), harness: harness('codex') }));
+            for (const [name, next] of [['moved', 'm2'], ['other', 'o2'], ['agent', 'a2'], ['nosession', 'n2']] as const) sources.set(name, next);
             await engine.refresh(TAB);
-            assert.deepEqual(world.positions(), [UNREAD, { cursor: 5, tail: null }]);
-            assert.deepEqual(cursorsOf(world, TAB), [{ pane: 'a', transcript: 'x2', cursor: 9 }]);
+            const readFrom = (): Map<string, Position | undefined> => new Map(world.reads().map((source, at) => [source, world.positions()[at]]));
+            assert.deepEqual(['m2', 'o2', 'a2', 'n2'].map((source) => readFrom().get(source)), [{ cursor: 5, tail: null }, UNREAD, UNREAD, UNREAD]);
+            assert.deepEqual(carried.toSorted(), ['m1>m2', 'o1>o2']);
+            sources.set('other', 'o1');
+            await engine.refresh(TAB);
+            assert.deepEqual(readFrom().get('o1'), { cursor: 5, tail: null });
+            assert.ok(cursorsOf(world, TAB).some((cursor) => cursor.pane === 'other' && cursor.transcript === 'o2' && cursor.cursor === 9));
         },
     },
     {

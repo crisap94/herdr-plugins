@@ -2,12 +2,14 @@ import { statSync } from 'node:fs';
 import { claudeProjectsRoot, locateClaudeTranscript } from '@stateforge-labs/harness-adapters/claude';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
-import type { ChunkResult, InFlightResult, Located, ObservedResult, Position, PromptResult, SupportedInFlight, Transcripts } from '#src/ports/transcripts.ts';
+import { UNREAD, type ChunkResult, type InFlightResult, type Located, type ObservedResult, type Position, type PromptResult, type SupportedInFlight, type Transcripts } from '#src/ports/transcripts.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import { parseText } from '#src/recap/domain/text.ts';
-import { readJsonl, tailLines, tailOf } from '../jsonl.ts';
+import { readJsonl, sameStart, tailLines, tailOf } from '../jsonl.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
+import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import { claudeObserved } from './context.ts';
 import { extractClaude } from './rows.ts';
 import { CLAUDE_SPLIT, IN_FLIGHT_MAX_BYTES, answerOf, scanFlight } from './in-flight.ts';
@@ -99,5 +101,10 @@ export class ClaudeTranscripts implements Transcripts {
         } catch (error) {
             return Promise.resolve(unknown({ why: 'unreadable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) }));
         }
+    }
+
+    carry(from: Located, to: Located, at: Position): Promise<Position> {
+        const moved = from.kind === 'located' && to.kind === 'located' && sameStart(must(parseFsPath(from.source)), must(parseFsPath(to.source)), must(parseCount(at.cursor))) === 'present';
+        return Promise.resolve(moved ? at : UNREAD);
     }
 }

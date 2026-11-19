@@ -117,3 +117,18 @@ export function readJsonlFrom(path: FsPath, was: Position, budget: Count): Jsonl
     const { lines, end } = readLines(path, must(parseCount(Math.max(was.cursor, size - budget, 0))), budget);
     return { lines, position: { cursor: end, tail: null }, grew: size > was.cursor ? 'present' : 'absent' };
 }
+
+const SAME_START_BYTES = 64 * 1024;
+
+export function sameStart(was: FsPath, now: FsPath, cursor: Count): Presence {
+    try {
+        const start = must(parseCount(0));
+        const span = must(parseCount(Math.min(cursor, SAME_START_BYTES)));
+        const atLineEnd = cursor === 0 || readLines(now, must(parseCount(cursor - 1)), must(parseCount(1))).end === cursor;
+        const before = readLines(was, start, span);
+        const after = readLines(now, start, span);
+        return statSync(now).size >= cursor && atLineEnd && before.end === after.end && before.lines.join('\n') === after.lines.join('\n') ? 'present' : 'absent';
+    } catch {
+        return 'absent';
+    }
+}
