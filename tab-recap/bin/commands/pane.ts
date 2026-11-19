@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { configGetter } from '#src/daemon/config.ts';
+import { BESIDE_KEY } from '#src/pane/relay-env.ts';
 
 const NOT_COVERED = 3;
 const USAGE = 2;
@@ -20,7 +21,7 @@ export function paneEnvOf(args: readonly string[], env: NodeJS.ProcessEnv): Node
         if (mode === undefined || positionals.length > 1) {
             return null;
         }
-        return { ...env, ...mode, TAB_RECAP_TAB: positionals[0] ?? env['TAB_RECAP_TAB'] ?? '' };
+        return { ...env, ...mode, [BESIDE_KEY]: 'on', TAB_RECAP_TAB: positionals[0] ?? env['TAB_RECAP_TAB'] ?? '' };
     } catch {
         return null;
     }

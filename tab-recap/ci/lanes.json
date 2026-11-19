@@ -220,6 +220,7 @@
       "test/closed-lanes-contract.test.ts",
       "test/closed-lanes-dispatch.test.ts",
       "test/closed-lanes-sweep.test.ts",
+      "test/column-safety-relay.test.ts",
       "test/column-safety.test.ts",
       "test/compact-note.test.ts",
       "test/compact-requests-enqueue.test.ts",
