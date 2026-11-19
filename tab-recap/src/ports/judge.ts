@@ -2,7 +2,8 @@ import type { Text } from '#src/recap/domain/text.ts';
 import type { Usd } from '#src/recap/domain/usd.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
-export type { CheckAnchor, CheckAnchors, Judge, Said } from './legacy.ts';
+export type { Judge, Said } from './legacy.ts';
+export type { CheckAnchor, CheckAnchors } from './twins/checks/legacy.ts';
 
 export type JudgeTask = 'score' | 'readback' | 'grade' | 'cover';
 

@@ -1,3 +1,5 @@
-import type { AgentSession, SessionId } from '#src/recap/domain/ids.ts';
+import type { AgentKind, AgentSession, SessionId } from '#src/recap/domain/ids.ts';
 
-export type SessionOf = (kind: string, agentSession: AgentSession) => SessionId | null;
+export type { SessionOf } from './twins/legacy.ts';
+
+export type AgentSessionOf = (kind: AgentKind, agentSession: AgentSession) => SessionId | null;

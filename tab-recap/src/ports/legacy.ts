@@ -10,6 +10,7 @@ import type { Origin } from '#src/recap/domain/origin.ts';
 import type { AgentState, ClosedAll, LayoutResult, NewHandoffRequest, PromptBehavior, PromptWait } from './twins/runs/legacy.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 import type { Done, OpenResult, ResizeDirection } from './columns.ts';
+import type { WorkspacesResult } from './twins/legacy.ts';
 import type { LineBehavior, Prompted } from './agents.ts';
 import type { AskIdentity, AskKey, Requester } from './ask-ledger.ts';
 import type { DecisionCounts, DecisionGate, DecisionMode, DecisionVerdict, LinkedDecision, PaneKey, PassedCoverage, UncheckedCoverage } from './autocompact-records.ts';
@@ -264,14 +265,11 @@ export interface Judge {
     ask(task: JudgeTask, document: string): Promise<Said>;
 }
 
-export interface CheckAnchor {
-    readonly item: string;
-    readonly pass: boolean;
-    readonly reason: string;
-}
-
-export type CheckAnchors = ReadonlyMap<string, readonly CheckAnchor[]>;
-
 export interface LaneTokens {
     report(pane: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done>;
+}
+
+export interface WorkspaceTokens {
+    reportWorkspace(workspace: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done>;
+    workspaces(): Promise<WorkspacesResult>;
 }
