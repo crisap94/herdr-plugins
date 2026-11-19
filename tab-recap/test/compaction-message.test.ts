@@ -3,19 +3,22 @@ import assert from 'node:assert/strict';
 import { guidanceOf, MESSAGE_LIMIT, restoreFrom, restoreOf } from '#src/recap/application/compaction-message.ts';
 import type { Material } from '#src/recap/application/compaction-message.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { must } from '#src/protocol/result.ts';
 
 const web = { base: 'https://git.example/team/app', forge: 'gitlab', branch: 'feat/cart' } as const;
 const sections = {
     ...NO_SECTIONS, goal: 'Ship the cart rewrite', now: ['Running the checkout tests'], needs: ['Should guests keep their basket?'],
     decisions: ['Use sqlite, it needs no server'], next: ['Open the merge request'], rules: ['Never push to main'], links: ['!252', '`src/cart.ts`'],
 };
+const said = (raw: string): Text => must(parseText(raw));
 const material = (over: Partial<Material> = {}): Material => ({ sections, web, note: null, ...over });
 
 const many = (label: string): string[] => Array.from({ length: 14 }, (_, at) => `${label} ${at} ${'x'.repeat(60)}`);
 const FORBIDDEN = /recap|\btabs?\b|tool/iu;
 
 test('golden: the guidance with a note is ONE line, numbered, references as URLs', () => {
-    assert.equal(guidanceOf(material({ note: 'the failing retry test' })), [
+    assert.equal(guidanceOf(material({ note: said('the failing retry test') })), [
         'When you summarize this conversation, keep these, most important first:',
         '(1) Above all, keep: the failing retry test',
         '(2) What I want: Ship the cart rewrite',
@@ -26,11 +29,11 @@ test('golden: the guidance with a note is ONE line, numbered, references as URLs
         '(7) Exact references to keep as written: !252 (https://git.example/team/app/-/merge_requests/252); src/cart.ts (https://git.example/team/app/-/blob/feat/cart/src/cart.ts).',
         'Drop raw command output, the details of steps that are finished, and dead ends we already resolved.',
     ].join(' '));
-    assert.ok(!/[\r\n]/u.test(guidanceOf(material({ note: 'a\nb' }))), 'no line break, whatever the note holds');
+    assert.ok(!/[\r\n]/u.test(guidanceOf(material({ note: said('a\nb') }))), 'no line break, whatever the note holds');
 });
 
 test('a skipped note leaves no trace, and empty priorities are omitted', () => {
-    const text = guidanceOf(material({ note: '   ', sections: { ...NO_SECTIONS, goal: 'Fix the login bug' } }));
+    const text = guidanceOf(material({ note: said('   '), sections: { ...NO_SECTIONS, goal: 'Fix the login bug' } }));
     assert.equal(text, ['When you summarize this conversation, keep these, most important first:', '(1) What I want: Fix the login bug', 'Drop raw command output, the details of steps that are finished, and dead ends we already resolved.'].join(' '));
     assert.ok(!/above all|note/iu.test(text));
 });
@@ -46,17 +49,17 @@ test('golden: the restore message for an agent whose compaction takes no instruc
 
 test('over the limit: references go first, then next steps, then decisions; the note and the goal stay whole', () => {
     const big = { ...sections, links: many('ref'), next: many('next'), now: [], decisions: many('decision'), needs: [], rules: [] };
-    const text = guidanceOf(material({ sections: big, note: 'keep the note whole' }));
+    const text = guidanceOf(material({ sections: big, note: said('keep the note whole') }));
     assert.ok(text.length <= MESSAGE_LIMIT, String(text.length));
     assert.ok(text.includes('keep the note whole') && text.includes('Ship the cart rewrite'));
     assert.ok(!text.includes('ref 13') && text.includes('next 13'), 'references are cut first, from the end');
     assert.ok(text.includes('decision 13'), 'decisions are whole while references can still give');
-    const tighter = guidanceOf(material({ sections: { ...big, decisions: many('decision').map((line) => line + 'y'.repeat(150)) }, note: 'n' }));
+    const tighter = guidanceOf(material({ sections: { ...big, decisions: many('decision').map((line) => line + 'y'.repeat(150)) }, note: said('n') }));
     assert.ok(tighter.length <= MESSAGE_LIMIT && !tighter.includes('next 0'), 'next steps go before decisions');
 });
 
 test('the agent never hears about the plugin: no template, with or without a note, names it', () => {
-    for (const text of [guidanceOf(material({ note: 'x' })), guidanceOf(material()), restoreOf(material({ note: 'x' })), restoreOf(material()), guidanceOf(material({ sections: NO_SECTIONS })), restoreOf(material({ sections: NO_SECTIONS })), restoreFrom('We kept SQLite.')]) {
+    for (const text of [guidanceOf(material({ note: said('x') })), guidanceOf(material()), restoreOf(material({ note: said('x') })), restoreOf(material()), guidanceOf(material({ sections: NO_SECTIONS })), restoreOf(material({ sections: NO_SECTIONS })), restoreFrom(said('We kept SQLite.'))]) {
         assert.ok(!FORBIDDEN.test(text), text);
     }
 });

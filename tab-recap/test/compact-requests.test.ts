@@ -10,6 +10,7 @@ import type { CompactRequest } from '#src/ports/requests.ts';
 import { Trail } from '#src/recap/application/compaction-trail.ts';
 import type { Records } from '#src/recap/application/compaction-trail.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { parseCompactionId } from '#src/recap/domain/ids.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import { parseIdText, parseToolName } from '#src/protocol/primitives.ts';
@@ -105,9 +106,9 @@ test('off: nothing is read, nothing is queued and nothing is answered; a request
 test('a compaction ends with its answer: the trail hears how it ended, and the answer says done or the declared reason', () => {
     const answered: string[] = [];
     const records: Records = { begin: () => 'cmp', advance: () => undefined, finish: () => undefined };
-    const ended = new Trail(records, 'cmp', () => instant(0), (end, reason) => { answered.push(finalAnswerOf(end.stage, reason)); });
+    const ended = new Trail(records, must(parseCompactionId('cmp')), () => instant(0), (end, reason) => { answered.push(finalAnswerOf(end.stage, reason)); });
     ended.end('compacted');
-    const failed = new Trail(records, 'cmp', () => instant(0), (end, reason) => { answered.push(finalAnswerOf(end.stage, reason)); });
+    const failed = new Trail(records, must(parseCompactionId('cmp')), () => instant(0), (end, reason) => { answered.push(finalAnswerOf(end.stage, reason)); });
     failed.end('failed', { why: 'unreachable' }, COMPACT_FAILURES.busy);
     assert.deepEqual(answered, ['done', 'failed-busy']);
 });

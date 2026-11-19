@@ -1,41 +1,14 @@
 {
-  "src/recap/application/async-queue.ts": {
-    "container": 4,
-    "property": 1,
-    "assertion": 1
-  },
   "src/recap/application/compaction-deps.ts": {
     "parameter": 8,
     "return": 4,
     "container": 1
   },
-  "src/recap/application/compaction-input.ts": {
-    "property": 8
-  },
-  "src/recap/application/compaction-lanes.ts": {
-    "return": 1,
-    "property": 2
-  },
-  "src/recap/application/compaction-message.ts": {
-    "parameter": 1,
-    "property": 1
-  },
-  "src/recap/application/compaction-trail.ts": {
-    "parameter": 1,
-    "property": 1
-  },
   "src/recap/application/compaction.ts": {
     "parameter": 6,
-    "return": 3,
+    "return": 2,
     "container": 1,
     "property": 1
-  },
-  "src/recap/application/counted-writer.ts": {
-    "property": 1
-  },
-  "src/recap/application/coverage-verdict.ts": {
-    "parameter": 1,
-    "return": 3
   },
   "src/recap/application/decode.ts": {
     "parameter": 4,
@@ -263,6 +236,12 @@
   },
   "src/recap/application/transcript-tail.ts": {
     "return": 1
+  },
+  "src/recap/application/twins/compaction-input/legacy.ts": {
+    "legacy": 10
+  },
+  "src/recap/application/twins/counted-writer/legacy.ts": {
+    "legacy": 1
   },
   "src/recap/application/worksite-section.ts": {
     "return": 1,
