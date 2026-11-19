@@ -4,7 +4,7 @@ import type { HistoryFact } from '#src/ports/ledger.ts';
 import type { LastRun } from '#src/ports/recap-records.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
-import { taskFactsOf } from './ledger-input.ts';
+import { CLOSED_SHOWN_MS } from './ledger-input.ts';
 import { RecapJob, type RecapJobDeps } from './recap-job.ts';
 
 export type ScopeId = TabId;
@@ -44,8 +44,14 @@ const heldBy = (session: FollowedSession): PaneId => session.pane;
 
 function restoreFactsOf(store: EngineStore, at: Instant, scope: ScopeId, session: FollowedSession): RestoreFacts {
     const id = String(scope);
-    const tasks = (store.records.readRecap(id)?.tasks ?? []).filter((task) => task.lanes.includes(String(heldBy(session))));
-    const facts = tasks.map((task) => taskFactsOf(store.ledger, { tab: id, key: task.id }, at));
+    const recap = store.records.readRecap(id);
+    const tasks = (recap === null || 'kind' in recap ? [] : recap.tasks).filter((task) => task.lanes.includes(String(heldBy(session))));
+    const facts = tasks.map((task) => {
+        const owned = { tab: id, key: task.id };
+        const open = store.ledger.openOf(owned);
+        const closed = store.ledger.recentlyClosed(owned, at - CLOSED_SHOWN_MS);
+        return { open: 'kind' in open ? [] : open, closed: 'kind' in closed ? [] : closed };
+    });
     return { at, lastRun: store.records.lastRunOf(id), open: facts.flatMap((task) => task.open), closed: facts.flatMap((task) => task.closed) };
 }
 

@@ -2,8 +2,8 @@ import type * as sl from './contract-names.ts';
 import { parseHarnessKind, parseScopeId, parseSessionKey } from '#src/contract/ids.ts';
 import { must } from '#src/protocol/result.ts';
 import { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
-import type { Ledger, Applied } from '#src/ports/ledger.ts';
-import type { RecapRecords, RecordedRun, FailedRun, Advance, TabRecap, LastRun } from '#src/ports/recap-records.ts';
+import type { CheckedLedger, Applied } from '#src/ports/ledger.ts';
+import type { CheckedRecapRecords, RecordedRun, FailedRun, Advance, TabRecap, LastRun } from '#src/ports/recap-records.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { Transcripts, Located, ChunkResult, PromptResult } from '#src/ports/transcripts.ts';
 import type { Clock } from '#src/ports/clock.ts';
@@ -125,8 +125,11 @@ const orEmpty = <T>(value: readonly T[] | sl.Unknown): readonly T[] => orFallbac
 const scopeOf = (tab: string): sl.ScopeId => must(parseScopeId(tab));
 const keyOf = (pane: string): sl.SessionKey => must(parseSessionKey(pane));
 
-const pluginRecords = (records: sl.Records): RecapRecords => ({
-    readRecap: (tab: string): TabRecap | null => orNull(records.readRecap(scopeOf(tab))),
+const pluginRecords = (records: sl.Records): CheckedRecapRecords => ({
+    readRecap: (tab: string): TabRecap | null | Unknown => {
+        const found = records.readRecap(scopeOf(tab));
+        return isLedgerUnknown(found) ? pluginUnknown(found) : found;
+    },
     lastRunOf: (tab: string): LastRun | null => orNull(records.lastRunOf(scopeOf(tab))),
     beginRun: (tab: string, backend: string | null, at: number): void => {
         records.beginRun(scopeOf(tab), backend, at);
@@ -142,11 +145,13 @@ const pluginRecords = (records: sl.Records): RecapRecords => ({
     },
 });
 
-const pluginLedger = (facts: sl.FactStore): Ledger => ({
-    openOf: (task) => orEmpty(facts.openOf(task)).map(pluginFact),
-    recentlyClosed: (task, sinceMs) => orEmpty(facts.recentlyClosed(task, sinceMs)).map(pluginFact),
+const passedUnknown = <S, T>(value: S | sl.Unknown, convert: (each: S) => T): T | Unknown => (isLedgerUnknown(value) ? pluginUnknown(value) : convert(value));
+
+const pluginLedger = (facts: sl.FactStore): CheckedLedger => ({
+    openOf: (task) => passedUnknown(facts.openOf(task), (open) => open.map(pluginFact)),
+    recentlyClosed: (task, sinceMs) => passedUnknown(facts.recentlyClosed(task, sinceMs), (closed) => closed.map(pluginFact)),
     allOf: (task) => orEmpty(facts.allOf(task)).map(pluginFact),
-    keysOf: (tab): readonly Text[] => orEmpty(facts.keysOf(scopeOf(tab))).map((key) => must(parseText(key))),
+    keysOf: (tab) => { const found = facts.keysOf(scopeOf(tab)); return isLedgerUnknown(found) ? pluginUnknown(found) : found.map((key) => must(parseText(key))); },
     historyOf: (tab, pane) => facts.historyOf(scopeOf(tab), keyOf(pane)),
     apply: (run, ops) => pluginApplied(facts.apply(ledgerRun(run), ops.map(ledgerOperation))),
 });

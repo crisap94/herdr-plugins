@@ -37,7 +37,7 @@ export function sessionStarted(set: FollowSet, legacy: LegacyEngine, rebinding: 
         return;
     }
     const stored = rebinding.store.records.readRecap(String(into));
-    if (stored !== null) {
+    if (stored !== null && !('kind' in stored)) {
         rebinding.retired.keep(stored, was);
     }
     set.follow(scope, key, rebound);

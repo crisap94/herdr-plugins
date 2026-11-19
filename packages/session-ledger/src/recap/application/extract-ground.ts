@@ -8,7 +8,7 @@ import type { Built } from './recap-input.ts';
 
 const REPEAT_WINDOW_MS = 24 * 3_600_000;
 
-export function groundOf(world: { readonly tab: string; readonly tasks: readonly TaskShape[]; readonly built: Built; readonly entries: readonly Entry[]; readonly ledger: Ledger; readonly now: number; readonly language: string }): Ground {
+export function groundOf(world: { readonly tab: string; readonly tasks: readonly TaskShape[]; readonly built: Built; readonly entries: readonly Entry[]; readonly ledger: Omit<Ledger, 'keysOf'>; readonly now: number; readonly language: string }): Ground {
     const { tab, tasks, built, now } = world;
     const source = anchorSource(built.input);
     const agents = built.input.agents.flatMap((agent) => [agent.id, agent.label, agent.kind]).filter((name) => name !== '').map((name) => name.toLowerCase());
