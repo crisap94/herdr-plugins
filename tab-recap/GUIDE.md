@@ -234,6 +234,24 @@ that service, and the brief and its facts too when the brief is checked. The bri
 `~/.config/typesafe-api-key`, and is never logged or shown. A decision costs a fraction of a cent. Details and every
 key: [tab-recap/docs/REFERENCE.md](docs/REFERENCE.md#autocompact).
 
+## Hooks
+
+Claude Code and Codex can call tab-recap themselves: at the end of each turn (`Stop`), when a session starts
+(`SessionStart`) and before a compaction (`PreCompact`). The daemon then writes that tab's recap once per turn, at the
+turn's end. The listener is on by default (`TAB_RECAP_HOOKS=on`), but nothing is written into your agents' settings
+until you run the install yourself, once per harness:
+
+```bash
+tab-recap hooks install               # both harnesses
+tab-recap hooks install --harness claude
+```
+
+`tab-recap hooks uninstall` takes the entries out again. The install writes `~/.claude/settings.json` and
+`~/.codex/hooks.json`. Codex asks you to trust the new hooks on its `/hooks` screen before it runs them. The daemon
+reads `TAB_RECAP_HOOKS` at start, so restart it after changing the key. A session the daemon does not follow gets no
+recap and no engine call, and if the daemon is down the hook does nothing: the agent carries on as if tab-recap were
+not there.
+
 ## Chapters and how long things are kept
 
 A session breaks when an agent compacts its context (Claude's `compact_boundary`, Codex's `compacted` row,
@@ -351,6 +369,7 @@ variables win over the file, except for the two language keys, where the file (w
 | `TAB_RECAP_RECONCILE_EVERY` | `8` | turns between two reconciliations of the open facts by the curator |
 | `TAB_RECAP_KEEP_INPUT_DAYS` | `14` | days the input of each run is kept for the judge (`0` = never keep) |
 | `TAB_RECAP_KEEP_DAYS` | `30` | days a closed tab is kept before the daemon's daily retention pass removes it (`0` = keep everything) |
+| `TAB_RECAP_HOOKS` | `on` | the hook listener: Claude Code and Codex call the daemon at each turn's end (*restart*; see [Hooks](#hooks)) |
 
 ## Troubleshooting
 

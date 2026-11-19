@@ -145,6 +145,7 @@ example take effect after the daemon restarts.
 | `TAB_RECAP_COMPACT_TARGET` | `focused` | which agents `compact` reaches: `focused`, `all`, or kinds such as `claude,codex` |
 | `TAB_RECAP_MIN_TAB_COLS` | `110` | tabs narrower than this get the bar instead of a column (restart) |
 | `TAB_RECAP_KEEP_DAYS` | `30` | days a closed tab's history is kept; `0` keeps everything |
+| `TAB_RECAP_HOOKS` | `on` | Claude Code and Codex call the daemon at each turn's end, so a recap is written once per turn; nothing is installed until `tab-recap hooks install` (restart) |
 
 The models, compaction, handoff, autocompact and telemetry settings are in
 [`config.example.env`](config.example.env) and in the [configuration reference](docs/REFERENCE.md#configuration-reference).

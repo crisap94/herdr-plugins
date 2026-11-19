@@ -38,11 +38,11 @@ function fake(): Fake {
     return { root, lines, listeners, context };
 }
 
-test('with the key unset the hooks slot is off: no socket file and the slot does not start', async () => {
+test('with the key off the hooks slot does not start: no socket file, no status subscription', async () => {
     const double = fake();
     try {
         const entry: SlotEntry = { name: 'hooks', key: 'TAB_RECAP_HOOKS', defaultOn, slot };
-        const started = await startSlots([entry], double.context(parseSwitch(undefined)));
+        const started = await startSlots([entry], double.context(parseSwitch('off')));
         assert.equal(existsSync(join(double.root, SOCKET)), false);
         assert.deepEqual(double.lines, []);
         assert.equal(double.listeners.size, 0);
