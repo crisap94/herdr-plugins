@@ -9,6 +9,36 @@ export type Percent = Brand<number, 'Percent'>;
 export type Seconds = Brand<number, 'Seconds'>;
 export type Minutes = Brand<number, 'Minutes'>;
 
+export function assertCount(input: unknown): asserts input is Count {
+    if (typeof input !== 'number') {
+        throw new TypeError('a count is a number');
+    }
+}
+
+export function assertAmount(input: unknown): asserts input is Amount {
+    if (typeof input !== 'number') {
+        throw new TypeError('an amount is a number');
+    }
+}
+
+export function assertPercent(input: unknown): asserts input is Percent {
+    if (typeof input !== 'number') {
+        throw new TypeError('a percent is a number');
+    }
+}
+
+export function assertSeconds(input: unknown): asserts input is Seconds {
+    if (typeof input !== 'number') {
+        throw new TypeError('a seconds is a number');
+    }
+}
+
+export function assertMinutes(input: unknown): asserts input is Minutes {
+    if (typeof input !== 'number') {
+        throw new TypeError('a minutes is a number');
+    }
+}
+
 export interface BadgeWording<Text> {
     readonly working: Text;
     readonly blocked: Text;
@@ -106,3 +136,7 @@ export interface Wording<Text> {
     readonly expanded: ExpandedWording<Text>;
     readonly chapters: ChaptersWording<Text>;
 }
+
+export interface TextWording extends Wording<string> {}
+
+export interface TextChapters extends ChaptersWording<string> {}

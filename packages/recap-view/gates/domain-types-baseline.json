@@ -1,4 +1,21 @@
 {
+  "src/compaction-stage.ts": {
+    "parameter": 5,
+    "return": 4,
+    "property": 3
+  },
+  "src/expanded-regions.ts": {
+    "parameter": 3,
+    "return": 8,
+    "container": 12,
+    "property": 6,
+    "assertion": 1
+  },
+  "src/expanded.ts": {
+    "parameter": 3,
+    "return": 1,
+    "container": 8
+  },
   "src/hyperlink.ts": {
     "parameter": 5,
     "return": 4
@@ -14,6 +31,28 @@
   },
   "src/model.ts": {
     "property": 2
+  },
+  "src/present.ts": {
+    "parameter": 23,
+    "return": 13,
+    "container": 15,
+    "property": 4
+  },
+  "src/session-lines.ts": {
+    "parameter": 1,
+    "return": 2,
+    "container": 3,
+    "property": 6
+  },
+  "src/timeline-breaks.ts": {
+    "parameter": 3,
+    "return": 4
+  },
+  "src/timeline.ts": {
+    "parameter": 9,
+    "return": 5,
+    "container": 2,
+    "property": 3
   },
   "src/wrap.ts": {
     "parameter": 16,

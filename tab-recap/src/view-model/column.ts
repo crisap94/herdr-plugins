@@ -2,10 +2,19 @@ import type { ColumnTask, ColumnView, CompactionRow, RecapColumn, Row, Style, We
 import type { CompactionRecord } from '#src/ports/compaction-records.ts';
 import type { LaneCursor, TabRecap } from '#src/ports/recap-records.ts';
 import { isScreenSource } from '#src/ports/screens.ts';
-import type { LaneWeb, TabLane } from '#src/ports/tab-views.ts';
-import type { ColumnView as PluginColumnView } from '#src/recap/render/present.ts';
+import type { LaneWeb, TabLane, TabView } from '#src/ports/tab-views.ts';
+import type { Messages } from '#src/i18n/messages.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
+
+export interface PluginColumnView extends Omit<ColumnView<string>, 'rows' | 'daemonVersion' | 'recap' | 'wording' | 'compactions'> {
+    readonly tab: TabView | null;
+    readonly recap: TabRecap | null;
+    readonly messages: Messages;
+    readonly compactions?: readonly CompactionRecord[];
+}
+
+export interface PresentedView extends ColumnView<string> {}
 
 export function wordingOf<Text>(wording: Wording<Text>): Wording<Text> {
     return wording;
@@ -20,7 +29,7 @@ function laneExtras(lane: TabLane): Partial<Row> {
     return {
         ...(lane.lastPrompt === undefined ? {} : { lastPrompt: lane.lastPrompt }),
         ...(web === undefined ? {} : { web: web === null ? null : webOf(web) }),
-        ...(context === undefined ? {} : { context: context === null ? null : { tokens: context.tokens, window: context.window } }),
+        ...(context === undefined ? {} : { context: context === null ? null : { tokens: context.tokens, window: context.window, source: context.source } }),
         ...(lane.since === undefined ? {} : { since: lane.since }),
     };
 }
@@ -36,6 +45,10 @@ export function rowOf(lane: TabLane, cursor: LaneCursor | undefined): Row {
         fromScreen: cursor !== undefined && isScreenSource(cursor.transcript),
         harnessRecap: cursor?.claudeRecap ?? null,
     };
+}
+
+function columnRowOf(lane: TabLane, cursor: LaneCursor | undefined): Row {
+    return { ...rowOf(lane, cursor), title: cursor?.title ?? lane.title, lastPrompt: lane.lastPrompt ?? cursor?.lastPrompt ?? null };
 }
 
 export function columnTaskOf(task: RecapTask): ColumnTask {
@@ -74,7 +87,7 @@ export function columnViewOf<Text>(view: PluginColumnView, wording: Wording<Text
     const cursors = view.recap?.lanes ?? [];
     return {
         ...columnExtras(view, style),
-        rows: view.tab === null ? null : view.tab.lanes.map((lane) => rowOf(lane, cursors.find((cursor) => cursor.pane === lane.pane))),
+        rows: view.tab === null ? null : view.tab.lanes.map((lane) => columnRowOf(lane, cursors.find((cursor) => cursor.pane === lane.pane))),
         daemonVersion: view.tab?.daemonVersion ?? null,
         recap: view.recap === null ? null : recapColumnOf(view.recap),
         notes: view.notes,
@@ -83,3 +96,22 @@ export function columnViewOf<Text>(view: PluginColumnView, wording: Wording<Text
         wording,
     };
 }
+
+export function stageRowOf(record: CompactionRecord): CompactionRow {
+    return { ...compactionRowOf(record), agent: record.agent, startedAt: record.startedAt };
+}
+
+export function presentedOf(view: PluginColumnView): PresentedView {
+    const mapped = columnViewOf(view, view.messages, view.style);
+    return view.compactions === undefined ? mapped : { ...mapped, compactions: view.compactions.map(stageRowOf) };
+}
+
+export const viewDrawing =
+    <Width, Shape, Drawn>(draw: (view: PresentedView, width: Width, markdown: Shape) => Drawn) =>
+    (view: PluginColumnView, width: Width, markdown: Shape): Drawn =>
+        draw(presentedOf(view), width, markdown);
+
+export const barDrawing =
+    <Width, Drawn>(draw: (view: PresentedView, width: Width) => Drawn) =>
+    (view: PluginColumnView, width: Width): Drawn =>
+        draw(presentedOf(view), width);
