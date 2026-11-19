@@ -312,7 +312,7 @@ test('every BACKEND_IDS id has a maker that names itself; custom has no model or
     const config = { backend: 'auto', models: { claude: 'haiku', codex: '', opencode: '', custom: '' }, effort: 'default', customCommand: 'my-llm --model x', timeoutMs: 1000 } as unknown as Config;
     assert.deepEqual(Object.keys(MAKERS).toSorted(), [...BACKEND_IDS].toSorted());
     for (const id of BACKEND_IDS) {
-        assert.equal(MAKERS[id](config, dir, runtime).id, id);
+        assert.equal(MAKERS[id](config, must(parseDirectory(dir)), runtime).id, id);
     }
     assert.equal(MODEL_DEFAULTS.custom, '');
     assert.equal(enumeratorFor({ ...config, backend: 'custom' }, ['custom'], must(parseDirectory(dir)), runtime), null);

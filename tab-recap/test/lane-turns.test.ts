@@ -9,9 +9,10 @@ import type { Board } from '#src/recap/domain/board.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import type { FleetSource, Frame, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
+import { laneStatus } from '#src/recap/domain/status.ts';
 import { memoryStore } from './db/support.ts';
 
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' });
@@ -22,7 +23,8 @@ function turns(): { heard: (pane: string, status: string) => void; store: Return
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
     const settled: string[] = [];
     const hub = new SettleHub({ agents: { status: (): never => { throw new Error('no poll'); } }, listening: (): boolean => true, pause: (): Promise<void> => Promise.resolve(), now: (): number => 100 });
-    const heard = laneTurns({ hub, compactions: store.compactions, board: (): Board => board, now: (): number => 100 });
+    const turn = laneTurns({ hub, compactions: store.compactions, board: (): Board => board, now: (): Instant => instant(100) });
+    const heard = (pane: string, status: string): void => { turn({ pane: paneId(pane), status: laneStatus(status) }); };
     void hub.settled('w1:p1', instant(0), 1000).then((done) => { settled.push(done.kind === 'settled' ? done.status : 'timeout'); return done; });
     return { heard, store, settled };
 }

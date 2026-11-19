@@ -15,8 +15,12 @@ import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
 import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
-import { lanesOf, listsPane } from '#src/recap/domain/board.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { lanesOf } from '#src/recap/domain/board.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
+import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+import type { AnswerStage, RequestId } from '#src/protocol/primitives.ts';
 import type { CompactionRecords } from '#src/ports/compaction-records.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
@@ -25,25 +29,24 @@ import type { RecapRecords } from '#src/ports/recap-records.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
-import { RECAP_WAIT_MS } from '#src/recap/application/recap-wait.ts';
-import { refreshedWithin } from './refresh-status.ts';
+import { ceilingOverrideNow, listsPaneIn, refreshVia } from './legacy.ts';
 import { loadConfig, messagesOf } from './config.ts';
 
 interface CoverageCheck {
-    check(brief: string, facts: readonly CoverageFact[]): Promise<Coverage>;
+    check(brief: Text, facts: readonly CoverageFact[]): Promise<Coverage>;
 }
 
 interface CompactionWebs {
-    of(pane: string): LaneWeb | null;
+    of(pane: PaneId): LaneWeb | null;
 }
 
 interface CompactionAnswers {
-    answer(id: string, pane: string, stage: string): void;
+    answer(id: RequestId, pane: PaneId, stage: AnswerStage): void;
 }
 
 interface CompactionTyping {
-    acquire(pane: string): Promise<'taken' | 'busy' | 'unavailable'>;
-    release(pane: string): Promise<void>;
+    acquire(pane: PaneId): Promise<'taken' | 'busy' | 'unavailable'>;
+    release(pane: PaneId): Promise<void>;
 }
 
 interface CompactionParts {
@@ -66,7 +69,7 @@ interface CompactionParts {
     readonly typing: CompactionTyping;
     readonly events: LaneEvents;
     readonly claims: LaneClaims;
-    log(line: string): void;
+    log(line: Text): void;
 }
 
 export function coverageOf(decider: Decider | null, tuning: () => AutocompactTuning): CoverageCheck | null {
@@ -75,24 +78,24 @@ export function coverageOf(decider: Decider | null, tuning: () => AutocompactTun
 
 export function wireCompaction(parts: CompactionParts): Compaction {
     const { fleet, informer, recaps } = parts;
-    const brief = new BriefDesk({ writer: (): CompactionBriefs | null => parts.briefs(), log: (line: string): void => { parts.log(line); } });
+    const brief = new BriefDesk({ writer: (): CompactionBriefs | null => parts.briefs(), log: (line: Text): void => { parts.log(line); } });
     return new Compaction({
         compactionPlans,
-        agents: fleet.agents(), notifier: fleet, records: parts.records, boundaries: parts.boundaries, ledger: parts.ledger, compactions: parts.compactions, settling: parts.settling, webs: parts.webs, log: (line) => { parts.log(line); },
-        brief, recent: (lane) => parts.recent.of(lane), marks: (lane) => parts.recent.marks(lane), pause: sleep, now: () => Date.now(),
-        lanes: (tab) => lanesOf(informer.current, tabId(tab)),
-        listsPane: (pane) => listsPane(informer.current, paneId(pane)),
-        focused: async (tab) => {
-            const layout = await fleet.layout(tabId(tab));
-            return isUnknown(layout) ? null : layout.focused;
+        agents: fleet.agents(), notifier: fleet, records: parts.records, boundaries: parts.boundaries, ledger: parts.ledger, compactions: parts.compactions, settling: parts.settling, webs: parts.webs, log: (line: Text) => { parts.log(line); },
+        brief, recent: (lane) => parts.recent.of(lane), marks: (lane) => parts.recent.marks(lane), pause: sleep, now: () => instant(Date.now()),
+        lanes: (tab: TabId) => lanesOf(informer.current, tab),
+        listsPane: listsPaneIn(informer),
+        focused: async (tab: TabId): Promise<PaneId | null> => {
+            const layout = await fleet.layout(tab);
+            return isUnknown(layout) || layout.focused === null ? null : paneId(layout.focused);
         },
-        refresh: (tab, lanes) => refreshedWithin(recaps.refresh(tabId(tab), lanes), parts.records, tab, RECAP_WAIT_MS),
+        refresh: refreshVia(recaps, parts.records),
         coverage: () => coverageOf(parts.coverageDecider(), () => loadConfig().tuning),
         decisions: parts.decisions,
         checkedBriefs: parts.checkedBriefs,
-        ceilingOverride: () => loadConfig().autocompact.ceilingPolicy === 'overrides-check',
+        ceilingOverride: ceilingOverrideNow,
         missedFacts: () => loadConfig().autocompact.missedFacts,
-        answer: (id, pane, stage) => { parts.answers.answer(id, pane, stage); },
+        answer: (id: RequestId, pane: PaneId, stage: AnswerStage) => { parts.answers.answer(id, pane, stage); },
         asks: parts.asks,
         typing: parts.typing,
         events: parts.events,
