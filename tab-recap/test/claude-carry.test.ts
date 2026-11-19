@@ -36,10 +36,14 @@ test('a new transcript shorter than the old cursor starts at UNREAD', async () =
     assert.deepEqual(await carried(START, row('first')), UNREAD);
 });
 
-test('a cursor that would land inside a line of the new transcript starts at UNREAD', async () => {
-    assert.deepEqual(await carried(START, START + row('third'), { cursor: AT.cursor - 2, tail: null }), UNREAD);
+test('a fork that shares the first 64 KiB and differs before the cursor starts at UNREAD', async () => {
+    const head = row('x'.repeat(70 * 1024));
+    const old = head + row('old turn');
+    const at: Position = { cursor: Buffer.byteLength(old), tail: null };
+    assert.deepEqual(await carried(old, head + row('new turn') + row('more'), at), UNREAD);
+    assert.deepEqual(await carried(old, old + row('more'), at), at);
 });
 
-test('an old transcript that can no longer be read starts at UNREAD', async () => {
+test('a true move, whose old transcript can no longer be read, starts at UNREAD', async () => {
     assert.deepEqual(await carried(null, START + row('third')), UNREAD);
 });

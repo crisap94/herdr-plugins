@@ -123,7 +123,7 @@ export const CSR_CASES: readonly Case<EngineWorld, Engine>[] = [
     {
         id: 'CSR-7',
         group: 'CSR',
-        title: 'a new source for the same key continues the old cursor only when the reader confirms the same file moved; otherwise it starts at UNREAD and the old cursor is kept',
+        title: 'a new source for the same key continues the old cursor only when the reader confirms it holds exactly the bytes already read from the old source; otherwise, or when the old source can no longer be read, it starts at UNREAD and the old cursor is kept',
         level: 'full',
         async run(world, engine) {
             engine.follow(TAB, followed(key('moved'), { session: session('s1') }));

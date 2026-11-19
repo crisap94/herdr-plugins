@@ -67,11 +67,18 @@ const unread = (cursors: readonly LaneCursor[], read: readonly LaneCursor[]): re
 
 const after = <F extends (...args: never[]) => ReturnType<F>>(call: F, then: (result: ReturnType<F>) => ReturnType<F>) => (...args: Parameters<F>): ReturnType<F> => then(call(...args));
 
+const OLD_CURSORS_PER_PANE = 4;
+
 const keptOver = (store: EngineStore): EngineStore => {
     const read = new Map<string, readonly LaneCursor[]>();
     const withKept = (move: Moved): readonly LaneCursor[] => {
-        const held = (read.get(move.tab) ?? []).filter((cursor) => move.lanes.some((other) => other.pane === cursor.pane));
-        return [...move.lanes, ...unread(held, move.lanes)];
+        const old = unread(read.get(move.tab) ?? [], move.lanes);
+        const held = old.filter((cursor, at) => {
+            const same = [...move.lanes, ...old.slice(0, at)].filter((other) => other.pane === cursor.pane);
+            const current = same.filter((other) => move.lanes.includes(other)).length;
+            return current > 0 && same.length - current < OLD_CURSORS_PER_PANE;
+        });
+        return [...move.lanes, ...held];
     };
     const seen = (found: ReturnType<EngineStore['records']['readRecap']>): ReturnType<EngineStore['records']['readRecap']> => {
         if (found !== null && !('kind' in found)) read.set(found.tab, found.lanes);

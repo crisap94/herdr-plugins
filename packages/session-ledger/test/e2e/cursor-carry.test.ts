@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { parseSessionId, type SessionId } from '@stateforge-labs/session-ledger';
+import { createEngine, parseSessionId, type SessionId } from '@stateforge-labs/session-ledger';
+import { createEngineWorld, followed, key, scope, session } from '@stateforge-labs/session-ledger/testkit';
 import { CursorCarry } from '@stateforge-labs/session-ledger/unstable/recap/application/cursor-carry.ts';
 import type { LaneCursor } from '@stateforge-labs/session-ledger/unstable/ports/recap-records.ts';
 import { UNREAD, type Located, type Position, type Transcripts } from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
@@ -60,4 +61,21 @@ test('a source with its own stored cursor reads from that cursor', async () => {
     const carry = new CursorCarry();
     const reader = readerOf([], true);
     assert.equal((await carry.cursorFor({ session: S1, cursors: [cursorOf('x1', 3)], wanted: cursorOf('x1'), reader })).cursor, 3);
+});
+
+test('a followed pane keeps its current cursor and at most four old ones', async () => {
+    const world = createEngineWorld();
+    const engine = createEngine(world.plugs);
+    const tab = scope('one');
+    let source = 'x0';
+    world.setLocate(() => ({ kind: 'answer', value: { kind: 'located', source } }));
+    world.setRead({ kind: 'answer', value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 3, tail: null }, grew: true } });
+    engine.follow(tab, followed(key('p1'), { session: session('s1') }));
+    for (let at = 0; at < 7; at += 1) {
+        source = `x${at}`;
+        await engine.refresh(tab);
+    }
+    const recap = world.store.records.readRecap(tab);
+    assert.ok(recap !== null && !('kind' in recap));
+    assert.deepEqual(recap.lanes.map((cursor) => cursor.transcript), ['x6', 'x5', 'x4', 'x3', 'x2']);
 });
