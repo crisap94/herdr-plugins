@@ -59,10 +59,8 @@
     "parameter": 1,
     "return": 1
   },
-  "src/adapters/db/rows.ts": {
-    "parameter": 6,
-    "return": 5,
-    "container": 22
+  "src/adapters/db/rows/legacy.ts": {
+    "legacy": 33
   },
   "src/adapters/db/run-inputs.ts": {
     "parameter": 8,

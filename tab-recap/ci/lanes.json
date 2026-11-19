@@ -589,6 +589,7 @@
       "src/adapters/db/requests.ts",
       "src/adapters/db/retention.ts",
       "src/adapters/db/rows.ts",
+      "src/adapters/db/rows/legacy.ts",
       "src/adapters/db/run-inputs.ts",
       "src/adapters/db/run-write.ts",
       "src/adapters/db/schema/001-history.ts",
