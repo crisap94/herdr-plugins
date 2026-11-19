@@ -28,14 +28,10 @@ import { VALUE_MAX as EVENT_MAX, type EventKind } from './event-token.ts';
 import type { FactId } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
 import type { Freshness, LastRunCause, RefreshStatus, WaitResult } from './freshness.ts';
 import type { HandoffGroupId } from './handoff-content.ts';
-import { CAPABILITY_TOKEN } from '#src/protocol/capability.ts';
-import type { OptIn } from '#src/protocol/primitives.ts';
 import { cleanHandoffText, type HandoffText } from './handoff-sanitize.ts';
 import { vetHandoffText } from './handoff-vetting.ts';
 import { herdrEventsFrom, type HerdrEvents } from './herdr-events.ts';
 import { parseHandoffOutcome, parseStoredHandoffOutcome, type HandoffOutcome, type StoredHandoffOutcome } from './handoff-outcome.ts';
-import { API_TOKEN, NEEDS_TOKEN, RECAP_TOKEN, SHARE_TOKEN } from './lane-token-names.ts';
-import { CAPABILITY_VALUE, PROTOCOL_VERSION, capabilityValueOf } from './lane-capability.ts';
 import type { WorksiteSnapshot } from './worksite.ts';
 import { NotAnIdentifierError, isUncheckedSessionId, isUncheckedSessionPath, parseAgentKind, parseHandoffId, parsePaneId, parseSessionId, parseSessionPath, parseTabId, parseWorkspaceId, type HandoffId, type PaneId, type SessionId, type SessionPath, type AgentKind, type TabId, type WorkspaceId } from './ids.ts';
 import type { Lane, SeenLane } from './lane.ts';
@@ -291,35 +287,7 @@ export const isForbidden = (text: HandoffText): boolean => vetHandoffText(text).
 
 export const herdrEventsOf = (raw: string | undefined): HerdrEvents => herdrEventsFrom(textValue(raw));
 
-export const capabilityOf = (isOn: (setting: OptIn) => boolean): string => capabilityValueOf((setting) => (isOn(setting) ? 'on' : 'off'));
-
-export interface LaneFacts { readonly share: number | null; readonly recapAt: number | null; readonly needs: number; }
-
-export type TokenValues = Readonly<Record<string, string>>;
-
-export function valuesOf(facts: LaneFacts, capability: string = CAPABILITY_VALUE): TokenValues {
-    return {
-        [API_TOKEN]: PROTOCOL_VERSION,
-        ...(facts.share === null ? {} : { [SHARE_TOKEN]: String(facts.share) }),
-        ...(facts.recapAt === null ? {} : { [RECAP_TOKEN]: String(facts.recapAt) }),
-        [NEEDS_TOKEN]: String(facts.needs),
-        [CAPABILITY_TOKEN]: capability,
-    };
-}
-
-export interface Written { readonly values: TokenValues; readonly at: number; }
-
-export function writeDue(previous: Written | null, values: TokenValues, now: number, ttlMs: number): TokenValues | null {
-    if (previous === null) {
-        return values;
-    }
-    const changed = Object.keys(values).some((name) => values[name] !== previous.values[name]) || Object.keys(previous.values).some((name) => !(name in values));
-    return changed || now - previous.at >= ttlMs / 2 ? values : null;
-}
-
-export const clearing = (names: readonly string[]): Readonly<Record<string, null>> => Object.fromEntries(names.map((name) => [name, null]));
-
-export const unownedName = (names: readonly string[], allowed: readonly string[]): string | null => names.find((name) => !allowed.includes(name)) ?? null;
+export * from './twins/values/legacy.ts';
 
 export const handoffOutcomeOf = (kind: string, reason: string | null): HandoffOutcome | null => okOrNull(parseHandoffOutcome(kind, reason));
 

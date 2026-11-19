@@ -14,7 +14,7 @@
     "container": 1
   },
   "src/recap/domain/legacy.ts": {
-    "legacy": 143
+    "legacy": 125
   },
   "src/recap/domain/origin.ts": {
     "parameter": 1
@@ -51,6 +51,9 @@
   },
   "src/recap/domain/token-registry.ts": {
     "parameter": 1
+  },
+  "src/recap/domain/twins/values/legacy.ts": {
+    "legacy": 18
   },
   "src/recap/domain/visibility.ts": {
     "return": 2,
