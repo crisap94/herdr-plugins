@@ -1,50 +1,4 @@
 {
-  "src/adapters/db/ask-ledger.ts": {
-    "parameter": 6,
-    "return": 2,
-    "container": 2
-  },
-  "src/adapters/db/autocompact-briefs.ts": {
-    "parameter": 4,
-    "return": 2,
-    "container": 1
-  },
-  "src/adapters/db/autocompact-records.ts": {
-    "parameter": 1,
-    "return": 6,
-    "container": 14,
-    "assertion": 5
-  },
-  "src/adapters/db/boundaries.ts": {
-    "parameter": 3,
-    "return": 1,
-    "property": 1
-  },
-  "src/adapters/db/boundary-read.ts": {
-    "parameter": 3,
-    "return": 4,
-    "assertion": 2
-  },
-  "src/adapters/db/checked-fact-codec.ts": {
-    "container": 1,
-    "property": 1,
-    "assertion": 1
-  },
-  "src/adapters/db/compaction-records.ts": {
-    "parameter": 8,
-    "return": 6,
-    "container": 6,
-    "assertion": 1
-  },
-  "src/adapters/db/database.ts": {
-    "parameter": 4,
-    "return": 1,
-    "property": 1
-  },
-  "src/adapters/db/handoff-answers.ts": {
-    "parameter": 1,
-    "return": 2
-  },
   "src/adapters/db/import/equivalence.ts": {
     "parameter": 2,
     "return": 1,
@@ -94,16 +48,8 @@
     "parameter": 2,
     "return": 1
   },
-  "src/adapters/db/ledger-rows.ts": {
-    "container": 2,
-    "assertion": 1
-  },
-  "src/adapters/db/operator-anchors.ts": {
-    "parameter": 1,
-    "container": 1
-  },
-  "src/adapters/db/print-store.ts": {
-    "parameter": 1
+  "src/adapters/db/legacy.ts": {
+    "legacy": 43
   },
   "src/adapters/db/recap-read.ts": {
     "parameter": 3,

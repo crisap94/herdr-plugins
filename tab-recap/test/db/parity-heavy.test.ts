@@ -1,7 +1,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Database } from 'bun:sqlite';
-import { CompactionRecordsRepository } from '#src/adapters/db/compaction-records.ts';
+import { CompactionRecordsRepository } from '#src/adapters/db/legacy.ts';
 import { typeIdOf } from '#src/adapters/db/typeid.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { expectSameEffect, expectSameRows, withParity } from './parity.ts';

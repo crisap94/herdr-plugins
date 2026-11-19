@@ -1,14 +1,20 @@
 import type { Database } from 'bun:sqlite';
 import { lt, sql } from 'drizzle-orm';
-import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
+import type { DecisionBriefs } from '#src/ports/autocompact-briefs.ts';
+import { must } from '#src/protocol/result.ts';
 import type { CheckedFact } from '#src/recap/domain/autocompact.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import type { FactIndex } from '#src/recap/domain/fact-index.ts';
+import type { DecisionId } from '#src/recap/domain/ids.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 import { encode } from './checked-fact-codec.ts';
 import { autocompactBrief } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { idOf } from './typeid.ts';
 import { writeTx } from './connection.ts';
 
-export class AutocompactBriefsRepository implements AutocompactBriefs {
+export class DecisionBriefsRepository implements DecisionBriefs {
     private readonly db: Database;
     private readonly orm: Orm;
 
@@ -17,7 +23,7 @@ export class AutocompactBriefsRepository implements AutocompactBriefs {
         this.orm = ormOf(db);
     }
 
-    put(decisionId: string, brief: string, appended: readonly number[], checked: readonly CheckedFact[], briefedAt: number): void {
+    put(decisionId: DecisionId, brief: Text, appended: readonly FactIndex[], checked: readonly CheckedFact[], briefedAt: Instant): void {
         const id = idOf('decision', decisionId);
         if (id !== null) {
             writeTx(this.db, () => {
@@ -28,7 +34,7 @@ export class AutocompactBriefsRepository implements AutocompactBriefs {
         }
     }
 
-    clearBefore(cutoff: number): number {
-        return writeTx(this.db, () => this.orm.delete(autocompactBrief).where(lt(autocompactBrief.briefedAt, cutoff)).returning({ id: autocompactBrief.decisionId }).all().length);
+    clearBefore(cutoff: Instant): Count {
+        return writeTx(this.db, () => must(parseCount(this.orm.delete(autocompactBrief).where(lt(autocompactBrief.briefedAt, cutoff)).returning({ id: autocompactBrief.decisionId }).all().length)));
     }
 }

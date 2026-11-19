@@ -573,6 +573,7 @@
       "src/adapters/db/ledger-history.ts",
       "src/adapters/db/ledger-rows.ts",
       "src/adapters/db/ledger.ts",
+      "src/adapters/db/legacy.ts",
       "src/adapters/db/operator-anchors.ts",
       "src/adapters/db/orm.ts",
       "src/adapters/db/pane-alerts.ts",

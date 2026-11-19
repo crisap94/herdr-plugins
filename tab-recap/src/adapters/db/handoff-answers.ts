@@ -1,20 +1,25 @@
 import type { Database } from 'bun:sqlite';
 import { eq, lt } from 'drizzle-orm';
-import type { HandoffAnswerRow, HandoffAnswers } from '#src/ports/handoff-answers.ts';
+import type { HandoffAnswerRecord, HandoffAnswerStore } from '#src/ports/handoff-answers.ts';
+import { must } from '#src/protocol/result.ts';
 import { storedOutcomeOf, type StoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { handoffAnswer } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { writeTx } from './connection.ts';
 import { handoffBytesOf } from './handoff-ids.ts';
-import { guarded, maybeText, text, whole } from './rows.ts';
+import { guarded } from './rows.ts';
 
-export class HandoffAnswersRepository implements HandoffAnswers {
+const wallClock = (): Instant => instant(Date.now());
+
+export class HandoffAnswerRepository implements HandoffAnswerStore {
     private readonly db: Database;
     private readonly orm: Orm;
-    private readonly now: () => number;
+    private readonly now: () => Instant;
 
-    constructor(db: Database, now: () => number = Date.now) {
+    constructor(db: Database, now: () => Instant = wallClock) {
         this.db = db;
         this.orm = ormOf(db);
         this.now = now;
@@ -34,16 +39,17 @@ export class HandoffAnswersRepository implements HandoffAnswers {
         });
     }
 
-    handoffAnswer(id: HandoffId): HandoffAnswerRow | null {
+    handoffAnswer(id: HandoffId): HandoffAnswerRecord | null {
         const key = handoffBytesOf(id);
-        return guarded((): HandoffAnswerRow | null => {
+        return guarded((): HandoffAnswerRecord | null => {
             const row = key === null ? null : this.orm.select({ at: handoffAnswer.at, outcome: handoffAnswer.outcome, reason: handoffAnswer.reason }).from(handoffAnswer).where(eq(handoffAnswer.id, key)).get() ?? null;
-            const stored = row === null ? null : storedOutcomeOf(text(row, 'outcome'), maybeText(row, 'reason'));
-            return row === null || stored === null ? null : { kind: stored.kind, reason: 'reason' in stored ? stored.reason : null, id, at: whole(row, 'at') };
+            const stored = row === null ? null : storedOutcomeOf(row.outcome, row.reason);
+            if (row === null || stored === null) return null;
+            return { kind: stored.kind, reason: 'reason' in stored ? must(parseText(stored.reason)) : null, id, at: instant(row.at) };
         }, null);
     }
 
-    prune(before: number): void {
+    prune(before: Instant): void {
         writeTx(this.db, () => { this.orm.delete(handoffAnswer).where(lt(handoffAnswer.at, before)).run(); });
     }
 }

@@ -18,20 +18,19 @@ import { ClosedLanesRepository } from './closed-lanes.ts';
 import { closeDatabase } from './connection.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
+import type { Directory } from '#src/recap/domain/directory.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 import { DEFAULT_CLOSED_LANE_DAYS } from '#src/recap/domain/retention.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
-import { AutocompactRecordsRepository } from './autocompact-records.ts';
-import { AutocompactBriefsRepository } from './autocompact-briefs.ts';
+import { AskLedgerRepository, AutocompactBriefsRepository, AutocompactRecordsRepository, BoundaryRepository, CompactionRecordsRepository, HandoffAnswersRepository } from './legacy.ts';
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
-import { CompactionRecordsRepository } from './compaction-records.ts';
-import { BoundaryRepository } from './boundary-read.ts';
 import { ColumnVisibilityRepository } from './column-visibility.ts';
 import { LedgerRepository } from './ledger.ts';
 import { openDatabase } from './open.ts';
 import type { NewerDatabase } from './open.ts';
 import { RecapRecordsRepository } from './recap-records.ts';
 import { RequestsRepository } from './requests.ts';
-import { AskLedgerRepository } from './ask-ledger.ts';
 import type { AskLedger } from '#src/ports/ask-ledger.ts';
 import { RunInputsRepository } from './run-inputs.ts';
 import { VerdictsRepository } from './verdicts.ts';
@@ -39,7 +38,6 @@ import { SessionSourceRepository } from './session-source.ts';
 import { StoriesRepository } from './stories.ts';
 import { RetentionRepository } from './retention.ts';
 import { TabViewsRepository } from './tab-views.ts';
-import { HandoffAnswersRepository } from './handoff-answers.ts';
 import type { HandoffAnswers } from '#src/ports/handoff-answers.ts';
 import type { PaneNoteReader, PaneNoteWriter, WorktreeStatusReader, WorktreeStatusWriter } from '#src/ports/worktree-status.ts';
 import type { PaneAlertReader, PaneAlertWriter } from '#src/ports/pane-alerts.ts';
@@ -75,14 +73,17 @@ export interface Store {
     close(): void;
 }
 
-export interface StoreOptions {
-    readonly daemonVersion?: string | null;
-    readonly now?: () => number;
-    readonly log?: (line: string) => void;
+export interface StoreSettings {
+    readonly daemonVersion?: Text | null;
+    readonly now?: () => Instant;
+    readonly log?: (line: Text) => void;
     readonly closedDays?: ClosedLaneDays;
 }
 
-export function storeOver(db: Database, options: StoreOptions = {}): Store {
+export type { StoreOptions } from './legacy.ts';
+export { databasePath, openStore, stateStore } from './legacy.ts';
+
+export function storeOver(db: Database, options: StoreSettings = {}): Store {
     const ledger = new LedgerRepository(db);
     return {
         kind: 'ready', db, records: new RecapRecordsRepository(db), ledger, views: new TabViewsRepository(db, options.daemonVersion ?? null),
@@ -98,11 +99,9 @@ export function storeOver(db: Database, options: StoreOptions = {}): Store {
     };
 }
 
-export const databasePath = (stateDir: string): FsPath => must(parseFsPath(join(stateDir, 'tab-recap.db')));
+export const databaseFile = (stateDir: Directory): FsPath => must(parseFsPath(join(stateDir, 'tab-recap.db')));
 
-export function openStore(path: string, options: StoreOptions = {}): Store | NewerDatabase {
+export function openStoreAt(path: FsPath, options: StoreSettings = {}): Store | NewerDatabase {
     const opened = openDatabase(path);
     return opened.kind === 'ready' ? storeOver(opened.db, options) : opened;
 }
-
-export const stateStore = (stateDir: string, options: StoreOptions = {}): Store | NewerDatabase => openStore(databasePath(stateDir), options);

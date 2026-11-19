@@ -1,63 +1,45 @@
 import type { Database } from 'bun:sqlite';
 import { and, asc, eq, isNotNull, isNull, lt, sql } from 'drizzle-orm';
-import { LOCAL_REQUESTER } from '#src/ports/ask-ledger.ts';
-import type { Ask, AskIdentity, AskKey, AskLedger, NewAsk, Requester } from '#src/ports/ask-ledger.ts';
-import { parseExchangeName, parseRequestId, parseToolName } from '#src/protocol/primitives.ts';
+import { parseAskEntry } from '#src/ports/ask-ledger.ts';
+import type { AskBook, AskDraft, AskEntry, AskIdentity, AskKey, AskSighting, Requester } from '#src/ports/ask-ledger.ts';
 import type { ExchangeName, RequestId } from '#src/protocol/primitives.ts';
-import { outcomeOf, outcomeText } from '#src/recap/domain/ask-outcome.ts';
+import { must } from '#src/protocol/result.ts';
+import { outcomeText } from '#src/recap/domain/ask-outcome.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 import { ask as asks } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
-import { guarded, maybeText, text, whole } from './rows.ts';
-import type { Row } from './rows.ts';
+import { guarded } from './rows.ts';
 import { writeTx } from './connection.ts';
 
-const requesterOf = (raw: string): Requester | null => {
-    if (raw === LOCAL_REQUESTER) {
-        return LOCAL_REQUESTER;
-    }
-    const parsed = parseToolName(raw);
-    return parsed.kind === 'ok' ? parsed.value : null;
-};
+const SEEN: AskSighting = 'seen';
+const UNSEEN: AskSighting = 'unseen';
 
-function askOf(row: Row, log: (line: string) => void): readonly Ask[] {
-    const exchange = parseExchangeName(text(row, 'exchange'));
-    const requester = requesterOf(text(row, 'requester'));
-    const id = parseRequestId(text(row, 'id'), 'legacy-length');
-    const raw = maybeText(row, 'outcome');
-    const outcome = raw === null ? null : outcomeOf(raw);
-    if (exchange.kind !== 'ok' || requester === null || id.kind !== 'ok' || (raw !== null && outcome === null)) {
-        log(`ask ledger: a row this build cannot read is left out (exchange ${text(row, 'exchange')}, requester ${text(row, 'requester')})`);
-        return [];
-    }
-    return [{ exchange: exchange.value, requester, id: id.value, pane: paneId(text(row, 'pane')), at: whole(row, 'at'), ref: maybeText(row, 'ref'), outcome }];
-}
-
-export class AskLedgerRepository implements AskLedger {
+export class AskBookRepository implements AskBook {
     private readonly orm: Orm;
     private readonly db: Database;
-    private readonly log: (line: string) => void;
+    private readonly log: (line: Text) => void;
 
-    constructor(db: Database, log: (line: string) => void = (): void => undefined) {
+    constructor(db: Database, log: (line: Text) => void = (): void => undefined) {
         this.db = db;
         this.orm = ormOf(db);
         this.log = log;
     }
 
-    seen(exchange: ExchangeName, requester: Requester, id: RequestId): boolean {
-        return guarded(() => this.orm.select({ found: sql<number>`1` }).from(asks)
-            .where(and(eq(asks.exchange, exchange), eq(asks.requester, requester), eq(asks.id, id))).get() !== undefined, true);
+    seen(exchange: ExchangeName, requester: Requester, id: RequestId): AskSighting {
+        return guarded(() => (this.orm.select({ found: sql<number>`1` }).from(asks)
+            .where(and(eq(asks.exchange, exchange), eq(asks.requester, requester), eq(asks.id, id))).get() === undefined ? UNSEEN : SEEN), SEEN);
     }
 
-    record(ask: NewAsk): void {
+    record(ask: AskDraft): void {
         writeTx(this.db, () => {
             this.orm.insert(asks).values({ exchange: ask.exchange, requester: ask.requester, id: ask.id, pane: ask.pane, at: ask.at, ref: ask.ref, outcome: null })
                 .onConflictDoNothing().run();
         });
     }
 
-    attach(match: AskKey, ref: string): void {
+    attach(match: AskKey, ref: Text): void {
         writeTx(this.db, () => {
             this.orm.update(asks).set({ ref }).where(and(eq(asks.exchange, match.exchange), eq(asks.id, match.id), eq(asks.pane, match.pane), isNull(asks.ref))).run();
         });
@@ -75,13 +57,18 @@ export class AskLedgerRepository implements AskLedger {
         });
     }
 
-    unfinished(): readonly Ask[] {
+    unfinished(): readonly AskEntry[] {
         return guarded(() => this.orm.select({ exchange: asks.exchange, requester: asks.requester, id: asks.id, pane: asks.pane, at: asks.at, ref: asks.ref, outcome: asks.outcome })
             .from(asks).where(isNull(asks.outcome)).orderBy(asc(asks.at), asc(asks.requester), asc(asks.id)).all()
-            .flatMap((row) => askOf(row, this.log)), []);
+            .flatMap((row) => {
+                const entry = parseAskEntry(row);
+                if (entry.kind === 'ok') return [entry.value];
+                this.log(must(parseText(`ask ledger: a row this build cannot read is left out (exchange ${row.exchange}, requester ${row.requester})`)));
+                return [];
+            }), []);
     }
 
-    prune(before: number): void {
+    prune(before: Instant): void {
         writeTx(this.db, () => { this.orm.delete(asks).where(and(lt(asks.at, before), isNotNull(asks.outcome))).run(); });
     }
 }

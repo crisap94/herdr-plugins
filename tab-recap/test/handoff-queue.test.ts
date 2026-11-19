@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { AskLedgerRepository } from '#src/adapters/db/ask-ledger.ts';
+import { AskLedgerRepository } from '#src/adapters/db/legacy.ts';
 import { HandoffQueueRepository } from '#src/adapters/db/handoff-queue.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import type { NewAsk } from '#src/ports/ask-ledger.ts';

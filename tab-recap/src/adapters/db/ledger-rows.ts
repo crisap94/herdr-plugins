@@ -8,8 +8,7 @@ import type { Operation, RunRef } from '#src/recap/domain/ops.ts';
 import { tabId, type TabId } from '#src/recap/domain/ids.ts';
 import { parseTaskName, type TaskName } from '#src/recap/domain/task-name.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
-import { blob, BadRow, maybeText, maybeWhole, text, whole } from './rows.ts';
-import type { Row } from './rows.ts';
+import { blob, BadRow, isRow, maybeText, maybeWhole, text, whole } from './rows.ts';
 import { fact as factTable, task as taskTable } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { typeIdOf, idOf } from './typeid.ts';
@@ -26,6 +25,28 @@ const FACT_COLUMNS = {
     first_at: factTable.firstAt, last_at: factTable.lastAt, state: factTable.state, closed_why: factTable.closedWhy, closed_at: factTable.closedAt, language: factTable.language,
 };
 
+export type LedgerFact = Fact;
+export type LedgerFactId = FactId;
+
+export const isLedgerFactId = (input: unknown): input is LedgerFactId => typeof input === 'string' && input.startsWith('fct_');
+
+export function parseLedgerFact(input: unknown, task: TaskId): LedgerFact {
+    if (!isRow(input)) {
+        throw new BadRow('a fact is not a row');
+    }
+    const [id, section, closedWhy, state] = [typeIdOf('fact', blob(input, 'id')), text(input, 'section'), maybeText(input, 'closed_why'), text(input, 'state')];
+    if (!isLedgerFactId(id) || !isSection(section) || (state !== OPEN && state !== CLOSED)) {
+        throw new BadRow('a fact is not what the schema promises');
+    }
+    if (closedWhy !== null && !isClosedWhy(closedWhy)) {
+        throw new BadRow('a fact closed for a reason the schema does not know');
+    }
+    return {
+        id, task, section, text: text(input, 'text'), why: maybeText(input, 'why'), ref: maybeText(input, 'ref'), agent: maybeText(input, 'agent'), anchor: maybeText(input, 'anchor'),
+        firstAt: whole(input, 'first_at'), lastAt: whole(input, 'last_at'), state, closedWhy, closedAt: maybeWhole(input, 'closed_at'), language: text(input, 'language'),
+    };
+}
+
 export class LedgerRows {
     private readonly orm: Orm;
 
@@ -33,30 +54,16 @@ export class LedgerRows {
         this.orm = ormOf(db);
     }
 
-    private factOf(row: Row, task: TaskId): Fact {
-        const [section, closedWhy, state] = [text(row, 'section'), maybeText(row, 'closed_why'), text(row, 'state')];
-        if (!isSection(section) || (state !== OPEN && state !== CLOSED)) {
-            throw new BadRow('a fact is not what the schema promises');
-        }
-        if (closedWhy !== null && !isClosedWhy(closedWhy)) {
-            throw new BadRow('a fact closed for a reason the schema does not know');
-        }
-        return {
-            id: typeIdOf('fact', blob(row, 'id')) as FactId, task, section, text: text(row, 'text'), why: maybeText(row, 'why'), ref: maybeText(row, 'ref'), agent: maybeText(row, 'agent'), anchor: maybeText(row, 'anchor'),
-            firstAt: whole(row, 'first_at'), lastAt: whole(row, 'last_at'), state, closedWhy, closedAt: maybeWhole(row, 'closed_at'), language: text(row, 'language'),
-        };
-    }
-
     openOf(task: TaskId): readonly Fact[] {
-        return this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, tabId(task.tab)), eq(taskTable.key, task.key), eq(factTable.state, OPEN))).orderBy(desc(factTable.lastAt), asc(factTable.id)).all().map((row) => this.factOf(row, task));
+        return this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, tabId(task.tab)), eq(taskTable.key, task.key), eq(factTable.state, OPEN))).orderBy(desc(factTable.lastAt), asc(factTable.id)).all().map((row) => parseLedgerFact(row, task));
     }
 
     recentlyClosed(task: TaskId, since: Instant): readonly Fact[] {
-        return this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, tabId(task.tab)), eq(taskTable.key, task.key), eq(factTable.state, CLOSED), gte(factTable.closedAt, since))).orderBy(asc(factTable.closedAt), asc(factTable.id)).all().map((row) => this.factOf(row, task));
+        return this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, tabId(task.tab)), eq(taskTable.key, task.key), eq(factTable.state, CLOSED), gte(factTable.closedAt, since))).orderBy(asc(factTable.closedAt), asc(factTable.id)).all().map((row) => parseLedgerFact(row, task));
     }
 
     allOf(task: TaskId): readonly Fact[] {
-        return this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, tabId(task.tab)), eq(taskTable.key, task.key))).orderBy(asc(factTable.firstAt), asc(factTable.id)).all().map((row) => this.factOf(row, task));
+        return this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, tabId(task.tab)), eq(taskTable.key, task.key))).orderBy(asc(factTable.firstAt), asc(factTable.id)).all().map((row) => parseLedgerFact(row, task));
     }
 
     keysOf(tab: TabId): readonly TaskName[] {
@@ -103,7 +110,7 @@ export class LedgerRows {
     }
 
     applyTo(run: Uint8Array, at: RunRef, ops: readonly Operation[], sweepNow: SweepNow = 'keep'): Applied {
-        const before = this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, tabId(at.task.tab)), eq(taskTable.key, at.task.key), or(eq(factTable.state, OPEN), gte(factTable.closedAt, at.at - FOLD_WINDOW_MS)))).orderBy(asc(factTable.firstAt), asc(factTable.id)).all().map((row) => this.factOf(row, at.task));
+        const before = this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, tabId(at.task.tab)), eq(taskTable.key, at.task.key), or(eq(factTable.state, OPEN), gte(factTable.closedAt, at.at - FOLD_WINDOW_MS)))).orderBy(asc(factTable.firstAt), asc(factTable.id)).all().map((row) => parseLedgerFact(row, at.task));
         const folded = apply(before, ops, at, sweepNow === 'sweep');
         this.persist(run, at.task, before, folded.changed);
         return { changed: folded.changed, refused: folded.refused };

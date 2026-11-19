@@ -5,7 +5,7 @@ import { decode, encode } from '#src/adapters/db/checked-fact-codec.ts';
 
 test('checked brief codec round-trips no facts, one fact and forty facts', () => {
     for (const checked of [[], [{ section: 'goal' as const, text: brand<string, 'Text'>('goal'), why: null }], Array.from({ length: 40 }, (_, at) => ({ section: 'needs' as const, text: brand<string, 'Text'>(`fact `), why: at % 2 === 0 ? brand<string, 'Text'>('reason') : null }))]) {
-        const value = { brief: 'the typed brief', appended: checked.length === 0 ? [] : [0], checked };
+        const value = { brief: brand<string, 'Text'>('the typed brief'), appended: checked.length === 0 ? [] : [brand<number, 'FactIndex'>(0)], checked };
         assert.deepEqual(decode(encode(value)), value);
     }
 });

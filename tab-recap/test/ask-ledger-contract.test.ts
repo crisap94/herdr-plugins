@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { AskLedgerRepository } from '#src/adapters/db/ask-ledger.ts';
+import { AskLedgerRepository } from '#src/adapters/db/legacy.ts';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import type { AskLedger } from '#src/ports/ask-ledger.ts';

@@ -12,7 +12,7 @@ import type { Store } from '#src/adapters/db/database.ts';
 import { memoryStore, must } from './support.ts';
 import { idOf } from '#src/adapters/db/typeid.ts';
 import { decode } from '#src/adapters/db/checked-fact-codec.ts';
-import { laneStatusOf } from '#src/adapters/db/autocompact-records.ts';
+import { parseLaneStatusAtDecision } from '#src/recap/domain/autocompact.ts';
 import { listing } from '#src/recap/application/autocompact-listing.ts';
 
 const decision = (over: Partial<Decision> = {}): Decision => ({
@@ -40,6 +40,14 @@ test('newest: newest first, limited, of one tab when asked', () => {
     assert.deepEqual(store.autocompact.newest(mustParsed(parseCount(2))).map((each) => each.at), [30, 20]);
     assert.deepEqual(store.autocompact.newest(mustParsed(parseCount(20)), mustParsed(parseTabId('w1:t1'))).map((each) => each.at), [20, 10]);
     assert.deepEqual(store.autocompact.newest(mustParsed(parseCount(5)), mustParsed(parseTabId('w9:t9'))), []);
+});
+
+test('newest: a decision whose stored answers are not JSON is left out, and the others still come back', () => {
+    const store = seeded();
+    store.autocompact.record(decision({ at: instant(10) }));
+    store.autocompact.record(decision({ at: instant(20) }));
+    store.db.exec("UPDATE autocompact_decision SET answers = '{not json' WHERE at = 20");
+    assert.deepEqual(store.autocompact.newest(mustParsed(parseCount(5))).map((each) => each.at), [10]);
 });
 
 test('link points a decision at its compaction; a deleted compaction leaves the decision', () => {
@@ -195,5 +203,5 @@ test('a decision that recorded no status lists as a dash', () => {
 });
 
 test('a stored lane status that is not one of the three reads as null', () => {
-    assert.deepEqual([laneStatusOf({ lane_status: 'done' }), laneStatusOf({ lane_status: 'bogus' }), laneStatusOf({ lane_status: null })], ['done', null, null]);
+    assert.deepEqual([parseLaneStatusAtDecision('done'), parseLaneStatusAtDecision('bogus'), parseLaneStatusAtDecision(null)], ['done', null, null]);
 });
