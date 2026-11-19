@@ -39,12 +39,6 @@
     "container": 2
   },
   "src/recap/render/legacy.ts": {
-    "legacy": 2
-  },
-  "src/recap/render/setup.ts": {
-    "parameter": 18,
-    "return": 34,
-    "container": 26,
-    "assertion": 1
+    "legacy": 6
   }
 }
