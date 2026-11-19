@@ -87,7 +87,7 @@ test('the compact message drops the least important lines to fit 3000 characters
     const made = compactPreviewOf({ records, views: { readTab: (): null => null } }, tabId(TAB), paneId(PANE), must(parseText('n'.repeat(280))));
     assert.ok(made.kind === 'guidance');
     assert.ok(made.text.length <= 3000);
-    assert.equal(made.text, guidanceOf({ sections, web: null, note: 'n'.repeat(280) }));
+    assert.equal(made.text, guidanceOf({ sections, web: null, note: must(parseText('n'.repeat(280))) }));
 });
 
 test('the handoff message is what handoff --print prints for the same lane', async () => {

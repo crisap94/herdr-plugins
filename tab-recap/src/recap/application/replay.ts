@@ -8,18 +8,29 @@ import type { ChunkResult, Entry, InFlightCapability, Located, PromptResult, Tra
 import { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { capabilityWording } from '#src/ports/capability-reasons.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import type { Count } from '#src/recap/domain/count.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
+import type { PositiveCount } from '#src/recap/domain/count.ts';
+import { parsePositiveCount } from '#src/recap/domain/count.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import type { SessionPath, TabId } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
+import type { Usd } from '#src/recap/domain/usd.ts';
+import { parseUsd } from '#src/recap/domain/usd.ts';
 import { pluginEngine } from '#src/engine/engine-adapter.ts';
 import { tabRecaps, type TabRecaps } from '#src/engine/tab-recaps.ts';
 import type { EngineModels, EngineSettings } from '@stateforge-labs/session-ledger/unstable/recap/application/engine.ts';
 
-export function windowsOf(entries: readonly Entry[], mergeTurns = 1): readonly (readonly Entry[])[] {
+export type { ReplayDeps } from './legacy.ts';
+export { replay, windowsOf } from './legacy.ts';
+
+export function mergedWindows(entries: readonly Entry[], mergeTurns: PositiveCount): readonly (readonly Entry[])[] {
     const windows: Entry[][] = [];
     for (const entry of entries) {
         const [last] = windows.slice(-1);
@@ -36,36 +47,41 @@ export function windowsOf(entries: readonly Entry[], mergeTurns = 1): readonly (
     return merged;
 }
 
-export interface ReplayDeps {
+export interface TypedReplayDeps {
     readonly reader: Transcripts;
     readonly summarizer: () => Summarizer;
     readonly records: RecapRecords;
     readonly ledger: Ledger;
     readonly repos: LaneRepo;
-    readonly language: string;
-    readonly log: (line: string) => void;
+    readonly language: Text;
+    readonly log: (line: Text) => void;
     readonly pipeline?: Pipeline;
     readonly enumerator?: () => Enumerators | null;
     readonly writerView: WriterView;
 }
 
 export interface Replayed {
-    readonly windows: number;
-    readonly turns: number;
+    readonly windows: Count;
+    readonly turns: Count;
     readonly facts: readonly Fact[];
-    readonly costUsd: number;
+    readonly costUsd: Usd;
 }
 
 interface Position {
-    turn: number;
-    now: number;
+    turn: Count;
+    now: Instant;
 }
+
+const ONE = must(parsePositiveCount(1));
+const NONE = must(parseCount(0));
 
 const noPrompt = (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null });
 
-const endOf = (window: readonly Entry[] | undefined, from: number): number => Math.max(from + 1, window?.findLast((entry) => entry.at !== undefined)?.at ?? from + 1);
+const endOf = (window: readonly Entry[] | undefined, from: Instant): Instant => instant(Math.max(from + 1, window?.findLast((entry) => entry.at !== undefined)?.at ?? from + 1));
 
-function windowed(base: Transcripts, file: string, windows: readonly (readonly Entry[])[], at: Position): Transcripts {
+const unavailable = (kind: string): Text => must(parseText(capabilityWording('history-unavailable', kind)));
+
+function windowed(base: Transcripts, file: SessionPath, windows: readonly (readonly Entry[])[], at: Position): Transcripts {
     const read = (): Promise<ChunkResult> => Promise.resolve({
         kind: 'chunk', entries: windows[at.turn] ?? [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: at.turn + 1, tail: null }, grew: true,
     });
@@ -74,46 +90,53 @@ function windowed(base: Transcripts, file: string, windows: readonly (readonly E
     return { agent: base.agent, locate, latestPrompt: noPrompt, read, inFlight };
 }
 
-function modelsOf(deps: ReplayDeps): EngineModels {
+function modelsOf(deps: TypedReplayDeps): EngineModels {
     return { summarizer: deps.summarizer, ...(deps.enumerator === undefined ? {} : { enumerator: deps.enumerator }) };
 }
 
-function settingsOf(deps: ReplayDeps): EngineSettings {
+function settingsOf(deps: TypedReplayDeps): EngineSettings {
     const chosen = deps.pipeline;
-    return { language: (): string => deps.language, ...(chosen === undefined ? {} : { pipeline: (): Pipeline => chosen }), writerView: (): WriterView => deps.writerView };
+    return { language: (): Text => deps.language, ...(chosen === undefined ? {} : { pipeline: (): Pipeline => chosen }), writerView: (): WriterView => deps.writerView };
 }
 
-function engineOf(deps: ReplayDeps, file: string, windows: readonly (readonly Entry[])[], at: Position): TabRecaps {
+function engineOf(deps: TypedReplayDeps, file: SessionPath, windows: readonly (readonly Entry[])[], at: Position): TabRecaps {
     return tabRecaps(pluginEngine({
-        source: { transcripts: new TranscriptRegistry({ [deps.reader.agent]: windowed(deps.reader, file, windows, at) }, null, (kind): string => capabilityWording('history-unavailable', kind)) },
+        source: { transcripts: new TranscriptRegistry({ [deps.reader.agent]: windowed(deps.reader, file, windows, at) }, null, unavailable) },
         store: { records: deps.records, ledger: deps.ledger },
         models: modelsOf(deps),
-        environment: { clock: { now: (): Instant => instant(at.now) }, repos: deps.repos, log: deps.log },
+        environment: { clock: { now: (): Instant => at.now }, repos: deps.repos, log: deps.log },
         settings: settingsOf(deps),
     }));
 }
 
-async function entriesOf(reader: Transcripts, file: string, size: number): Promise<readonly Entry[]> {
+async function entriesOf(reader: Transcripts, file: SessionPath, size: Count): Promise<readonly Entry[]> {
     const result = await reader.read(file, UNREAD, size);
     if (isUnknown(result)) throw new Error(`cannot read ${file}: ${saying(result.why)}`);
     return result.entries;
 }
 
-async function runWindows(engine: TabRecaps, lane: ReturnType<typeof laneFrom>, windows: readonly (readonly Entry[])[], at: Position, label: string): Promise<void> {
-    for (; at.turn < windows.length; at.turn += 1) {
+async function runWindows(engine: TabRecaps, lane: ReturnType<typeof laneFrom>, windows: readonly (readonly Entry[])[], at: Position, label: TabId): Promise<void> {
+    for (; at.turn < windows.length; at.turn = must(parseCount(at.turn + 1))) {
         at.now = endOf(windows[at.turn], at.now);
-        await engine.refresh(tabId(label), [lane]);
+        await engine.refresh(label, [lane]);
     }
 }
 
-export async function replay(deps: ReplayDeps, file: string, label: string, size: number, mergeTurns = 1): Promise<Replayed> {
+export async function replayFile(deps: TypedReplayDeps, file: SessionPath, label: TabId, size: Count, mergeTurns: PositiveCount): Promise<Replayed> {
     const entries = await entriesOf(deps.reader, file, size);
-    const turns = windowsOf(entries);
-    const windows = windowsOf(entries, mergeTurns);
-    const at: Position = { turn: 0, now: windows.at(0)?.at(0)?.at ?? 1 };
+    const turns = mergedWindows(entries, ONE);
+    const windows = mergedWindows(entries, mergeTurns);
+    const at: Position = { turn: NONE, now: instant(windows.at(0)?.at(0)?.at ?? 1) };
     const engine = engineOf(deps, file, windows, at);
     const lane = laneFrom({ paneId: 'replay:p1', tabId: label, workspaceId: 'replay', agent: deps.reader.agent, session: 'replay' });
     await runWindows(engine, lane, windows, at, label);
     const tasks = deps.records.readRecap(label)?.tasks ?? [];
-    return { windows: windows.length, turns: turns.length, facts: tasks.flatMap((task) => deps.ledger.allOf({ tab: label, key: task.id })), costUsd: deps.records.readRecap(label)?.costUsd ?? 0 };
+    return {
+        windows: must(parseCount(windows.length)),
+        turns: must(parseCount(turns.length)),
+        facts: tasks.flatMap((task) => deps.ledger.allOf({ tab: label, key: task.id })),
+        costUsd: must(parseUsd(deps.records.readRecap(label)?.costUsd ?? 0)),
+    };
 }
+
+export const oneTurnReplay = (): Replayed => ({ windows: must(parseCount(1)), turns: must(parseCount(1)), facts: [], costUsd: must(parseUsd(0)) });

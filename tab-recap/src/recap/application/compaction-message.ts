@@ -11,7 +11,7 @@ export const NOTE_LIMIT = 280;
 export interface Material {
     readonly sections: RecapSections;
     readonly web: LaneWeb | null;
-    readonly note: string | null;
+    readonly note: Text | null;
 }
 
 interface Priorities {
@@ -95,6 +95,6 @@ export function restoreOf(material: Material): Text {
     return fitted((p) => must(parseText([...linesOf(note, p, RESTORE_LEAD), CARRY_ON].join('\n'))), prioritiesOf(material));
 }
 
-export function restoreFrom(brief: string): Text {
+export function restoreFrom(brief: Text): Text {
     return must(parseText(`We just compacted this conversation. This is where things stand: ${brief} Nothing needs doing yet: just answer "ok".`));
 }

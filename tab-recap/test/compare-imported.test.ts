@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { compareImported, withoutLedgers } from '#src/recap/application/compare-imported.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseUsd } from '#src/recap/domain/usd.ts';
 import type { ImportedChapter } from '#src/ports/imported-recaps.ts';
 import type { Judge, JudgeTask } from '#src/ports/judge.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
@@ -100,5 +102,5 @@ test('the report: one row per chapter, 1.x beside the replay, the sums, and why 
     assert.match(text, /chapter 1 \(2026-10-04 21:21, 3 key facts\) +33% \(1\/3\) +67% \(2\/3\)/);
     assert.match(text, /all chapters +\d+% \(\d+\/6\)/);
     assert.match(text, /chapter 3 \(2026-10-04 03:40\): the replay does not reach this chapter|chapter 3 \([^)]*\): the replay does not reach this chapter/);
-    assert.match(comparisonLines({ chapters: [], total: compared.total, costUsd: 0 }, 'w1:t1', plain).join('\n'), /no chapter could be compared/);
+    assert.match(comparisonLines({ chapters: [], total: compared.total, costUsd: must(parseUsd(0)) }, 'w1:t1', plain).join('\n'), /no chapter could be compared/);
 });

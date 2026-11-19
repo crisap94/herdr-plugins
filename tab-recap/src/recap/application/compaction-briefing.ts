@@ -83,7 +83,7 @@ export class Briefing {
 
     private recordCoverage(decision: DecisionId | null, flow: CoverageFlow, saved: Checked): void {
         const messages = this.deps.messages();
-        const blocked = blockedByCoverage(saved, flow);
+        const blocked = blockedByCoverage(saved, flow) === 'present';
         const line = flow.appends === 'present' ? coverageLog(saved.outcome, messages) : null;
         if (line !== null) this.deps.log(`${flow.atCeiling === 'present' ? 'autocompact ceiling' : 'autocompact'}: ${line}`);
         if (decision !== null) this.deps.decisions?.amend(decision, { coverage: saved.coverage === null ? null : Object.fromEntries(saved.coverage), outcome: saved.outcome, coverageMs: saved.coverageMs, coverageCostUsd: saved.coverageCostUsd, why: blocked ? saved.why : coverageWhy(saved.outcome, saved.why, messages), block: blocked });

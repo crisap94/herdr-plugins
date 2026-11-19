@@ -22,7 +22,7 @@ test('viewOf carries each lane\'s cwd, null when herdr did not say', () => {
         kind: 'reconciled',
         seen: { focusedTab: 'w1:t1', lanes: [seen('w1:p1', '/w/repo'), seen('w1:p2', null)], columns: [], panes: ['w1:p1', 'w1:p2'], widths: new Map([['w1:t1', 200]]) },
     }, instant(0), DEFAULT_POLICY);
-    assert.deepEqual(viewOf(board, tabId('w1:t1'), 5).lanes.map((lane) => lane.cwd), ['/w/repo', null]);
+    assert.deepEqual(viewOf(board, tabId('w1:t1'), instant(5)).lanes.map((lane) => lane.cwd), ['/w/repo', null]);
 });
 
 test('viewOf carries each lane\'s since from the board', () => {
@@ -30,7 +30,7 @@ test('viewOf carries each lane\'s since from the board', () => {
         kind: 'reconciled',
         seen: { focusedTab: 'w1:t1', lanes: [seen('w1:p1', '/w/repo'), seen('w1:p2', null)], columns: [], panes: ['w1:p1', 'w1:p2'], widths: new Map([['w1:t1', 200]]) },
     }, instant(0), DEFAULT_POLICY);
-    assert.deepEqual(viewOf(board, tabId('w1:t1'), 5).lanes.map((lane) => lane.since), [instant(0), instant(0)]);
+    assert.deepEqual(viewOf(board, tabId('w1:t1'), instant(5)).lanes.map((lane) => lane.since), [instant(0), instant(0)]);
 });
 
 const lane: TabLane = { pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: null };

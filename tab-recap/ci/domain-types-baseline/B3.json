@@ -1,53 +1,14 @@
 {
-  "src/recap/application/async-queue.ts": {
-    "container": 4,
-    "property": 1,
-    "assertion": 1
-  },
   "src/recap/application/compaction-deps.ts": {
     "parameter": 8,
     "return": 4,
     "container": 1
   },
-  "src/recap/application/compaction-input.ts": {
-    "property": 8
-  },
-  "src/recap/application/compaction-lanes.ts": {
-    "return": 1,
-    "property": 2
-  },
-  "src/recap/application/compaction-message.ts": {
-    "parameter": 1,
-    "property": 1
-  },
-  "src/recap/application/compaction-trail.ts": {
-    "parameter": 1,
-    "property": 1
-  },
   "src/recap/application/compaction.ts": {
     "parameter": 6,
-    "return": 3,
-    "container": 1,
-    "property": 1
-  },
-  "src/recap/application/compare-imported.ts": {
-    "parameter": 4,
     "return": 2,
     "container": 1,
-    "property": 15
-  },
-  "src/recap/application/counted-writer.ts": {
     "property": 1
-  },
-  "src/recap/application/coverage-verdict.ts": {
-    "parameter": 1,
-    "return": 3
-  },
-  "src/recap/application/curate.ts": {
-    "parameter": 7,
-    "return": 1,
-    "container": 6,
-    "property": 2
   },
   "src/recap/application/decode.ts": {
     "parameter": 4,
@@ -58,11 +19,6 @@
   },
   "src/recap/application/delivery-mark.ts": {
     "return": 3
-  },
-  "src/recap/application/dispatch.ts": {
-    "parameter": 12,
-    "return": 3,
-    "container": 3
   },
   "src/recap/application/edit-counts.ts": {
     "parameter": 2,
@@ -221,7 +177,7 @@
     "container": 2
   },
   "src/recap/application/legacy.ts": {
-    "legacy": 54
+    "legacy": 75
   },
   "src/recap/application/live-prompts.ts": {
     "parameter": 1,
@@ -240,11 +196,6 @@
     "parameter": 5,
     "return": 6,
     "property": 3
-  },
-  "src/recap/application/replay.ts": {
-    "parameter": 13,
-    "return": 3,
-    "property": 6
   },
   "src/recap/application/retention.ts": {
     "parameter": 1,
@@ -285,6 +236,12 @@
   },
   "src/recap/application/transcript-tail.ts": {
     "return": 1
+  },
+  "src/recap/application/twins/compaction-input/legacy.ts": {
+    "legacy": 10
+  },
+  "src/recap/application/twins/counted-writer/legacy.ts": {
+    "legacy": 1
   },
   "src/recap/application/worksite-section.ts": {
     "return": 1,

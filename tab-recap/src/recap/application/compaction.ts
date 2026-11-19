@@ -78,13 +78,13 @@ export class Compaction {
         const state = await this.deps.agents.status(String(lane.pane));
         if (isUnknown(state)) {
             if (state.why.why === 'not-found') return { kind: 'refused', refusal: laneClosedRefusal(point) };
-            const why = saying(state.why);
-            return { kind: 'refused', refusal: { stage: 'failed', reason: COMPACT_FAILURES.error, why, toast: compaction.failed(agent, why) } };
+            const why = must(parseText(saying(state.why)));
+            return { kind: 'refused', refusal: { stage: 'failed', reason: COMPACT_FAILURES.error, why, toast: must(parseText(compaction.failed(agent, why))) } };
         }
         if (READY.has(state.status)) return { kind: 'proceed', placement: 'immediate' };
         if (state.status === 'working' && this.queueing(agent) === 'queues') return { kind: 'proceed', placement: 'queued' };
         const reason = state.status === 'working' ? COMPACT_FAILURES.busy : COMPACT_FAILURES.skipped;
-        return { kind: 'refused', refusal: { stage: 'skipped', reason, why: badge[state.status], toast: compaction.skipped(agent, state.status) } };
+        return { kind: 'refused', refusal: { stage: 'skipped', reason, why: must(parseText(badge[state.status])), toast: must(parseText(compaction.skipped(agent, state.status))) } };
     }
 
     private answerOne(request: CompactRequest | null, pane: string, stage: string): void {
@@ -168,7 +168,7 @@ export class Compaction {
         const id = this.begun(request, { tab, pane, agent: lane.agent, stage: this.deps.brief.enabled() === 'present' ? 'briefing' : 'compacting', writer: this.deps.brief.job() });
         this.answer(request, pane, COMPACT_STAGES.running);
         this.deps.events?.lane(pane, COMPACT_EVENTS.running, id);
-        return new Trail(this.deps.compactions, id, () => instant(this.deps.now()), (end, reason) => { this.ended(request, pane, id, end, reason); });
+        return new Trail(this.deps.compactions, must(parseCompactionId(id)), () => instant(this.deps.now()), (end, reason) => { this.ended(request, pane, id, end, reason); });
     }
 
     private beginning(agent: AgentKind, placement: Placement): Text {
@@ -188,7 +188,7 @@ export class Compaction {
         const said = (text: Text): Text => must(parseText(auto ? compaction.auto(text) : text));
         await this.tell(said(must(parseText(compaction.title(agent)))), said(this.beginning(agent, placement)));
         const material = this.briefing.materialOf(tab, paneId(pane), request.note === null ? null : must(parseText(request.note)));
-        const link = this.briefing.linkedDecision(auto ? 'auto' : 'operator', tab, paneId(pane), must(parseCompactionId(trail.id)));
+        const link = this.briefing.linkedDecision(auto ? 'auto' : 'operator', tab, paneId(pane), trail.id);
         const verified = await this.briefing.verified(lane, tab, material, link);
         if (verified.kind === 'closed') {
             this.endClosed(lane, trail, verified.at);
@@ -221,7 +221,7 @@ export class Compaction {
 
     private async stoppedByCoverage(parts: CoverageStop): Promise<boolean> {
         const { lane, checked, flow, trail, said, messages } = parts;
-        if (!blockedByCoverage(checked, flow)) return false;
+        if (blockedByCoverage(checked, flow) === 'absent') return false;
         trail.end('skipped', { why: 'coverage' });
         await this.tell(said(must(parseText(messages.title(String(lane.agent))))), must(parseText(messages.coverageMissed(String(lane.agent)))));
         return true;
@@ -246,7 +246,7 @@ export class Compaction {
         }
         const { tab, lanes, targets } = scope;
         const origin = request.origin ?? 'operator';
-        const { owned, held } = splitByClaim(this.deps.claims, targets, (lane) => this.claimed(lane, request));
+        const { owned, held } = splitByClaim(this.deps.claims, targets, (lane) => (this.claimed(lane, request) ? 'present' : 'absent'));
         try {
             await Promise.all(held.map((lane) => this.refuse(lane, tab, null, laneBusyRefusal(this.deps.messages(), lane), { origin, request })));
             if (owned.length === 0) {
