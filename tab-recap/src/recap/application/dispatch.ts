@@ -21,20 +21,27 @@ import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import type { LaneEvents } from './lane-events.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
+import type { Count } from '#src/recap/domain/count.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
+
+export { Dispatch } from './legacy.ts';
+export type { DispatchDeps, LaneContextSource, LaneWebSource, LivePromptSource } from './legacy.ts';
 
 export type Sharing = 'on' | 'off';
 
-export interface DispatchDeps {
+export interface LaneDispatchDeps {
     readonly columns: Columns;
     readonly views: TabViews;
     readonly visibility: ColumnVisibility;
     readonly recaps: Pick<TabRecaps, 'turnEnded'>;
-    readonly prompts: LivePromptSource;
-    readonly webs: LaneWebSource;
-    readonly contexts?: LaneContextSource;
+    readonly prompts: PaneSource<Text>;
+    readonly webs: PaneSource<LaneWeb>;
+    readonly contexts?: PaneSource<ContextUse>;
     readonly closures: ClosureRecorder;
     readonly retirements?: TabRetirement;
     readonly events: LaneEvents;
@@ -47,34 +54,26 @@ export interface DispatchDeps {
     log(line: Text): void;
 }
 
-export interface LivePromptSource {
-    of(pane: string): string | null;
-    refresh(lane: Lane): Promise<boolean>;
+export interface PaneSource<Found> {
+    of(pane: PaneId): Found | null;
+    refresh(lane: Lane): Promise<Presence>;
 }
 
-export interface LaneContextSource {
-    of(pane: string): ContextUse | null;
-    refresh(lane: Lane): Promise<boolean>;
-}
-
-export interface LaneWebSource {
-    of(pane: string): LaneWeb | null;
-    refresh(lane: Lane): Promise<boolean>;
-}
+export type ReadPane<Found> = (pane: PaneId) => Found | null;
 
 export interface Lookups {
-    readonly prompts?: (pane: string) => string | null;
-    readonly webs?: (pane: string) => LaneWeb | null;
-    readonly contexts?: (pane: string) => ContextUse | null;
+    readonly prompts?: ReadPane<Text>;
+    readonly webs?: ReadPane<LaneWeb>;
+    readonly contexts?: ReadPane<ContextUse>;
 }
 
-export function viewOf(board: Board, tab: TabId, at: number, lookups: Lookups = {}): TabView {
+export function viewOf(board: Board, tab: TabId, at: Instant, lookups: Lookups = {}): TabView {
     const { prompts = (): null => null, webs = (): null => null, contexts = (): null => null } = lookups;
     return {
         tab: String(tab),
         column: board.columns.get(tab)?.pane ?? null,
         lanes: lanesOf(board, tab).map((lane) => ({
-            pane: String(lane.pane), agent: String(lane.agent), status: lane.status, title: lane.title, cwd: lane.cwd, lastPrompt: prompts(String(lane.pane)), web: webs(String(lane.pane)), context: contexts(String(lane.pane)), since: lane.since,
+            pane: String(lane.pane), agent: String(lane.agent), status: lane.status, title: lane.title, cwd: lane.cwd, lastPrompt: prompts(lane.pane), web: webs(lane.pane), context: contexts(lane.pane), since: lane.since,
         })),
         at,
     };
@@ -82,10 +81,10 @@ export function viewOf(board: Board, tab: TabId, at: number, lookups: Lookups = 
 
 const BAR_ROWS = 3;
 
-export class Dispatch {
-    private readonly deps: DispatchDeps;
+export class LaneDispatch {
+    private readonly deps: LaneDispatchDeps;
 
-    constructor(deps: DispatchDeps) {
+    constructor(deps: LaneDispatchDeps) {
         this.deps = deps;
     }
 
@@ -165,8 +164,8 @@ export class Dispatch {
     }
 
     private async look(lane: Lane): Promise<void> {
-        const changed = await Promise.all([this.deps.prompts.refresh(lane), this.deps.webs.refresh(lane), this.deps.contexts?.refresh(lane) ?? false]);
-        if (changed.includes(true)) {
+        const changed = await Promise.all([this.deps.prompts.refresh(lane), this.deps.webs.refresh(lane), this.deps.contexts?.refresh(lane) ?? 'absent']);
+        if (changed.includes('present')) {
             this.publish(lane.tab);
         }
         if (lane.status === 'idle' || lane.status === 'done') {
@@ -175,10 +174,10 @@ export class Dispatch {
     }
 
     private publish(tab: TabId): void {
-        this.deps.views.writeTab(viewOf(this.deps.board(), tab, Date.now(), { prompts: (pane) => this.deps.prompts.of(pane), webs: (pane) => this.deps.webs.of(pane), contexts: (pane) => this.deps.contexts?.of(pane) ?? null }));
+        this.deps.views.writeTab(viewOf(this.deps.board(), tab, instant(Date.now()), { prompts: (pane) => this.deps.prompts.of(pane), webs: (pane) => this.deps.webs.of(pane), contexts: (pane) => this.deps.contexts?.of(pane) ?? null }));
     }
 
-    private failed(tab: TabId, why: string): void {
+    private failed(tab: TabId, why: Text): void {
         this.deps.log(must(parseText(`tab ${tab}: column not opened (${why})`)));
         this.deps.feedback({ kind: 'column-failed', tab });
     }
@@ -194,27 +193,30 @@ export class Dispatch {
     private async open(tab: TabId, shape: Shape): Promise<void> {
         const layout = await this.deps.columns.layout(tab);
         if (isUnknown(layout)) {
-            this.failed(tab, saying(layout.why));
+            this.failed(tab, must(parseText(saying(layout.why))));
             return;
         }
         const axis: Axis = shape === 'side' ? 'right' : 'down';
         const target = edgePane(layout.panes, axis);
         if (target === null) {
-            this.failed(tab, 'the tab has no panes');
+            this.failed(tab, must(parseText('the tab has no panes')));
             return;
         }
         const opened = await this.deps.columns.open(tab, target.paneId, shape);
         if (isUnknown(opened)) {
-            this.failed(tab, saying(opened.why));
+            this.failed(tab, must(parseText(saying(opened.why))));
             return;
         }
         const cells = shape === 'side' ? targetCols(layout.width, this.deps.sizing()) : BAR_ROWS;
-        await this.narrow(tab, opened.pane, axis, cells);
+        const counted = parseCount(cells);
+        if (counted.kind === 'ok') {
+            await this.narrow(tab, opened.pane, axis, counted.value);
+        }
         this.deps.log(must(parseText(`tab ${tab}: column opened (${opened.pane}, ${shape})`)));
         this.deps.feedback({ kind: 'column-opened', tab, pane: opened.pane, shape, at: Date.now() });
     }
 
-    private async narrow(tab: TabId, pane: PaneId, axis: Axis, cells: number): Promise<void> {
+    private async narrow(tab: TabId, pane: PaneId, axis: Axis, cells: Count): Promise<void> {
         const after = await this.deps.columns.layout(tab);
         if (isUnknown(after)) {
             return;

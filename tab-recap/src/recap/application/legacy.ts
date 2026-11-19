@@ -30,6 +30,13 @@ import { parseUsd } from '#src/recap/domain/usd.ts';
 import { listingOf, parseListingArgs, type ParsedListing } from './autocompact-listing.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { CompactRequestQueue } from './compact-requests.ts';
+import { CurateTasks, type CurateDeps, type CurateWhy } from './curate.ts';
+import { LaneDispatch, type LaneDispatchDeps, type PaneSource } from './dispatch.ts';
+import type { Lane } from '#src/recap/domain/lane.ts';
+import type { Intent } from '#src/recap/domain/intent.ts';
+import type { ContextUse } from '#src/recap/domain/compaction.ts';
+import type { LaneWeb } from '#src/ports/tab-views.ts';
+import { parseTabId } from '#src/recap/domain/ids.ts';
 
 export interface CoverageFact {
     readonly section: string;
@@ -214,4 +221,58 @@ export function parseListing(argv: readonly string[]): ParsedListing {
 
 export function listing(decisions: readonly StoredDecision[], spent: { readonly since: number; readonly costUsd: number }, now: number, zone: string, skips: readonly Skip[] = []): readonly Text[] {
     return listingOf(decisions, { since: instant(spent.since), costUsd: must(parseUsd(spent.costUsd)) }, instant(now), must(parseText(zone)), skips);
+}
+
+export class Curate {
+    private readonly typed: CurateTasks;
+
+    constructor(deps: CurateDeps) {
+        this.typed = new CurateTasks(deps);
+    }
+
+    afterRun(event: Parameters<CurateTasks['afterRun']>[0]): Promise<void> {
+        return this.typed.afterRun(event);
+    }
+
+    async run(tab: string, why: CurateWhy = 'open'): Promise<void> {
+        const parsed = parseTabId(tab);
+        if (parsed.kind === 'ok') {
+            await this.typed.run(parsed.value, why);
+        }
+    }
+}
+
+export interface LivePromptSource { of(pane: string): string | null; refresh(lane: Lane): Promise<boolean> }
+
+export interface LaneContextSource { of(pane: string): ContextUse | null; refresh(lane: Lane): Promise<boolean> }
+
+export interface LaneWebSource { of(pane: string): LaneWeb | null; refresh(lane: Lane): Promise<boolean> }
+
+export interface DispatchDeps extends Omit<LaneDispatchDeps, 'prompts' | 'webs' | 'contexts'> {
+    readonly prompts: LivePromptSource;
+    readonly webs: LaneWebSource;
+    readonly contexts?: LaneContextSource;
+}
+
+interface OldSource<Found> { of(pane: string): Found | null; refresh(lane: Lane): Promise<boolean> }
+
+const sourceOf = <Found, Typed>(source: OldSource<Found>, read: (found: Found) => Typed): PaneSource<Typed> => ({
+    of: (pane) => { const found = source.of(pane); return found === null ? null : read(found); },
+    refresh: async (lane): Promise<Presence> => ((await source.refresh(lane)) ? 'present' : 'absent'),
+});
+
+const same = <Found>(found: Found): Found => found;
+
+export class Dispatch {
+    private readonly typed: LaneDispatch;
+
+    constructor(deps: DispatchDeps) {
+        const { prompts, webs, contexts, ...rest } = deps;
+        const typedContexts = contexts === undefined ? {} : { contexts: sourceOf(contexts, same) };
+        this.typed = new LaneDispatch({ ...rest, prompts: sourceOf(prompts, (found) => must(parseText(found))), webs: sourceOf(webs, same), ...typedContexts });
+    }
+
+    send(intent: Intent): Promise<void> {
+        return this.typed.send(intent);
+    }
 }

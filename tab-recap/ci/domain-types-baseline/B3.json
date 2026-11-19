@@ -43,12 +43,6 @@
     "parameter": 1,
     "return": 3
   },
-  "src/recap/application/curate.ts": {
-    "parameter": 7,
-    "return": 1,
-    "container": 6,
-    "property": 2
-  },
   "src/recap/application/decode.ts": {
     "parameter": 4,
     "return": 2,
@@ -58,11 +52,6 @@
   },
   "src/recap/application/delivery-mark.ts": {
     "return": 3
-  },
-  "src/recap/application/dispatch.ts": {
-    "parameter": 12,
-    "return": 3,
-    "container": 3
   },
   "src/recap/application/edit-counts.ts": {
     "parameter": 2,
@@ -221,7 +210,7 @@
     "container": 2
   },
   "src/recap/application/legacy.ts": {
-    "legacy": 54
+    "legacy": 65
   },
   "src/recap/application/live-prompts.ts": {
     "parameter": 1,
