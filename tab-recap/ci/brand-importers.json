@@ -16,6 +16,7 @@
   "src/recap/domain/lane-closed.ts",
   "src/recap/domain/probability.ts",
   "src/recap/domain/retention.ts",
+  "src/recap/domain/run-ids.ts",
   "src/recap/domain/task-name.ts",
   "src/recap/domain/usd.ts",
   "src/recap/render/freshness.ts",
