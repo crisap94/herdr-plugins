@@ -92,9 +92,6 @@
     "container": 4,
     "property": 2
   },
-  "src/adapters/db/stories.ts": {
-    "assertion": 1
-  },
   "src/adapters/db/tab-row.ts": {
     "parameter": 2
   },
