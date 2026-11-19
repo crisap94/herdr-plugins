@@ -1,3 +1,4 @@
+import { parseOrigin } from './origin.ts';
 import type { ParsedValue } from '#src/protocol/codec.ts';
 import { BACKEND_IDS, harnessLabels, type BackendChoice, type BackendId } from '@stateforge-labs/session-ledger/unstable/recap/domain/backend.ts';
 import { parseText, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
@@ -328,3 +329,5 @@ export function sessionFactsOf(input: SessionInputs): SessionFacts {
         ...(chapters === null ? {} : { chapters }), ...(autocompact === null ? {} : { autocompact }),
     });
 }
+
+export const originOf = (raw: string | null | undefined): Origin => parseOrigin(raw);
