@@ -117,3 +117,26 @@ export function readJsonlFrom(path: FsPath, was: Position, budget: Count): Jsonl
     const { lines, end } = readLines(path, must(parseCount(Math.max(was.cursor, size - budget, 0))), budget);
     return { lines, position: { cursor: end, tail: null }, grew: size > was.cursor ? 'present' : 'absent' };
 }
+
+const SAME_START_CHUNK = 64 * 1024;
+
+export function sameStart(was: FsPath, now: FsPath, cursor: Count): Presence {
+    const opened: number[] = [];
+    try {
+        const left = openSync(was, 'r');
+        opened.push(left);
+        const right = openSync(now, 'r');
+        opened.push(right);
+        const [mine, theirs] = [Buffer.alloc(SAME_START_CHUNK), Buffer.alloc(SAME_START_CHUNK)];
+        for (let at = 0; at < cursor; at += SAME_START_CHUNK) {
+            const length = Math.min(SAME_START_CHUNK, cursor - at);
+            const read = readSync(left, mine, 0, length, at) === length && readSync(right, theirs, 0, length, at) === length;
+            if (!read || !mine.subarray(0, length).equals(theirs.subarray(0, length))) return 'absent';
+        }
+        return 'present';
+    } catch {
+        return 'absent';
+    } finally {
+        for (const fd of opened) closeSync(fd);
+    }
+}

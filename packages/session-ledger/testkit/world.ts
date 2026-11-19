@@ -53,6 +53,7 @@ export interface EngineWorld {
     setRestoreBytes(bytes: number): void;
     setLanguage(next: string): void;
     setNoReader(next: HarnessKind | null): void;
+    setCarry(next: (from: string, to: string, at: Position) => Position): void;
     setKeepInput(next: () => boolean): void;
     budgets(): readonly number[];
     writerResolutions(): number;
@@ -102,6 +103,7 @@ interface Script {
     restoreBytes: number;
     language: string;
     noReader: HarnessKind | null;
+    carry: (from: string, to: string, at: Position) => Position;
     keepInput: () => boolean;
 }
 
@@ -117,11 +119,12 @@ const scriptOf = (options: WorldOptions): Script => {
         restoreBytes: Number.MAX_SAFE_INTEGER,
         language: 'en',
         noReader: null,
+        carry: () => UNREAD,
         keepInput: () => true,
     };
 };
 
-type Controls = Pick<EngineWorld, 'setLocate' | 'setDebounce' | 'setRead' | 'setReadBySource' | 'setWriter' | 'setCurator' | 'setOn' | 'setRestoreBytes' | 'setLanguage' | 'setNoReader' | 'setKeepInput'>;
+type Controls = Pick<EngineWorld, 'setLocate' | 'setDebounce' | 'setRead' | 'setReadBySource' | 'setWriter' | 'setCurator' | 'setOn' | 'setRestoreBytes' | 'setLanguage' | 'setNoReader' | 'setCarry' | 'setKeepInput'>;
 
 const controlsOf = (script: Script): Controls => ({
     setLocate: (next: (session: FollowedSession) => Behaviour<LocatedAnswer>) => {
@@ -154,6 +157,9 @@ const controlsOf = (script: Script): Controls => ({
     setNoReader: (next: HarnessKind | null) => {
         script.noReader = next;
     },
+    setCarry: (next: (from: string, to: string, at: Position) => Position) => {
+        script.carry = next;
+    },
     setKeepInput: (next: () => boolean) => {
         script.keepInput = next;
     },
@@ -180,7 +186,7 @@ export function createEngineWorld(options: WorldOptions = {}): EngineWorld {
     const workplaces = workplacesOf(probes);
 
     const plugs: EnginePlugs = {
-        source: { sessions: sessionsOf(run, (session) => script.locate(session), (source) => script.chunk(source), probes, () => script.noReader) },
+        source: { sessions: sessionsOf(run, (session) => script.locate(session), (source) => script.chunk(source), probes, { noReader: () => script.noReader, carry: (from, to, at) => script.carry(from, to, at) }) },
         store: { records: store.records, facts: store.facts, stories: storiesOf() },
         models: { writer: () => { probes.writers.push(1); return writerOf(run, store, requests, () => script.written); }, curator: () => curatorOf(run, (document) => probes.curated.push(document), () => script.curator) },
         environment: {

@@ -18,7 +18,6 @@
   "./unstable/ports/recap-records.ts hasRecap",
   "./unstable/ports/transcript-registry.ts TranscriptRegistry",
   "./unstable/ports/transcript-source.ts SCREEN_PREFIX",
-  "./unstable/ports/transcripts.ts UNREAD",
   "./unstable/ports/unknowable.ts isUnknown",
   "./unstable/ports/unknowable.ts unknown",
   "./unstable/ports/unknowable.ts unreadableOf",

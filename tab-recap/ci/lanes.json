@@ -213,6 +213,7 @@
       "test/autocompact-world.ts",
       "test/autocompact.test.ts",
       "test/boundaries-marks.test.ts",
+      "test/claude-carry.test.ts",
       "test/cli-arguments.test.ts",
       "test/cli-store-window.test.ts",
       "test/closed-handoff-request.test.ts",
