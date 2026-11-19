@@ -8,6 +8,22 @@ All notable changes are documented here. The format follows
 
 ### [Unreleased]
 
+### [3.2.0] — 2026-11-19
+
+#### Added
+
+- feat(tab-recap): the recap writer asks for a schema-forced answer when its harness reports schema support (KIT-19) (!315)
+
+#### Changed
+
+- feat(tab-recap): hooks slot on by default (H3) (!317)
+
+#### Fixed
+
+- fix(tab-recap): the daemon keeps a relay pane instead of closing it as a stray column (!312)
+- fix(session-ledger): a new source under the same key continues the old cursor only when it holds the bytes already read (CSR-7) (!316)
+- fix(tab-recap): a failed store read reports unknown, not an empty store (STO-5) (!318)
+
 ### [3.1.1] — 2026-11-18
 
 #### Changed
@@ -327,7 +343,8 @@ First public release.
 - A pane is taken for a recap column only if its title is exactly `tab-recap` or `tab-recap:bar`, it hosts no agent and, when herdr reports one, its label is the manifest's. Before, any pane whose title merely *started with* `tab-recap` (for example an agent session named `tab-recap-harness-config`) was adopted as a column and closed with the columns when the daemon stopped.
 - A recap never closes, resizes or moves a pane that hosts an agent: enforced where the board adopts columns, in the close-column intents, and at the herdr edge, which checks the pane in a fresh snapshot before `pane.close`, `pane.resize` and `pane.swap` and refuses (with a log line) if it hosts an agent.
 
-[Unreleased]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.1.1...HEAD
+[Unreleased]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.2.0...HEAD
+[3.2.0]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.1.1...tab-recap-v3.2.0
 [3.1.1]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.1.0...tab-recap-v3.1.1
 [3.1.0]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.0.2...tab-recap-v3.1.0
 [3.0.2]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.0.1...tab-recap-v3.0.2
