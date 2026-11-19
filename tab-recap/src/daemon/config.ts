@@ -209,6 +209,7 @@ export function loadSettings(): Settings {
         customCommand: get('TAB_RECAP_CUSTOM_CMD') ?? NO_VALUE,
         effort: effortOf(get('TAB_RECAP_EFFORT')),
         pipeline: pipelineOf(get('TAB_RECAP_PIPELINE')) ?? DEFAULT_PIPELINE, writerCloseEvidence: closeEvidenceOr(parseCloseEvidence(get('TAB_RECAP_WRITER_CLOSE_EVIDENCE'))),
+        ...(get('TAB_RECAP_WRITER_ANSWER')?.trim().toLowerCase() === 'schema' ? { writerAnswer: 'schema' } : {}),
         recapDebounce: debounceOf(get('TAB_RECAP_RUN_DEBOUNCE_MS')),
         reconcileEvery: reconcileEveryFrom(get),
         sizing: sizingFrom(get),

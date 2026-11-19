@@ -1,6 +1,6 @@
 import type { Locale } from '#src/i18n/index.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
-import type { DeciderJob, Job } from '#src/recap/domain/job.ts';
+import type { DeciderJob, Job, JobAnswer } from '#src/recap/domain/job.ts';
 import type { AutocompactPolicy, BriefRetention, CoverageBy, JevSettings } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import type { CompactTarget } from '#src/recap/domain/compaction.ts';
@@ -49,6 +49,7 @@ export type SettingName =
     | 'TAB_RECAP_EFFORT'
     | 'TAB_RECAP_PIPELINE'
     | 'TAB_RECAP_WRITER_CLOSE_EVIDENCE'
+    | 'TAB_RECAP_WRITER_ANSWER'
     | 'TAB_RECAP_RUN_DEBOUNCE_MS'
     | 'TAB_RECAP_RECONCILE_EVERY'
     | 'TAB_RECAP_WIDTH'
@@ -85,6 +86,7 @@ export interface Settings {
     readonly effort: Effort;
     readonly pipeline: Pipeline;
     readonly writerCloseEvidence: CloseEvidence;
+    readonly writerAnswer?: JobAnswer;
     readonly recapDebounce: Debounce;
     readonly reconcileEvery: PositiveCount;
     readonly locale: Locale;

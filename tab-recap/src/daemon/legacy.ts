@@ -37,7 +37,7 @@ import type { HandoffExchangeWiring } from './handoff-exchange-wiring.ts';
 import type { Worktrees } from './worktrees.ts';
 import type { Locale } from '#src/i18n/index.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
-import type { DeciderJob, Job } from '#src/recap/domain/job.ts';
+import type { DeciderJob, Job, JobAnswer } from '#src/recap/domain/job.ts';
 import type { AutocompactPolicy, BriefRetention, CoverageBy, JevSettings } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
@@ -68,6 +68,7 @@ export interface Config {
     readonly effort: Effort;
     readonly pipeline: Pipeline;
     readonly writerCloseEvidence: CloseEvidence;
+    readonly writerAnswer?: JobAnswer;
     readonly recapDebounce: Debounce;
     readonly reconcileEvery: number;
     readonly locale: Locale;

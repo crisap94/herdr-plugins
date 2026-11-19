@@ -9,7 +9,8 @@ import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import type { FakeCall } from '@stateforge-labs/harness-adapters/testing';
 import type { PolicedRuntime } from '#test/fakes/harness-runtime.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
-import type { HarnessCall } from '#src/ports/harness.ts';
+import type { Harness, HarnessCall, Ran, StructuredSupport } from '#src/ports/harness.ts';
+import type { BackendId } from '#src/recap/domain/backend.ts';
 import { loadConfig } from '#src/daemon/config.ts';
 import type { Config } from '#src/daemon/config.ts';
 import { MAKERS } from '#src/daemon/harness-makers.ts';
@@ -22,7 +23,7 @@ import { summarizerFor } from '#src/daemon/backends.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { RecapWriter } from '#src/adapters/job/writer.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
+import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import { requestOf } from '#test/support.ts';
 import type { Milliseconds } from '#src/recap/domain/time.ts';
 
@@ -337,4 +338,69 @@ test('a run whose cost is unavailable says so in the same line, and a fully supp
 test('every library harness id reports tool support none', () => {
     const runtime = fakeRuntime({ scripts: {} });
     for (const id of Object.values(LIBRARY_IDS)) assert.equal(new LibraryHarness(runtime, id, 1000).tools, 'none');
+});
+
+function recordingHarness(structured: StructuredSupport | undefined, limit: number | null = null, result: Ran = { kind: 'ran', text: '{"ops":[]}', costUsd: 0 }): { readonly harness: Harness<BackendId>; readonly calls: HarnessCall[] } {
+    const calls: HarnessCall[] = [];
+    const harness: Harness<BackendId> = {
+        id: 'claude',
+        label: () => 'claude',
+        limit,
+        ...(structured === undefined ? {} : { structured }),
+        run: (asked) => {
+            calls.push(asked);
+            return Promise.resolve(result);
+        },
+    };
+    return { harness, calls };
+}
+
+test('answer schema on a schema harness: the writer asks for the writer schema and reads the answer as usual', async () => {
+    const recorded = recordingHarness('schema');
+    const written = await new RecapWriter(recorded.harness, { model: '', effort: 'default' }, 'schema').write(requestOf({ entries: ENTRIES }));
+    assert.deepEqual(recorded.calls[0]?.answer, { kind: 'schema', schema: 'writer' });
+    assert.equal(written.kind, 'written');
+});
+
+test('answer schema on a harness without structured support: the call has no answer key', async () => {
+    const recorded = recordingHarness(undefined);
+    await new RecapWriter(recorded.harness, { model: '', effort: 'default' }, 'schema').write(requestOf({ entries: ENTRIES }));
+    assert.equal(recorded.calls.length, 1);
+    assert.equal('answer' in (recorded.calls[0] ?? {}), false);
+});
+
+test('answer omitted on a schema harness: the call has no answer key', async () => {
+    const recorded = recordingHarness('schema');
+    await new RecapWriter(recorded.harness, { model: '', effort: 'default' }).write(requestOf({ entries: ENTRIES }));
+    assert.equal(recorded.calls.length, 1);
+    assert.equal('answer' in (recorded.calls[0] ?? {}), false);
+});
+
+test('answer schema on a fitted schema harness: the call carries the answer and the fitted input', async () => {
+    const request = requestOf({ entries: ENTRIES });
+    const fitted = recordingHarness('schema', 30_000);
+    await new RecapWriter(fitted.harness, { model: '', effort: 'default' }, 'schema').write(request);
+    const whole = recordingHarness('schema', null);
+    await new RecapWriter(whole.harness, { model: '', effort: 'default' }, 'schema').write(request);
+    const [fittedAsk] = fitted.calls;
+    const [wholeAsk] = whole.calls;
+    assert.ok(fittedAsk !== undefined && wholeAsk !== undefined);
+    assert.deepEqual(fittedAsk.answer, { kind: 'schema', schema: 'writer' });
+    assert.ok(Buffer.byteLength(fittedAsk.input) < Buffer.byteLength(wholeAsk.input));
+});
+
+test('answer schema on a library harness without structured output stays dark: one headless run with no output schema', async () => {
+    const runtime = fakeRuntime({ scripts: { opencode: [fakeOutput({ text: '{"ops":[]}' })] } });
+    const written = await new RecapWriter(new LibraryHarness(runtime, 'opencode', 1000), { model: '', effort: 'default' }, 'schema').write(requestOf({ entries: ENTRIES }));
+    assert.equal(written.kind, 'written');
+    assert.equal(runtime.calls.length, 1);
+    assert.equal('outputSchema' in firstCall(runtime).request, false);
+});
+
+test('answer schema with a failed schema call: the writer returns that failure and makes no text retry', async () => {
+    const failure = unknown({ why: 'not-found', what: 'writer' });
+    const recorded = recordingHarness('schema', null, failure);
+    const written = await new RecapWriter(recorded.harness, { model: '', effort: 'default' }, 'schema').write(requestOf({ entries: ENTRIES }));
+    assert.equal(written, failure);
+    assert.equal(recorded.calls.length, 1);
 });
