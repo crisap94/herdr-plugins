@@ -27,7 +27,8 @@ const textsOf = (facts: readonly Fact[]): readonly string[] => facts.map((fact) 
 const isThenable = (value: unknown): boolean => typeof value === 'object' && value !== null && 'then' in value;
 
 const writeFacts = (store: StoreUnderTest, at: number, tab: string, facts: readonly Fact[]): void => {
-    store.records.recordRun(runOf({ tab, at, lanes: [cursor('p1')], tasks: [shapeOf('a', ['p1'])], changed: facts }));
+    const keys = [...new Set(facts.map((fact) => fact.task.key))];
+    store.records.recordRun(runOf({ tab, at, lanes: keys.map((key) => cursor(key)), tasks: keys.map((key) => shapeOf(key, [key])), changed: facts }));
 };
 
 const openAt = (id: number, text: string, firstAt: number, lastAt: number, task: TaskId = TAB_1_A): Fact =>

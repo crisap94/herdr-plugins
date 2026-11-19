@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { opsOfSections } from '#src/adapters/db/import/sections-to-ops.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import type { RecordedRun } from '#src/ports/recap-records.ts';
+import type { Fact } from '#src/recap/domain/fact.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
@@ -96,6 +97,16 @@ test('a run is all or nothing: a run whose fact the schema refuses (an empty tex
     const refused = [{ task: 't1', ops: [{ op: 'add' as const, section: 'done' as const, text: 'fine', why: null, ref: null, at: null, agent: null }, { op: 'add' as const, section: 'done' as const, text: '', why: null, ref: null, at: null, agent: null }] }];
     assert.throws(() => { records.recordRun(run({ ops: refused })); }, /CHECK constraint failed/);
     for (const table of ['run', 'task', 'transcript', 'fact', 'run_task']) {
+        assert.equal((db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n, 0, table);
+    }
+    assert.equal(db.inTransaction, false);
+});
+
+test('a fact the run carries with an id that is not a fact typeid throws, and the run leaves no trace', () => {
+    const { records, db } = memoryStore();
+    const carried: Fact = JSON.parse('{"id":"run_00000000000000000000000001","task":{"tab":"w1:t1","key":"t1"},"section":"done","text":"x","why":null,"ref":null,"agent":null,"anchor":null,"firstAt":100,"lastAt":100,"state":"open","closedWhy":null,"closedAt":null,"language":"en"}');
+    assert.throws(() => { records.recordRun(run({ changed: [carried] })); }, /is not a fact id/);
+    for (const table of ['run', 'task', 'fact']) {
         assert.equal((db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n, 0, table);
     }
     assert.equal(db.inTransaction, false);

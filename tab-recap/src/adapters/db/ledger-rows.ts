@@ -24,6 +24,14 @@ type SweepNow = 'sweep' | 'keep';
 
 export const mintFactId = (): FactId => must(parseFactId(typeIdOf('fact', ids.next())));
 
+const factIdOf = (f: Fact): Uint8Array => {
+    const id = idOf('fact', f.id);
+    if (id === null) {
+        throw new Error(`${f.id} is not a fact id`);
+    }
+    return id;
+};
+
 const FACT_COLUMNS = {
     id: factTable.id, section: factTable.section, text: factTable.text, why: factTable.why, ref: factTable.ref, agent: factTable.agent, anchor: factTable.anchor,
     first_at: factTable.firstAt, last_at: factTable.lastAt, state: factTable.state, closed_why: factTable.closedWhy, closed_at: factTable.closedAt, language: factTable.language,
@@ -86,29 +94,44 @@ export class LedgerRows {
         return blob(this.orm.select({ id: taskTable.id }).from(taskTable).where(and(eq(taskTable.tabId, tabId(task.tab)), eq(taskTable.key, task.key))).get() ?? {}, 'id');
     }
 
-    private insertFact(run: Uint8Array, owner: Uint8Array, task: TaskId, f: Fact): void {
-        const id = idOf('fact', f.id) ?? ids.next();
+    private insertFact(run: Uint8Array, owner: Uint8Array, task: TaskId, id: Uint8Array, f: Fact): void {
         this.orm.insert(factTable).values({
             id, tabId: tabId(task.tab), taskId: owner, section: f.section, text: f.text, why: f.why, ref: f.ref, agent: f.agent, anchor: f.anchor,
             firstAt: f.firstAt, lastAt: f.lastAt, state: f.state, closedWhy: f.closedWhy, closedAt: f.closedAt, bornRun: run, lastRun: run, language: f.language,
         }).run();
     }
 
-    private updateFact(run: Uint8Array, f: Fact): void {
-        const id = idOf('fact', f.id) ?? ids.next();
+    private updateFact(run: Uint8Array, id: Uint8Array, f: Fact): void {
         this.orm.update(factTable).set({
             text: f.text, why: f.why, ref: f.ref, agent: f.agent, anchor: f.anchor, lastAt: f.lastAt, state: f.state, closedWhy: f.closedWhy, closedAt: f.closedAt,
             lastRun: run, language: f.language,
         }).where(eq(factTable.id, id)).run();
     }
 
+    private factExists(id: Uint8Array): boolean {
+        return this.orm.select({ id: factTable.id }).from(factTable).where(eq(factTable.id, id)).get() !== undefined;
+    }
+
+    keep(run: Uint8Array, changed: readonly Fact[]): void {
+        for (const f of changed) {
+            const id = factIdOf(f);
+            const owner = this.taskRow(f.task);
+            if (this.factExists(id)) {
+                this.updateFact(run, id, f);
+            } else {
+                this.insertFact(run, owner, f.task, id, f);
+            }
+        }
+    }
+
     private persist(run: Uint8Array, task: TaskId, before: readonly Fact[], changed: readonly Fact[]): void {
         const owner = this.taskRow(task);
         for (const f of changed) {
+            const id = factIdOf(f);
             if (before.some((was) => was.id === f.id)) {
-                this.updateFact(run, f);
+                this.updateFact(run, id, f);
             } else {
-                this.insertFact(run, owner, task, f);
+                this.insertFact(run, owner, task, id, f);
             }
         }
     }
