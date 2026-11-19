@@ -2,7 +2,6 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { createEngine } from '@stateforge-labs/session-ledger';
 import { createEngineWorld, engineCases, runConformance } from '@stateforge-labs/session-ledger/testkit';
-import { contractFold } from '@stateforge-labs/session-ledger/unstable/facade/plugs.ts';
 
 const GROUPS: readonly string[] = ['FOL', 'TRN', 'STA', 'FBY', 'EVT', 'CMP', 'CUR', 'HIS', 'REF', 'RUN', 'CSR', 'LNG', 'RDF', 'PRT', 'LED'];
 
@@ -24,7 +23,7 @@ runConformance({
     subject: {
         name: 'package engine',
         level: 'full',
-        world: () => createEngineWorld({ fold: contractFold }),
+        world: () => createEngineWorld(),
         create: (world) => createEngine(world.plugs),
     },
     pending: GROUPS.flatMap(idsOf),

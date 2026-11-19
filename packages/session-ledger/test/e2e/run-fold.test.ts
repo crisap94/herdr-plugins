@@ -53,7 +53,6 @@ test('throwingLedger turns an unknown read into an error that says why', () => {
         allOf: () => [],
         keysOf: () => [],
         historyOf: () => [],
-        apply: () => ({ changed: [], refused: [], markdown: '' }),
     };
     assert.throws(() => throwingLedger(checked).openOf({ ...OWNER, key: 'a' }), { message: 'the ledger not found' });
 });

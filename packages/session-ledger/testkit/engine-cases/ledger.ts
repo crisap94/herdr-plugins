@@ -173,7 +173,7 @@ export const LED_CASES: readonly Case<EngineWorld, Engine>[] = [
             await runWith(world, engine, [addOf('now', 'alpha')], 'one');
             const id = await shownId(world, engine, 'alpha');
             await runWith(world, engine, [closeOp(id, 'done'), addOf('now', 'beta')], 'two');
-            assert.ok(!world.store.calls().includes('apply'));
+            assert.ok(!('apply' in world.store.facts));
             const markdown = recapOf(world, TAB)?.tasks[0]?.markdown ?? '';
             assert.ok(markdown.includes('beta'));
             assert.ok(!markdown.includes('alpha'));

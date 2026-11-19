@@ -46,6 +46,5 @@ export type SectionsAreEight = Holds<'goal' | 'now' | 'needs' | 'done' | 'decisi
 export type ReadRecapMayBeUnknown = Holds<Unknown extends ReturnType<Records['readRecap']> ? true : false>;
 export type OpenOfMayBeUnknown = Holds<Unknown extends ReturnType<FactStore['openOf']> ? true : false>;
 export type HistoryOfIsAlwaysRead = Holds<ReturnType<FactStore['historyOf']> extends readonly HistoryFact[] ? true : false>;
-export type ApplyIsKept = Holds<ReturnType<FactStore['apply']> extends Applied ? true : false>;
 export type RecapKeepsLanes = Holds<Recap['lanes'] extends readonly SessionCursor[] ? true : false>;
 export type TaskShapeIsPicked = Holds<keyof TaskShape extends 'id' | 'name' | 'lanes' ? true : false>;

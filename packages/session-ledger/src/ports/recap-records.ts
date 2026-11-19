@@ -1,7 +1,8 @@
 import type { LaneMark } from '#src/recap/domain/boundary.ts';
 import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
-import type { TaskOps } from '#src/recap/domain/ops.ts';
+import type { Refusal } from '#src/recap/domain/ops.ts';
+import type { Fact } from '#src/recap/domain/fact.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
@@ -49,7 +50,8 @@ export interface RecordedRun extends RunFacts {
     readonly error: string | null;
     readonly lanes: readonly LaneCursor[];
     readonly tasks: readonly TaskShape[];
-    readonly ops: readonly TaskOps[];
+    readonly changed: readonly Fact[];
+    readonly refused: readonly Refusal[];
     readonly input?: string;
     readonly gateStats?: GateStats;
 }

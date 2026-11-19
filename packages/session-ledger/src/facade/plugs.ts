@@ -3,15 +3,15 @@ import { parseHarnessKind, parseScopeId, parseSessionKey, type RestoreText } fro
 import { must } from '#src/protocol/result.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
-import type { CheckedLedger, Applied } from '#src/ports/ledger.ts';
+import type { CheckedLedger } from '#src/ports/ledger.ts';
 import type { CheckedRecapRecords, RecordedRun, FailedRun, Advance, TabRecap, LastRun } from '#src/ports/recap-records.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { Transcripts, Located, ChunkResult, PromptResult } from '#src/ports/transcripts.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
 import type { Unknown, Unknowable } from '#src/ports/unknowable.ts';
-import type { Fact, FactId, RunId, Section } from '#src/recap/domain/fact.ts';
-import { apply, type Operation, type Refusal, type RunRef, type TaskOps } from '#src/recap/domain/ops.ts';
+import type { Fact, FactId, Section } from '#src/recap/domain/fact.ts';
+import type { Operation, Refusal } from '#src/recap/domain/ops.ts';
 import type { Lane } from '#src/recap/domain/lane-shape.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { parseDuration, parseInstant, type Duration } from '#src/recap/domain/time.ts';
@@ -35,9 +35,7 @@ export interface FacadePlugs extends Omit<LegacyPlugs, 'ran'> {
 
 const isLedgerFactId = (id: FactId): id is FactId & sl.FactId => id !== '';
 const isPluginFactId = (id: sl.FactId): id is sl.FactId & FactId => id !== '';
-const isLedgerRunId = (id: RunId): id is RunId & sl.RunId => id !== '';
 const isLedgerText = (text: Text): text is Text & sl.Text => text.length >= 0;
-const isPluginText = (text: sl.Text): text is sl.Text & Text => text.length >= 0;
 const isLedgerCount = (count: PositiveCount): count is PositiveCount & sl.PositiveCount => Number.isSafeInteger(count) && count >= 1;
 
 const bridged = <F, T extends F>(value: F, fits: (value: F) => value is T, what: string): T => {
@@ -58,47 +56,10 @@ const ledgerOperation = (op: Operation): sl.Operation => {
     }
     return { ...op, anchor: bridged(op.anchor, isLedgerText, 'an anchor') };
 };
-const pluginOperation = (op: sl.Operation): Operation => {
-    if (op.op !== 'close' || op.anchor === undefined) {
-        return op.op === 'close' ? { op: 'close', id: op.id, why: op.why } : op;
-    }
-    return { ...op, anchor: bridged(op.anchor, isPluginText, 'an anchor') };
-};
 
 const ledgerRefusal = (refusal: Refusal): sl.Refusal => ({ op: ledgerOperation(refusal.op), reason: refusal.reason });
-const pluginRefusal = (refusal: sl.Refusal): Refusal => ({ op: pluginOperation(refusal.op), reason: refusal.reason });
-const ledgerTaskOps = (task: TaskOps): sl.TaskOps => ({ task: task.task, ops: task.ops.map(ledgerOperation) });
 
-const ledgerRun = (run: RunRef): sl.RunRef => ({
-    id: bridged(run.id, isLedgerRunId, 'a run id'),
-    task: run.task,
-    at: run.at,
-    language: run.language,
-    mint: () => ledgerFactId(run.mint()),
-});
-const isPluginRunId = (id: sl.RunId): id is sl.RunId & RunId => id !== '';
-
-const pluginRun = (run: sl.RunRef): RunRef => ({
-    id: bridged(run.id, isPluginRunId, 'a run id'),
-    task: run.task,
-    at: run.at,
-    language: run.language,
-    mint: () => pluginFactId(run.mint()),
-});
-
-export interface ContractFolded {
-    readonly ledger: readonly sl.Fact[];
-    readonly refused: readonly sl.Refusal[];
-    readonly changed: readonly sl.Fact[];
-}
-
-export const contractFold = (before: readonly sl.Fact[], ops: readonly sl.Operation[], run: sl.RunRef, sweepNow: boolean): ContractFolded => {
-    const folded = apply(before.map(pluginFact), ops.map(pluginOperation), pluginRun(run), sweepNow);
-    return { ledger: folded.ledger.map(ledgerFact), refused: folded.refused.map(ledgerRefusal), changed: folded.changed.map(ledgerFact) };
-};
-
-const pluginApplied = (applied: sl.Applied): Applied => ({ changed: applied.changed.map(pluginFact), refused: applied.refused.map(pluginRefusal) });
-const ledgerRecorded = (run: RecordedRun): sl.RecordedRun => ({ ...run, ops: run.ops.map(ledgerTaskOps) });
+const ledgerRecorded = (run: RecordedRun): sl.RecordedRun => ({ ...run, changed: run.changed.map(ledgerFact), refused: run.refused.map(ledgerRefusal) });
 
 const durationOf = (after: sl.Duration): Duration => must(parseDuration(after));
 const causeOf = (detail: string): FailureCause => parseFailureCause(must(parseText(detail)));
@@ -162,7 +123,6 @@ const pluginLedger = (facts: sl.FactStore): CheckedLedger => ({
     allOf: (task) => orEmpty(facts.allOf(task)).map(pluginFact),
     keysOf: (tab) => { const found = facts.keysOf(scopeOf(tab)); return isLedgerUnknown(found) ? pluginUnknown(found) : found.map((key) => must(parseText(key))); },
     historyOf: (tab, pane) => facts.historyOf(scopeOf(tab), keyOf(pane)),
-    apply: (run, ops) => pluginApplied(facts.apply(ledgerRun(run), ops.map(ledgerOperation))),
 });
 
 

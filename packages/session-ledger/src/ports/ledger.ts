@@ -1,5 +1,5 @@
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
-import type { Operation, Refusal, RunRef } from '#src/recap/domain/ops.ts';
+import type { Refusal } from '#src/recap/domain/ops.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 
 export interface Applied {
@@ -21,7 +21,6 @@ export interface HistoryFact {
 export interface Ledger {
     openOf(task: TaskId): readonly Fact[];
     recentlyClosed(task: TaskId, sinceMs: number): readonly Fact[];
-    apply(run: RunRef, ops: readonly Operation[]): Applied;
     allOf(task: TaskId): readonly Fact[];
     keysOf(tab: string): readonly string[];
     historyOf(tab: string, pane: string): readonly HistoryFact[];
