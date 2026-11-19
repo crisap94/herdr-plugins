@@ -72,15 +72,11 @@
     "legacy": 12
   },
   "src/adapters/herdr/column-panes.ts": {
-    "parameter": 1,
-    "return": 1,
-    "container": 8
+    "container": 1
   },
   "src/adapters/herdr/fleet.ts": {
-    "parameter": 18,
-    "return": 1,
-    "container": 7,
-    "property": 1
+    "parameter": 1,
+    "container": 3
   },
   "src/adapters/herdr/host-check.ts": {
     "parameter": 4,
@@ -88,7 +84,7 @@
     "property": 2
   },
   "src/adapters/herdr/legacy.ts": {
-    "legacy": 20
+    "legacy": 39
   },
   "src/adapters/herdr/session-registry.ts": {
     "parameter": 2
