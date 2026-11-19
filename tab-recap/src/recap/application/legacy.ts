@@ -13,7 +13,7 @@ import type { Decider, Noul } from '#src/ports/decider.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCheckedFact, type CheckedFact } from '#src/recap/domain/autocompact.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { parseCount, parsePositiveCount } from '#src/recap/domain/count.ts';
 import { parseProbability, type Probability } from '#src/recap/domain/probability.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { checkCoverage, checkedFactsOf, correctionFor, KEPT_AT_LEAST, questionsOf, unmetLinesOf, unmetOf, type CheckedCoverage, type MissingPart, type UnmetFact } from './brief-coverage.ts';
@@ -36,7 +36,11 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
-import { parseTabId } from '#src/recap/domain/ids.ts';
+import { parseSessionPath, parseTabId } from '#src/recap/domain/ids.ts';
+import type { Entry } from '#src/ports/transcripts.ts';
+import { mergedWindows, replayFile, type Replayed, type TypedReplayDeps } from './replay.ts';
+import type { ImportedChapter } from '#src/ports/imported-recaps.ts';
+import { compareChapters, type Comparison, type TypedCompareDeps } from './compare-imported.ts';
 
 export interface CoverageFact {
     readonly section: string;
@@ -275,4 +279,24 @@ export class Dispatch {
     send(intent: Intent): Promise<void> {
         return this.typed.send(intent);
     }
+}
+
+export interface ReplayDeps extends Omit<TypedReplayDeps, 'language' | 'log'> { readonly language: string; readonly log: (line: string) => void }
+
+export function windowsOf(entries: readonly Entry[], mergeTurns = 1): readonly (readonly Entry[])[] {
+    return mergedWindows(entries, must(parsePositiveCount(mergeTurns)));
+}
+
+export function replay(deps: ReplayDeps, file: string, label: string, size: number, mergeTurns = 1): Promise<Replayed> {
+    const { language, log, ...rest } = deps;
+    return replayFile({ ...rest, language: must(parseText(language)), log: (line: Text): void => log(line) }, must(parseSessionPath(file)), must(parseTabId(label)), must(parseCount(size)), must(parsePositiveCount(mergeTurns)));
+}
+
+export interface CompareDeps extends Omit<TypedCompareDeps, 'label'> { readonly label: string }
+
+export const withoutLedgers = (document: string): string => document.replace(/<ledger\b[^>]*?(?:\/>|>[\s\S]*?<\/ledger>)/gu, '');
+
+export function compareImported(deps: CompareDeps, chapters: readonly ImportedChapter[]): Promise<Comparison> {
+    const typed = chapters.map((chapter) => ({ n: must(parseCount(chapter.n)), at: must(parseInstant(chapter.at)), items: chapter.items }));
+    return compareChapters({ ...deps, label: must(parseTabId(deps.label)) }, typed);
 }

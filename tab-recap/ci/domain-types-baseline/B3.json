@@ -30,12 +30,6 @@
     "container": 1,
     "property": 1
   },
-  "src/recap/application/compare-imported.ts": {
-    "parameter": 4,
-    "return": 2,
-    "container": 1,
-    "property": 15
-  },
   "src/recap/application/counted-writer.ts": {
     "property": 1
   },
@@ -210,7 +204,7 @@
     "container": 2
   },
   "src/recap/application/legacy.ts": {
-    "legacy": 65
+    "legacy": 75
   },
   "src/recap/application/live-prompts.ts": {
     "parameter": 1,
@@ -229,11 +223,6 @@
     "parameter": 5,
     "return": 6,
     "property": 3
-  },
-  "src/recap/application/replay.ts": {
-    "parameter": 13,
-    "return": 3,
-    "property": 6
   },
   "src/recap/application/retention.ts": {
     "parameter": 1,

@@ -5,5 +5,12 @@
     "function": "store",
     "parameter": "named",
     "reason": "callback: the facts map that curatorInput of packages/session-ledger/src/recap/application/curator-input.ts (session-ledger, frozen) returns fixes ReadonlyMap<string, Fact>"
+  },
+  {
+    "class": "callback",
+    "file": "src/recap/application/replay.ts",
+    "function": "unavailable",
+    "parameter": "kind",
+    "reason": "callback: the unavailable wording of TranscriptRegistry in packages/session-ledger/src/ports/transcript-registry.ts (session-ledger, frozen) takes (kind: string) => string"
   }
 ]
