@@ -25,7 +25,7 @@ async function switchedOn(): Promise<boolean> {
     if (value === 'on' || value === 'off') return value === 'on';
     try {
         const loaded: unknown = await import(SLOT_FILE.href);
-        return typeof loaded === 'object' && loaded !== null && 'defaultOn' in loaded && loaded.defaultOn === true;
+        return typeof loaded === 'object' && loaded !== null && 'defaultOn' in loaded && loaded.defaultOn === 'on';
     } catch {
         return false;
     }

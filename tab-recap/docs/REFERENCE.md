@@ -10,6 +10,7 @@ the desktop app, the other tools and the state. The [README](../README.md) has t
 - [The expanded view](#the-expanded-view)
 - [Chapters and retention](#chapters-and-retention)
 - [How the recap is kept](#how-the-recap-is-kept)
+- [Hooks](#hooks)
 - [Compaction](#compaction)
 - [Handoff](#handoff)
 - [Autocompact](#autocompact)
@@ -195,6 +196,25 @@ and may update a fact, close it (`done`, `wrong`, `superseded`, or `answered` â€
 it never adds. Each update and close carries a quote of the turns that shows the change; one without a quote in the turns is
 refused, so a fact is never closed because a summary the agent wrote after a compaction leaves it out. At most one such call per
 task every five minutes.
+
+## Hooks
+
+With `TAB_RECAP_HOOKS=on` (the default), Claude Code and Codex call the daemon over a local socket in the state folder
+at three points: `Stop` (the end of a turn), `SessionStart` and `PreCompact`. A turn's end is a recap run for that tab,
+so the writer runs once per turn and is not woken by polling. Each harness gets the same three entries, written by
+`tab-recap hooks install [--harness claude|codex]` into `~/.claude/settings.json` (Claude Code) and `~/.codex/hooks.json`
+(Codex); `tab-recap hooks uninstall` removes them. An install that finds the entries already there changes nothing.
+
+- **Following.** The daemon answers only for a session it follows, the lanes of the tabs on its board. Any other session,
+  and tab-recap's own headless jobs, get `{}` and cause no engine call.
+- **Fail open.** When the daemon is down or the socket does not answer, the hook prints `{}` and exits 0, so the agent
+  is never held up.
+- **Codex trust.** Codex runs a new hook only after you trust it on its `/hooks` screen.
+- **Restart.** The key is read once at daemon start: restart the daemon after changing it.
+- **Off.** `TAB_RECAP_HOOKS=off` starts no listener, and `tab-recap hooks` exits 3 (not available).
+
+Exit codes of the command: 0 when it wrote or found the entries, 1 when it refused (with the reason), 2 for a usage
+error, 3 when the hooks switch is off.
 
 ## Compaction
 
@@ -703,6 +723,8 @@ protocol. Token names are `[A-Za-z0-9_-]`, 1 to 32 characters.
 
 
 ## Configuration reference
+
+Key new with the hooks: `TAB_RECAP_HOOKS` (`on` by default: the daemon's listener for Claude Code and Codex turn-end, session-start and pre-compact calls; `off` starts none). See [Hooks](#hooks). Nothing is written into the agents' settings until `tab-recap hooks install` runs.
 
 Key new with herdr events: `TAB_RECAP_HERDR_EVENTS` (`off` by default, or `on`: lanes are shared on herdr's event stream as pane tokens, and another tool's `compact-req-<tool>` request is answered in `tab-recap-compact`; see the setting "Herdr events"). Off writes no token and answers no request; the typing leases and `awaiting` tokens of other tools are honoured either way. `TAB_RECAP_HANDOFF_REQUESTS` (`off` by default, or `on`, effective only with herdr events on) lets another tool ask for a handoff of its lane, answered in `tab-recap-handoff` (see "For other tools").
 

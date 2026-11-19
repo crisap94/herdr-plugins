@@ -15,7 +15,7 @@ const SLOT_FOLDER = new URL('../src/daemon/slots/', import.meta.url);
 export async function slotDefault(slot: string, folder: URL = SLOT_FOLDER): Promise<boolean> {
     try {
         const loaded: unknown = await import(new URL(`${slot}.ts`, folder).href);
-        return typeof loaded === 'object' && loaded !== null && 'defaultOn' in loaded && loaded.defaultOn === true;
+        return typeof loaded === 'object' && loaded !== null && 'defaultOn' in loaded && loaded.defaultOn === 'on';
     } catch {
         return false;
     }
