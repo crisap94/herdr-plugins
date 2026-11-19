@@ -237,6 +237,7 @@
       "test/continuation-note.test.ts",
       "test/coordination-names.test.ts",
       "test/count-parsers.test.ts",
+      "test/curate-unknown.test.ts",
       "test/curation.test.ts",
       "test/curator-setup.test.ts",
       "test/daemon-handoff-wiring.test.ts",

@@ -1,30 +1,27 @@
 import type { CheckedLedger, Ledger } from '#src/ports/ledger.ts';
 import type { CheckedRecapRecords, RecapRecords } from '#src/ports/recap-records.ts';
-import type { Unknown } from '#src/ports/unknowable.ts';
+import { isUnknown, type Unknown } from '#src/ports/unknowable.ts';
 
 type RecordReads = 'readRecap' | 'lastRunOf';
 type LedgerReads = 'openOf' | 'recentlyClosed' | 'allOf' | 'keysOf';
+type Read = RecapRecords[RecordReads] | Ledger[LedgerReads];
+type Guarded<F extends Read> = { read(...args: Parameters<F>): ReturnType<F> | Unknown }['read'];
 
-export interface GuardedRecapRecords extends Omit<RecapRecords, RecordReads> {
-    readRecap(...args: Parameters<RecapRecords['readRecap']>): ReturnType<RecapRecords['readRecap']> | Unknown;
-    lastRunOf(...args: Parameters<RecapRecords['lastRunOf']>): ReturnType<RecapRecords['lastRunOf']> | Unknown;
-}
+export type GuardedRecapRecords = Omit<RecapRecords, RecordReads> & { readonly [K in RecordReads]: Guarded<RecapRecords[K]> };
 
-export interface GuardedLedger extends Omit<Ledger, LedgerReads> {
-    openOf(...args: Parameters<Ledger['openOf']>): ReturnType<Ledger['openOf']> | Unknown;
-    recentlyClosed(...args: Parameters<Ledger['recentlyClosed']>): ReturnType<Ledger['recentlyClosed']> | Unknown;
-    allOf(...args: Parameters<Ledger['allOf']>): ReturnType<Ledger['allOf']> | Unknown;
-    keysOf(...args: Parameters<Ledger['keysOf']>): ReturnType<Ledger['keysOf']> | Unknown;
-}
+export type GuardedLedger = Omit<Ledger, LedgerReads> & { readonly [K in LedgerReads]: Guarded<Ledger[K]> };
 
-export const isUnknownRead = (value: unknown): value is Unknown =>
-    typeof value === 'object' && value !== null && 'kind' in value && value.kind === 'unknown';
+export const isUnknownRead = <T>(read: T | Unknown): read is Extract<T | Unknown, Unknown> => typeof read === 'object' && read !== null && 'kind' in read && typeof read.kind === 'string' && isUnknown({ kind: read.kind });
 
 export const knownOr = <T>(value: T | Unknown, fallback: T): T => (isUnknownRead(value) ? fallback : value);
 
+const orElse = <A, R>(read: (arg: A) => R | Unknown, fallback: R) => (arg: A): R => knownOr(read(arg), fallback);
+
+const orElseOf2 = <A, B, R>(read: (first: A, second: B) => R | Unknown, fallback: R) => (first: A, second: B): R => knownOr(read(first, second), fallback);
+
 export const checkedRecords = (records: GuardedRecapRecords): CheckedRecapRecords => ({
     readRecap: records.readRecap.bind(records),
-    lastRunOf: (...args) => knownOr(records.lastRunOf(...args), null),
+    lastRunOf: orElse(records.lastRunOf.bind(records), null),
     beginRun: records.beginRun.bind(records),
     recordRun: records.recordRun.bind(records),
     failRun: records.failRun.bind(records),
@@ -34,15 +31,15 @@ export const checkedRecords = (records: GuardedRecapRecords): CheckedRecapRecord
 export const checkedLedger = (ledger: GuardedLedger): CheckedLedger => ({
     openOf: ledger.openOf.bind(ledger),
     recentlyClosed: ledger.recentlyClosed.bind(ledger),
-    allOf: (...args) => knownOr(ledger.allOf(...args), []),
+    allOf: orElse(ledger.allOf.bind(ledger), []),
     keysOf: ledger.keysOf.bind(ledger),
     historyOf: ledger.historyOf.bind(ledger),
 });
 
 export const fallbackLedger = (ledger: GuardedLedger): Ledger => ({
-    openOf: (...args) => knownOr(ledger.openOf(...args), []),
-    recentlyClosed: (...args) => knownOr(ledger.recentlyClosed(...args), []),
-    allOf: (...args) => knownOr(ledger.allOf(...args), []),
-    keysOf: (...args) => knownOr(ledger.keysOf(...args), []),
+    openOf: orElse(ledger.openOf.bind(ledger), []),
+    recentlyClosed: orElseOf2(ledger.recentlyClosed.bind(ledger), []),
+    allOf: orElse(ledger.allOf.bind(ledger), []),
+    keysOf: orElse(ledger.keysOf.bind(ledger), []),
     historyOf: ledger.historyOf.bind(ledger),
 });

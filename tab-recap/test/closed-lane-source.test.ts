@@ -39,7 +39,7 @@ const rowOf = (closedAt: number, association: { readonly task: TaskId; readonly 
     record: { tab: TAB, pane: PANE, agent: AGENT, closedAt: instant(closedAt), cwd: null, association },
 });
 
-function depsOf(read: ClosedLaneRead, parts: { readonly ledger?: Pick<Ledger, 'allOf'>; readonly closedDays?: ClosedSourceDeps['closedDays']; readonly now?: ClosedSourceDeps['now'] } = {}): ClosedSourceDeps {
+function depsOf(read: ClosedLaneRead, parts: { readonly ledger?: ClosedSourceDeps['ledger']; readonly closedDays?: ClosedSourceDeps['closedDays']; readonly now?: ClosedSourceDeps['now'] } = {}): ClosedSourceDeps {
     return {
         closures: readOf(read),
         ledger: parts.ledger ?? new MemoryLedger(),
@@ -132,4 +132,10 @@ test('a closure past the window is expired, and once the sweep has pruned it the
     assert.deepEqual(resolveClosedLane(IDENTITY, deps), { kind: 'expired', closedAt: CLOSED });
     stored = { kind: 'absent' };
     assert.deepEqual(resolveClosedLane(IDENTITY, deps), { kind: 'never-seen' });
+});
+
+test('an unknown facts read is that unknown', () => {
+    const locked = unknown({ why: 'unreadable', detail: causeOf('locked') });
+    const ledger: ClosedSourceDeps['ledger'] = { allOf: () => locked };
+    assert.deepEqual(resolveClosedLane(IDENTITY, depsOf(rowOf(CLOSED), { ledger })), locked);
 });
