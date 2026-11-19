@@ -56,8 +56,8 @@ test('a word is listed while its key is on, hidden while it is off, and follows 
 test('a slot file decides its default by its defaultOn export; a missing or broken slot file counts as off', async () => {
     const folder = mkdtempSync(join(tmpdir(), 'tab-recap-slots-'));
     try {
-        writeFileSync(join(folder, 'hooks.ts'), 'export const defaultOn = true;\n');
-        writeFileSync(join(folder, 'view.ts'), 'export const defaultOn = false;\n');
+        writeFileSync(join(folder, 'hooks.ts'), 'export const defaultOn = "on";\n');
+        writeFileSync(join(folder, 'view.ts'), 'export const defaultOn = "off";\n');
         writeFileSync(join(folder, 'roll.ts'), 'export const defaultOn = "true";\n');
         writeFileSync(join(folder, 'timing.ts'), 'export const defaultOn = ;\n');
         const base = pathToFileURL(`${folder}/`);
@@ -72,21 +72,22 @@ test('a slot file decides its default by its defaultOn export; a missing or brok
     }
 });
 
-test('with every slot off the usage text lists the built-in words only, as before', () => {
-    const done = cli(['--help'], {});
+test('with every slot key off the usage text lists the built-in words only, as before', () => {
+    const done = cli(['--help'], { TAB_RECAP_HOOKS: 'off' });
     assert.equal(done.status, 0, done.err);
     assert.equal(done.out, `USAGE: tab-recap ${BUILT_IN} [-h|--help]\n`);
 });
 
-test('the usage text lists hooks while TAB_RECAP_HOOKS is on and pane while TAB_RECAP_VIEW_SERVER is on', () => {
+test('the usage text lists hooks while TAB_RECAP_HOOKS is on or unset and pane while TAB_RECAP_VIEW_SERVER is on', () => {
+    assert.equal(cli(['--help'], {}).out, `USAGE: tab-recap ${BUILT_IN}|hooks [-h|--help]\n`);
     assert.equal(cli(['--help'], { TAB_RECAP_HOOKS: 'on' }).out, `USAGE: tab-recap ${BUILT_IN}|hooks [-h|--help]\n`);
-    assert.equal(cli(['--help'], { TAB_RECAP_VIEW_SERVER: 'on' }).out, `USAGE: tab-recap ${BUILT_IN}|pane [-h|--help]\n`);
+    assert.equal(cli(['--help'], { TAB_RECAP_HOOKS: 'off', TAB_RECAP_VIEW_SERVER: 'on' }).out, `USAGE: tab-recap ${BUILT_IN}|pane [-h|--help]\n`);
     assert.equal(cli(['--help'], { TAB_RECAP_HOOKS: 'off' }).out, `USAGE: tab-recap ${BUILT_IN} [-h|--help]\n`);
 });
 
 test('the hooks and pane words exist while dark: each says not available and exits 3', () => {
     for (const word of ['hooks', 'pane']) {
-        const done = cli([word, 'install', '--help'], {});
+        const done = cli([word, 'install', '--help'], { TAB_RECAP_HOOKS: 'off' });
         assert.equal(done.status, 3, `${word}: ${done.err}`);
         assert.equal(done.err, `tab-recap: 3 — ${word}: not available\n`);
         assert.equal(done.out, '');

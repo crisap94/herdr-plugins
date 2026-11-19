@@ -153,9 +153,9 @@ test('tab-recap hooks install then uninstall, switched on, edits ~/.claude/setti
     });
 });
 
-test('tab-recap hooks install stays dark while TAB_RECAP_HOOKS is not on: exit 3, nothing written', async () => {
+test('tab-recap hooks install stays dark while TAB_RECAP_HOOKS is off: exit 3, nothing written', async () => {
     await inRoom((room) => {
-        const done = cli(room, ['install'], '');
+        const done = cli(room, ['install'], 'off');
         assert.equal(done.status, 3, done.stderr);
         assert.equal(done.stderr, 'tab-recap: 3 — hooks: not available\n');
         assert.equal(read(room.settingsPath), read(SAMPLE.pathname));
