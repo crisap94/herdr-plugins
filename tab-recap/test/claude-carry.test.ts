@@ -1,10 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.ts';
 import { UNREAD, type Located, type Position } from '#src/ports/transcripts.ts';
+import { sameStart } from '#src/adapters/transcripts/jsonl.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
+import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 
 const row = (text: string): string => `${JSON.stringify({ type: 'user', message: { content: text } })}\n`;
 const START = row('first') + row('second');
@@ -46,4 +50,17 @@ test('a fork that shares the first 64 KiB and differs before the cursor starts a
 
 test('a true move, whose old transcript can no longer be read, starts at UNREAD', async () => {
     assert.deepEqual(await carried(null, START + row('third')), UNREAD);
+});
+
+test('a carry check whose new transcript cannot be opened leaves no file open', { skip: !existsSync('/proc/self/fd') }, () => {
+    const dir = mkdtempSync(join(tmpdir(), 'claude-carry-'));
+    try {
+        const from = join(dir, 'old.jsonl');
+        writeFileSync(from, START);
+        const before = readdirSync('/proc/self/fd').length;
+        for (let round = 0; round < 50; round += 1) sameStart(must(parseFsPath(from)), must(parseFsPath(join(dir, 'missing.jsonl'))), must(parseCount(AT.cursor)));
+        assert.equal(readdirSync('/proc/self/fd').length, before);
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
 });

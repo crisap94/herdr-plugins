@@ -123,8 +123,10 @@ const SAME_START_CHUNK = 64 * 1024;
 export function sameStart(was: FsPath, now: FsPath, cursor: Count): Presence {
     const opened: number[] = [];
     try {
-        const [left, right] = [openSync(was, 'r'), openSync(now, 'r')];
-        opened.push(left, right);
+        const left = openSync(was, 'r');
+        opened.push(left);
+        const right = openSync(now, 'r');
+        opened.push(right);
         const [mine, theirs] = [Buffer.alloc(SAME_START_CHUNK), Buffer.alloc(SAME_START_CHUNK)];
         for (let at = 0; at < cursor; at += SAME_START_CHUNK) {
             const length = Math.min(SAME_START_CHUNK, cursor - at);
