@@ -104,7 +104,9 @@ export class ClaudeTranscripts implements Transcripts {
     }
 
     carry(from: Located, to: Located, at: Position): Promise<Position> {
-        const moved = from.kind === 'located' && to.kind === 'located' && sameStart(must(parseFsPath(from.source)), must(parseFsPath(to.source)), must(parseCount(at.cursor))) === 'present';
-        return Promise.resolve(moved ? at : UNREAD);
+        if (from.kind !== 'located' || to.kind !== 'located') return Promise.resolve(UNREAD);
+        const [was, now, cursor] = [parseFsPath(from.source), parseFsPath(to.source), parseCount(at.cursor)];
+        if (was.kind !== 'ok' || now.kind !== 'ok' || cursor.kind !== 'ok') return Promise.resolve(UNREAD);
+        return Promise.resolve(sameStart(was.value, now.value, cursor.value) === 'present' ? at : UNREAD);
     }
 }

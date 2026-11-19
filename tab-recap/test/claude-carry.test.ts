@@ -64,3 +64,7 @@ test('a carry check whose new transcript cannot be opened leaves no file open', 
         rmSync(dir, { recursive: true, force: true });
     }
 });
+
+test('a carry asked with a cursor that is not a count starts at UNREAD instead of throwing', async () => {
+    assert.deepEqual(await carried(START, START, { cursor: -1, tail: null }), UNREAD);
+});
