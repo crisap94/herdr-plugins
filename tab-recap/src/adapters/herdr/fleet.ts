@@ -6,8 +6,8 @@ import { subscribeTopics } from './subscriptions.ts';
 import { agentPanesIn, columnsIn, parseOptionalPaneId } from './column-panes.ts';
 import { list, paneTokensOf, rectOf, reconciliationOf, str } from './json.ts';
 import { parseJson, type JsonObject } from './json-object.ts';
-import { refusalOf } from './token-refusal.ts';
-import { PANE_WRITABLE } from '#src/recap/domain/lane-tokens.ts';
+import { refusalOfTokens } from './token-refusal.ts';
+import { OWNERS } from '#src/recap/domain/token-registry.ts';
 import { parseAgentKind, parseTabId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
@@ -195,7 +195,7 @@ export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, Harne
 
     async report(pane: PaneId, tokens: LaneTokenMap, ttlMs: Milliseconds): Promise<Done> {
         const record = Object.fromEntries(tokens);
-        const refused = refusalOf(record, PANE_WRITABLE);
+        const refused = refusalOfTokens(tokens, OWNERS.writable);
         return refused ?? this.call(() => usePlugin((client) => client.call('pane.report_metadata', { pane_id: pane, source: PLUGIN_ID, tokens: record, ttl_ms: Number(ttlMs) })));
     }
 
