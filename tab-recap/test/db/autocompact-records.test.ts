@@ -42,6 +42,14 @@ test('newest: newest first, limited, of one tab when asked', () => {
     assert.deepEqual(store.autocompact.newest(mustParsed(parseCount(5)), mustParsed(parseTabId('w9:t9'))), []);
 });
 
+test('newest: a decision whose stored answers are not JSON is left out, and the others still come back', () => {
+    const store = seeded();
+    store.autocompact.record(decision({ at: instant(10) }));
+    store.autocompact.record(decision({ at: instant(20) }));
+    store.db.exec("UPDATE autocompact_decision SET answers = '{not json' WHERE at = 20");
+    assert.deepEqual(store.autocompact.newest(mustParsed(parseCount(5))).map((each) => each.at), [10]);
+});
+
 test('link points a decision at its compaction; a deleted compaction leaves the decision', () => {
     const store = seeded();
     const id = store.autocompact.record(decision());

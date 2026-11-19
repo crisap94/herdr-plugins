@@ -175,8 +175,14 @@ export class DecisionLedgerRepository implements DecisionLedger {
         return guarded(() => this.orm.select(NEWEST_COLUMNS).from(autocompactDecision)
             .where(tab === undefined ? undefined : eq(autocompactDecision.tabId, tabId(tab)))
             .orderBy(desc(autocompactDecision.at), desc(autocompactDecision.id)).limit(limit).all().flatMap((row) => {
-                const answers: unknown = JSON.parse(row.answers);
-                const coverage: unknown = row.coverage === null ? null : JSON.parse(row.coverage);
+                let answers: unknown = null;
+                let coverage: unknown = null;
+                try {
+                    answers = JSON.parse(row.answers);
+                    coverage = row.coverage === null ? null : JSON.parse(row.coverage);
+                } catch {
+                    return [];
+                }
                 const outcome = row.coverageOutcome === null ? null : { kind: row.coverageOutcome, count: row.coverageMissing, reason: row.uncheckedReason };
                 const parsed = parseStoredDecisionRow({
                     ...row, id: typeIdOf('decision', row.id), compactionId: row.compactionId === null ? null : typeIdOf('compaction', row.compactionId),
