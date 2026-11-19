@@ -172,37 +172,37 @@ export interface CompactionMessages {
 }
 
 export interface CompactionOriginMessages {
-    readonly operator: (count: number) => string;
-    readonly auto: (count: number) => string;
+    readonly operator: (count: Count) => Text;
+    readonly auto: (count: Count) => Text;
 }
 
-export interface CausesMessages { readonly 'turn-ended': string; readonly focused: string; readonly requested: string }
+export interface CausesMessages { readonly 'turn-ended': Text; readonly focused: Text; readonly requested: Text }
 
 export interface ExpandedAutocompactMessages {
-    readonly label: string;
-    readonly text: (decisions: number, compacted: number, waited: number) => string;
+    readonly label: Text;
+    readonly text: (decisions: Count, compacted: Count, waited: Count) => Text;
 }
 
 export interface ExpandedMessages {
-    readonly timeline: string; readonly rules: string; readonly session: string; readonly story: string; readonly updatingStory: string;
-    readonly waiting: (amount: number, unit: AgoUnit) => string;
-    readonly closed: (why: ClosedWhy) => string;
-    readonly started: string; readonly turns: string; readonly compactions: string; readonly compactionOrigin: CompactionOriginMessages; readonly of: string; readonly repo: string; readonly branch: string; readonly files: string;
+    readonly timeline: Text; readonly rules: Text; readonly session: Text; readonly story: Text; readonly updatingStory: Text;
+    readonly waiting: (amount: Count, unit: AgoUnit) => Text;
+    readonly closed: (why: ClosedWhy) => Text;
+    readonly started: Text; readonly turns: Text; readonly compactions: Text; readonly compactionOrigin: CompactionOriginMessages; readonly of: Text; readonly repo: Text; readonly branch: Text; readonly files: Text;
     readonly causes: CausesMessages;
     readonly autocompact: ExpandedAutocompactMessages;
 }
 
 export interface ChaptersMessages {
-    readonly label: string;
-    readonly count: (chapters: number) => string;
-    readonly compacted: string;
-    readonly newSession: string;
-    readonly seconds: (seconds: number) => string;
-    readonly minutes: (minutes: number, seconds: number) => string;
+    readonly label: Text;
+    readonly count: (chapters: Count) => Text;
+    readonly compacted: Text;
+    readonly newSession: Text;
+    readonly seconds: (seconds: Count) => Text;
+    readonly minutes: (minutes: Count, seconds: Count) => Text;
 }
 
 export interface DatabaseMessages {
-    readonly newer: (backup: string | null) => string;
+    readonly newer: (backup: Text | null) => Text;
 }
 
 export interface KeyBinding {
