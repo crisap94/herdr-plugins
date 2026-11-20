@@ -1,6 +1,7 @@
 import type { Directory, HarnessKind, RestoreText, ScopeId, SessionId, SessionKey } from './ids.ts';
 import type { FollowedSession, RecapCause, SessionSource } from './session.ts';
 import type { Applied, CloseOp, Fact, HistoryFact, TaskId, UpdateOp } from './facts.ts';
+import type { LastRun } from './records.ts';
 import type { FactStore, Records } from './records.ts';
 import type { Curator, Enumerator, Writer } from './models.ts';
 import type { Clock, Ids, Workplaces } from './environment.ts';
@@ -12,6 +13,8 @@ export type Attention = 'needs-you' | 'none';
 export type FlushWhy = 'requested' | 'shutdown' | 'closed' | 'handoff' | 'handoff print' | 'autocompact';
 
 export interface RestoreFacts {
+    readonly at: Instant;
+    readonly lastRun: LastRun | null;
     readonly open: readonly Fact[];
     readonly closed: readonly Fact[];
 }

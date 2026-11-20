@@ -18,6 +18,13 @@ export function parseScopeId(input: unknown): Result<ScopeId, ParseFailure> {
     return ok(brand<string, 'ScopeId'>(input));
 }
 
+export function parseRestoreText(input: unknown): Result<RestoreText, ParseFailure> {
+    if (typeof input !== 'string') {
+        return err({ kind: 'not-a-string' });
+    }
+    return ok(brand<string, 'RestoreText'>(input));
+}
+
 export function parseSessionKey(input: unknown): Result<SessionKey, ParseFailure> {
     if (typeof input !== 'string') {
         return err({ kind: 'not-a-string' });

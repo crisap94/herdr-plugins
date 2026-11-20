@@ -17,7 +17,7 @@ import { parseCount } from '#src/recap/domain/count.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { freshnessTextOf } from '#src/recap/render/freshness.ts';
 import { HANDOFF_PREAMBLE, serializeHandoff } from '#src/recap/render/handoff-markdown.ts';
-import { utcMinuteText } from '#src/recap/render/utc-minute.ts';
+import { utcMinuteOf } from '#src/recap/render/utc-minute.ts';
 import type { HandoffParts, OmittedCounts, OmittedKind } from '#src/recap/render/handoff-markdown.ts';
 import { WORKSITE_UNAVAILABLE, worksiteTextOf } from '#src/recap/render/worksite.ts';
 
@@ -86,7 +86,7 @@ test('every fact class is rendered under its own heading with its last-seen time
         closed: '## Recently closed',
     };
     for (const [index, id] of HANDOFF_GROUP_IDS.entries()) {
-        const at = utcMinuteText(AT - index * 60_000);
+        const at = utcMinuteOf(instant(AT - index * 60_000));
         const heading = lines.indexOf(headingOf[id]);
         assert.notEqual(heading, -1, id);
         assert.equal(lines[heading + 1], `- ${at} ${id} text`, id);
@@ -182,12 +182,12 @@ test('two handoffs differ within their first 400 code points, by HandoffId and b
 
 test('the rendered minute is the UTC minute under a non-UTC time zone', () => {
     const millis = Date.parse('2026-10-11T07:30:00Z');
-    const script = `import { utcMinuteText } from ${JSON.stringify(pathToFileURL(join(import.meta.dirname, '..', 'src', 'recap', 'render', 'utc-minute.ts')).href)};
-process.stdout.write(utcMinuteText(${millis}));`;
+    const script = `import { utcMinuteOf } from ${JSON.stringify(pathToFileURL(join(import.meta.dirname, '..', 'src', 'recap', 'render', 'utc-minute.ts')).href)};
+process.stdout.write(utcMinuteOf(${millis}));`;
     const child = spawnSync(process.execPath, ['--eval', script], { encoding: 'utf8', env: { ...process.env, TZ: 'America/Los_Angeles' } });
     assert.equal(child.status, 0, child.stderr);
     assert.equal(child.stdout, '2026-10-11 07:30Z');
-    assert.equal(utcMinuteText(millis), '2026-10-11 07:30Z');
+    assert.equal(utcMinuteOf(instant(millis)), '2026-10-11 07:30Z');
 });
 
 test('forbidden words are absent from the fixed text and from every template, whatever the facts', () => {

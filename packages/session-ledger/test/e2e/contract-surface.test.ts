@@ -9,7 +9,7 @@ import { notFound } from '@stateforge-labs/session-ledger/testkit';
 const packageRoot = join(dirname(new URL(import.meta.url).pathname), '..', '..');
 const surfaceDir = join(packageRoot, 'test', 'e2e', 'surface');
 
-const SEVENTEEN = [
+const EIGHTEEN = [
     'FULL_WRITER_VIEW',
     'SECTIONS',
     'UNREAD',
@@ -21,6 +21,7 @@ const SEVENTEEN = [
     'ok',
     'parseDirectory',
     'parseHarnessKind',
+    'parseRestoreText',
     'parseScopeId',
     'parseSessionId',
     'parseSessionKey',
@@ -51,8 +52,15 @@ function errorsOf(rootNames: readonly string[], seeded: ReadonlyMap<string, stri
     return ts.getPreEmitDiagnostics(program).map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'));
 }
 
-test('the root exports exactly the seventeen values', () => {
-    assert.deepEqual(Object.keys(root).toSorted(), SEVENTEEN);
+test('the root exports exactly the eighteen values', () => {
+    assert.deepEqual(Object.keys(root).toSorted(), EIGHTEEN);
+});
+
+test('parseRestoreText refuses a non-string and brands any other string', () => {
+    assert.deepEqual(root.parseRestoreText(42), { kind: 'err', error: { kind: 'not-a-string' } });
+    assert.deepEqual(root.parseRestoreText(undefined), { kind: 'err', error: { kind: 'not-a-string' } });
+    assert.deepEqual(root.parseRestoreText(''), { kind: 'ok', value: '' });
+    assert.deepEqual(root.parseRestoreText('## Restore\nbody'), { kind: 'ok', value: '## Restore\nbody' });
 });
 
 test('the six values of the facade step keep the behaviour of main', () => {
