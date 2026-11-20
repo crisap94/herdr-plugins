@@ -1,23 +1,13 @@
 {
-  "src/adapters/db/import/equivalence.ts": {
-    "parameter": 2,
-    "return": 1,
-    "container": 3,
-    "assertion": 2
-  },
-  "src/adapters/db/import/import-files.ts": {
-    "parameter": 3,
-    "return": 3,
-    "container": 1,
-    "property": 7,
-    "assertion": 1
-  },
   "src/adapters/db/import/legacy-files.ts": {
     "parameter": 10,
     "return": 4,
     "container": 7,
     "property": 8,
     "assertion": 5
+  },
+  "src/adapters/db/import/legacy.ts": {
+    "legacy": 5
   },
   "src/adapters/db/legacy.ts": {
     "legacy": 52

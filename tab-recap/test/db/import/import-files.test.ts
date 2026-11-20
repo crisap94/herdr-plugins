@@ -20,7 +20,7 @@ test('every historical shape imports and reads back equal to what the legacy rea
         const legacy = new LegacyFiles(dir);
         const report = loadAndCompare(store, legacy, 1);
         assert.deepEqual(report.differences, []);
-        assert.deepEqual([report.recaps, report.views, report.requests, report.visibility, report.hidden], [6, 3, 1, 2, true], 'the empty recap file is not a recap');
+        assert.deepEqual([report.recaps, report.views, report.requests, report.visibility, report.hidden], [6, 3, 1, 2, 'present'], 'the empty recap file is not a recap');
         for (const recap of legacy.recaps().map(canonicalRecap).filter(holdsAnything)) {
             assert.deepEqual(recapDifferences(recap, storeRead(store.records.readRecap(recap.tab))), [], recap.tab);
         }
