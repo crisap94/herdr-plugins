@@ -8,6 +8,7 @@ import type { Instant, Text } from './kernel.ts';
 import type { Debounce, Pacing, Pipeline, Shown, WriterView } from './settings.ts';
 import type { LedgerEvent } from './events.ts';
 
+export type Attention = 'needs-you' | 'none';
 export type FlushWhy = 'requested' | 'shutdown' | 'closed' | 'handoff' | 'handoff print' | 'autocompact';
 
 export interface RestoreFacts {
@@ -60,7 +61,7 @@ export interface Engine {
     follow(scope: ScopeId, session: FollowedSession): void;
     unfollow(scope: ScopeId, key: SessionKey): void;
     followedBy(harness: HarnessKind, session: SessionId): { readonly scope: ScopeId; readonly key: SessionKey } | null;
-    turnEnded(scope: ScopeId, key: SessionKey | null, cause: RecapCause): void;
+    turnEnded(scope: ScopeId, key: SessionKey | null, cause: RecapCause, attention?: Attention): void;
     sessionStarted(scope: ScopeId, key: SessionKey, now: { readonly session: SessionId | null; readonly cwd: Directory | null }): void;
     refresh(scope: ScopeId): Promise<void>;
     flush(scope: ScopeId, why?: FlushWhy): Promise<void>;

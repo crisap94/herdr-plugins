@@ -44,7 +44,7 @@ export function tabRecaps(engine: Engine): TabRecaps {
             sync(tab, lanes);
             const scope = scopeOf(tab);
             if (scope !== null) {
-                engine.turnEnded(scope, null, cause);
+                engine.turnEnded(scope, null, cause, lanes.some((lane) => lane.status === 'blocked') ? 'needs-you' : 'none');
             }
         },
         refresh: (tab: TabId, lanes: readonly Lane[]): Promise<void> => {

@@ -104,3 +104,13 @@ test('under smart pacing the first beat with lanes ends a turn on every tab, whi
     assert.deepEqual(beatsUnder(smart), ['follow', 'follow', 'turnEnded', 'unfollow', 'unfollow', 'follow', 'unfollow', 'follow', 'follow']);
     assert.deepEqual(beatsUnder(PACING_TURN), ['follow', 'follow', 'unfollow', 'unfollow', 'follow', 'unfollow', 'follow', 'follow']);
 });
+
+test('a turn end on a tab with a blocked lane tells the engine a session needs the user; otherwise it says none', () => {
+    const told: string[] = [];
+    const fake = createFakeEngine();
+    const engine = { ...fake, turnEnded: (...args: Parameters<typeof fake.turnEnded>): void => { told.push(args[3] ?? 'unset'); } };
+    const recaps = tabRecaps(engine);
+    recaps.turnEnded(tabId(TAB), lanes, 'turn-ended');
+    recaps.turnEnded(tabId(TAB), [{ ...first, status: 'blocked' }, ...lanes.slice(1)], 'turn-ended');
+    assert.deepEqual(told, ['none', 'needs-you']);
+});
