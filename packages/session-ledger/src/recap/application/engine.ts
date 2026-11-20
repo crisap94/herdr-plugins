@@ -15,7 +15,7 @@ export type EngineSource = Pick<RecapJobDeps, 'transcripts'>;
 export type EngineStore = Pick<RecapJobDeps, 'records' | 'ledger'>;
 export type EngineModels = Pick<RecapJobDeps, 'summarizer' | 'enumerator'>;
 export type EngineEnvironment = Pick<RecapJobDeps, 'clock' | 'repos' | 'log' | 'mint'>;
-export type EngineSettings = Pick<RecapJobDeps, 'language' | 'writerView' | 'keepInput' | 'pipeline' | 'closeEvidence' | 'debounce'>;
+export type EngineSettings = Pick<RecapJobDeps, 'language' | 'writerView' | 'keepInput' | 'pipeline' | 'closeEvidence' | 'debounce' | 'pacing' | 'visible'>;
 
 export interface EnginePlugs extends Pick<RecapJobDeps, 'ran'> {
     readonly source: EngineSource;
@@ -40,6 +40,8 @@ export interface Engine {
     history(scope: ScopeId, session: FollowedSession): readonly HistoryFact[];
     restore(scope: ScopeId, session: FollowedSession): RestoreFacts;
     idle(scope: ScopeId): Promise<void>;
+    flush(scope: ScopeId): Promise<void>;
+    flushAll(): Promise<void>;
 }
 
 const heldBy = (session: FollowedSession): PaneId => session.pane;
@@ -72,5 +74,7 @@ export function createEngine(plugs: EnginePlugs): Engine {
         history: (scope, session): readonly HistoryFact[] => store.ledger.historyOf(String(scope), String(heldBy(session))),
         restore: (scope, session): RestoreFacts => restoreFactsOf(store, environment, environment.clock.now(), scope, session),
         idle: (scope): Promise<void> => job.idle(scope),
+        flush: (scope): Promise<void> => job.flush(scope),
+        flushAll: (): Promise<void> => job.flushAll(),
     };
 }

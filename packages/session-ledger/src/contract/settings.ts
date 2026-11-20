@@ -20,3 +20,7 @@ export type Pipeline = 'one' | 'enumerate' | 'enumerate+gates' | 'full';
 export type CloseEvidence = 'off' | 'on';
 
 export type Debounce = { readonly kind: 'off' } | { readonly kind: 'window'; readonly window: Duration };
+
+export type Shown = 'shown' | 'hidden';
+
+export type Pacing = { readonly kind: 'turn' } | { readonly kind: 'smart'; readonly quiet: Duration; readonly maxWait: Duration };

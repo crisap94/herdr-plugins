@@ -107,8 +107,8 @@ export class CodexTranscripts implements Transcripts {
 
     read(source: string, was: Position, budget: number): Promise<ChunkResult> {
         try {
-            const { lines, position, grew } = readJsonl(source, was, budget);
-            return Promise.resolve({ kind: 'chunk', ...extractCodex(lines), position, grew });
+            const { lines, position, grew, more } = readJsonl(source, was, budget);
+            return Promise.resolve({ kind: 'chunk', ...extractCodex(lines), position, grew, more: more === 'present' });
         } catch (error) {
             return Promise.resolve(unknown({ why: 'unreadable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) }));
         }

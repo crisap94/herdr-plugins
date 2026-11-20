@@ -152,6 +152,8 @@ export function engineOver(plugs: FacadePlugs): Engine {
             const tab = tabOf(scope);
             return tab === null ? Promise.resolve() : legacy.refresh(tab, set.lanesOf(scope));
         },
+        flush: (scope: ScopeId): Promise<void> => { const id = tabOf(scope); return id === null ? Promise.resolve() : legacy.flush(id); },
+        flushAll: (): Promise<void> => legacy.flushAll(),
         compacted: (scope, key) => compacted(set, legacy, plugs.restore ?? NO_RESTORE, scope, key),
         history: (scope: ScopeId, key: SessionKey): readonly HistoryFact[] => {
             const tab = tabOf(scope);

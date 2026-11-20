@@ -176,4 +176,23 @@ export const CSR_CASES: readonly Case<EngineWorld, Engine>[] = [
             assert.equal(second.claudeRecap, 'R1');
         },
     },
+    {
+        id: 'CSR-9',
+        group: 'CSR',
+        title: 'a read that reports more left runs the tab again at once from the stored cursor, until a read reports nothing left',
+        level: 'full',
+        async run(world, engine) {
+            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            let reads = 0;
+            world.setReadBySource(() => {
+                reads += 1;
+                return reads === 1 ? chunkAt(5, { more: true }) : chunkAt(9);
+            });
+            world.setWriter(NO_OPS);
+            await engine.refresh(TAB);
+            assert.equal(reads, 2);
+            assert.deepEqual(world.positions(), [UNREAD, { cursor: 5, tail: null }]);
+            assert.equal(cursorOf(world, 'a'), 9);
+        },
+    },
 ];

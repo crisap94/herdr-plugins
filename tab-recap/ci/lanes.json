@@ -840,6 +840,7 @@
       "test/herdr-json-object.test.ts",
       "test/herdr-subscription-isolation.test.ts",
       "test/jev-decider.test.ts",
+      "test/jsonl-forward.test.ts",
       "test/lane-repo.test.ts",
       "test/opencode-in-flight.test.ts",
       "test/opencode-leak.test.ts",

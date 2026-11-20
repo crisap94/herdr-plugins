@@ -2,6 +2,7 @@ import {
     UNREAD,
     type Chunk,
     type Debounce,
+    type Pacing,
     type Position,
     type EnginePlugs,
     type FollowedSession,
@@ -28,6 +29,8 @@ export interface WorldOptions {
     readonly locate?: Behaviour<LocatedAnswer>;
     readonly read?: Behaviour<Chunk>;
     readonly debounce?: Debounce;
+    readonly pacing?: Pacing;
+    readonly visible?: boolean;
 }
 
 export interface EngineWorld {
@@ -45,6 +48,8 @@ export interface EngineWorld {
     settle(): Promise<void>;
     setLocate(next: (session: FollowedSession) => Behaviour<LocatedAnswer>): void;
     setDebounce(next: Debounce): void;
+    setPacing(next: Pacing): void;
+    setVisible(next: boolean): void;
     setRead(next: Behaviour<Chunk>): void;
     setReadBySource(next: (source: string) => Behaviour<Chunk>): void;
     setWriter(next: Behaviour<WrittenAnswer>): void;
@@ -95,6 +100,8 @@ const writerOf = (run: Run, store: MemoryStore, requests: RecapRequest[], behavi
 
 interface Script {
     debounce: Debounce;
+    pacing: Pacing;
+    visible: boolean;
     chunk: (source: string) => Behaviour<Chunk>;
     written: Behaviour<WrittenAnswer> | undefined;
     curator: Behaviour<CuratedAnswer> | null;
@@ -111,6 +118,8 @@ const scriptOf = (options: WorldOptions): Script => {
     const scripted = options.locate;
     return {
         debounce: options.debounce ?? { kind: 'off' },
+        pacing: options.pacing ?? { kind: 'turn' },
+        visible: options.visible ?? true,
         chunk: () => options.read ?? DEFAULT_READ,
         written: options.writer,
         curator: null,
@@ -124,7 +133,7 @@ const scriptOf = (options: WorldOptions): Script => {
     };
 };
 
-type Controls = Pick<EngineWorld, 'setLocate' | 'setDebounce' | 'setRead' | 'setReadBySource' | 'setWriter' | 'setCurator' | 'setOn' | 'setRestoreBytes' | 'setLanguage' | 'setNoReader' | 'setCarry' | 'setKeepInput'>;
+type Controls = Pick<EngineWorld, 'setLocate' | 'setDebounce' | 'setPacing' | 'setVisible' | 'setRead' | 'setReadBySource' | 'setWriter' | 'setCurator' | 'setOn' | 'setRestoreBytes' | 'setLanguage' | 'setNoReader' | 'setCarry' | 'setKeepInput'>;
 
 const controlsOf = (script: Script): Controls => ({
     setLocate: (next: (session: FollowedSession) => Behaviour<LocatedAnswer>) => {
@@ -132,6 +141,12 @@ const controlsOf = (script: Script): Controls => ({
     },
     setDebounce: (next: Debounce) => {
         script.debounce = next;
+    },
+    setPacing: (next: Pacing) => {
+        script.pacing = next;
+    },
+    setVisible: (next: boolean) => {
+        script.visible = next;
     },
     setRead: (next: Behaviour<Chunk>) => {
         script.chunk = (): Behaviour<Chunk> => next;
@@ -201,6 +216,8 @@ export function createEngineWorld(options: WorldOptions = {}): EngineWorld {
             language: () => script.language,
             writerView: () => ({ kind: 'full' }),
             debounce: () => script.debounce,
+            pacing: () => script.pacing,
+            visible: () => (script.visible ? 'shown' : 'hidden'),
             restoreBytes: () => script.restoreBytes,
             keepInput: () => script.keepInput(),
         },

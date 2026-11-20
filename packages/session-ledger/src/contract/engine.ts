@@ -5,7 +5,7 @@ import type { FactStore, Records } from './records.ts';
 import type { Curator, Enumerator, Writer } from './models.ts';
 import type { Clock, Ids, Workplaces } from './environment.ts';
 import type { Instant, Text } from './kernel.ts';
-import type { Debounce, Pipeline, WriterView } from './settings.ts';
+import type { Debounce, Pacing, Pipeline, Shown, WriterView } from './settings.ts';
 import type { LedgerEvent } from './events.ts';
 
 export interface RestoreFacts {
@@ -46,6 +46,8 @@ export interface EnginePlugs {
         keepInput?(): boolean;
         pipeline?(): Pipeline;
         debounce?(): Debounce;
+        pacing?(): Pacing;
+        visible?(scope: ScopeId): Shown;
         restoreBytes?(): number;
         rubric?(): Text;
         restoreText?(facts: RestoreFacts): RestoreText;
@@ -59,6 +61,8 @@ export interface Engine {
     turnEnded(scope: ScopeId, key: SessionKey | null, cause: RecapCause): void;
     sessionStarted(scope: ScopeId, key: SessionKey, now: { readonly session: SessionId | null; readonly cwd: Directory | null }): void;
     refresh(scope: ScopeId): Promise<void>;
+    flush(scope: ScopeId): Promise<void>;
+    flushAll(): Promise<void>;
     compacted(scope: ScopeId, key: SessionKey): RestoreText;
     history(scope: ScopeId, key: SessionKey): readonly HistoryFact[];
     curate(scope: ScopeId): Promise<void>;

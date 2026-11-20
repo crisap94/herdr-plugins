@@ -10,7 +10,7 @@ import type {
 } from '@stateforge-labs/session-ledger';
 import { restore } from './ids.ts';
 
-export type EngineCall = 'follow' | 'unfollow' | 'followedBy' | 'turnEnded' | 'sessionStarted' | 'refresh' | 'compacted' | 'history' | 'curate';
+export type EngineCall = 'follow' | 'unfollow' | 'followedBy' | 'turnEnded' | 'sessionStarted' | 'refresh' | 'flush' | 'flushAll' | 'compacted' | 'history' | 'curate';
 
 export interface FakeScript {
     readonly restore?: RestoreText;
@@ -58,6 +58,14 @@ export function createFakeEngine(script: FakeScript = {}): FakeEngine {
             follows = follows.map((entry) =>
                 isFollow(entry, scope, key) ? { scope, session: { ...entry.session, session: now.session, cwd: now.cwd } } : entry,
             );
+        },
+        flush: () => {
+            log.push('flush');
+            return Promise.resolve();
+        },
+        flushAll: () => {
+            log.push('flushAll');
+            return Promise.resolve();
         },
         refresh: () => {
             log.push('refresh');
