@@ -209,11 +209,11 @@ export class Autocompact {
         if (policy === null) return;
         const tuning = this.tuning();
         const { tab, pane } = lane;
-        await deps.flush(tab, 'autocompact');
         const use = deps.contexts.of(pane);
         if (use === null) { this.skip(lane, 'no-context', null, NO_CONTEXT); return; }
         const { gate, effect, detail, flight, atCeiling } = await this.gated(lane, policy, use, tuning);
         if (gate !== 'ask' && gate !== 'ceiling') { this.skip(lane, gate, shareCount(use), detail); return; }
+        await deps.flush(tab, 'autocompact');
         if (deps.hasRecap(tab) === 'unrecapped') await deps.refresh(tab, deps.lanes(tab));
         const judged = gate === 'ceiling' ? CEILING : await this.asking(lane, tuning);
         const seen = await this.lateFlight(lane, use, flight, atCeiling);
