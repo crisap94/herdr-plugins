@@ -27,6 +27,7 @@ import { handoffCommand, productionWiring } from './handoff.ts';
 import { parseArguments } from './arguments.ts';
 import { evalCommand } from './eval.ts';
 import { setValues } from './set-backend.ts';
+import { markStopping, stillStopping } from './stop-marker.ts';
 
 const OK = 0;
 const FAILED = 1;
@@ -40,7 +41,8 @@ const pidfile = new Pidfile(stateDir());
 
 const WEDGED_MS = 180_000;
 
-function launch(): number {
+async function launch(): Promise<number> {
+    if (await stillStopping(stateDir())) { console.error(`tab-recap: 1 — ${m().cli.daemonStillStopping}`); return FAILED; }
     let running = pidfile.alive();
     if (running !== null && pidfile.wedged(WEDGED_MS)) {
         console.log(`tab-recap: ${m().cli.daemonWedged(running)}`);
@@ -68,6 +70,7 @@ function stop(): number {
         console.log(`tab-recap: ${m().cli.offIdle}`);
         return OK;
     }
+    markStopping(stateDir(), running);
     process.kill(running, 'SIGTERM');
     console.log(`tab-recap: ${m().cli.offClosing(running)}`);
     return OK;
