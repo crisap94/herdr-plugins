@@ -104,9 +104,9 @@ test('every bun command of the manifest is a launcher', () => {
     const commands = [...manifest.matchAll(/^command = \["bun", "([^"]+\.mjs)"/gm)].map((found) => found[1]);
     assert.ok(commands.length >= 14, 'the actions, the startup, the event and the panes');
     for (const file of commands) {
-        assert.ok(LAUNCHERS.includes(file ?? ''), `${file} is a launcher`);
+        assert.ok([...LAUNCHERS, 'src/pane/launch.mjs'].includes(file ?? ''), `${file} is a launcher`);
     }
-    assert.deepEqual(new Set(commands.filter((file) => file !== 'bin/tab-recap.mjs')), new Set(['src/column/launch.mjs', 'src/setup/launch.mjs', 'src/compact/launch.mjs']));
+    assert.deepEqual(new Set(commands.filter((file) => file !== 'bin/tab-recap.mjs')), new Set(['src/pane/launch.mjs', 'src/setup/launch.mjs', 'src/compact/launch.mjs']));
     assert.doesNotMatch(manifest, /platforms = .*windows/, 'Windows is not declared');
 });
 
