@@ -1,5 +1,5 @@
 import { setValues } from '#src/adapters/os/config/file.ts';
-import { openCliStore } from '#src/daemon/cli-store.ts';
+import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
@@ -98,7 +98,7 @@ function save(values: ReadonlyMap<string, string>, languageChanged: boolean): vo
         if (languageChanged) {
             const store = openCliStore();
             if (store.kind !== 'ready') {
-                throw new Error(messages().database.newer(store.backup));
+                throw new Error(notReadyLine(store, messages()));
             }
             requestRewrites(tab === '' ? null : tabId(tab), store);
         }

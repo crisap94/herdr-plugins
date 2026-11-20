@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DesktopReads } from '#src/adapters/desktop/expanded.ts';
 import { GuiPublisher } from '#src/adapters/desktop/publisher.ts';
-import { openCliStore } from '#src/daemon/cli-store.ts';
+import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import { messagesOf, stateDir } from '#src/daemon/config.ts';
 import { must } from '#src/protocol/result.ts';
 import type { GuiReads } from '#src/recap/application/gui-tab-reads.ts';
@@ -34,7 +34,7 @@ export function desktopDocumentCommand(tab: TabId): number {
     }
     const store = openCliStore();
     if (store.kind !== 'ready') {
-        console.error(`tab-recap: 1 — ${messagesOf().database.newer(store.backup)}`);
+        console.error(`tab-recap: 1 — ${notReadyLine(store, messagesOf())}`);
         return 1;
     }
     const reads = new DesktopReads({ store, dir, now, republish: (): void => undefined, mode: 'read-only' });

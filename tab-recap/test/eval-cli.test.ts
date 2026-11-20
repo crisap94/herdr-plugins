@@ -14,6 +14,10 @@ const entry = join(import.meta.dirname, '..', 'bin', 'tab-recap.ts');
 function run(args: readonly string[], input = ''): { status: number | null; stdout: string; stderr: string; state: string; done: () => void } {
     const root = mkdtempSync(join(tmpdir(), 'tab-recap-eval-'));
     const state = join(root, 'state');
+    const owner = stateStore(state);
+    if (owner.kind === 'ready') {
+        owner.close();
+    }
     const ran = spawnSync(process.execPath, [entry, ...args], {
         encoding: 'utf8', input,
         env: { PATH: '', HOME: root, HERDR_PLUGIN_CONFIG_DIR: join(root, 'config'), TAB_RECAP_STATE: state, TAB_RECAP_LOCALE: 'en', ...BUN_CACHE_OFF },

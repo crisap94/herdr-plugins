@@ -146,7 +146,7 @@ export const spanish: Catalog = {
         seconds: (seconds) => must(parseText(`${seconds} s`)),
         minutes: (minutes, seconds) => must(parseText(seconds === 0 ? `${minutes} min` : `${minutes} min ${seconds} s`)),
     },
-    database: { newer: (backup) => must(parseText(`la base de datos es más nueva que este plugin — ${backup === null ? 'restaura una copia' : `restaura ${backup}`} o actualiza`)) },
+    database: { newer: (backup) => must(parseText(`la base de datos es más nueva que este plugin — ${backup === null ? 'restaura una copia' : `restaura ${backup}`} o actualiza`)), stale: (found, known) => must(parseText(`el almacén de estado está en v${found}, este plugin necesita v${known} — inicia el daemon: tab-recap start`)) },
     cli: {
         daemonRunning: (pid) => must(parseText(`el daemon ya está en marcha (pid ${pid})`)),
         daemonStillStopping: must(parseText('el daemon anterior sigue cerrando sus columnas: no inicio un segundo daemon, vuelve a intentarlo cuando haya terminado')),

@@ -1,5 +1,5 @@
 import { setTimeout as sleep } from 'node:timers/promises';
-import { openCliStore } from '#src/daemon/cli-store.ts';
+import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { loadConfig, messagesOf, stateDir } from '#src/daemon/config.ts';
 import { opensPopup, requestNoteOf, startCompact } from '#src/recap/application/compact-start.ts';
@@ -16,7 +16,7 @@ const FAILED = 1;
 function queueCompaction(request: CompactRequest): Done {
     const store = openCliStore();
     if (store.kind !== 'ready') {
-        console.error(`tab-recap: 1 — ${messagesOf().database.newer(store.backup)}`);
+        console.error(`tab-recap: 1 — ${notReadyLine(store, messagesOf())}`);
         return unknown({ why: 'unreadable', detail: causeOf(must(parseText('the state store is not ready'))) });
     }
     store.requests.requestCompact(request);

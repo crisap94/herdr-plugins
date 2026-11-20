@@ -1,4 +1,4 @@
-import { openCliStore } from '#src/daemon/cli-store.ts';
+import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import { loadConfig, messagesOf } from '#src/daemon/config.ts';
 import { AUTOCOMPACT_USAGE, LISTED, listing, parseListing, styleLine } from '#src/recap/application/autocompact-listing.ts';
 import { must } from '#src/protocol/result.ts';
@@ -13,7 +13,7 @@ export function autocompactCommand(argv: readonly string[]): number {
     }
     const store = openCliStore();
     if (store.kind !== 'ready') {
-        console.error(`tab-recap: 1 — ${messagesOf().database.newer(store.backup)}`);
+        console.error(`tab-recap: 1 — ${notReadyLine(store, messagesOf())}`);
         return 1;
     }
     try {

@@ -1,5 +1,5 @@
 import { knownOr } from '#src/ports/guarded-reads.ts';
-import { openCliStore } from '#src/daemon/cli-store.ts';
+import { notReadyText, openCliStore, release } from '#src/daemon/cli-store.ts';
 import { glowRenderer } from '#src/adapters/os/glow.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { BEL, ESC, FRAME_END, FRAME_HOME, LINE_END, MOUSE_OFF, MOUSE_ON, RESET_SGR, SCREEN_OFF, SCREEN_ON, TITLE_OSC } from '#src/adapters/os/tui.ts';
@@ -46,6 +46,11 @@ const mode = modeOf(process.env);
 const title = mode === 'bar' ? BAR_TITLE : COLUMN_TITLE;
 const opened = openCliStore();
 const store = opened.kind === 'ready' ? opened : null;
+const notReady = opened.kind === 'ready' ? null : opened;
+const stale = opened.kind === 'stale-store';
+if (notReady !== null) {
+    release(notReady);
+}
 const config = loadConfig();
 const startedVersion = codeVersion();
 let settled = { at: 0, locale: config.locale, version: startedVersion };
@@ -75,6 +80,7 @@ function localeNow(): Locale {
     if (Date.now() - settled.at > LOCALE_MS) {
         settled = { at: Date.now(), locale: loadConfig().locale, version: codeVersion() };
         rollWhenUpgraded();
+        rollWhenMigrated();
     }
     return settled.locale;
 }
@@ -94,10 +100,30 @@ function rollWhenUpgraded(): void {
     candidate = current;
 }
 
+function rollWhenMigrated(): void {
+    if (!stale || mode === 'modal' || rollFailed || typeof process.execve !== 'function') {
+        return;
+    }
+    const probe = openCliStore();
+    if (probe.kind !== 'ready') {
+        release(probe);
+        return;
+    }
+    probe.close();
+    restore();
+    try {
+        process.execve(process.execPath, [process.execPath, ...process.execArgv, ...process.argv.slice(1)], process.env);
+    } catch {
+        rollFailed = true;
+        enter();
+        draw('always');
+    }
+}
+
 function view(): ColumnView {
     const locale = localeNow();
     const stored = store?.views.readTab(tab) ?? null;
-    const newer = opened.kind === 'newer-db' ? [messagesFor(locale).database.newer(opened.backup)] : [];
+    const newer = notReady === null ? [] : [notReadyText(notReady, messagesFor(locale))];
     return { tab: stored, recap: store === null ? null : knownOr(store.records.readRecap(tab), null), notes: notesOf(extensions, stored?.lanes, locale), warnings: [...newer, ...warningsOf(extensions, locale)], now: Date.now(), messages: messagesFor(locale), version: settled.version, compactHint: loadConfig().compaction.hint, compactions: store?.compactions.shownFor(tab) ?? [], style };
 }
 

@@ -23,6 +23,11 @@ function run(args: readonly string[], setting?: string, newer = false): { status
         const db = openFixture(join(state, 'tab-recap.db'));
         db.exec('PRAGMA user_version = 9999');
         db.close();
+    } else {
+        const owner = stateStore(state);
+        if (owner.kind === 'ready') {
+            owner.close();
+        }
     }
     const ran = spawnSync(process.execPath, [entry, ...args], { encoding: 'utf8', env });
     const store = stateStore(state);
