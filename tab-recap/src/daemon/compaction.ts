@@ -101,7 +101,7 @@ export function wireCompaction(parts: CompactionParts): Compaction {
         typing: parts.typing,
         events: parts.events,
         claims: parts.claims,
-        hookRestoredAt: (session) => parts.preCompacts.servedSinceMark(session),
+        restores: parts.preCompacts,
         target: () => loadConfig().compaction.target,
         messages: messagesOf,
     });

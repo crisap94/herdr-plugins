@@ -48,12 +48,13 @@ const stopped = (deps: ReceiverDeps, followed: Followed): void => {
 export function createReceiver(deps: ReceiverDeps): HookReceiver {
     const sessionStarted = (call: HookCall, session: SessionId, scope: ScopeId, key: SessionKey): HookAnswer => {
         if (call.source === 'compact') {
-            const text = deps.engine.compacted(scope, key);
-            if (text === '' || deps.restoreMode() !== 'on') {
+            const facts = deps.engine.compacted(scope, key);
+            if (deps.restoreMode() !== 'on') {
                 return NOTHING;
             }
-            deps.preCompacts.restored(session, deps.clock.now());
-            return { kind: 'context', text };
+            const held = deps.preCompacts.served(session);
+            const text = held.kind === 'offered' ? held.text : facts;
+            return held.kind === 'typed' || text === '' ? NOTHING : { kind: 'context', text };
         }
         const read = call.cwd === null ? null : parseDirectory(call.cwd);
         const cwd = read !== null && read.kind === 'ok' ? ledgerDirectoryOf(read.value) : null;

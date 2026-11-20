@@ -2,7 +2,6 @@ import type { GuardedLedger, GuardedRecapRecords } from '#src/ports/guarded-read
 import type { Messages } from '#src/i18n/index.ts';
 import type { CompactTarget } from '#src/recap/domain/compaction.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
 import type { Agents } from '#src/ports/agents.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
 import type { Notifier } from '#src/ports/notifier.ts';
@@ -33,6 +32,8 @@ interface TypingPort { acquire(pane: PaneId): Promise<'taken' | 'busy' | 'unavai
 
 interface LaneWebs { of(pane: PaneId): LaneWeb | null }
 
+export interface RestoreHandoff { offer(session: SessionId, text: Text): void; take(session: SessionId): Text | null }
+
 export interface CompactionDeps {
     readonly compactionPlans: CompactionPlans;
     readonly agents: Agents;
@@ -53,7 +54,7 @@ export interface CompactionDeps {
     readonly typing?: TypingPort;
     readonly events?: LaneEvents;
     readonly claims: LaneClaims;
-    hookRestoredAt?(session: SessionId): Instant | null;
+    readonly restores?: RestoreHandoff;
     recent(lane: Lane): Promise<readonly Entry[]>;
     marks(lane: Lane): Promise<readonly Mark[]>;
     pause(ms: Duration): Promise<void>;

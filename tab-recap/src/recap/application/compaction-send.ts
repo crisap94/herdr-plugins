@@ -126,14 +126,23 @@ export class Sender {
         await this.tell(must(parseText(compaction.title(String(lane.agent)))), must(parseText(compaction.failed(String(lane.agent), why))));
     }
 
-    private async restore(lane: Lane, text: Text, plan: CompactionPlan, trail: Trail): Promise<void> {
+    private handoff(lane: Lane, plan: CompactionPlan, text: Text): () => Prose | null {
+        const message = text.brief === null ? restoreOf(text.material) : restoreFrom(text.brief);
+        const restores = this.deps.restores;
+        const session = lane.session;
+        if (plan.followUp.kind === 'none' || restores === undefined || session === null) {
+            return () => message;
+        }
+        restores.offer(session, message);
+        return () => restores.take(session);
+    }
+
+    private async restore(lane: Lane, message: Prose | null, plan: CompactionPlan, trail: Trail): Promise<void> {
         const followUp = plan.followUp;
-        const hookRestored = lane.session === null ? null : (this.deps.hookRestoredAt?.(lane.session) ?? null);
-        if (followUp.kind === 'none' || hookRestored !== null) {
+        if (followUp.kind === 'none' || message === null) {
             return;
         }
         trail.to('restoring');
-        const message = text.brief === null ? restoreOf(text.material) : restoreFrom(text.brief);
         const pane = lane.pane;
         const since = this.now();
         const sent = await this.typed(pane, () => this.deps.agents.prompt(pane, message, undefined, { acceptsStall: followUp.acceptsStall }));
@@ -172,14 +181,16 @@ export class Sender {
         const plan = resolved.plan;
         const began = this.now();
         if (placed.placement === 'queued') trail.to('compacting', { queued: true });
+        const take = this.handoff(lane, plan, text);
         const { tried, retry } = await this.attemptedOnce(lane, plan, trail, placed.placement);
+        const message = take();
         if (tried.sent.kind !== 'sent') {
             await this.refused(lane, trail, tried.sent);
             return undefined;
         }
         const verdict = tried.verdict ?? { outcome: 'unconfirmed' as const };
         if (plan.followUp.kind === 'restore-message' && verdict.outcome !== 'failed') {
-            await this.restore(lane, text, plan, trail);
+            await this.restore(lane, message, plan, trail);
         }
         await this.conclude(lane, trail, { verdict, retry, began });
         return undefined;

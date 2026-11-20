@@ -109,8 +109,9 @@ function world(setup: Setup): World {
                 preCompacts.mark(session, when);
             },
             markedAt: (session) => preCompacts.markedAt(session),
-            restored: (session, when) => preCompacts.restored(session, when),
-            servedSinceMark: (session) => preCompacts.servedSinceMark(session),
+            offer: (session, text) => { preCompacts.offer(session, text); },
+            take: (session) => preCompacts.take(session),
+            served: (session) => preCompacts.served(session),
         },
         restoreMode: () => (setup.restoreOn ? 'on' : 'off'),
         clock,

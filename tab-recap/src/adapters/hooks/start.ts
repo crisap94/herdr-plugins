@@ -29,7 +29,7 @@ export async function startHooks(context: SlotContext): Promise<Running> {
         engine: context.engine,
         turnEnds,
         preCompacts: context.preCompacts,
-        restoreMode: () => 'on',
+        restoreMode: () => (context.setting('TAB_RECAP_HOOKS_RESTORE') === 'off' ? 'off' : 'on'),
         clock: context.clock,
         log: context.log,
     });

@@ -14,7 +14,7 @@ import type { Viewers } from './view/viewers.ts';
 import { brand, type Brand } from '#src/recap/domain/brand.ts';
 
 export type SlotName = 'hooks' | 'view' | 'roll' | 'timing';
-export type SlotKey = 'TAB_RECAP_HOOKS' | 'TAB_RECAP_VIEW_SERVER' | 'TAB_RECAP_SELF_ROLL' | 'TAB_RECAP_TIMING_EVENTS';
+export type SlotKey = 'TAB_RECAP_HOOKS' | 'TAB_RECAP_HOOKS_RESTORE' | 'TAB_RECAP_VIEW_SERVER' | 'TAB_RECAP_SELF_ROLL' | 'TAB_RECAP_TIMING_EVENTS';
 export type Switch = 'on' | 'off' | 'unset';
 export type Mode = 'on' | 'off';
 export type Root = Brand<string, 'Root'>;
