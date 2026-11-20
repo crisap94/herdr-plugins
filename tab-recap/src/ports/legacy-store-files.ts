@@ -48,15 +48,12 @@ const legacyTasks = (stored: Row): RecapTask[] => {
     return [{ id: 't1', name: '', lanes, sections: isRow(stored.sections) ? sectionsOf(stored.sections) : null, markdown }];
 };
 
-const tasksOf = (stored: Row): Result<RecapTask[], ParseFailure> => {
-    if (!Array.isArray(stored.tasks)) return ok(legacyTasks(stored));
-    const tasks: RecapTask[] = [];
-    for (const [index, item] of stored.tasks.entries()) {
-        if (!isRow(item)) return err({ kind: 'not-a-row' });
-        const task = taskOf(item);
-        tasks.push(task.id === '' ? { ...task, id: `t${index + 1}` } : task);
-    }
-    return ok(tasks);
+const tasksOf = (stored: Row): RecapTask[] => {
+    if (!Array.isArray(stored.tasks)) return legacyTasks(stored);
+    return stored.tasks.map((item, index) => {
+        const task = taskOf(isRow(item) ? item : {});
+        return task.id === '' ? { ...task, id: `t${index + 1}` } : task;
+    });
 };
 
 const cursorOf = (input: Row): Result<LaneCursor, ParseFailure> => {
@@ -132,10 +129,8 @@ export function parseLegacyRecapFile(input: unknown): Result<TabRecap, ParseFail
     if (!isText(input.tab)) return err({ kind: 'not-a-string' });
     const lanes = cursorsOf(input);
     if (lanes.kind === 'err') return lanes;
-    const tasks = tasksOf(input);
-    if (tasks.kind === 'err') return tasks;
-    if (!isCount(input.costUsd)) return err({ kind: 'not-a-number' });
-    return ok({ tab: input.tab, lanes: lanes.value, tasks: tasks.value, costUsd: input.costUsd, ...recapMetaOf(input) });
+    const costUsd = isCount(input.costUsd) ? input.costUsd : 0;
+    return ok({ tab: input.tab, lanes: lanes.value, tasks: tasksOf(input), costUsd, ...recapMetaOf(input) });
 }
 
 export function parseLegacyViewFile(input: unknown): Result<TabView, ParseFailure> {
@@ -143,12 +138,11 @@ export function parseLegacyViewFile(input: unknown): Result<TabView, ParseFailur
     if (!isText(input.tab)) return err({ kind: 'not-a-string' });
     const lanes = viewLanesOf(input);
     if (lanes.kind === 'err') return lanes;
-    if (!isCount(input.at)) return err({ kind: 'not-a-number' });
     return ok({
         tab: input.tab,
         column: typeof input.column === 'string' ? input.column : null,
         lanes: lanes.value,
-        at: input.at,
+        at: isCount(input.at) ? input.at : 0,
         daemonVersion: typeof input.daemonVersion === 'string' ? input.daemonVersion : null,
     });
 }

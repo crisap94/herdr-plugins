@@ -54,3 +54,24 @@ test('each parser refuses a non-object input as not-a-row', () => {
         assert.deepEqual(parse('text'), { kind: 'err', error: { kind: 'not-a-row' } });
     }
 });
+
+test('a recap without costUsd reads it as 0 and a non-object task item becomes an empty numbered task', () => {
+    const file = { tab: 'w1:t4', lanes: [], tasks: [task, 'junk'] };
+    const empty = { id: 't2', name: '', lanes: [], sections: null, markdown: '' };
+    assert.deepEqual(parseLegacyRecapFile(file), {
+        kind: 'ok',
+        value: { tab: 'w1:t4', lanes: [], tasks: [{ ...task, sections: { ...task.sections, rules: [] } }, empty], at: null, running: false, backend: null, error: null, costUsd: 0, language: 'en' },
+    });
+});
+
+test('a view without at reads it as 0', () => {
+    assert.deepEqual(parseLegacyViewFile({ tab: 'w1:t1', column: null }), { kind: 'ok', value: { tab: 'w1:t1', column: null, at: 0, daemonVersion: null, lanes: [] } });
+});
+
+test('a lane the store cannot import is refused', () => {
+    const { cursor: _, ...noCursor } = cursor;
+    assert.deepEqual(parseLegacyRecapFile({ tab: 'w1:t1', lanes: [noCursor] }), { kind: 'err', error: { kind: 'not-a-number' } });
+    assert.deepEqual(parseLegacyRecapFile({ tab: 'w1:t1' }), { kind: 'err', error: { kind: 'not-a-row' } });
+    assert.deepEqual(parseLegacyViewFile({ tab: 'w1:t1', at: 1, lanes: [{ pane: 'w1:p1', agent: 'codex' }] }), { kind: 'err', error: { kind: 'not-a-string' } });
+    assert.deepEqual(parseLegacyViewFile({ tab: 'w1:t1', at: 1, lanes: [null] }), { kind: 'err', error: { kind: 'not-a-row' } });
+});
