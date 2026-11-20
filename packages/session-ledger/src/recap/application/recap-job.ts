@@ -85,6 +85,7 @@ export class RecapJob {
         slot.pending = pacing.kind === 'smart'
             ? pacedOf(slot, lanes, cause, { pacing, shown: this.deps.visible?.(tab) ?? 'shown', now: this.deps.clock.now() })
             : pendingOf(slot, lanes, cause, this.deps.debounce?.() ?? DEBOUNCE_OFF, () => this.deps.clock.now());
+        this.hurry(slot);
         this.arm(slot, tab);
     }
 
@@ -130,7 +131,12 @@ export class RecapJob {
         slot.running = false;
         const done = slot.pending === null ? [...covered, ...slot.waiting.splice(0)] : covered;
         for (const finish of done) finish();
+        this.hurry(slot);
         if (slot.pending !== null) this.arm(slot, tab);
+    }
+
+    private hurry(slot: Slot): void {
+        if (slot.pending !== null && slot.pending.burst !== null && slot.waiting.length > 0) slot.pending = { ...slot.pending, start: AT_ONCE };
     }
 
     refreshNow(tab: TabId, lanes: readonly Lane[]): Promise<void> { this.request(tab, lanes, 'requested'); return this.idle(tab); }

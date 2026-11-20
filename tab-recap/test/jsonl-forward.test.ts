@@ -41,7 +41,7 @@ test('a continuing read over the budget reads forward from the cursor and report
         const second = readJsonl(path, first.position, 350);
         assert.deepEqual(numbersOf(second.lines), [4, 5, 6]);
         assert.equal(second.position.cursor, 700);
-        assert.equal(second.more, 'absent');
+        assert.equal(second.more, 'present');
         const third = readJsonl(path, second.position, 350);
         assert.deepEqual(numbersOf(third.lines), [7, 8, 9]);
         assert.equal(third.position.cursor, 1000);
@@ -59,6 +59,19 @@ test('a continuing read whose next line is larger than the budget still advances
         assert.deepEqual(numbersOf(read.lines), [1, 2]);
         assert.equal(read.position.cursor, 1100);
         assert.equal(read.more, 'absent');
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+test('a continuing read that leaves less than one budget unread still reports more left', () => {
+    const lines = Array.from({ length: 5 }, (_, n) => line(n, 100));
+    const { dir, path } = fileOf(lines);
+    try {
+        const first = readJsonl(path, { cursor: 100, tail: null }, 250);
+        assert.deepEqual(numbersOf(first.lines), [1, 2]);
+        assert.equal(first.position.cursor, 300);
+        assert.equal(first.more, 'present');
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }

@@ -88,6 +88,16 @@ test('flush runs a deferred tab now with the lanes it captured', async () => {
     assert.equal(world.located().length, 1);
 });
 
+test('a turn end that arrives while a flush waits does not hold the flush until MAX_WAIT', async () => {
+    const { world, engine } = setup({ pacing: smart(50, 60_000), visible: false });
+    engine.turnEnded(TAB, key('a'), 'turn-ended');
+    const flushed = engine.flush(TAB).then(() => 'flushed');
+    engine.turnEnded(TAB, key('a'), 'turn-ended');
+    assert.equal(await Promise.race([flushed, pause(1_000).then(() => 'held')]), 'flushed');
+    await world.settle();
+    assert.equal(world.located().length, 1);
+});
+
 test('flushAll resolves after every deferred tab has run', async () => {
     const { world, engine } = setup({ pacing: smart(50, 60_000), visible: false });
     engine.turnEnded(TAB, key('a'), 'turn-ended');

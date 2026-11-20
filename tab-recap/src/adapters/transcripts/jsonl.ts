@@ -127,7 +127,7 @@ export function readJsonlFrom(path: FsPath, was: Position, budget: Count): Jsonl
     const span = was.cursor > 0
         ? forwardSpan(path, must(parseCount(was.cursor)), size, budget)
         : readLines(path, must(parseCount(Math.max(0, size - budget))), budget);
-    const more = was.cursor > 0 && span.end > was.cursor && size - span.end > budget;
+    const more = was.cursor > 0 && span.end > was.cursor && size > span.end;
     return { lines: span.lines, position: { cursor: span.end, tail: null }, grew: size > was.cursor ? 'present' : 'absent', more: more ? 'present' : 'absent' };
 }
 
