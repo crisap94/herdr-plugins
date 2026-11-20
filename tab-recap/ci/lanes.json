@@ -843,6 +843,7 @@
       "src/adapters/transcripts/claude/transcripts.ts",
       "src/adapters/transcripts/codex/context.ts",
       "src/adapters/transcripts/codex/in-flight.ts",
+      "src/adapters/transcripts/codex/legacy.ts",
       "src/adapters/transcripts/codex/marks.ts",
       "src/adapters/transcripts/codex/tool-calls.ts",
       "src/adapters/transcripts/codex/transcripts.ts",

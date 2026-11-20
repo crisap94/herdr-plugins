@@ -171,24 +171,8 @@
   "src/adapters/transcripts/claude/legacy.ts": {
     "legacy": 19
   },
-  "src/adapters/transcripts/codex/context.ts": {
-    "container": 1
-  },
-  "src/adapters/transcripts/codex/in-flight.ts": {
-    "parameter": 1,
-    "container": 1
-  },
-  "src/adapters/transcripts/codex/marks.ts": {
-    "return": 1,
-    "container": 1
-  },
-  "src/adapters/transcripts/codex/tool-calls.ts": {
-    "parameter": 3
-  },
-  "src/adapters/transcripts/codex/transcripts.ts": {
-    "parameter": 13,
-    "container": 1,
-    "property": 2
+  "src/adapters/transcripts/codex/legacy.ts": {
+    "legacy": 22
   },
   "src/adapters/transcripts/context-values.ts": {
     "parameter": 1,
