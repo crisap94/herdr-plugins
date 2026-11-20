@@ -4,7 +4,7 @@ import type { Database } from 'bun:sqlite';
 import { ColumnVisibilityRepository } from '#src/adapters/db/column-visibility.ts';
 import { PaneAlertsRepository } from '#src/adapters/db/pane-alerts.ts';
 import { PaneNotesRepository } from '#src/adapters/db/pane-notes.ts';
-import { TabRow } from '#src/adapters/db/tab-row.ts';
+import { TabRow } from '#src/adapters/db/tab-row/legacy.ts';
 import type { HiddenState } from '#src/recap/domain/board.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 import { parseAlertSource } from '#src/recap/domain/pane-alert.ts';

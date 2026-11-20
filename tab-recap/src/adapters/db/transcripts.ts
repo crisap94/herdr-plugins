@@ -1,7 +1,10 @@
 import type { Database } from 'bun:sqlite';
 import { and, desc, eq, ne, sql } from 'drizzle-orm';
+import { must } from '#src/protocol/result.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { parsePaneId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 import { transcript } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { BadRow } from './rows.ts';
@@ -11,11 +14,11 @@ const PLACEHOLDER_AGENT = 'unknown';
 const NO_SOURCE = '';
 const NO_ROW = 'transcript write returned no row';
 
-export interface Moved {
+export interface TranscriptMove {
     readonly id: Uint8Array;
-    readonly pane: string;
-    readonly from: number;
-    readonly to: number;
+    readonly pane: PaneId;
+    readonly from: Count;
+    readonly to: Count;
     readonly replaces: Uint8Array | null;
 }
 
@@ -34,27 +37,27 @@ function idOf(row: IdRow | undefined): Uint8Array {
     return plainId(row.id);
 }
 
-export class TranscriptRows {
+export class TranscriptStore {
     private readonly orm: Orm;
 
     constructor(db: Database) {
         this.orm = ormOf(db);
     }
 
-    attach(tab: string, lanes: readonly LaneCursor[], at: number): readonly Moved[] {
-        const tabKey = tabId(tab);
-        this.orm.update(transcript).set({ attached: 0 }).where(eq(transcript.tabId, tabKey)).run();
+    attach(tab: TabId, lanes: readonly LaneCursor[], at: Instant): readonly TranscriptMove[] {
+        this.orm.update(transcript).set({ attached: 0 }).where(eq(transcript.tabId, tab)).run();
         return lanes.map((lane, position) => {
-            const pane = paneId(lane.pane);
+            const pane = must(parsePaneId(lane.pane));
+            const cursor = must(parseCount(lane.cursor));
             const was = this.orm.select({ cursor: transcript.cursor }).from(transcript)
-                .where(and(eq(transcript.tabId, tabKey), eq(transcript.pane, pane), eq(transcript.source, lane.transcript))).get() ?? null;
+                .where(and(eq(transcript.tabId, tab), eq(transcript.pane, pane), eq(transcript.source, lane.transcript))).get() ?? null;
             const prior = was === null && lane.transcript !== NO_SOURCE
                 ? this.orm.select({ id: transcript.id }).from(transcript)
-                    .where(and(eq(transcript.tabId, tabKey), eq(transcript.pane, pane), ne(transcript.source, NO_SOURCE)))
+                    .where(and(eq(transcript.tabId, tab), eq(transcript.pane, pane), ne(transcript.source, NO_SOURCE)))
                     .orderBy(desc(transcript.firstSeen), desc(transcript.id)).limit(1).get() ?? null
                 : null;
             const saved = this.orm.insert(transcript)
-                .values({ id: ids.next(), tabId: tabKey, pane, agent: lane.agent, source: lane.transcript, attached: 1, position, cursor: lane.cursor, tail: lane.tail, title: lane.title, lastPrompt: lane.lastPrompt, claudeNote: lane.claudeRecap, firstSeen: at })
+                .values({ id: ids.next(), tabId: tab, pane, agent: lane.agent, source: lane.transcript, attached: 1, position, cursor, tail: lane.tail, title: lane.title, lastPrompt: lane.lastPrompt, claudeNote: lane.claudeRecap, firstSeen: at })
                 .onConflictDoUpdate({
                     target: [transcript.tabId, transcript.pane, transcript.source],
                     set: {
@@ -69,21 +72,19 @@ export class TranscriptRows {
                     },
                 })
                 .returning({ id: transcript.id }).get();
-            return { id: idOf(saved), pane: lane.pane, from: was === null ? lane.cursor : was.cursor, to: lane.cursor, replaces: prior === null ? null : plainId(prior.id) };
+            return { id: idOf(saved), pane, from: was === null ? cursor : must(parseCount(was.cursor)), to: cursor, replaces: prior === null ? null : plainId(prior.id) };
         });
     }
 
-    ofPane(tab: string, pane: string, at: number): Uint8Array {
-        const tabKey = tabId(tab);
-        const paneKey = paneId(pane);
+    ofPane(tab: TabId, pane: PaneId, at: Instant): Uint8Array {
         const found = this.orm.select({ id: transcript.id }).from(transcript)
-            .where(and(eq(transcript.tabId, tabKey), eq(transcript.pane, paneKey)))
+            .where(and(eq(transcript.tabId, tab), eq(transcript.pane, pane)))
             .orderBy(desc(transcript.attached), desc(transcript.id)).limit(1).get();
         if (found !== undefined) {
             return plainId(found.id);
         }
         return idOf(this.orm.insert(transcript)
-            .values({ id: ids.next(), tabId: tabKey, pane: paneKey, agent: PLACEHOLDER_AGENT, source: NO_SOURCE, attached: 0, position: 0, cursor: 0, firstSeen: at })
+            .values({ id: ids.next(), tabId: tab, pane, agent: PLACEHOLDER_AGENT, source: NO_SOURCE, attached: 0, position: 0, cursor: 0, firstSeen: at })
             .returning({ id: transcript.id }).get());
     }
 }

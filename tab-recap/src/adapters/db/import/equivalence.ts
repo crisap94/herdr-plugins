@@ -1,7 +1,7 @@
 import { isDeepStrictEqual } from 'node:util';
 import type { TabRecap } from '#src/ports/recap-records.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
-import { microsOf } from '../run-write.ts';
+import { microsOf } from '../run-write/legacy.ts';
 
 export function canonicalRecap(file: TabRecap): TabRecap {
     const costUsd = typeof file.costUsd === 'number' ? file.costUsd : 0;

@@ -44,52 +44,32 @@
     "legacy": 33
   },
   "src/adapters/db/run-inputs.ts": {
-    "parameter": 8,
-    "return": 4,
-    "container": 6,
-    "assertion": 1
-  },
-  "src/adapters/db/run-write.ts": {
-    "parameter": 5,
+    "parameter": 2,
     "return": 1,
-    "property": 2
+    "container": 4
   },
-  "src/adapters/db/schema/018-lane-status.ts": {
-    "parameter": 1,
-    "return": 1
+  "src/adapters/db/run-inputs/legacy.ts": {
+    "legacy": 8
   },
-  "src/adapters/db/scratch.ts": {
-    "property": 1
+  "src/adapters/db/run-write/legacy.ts": {
+    "legacy": 8
   },
-  "src/adapters/db/sections-rows.ts": {
-    "parameter": 1,
-    "return": 1,
-    "container": 1,
-    "property": 3
+  "src/adapters/db/session-source/legacy.ts": {
+    "legacy": 6
   },
-  "src/adapters/db/session-source.ts": {
-    "parameter": 3,
-    "return": 2,
-    "container": 4,
-    "property": 2
+  "src/adapters/db/tab-row/legacy.ts": {
+    "legacy": 2
   },
-  "src/adapters/db/tab-row.ts": {
-    "parameter": 2
+  "src/adapters/db/tab-views/legacy.ts": {
+    "legacy": 4
   },
-  "src/adapters/db/tab-views.ts": {
-    "parameter": 3,
-    "return": 2,
-    "container": 9
-  },
-  "src/adapters/db/transcripts.ts": {
-    "parameter": 5,
-    "property": 3
+  "src/adapters/db/transcripts/legacy.ts": {
+    "legacy": 8
   },
   "src/adapters/db/typeid/legacy.ts": {
     "legacy": 4
   },
-  "src/adapters/db/verdicts.ts": {
-    "parameter": 2,
-    "container": 2
+  "src/adapters/db/verdicts/legacy.ts": {
+    "legacy": 3
   }
 }

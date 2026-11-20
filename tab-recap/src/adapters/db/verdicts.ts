@@ -1,10 +1,14 @@
 import type { Database } from 'bun:sqlite';
 import { and, asc, eq, isNotNull, sql } from 'drizzle-orm';
-import type { Disagreement, Pair, Verdict, VerdictSource, Verdicts } from '#src/ports/verdicts.ts';
+import { must } from '#src/protocol/result.ts';
+import type { RunId } from '#src/recap/domain/run-ids.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { parseDisagreementRecord, parsePairRecord, parseVerdictRecord, type DisagreementRecord, type PairRecord, type VerdictRecord, type VerdictStore } from '#src/ports/verdicts.ts';
 import { writeTx } from './connection.ts';
 import { verdict as verdicts } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
-import { blob, flag, guarded, maybeText, text, whole } from './rows.ts';
+import { blob, guarded } from './rows.ts';
 import type { Row } from './rows.ts';
 import { idOf, typeIdOf } from './typeid.ts';
 import { ids } from './uuid7.ts';
@@ -22,7 +26,7 @@ const DISAGREE = sql`${LATEST}
   JOIN latest o ON o.run_id = j.run_id AND o.item_key IS j.item_key AND o.check_id = j.check_id AND o.source = 'operator'
   WHERE j.source = 'judge' AND j.item_key IS NOT NULL AND j.pass <> o.pass ORDER BY o.at DESC, o.id DESC`;
 
-export class VerdictsRepository implements Verdicts {
+export class VerdictRowStore implements VerdictStore {
     private readonly db: Database;
     private readonly orm: Orm;
 
@@ -31,7 +35,7 @@ export class VerdictsRepository implements Verdicts {
         this.orm = ormOf(db);
     }
 
-    add(rows: readonly Verdict[]): void {
+    add(rows: readonly VerdictRecord[]): void {
         writeTx(this.db, () => {
             for (const verdict of rows) {
                 const run = idOf('run', verdict.run);
@@ -39,39 +43,38 @@ export class VerdictsRepository implements Verdicts {
                     throw new Error(`not a run id: ${verdict.run}`);
                 }
                 this.orm.insert(verdicts).values({
-                    id: ids.next(), runId: run, itemKey: verdict.item, checkId: verdict.check, pass: verdict.pass ? 1 : 0,
+                    id: ids.next(), runId: run, itemKey: verdict.item, checkId: verdict.check, pass: verdict.pass === 'pass' ? 1 : 0,
                     critique: verdict.critique, judge: verdict.judge, at: verdict.at, source: verdict.source,
                 }).run();
             }
         });
     }
 
-    ofRun(run: string): readonly Verdict[] {
+    ofRun(run: RunId): readonly VerdictRecord[] {
         const id = idOf('run', run);
         return id === null ? [] : guarded(() => this.orm.select({
             item: verdicts.itemKey, check: verdicts.checkId, pass: verdicts.pass, critique: verdicts.critique,
             judge: verdicts.judge, at: verdicts.at, source: verdicts.source,
         }).from(verdicts).where(eq(verdicts.runId, id)).orderBy(asc(verdicts.at), asc(verdicts.checkId)).all()
-            .map((row): Verdict => ({
-                run, item: row.item, check: row.check, pass: row.pass === 1, critique: row.critique,
-                judge: row.judge, at: row.at, source: row.source === 'operator' ? 'operator' : ('judge' satisfies VerdictSource),
-            })), []);
+            .map((row) => must(parseVerdictRecord({ ...row, run, pass: (row.pass === 1 ? 'pass' : 'fail') }))), []);
     }
 
-    labelled(check: string | null = null): ReadonlySet<string> {
+    labelled(check: Text | null = null): ReadonlySet<Text> {
         return guarded(() => new Set(this.orm.selectDistinct({ runId: verdicts.runId, itemKey: verdicts.itemKey }).from(verdicts)
             .where(and(eq(verdicts.source, 'operator'), isNotNull(verdicts.itemKey), check === null ? undefined : eq(verdicts.checkId, check))).all()
-            .map((row) => `${typeIdOf('run', row.runId)}|${row.itemKey}`)), new Set());
+            .map((row) => must(parseText(`${typeIdOf('run', row.runId)}|${row.itemKey}`)))), new Set<Text>());
     }
 
-    pairs(): readonly Pair[] {
-        return guarded(() => this.orm.all<Row>(PAIRS).map((row): Pair => ({ check: text(row, 'check_id'), judge: flag(row, 'judge_pass'), operator: flag(row, 'operator_pass') })), []);
+    pairs(): readonly PairRecord[] {
+        return guarded(() => this.orm.all<Row>(PAIRS).map((row) => must(parsePairRecord({
+            check: row.check_id, judge: (row.judge_pass === 1 ? 'pass' : 'fail'), operator: (row.operator_pass === 1 ? 'pass' : 'fail'),
+        }))), []);
     }
 
-    disagreements(): readonly Disagreement[] {
-        return guarded(() => this.orm.all<Row>(DISAGREE).map((row): Disagreement => ({
-            run: typeIdOf('run', blob(row, 'run_id')), item: text(row, 'item_key'), check: text(row, 'check_id'), judge: flag(row, 'judge_pass'), operator: flag(row, 'operator_pass'),
-            judgeCritique: maybeText(row, 'judge_critique'), reason: maybeText(row, 'reason'), at: whole(row, 'at'),
-        })), []);
+    disagreements(): readonly DisagreementRecord[] {
+        return guarded(() => this.orm.all<Row>(DISAGREE).map((row) => must(parseDisagreementRecord({
+            run: typeIdOf('run', blob(row, 'run_id')), item: row.item_key, check: row.check_id, judge: (row.judge_pass === 1 ? 'pass' : 'fail'), operator: (row.operator_pass === 1 ? 'pass' : 'fail'),
+            judgeCritique: row.judge_critique, reason: row.reason, at: row.at,
+        }))), []);
     }
 }
