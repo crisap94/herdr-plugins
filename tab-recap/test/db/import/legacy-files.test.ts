@@ -9,8 +9,8 @@ test('the legacy reader knows every shape a file was ever stored in', () => {
     const dir = scratchDir('legacy');
     try {
         everyShape(dir);
-        const legacy = new LegacyFiles(dir);
-        const recap = (tab: string): ReturnType<LegacyFiles['recaps']>[number] | undefined => legacy.recaps().find((each) => each.tab === tab);
+        const legacy = new LegacyFiles(dir).files;
+        const recap = (tab: string): ReturnType<LegacyFiles['files']['recaps']>[number] | undefined => legacy.recaps().find((each) => each.tab === tab);
         assert.equal(legacy.recaps().length, 7);
         assert.deepEqual(recap('w1:t1')?.tasks.at(0)?.sections, sections);
         assert.deepEqual(recap('w1:t2')?.tasks, [{ id: 't1', name: '', lanes: ['w1:p1'], sections: null, markdown: '## Goal\n- from the old days' }], 'before tasks and sections: ONE task holding every lane, markdown only');
@@ -26,7 +26,7 @@ test('the legacy reader knows a view written before cwd, the live prompt and the
     const dir = scratchDir('views');
     try {
         everyShape(dir);
-        const views = new LegacyFiles(dir).views();
+        const views = new LegacyFiles(dir).files.views();
         assert.deepEqual(views.find((view) => view.tab === 'w1:t2')?.lanes.at(0), { pane: 'w1:p1', agent: 'claude', status: 'working', title: null, cwd: null, lastPrompt: null, web: null, context: null });
         assert.equal(views.find((view) => view.tab === 'w1:t2')?.daemonVersion, null);
         assert.deepEqual(views.find((view) => view.tab === 'w1:t8')?.lanes, [], 'a view with no lanes');
@@ -45,7 +45,7 @@ test('damaged sections read as null, half-damaged ones keep what is text; pendin
         put(dir, 'visibility', '1.json', { target: 5 });
         put(dir, 'visibility', '2.json', { target: 'w1:t1', hidden: 'maybe' });
         put(dir, 'visibility', '3.json', { target: 'w1:t1', hidden: false });
-        const legacy = new LegacyFiles(dir);
+        const legacy = new LegacyFiles(dir).files;
         assert.equal(legacy.recaps().find((recap) => recap.tab === 'bad')?.tasks.at(0)?.sections, null);
         assert.deepEqual(legacy.recaps().find((recap) => recap.tab === 'half')?.tasks.at(0)?.sections, { goal: '', now: ['a'], needs: [], done: [], decisions: [], next: [], links: [], rules: [] });
         assert.equal(legacy.recaps().length, 2, 'a file that is not JSON is not a recap');
@@ -53,7 +53,7 @@ test('damaged sections read as null, half-damaged ones keep what is text; pendin
         assert.deepEqual(legacy.pendingRequests(), ['w1:t1'], 'still there');
         put(dir, '', 'hidden.json', '{"all":"yes","hidden":[1,"w1:t5"],"shown":null}');
         assert.deepEqual(legacy.readHidden(), { all: false, hidden: ['w1:t5'], shown: [] });
-        assert.equal(new LegacyFiles(scratchDir('none')).exists(), false);
+        assert.equal(new LegacyFiles(scratchDir('none')).files.exists(), 'absent');
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }

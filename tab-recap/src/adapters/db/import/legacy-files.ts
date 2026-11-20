@@ -1,131 +1,103 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import type { HiddenState } from '#src/recap/domain/board.ts';
-import type { RecapSections } from '#src/recap/domain/shape.ts';
-import type { RecapTask } from '#src/recap/domain/tasks.ts';
-import type { LaneCursor, TabRecap } from '#src/ports/recap-records.ts';
+import { parseLegacyHidden, parseLegacyRecapFile, parseLegacyViewFile, parseLegacyVisibility } from '#src/ports/legacy-store-files.ts';
+import type { TabRecap } from '#src/ports/recap-records.ts';
 import type { VisibilityRequest } from '#src/ports/requests.ts';
-import type { TabLane, TabView } from '#src/ports/tab-views.ts';
+import type { TabView } from '#src/ports/tab-views.ts';
+import { must, type Result } from '#src/protocol/result.ts';
+import type { HiddenState } from '#src/recap/domain/board.ts';
+import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
+import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import type { Presence } from './equivalence.ts';
 
-export const fileKey = (id: string): string => id.replaceAll(':', '_').replaceAll('/', '_');
+export { LegacyFiles } from './legacy.ts';
 
-function readJson(path: string): unknown {
+type Kind = 'recaps' | 'tabs' | 'requests' | 'visibility';
+
+const KINDS: readonly Kind[] = ['recaps', 'tabs', 'requests', 'visibility'];
+
+export const fileKey = (id: TabId | PaneId): Text => must(parseText(id.replaceAll(':', '_').replaceAll('/', '_')));
+
+function attempt<T, E>(read: () => Result<T, E>): T | null {
     try {
-        return JSON.parse(readFileSync(path, 'utf8'));
+        const result = read();
+        return result.kind === 'ok' ? result.value : null;
     } catch {
         return null;
     }
 }
 
-const strings = (value: unknown): string[] => (Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []);
-
-function sectionsOf(value: unknown): RecapSections | null {
-    if (typeof value !== 'object' || value === null) {
-        return null;
+function readRequest(path: FsPath): readonly Text[] {
+    try {
+        const tab = parseText(readFileSync(path, 'utf8').trim());
+        return tab.kind === 'ok' && tab.value !== '' ? [tab.value] : [];
+    } catch {
+        return [];
     }
-    const fields = value as Readonly<Record<string, unknown>>;
-    return { goal: typeof fields['goal'] === 'string' ? fields['goal'] : '', now: strings(fields['now']), needs: strings(fields['needs']), done: strings(fields['done']), decisions: strings(fields['decisions']), next: strings(fields['next']), links: strings(fields['links']), rules: [] };
 }
 
-interface StoredTasks {
-    readonly tasks?: unknown;
-    readonly sections?: unknown;
-    readonly markdown?: unknown;
-    readonly lanes?: unknown;
-}
+export class LegacyStoreFiles {
+    readonly root: FsPath;
 
-interface StoredLaneFields {
-    cwd?: unknown;
-    lastPrompt?: unknown;
-}
-
-interface StoredCursorFields {
-    tail?: unknown;
-}
-
-function tasksOf(stored: StoredTasks): readonly RecapTask[] {
-    if (Array.isArray(stored.tasks)) {
-        return stored.tasks.map((task: Readonly<Record<string, unknown>>, at: number) => ({
-            id: typeof task['id'] === 'string' && task['id'] !== '' ? task['id'] : `t${at + 1}`,
-            name: typeof task['name'] === 'string' ? task['name'] : '',
-            lanes: strings(task['lanes']),
-            sections: sectionsOf(task['sections']),
-            markdown: typeof task['markdown'] === 'string' ? task['markdown'] : '',
-        }));
-    }
-    const markdown = typeof stored.markdown === 'string' ? stored.markdown : '';
-    const lanes = Array.isArray(stored.lanes) ? stored.lanes.flatMap((lane: Readonly<Record<string, unknown>>) => (typeof lane['pane'] === 'string' ? [lane['pane']] : [])) : [];
-    return markdown === '' ? [] : [{ id: 't1', name: '', lanes, sections: sectionsOf(stored.sections), markdown }];
-}
-
-function laneOf(lane: Omit<TabLane, 'cwd' | 'lastPrompt' | 'web' | 'context'> & StoredLaneFields): TabLane {
-    return {
-        pane: lane.pane, agent: lane.agent, status: lane.status, title: lane.title,
-        cwd: typeof lane.cwd === 'string' ? lane.cwd : null, lastPrompt: typeof lane.lastPrompt === 'string' ? lane.lastPrompt : null, web: null, context: null,
-    };
-}
-
-function cursorOf(cursor: Omit<LaneCursor, 'tail'> & StoredCursorFields): LaneCursor {
-    return { ...cursor, tail: typeof cursor.tail === 'string' ? cursor.tail : null };
-}
-
-type StoredRecap = Omit<TabRecap, 'language' | 'tasks' | 'lanes'> & { language?: unknown; tasks?: unknown; sections?: unknown; markdown?: unknown; lanes: readonly (Omit<LaneCursor, 'tail'> & { tail?: unknown })[] };
-type StoredView = Omit<TabView, 'lanes' | 'daemonVersion'> & { lanes?: readonly (Omit<TabLane, 'cwd'> & { cwd?: unknown })[]; daemonVersion?: unknown };
-
-export class LegacyFiles {
-    readonly root: string;
-
-    constructor(root: string) {
+    constructor(root: FsPath) {
         this.root = root;
     }
 
-    private names(kind: string): string[] {
-        try { return readdirSync(join(this.root, kind)).filter((name) => !name.endsWith('.tmp')).toSorted(); } catch { return []; }
+    private file(kind: Kind, name: Text): FsPath {
+        return must(parseFsPath(join(this.root, kind, name)));
     }
 
-    recapOf(stored: unknown): TabRecap | null {
-        if (typeof stored !== 'object' || stored === null) {
-            return null;
-        }
-        const file = stored as StoredRecap;
-        const language = typeof file.language === 'string' && file.language !== '' ? file.language : 'en';
-        return { tab: file.tab, lanes: Array.from(file.lanes, cursorOf), tasks: tasksOf(file), at: file.at, running: file.running, backend: file.backend, error: file.error, costUsd: file.costUsd, language };
+    private hiddenFile(): FsPath {
+        return must(parseFsPath(join(this.root, 'hidden.json')));
     }
 
-    viewOf(stored: unknown): TabView | null {
-        if (typeof stored !== 'object' || stored === null) {
-            return null;
+    private names(kind: Kind): Text[] {
+        try {
+            return readdirSync(join(this.root, kind))
+                .filter((name) => !name.endsWith('.tmp'))
+                .toSorted()
+                .flatMap((name) => {
+                    const text = parseText(name);
+                    return text.kind === 'ok' ? [text.value] : [];
+                });
+        } catch {
+            return [];
         }
-        const file = stored as StoredView;
-        return { ...file, lanes: Array.from(file.lanes ?? [], laneOf), daemonVersion: typeof file.daemonVersion === 'string' ? file.daemonVersion : null };
     }
 
     recaps(): readonly TabRecap[] {
-        return this.names('recaps').flatMap((name) => this.recapOf(readJson(join(this.root, 'recaps', name))) ?? []);
-    }
-
-    views(): readonly TabView[] {
-        return this.names('tabs').flatMap((name) => this.viewOf(readJson(join(this.root, 'tabs', name))) ?? []);
-    }
-
-    readHidden(): HiddenState | null {
-        const stored = readJson(join(this.root, 'hidden.json')) as { all?: unknown; hidden?: unknown; shown?: unknown } | null;
-        return stored === null ? null : { all: stored.all === true, hidden: strings(stored.hidden), shown: strings(stored.shown) };
-    }
-
-    pendingRequests(): readonly string[] {
-        const read = (name: string): string => { try { return readFileSync(join(this.root, 'requests', name), 'utf8').trim(); } catch { return ''; } };
-        return this.names('requests').map(read).filter((tab) => tab !== '');
-    }
-
-    pendingVisibility(): readonly VisibilityRequest[] {
-        return this.names('visibility').filter((name) => name.endsWith('.json')).flatMap((name) => {
-            const asked = readJson(join(this.root, 'visibility', name)) as { target?: unknown; hidden?: unknown } | null;
-            return asked !== null && typeof asked.target === 'string' && asked.target !== '' && (typeof asked.hidden === 'boolean' || asked.hidden === 'toggle') ? [{ target: asked.target, hidden: asked.hidden }] : [];
+        return this.names('recaps').flatMap((name) => {
+            const file = attempt(() => parseLegacyRecapFile(JSON.parse(readFileSync(this.file('recaps', name), 'utf8'))));
+            return file === null ? [] : [file];
         });
     }
 
-    exists(): boolean {
-        return ['recaps', 'tabs', 'requests', 'visibility'].some((kind) => this.names(kind).length > 0) || this.readHidden() !== null;
+    views(): readonly TabView[] {
+        return this.names('tabs').flatMap((name) => {
+            const file = attempt(() => parseLegacyViewFile(JSON.parse(readFileSync(this.file('tabs', name), 'utf8'))));
+            return file === null ? [] : [file];
+        });
+    }
+
+    readHidden(): HiddenState | null {
+        return attempt(() => parseLegacyHidden(JSON.parse(readFileSync(this.hiddenFile(), 'utf8'))));
+    }
+
+    pendingRequests(): readonly Text[] {
+        return this.names('requests').flatMap((name) => readRequest(this.file('requests', name)));
+    }
+
+    pendingVisibility(): readonly VisibilityRequest[] {
+        return this.names('visibility')
+            .filter((name) => name.endsWith('.json'))
+            .flatMap((name) => {
+                const asked = attempt(() => parseLegacyVisibility(JSON.parse(readFileSync(this.file('visibility', name), 'utf8'))));
+                return asked === null ? [] : [asked];
+            });
+    }
+
+    exists(): Presence {
+        return KINDS.some((kind) => this.names(kind).length > 0) || this.readHidden() !== null ? 'present' : 'absent';
     }
 }

@@ -10,7 +10,7 @@ import { writeTx } from '../connection.ts';
 import type { Store } from '../database.ts';
 import { canonicalRecap, canonicalView, holdingOf, recapDifferenceLines, viewDifferenceLines, type Presence } from './equivalence.ts';
 import { attempt, RowsWriter } from './import-rows.ts';
-import type { LegacyFiles } from './legacy-files.ts';
+import type { LegacyStoreFiles } from './legacy-files.ts';
 
 export { importFiles, loadAndCompare } from './legacy.ts';
 
@@ -36,12 +36,12 @@ export interface ImportOptions {
 
 const FILES = ['recaps', 'tabs', 'requests', 'visibility', 'hidden.json'];
 
-export function compareLegacyFiles(store: Store, legacy: LegacyFiles, now: Instant): ImportReport {
+export function compareLegacyFiles(store: Store, legacy: LegacyStoreFiles, now: Instant): ImportReport {
     const writer = new RowsWriter(store.db);
     const recaps = legacy.recaps().map(canonicalRecap).filter((file) => holdingOf(file) === 'present');
     const views = legacy.views().map(canonicalView);
     const hidden = legacy.readHidden();
-    const refresh = legacy.pendingRequests().map((tab) => must(parseText(tab)));
+    const refresh = legacy.pendingRequests();
     const visibility = legacy.pendingVisibility();
     const refused = [
         ...recaps.map((file) => attempt(store.db, must(parseText(`recap ${file.tab}`)), () => { writer.recap(file, now); })),
@@ -79,7 +79,7 @@ const importedState = (store: Store): Presence => {
     return typeof row === 'object' && row !== null && 'at' in row && row.at !== null && row.at !== undefined ? 'present' : 'absent';
 };
 
-export function importFilesAt(store: Store, legacy: LegacyFiles, options: ImportOptions): ImportOutcome {
+export function importFilesAt(store: Store, legacy: LegacyStoreFiles, options: ImportOptions): ImportOutcome {
     if (importedState(store) === 'present') {
         return { kind: 'already' };
     }
@@ -87,7 +87,7 @@ export function importFilesAt(store: Store, legacy: LegacyFiles, options: Import
     const seen: { report: ImportReport | null } = { report: null };
     try {
         writeTx(store.db, () => {
-            seen.report = legacy.exists() ? compareLegacyFiles(store, legacy, now) : null;
+            seen.report = legacy.exists() === 'present' ? compareLegacyFiles(store, legacy, now) : null;
             options.afterInsert?.();
             if (seen.report !== null && seen.report.differences.length > 0) {
                 throw new Error(`${seen.report.differences.length} difference(s): ${seen.report.differences.slice(0, 3).join('; ')}`);
@@ -97,5 +97,5 @@ export function importFilesAt(store: Store, legacy: LegacyFiles, options: Import
     } catch (error) {
         return { kind: 'failed', report: seen.report, why: must(parseText(error instanceof Error ? error.message : String(error))) };
     }
-    return seen.report === null ? { kind: 'nothing' } : { kind: 'imported', report: seen.report, movedTo: moveAside(must(parseFsPath(legacy.root)), now) };
+    return seen.report === null ? { kind: 'nothing' } : { kind: 'imported', report: seen.report, movedTo: moveAside(legacy.root, now) };
 }

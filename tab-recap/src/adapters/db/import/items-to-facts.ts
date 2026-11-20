@@ -1,5 +1,5 @@
 import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import type { Count } from '#src/recap/domain/count.ts';
 import type { ClosedWhy, Section } from '#src/recap/domain/fact.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
@@ -68,7 +68,12 @@ interface KeyedItem {
 
 type Order = -1 | 0 | 1;
 
-const byPosition = (a: ImportedItem, b: ImportedItem): Order => (a.position < b.position ? -1 : (a.position > b.position ? 1 : 0));
+function byPosition(a: ImportedItem, b: ImportedItem): Order {
+    if (a.position < b.position) {
+        return -1;
+    }
+    return a.position > b.position ? 1 : 0;
+}
 
 function keysOf(items: readonly ImportedItem[]): readonly KeyedItem[] {
     const seen = new Map<string, number>();

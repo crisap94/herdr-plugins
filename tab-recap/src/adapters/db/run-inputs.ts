@@ -30,11 +30,13 @@ export class RunInputStore implements RunInputReader {
         return guarded(() => this.orm.all<Record<string, unknown>>(sql`SELECT r.id, c.tab_id, r.at, r.language, r.backend, r.gate_stats, i.run_id IS NOT NULL AS has_input
           FROM run r JOIN chapter c ON c.id = r.chapter_id LEFT JOIN run_input i ON i.run_id = r.id
           WHERE EXISTS (SELECT 1 FROM fact WHERE born_run = r.id) AND (${tab} IS NULL OR c.tab_id = ${tab}) AND r.at >= ${since} AND (${withInput} = 0 OR i.run_id IS NOT NULL)
-          ORDER BY r.id DESC LIMIT ${query.limit}`).map((row) => must(parseRunRecord({
-            id: typeIdOf('run', blob(row, 'id')), tab: text(row, 'tab_id'), at: whole(row, 'at'), language: text(row, 'language'),
-            backend: maybeText(row, 'backend'), input: flag(row, 'has_input') ? 'present' : 'absent',
-            gateStats: typeof row['gate_stats'] === 'string' ? JSON.parse(row['gate_stats']) : null,
-        }))), []);
+          ORDER BY r.id DESC LIMIT ${query.limit}`).map((row) => {
+            const gateStats: unknown = typeof row['gate_stats'] === 'string' ? JSON.parse(row['gate_stats']) : null;
+            return must(parseRunRecord({
+                id: typeIdOf('run', blob(row, 'id')), tab: text(row, 'tab_id'), at: whole(row, 'at'), language: text(row, 'language'),
+                backend: maybeText(row, 'backend'), input: flag(row, 'has_input') ? 'present' : 'absent', gateStats,
+            }));
+        }), []);
     }
 
     document(run: RunId): Text | null {
@@ -69,7 +71,10 @@ export class RunInputStore implements RunInputReader {
     gateCounts(since: Instant | null): readonly GateTally[] {
         return guarded(() => this.orm.select({ at: runs.at, gate_stats: runs.gateStats }).from(runs)
             .where(and(isNotNull(runs.gateStats), gte(runs.at, since ?? instant(0)))).orderBy(desc(runs.id)).all()
-            .map((row) => must(parseGateTally({ at: row.at, stats: typeof row.gate_stats === 'string' ? JSON.parse(row.gate_stats) : null }))), []);
+            .map((row) => {
+                const stats: unknown = typeof row.gate_stats === 'string' ? JSON.parse(row.gate_stats) : null;
+                return must(parseGateTally({ at: row.at, stats }));
+            }), []);
     }
 
     prune(before: Instant): Count {

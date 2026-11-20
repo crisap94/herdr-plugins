@@ -14,7 +14,7 @@ const opened = openDatabase(MEMORY);
 if (opened.kind !== 'ready') {
     throw new Error('an in-memory database cannot be newer');
 }
-const report = compareLegacyFiles(storeOver(opened.db), new LegacyFiles(directory), instant(Date.now()));
+const report = compareLegacyFiles(storeOver(opened.db), new LegacyFiles(directory).files, instant(Date.now()));
 process.stdout.write(`recaps ${report.recaps} · views ${report.views} · requests ${report.requests} · visibility requests ${report.visibility} · hidden.json ${report.hidden === 'present' ? 'yes' : 'no'}\n`);
 process.stdout.write(`${report.differences.length === 0 ? 'no differences' : `${report.differences.length} difference(s):\n${report.differences.map((line) => `  ${line}`).join('\n')}`}\n`);
 process.exitCode = report.differences.length === 0 ? 0 : 1;

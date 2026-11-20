@@ -1,13 +1,6 @@
 {
-  "src/adapters/db/import/legacy-files.ts": {
-    "parameter": 10,
-    "return": 4,
-    "container": 7,
-    "property": 8,
-    "assertion": 5
-  },
   "src/adapters/db/import/legacy.ts": {
-    "legacy": 5
+    "legacy": 7
   },
   "src/adapters/db/legacy.ts": {
     "legacy": 52
