@@ -9,7 +9,7 @@ import { ormOf, type Orm } from '../orm.ts';
 import { blob } from '../rows.ts';
 import { ids } from '../uuid7.ts';
 import { RunInputRows, statsText } from '../run-inputs/legacy.ts';
-import type { Moved, TranscriptRows } from '../transcripts.ts';
+import type { Moved, TranscriptRows } from '../transcripts/legacy.ts';
 
 export const microsOf = (usd: number): number => Math.round(usd * 1e6);
 

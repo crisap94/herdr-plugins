@@ -1,6 +1,9 @@
 import type { Migration } from './migration.ts';
 
-const uuid = (column: string): string =>
+type UuidColumn = 'id' | 'compaction_id';
+type UuidExpr = `lower(substr(hex(${UuidColumn}),1,8)||'-'||substr(hex(${UuidColumn}),9,4)||'-'||substr(hex(${UuidColumn}),13,4)||'-'||substr(hex(${UuidColumn}),17,4)||'-'||substr(hex(${UuidColumn}),21,12))`;
+
+const uuid = (column: UuidColumn): UuidExpr =>
     `lower(substr(hex(${column}),1,8)||'-'||substr(hex(${column}),9,4)||'-'||substr(hex(${column}),13,4)||'-'||substr(hex(${column}),17,4)||'-'||substr(hex(${column}),21,12))`;
 
 const DECISION_VIEW = `CREATE VIEW autocompact_decision_readable AS SELECT ${uuid('id')} AS id, tab_id, pane, agent, at, mode, share, tokens, window, gate, verdict, answers, coverage, decider, cost_micro_usd, took_ms, why, requested, asked_verdict, coverage_outcome, unchecked_reason, coverage_missing, coverage_ms, coverage_cost_micro_usd, lane_status, CASE WHEN compaction_id IS NULL THEN NULL ELSE ${uuid('compaction_id')} END AS compaction_id FROM autocompact_decision`;

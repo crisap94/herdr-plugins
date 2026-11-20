@@ -1,17 +1,19 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { must } from '#src/protocol/result.ts';
+import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { openStore } from './database.ts';
 import type { Store } from './database.ts';
 
 export interface Scratch {
     readonly store: Store;
-    readonly dir: string;
+    readonly dir: FsPath;
     dispose(): void;
 }
 
 export function scratchStore(): Scratch {
-    const dir = mkdtempSync(join(tmpdir(), 'tab-recap-replay-'));
+    const dir = must(parseFsPath(mkdtempSync(join(tmpdir(), 'tab-recap-replay-'))));
     const opened = openStore(join(dir, 'replay.db'));
     if (opened.kind !== 'ready') {
         rmSync(dir, { recursive: true, force: true });

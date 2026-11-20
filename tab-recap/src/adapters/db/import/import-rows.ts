@@ -11,7 +11,7 @@ import { RequestsRepository } from '../requests.ts';
 import { RunRows } from '../run-write/legacy.ts';
 import { TabRow } from '../tab-row/legacy.ts';
 import { TabViewsRepository } from '../tab-views/legacy.ts';
-import { TranscriptRows } from '../transcripts.ts';
+import { TranscriptRows } from '../transcripts/legacy.ts';
 import { typeIdOf } from '../typeid.ts';
 import { ids } from '../uuid7.ts';
 import { opsOfSections } from './sections-to-ops.ts';

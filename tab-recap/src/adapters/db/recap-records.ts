@@ -16,7 +16,7 @@ import { RecapReader } from './recap-read.ts';
 import { guardedRead } from './rows.ts';
 import { RunRows } from './run-write/legacy.ts';
 import { TabStore } from './tab-row.ts';
-import { TranscriptRows } from './transcripts.ts';
+import { TranscriptRows } from './transcripts/legacy.ts';
 
 type LastCause = RecapCause | 'imported';
 

@@ -6,7 +6,7 @@ import { paneId, tabId, type TabId } from '#src/recap/domain/ids.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { boundary, chapter, compaction, transcript } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
-import type { Moved, TranscriptRows } from './transcripts.ts';
+import type { Moved, TranscriptRows } from './transcripts/legacy.ts';
 import { ids } from './uuid7.ts';
 
 export interface Found {

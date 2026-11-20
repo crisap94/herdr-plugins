@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import type { Database } from 'bun:sqlite';
-import { TranscriptRows, type Moved } from '#src/adapters/db/transcripts.ts';
+import { TranscriptRows, type Moved } from '#src/adapters/db/transcripts/legacy.ts';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';

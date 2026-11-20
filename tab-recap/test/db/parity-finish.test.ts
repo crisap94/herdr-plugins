@@ -10,7 +10,7 @@ import { SessionSourceRepository } from '#src/adapters/db/session-source/legacy.
 import { StoriesRepository } from '#src/adapters/db/stories.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
-import { TranscriptRows } from '#src/adapters/db/transcripts.ts';
+import { TranscriptRows } from '#src/adapters/db/transcripts/legacy.ts';
 import { typeIdOf } from '#src/adapters/db/typeid.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { VerdictsRepository } from '#src/adapters/db/verdicts/legacy.ts';

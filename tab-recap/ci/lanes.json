@@ -655,6 +655,7 @@
       "src/adapters/db/tab-views.ts",
       "src/adapters/db/tab-views/legacy.ts",
       "src/adapters/db/transcripts.ts",
+      "src/adapters/db/transcripts/legacy.ts",
       "src/adapters/db/typeid.ts",
       "src/adapters/db/typeid/legacy.ts",
       "src/adapters/db/uuid7.ts",
