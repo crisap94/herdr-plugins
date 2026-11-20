@@ -3,7 +3,7 @@ import type { DecodedFrame, EventSubscription } from '@stateforge-labs/herdr-sdk
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { usePlugin, useAdmin } from './client.ts';
 import { subscribeTopics } from './subscriptions.ts';
-import { agentPanesIn, columnsIn, parseOptionalPaneId } from './column-panes.ts';
+import { agentPanesIn, columnsIn, deadColumnsIn, parseOptionalPaneId } from './column-panes.ts';
 import { list, paneTokensOf, rectOf, reconciliationOf, str } from './json.ts';
 import { parseJson, type JsonObject } from './json-object.ts';
 import { refusalOfTokens } from './token-refusal.ts';
@@ -222,8 +222,9 @@ export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, Harne
             const panes = list(snapshot['panes']);
             let closed = 0;
             let failed = 0;
-            for (const column of columnsIn(panes, agentPanesIn(panes, list(snapshot['agents'])))) {
-                const done = await this.call(() => useAdmin((client) => client.call('pane.close', { pane_id: column.paneId })));
+            const agentPanes = agentPanesIn(panes, list(snapshot['agents']));
+            for (const target of [...columnsIn(panes, agentPanes).map((column) => column.paneId), ...deadColumnsIn(panes, agentPanes).map((dead) => String(dead.pane))]) {
+                const done = await this.call(() => useAdmin((client) => client.call('pane.close', { pane_id: target })));
                 closed += done.kind === 'done' ? 1 : 0;
                 failed += done.kind === 'done' ? 0 : 1;
             }

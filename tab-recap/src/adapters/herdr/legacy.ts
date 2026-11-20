@@ -26,7 +26,7 @@ import { parseMilliseconds } from '#src/recap/domain/time.ts';
 import { PANE_WRITABLE, WORKSPACE_WRITABLE } from '#src/recap/domain/lane-tokens.ts';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { seenFrom, sessionOf, tokensOf } from '#src/recap/application/decode.ts';
-import { agentPanesIn, columnsIn } from './column-panes.ts';
+import { agentPanesIn, columnsIn, deadColumnsIn } from './column-panes.ts';
 import { HerdrAgentPanes, herdrWire, type Wire } from './agents.ts';
 import { usePlugin } from './client.ts';
 import { HerdrFleetPorts, PLUGIN_ID, pumpFrames } from './fleet.ts';
@@ -60,7 +60,7 @@ export function reconciliationOf(snapshot: Json): Reconciliation {
     const widths = new Map(list(snapshot['layouts']).map((layout) => [str(layout['tab_id']), rectOf(layout['area']).width]));
     const focused = str(snapshot['focused_tab_id']);
     const tabs = Array.isArray(snapshot['tabs']) ? { tabs: list(snapshot['tabs']).map((tab) => str(tab['tab_id'])).filter((tab) => tab !== '').map((tab) => tabId(tab)) } : {};
-    return { focusedTab: focused === '' ? null : focused, lanes, panes: panes.map((pane) => str(pane['pane_id'])), columns: columnsIn(panes, agents), widths, ...tabs };
+    return { focusedTab: focused === '' ? null : focused, lanes, panes: panes.map((pane) => str(pane['pane_id'])), columns: columnsIn(panes, agents), dead: deadColumnsIn(panes, agents), widths, ...tabs };
 }
 
 export function paneTokensOf(snapshot: Json): ReadonlyMap<string, TokenMap> {
