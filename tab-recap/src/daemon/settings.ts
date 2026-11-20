@@ -14,6 +14,7 @@ import type { ClaudePolicyAck } from '#src/recap/domain/claude-policy-ack.ts';
 import type { RepairMode } from '#src/recap/application/job-kit/repair.ts';
 import type { CloseEvidence, Pipeline } from '#src/recap/domain/pipeline.ts';
 import type { Debounce } from '#src/recap/domain/debounce.ts';
+import type { Pacing } from '#src/recap/domain/pacing.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import type { BackendChoice, BackendId, EnvironmentName } from '#src/recap/domain/backend.ts';
 import type { PrunedWriterView, WriterView } from '#src/recap/domain/writer-view.ts';
@@ -51,6 +52,9 @@ export type SettingName =
     | 'TAB_RECAP_WRITER_CLOSE_EVIDENCE'
     | 'TAB_RECAP_WRITER_ANSWER'
     | 'TAB_RECAP_RUN_DEBOUNCE_MS'
+    | 'TAB_RECAP_RUN_PACING'
+    | 'TAB_RECAP_RUN_QUIET_MS'
+    | 'TAB_RECAP_RUN_MAX_WAIT_MS'
     | 'TAB_RECAP_RECONCILE_EVERY'
     | 'TAB_RECAP_WIDTH'
     | 'TAB_RECAP_MIN_COLS'
@@ -88,6 +92,7 @@ export interface Settings {
     readonly writerCloseEvidence: CloseEvidence;
     readonly writerAnswer?: JobAnswer;
     readonly recapDebounce: Debounce;
+    readonly pacing: Pacing;
     readonly reconcileEvery: PositiveCount;
     readonly locale: Locale;
     readonly recapLanguage: Text;

@@ -7,7 +7,7 @@ import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 
 export const defaultOn: Mode = 'off';
 
-export type ViewContext = Pick<SlotContext, 'root' | 'version' | 'store' | 'observe' | 'clock' | 'log'>;
+export type ViewContext = Pick<SlotContext, 'root' | 'version' | 'store' | 'observe' | 'clock' | 'log' | 'viewers'>;
 
 const glowFor = async (): Promise<GlowCache> => {
     const processes = await import('node:child_process');
@@ -97,6 +97,7 @@ export const slot = {
         if (started === null) {
             return { stop: (): void => undefined };
         }
+        const detach = context.viewers.attach(started.watching);
         const unsubscribe = cache.onReady(() => {
             started.refresh();
         });
@@ -106,6 +107,7 @@ export const slot = {
             },
             stop: async (): Promise<void> => {
                 unsubscribe();
+                detach();
                 await started.stop('shutdown');
             },
         };

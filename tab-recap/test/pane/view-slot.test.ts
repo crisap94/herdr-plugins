@@ -12,6 +12,7 @@ import * as view from '#src/daemon/slots/view.ts';
 import type { ViewContext } from '#src/daemon/slots/view.ts';
 import { parseRoot } from '#src/daemon/slots.ts';
 import type { Line, Root } from '#src/daemon/slots.ts';
+import { viewersOf } from '#src/daemon/view/viewers.ts';
 import { viewSocketPath } from '#src/wire/paths.ts';
 import { LineSplitter, decodeDaemon, encode } from '#src/wire/view/codec.ts';
 import { PROTOCOL } from '#src/wire/view/protocol.ts';
@@ -37,6 +38,7 @@ const contextOf = (root: Root, store: Store, logs: Line[]): ViewContext => ({
     log: (line: Line): void => {
         logs.push(line);
     },
+    viewers: viewersOf(),
 });
 
 const withConfig = async (dir: string, work: () => Promise<void>): Promise<void> => {

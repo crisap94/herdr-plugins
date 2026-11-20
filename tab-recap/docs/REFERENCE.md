@@ -740,6 +740,12 @@ their turns through the transcript cursor. The settle delay still applies after 
 and, when a window is enabled, the first run of a tab in this process and a changed lane set are forced runs and start at once. The default is `0`
 (off), which keeps the previous timing. Set `5000` through `300000` to use a window; invalid values act as `0`.
 
+`TAB_RECAP_RUN_PACING` chooses when a turn-ended run starts. `turn` (the default) runs when the turn ends, as before. `smart` waits
+until the tab has been quiet for `TAB_RECAP_RUN_QUIET_MS` (default `45000`, accepted `10000` through `600000`), so a burst of
+turns runs once, and it never waits longer than `TAB_RECAP_RUN_MAX_WAIT_MS` (default `1200000`, accepted `60000` through
+`3600000`). A tab that is not on screen (not focused and with no open view) waits the full `TAB_RECAP_RUN_MAX_WAIT_MS` instead of the quiet
+time. Focus and requested refreshes still run at once. Invalid values fall back to the defaults.
+
 Use `tab-recap eval --replay <file> --merge-turns <n>` to group consecutive turns into one writer call and compare its
 result with the existing `--merge-turns 1` report. The replay report names the merge count beside the pipeline.
 

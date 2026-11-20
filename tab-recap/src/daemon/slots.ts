@@ -9,6 +9,7 @@ import type { Observation } from '#src/recap/domain/fold.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
 import type { Clock } from '#src/ports/clock.ts';
+import type { Viewers } from './view/viewers.ts';
 import { brand, type Brand } from '#src/recap/domain/brand.ts';
 
 export type SlotName = 'hooks' | 'view' | 'roll' | 'timing';
@@ -39,6 +40,7 @@ export interface SlotContext {
     readonly statuses: (listener: (event: StatusEvent) => void) => () => void;
     readonly ledger: (listener: (event: LedgerEvent) => void) => () => void;
     readonly clock: Clock;
+    readonly viewers: Viewers;
     readonly setting: (key: SlotKey) => Switch;
     readonly log: (line: Line) => void;
 }

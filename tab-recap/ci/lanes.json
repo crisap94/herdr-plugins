@@ -167,6 +167,7 @@
       "src/recap/domain/ledger-view.ts",
       "src/recap/domain/legacy.ts",
       "src/recap/domain/origin.ts",
+      "src/recap/domain/pacing.ts",
       "src/recap/domain/pane-alert.ts",
       "src/recap/domain/pane-notes.ts",
       "src/recap/domain/perf.ts",

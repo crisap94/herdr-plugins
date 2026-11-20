@@ -24,6 +24,7 @@ import { RECONCILE_EVERY } from '#src/recap/application/ledger-reconcile.ts';
 import { parseRepairMode, repairModeOr } from '#src/recap/application/job-kit/repair.ts';
 import { closeEvidenceOr, DEFAULT_PIPELINE, parseCloseEvidence, pipelineOf } from '#src/recap/domain/pipeline.ts';
 import { debounceOf } from '#src/recap/domain/debounce.ts';
+import { parsePacing, type Pacing } from '#src/recap/domain/pacing.ts';
 import { FULL_WRITER_VIEW, KEEP_NEWEST_RANGE, NEXT_HOURS_RANGE, keepNewestOf, nextHoursOf, prunedWriterView, type PrunedWriterView } from '#src/recap/domain/writer-view.ts';
 import { parseCount, parsePositiveCount, type Count, type PositiveCount } from '#src/recap/domain/count.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
@@ -190,6 +191,8 @@ const screenAgentsFrom = (get: SettingGet): readonly AgentKind[] => screenKindsO
     return parsed.kind === 'ok' ? [parsed.value] : [];
 });
 
+const pacingOf = (get: SettingGet): Pacing => parsePacing(get('TAB_RECAP_RUN_PACING')?.trim().toLowerCase(), numberIn(get('TAB_RECAP_RUN_QUIET_MS'), 10_000, 600_000, true) ?? 45_000, numberIn(get('TAB_RECAP_RUN_MAX_WAIT_MS'), 60_000, 3_600_000, true) ?? 1_200_000);
+
 const reconcileEveryFrom = (get: SettingGet): PositiveCount => positiveOr(parsePositiveCount(Math.max(1, Math.floor(numberIn(get('TAB_RECAP_RECONCILE_EVERY'), POSITIVE.min, POSITIVE.max) ?? RECONCILE_EVERY))), must(parsePositiveCount(RECONCILE_EVERY)));
 
 export function loadSettings(): Settings {
@@ -211,6 +214,7 @@ export function loadSettings(): Settings {
         pipeline: pipelineOf(get('TAB_RECAP_PIPELINE')) ?? DEFAULT_PIPELINE, writerCloseEvidence: closeEvidenceOr(parseCloseEvidence(get('TAB_RECAP_WRITER_CLOSE_EVIDENCE'))),
         ...(get('TAB_RECAP_WRITER_ANSWER')?.trim().toLowerCase() === 'schema' ? { writerAnswer: 'schema' } : {}),
         recapDebounce: debounceOf(get('TAB_RECAP_RUN_DEBOUNCE_MS')),
+        pacing: pacingOf(get),
         reconcileEvery: reconcileEveryFrom(get),
         sizing: sizingFrom(get),
         policy: policyFrom(get, screenAgents),

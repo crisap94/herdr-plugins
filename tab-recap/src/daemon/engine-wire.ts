@@ -12,9 +12,11 @@ import type { Summarizer } from '#src/ports/summarizer.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { CloseEvidence, Pipeline } from '#src/recap/domain/pipeline.ts';
 import type { Debounce } from '#src/recap/domain/debounce.ts';
+import type { Pacing, Shown } from '#src/recap/domain/pacing.ts';
+import { viewersOf, type Viewers } from './view/viewers.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { lanesOf, type Board } from '#src/recap/domain/board.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId, type TabId } from '#src/recap/domain/ids.ts';
 import type { Backends } from './backends.ts';
 import { loadConfig } from './config.ts';
 import { parseLine, parseMessage } from './slots.ts';
@@ -50,6 +52,7 @@ export interface EngineParts {
 export interface WiredEngine {
     readonly engine: Engine;
     readonly recaps: TabRecaps;
+    readonly viewers: Viewers;
 }
 
 async function runCurator(curate: Curate, event: RunEvent, say: EngineLog): Promise<void> {
@@ -66,6 +69,7 @@ function ranRun(curate: Curate, events: EventStream, board: () => Board, event: 
 }
 
 export function wireEngine({ store, backends, transcripts, clock, repos, curate, events, board, ledger, log }: EngineParts): WiredEngine {
+    const viewers = viewersOf();
     const engine = pluginEngine({
         source: { transcripts },
         store: { records: checkedRecords(store.records), ledger: checkedLedger(store.ledger) },
@@ -78,6 +82,8 @@ export function wireEngine({ store, backends, transcripts, clock, repos, curate,
             closeEvidence: (): CloseEvidence => loadConfig().writerCloseEvidence,
             writerView: (): WriterView => loadConfig().writerView,
             debounce: (): Debounce => loadConfig().recapDebounce,
+            pacing: (): Pacing => loadConfig().pacing,
+            visible: (tab: TabId): Shown => (board().focused === tab ? 'shown' : viewers.watching(tab)),
         },
         on: (event): void => {
             if (event.kind === 'recap-written') {
@@ -86,5 +92,5 @@ export function wireEngine({ store, backends, transcripts, clock, repos, curate,
             ledger(event);
         },
     });
-    return { engine, recaps: tabRecaps(engine) };
+    return { engine, recaps: tabRecaps(engine), viewers };
 }
