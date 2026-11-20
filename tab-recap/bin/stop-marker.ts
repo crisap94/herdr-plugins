@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -8,7 +9,7 @@ export const STOP_POLL_MS = 250;
 
 export type Alive = (pid: number) => boolean;
 
-export const processAlive: Alive = (pid) => {
+const running = (pid: number): boolean => {
     try {
         process.kill(pid, 0);
         return true;
@@ -16,6 +17,21 @@ export const processAlive: Alive = (pid) => {
         return false;
     }
 };
+
+export function isDaemonCommand(command: string): boolean {
+    return /daemon[\\/]launch\.mjs/.test(command);
+}
+
+const commandOf = (pid: number): string => {
+    try {
+        return readFileSync(`/proc/${pid}/cmdline`, 'utf8').replaceAll('\0', ' ');
+    } catch {
+        const ps = spawnSync('ps', ['-p', String(pid), '-o', 'args='], { encoding: 'utf8' });
+        return ps.status === 0 ? ps.stdout : '';
+    }
+};
+
+export const processAlive: Alive = (pid) => running(pid) && isDaemonCommand(commandOf(pid));
 
 const markerOf = (root: string): string => join(root, 'daemon.stopping');
 
