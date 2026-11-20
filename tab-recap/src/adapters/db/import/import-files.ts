@@ -1,4 +1,7 @@
 import { knownOr } from '#src/ports/guarded-reads.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { existsSync, mkdirSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import { writeTx } from '../connection.ts';
@@ -34,13 +37,13 @@ export function loadAndCompare(store: Store, legacy: LegacyFiles, now: number): 
     const recaps = legacy.recaps().map(canonicalRecap).filter(holdsAnything);
     const views = legacy.views().map(canonicalView);
     const hidden = legacy.readHidden();
-    const refresh = legacy.pendingRequests();
+    const refresh = legacy.pendingRequests().map((tab) => must(parseText(tab)));
     const visibility = legacy.pendingVisibility();
     const refused = [
-        ...recaps.map((file) => attempt(store.db, `recap ${file.tab}`, () => { writer.recap(file, now); })),
-        ...views.map((file) => attempt(store.db, `view ${file.tab}`, () => { writer.view(file); })),
-        attempt(store.db, 'hidden', () => { if (hidden !== null) { writer.hidden(hidden); } }),
-        attempt(store.db, 'requests', () => { writer.requests(refresh, visibility, now); }),
+        ...recaps.map((file) => attempt(store.db, must(parseText(`recap ${file.tab}`)), () => { writer.recap(file, instant(now)); })),
+        ...views.map((file) => attempt(store.db, must(parseText(`view ${file.tab}`)), () => { writer.view(file); })),
+        attempt(store.db, must(parseText('hidden')), () => { if (hidden !== null) { writer.hidden(hidden); } }),
+        attempt(store.db, must(parseText('requests')), () => { writer.requests(refresh, visibility, instant(now)); }),
     ].flatMap((message) => message ?? []);
     const differences = [
         ...refused,

@@ -14,23 +14,7 @@ import { idOf, typeIdOf } from './typeid.ts';
 
 const SECTION_ORDER = sql.raw("CASE f.section WHEN 'goal' THEN 0 WHEN 'now' THEN 1 WHEN 'needs' THEN 2 WHEN 'done' THEN 3 WHEN 'decisions' THEN 4 WHEN 'next' THEN 5 WHEN 'links' THEN 6 ELSE 7 END");
 
-function parseStatsJson(raw: unknown): unknown {
-    return typeof raw === 'string' ? JSON.parse(raw) : null;
-}
-
-function runRecordOf(row: Record<string, unknown>): RunRecord {
-    return must(parseRunRecord({
-        id: typeIdOf('run', blob(row, 'id')), tab: text(row, 'tab_id'), at: whole(row, 'at'), language: text(row, 'language'),
-        backend: maybeText(row, 'backend'), input: flag(row, 'has_input') ? 'present' : 'absent', gateStats: parseStatsJson(row['gate_stats']),
-    }));
-}
-
-function runEntryOf(row: Record<string, unknown>, prefix: '' | 'state/'): RunEntry {
-    return must(parseRunEntry({
-        key: `${prefix}${text(row, 'task')}/${text(row, 'section')}/${whole(row, 'position')}`, section: text(row, 'section'), text: text(row, 'text'),
-        fact: typeIdOf('fact', blob(row, 'fact')), birth: flag(row, 'born') ? 'born' : 'carried', anchor: maybeText(row, 'anchor'),
-    }));
-}
+type EntryPrefix = '' | 'state/';
 
 export class RunInputStore implements RunInputReader {
     private readonly orm: Orm;
@@ -46,7 +30,11 @@ export class RunInputStore implements RunInputReader {
         return guarded(() => this.orm.all<Record<string, unknown>>(sql`SELECT r.id, c.tab_id, r.at, r.language, r.backend, r.gate_stats, i.run_id IS NOT NULL AS has_input
           FROM run r JOIN chapter c ON c.id = r.chapter_id LEFT JOIN run_input i ON i.run_id = r.id
           WHERE EXISTS (SELECT 1 FROM fact WHERE born_run = r.id) AND (${tab} IS NULL OR c.tab_id = ${tab}) AND r.at >= ${since} AND (${withInput} = 0 OR i.run_id IS NOT NULL)
-          ORDER BY r.id DESC LIMIT ${query.limit}`).map(runRecordOf), []);
+          ORDER BY r.id DESC LIMIT ${query.limit}`).map((row) => must(parseRunRecord({
+            id: typeIdOf('run', blob(row, 'id')), tab: text(row, 'tab_id'), at: whole(row, 'at'), language: text(row, 'language'),
+            backend: maybeText(row, 'backend'), input: flag(row, 'has_input') ? 'present' : 'absent',
+            gateStats: typeof row['gate_stats'] === 'string' ? JSON.parse(row['gate_stats']) : null,
+        }))), []);
     }
 
     document(run: RunId): Text | null {
@@ -61,22 +49,27 @@ export class RunInputStore implements RunInputReader {
         if (id === null) {
             return [];
         }
-        return guarded(() => (mode === 'state'
-            ? this.orm.all<Record<string, unknown>>(sql`SELECT t.key AS task, f.section, f.text, f.id AS fact, f.anchor, f.born_run = ${id} AS born, ROW_NUMBER() OVER (PARTITION BY f.task_id, f.section ORDER BY f.id) - 1 AS position
+        const prefix: EntryPrefix = mode === 'state' ? 'state/' : '';
+        const rows = mode === 'state'
+            ? sql`SELECT t.key AS task, f.section, f.text, f.id AS fact, f.anchor, f.born_run = ${id} AS born, ROW_NUMBER() OVER (PARTITION BY f.task_id, f.section ORDER BY f.id) - 1 AS position
           FROM fact f JOIN task t ON t.id = f.task_id
           WHERE f.tab_id = (SELECT c.tab_id FROM run r JOIN chapter c ON c.id = r.chapter_id WHERE r.id = ${id})
             AND f.born_run <= ${id} AND (f.closed_at IS NULL OR f.closed_at > (SELECT at FROM run WHERE id = ${id}))
-          ORDER BY t.key, ${SECTION_ORDER}, f.id`).map((row) => runEntryOf(row, 'state/'))
-            : this.orm.all<Record<string, unknown>>(sql`SELECT t.key AS task, f.section, f.text, f.id AS fact, f.anchor, f.born_run = ${id} AS born, ROW_NUMBER() OVER (PARTITION BY f.task_id, f.section ORDER BY f.id) - 1 AS position
+          ORDER BY t.key, ${SECTION_ORDER}, f.id`
+            : sql`SELECT t.key AS task, f.section, f.text, f.id AS fact, f.anchor, f.born_run = ${id} AS born, ROW_NUMBER() OVER (PARTITION BY f.task_id, f.section ORDER BY f.id) - 1 AS position
           FROM fact f JOIN task t ON t.id = f.task_id LEFT JOIN run_task rt ON rt.run_id = f.born_run AND rt.task_id = f.task_id
           WHERE f.born_run = ${id}
-          ORDER BY COALESCE(rt.position, 0), ${SECTION_ORDER}, f.id`).map((row) => runEntryOf(row, ''))), []);
+          ORDER BY COALESCE(rt.position, 0), ${SECTION_ORDER}, f.id`;
+        return guarded(() => this.orm.all<Record<string, unknown>>(rows).map((row) => must(parseRunEntry({
+            key: `${prefix}${text(row, 'task')}/${text(row, 'section')}/${whole(row, 'position')}`, section: text(row, 'section'), text: text(row, 'text'),
+            fact: typeIdOf('fact', blob(row, 'fact')), birth: flag(row, 'born') ? 'born' : 'carried', anchor: maybeText(row, 'anchor'),
+        }))), []);
     }
 
     gateCounts(since: Instant | null): readonly GateTally[] {
         return guarded(() => this.orm.select({ at: runs.at, gate_stats: runs.gateStats }).from(runs)
             .where(and(isNotNull(runs.gateStats), gte(runs.at, since ?? instant(0)))).orderBy(desc(runs.id)).all()
-            .map((row) => must(parseGateTally({ at: row.at, stats: parseStatsJson(row.gate_stats) }))), []);
+            .map((row) => must(parseGateTally({ at: row.at, stats: typeof row.gate_stats === 'string' ? JSON.parse(row.gate_stats) : null }))), []);
     }
 
     prune(before: Instant): Count {

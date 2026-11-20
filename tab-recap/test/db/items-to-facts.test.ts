@@ -1,21 +1,27 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { must } from '#src/protocol/result.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { itemsToFacts, NOT_RECORDED, normalised, whyOf } from '#src/adapters/db/import/items-to-facts.ts';
 import type { ImportedItem, ImportedRun } from '#src/adapters/db/import/items-to-facts.ts';
 
-const item = (section: ImportedItem['section'], text: string, position = 0): ImportedItem => ({ section, position, text });
-const run = (name: string, at: number, items: readonly ImportedItem[], good = true): ImportedRun => ({ run: name, at, language: 'en', good, items });
-
+const item = (section: ImportedItem['section'], value: string, position = 0): ImportedItem => ({ section, position: must(parseCount(position)), text: must(parseText(value)) });
+const run = (name: string, at: number, items: readonly ImportedItem[], good = true): ImportedRun => ({ run: Uint8Array.from(Buffer.from(name)), at: instant(at), language: must(parseText('en')), good: good ? 'good' : 'failed', items });
+const name = (bytes: Uint8Array | null | undefined): string | undefined => (bytes === null || bytes === undefined ? undefined : Buffer.from(bytes).toString());
+const norm = (value: string): string => normalised(must(parseText(value)));
+const why = (value: string): string => whyOf(must(parseText(value)));
 test('normalising: lower case, punctuation out, whitespace folded', () => {
-    assert.equal(normalised('  Released 1.10.0,   through CI! '), 'released 1100 through ci');
-    assert.equal(normalised('Released 1100 through CI'), normalised('released 1.10.0 through ci.'));
+    assert.equal(norm('  Released 1.10.0,   through CI! '), 'released 1100 through ci');
+    assert.equal(norm('Released 1100 through CI'), norm('released 1.10.0 through ci.'));
 });
 
 test('one fact, many runs: equal items collapse, first = the first run\'s time, last = the last run that carried it', () => {
     const line = 'Released 1.10.0 through CI';
     const facts = itemsToFacts([run('r3', 30, [item('done', line)]), run('r4', 40, [item('done', `${line}.`)]), run('r9', 90, [item('done', line.toLowerCase()), item('done', 'Wrote the notes', 1)])]);
     const released = facts.find((fact) => fact.text.toLowerCase().startsWith('released'));
-    assert.deepEqual([facts.length, released?.firstAt, released?.lastAt, released?.bornRun, released?.lastRun, released?.closed], [2, 30, 90, 'r3', 'r9', null]);
+    assert.deepEqual([facts.length, released?.firstAt, released?.lastAt, name(released?.bornRun), name(released?.lastRun), released?.closed], [2, 30, 90, 'r3', 'r9', null]);
 });
 
 test('open = the last good run\'s items; everything else is closed as rewritten at the first run that no longer carried it', () => {
@@ -35,7 +41,7 @@ test('a run with an error is not the last good one: its items count for history,
     const facts = itemsToFacts([run('r1', 10, [item('done', 'First thing')]), run('r2', 20, [item('done', 'First thing'), item('done', 'Second thing', 1)], false)]);
     const first = facts.find((fact) => fact.text === 'First thing');
     const second = facts.find((fact) => fact.text === 'Second thing');
-    assert.deepEqual([first?.closed, first?.lastAt, first?.lastRun], [null, 10, 'r1'], 'stamped with the last good run');
+    assert.deepEqual([first?.closed, first?.lastAt, name(first?.lastRun)], [null, 10, 'r1'], 'stamped with the last good run');
     assert.deepEqual([second?.closed?.why, second?.lastAt], ['rewritten', 20], 'only in the run with an error: closed, last seen there');
 });
 
@@ -45,10 +51,10 @@ test('goals: the last good run\'s goal stays open, earlier distinct goals are cl
 });
 
 test('decisions: the why is the part after the first : or —, else the reason clause, else "(not recorded)"; other sections have none', () => {
-    assert.equal(whyOf('Use SQLite: it needs no server'), 'it needs no server');
-    assert.equal(whyOf('Use SQLite — one file to back up'), 'one file to back up');
-    assert.equal(whyOf('Keep the db tab alone because it is not part of this'), 'because it is not part of this');
-    assert.equal(whyOf('Leave the db tab alone'), NOT_RECORDED);
+    assert.equal(why('Use SQLite: it needs no server'), 'it needs no server');
+    assert.equal(why('Use SQLite — one file to back up'), 'one file to back up');
+    assert.equal(why('Keep the db tab alone because it is not part of this'), 'because it is not part of this');
+    assert.equal(why('Leave the db tab alone'), NOT_RECORDED);
     const facts = itemsToFacts([run('r1', 10, [item('decisions', 'Leave the db tab alone'), item('done', 'Because of that, wrote it', 1)])]);
     assert.deepEqual(facts.map((fact) => [fact.section, fact.why]), [['decisions', NOT_RECORDED], ['done', null]]);
 });

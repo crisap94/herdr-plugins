@@ -4,7 +4,11 @@ import type { TabRecap } from '#src/ports/recap-records.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import type { VisibilityRequest } from '#src/ports/requests.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
-import type { FactId, RunId } from '#src/recap/domain/fact.ts';
+import type { FactId } from '#src/recap/domain/fact.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseFactId, parseRunId } from '#src/recap/domain/run-ids.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 import { ColumnVisibilityRepository } from '../column-visibility.ts';
 import { LedgerRows } from '../ledger-rows.ts';
 import { RequestsRepository } from '../requests.ts';
@@ -16,7 +20,7 @@ import { typeIdOf } from '../typeid.ts';
 import { ids } from '../uuid7.ts';
 import { opsOfSections } from './sections-to-ops.ts';
 
-export function attempt(db: Database, name: string, work: () => void): string | null {
+export function attempt(db: Database, name: Text, work: () => void): Text | null {
     db.exec('SAVEPOINT piece');
     try {
         work();
@@ -26,11 +30,11 @@ export function attempt(db: Database, name: string, work: () => void): string | 
         db.exec('ROLLBACK TO piece');
         db.exec('RELEASE piece');
         const said = (error instanceof Error ? error.message : String(error)).replaceAll(/\s+/g, ' ');
-        return `${name}: ${said.slice(0, 160)}`;
+        return must(parseText(`${name}: ${said.slice(0, 160)}`));
     }
 }
 
-const mint = (): FactId => typeIdOf('fact', ids.next()) as FactId;
+const mint = (): FactId => must(parseFactId(typeIdOf('fact', ids.next())));
 
 export class RowsWriter {
     private readonly db: Database;
@@ -55,12 +59,12 @@ export class RowsWriter {
         const facts = { tab: file.tab, at: file.at ?? 0, cause: 'imported', backend: file.backend, language: file.language, costUsd: file.costUsd } as const;
         this.runs.writeTasks(run, facts, tasks.map((task) => ({ id: task.id, name: task.name, lanes: task.lanes, ...(task.sections === null ? { legacy: task.markdown } : {}) })));
         for (const task of tasks) {
-            const ref = { id: typeIdOf('run', run) as RunId, task: { tab: file.tab, key: task.id }, at: facts.at, language: file.language, mint };
+            const ref = { id: must(parseRunId(typeIdOf('run', run))), task: { tab: file.tab, key: task.id }, at: facts.at, language: file.language, mint };
             this.ledger.applyTo(run, ref, task.sections === null ? [] : opsOfSections(task.sections));
         }
     }
 
-    recap(file: TabRecap, now: number): void {
+    recap(file: TabRecap, now: Instant): void {
         const at = file.at ?? now;
         this.tabs.ensure(file.tab, at);
         this.transcripts.attach(file.tab, file.lanes, at);
@@ -81,7 +85,7 @@ export class RowsWriter {
         new ColumnVisibilityRepository(this.db).writeHidden(state);
     }
 
-    requests(refresh: readonly string[], visibility: readonly VisibilityRequest[], now: number): void {
+    requests(refresh: readonly Text[], visibility: readonly VisibilityRequest[], now: Instant): void {
         const queue = new RequestsRepository(this.db, () => now);
         refresh.forEach((tab) => { queue.request(tab); });
         visibility.forEach((asked) => { queue.requestVisibility(asked); });
