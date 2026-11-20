@@ -8,7 +8,7 @@ const TAB = scope('one');
 const MINUTES = 60_000;
 
 const CURATED: Behaviour<CuratedAnswer> = { kind: 'answer', value: { kind: 'curated', text: '{"story":"kept story"}' } };
-const SILENT: Behaviour<CuratedAnswer> = { kind: 'answer', value: { kind: 'curated', text: '{"story":""}' } };
+const SILENT: Behaviour<CuratedAnswer> = { kind: 'answer', value: { kind: 'curated', text: '{"story":null}' } };
 const NO_OPS: Behaviour<WrittenAnswer> = { kind: 'answer', value: { kind: 'written', text: JSON.stringify({ ops: [] }), costUsd: 0 } };
 
 const spoken = (line: string): Behaviour<Chunk> => ({
