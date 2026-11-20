@@ -1,29 +1,13 @@
-import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
+import type { Fact } from '#src/recap/domain/fact.ts';
 import type { Refusal } from '#src/recap/domain/ops.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
+import type { Ledger } from './legacy.ts';
+
+export type { HistoryFact, Ledger } from './legacy.ts';
 
 export interface Applied {
     readonly changed: readonly Fact[];
     readonly refused: readonly Refusal[];
-}
-
-export interface HistoryFact {
-    readonly section: string;
-    readonly text: string;
-    readonly why: string | null;
-    readonly state: 'open' | 'closed';
-    readonly closedWhy: string | null;
-    readonly closedAt: number | null;
-    readonly firstAt: number;
-    readonly lastAt: number;
-}
-
-export interface Ledger {
-    openOf(task: TaskId): readonly Fact[];
-    recentlyClosed(task: TaskId, sinceMs: number): readonly Fact[];
-    allOf(task: TaskId): readonly Fact[];
-    keysOf(tab: string): readonly string[];
-    historyOf(tab: string, pane: string): readonly HistoryFact[];
 }
 
 type Reads = 'openOf' | 'recentlyClosed' | 'keysOf';
