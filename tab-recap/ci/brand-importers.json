@@ -14,6 +14,7 @@
   "src/recap/domain/ids.ts",
   "src/recap/domain/kappa.ts",
   "src/recap/domain/lane-closed.ts",
+  "src/recap/domain/pid.ts",
   "src/recap/domain/probability.ts",
   "src/recap/domain/retention.ts",
   "src/recap/domain/run-ids.ts",
