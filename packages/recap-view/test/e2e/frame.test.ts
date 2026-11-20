@@ -26,6 +26,7 @@ const wording: TextWording = {
     claudeOwn: 'their own words',
     noRecapYet: 'no recap yet',
     noRecapShort: 'no recap',
+    allDoneShort: 'all done',
     recapError: (error) => `error: ${error}`,
     needsYou: (what) => `needs you: ${what}`,
     ago: (amount, unit) => `${amount} ${unit} ago`,

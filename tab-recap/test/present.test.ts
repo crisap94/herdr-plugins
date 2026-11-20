@@ -181,6 +181,13 @@ test('the bar reads its headline from the data: needs you first, then now, then 
     assert.match(bar(withSections({}), en, 'idle'), /no recap yet/);
 });
 
+test('the bar says all done when the recap is written and every fact is done, and no recap yet only when nothing is written', () => {
+    assert.match(bar(withSections({ done: ['Added backoff'] }), en, 'idle'), /all done/);
+    assert.doesNotMatch(bar(withSections({ done: ['Added backoff'] }), en, 'idle'), /no recap yet/);
+    assert.match(bar(withSections({ done: ['agregar reintento'], goal: 'Subir el archivo' }, 'es'), es, 'idle'), /todo hecho/);
+    assert.match(presentBar({ tab: tabOf('idle', null), recap: null, notes: new Map(), warnings: [], now: 0, messages: en }, 70)[0] ?? '', /no recap yet/);
+});
+
 test('a recap stored before the fixed structure is still shown as it was written, headline included', () => {
     const old = { ...blankRecap('w1:t1'), tasks: oneTask('## Goal\n- old\n\n## Waiting on you\n- answer me\n'), at: 0 };
     assert.equal(old.tasks[0]?.sections, null);

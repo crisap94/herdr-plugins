@@ -255,6 +255,7 @@ export interface Catalog {
     readonly claudeOwn: Text;
     readonly noRecapYet: Text;
     readonly noRecapShort: Text;
+    readonly allDoneShort: Text;
     readonly autocompactSettings: AutocompactSettingsMessages;
     readonly git: GitMessages;
     readonly recapError: (error: Text) => Text;
