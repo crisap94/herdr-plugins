@@ -1,26 +1,30 @@
 import type { ClaudeCompact, ClaudeRecord } from '@stateforge-labs/harness-adapters/claude';
 import * as claude from '@stateforge-labs/harness-adapters/claude';
 import type { AgentNote, Chunk, Entry, Mark } from '#src/ports/transcripts.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { namedCall, toolEntry } from '../tool-calls.ts';
+
+export { extractClaude } from './legacy.ts';
 
 const AWAY_SUBTYPE = claude.ClaudeSystemSubtype.enum['away_summary'];
 
 interface Meta {
-    title: string | null;
-    lastPrompt: string | null;
-    claudeRecap: string | null;
+    title: Text | null;
+    lastPrompt: Text | null;
+    claudeRecap: Text | null;
 }
 
-function awayOf(record: ClaudeRecord): string | null {
-    return record.kind === 'system' && record.subtype === AWAY_SUBTYPE ? record.content : null;
+function awayOf(record: ClaudeRecord): Text | null {
+    return record.kind === 'system' && record.subtype === AWAY_SUBTYPE && record.content !== null ? must(parseText(record.content)) : null;
 }
 
-function compactRecapOf(record: ClaudeRecord): string | null {
+function compactRecapOf(record: ClaudeRecord): Text | null {
     if (record.kind !== 'user' || !record['isCompactSummary']) {
         return null;
     }
     const text = record.text.trim();
-    return text === '' ? null : text;
+    return text === '' ? null : must(parseText(text));
 }
 
 function compactedMark(record: ClaudeRecord, compact: ClaudeCompact): Mark {
@@ -36,10 +40,10 @@ function compactedMark(record: ClaudeRecord, compact: ClaudeCompact): Mark {
 
 function noteMeta(record: ClaudeRecord, meta: Meta): void {
     if (record.kind === 'ai-title' && record.title !== '') {
-        meta.title = record.title;
+        meta.title = must(parseText(record.title));
     }
     if (record.kind === 'last-prompt' && record.prompt !== '') {
-        meta.lastPrompt = claude.unwrapPastedContent(record.prompt);
+        meta.lastPrompt = must(parseText(claude.unwrapPastedContent(record.prompt)));
     }
     meta.claudeRecap = awayOf(record) ?? meta.claudeRecap;
 }
@@ -88,7 +92,7 @@ function marksOf(record: ClaudeRecord): Mark[] {
     return claude.compactionFailed(record) ? [{ kind: 'compaction-failed', at: record.at }] : [];
 }
 
-export function extractClaude(lines: readonly string[]): Omit<Chunk, 'kind' | 'position' | 'grew'> {
+export function extractClaudeOf(lines: readonly Text[]): Omit<Chunk, 'kind' | 'position' | 'grew'> {
     const meta: Meta = { title: null, lastPrompt: null, claudeRecap: null };
     const entries: Entry[] = [];
     const notes: AgentNote[] = [];

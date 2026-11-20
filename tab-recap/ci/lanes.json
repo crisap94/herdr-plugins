@@ -838,6 +838,7 @@
       "src/adapters/os/tui.ts",
       "src/adapters/transcripts/claude/context.ts",
       "src/adapters/transcripts/claude/in-flight.ts",
+      "src/adapters/transcripts/claude/legacy.ts",
       "src/adapters/transcripts/claude/rows.ts",
       "src/adapters/transcripts/claude/transcripts.ts",
       "src/adapters/transcripts/codex/context.ts",

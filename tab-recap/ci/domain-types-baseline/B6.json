@@ -168,23 +168,8 @@
     "parameter": 1,
     "return": 1
   },
-  "src/adapters/transcripts/claude/context.ts": {
-    "container": 1
-  },
-  "src/adapters/transcripts/claude/in-flight.ts": {
-    "parameter": 2,
-    "container": 2,
-    "property": 2
-  },
-  "src/adapters/transcripts/claude/rows.ts": {
-    "return": 2,
-    "container": 1,
-    "property": 3
-  },
-  "src/adapters/transcripts/claude/transcripts.ts": {
-    "parameter": 15,
-    "container": 2,
-    "property": 4
+  "src/adapters/transcripts/claude/legacy.ts": {
+    "legacy": 19
   },
   "src/adapters/transcripts/codex/context.ts": {
     "container": 1
