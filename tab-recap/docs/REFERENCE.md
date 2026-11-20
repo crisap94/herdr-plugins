@@ -744,9 +744,12 @@ and, when a window is enabled, the first run of a tab in this process and a chan
 until the tab has been quiet for `TAB_RECAP_RUN_QUIET_MS` (default `45000`, accepted `10000` through `600000`), so a burst of
 turns runs once, and it never waits longer than `TAB_RECAP_RUN_MAX_WAIT_MS` (default `1200000`, accepted `60000` through
 `3600000`). A tab that is not on screen (not focused and with no open view) waits the full `TAB_RECAP_RUN_MAX_WAIT_MS` instead of the quiet
-time. Focus and requested refreshes still run at once. Invalid values fall back to the defaults. A closed lane, a handoff, a
-handoff print from the desktop app, an autocompact check and daemon shutdown run a waiting recap at once (all but the closed
-lane wait for it), and the daemon log says `flushed (<why>)`. `tab-recap handoff --print` runs in its own process and does not reach the daemon's
+time; the daemon log says `deferred (not visible)` once per wait. A turn that ends with an agent waiting on you (a question or
+an approval) runs after the normal 2.5 s settle even when the tab is not on screen, so its NEEDS YOU line is not late. Focus and
+requested refreshes still run at once and read every waiting turn. Invalid values fall back to the defaults. A closed lane, a
+handoff, a handoff print from the desktop app, an autocompact decision that will ask (not one that skips below the minimum) and
+daemon shutdown run a waiting recap at once (all but the closed lane wait for it), and the daemon log says `flushed (<why>)`. At
+startup every followed tab gets a waiting run, so turns a stopped or killed daemon missed are caught up within the max wait. `tab-recap handoff --print` runs in its own process and does not reach the daemon's
 waiting runs, so under `smart` it can print a recap that is up to `TAB_RECAP_RUN_MAX_WAIT_MS` old.
 
 Use `tab-recap eval --replay <file> --merge-turns <n>` to group consecutive turns into one writer call and compare its
