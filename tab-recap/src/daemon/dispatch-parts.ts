@@ -25,7 +25,7 @@ export interface Box {
 export interface DispatchParts {
     readonly fleet: Fleet;
     readonly store: Store;
-    readonly recaps: Pick<TabRecaps, 'turnEnded'>;
+    readonly recaps: Pick<TabRecaps, 'turnEnded' | 'flush'>;
     readonly transcripts: TranscriptRegistry;
     readonly webs: LaneWebs;
     readonly contexts: LaneContexts;

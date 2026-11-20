@@ -2,6 +2,7 @@ import type { Engine, FollowedSession, SessionKey } from '@stateforge-labs/sessi
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
+import type { FlushWhy } from '#src/recap/domain/flush-why.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { followedOf, keyOf, scopeOf } from './engine-adapter.ts';
 
@@ -9,7 +10,7 @@ export interface TabRecaps {
     sync(tab: TabId, lanes: readonly Lane[]): void;
     turnEnded(tab: TabId, lanes: readonly Lane[], cause: RecapCause): void;
     refresh(tab: TabId, lanes: readonly Lane[]): Promise<void>;
-    flush(tab: TabId): Promise<void>;
+    flush(tab: TabId, why?: FlushWhy): Promise<void>;
     flushAll(): Promise<void>;
     history(tab: TabId, lane: Lane): readonly HistoryFact[];
 }
@@ -51,9 +52,9 @@ export function tabRecaps(engine: Engine): TabRecaps {
             const scope = scopeOf(tab);
             return scope === null ? Promise.resolve() : engine.refresh(scope);
         },
-        flush: (tab: TabId): Promise<void> => {
+        flush: (tab: TabId, why?: FlushWhy): Promise<void> => {
             const scope = scopeOf(tab);
-            return scope === null ? Promise.resolve() : engine.flush(scope);
+            return scope === null ? Promise.resolve() : engine.flush(scope, why);
         },
         flushAll: (): Promise<void> => engine.flushAll(),
         history: (tab: TabId, lane: Lane): readonly HistoryFact[] => {

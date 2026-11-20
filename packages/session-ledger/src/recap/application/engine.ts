@@ -1,3 +1,4 @@
+import type { FlushWhy } from '#src/contract/engine.ts';
 import type { Lane, PaneId, TabId } from '#src/recap/domain/lane-shape.ts';
 import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
@@ -40,7 +41,7 @@ export interface Engine {
     history(scope: ScopeId, session: FollowedSession): readonly HistoryFact[];
     restore(scope: ScopeId, session: FollowedSession): RestoreFacts;
     idle(scope: ScopeId): Promise<void>;
-    flush(scope: ScopeId): Promise<void>;
+    flush(scope: ScopeId, why?: FlushWhy): Promise<void>;
     flushAll(): Promise<void>;
 }
 
@@ -74,7 +75,7 @@ export function createEngine(plugs: EnginePlugs): Engine {
         history: (scope, session): readonly HistoryFact[] => store.ledger.historyOf(String(scope), String(heldBy(session))),
         restore: (scope, session): RestoreFacts => restoreFactsOf(store, environment, environment.clock.now(), scope, session),
         idle: (scope): Promise<void> => job.idle(scope),
-        flush: (scope): Promise<void> => job.flush(scope),
+        flush: (scope, why): Promise<void> => job.flush(scope, why),
         flushAll: (): Promise<void> => job.flushAll(),
     };
 }

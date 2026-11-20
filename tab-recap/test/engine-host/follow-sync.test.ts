@@ -9,6 +9,7 @@ import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports
 import { keyOf, pluginEngine, scopeOf, type PluginEnginePlugs } from '#src/engine/engine-adapter.ts';
 import { tabRecaps } from '#src/engine/tab-recaps.ts';
 import { onBeatOf } from '#src/daemon/follow-board.ts';
+import { PACING_TURN } from '#src/recap/domain/pacing.ts';
 import { emptyBoard, type Board } from '#src/recap/domain/board.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
@@ -62,7 +63,7 @@ test('a board with two lanes, published with no turn ended and no refresh, makes
     const engine = pluginEngine(plugs);
     const recaps = tabRecaps(engine);
     let board: Board = emptyBoard();
-    const beat = onBeatOf((): void => undefined, recaps, (): Board => board);
+    const beat = onBeatOf((): void => undefined, recaps, (): Board => board, PACING_TURN);
     const scope = scopeOf(tabId(TAB));
     const key = keyOf(first.pane);
     if (scope === null || key === null) {

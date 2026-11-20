@@ -2,7 +2,6 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
 import { silentClosures } from './fakes/silent-closures.ts';
-import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
@@ -48,7 +47,7 @@ test('a bar is docked with a split below the tab\'s bottom pane — no swap, no 
     const views = {} as TabViews;
     const visibility = {} as ColumnVisibility;
     const dispatch = new Dispatch({
-        columns, views, visibility, recaps: {} as Pick<TabRecaps, 'turnEnded'>, prompts: noPrompts, webs: noWebs, log: noop, board: noBoard,
+        columns, views, visibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() }, prompts: noPrompts, webs: noWebs, log: noop, board: noBoard,
         sizing, feedback: (observation): void => { fed.push(observation); }, ...silentClosures,
     });
     await dispatch.send({ kind: 'open-column', tab: tabId('w1:t1'), shape: 'bar' });
@@ -68,7 +67,7 @@ test('a bar is docked with a split below the tab\'s bottom pane — no swap, no 
 test('a side column still docks on the right edge', async () => {
     const { columns, calls } = fakeColumns();
     const dispatch = new Dispatch({
-        columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: {} as Pick<TabRecaps, 'turnEnded'>, prompts: noPrompts, webs: noWebs, log: noop, board: noBoard,
+        columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() }, prompts: noPrompts, webs: noWebs, log: noop, board: noBoard,
         sizing, feedback: noop, ...silentClosures,
     });
     await dispatch.send({ kind: 'open-column', tab: tabId('w1:t1'), shape: 'side' });

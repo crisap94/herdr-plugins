@@ -38,7 +38,7 @@ export interface LaneDispatchDeps {
     readonly columns: Columns;
     readonly views: TabViews;
     readonly visibility: ColumnVisibility;
-    readonly recaps: Pick<TabRecaps, 'turnEnded'>;
+    readonly recaps: Pick<TabRecaps, 'turnEnded' | 'flush'>;
     readonly prompts: PaneSource<Text>;
     readonly webs: PaneSource<LaneWeb>;
     readonly contexts?: PaneSource<ContextUse>;
@@ -113,6 +113,7 @@ export class LaneDispatch {
                 this.deps.log(must(parseText(`tab ${intent.tab}: column closed ${intent.reopens}x — left closed for a while`)));
                 return;
             case 'lane-closed':
+                void this.deps.recaps.flush(intent.closed.tab, 'closed');
                 this.keep(intent.closed);
                 this.announce(intent.closed);
                 return;

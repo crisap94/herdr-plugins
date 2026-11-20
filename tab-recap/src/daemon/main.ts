@@ -6,7 +6,7 @@ import type { Store } from '#src/adapters/db/database.ts';
 import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
 import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { frontendFor } from '#src/adapters/frontend.ts';
-import type { Frontend } from '#src/ports/frontend.ts';
+import type { FlushTab, Frontend } from '#src/ports/frontend.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
 import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
@@ -69,7 +69,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import type { HandoffRequests } from '#src/recap/domain/handoff-requests.ts';
 import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import { wireWorktrees, type Worktrees } from './worktrees.ts';
-import { ASK_KEEP_MS, CHECKPOINT_EVERY, EVENT_STOP_MS, INTENT_MS, REQUEST_POLL_MS, RESYNC_MS, RETENTION_EVERY } from './timing.ts';
+import { ASK_KEEP_MS, CHECKPOINT_EVERY, EVENT_STOP_MS, FLUSH_STOP_MS, INTENT_MS, REQUEST_POLL_MS, RESYNC_MS, RETENTION_EVERY } from './timing.ts';
 
 type ExitCode = 0 | 1;
 
@@ -139,7 +139,7 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
         },
         onBlind: (blindness: Blindness): void => { log(`blind at ${blindness.at}: ${blindness.saying}`); },
         onUnknownKind: (): void => { },
-        onBeat: onBeatOf((current: Board): void => { worktrees.registry.beat(current); }, recaps, board),
+        onBeat: onBeatOf((current: Board): void => { worktrees.registry.beat(current); }, recaps, board, loadConfig().pacing),
         onStatus: parseStatusPush.bind(undefined, turns),
         onPaneTokens: paneTokensTo(worktrees, answers, exchange),
         sessionIdentity: sessionOfForKind,
@@ -193,7 +193,11 @@ async function boot(root: Directory, pidfile: Pidfile): Promise<Wired | ExitCode
         pidfile.release(process.pid);
         return 1;
     }
-    return wire(root, frontend, frontend.wrap(opened, log));
+    const flushing: { run: FlushTab | null } = { run: null };
+    const flush: FlushTab = (tab, why) => flushing.run === null ? Promise.resolve() : flushing.run(tab, why);
+    const wired = wire(root, frontend, frontend.wrap(opened, log, flush));
+    flushing.run = (tab, why): Promise<void> => wired.recaps.flush(tab, why);
+    return wired;
 }
 
 async function start(): Promise<ExitCode> {
@@ -211,7 +215,7 @@ async function start(): Promise<ExitCode> {
             return;
         }
         stopping = true;
-        void boundedBy(events.daemon('daemon-stopping', codeVersion() ?? 'unknown'), duration(EVENT_STOP_MS)).then(() => shutDown(fleet, informer, log)).then(() => boundedBy(slots?.stop() ?? Promise.resolve(), duration(EVENT_STOP_MS))).finally(() => { store.close(); pidfile.release(process.pid); process.exit(0); });
+        void boundedBy(events.daemon('daemon-stopping', codeVersion() ?? 'unknown'), duration(EVENT_STOP_MS)).then(() => shutDown(fleet, informer, log)).then(() => boundedBy(slots?.stop() ?? Promise.resolve(), duration(EVENT_STOP_MS))).then(() => boundedBy(recaps.flushAll(), duration(FLUSH_STOP_MS))).finally(() => { store.close(); pidfile.release(process.pid); process.exit(0); });
     };
     process.on('SIGTERM', stop).on('SIGINT', stop);
     const restarted = answerRestart({

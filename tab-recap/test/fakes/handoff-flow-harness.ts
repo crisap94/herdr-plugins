@@ -125,6 +125,7 @@ export function harness(over: Partial<FlowWorld> = {}, sender: Pick<HandoffSende
         closed: { closures: { resolve: () => ({ kind: 'absent' }) }, ledger: new MemoryLedger().seed(...world.facts), runs: { runAt: () => null }, closedDays: () => DEFAULT_CLOSED_LANE_DAYS },
         target: { plans: handoffPlans, inFlight, awaiting: async () => { calls.push('awaiting'); return world.awaiting; } },
         claims,
+        flush: (): Promise<void> => Promise.resolve(),
         refresh: async (tab) => {
             calls.push(`refresh ${tab}`);
             world.onRefresh();

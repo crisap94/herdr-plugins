@@ -100,8 +100,8 @@
     "property": 3
   },
   "src/recap/application/recap-job.ts": {
-    "parameter": 6,
-    "return": 5,
+    "parameter": 5,
+    "return": 2,
     "container": 3,
     "property": 9
   },

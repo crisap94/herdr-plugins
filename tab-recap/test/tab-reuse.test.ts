@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 import type { Store } from '#src/adapters/db/database.ts';
 import { reconciliationOf } from '#src/adapters/herdr/json.ts';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
-import type { Engine } from '#src/recap/application/engine.ts';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
@@ -78,7 +77,7 @@ function folded(observations: readonly Observation[]): { readonly board: Board; 
 async function dispatched(store: Store, intents: readonly Intent[]): Promise<readonly string[]> {
     const lines: string[] = [];
     const dispatch = new Dispatch({
-        columns: {} as Columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: {} as Pick<Engine, 'turnEnded'>,
+        columns: {} as Columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() },
         prompts: { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) }, webs: { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) },
         log: (line): void => { lines.push(String(line)); }, board: (): Board => emptyBoard(), sizing: (): Sizing => ({ fraction: 0.3, minCols: 36, maxCols: 64 }), feedback: (): void => undefined,
         ...silentClosures, closures: store.closedLanes, closedDays: (): ClosedLaneDays => closedDaysOf('14'), retirements: store.retention,

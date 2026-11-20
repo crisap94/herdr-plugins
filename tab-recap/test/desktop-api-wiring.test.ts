@@ -45,7 +45,7 @@ test('the desktop frontend starts the API with the store and stops it before the
     const { root, store } = stateStore();
     process.env['TAB_RECAP_STATE'] = root;
     delete process.env['TAB_RECAP_API'];
-    const wrapped = desktopFrontend(DEAD_SOCKET).wrap(store, () => undefined);
+    const wrapped = desktopFrontend(DEAD_SOCKET).wrap(store, () => undefined, () => Promise.resolve());
     const path = join(root, 'gui', 'api.json');
     assert.ok(await appears(path));
     const found = JSON.parse(readFileSync(path, 'utf8'));
@@ -62,7 +62,7 @@ test('TAB_RECAP_API=off starts nothing', async () => {
     const { root, store } = stateStore();
     process.env['TAB_RECAP_STATE'] = root;
     process.env['TAB_RECAP_API'] = 'off';
-    const wrapped = desktopFrontend(DEAD_SOCKET).wrap(store, () => undefined);
+    const wrapped = desktopFrontend(DEAD_SOCKET).wrap(store, () => undefined, () => Promise.resolve());
     await sleep(300);
     assert.equal(existsSync(join(root, 'gui', 'api.json')), false);
     wrapped.close();

@@ -8,6 +8,8 @@ import type { Instant, Text } from './kernel.ts';
 import type { Debounce, Pacing, Pipeline, Shown, WriterView } from './settings.ts';
 import type { LedgerEvent } from './events.ts';
 
+export type FlushWhy = 'requested' | 'shutdown' | 'closed' | 'handoff' | 'handoff print' | 'autocompact';
+
 export interface RestoreFacts {
     readonly open: readonly Fact[];
     readonly closed: readonly Fact[];
@@ -61,7 +63,7 @@ export interface Engine {
     turnEnded(scope: ScopeId, key: SessionKey | null, cause: RecapCause): void;
     sessionStarted(scope: ScopeId, key: SessionKey, now: { readonly session: SessionId | null; readonly cwd: Directory | null }): void;
     refresh(scope: ScopeId): Promise<void>;
-    flush(scope: ScopeId): Promise<void>;
+    flush(scope: ScopeId, why?: FlushWhy): Promise<void>;
     flushAll(): Promise<void>;
     compacted(scope: ScopeId, key: SessionKey): RestoreText;
     history(scope: ScopeId, key: SessionKey): readonly HistoryFact[];

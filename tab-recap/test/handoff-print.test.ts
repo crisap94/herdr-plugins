@@ -81,6 +81,7 @@ function printerWith(spy: Spy, world: World = {}, logged: string[] = []): Printe
         target: { status: async () => world.target ?? UNREACHABLE },
         closedDays: closedLaneDaysOf('14'),
         now: () => NOW,
+        flush: (): Promise<void> => Promise.resolve(),
         log: (line) => { logged.push(line); },
     });
 }

@@ -36,7 +36,7 @@ interface AutocompactParts {
     readonly transcripts: TranscriptRegistry;
     readonly contexts: LaneContexts;
     readonly recent: LaneRecent;
-    readonly recaps: Pick<TabRecaps, 'refresh'>;
+    readonly recaps: Pick<TabRecaps, 'refresh' | 'flush'>;
     readonly informer: Informer;
     readonly decider: () => Decider | null;
     readonly events: LaneEvents;
@@ -53,6 +53,7 @@ export function wireAutocompact(parts: AutocompactParts): Autocompact {
         ledger: store.ledger, boundaries: store.boundaries, compactions: store.compactions, decisions: store.autocompact, requests: store.requests, claims: parts.claims, queue: store.requests,
         hasRecap: (tab) => { const recap = knownOr(store.records.readRecap(tab), null); return recap !== null && hasRecap(recap) ? 'recapped' : 'unrecapped'; },
         refresh: refreshVia(parts.recaps, store.records),
+        flush: (tab, why): Promise<void> => parts.recaps.flush(tab, why),
         lanes: (tab) => lanesOf(parts.informer.current, tabId(tab)), now: () => instant(Date.now()), log: (line) => { parts.log(line); },
     });
 }
