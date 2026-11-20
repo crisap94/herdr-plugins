@@ -5,7 +5,7 @@ import type { CompactStart } from '#src/recap/application/compact-start.ts';
 import type { Done } from '#src/ports/columns.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 
-export const defaultOn: Mode = 'off';
+export const defaultOn: Mode = 'on';
 
 export type ViewContext = Pick<SlotContext, 'root' | 'version' | 'store' | 'observe' | 'clock' | 'log' | 'viewers'>;
 

@@ -4,7 +4,7 @@ export interface StatusTexts { readonly connecting: string; readonly down: strin
 export const DEFAULT_TEXTS: StatusTexts = {
     connecting: 'Connecting to the recap daemon…',
     down: 'The recap daemon is not running.',
-    downHint: 'It starts again with the next herdr session.',
+    downHint: 'Run tab-recap status to see why.',
     mismatch: 'This pane and the recap daemon speak different protocols.',
 };
 export const LIMITS: { readonly lineBytes: 1_048_576 } = { lineBytes: 1_048_576 };

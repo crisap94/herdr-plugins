@@ -83,7 +83,7 @@ command = ["bun", "bin/tab-recap.mjs", "configure"]
 id = "column"
 title = "Recap"
 placement = "split"
-command = ["bun", "src/column/launch.mjs"]
+command = ["bun", "src/pane/launch.mjs"]
 
 [[panes]]
 id = "setup"

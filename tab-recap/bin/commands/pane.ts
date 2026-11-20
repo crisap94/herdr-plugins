@@ -28,7 +28,7 @@ export function paneEnvOf(args: readonly string[], env: NodeJS.ProcessEnv): Node
 }
 
 export function run(args: readonly string[]): number {
-    if (configGetter()('TAB_RECAP_VIEW_SERVER') !== 'on') {
+    if (configGetter()('TAB_RECAP_VIEW_SERVER') === 'off') {
         console.error('tab-recap: 3 — pane: not available');
         return NOT_COVERED;
     }
