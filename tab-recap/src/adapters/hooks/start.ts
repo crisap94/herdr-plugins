@@ -1,4 +1,3 @@
-import { createPreCompacts } from '#src/adapters/hooks/pre-compacts.ts';
 import { createReceiver, type Followed } from '#src/adapters/hooks/receiver.ts';
 import { startHookEndpoint } from '#src/adapters/hooks/endpoint.ts';
 import { createTurnEnds } from '#src/adapters/hooks/turn-ends.ts';
@@ -29,8 +28,8 @@ export async function startHooks(context: SlotContext): Promise<Running> {
         recaps: context.recaps,
         engine: context.engine,
         turnEnds,
-        preCompacts: createPreCompacts(),
-        restoreMode: () => 'off',
+        preCompacts: context.preCompacts,
+        restoreMode: () => (context.setting('TAB_RECAP_HOOKS_RESTORE') === 'off' ? 'off' : 'on'),
         clock: context.clock,
         log: context.log,
     });

@@ -13,6 +13,7 @@ import type { Decider } from '#src/ports/decider.ts';
 import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
+import type { PreCompacts } from '#src/adapters/hooks/pre-compacts.ts';
 import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
@@ -68,6 +69,7 @@ interface CompactionParts {
     readonly typing: CompactionTyping;
     readonly events: LaneEvents;
     readonly claims: LaneClaims;
+    readonly preCompacts: PreCompacts;
     log(line: Text): void;
 }
 
@@ -99,6 +101,7 @@ export function wireCompaction(parts: CompactionParts): Compaction {
         typing: parts.typing,
         events: parts.events,
         claims: parts.claims,
+        restores: parts.preCompacts,
         target: () => loadConfig().compaction.target,
         messages: messagesOf,
     });

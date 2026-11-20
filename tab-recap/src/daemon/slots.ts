@@ -9,11 +9,12 @@ import type { Observation } from '#src/recap/domain/fold.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
 import type { Clock } from '#src/ports/clock.ts';
+import type { PreCompacts } from '#src/adapters/hooks/pre-compacts.ts';
 import type { Viewers } from './view/viewers.ts';
 import { brand, type Brand } from '#src/recap/domain/brand.ts';
 
 export type SlotName = 'hooks' | 'view' | 'roll' | 'timing';
-export type SlotKey = 'TAB_RECAP_HOOKS' | 'TAB_RECAP_VIEW_SERVER' | 'TAB_RECAP_SELF_ROLL' | 'TAB_RECAP_TIMING_EVENTS';
+export type SlotKey = 'TAB_RECAP_HOOKS' | 'TAB_RECAP_HOOKS_RESTORE' | 'TAB_RECAP_VIEW_SERVER' | 'TAB_RECAP_SELF_ROLL' | 'TAB_RECAP_TIMING_EVENTS';
 export type Switch = 'on' | 'off' | 'unset';
 export type Mode = 'on' | 'off';
 export type Root = Brand<string, 'Root'>;
@@ -41,6 +42,7 @@ export interface SlotContext {
     readonly ledger: (listener: (event: LedgerEvent) => void) => () => void;
     readonly clock: Clock;
     readonly viewers: Viewers;
+    readonly preCompacts: PreCompacts;
     readonly setting: (key: SlotKey) => Switch;
     readonly log: (line: Line) => void;
 }

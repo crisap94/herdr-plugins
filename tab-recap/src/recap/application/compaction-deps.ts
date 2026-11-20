@@ -16,7 +16,7 @@ import type { Records } from './compaction-trail.ts';
 import type { LaneEvents } from './lane-events.ts';
 import type { LaneClaims } from './lane-claims.ts';
 import type { RecapRefresh } from './recap-wait.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { PaneId, SessionId } from '#src/recap/domain/ids.ts';
 import type { Duration } from '#src/recap/domain/time.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
@@ -31,6 +31,8 @@ interface CoveragePort { check(brief: string, facts: readonly CoverageFact[]): P
 interface TypingPort { acquire(pane: PaneId): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: PaneId): Promise<void> }
 
 interface LaneWebs { of(pane: PaneId): LaneWeb | null }
+
+export interface RestoreHandoff { offer(session: SessionId, text: Text): void; take(session: SessionId): Text | null }
 
 export interface CompactionDeps {
     readonly compactionPlans: CompactionPlans;
@@ -52,6 +54,7 @@ export interface CompactionDeps {
     readonly typing?: TypingPort;
     readonly events?: LaneEvents;
     readonly claims: LaneClaims;
+    readonly restores?: RestoreHandoff;
     recent(lane: Lane): Promise<readonly Entry[]>;
     marks(lane: Lane): Promise<readonly Mark[]>;
     pause(ms: Duration): Promise<void>;

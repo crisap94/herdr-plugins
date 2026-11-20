@@ -255,6 +255,14 @@ typed once more; Codex's `compacted` row means it compacted (the context before 
 they are read again a moment later. The records are the ones of the session herdr reports for the agent's pane now,
 so a new agent, or one resumed into a new session, is confirmed in its own session.
 
+**One restore per compaction.** When the hook listener is on and `TAB_RECAP_HOOKS_RESTORE` is `on` (the default), a
+Codex compaction that tab-recap types hands its restore message to the SessionStart hook (`source` `compact`) before it
+types `/compact`. Whichever comes first takes the message: the hook returns it to the agent as context, or, once the
+compaction is confirmed, the typed restore sends it. The other then sends nothing, so the agent gets the same text once,
+whatever order the hook and the confirmation arrive in. A Claude compaction, which has no typed restore, and a compaction tab-recap did not type (yours, or the agent's own)
+get the session's open facts from the hook instead. With `TAB_RECAP_HOOKS_RESTORE=off` the hook returns nothing and the
+typed restore is always sent.
+
 **One compaction per lane.** A lane has one compaction at a time, whatever asked for it (you, autocompact, or
 another tool's `compact-req-<tool>` token). A request for a lane that is already queued or compacting joins that
 compaction and starts no second one. The operator's toast says so (`already compacting: this request joins that
@@ -724,7 +732,7 @@ protocol. Token names are `[A-Za-z0-9_-]`, 1 to 32 characters.
 
 ## Configuration reference
 
-Key new with the hooks: `TAB_RECAP_HOOKS` (`on` by default: the daemon's listener for Claude Code and Codex turn-end, session-start and pre-compact calls; `off` starts none). See [Hooks](#hooks). Nothing is written into the agents' settings until `tab-recap hooks install` runs.
+Key new with the hooks: `TAB_RECAP_HOOKS` (`on` by default: the daemon's listener for Claude Code and Codex turn-end, session-start and pre-compact calls; `off` starts none). `TAB_RECAP_HOOKS_RESTORE` (`on` by default: the SessionStart compact hook returns the restore text; `off` leaves it to the typed restore). See [Hooks](#hooks). Nothing is written into the agents' settings until `tab-recap hooks install` runs.
 
 Key new with herdr events: `TAB_RECAP_HERDR_EVENTS` (`off` by default, or `on`: lanes are shared on herdr's event stream as pane tokens, and another tool's `compact-req-<tool>` request is answered in `tab-recap-compact`; see the setting "Herdr events"). Off writes no token and answers no request; the typing leases and `awaiting` tokens of other tools are honoured either way. `TAB_RECAP_HANDOFF_REQUESTS` (`off` by default, or `on`, effective only with herdr events on) lets another tool ask for a handoff of its lane, answered in `tab-recap-handoff` (see "For other tools").
 
