@@ -19,3 +19,4 @@ Context "Session ledger": the engine that reads agent sessions and keeps a writt
 | Imported run | A run brought in from an older store by the host (`cause: 'imported'`, `tab-recap/src/ports/recap-records.ts:40,72`) |
 | Language | The tag a recap is written in |
 | Restore text | The bounded text given back to a session after compaction |
+| Story | The short paragraph kept for a task by the `Stories` plug (`src/contract/engine.ts`) and read back for the task. A curator answer whose story is null keeps the stored story unchanged: the plug's `keep` is called with `story: null` and must leave what it stores as it was. |
