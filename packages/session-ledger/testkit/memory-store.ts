@@ -15,6 +15,7 @@ import {
     type Unknown,
 } from '@stateforge-labs/session-ledger';
 import { emptyRecap, historyOf, sameTask } from './facts.ts';
+import { failure } from './values.ts';
 
 export { factOf } from './facts.ts';
 
@@ -69,7 +70,7 @@ const read = <T>(state: State, which: ReadName, value: () => T): T | Unknown => 
     const left = state.failures.get(which) ?? 0;
     if (left > 0) {
         state.failures.set(which, left - 1);
-        return unknownOf({ why: 'failed', code: 1, detail: `scripted ${which} failure` });
+        return unknownOf(failure(1, `scripted ${which} failure`));
     }
     return value();
 };

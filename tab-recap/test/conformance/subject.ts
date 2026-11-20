@@ -3,9 +3,10 @@ import * as sl from '@stateforge-labs/session-ledger';
 import { createEngineWorld, createMemoryStore, type EngineWorld, type StoreUnderTest, type Subject } from '@stateforge-labs/session-ledger/testkit';
 import { pluginEngine } from '#src/engine/engine-adapter.ts';
 import { legacyPlugsOf } from '@stateforge-labs/session-ledger/unstable/facade/plugs.ts';
+import { historyOf } from '@stateforge-labs/session-ledger/unstable/facade/translate.ts';
 import type { GuardedLedger, GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import { isUnknownRead } from '#src/ports/guarded-reads.ts';
-import type { Unknown } from '#src/ports/unknowable.ts';
+import type { Unknowable, Unknown } from '#src/ports/unknowable.ts';
 import type { RecordedRun } from '#src/ports/recap-records.ts';
 import type { Fact, FactId } from '#src/recap/domain/fact.ts';
 import type { Operation, Refusal } from '#src/recap/domain/ops.ts';
@@ -15,6 +16,8 @@ import { memoryStore } from '#test/db/support.ts';
 const isLedgerFactId = (id: FactId): id is FactId & sl.FactId => id !== '';
 const isPluginFactId = (id: sl.FactId): id is sl.FactId & FactId => id !== '';
 const isPluginText = (text: sl.Text): text is sl.Text & Text => text.length >= 0;
+const isLedgerText = (text: string): text is sl.Text => text.length >= 0;
+const isLedgerExitCode = (code: number): code is sl.ExitCode => Number.isSafeInteger(code);
 
 const bridged = <F, T extends F>(value: F, fits: (value: F) => value is T, what: string): T => {
     if (fits(value)) {
@@ -25,6 +28,17 @@ const bridged = <F, T extends F>(value: F, fits: (value: F) => value is T, what:
 
 const ledgerFactId = (id: FactId): sl.FactId => bridged(id, isLedgerFactId, 'a fact id');
 const pluginFactId = (id: sl.FactId): FactId => bridged(id, isPluginFactId, 'a fact id');
+
+const ledgerUnknowable = (why: Unknowable): sl.Unknowable => {
+    if (why.why === 'not-found') {
+        return { why: 'not-found', what: bridged(why.what, isLedgerText, 'a missing thing') };
+    }
+    return why.why === 'failed' ? { why: 'failed', code: bridged(why.code, isLedgerExitCode, 'an exit code'), detail: why.detail } : why;
+};
+
+const ledgerUnknown = (unknown: Unknown): sl.Unknown => ({ kind: 'unknown', why: ledgerUnknowable(unknown.why) });
+
+const ledgerRead = <T>(read: T | Unknown): T | sl.Unknown => (isUnknownRead(read) ? ledgerUnknown(read) : read);
 
 const ledgerFact = (fact: Fact): sl.Fact => ({ ...fact, id: ledgerFactId(fact.id) });
 const pluginFact = (fact: sl.Fact): Fact => ({ ...fact, id: pluginFactId(fact.id) });
@@ -41,8 +55,8 @@ const pluginRefusal = (refusal: sl.Refusal): Refusal => ({ op: pluginOperation(r
 const pluginRecorded = (run: sl.RecordedRun): RecordedRun => ({ ...run, changed: run.changed.map(pluginFact), refused: run.refused.map(pluginRefusal) });
 
 const ledgerRecords = (records: GuardedRecapRecords): sl.Records => ({
-    readRecap: (scope) => records.readRecap(scope),
-    lastRunOf: (scope) => records.lastRunOf(scope),
+    readRecap: (scope) => ledgerRead(records.readRecap(scope)),
+    lastRunOf: (scope) => ledgerRead(records.lastRunOf(scope)),
     beginRun: (scope, backend, at) => {
         records.beginRun(scope, backend, at);
     },
@@ -57,14 +71,14 @@ const ledgerRecords = (records: GuardedRecapRecords): sl.Records => ({
     },
 });
 
-const ledgerFactsOf = (read: readonly Fact[] | Unknown): readonly sl.Fact[] | sl.Unknown => (isUnknownRead(read) ? read : read.map(ledgerFact));
+const ledgerFactsOf = (read: readonly Fact[] | Unknown): readonly sl.Fact[] | sl.Unknown => (isUnknownRead(read) ? ledgerUnknown(read) : read.map(ledgerFact));
 
 const ledgerFacts = (ledger: GuardedLedger): sl.FactStore => ({
     openOf: (task) => ledgerFactsOf(ledger.openOf(task)),
     recentlyClosed: (task, sinceMs) => ledgerFactsOf(ledger.recentlyClosed(task, sinceMs)),
     allOf: (task) => ledgerFactsOf(ledger.allOf(task)),
-    keysOf: (scope) => ledger.keysOf(scope),
-    historyOf: (scope, key) => ledger.historyOf(scope, key),
+    keysOf: (scope) => ledgerRead(ledger.keysOf(scope)),
+    historyOf: (scope, key) => historyOf(ledger.historyOf(scope, key)),
 });
 
 export const pluginSubject: Subject<EngineWorld, sl.Engine> = {

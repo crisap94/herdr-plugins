@@ -5,13 +5,14 @@ import { factOf } from '../facts.ts';
 import { followed, key, scope, session } from '../ids.ts';
 import type { Behaviour, CuratedAnswer, EngineWorld } from '../world.ts';
 import { addOf, blockedOps, countOf, spoken, writtenOps } from './support.ts';
+import { failure } from '../values.ts';
 
 const TAB = scope('one');
 const TASK = { tab: TAB, key: key('a') };
 const WRITES: readonly string[] = ['beginRun', 'recordRun', 'failRun', 'advance', 'apply'];
 
 const CURATED: Behaviour<CuratedAnswer> = { kind: 'answer', value: { kind: 'curated', text: 'curated story' } };
-const UNKNOWN: Behaviour<CuratedAnswer> = { kind: 'fail', why: { why: 'failed', code: 1, detail: 'scripted curator failure' } };
+const UNKNOWN: Behaviour<CuratedAnswer> = { kind: 'fail', why: failure(1, 'scripted curator failure') };
 const THROWS: Behaviour<CuratedAnswer> = { kind: 'throw', message: 'boom' };
 
 const writesOf = (world: EngineWorld): number => WRITES.reduce((sum, name) => sum + countOf(world, name), 0);

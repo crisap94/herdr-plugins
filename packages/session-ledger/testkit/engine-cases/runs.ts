@@ -4,6 +4,7 @@ import type { Case } from '../run.ts';
 import { followed, key, scope, session } from '../ids.ts';
 import type { Behaviour, EngineWorld, WrittenAnswer } from '../world.ts';
 import { countOf, NO_OPS, recapOf, spoken } from './support.ts';
+import { failure } from '../values.ts';
 
 const TAB = scope('one');
 const OTHER = scope('two');
@@ -14,7 +15,7 @@ const HELD: Behaviour<WrittenAnswer> = {
     after: { kind: 'answer', value: { kind: 'written', text: JSON.stringify({ ops: [] }), costUsd: 0 } },
 };
 
-const FAILED = { why: 'failed' as const, code: 1, detail: 'scripted writer failure' };
+const FAILED = failure(1, 'scripted writer failure');
 
 const runCalls = (world: EngineWorld): readonly string[] => world.store.calls().filter((call) => RUN_CALLS.has(call));
 

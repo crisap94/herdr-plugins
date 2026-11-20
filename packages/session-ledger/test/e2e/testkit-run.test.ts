@@ -8,6 +8,7 @@ import {
     runConformance,
     scope,
     session,
+    text,
     storeCases,
     type Case,
     type Subject,
@@ -125,7 +126,7 @@ test('the identifier constructors return the text they are given and refuse a bl
 
 test('followed fills the unset fields and keeps the ones given', () => {
     assert.deepEqual(followed(key('a')), { key: 'a', harness: 'claude', session: null, cwd: null, title: null });
-    assert.deepEqual(followed(key('a'), { session: session('s1'), title: 'Work' }), {
+    assert.deepEqual(followed(key('a'), { session: session('s1'), title: text('Work') }), {
         key: 'a',
         harness: 'claude',
         session: 's1',

@@ -6,7 +6,7 @@ import { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { CheckedLedger } from '#src/ports/ledger.ts';
 import type { CheckedRecapRecords, RecordedRun, FailedRun, Advance, TabRecap, LastRun } from '#src/ports/recap-records.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
-import { UNREAD, type Transcripts, type Located, type ChunkResult, type PromptResult } from '#src/ports/transcripts.ts';
+import { UNREAD, type Transcripts, type Located, type ChunkResult, type PromptResult, type Position } from '#src/ports/transcripts.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
 import type { Unknown, Unknowable } from '#src/ports/unknowable.ts';
@@ -154,6 +154,11 @@ const pluginSummarizer = (writer: sl.Writer): Summarizer => ({
 const pluginLocated = (located: sl.Located): Located => (located.kind === 'located' ? located : pluginUnknown(located));
 const pluginChunk = (chunk: sl.Chunk | sl.Unknown): ChunkResult => (chunk.kind === 'chunk' ? chunk : pluginUnknown(chunk));
 
+const ledgerPosition = (position: Position): sl.Position => ({
+    cursor: brand<number, 'Cursor'>(position.cursor),
+    tail: position.tail === null ? null : brand<string, 'Text'>(position.tail),
+});
+
 const transcriptsOf = (reader: sl.SessionReader): Transcripts => ({
     agent: reader.harness,
     inFlight: { kind: 'unsupported', why: 'in-flight-unavailable' },
@@ -164,8 +169,8 @@ const transcriptsOf = (reader: sl.SessionReader): Transcripts => ({
         }
         return pluginLocated(await reader.locate(session));
     },
-    read: async (source, was, budget) => pluginChunk(await reader.read(source, was, budget)),
-    carry: (from, to, at) => (reader.carry === undefined || from.kind !== 'located' || to.kind !== 'located' ? Promise.resolve(UNREAD) : reader.carry(from, to, at)),
+    read: async (source, was, budget) => pluginChunk(await reader.read(brand<string, 'SourcePath'>(source), ledgerPosition(was), brand<number, 'Count'>(budget))),
+    carry: (from, to, at) => (reader.carry === undefined || from.kind !== 'located' || to.kind !== 'located' ? Promise.resolve(UNREAD) : reader.carry({ kind: 'located', source: brand<string, 'SourcePath'>(from.source) }, { kind: 'located', source: brand<string, 'SourcePath'>(to.source) }, ledgerPosition(at))),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
 });
 
@@ -196,7 +201,7 @@ const pluginClock = (clock: sl.Clock): Clock => ({ now: () => must(parseInstant(
 const pluginRepo = (result: sl.RepoResult): RepoResult => (result.kind === 'repo' || result.kind === 'no-repo' ? result : pluginUnknown(result));
 
 const pluginRepos = (workplaces: sl.Workplaces): LaneRepo => ({
-    repoOf: async (cwd: string): Promise<RepoResult> => pluginRepo(await workplaces.repoOf(cwd)),
+    repoOf: async (cwd: string): Promise<RepoResult> => pluginRepo(await workplaces.repoOf(brand<string, 'Directory'>(cwd))),
 });
 
 const pluginWriterView = (view: sl.WriterView): WriterView =>
@@ -217,13 +222,13 @@ export const legacyPlugsOf = (plugs: sl.EnginePlugs): FacadePlugs => {
             repos: pluginRepos(plugs.environment.workplaces),
             mint: (): FactId => brand<string, 'FactId'>(plugs.environment.ids.next()),
             log: (line: string) => {
-                plugs.environment.log(line);
+                plugs.environment.log(brand<string, 'Text'>(line));
             },
         },
         settings: {
             language: () => settings.language(),
             writerView: () => pluginWriterView(settings.writerView()),
-            ...(settings.keepInput === undefined ? {} : { keepInput: () => settings.keepInput?.() === true }),
+            ...(settings.keepInput === undefined ? {} : { keepInput: () => settings.keepInput?.() === 'keep' }),
             ...(settings.pipeline === undefined ? {} : { pipeline: () => settings.pipeline?.() ?? 'one' }),
             ...(settings.debounce === undefined ? {} : { debounce: () => pluginDebounce(settings.debounce?.() ?? { kind: 'off' }) }),
             ...(settings.pacing === undefined ? {} : { pacing: () => pluginPacing(settings.pacing?.() ?? { kind: 'turn' }) }),

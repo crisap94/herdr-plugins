@@ -12,7 +12,7 @@ import { followedBy, type FollowedBy } from './followed-by.ts';
 import { legacyPlugsOf, type FacadePlugs, type RestoreHooks } from './plugs.ts';
 import { sessionStarted, type Started } from './session-started.ts';
 import type { Advance, LaneCursor } from '#src/ports/recap-records.ts';
-import { laneOf, tabOf, writtenOf } from './translate.ts';
+import { historyOf, laneOf, tabOf, writtenOf } from './translate.ts';
 
 const NO_RESTORE: RestoreHooks = { bytes: () => undefined, render: () => undefined };
 
@@ -163,7 +163,7 @@ export function engineOver(plugs: FacadePlugs): Engine {
                 plugs.environment.log(`engine-adapter: history skipped, the session was never followed: ${scope} ${key}`);
                 return [];
             }
-            return legacy.history(tab, lane);
+            return historyOf(legacy.history(tab, lane));
         },
         curate: async (scope: ScopeId): Promise<void> => {
             const held = tabOf(scope);

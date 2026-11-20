@@ -6,6 +6,7 @@ import type { Curator } from '#src/contract/models.ts';
 import type { RecapTask } from '#src/contract/records.ts';
 import { curatorInput } from '#src/recap/application/curator-input.ts';
 import { answerTextOf } from '#src/recap/application/recap-shape.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 
 const CURATE_GAP_MS = 5 * 60_000;
@@ -50,9 +51,9 @@ const keep = (round: Round, run: CurationRun, answer: Text): void => {
     const where = `curator ${round.scope} ${round.task.id}`;
     const story = storyIn(answer);
     const applied = round.stories.keep(run, { story, merges: [] });
-    applied.refused.forEach((one) => { environment.log(`${where}: the ledger refused ${one.op.op} — ${one.reason}`); });
+    applied.refused.forEach((one) => { environment.log(brand<string, 'Text'>(`${where}: the ledger refused ${one.op.op} — ${one.reason}`)); });
     if (story === null) {
-        environment.log(`${where}: no paragraph in the answer; the old one stays`);
+        environment.log(brand<string, 'Text'>(`${where}: no paragraph in the answer; the old one stays`));
     }
 };
 
@@ -62,12 +63,12 @@ const ask = async (round: Round, run: CurationRun, document: Text): Promise<void
         const answered = await round.curator.write(document, 'story');
         const text = answered.kind === 'curated' ? parseText(answered.text) : null;
         if (text === null || text.kind === 'err') {
-            round.plugs.environment.log(`${where}: ${round.curator.backend} gave none`);
+            round.plugs.environment.log(brand<string, 'Text'>(`${where}: ${round.curator.backend} gave none`));
             return;
         }
         keep(round, run, text.value);
     } catch (error) {
-        round.plugs.environment.log(`${where}: ${error instanceof Error ? error.message : String(error)}`);
+        round.plugs.environment.log(brand<string, 'Text'>(`${where}: ${error instanceof Error ? error.message : String(error)}`));
     }
 };
 
@@ -91,7 +92,7 @@ const curateTask = async (round: Round, marks: Marks): Promise<void> => {
     const facts = plugs.store.facts.allOf(taskIdOf(round));
     const language = parseText(plugs.settings.language());
     if ('kind' in facts || language.kind === 'err') {
-        plugs.environment.log(`curator ${round.scope} ${round.task.id}: the facts could not be read`);
+        plugs.environment.log(brand<string, 'Text'>(`curator ${round.scope} ${round.task.id}: the facts could not be read`));
         return;
     }
     const task = dueTask(round, marks, facts, now);
@@ -123,7 +124,7 @@ export function curate(plugs: EnginePlugs): (scope: ScopeId) => Promise<void> {
         }
         const recap = plugs.store.records.readRecap(scope);
         if (recap !== null && 'kind' in recap) {
-            plugs.environment.log(`curator ${scope}: the recap could not be read`);
+            plugs.environment.log(brand<string, 'Text'>(`curator ${scope}: the recap could not be read`));
             return;
         }
         for (const task of recap?.tasks ?? []) {

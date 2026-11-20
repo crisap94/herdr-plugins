@@ -1,4 +1,4 @@
-import type { Instant } from './kernel.ts';
+import type { Brand, Count, Instant } from './kernel.ts';
 import type { ScopeId, SessionKey } from './ids.ts';
 import type { RecapCause } from './session.ts';
 import type { Fact, TaskId } from './facts.ts';
@@ -12,11 +12,13 @@ export interface AccomplishmentEstablished {
     readonly fact: Fact;
     readonly at: Instant;
 }
+export type Boundary = Brand<boolean, 'Boundary'>;
+
 export interface RecapWritten {
     readonly kind: 'recap-written';
     readonly scope: ScopeId;
-    readonly turns: number;
-    readonly boundary: boolean;
+    readonly turns: Count;
+    readonly boundary: Boundary;
     readonly cause?: RecapCause;
 }
 export type LedgerEvent = TurnRecorded | AccomplishmentEstablished | RecapWritten;

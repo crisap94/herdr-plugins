@@ -118,12 +118,12 @@ const differencesOf = (copied: Copied, contractText: string, originText: string)
     return want === have ? [] : [`${label}: differs from ${row.origin}\n  main:     ${want}\n  contract: ${have}`];
 };
 
-const RECORD_ROW: Copied = { contract: 'packages/session-ledger/src/contract/records.ts', row: { export: 'Recap', origin: 'packages/session-ledger/src/ports/recap-records.ts', originName: 'TabRecap' } };
+const RECORD_ROW: Copied = { contract: 'packages/session-ledger/src/contract/records.ts', row: { export: 'Recap', origin: 'packages/session-ledger/src/ports/legacy.ts', originName: 'TabRecap' } };
 const SECTION_ROW: Copied = { contract: 'packages/session-ledger/src/contract/facts.ts', row: { export: 'Section', origin: 'packages/session-ledger/src/recap/domain/fact.ts', originConst: 'SECTION_IDS' } };
 
 test('every copied declaration of the contract equals its declaration on main', () => {
     const rows = allRows();
-    assert.ok(rows.some(({ row }) => row.export === 'HistoryFact'));
+    assert.ok(rows.some(({ row }) => row.export === 'Chunk'));
     assert.ok(rows.some(({ row }) => row.export === 'Recap'));
     assert.deepEqual(rows.flatMap((copied) => differencesOf(copied, read(copied.contract), read(copied.row.origin))), []);
 });

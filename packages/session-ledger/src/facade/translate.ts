@@ -1,6 +1,10 @@
 import { parseScopeId, parseSessionKey, parseHarnessKind, parseSessionId as parseLedgerSessionId, parseDirectory as parseLedgerDirectory, type Directory as LedgerDirectory, type HarnessKind, type RestoreText, type ScopeId, type SessionId as LedgerSessionId, type SessionKey } from '#src/contract/ids.ts';
 import type { FollowedSession, RecapCause } from '#src/contract/session.ts';
 import type { RecapWritten } from '#src/contract/events.ts';
+import type { HistoryFact } from '#src/contract/facts.ts';
+import { instant } from '#src/contract/kernel.ts';
+import type { HistoryFact as LegacyHistoryFact } from '#src/ports/ledger.ts';
+import { isClosedWhy, isSection } from '#src/recap/domain/fact.ts';
 import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
@@ -77,9 +81,27 @@ export const followedOf = (lane: Lane): FollowedSession | null => {
         harness,
         session: lane.session === null ? null : valueOf(parseLedgerSessionId(lane.session)),
         cwd: lane.cwd === null ? null : valueOf(parseLedgerDirectory(lane.cwd)),
-        title: lane.title,
+        title: valueOf(parseText(lane.title)),
     };
 };
+
+export const historyOf = (facts: readonly LegacyHistoryFact[]): readonly HistoryFact[] =>
+    facts.flatMap((fact) => {
+        const { section, closedWhy } = fact;
+        if (!isSection(section)) {
+            return [];
+        }
+        return [{
+            section,
+            text: brand<string, 'Text'>(fact.text),
+            why: fact.why === null ? null : brand<string, 'Text'>(fact.why),
+            state: fact.state,
+            closedWhy: closedWhy !== null && isClosedWhy(closedWhy) ? closedWhy : null,
+            closedAt: fact.closedAt === null ? null : instant(fact.closedAt),
+            firstAt: instant(fact.firstAt),
+            lastAt: instant(fact.lastAt),
+        }];
+    });
 
 export const writtenOf = (event: RunEvent): RecapWritten | null => {
     const scope = valueOf(parseScopeId(event.tab));
@@ -87,7 +109,7 @@ export const writtenOf = (event: RunEvent): RecapWritten | null => {
         return null;
     }
     const cause: RecapCause | undefined = RECAP_CAUSES.find((candidate) => candidate === event.cause);
-    return { kind: 'recap-written', scope, turns: event.turns, boundary: event.boundary, ...(cause === undefined ? {} : { cause }) };
+    return { kind: 'recap-written', scope, turns: brand<number, 'Count'>(event.turns), boundary: brand<boolean, 'Boundary'>(event.boundary), ...(cause === undefined ? {} : { cause }) };
 };
 
 const isRestore = (text: Text | RestoreText): text is RestoreText => text.length >= 0;

@@ -4,6 +4,7 @@ import type { Engine } from '@stateforge-labs/session-ledger';
 import { directory, followed, key, scope, session } from '../ids.ts';
 import type { EngineWorld } from '../world.ts';
 import { panesOf } from './support.ts';
+import { text } from '../values.ts';
 
 const TAB = scope('one');
 const OTHER = scope('two');
@@ -40,12 +41,12 @@ export const FOL_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'follow an existing key with a new session id, cwd or title',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1'), cwd: directory('/one'), title: 'one' }));
+            engine.follow(TAB, followed(key('a'), { session: session('s1'), cwd: directory('/one'), title: text('one') }));
             engine.follow(TAB, followed(key('b'), { session: session('s2') }));
-            engine.follow(TAB, followed(key('a'), { session: session('s9'), cwd: directory('/nine'), title: 'nine' }));
+            engine.follow(TAB, followed(key('a'), { session: session('s9'), cwd: directory('/nine'), title: text('nine') }));
             await engine.refresh(TAB);
             assert.deepEqual(world.located(), [
-                followed(key('a'), { session: session('s9'), cwd: directory('/nine'), title: 'nine' }),
+                followed(key('a'), { session: session('s9'), cwd: directory('/nine'), title: text('nine') }),
                 followed(key('b'), { session: session('s2') }),
             ]);
         },

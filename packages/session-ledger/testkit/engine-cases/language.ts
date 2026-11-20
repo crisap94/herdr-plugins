@@ -5,9 +5,10 @@ import { factOf } from '../facts.ts';
 import { followed, key, scope, session } from '../ids.ts';
 import type { Behaviour, EngineWorld, WrittenAnswer } from '../world.ts';
 import { countOf, NO_OPS, quietAt, recapOf, spoken } from './support.ts';
+import { failure } from '../values.ts';
 
 const TAB = scope('one');
-const FAILED = { why: 'failed' as const, code: 1, detail: 'scripted writer failure' };
+const FAILED = failure(1, 'scripted writer failure');
 const WRITE_CALLS = new Set<string>(['beginRun', 'recordRun', 'failRun', 'advance', 'apply']);
 
 const failWriter: Behaviour<WrittenAnswer> = { kind: 'fail', why: FAILED };

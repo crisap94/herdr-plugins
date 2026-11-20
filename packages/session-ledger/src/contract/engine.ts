@@ -4,7 +4,7 @@ import type { Applied, CloseOp, Fact, HistoryFact, TaskId, UpdateOp } from './fa
 import type { FactStore, Records } from './records.ts';
 import type { Curator, Enumerator, Writer } from './models.ts';
 import type { Clock, Ids, Workplaces } from './environment.ts';
-import type { Instant, Text } from './kernel.ts';
+import type { Brand, Instant, Text } from './kernel.ts';
 import type { Debounce, Pacing, Pipeline, Shown, WriterView } from './settings.ts';
 import type { LedgerEvent } from './events.ts';
 
@@ -38,31 +38,70 @@ export interface Stories {
     keep(run: CurationRun, change: StoryChange): Applied;
 }
 
+export type KeepInput = 'keep' | 'drop';
+export type ByteCount = Brand<number, 'ByteCount'>;
+
+export interface SourcePlugs {
+    readonly sessions: SessionSource;
+}
+
+export interface StorePlugs {
+    readonly records: Records;
+    readonly facts: FactStore;
+    readonly stories?: Stories;
+}
+
+export interface ModelPlugs {
+    writer(): Writer;
+    enumerator?(): Enumerator | null;
+    curator?(): Curator | null;
+}
+
+export interface EnvironmentPlugs {
+    readonly clock: Clock;
+    readonly ids: Ids;
+    readonly workplaces: Workplaces;
+    log(line: Text): void;
+}
+
+export interface SettingsPlugs {
+    language(): Text;
+    writerView(): WriterView;
+    keepInput?(): KeepInput;
+    pipeline?(): Pipeline;
+    debounce?(): Debounce;
+    pacing?(): Pacing;
+    visible?(scope: ScopeId): Shown;
+    restoreBytes?(): ByteCount;
+    rubric?(): Text;
+    restoreText?(facts: RestoreFacts): RestoreText;
+}
+
 export interface EnginePlugs {
-    readonly source: { readonly sessions: SessionSource };
-    readonly store: { readonly records: Records; readonly facts: FactStore; readonly stories?: Stories };
-    readonly models: { writer(): Writer; enumerator?(): Enumerator | null; curator?(): Curator | null };
-    readonly environment: { readonly clock: Clock; readonly ids: Ids; readonly workplaces: Workplaces; log(line: string): void };
-    readonly settings: {
-        language(): string;
-        writerView(): WriterView;
-        keepInput?(): boolean;
-        pipeline?(): Pipeline;
-        debounce?(): Debounce;
-        pacing?(): Pacing;
-        visible?(scope: ScopeId): Shown;
-        restoreBytes?(): number;
-        rubric?(): Text;
-        restoreText?(facts: RestoreFacts): RestoreText;
-    };
+    readonly source: SourcePlugs;
+    readonly store: StorePlugs;
+    readonly models: ModelPlugs;
+    readonly environment: EnvironmentPlugs;
+    readonly settings: SettingsPlugs;
     on?(event: LedgerEvent): void;
 }
+
+export interface Following {
+    readonly scope: ScopeId;
+    readonly key: SessionKey;
+}
+
+export interface SessionNow {
+    readonly session: SessionId | null;
+    readonly cwd: Directory | null;
+}
+
 export interface Engine {
     follow(scope: ScopeId, session: FollowedSession): void;
     unfollow(scope: ScopeId, key: SessionKey): void;
-    followedBy(harness: HarnessKind, session: SessionId): { readonly scope: ScopeId; readonly key: SessionKey } | null;
+    followedBy(harness: HarnessKind, session: SessionId): Following | null;
     turnEnded(scope: ScopeId, key: SessionKey | null, cause: RecapCause, attention?: Attention): void;
-    sessionStarted(scope: ScopeId, key: SessionKey, now: { readonly session: SessionId | null; readonly cwd: Directory | null }): void;
+    sessionStarted(scope: ScopeId, key: SessionKey, now: SessionNow): void;
     refresh(scope: ScopeId): Promise<void>;
     flush(scope: ScopeId, why?: FlushWhy): Promise<void>;
     flushAll(): Promise<void>;

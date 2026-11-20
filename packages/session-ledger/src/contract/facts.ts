@@ -1,14 +1,14 @@
-import type { Brand, Text } from './kernel.ts';
+import type { Brand, Instant, Text } from './kernel.ts';
 
 export interface HistoryFact {
-    readonly section: string;
-    readonly text: string;
-    readonly why: string | null;
+    readonly section: Section;
+    readonly text: Text;
+    readonly why: Text | null;
     readonly state: 'open' | 'closed';
-    readonly closedWhy: string | null;
-    readonly closedAt: number | null;
-    readonly firstAt: number;
-    readonly lastAt: number;
+    readonly closedWhy: ClosedWhy | null;
+    readonly closedAt: Instant | null;
+    readonly firstAt: Instant;
+    readonly lastAt: Instant;
 }
 
 export type FactId = Brand<string, 'FactId'>;

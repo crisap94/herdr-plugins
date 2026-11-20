@@ -1129,13 +1129,6 @@
   {
     "class": "contract",
     "file": "src/contract/session.ts",
-    "symbol": "<anonymous>",
-    "field": "source",
-    "reason": "EC 2.2, copied shape: source of the inline object of Located keeps the plain type of Located in tab-recap/src/ports/transcripts.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/session.ts",
     "symbol": "AgentNote",
     "field": "at",
     "reason": "EC 2.2, copied shape: at of AgentNote keeps the plain type of AgentNote in tab-recap/src/ports/transcripts.ts, held equal by gates/copied-shapes/session.json; ENG-5 types it"

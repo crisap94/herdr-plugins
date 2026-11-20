@@ -2,12 +2,15 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { instant, type Fact, type RecapRequest, type RecordedRun, type Unknown } from '@stateforge-labs/session-ledger';
 import {
+    boundary,
+    count,
     createEngineWorld,
     createFakeEngine,
     createMemoryStore,
     directory,
     duration,
     engineCases,
+    failure,
     factOf,
     followed,
     harness,
@@ -16,6 +19,7 @@ import {
     runConformance,
     scope,
     session,
+    text,
     type EngineWorld,
     type FakeEngine,
     type Subject,
@@ -80,13 +84,13 @@ test('refresh and curate resolve at once and every call is recorded in order', a
 
 test('emit hands the event to the captured events', () => {
     const engine: FakeEngine = createFakeEngine();
-    const event = { kind: 'recap-written' as const, scope: scope('tab-1'), turns: 1, boundary: true };
+    const event = { kind: 'recap-written' as const, scope: scope('tab-1'), turns: count(1), boundary: boundary(true) };
     engine.emit(event);
     assert.deepEqual(engine.emitted(), [event]);
 });
 
 test('a scripted writer failure resolves to Unknown and the request is captured', async () => {
-    const world = createEngineWorld({ writer: { kind: 'fail', why: { why: 'failed', code: 2, detail: 'scripted' } } });
+    const world = createEngineWorld({ writer: { kind: 'fail', why: failure(2, 'scripted') } });
     const result = await world.plugs.models.writer().write(request());
     assert.deepEqual(result, { kind: 'unknown', why: { why: 'failed', code: 2, detail: 'scripted' } });
     assert.equal(world.requests().length, 1);
@@ -152,7 +156,7 @@ test('the world hands out a manual clock, counter ids, and captures the log and 
     assert.equal(world.plugs.environment.clock.now(), 7);
     assert.equal(world.plugs.environment.ids.next(), 'id-1');
     assert.equal(world.plugs.environment.ids.next(), 'id-2');
-    world.plugs.environment.log('line');
+    world.plugs.environment.log(text('line'));
     const event = { kind: 'turn-recorded' as const, scope: scope('tab-1'), key: key('a'), at: instant(7) };
     world.plugs.on?.(event);
     assert.deepEqual(world.lines(), ['line']);

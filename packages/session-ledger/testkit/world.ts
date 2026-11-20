@@ -17,6 +17,7 @@ import { createMemoryStore, type MemoryStore } from './memory-store.ts';
 import { gateOf, runnerOf, type Behaviour, type Run } from './behaviour.ts';
 import { curatorOf, type CuratedAnswer } from './scripted-curator.ts';
 import { clockOf, idsOf, sessionsOf, workplacesOf, type LocatedAnswer, type ManualClock, type Probes } from './world-ports.ts';
+import { byteCount, text } from './values.ts';
 
 export type { CuratedAnswer } from './scripted-curator.ts';
 export type { Behaviour, Settled } from './behaviour.ts';
@@ -213,13 +214,13 @@ export function createEngineWorld(options: WorldOptions = {}): EngineWorld {
             },
         },
         settings: {
-            language: () => script.language,
+            language: () => text(script.language),
             writerView: () => ({ kind: 'full' }),
             debounce: () => script.debounce,
             pacing: () => script.pacing,
             visible: () => (script.visible ? 'shown' : 'hidden'),
-            restoreBytes: () => script.restoreBytes,
-            keepInput: () => script.keepInput(),
+            restoreBytes: () => byteCount(script.restoreBytes),
+            keepInput: () => (script.keepInput() ? 'keep' : 'drop'),
         },
         on: (event: LedgerEvent) => {
             emitted.push(event);

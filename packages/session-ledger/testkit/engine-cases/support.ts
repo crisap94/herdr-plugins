@@ -1,6 +1,7 @@
 import { UNREAD, type Chunk, type Entry, type Recap, type ScopeId } from '@stateforge-labs/session-ledger';
 import type { Behaviour, WrittenAnswer } from '../world.ts';
 import type { EngineWorld } from '../world.ts';
+import { cursorAt } from '../values.ts';
 
 export const panesOf = (world: EngineWorld, tab: ScopeId): readonly string[] => {
     const recap = world.store.records.readRecap(tab);
@@ -62,10 +63,10 @@ export const recapOf = (world: EngineWorld, tab: ScopeId): Recap | null => {
 
 export const chunkAt = (cursor: number, over: Partial<Chunk> = {}): Behaviour<Chunk> => ({
     kind: 'answer',
-    value: { kind: 'chunk', entries: [{ role: 'user', text: 'hello' }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor, tail: null }, grew: true, ...over },
+    value: { kind: 'chunk', entries: [{ role: 'user', text: 'hello' }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorAt(cursor), tail: null }, grew: true, ...over },
 });
 
 export const quietAt = (cursor: number): Behaviour<Chunk> => ({
     kind: 'answer',
-    value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor, tail: null }, grew: false },
+    value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorAt(cursor), tail: null }, grew: false },
 });
