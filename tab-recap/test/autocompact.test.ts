@@ -204,3 +204,9 @@ test('dispatch: a read-prompt of a lane that is idle or done tells the settled h
     for (const status of ['idle', 'done', 'working', 'blocked']) await dispatch.send({ kind: 'read-prompt', lane: lane('claude', status) });
     assert.deepEqual(told, ['w1:p1:idle', 'w1:p1:done']);
 });
+
+test('autocompact flushes the lane\'s pending recap before it reads the context and asks the decider', async () => {
+    const w = world();
+    await w.service.consider(lane());
+    assert.deepEqual([w.flushed, w.asked.length], [['w1:t1 autocompact asked 0'], 1]);
+});

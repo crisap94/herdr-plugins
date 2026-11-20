@@ -43,7 +43,7 @@ interface World {
     readonly closedUnreadable?: boolean;
 }
 
-function printerWith(spy: Spy, world: World = {}, logged: string[] = []): PrintedHandoffs {
+function printerWith(spy: Spy, world: World = {}, logged: string[] = [], flushed: string[] = []): PrintedHandoffs {
     const base = depsOf();
     const records: Pick<PrintStore['records'], 'readRecap' | 'lastRunOf'> = {
         readRecap: (): TabRecap => {
@@ -81,7 +81,7 @@ function printerWith(spy: Spy, world: World = {}, logged: string[] = []): Printe
         target: { status: async () => world.target ?? UNREACHABLE },
         closedDays: closedLaneDaysOf('14'),
         now: () => NOW,
-        flush: (): Promise<void> => Promise.resolve(),
+        flush: (tab, why): Promise<void> => { flushed.push(`${String(tab)} ${why} opened ${spy.opened}`); return Promise.resolve(); },
         log: (line) => { logged.push(line); },
     });
 }
@@ -144,4 +144,19 @@ test('print of a closed source whose store cannot be read fails source-unreadabl
 test('print of a lane with no recap run is refused ledger-empty', async () => {
     const result: PrintResult = await printerWith({ opened: 0, closed: 0 }, { lastRun: null }).renderForPrint(request());
     assert.deepEqual(result, { kind: 'refused', reason: 'ledger-empty' });
+});
+
+test('print flushes the pending recap of the live or closed source tab after it opens the store and before it reads', async () => {
+    const flushed: string[] = [];
+    const live = await printerWith({ opened: 0, closed: 0 }, {}, [], flushed).renderForPrint(request());
+    assert.equal(live.kind, 'text');
+    const closed: ClosedLaneIdentity = { tab: tabId('w1:t1'), pane: FROM, closedAt: CLOSED_AT };
+    await printerWith({ opened: 0, closed: 0 }, { closedUnreadable: true }, [], flushed).renderForPrint(request({ closed }));
+    assert.deepEqual(flushed, ['w1:t1 handoff print opened 1', 'w1:t1 handoff print opened 1']);
+});
+
+test('a print refused before the store opens flushes nothing', async () => {
+    const flushed: string[] = [];
+    await printerWith({ opened: 0, closed: 0 }, {}, [], flushed).renderForPrint(request({ to: FROM }));
+    assert.deepEqual(flushed, []);
 });

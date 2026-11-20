@@ -131,3 +131,20 @@ test('the pending plan starts an invisible turn at MAX_WAIT, a visible one by qu
     assert.deepEqual(pacedOf({ ...slot, pending: first }, lanes, 'turn-ended', { pacing: paced, shown: 'shown', now: instant(1380) }).start, { kind: 'at', deadline: 1400 });
     assert.deepEqual([...laneSet(lanes)], lanes.map((lane) => lane.pane));
 });
+
+test('a hidden tab logs one deferral per deferred run, a visible one logs none, and flush and flushAll log why they ran early', async () => {
+    const { world, engine } = setup({ pacing: smart(50, 60_000), visible: false });
+    const said = (tail: string): number => world.lines().filter((line) => line.endsWith(tail)).length;
+    engine.turnEnded(TAB, key('a'), 'turn-ended');
+    engine.turnEnded(TAB, key('a'), 'turn-ended');
+    assert.equal(said('deferred (not visible)'), 1);
+    await engine.flush(TAB, 'handoff');
+    assert.deepEqual([said('flushed (handoff)'), world.located().length], [1, 1]);
+    engine.turnEnded(TAB, key('a'), 'turn-ended');
+    assert.equal(said('deferred (not visible)'), 2);
+    world.setVisible(true);
+    engine.turnEnded(OTHER, key('b'), 'turn-ended');
+    assert.equal(said('deferred (not visible)'), 2);
+    await engine.flushAll();
+    assert.deepEqual([said('flushed (shutdown)'), world.located().length], [2, 3]);
+});

@@ -235,3 +235,16 @@ test('a run abandoned while it waits for the settle hold keeps its claims for th
     assert.deepEqual(h.sent, []);
     assert.equal(h.claims.has(row.pane), true);
 });
+
+test('the flow flushes the source tab\'s pending recap after its checks and before it refreshes or renders', async () => {
+    const h = harness();
+    assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'delivered' });
+    assert.deepEqual(h.flushes, [`${String(TAB)} handoff at 2`]);
+    assert.deepEqual(h.calls.slice(0, 3), ['awaiting', 'flight', `refresh ${String(TAB)}`]);
+});
+
+test('a refused handoff flushes nothing', async () => {
+    const h = harness({ targetStatus: 'working' });
+    assert.equal((await h.flow.run(request())).kind, 'refused');
+    assert.deepEqual(h.flushes, []);
+});

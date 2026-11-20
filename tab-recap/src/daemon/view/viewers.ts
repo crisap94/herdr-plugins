@@ -1,5 +1,6 @@
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { Shown } from '#src/recap/domain/pacing.ts';
+import type { Board } from '#src/recap/domain/board.ts';
 
 export type Watching = (tab: TabId) => Shown;
 
@@ -21,4 +22,8 @@ export function viewersOf(): Viewers {
             };
         },
     };
+}
+
+export function visibleOf(board: () => Board, viewers: Pick<Viewers, 'watching'>): Watching {
+    return (tab: TabId): Shown => (board().focused === tab ? 'shown' : viewers.watching(tab));
 }

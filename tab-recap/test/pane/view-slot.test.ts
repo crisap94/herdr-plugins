@@ -12,7 +12,9 @@ import * as view from '#src/daemon/slots/view.ts';
 import type { ViewContext } from '#src/daemon/slots/view.ts';
 import { parseRoot } from '#src/daemon/slots.ts';
 import type { Line, Root } from '#src/daemon/slots.ts';
-import { viewersOf } from '#src/daemon/view/viewers.ts';
+import { viewersOf, visibleOf } from '#src/daemon/view/viewers.ts';
+import { emptyBoard } from '#src/recap/domain/board.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 import { viewSocketPath } from '#src/wire/paths.ts';
 import { LineSplitter, decodeDaemon, encode } from '#src/wire/view/codec.ts';
 import { PROTOCOL } from '#src/wire/view/protocol.ts';
@@ -146,6 +148,35 @@ test('the view slot makes an existing shared socket folder owner-only before it 
             const running = await view.slot.start(contextOf(parseRoot(root), store, logs));
             assert.equal(statSync(folder).mode & 0o777, 0o700);
             await running.stop();
+        });
+    } finally {
+        store.close();
+        rmSync(root, { recursive: true, force: true });
+    }
+});
+
+test('a tab is visible while it is focused or a view connection shows it, and hidden once the view slot stops', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'view-slot-'));
+    const store = storeOf();
+    const viewers = viewersOf();
+    let focused: ReturnType<typeof tabId> | null = null;
+    const visible = visibleOf(() => ({ ...emptyBoard(), focused }), viewers);
+    try {
+        await withConfig(join(root, 'config'), async (): Promise<void> => {
+            const running = await view.slot.start({ ...contextOf(parseRoot(root), store, []), viewers });
+            assert.deepEqual([visible(tabId('t1')), visible(tabId('t2'))], ['hidden', 'hidden']);
+            focused = tabId('t2');
+            assert.deepEqual([visible(tabId('t1')), visible(tabId('t2'))], ['hidden', 'shown']);
+            const client = createConnection(viewSocketPath(root));
+            await once(client, 'connect');
+            const next = inbox(client);
+            client.write(encode(HELLO));
+            await next((message) => message.t === 'frame');
+            assert.deepEqual([visible(tabId('t1')), visible(tabId('t2'))], ['shown', 'shown']);
+            await running.stop();
+            focused = null;
+            assert.deepEqual([visible(tabId('t1')), visible(tabId('t2'))], ['hidden', 'hidden']);
+            client.destroy();
         });
     } finally {
         store.close();
