@@ -148,6 +148,7 @@ export const spanish: Catalog = {
     database: { newer: (backup) => must(parseText(`la base de datos es más nueva que este plugin — ${backup === null ? 'restaura una copia' : `restaura ${backup}`} o actualiza`)) },
     cli: {
         daemonRunning: (pid) => must(parseText(`el daemon ya está en marcha (pid ${pid})`)),
+        daemonStillStopping: must(parseText('el daemon anterior sigue cerrando sus columnas: no inicio un segundo daemon, vuelve a intentarlo cuando haya terminado')),
         daemonWedged: (pid) => must(parseText(`el daemon ${pid} estaba atascado (sin latido en 3 minutos): detenido, iniciando uno nuevo`)),
         daemonStarted: (pid, log) => must(parseText(`daemon iniciado (pid ${pid}) — registro: ${log}`)),
         offIdle: must(parseText('apagado (no había ningún daemon en marcha)')),

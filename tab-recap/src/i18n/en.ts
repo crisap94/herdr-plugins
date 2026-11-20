@@ -147,6 +147,7 @@ export const english: Catalog = {
     database: { newer: (backup) => must(parseText(`database is newer than this plugin — ${backup === null ? 'restore a backup' : `restore ${backup}`} or upgrade`)) },
     cli: {
         daemonRunning: (pid) => must(parseText(`daemon already running (pid ${pid})`)),
+        daemonStillStopping: must(parseText('the previous daemon is still closing its columns: not starting a second daemon, try again when it has exited')),
         daemonWedged: (pid) => must(parseText(`daemon ${pid} was stuck (no beat for 3 minutes): stopped it, starting a new one`)),
         daemonStarted: (pid, log) => must(parseText(`daemon started (pid ${pid}) — log: ${log}`)),
         offIdle: must(parseText('off (no daemon was running)')),

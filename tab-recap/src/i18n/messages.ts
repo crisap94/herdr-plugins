@@ -212,6 +212,7 @@ export interface KeyBinding {
 
 export interface CliMessages {
     readonly daemonRunning: (pid: number) => Text;
+    readonly daemonStillStopping: Text;
     readonly daemonWedged: (pid: number) => Text;
     readonly daemonStarted: (pid: Text, log: Text) => Text;
     readonly offIdle: Text;

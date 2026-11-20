@@ -1206,6 +1206,7 @@
       "test/protocol-names-check.test.ts",
       "test/protocol-pure.test.ts",
       "test/protocol-vectors.test.ts",
+      "test/stop-marker.test.ts",
       "test/support/bun-env.ts",
       "test/support/bun-test.d.ts",
       "test/support/closure.ts",
