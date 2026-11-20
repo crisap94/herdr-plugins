@@ -184,7 +184,7 @@ async function skipOf(readers: TranscriptRegistry, placed: Lane, kind: Kind): Pr
         config: () => config, awaiting: () => Promise.resolve({ kind: 'clear' }), store, transcripts: readers,
         contexts: { of: () => ({ tokens: 620_000, window: 1_000_000, source: 'observed' }) } as unknown as LaneContexts,
         recent: { of: () => Promise.resolve([]) } as unknown as LaneRecent,
-        recaps: { refresh: (): Promise<void> => Promise.resolve() } satisfies Pick<TabRecaps, 'refresh'>,
+        recaps: { refresh: (): Promise<void> => Promise.resolve(), flush: (): Promise<void> => Promise.resolve() } satisfies Pick<TabRecaps, 'refresh' | 'flush'>,
         informer: { current: emptyBoard() } as unknown as Informer,
         decider: () => decider, events: { lane: () => undefined, inWorkspace: () => undefined },
         claims: new LaneClaims(), log: () => undefined,

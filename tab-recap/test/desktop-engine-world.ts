@@ -41,7 +41,7 @@ export async function startWorld(): Promise<World> {
     delete process.env['TAB_RECAP_API'];
     const opened = openStore(join(root, 'tab-recap.db'));
     if (opened.kind !== 'ready') { throw new Error('store'); }
-    const wrapped = desktopFrontend(DEAD_SOCKET).wrap(opened, () => undefined);
+    const wrapped = desktopFrontend(DEAD_SOCKET).wrap(opened, () => undefined, () => Promise.resolve());
     const path = join(root, 'gui', 'api.json');
     for (let n = 0; n < 100 && !existsSync(path); n += 1) { await sleep(20); }
     const found = JSON.parse(readFileSync(path, 'utf8'));

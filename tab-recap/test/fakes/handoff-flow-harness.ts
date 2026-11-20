@@ -83,6 +83,7 @@ export interface Harness {
     readonly sent: { readonly target: Ready; readonly text: string }[];
     readonly renders: HandoffRenderInput[];
     readonly logs: string[];
+    readonly flushes: string[];
 }
 
 export function harness(over: Partial<FlowWorld> = {}, sender: Pick<HandoffSender, 'send'> | null = null): Harness {
@@ -93,6 +94,7 @@ export function harness(over: Partial<FlowWorld> = {}, sender: Pick<HandoffSende
     const sent: { readonly target: Ready; readonly text: string }[] = [];
     const renders: HandoffRenderInput[] = [];
     const logs: string[] = [];
+    const flushes: string[] = [];
     const targetKey = world.targetKeyKnown ? { session: 'sess-2', cwd: '/other' } : { session: null, cwd: null };
     const lanes = (): readonly Lane[] => [
         laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: world.sourceStatus, session: 'sess-1', cwd: '/repo' }),
@@ -125,6 +127,7 @@ export function harness(over: Partial<FlowWorld> = {}, sender: Pick<HandoffSende
         closed: { closures: { resolve: () => ({ kind: 'absent' }) }, ledger: new MemoryLedger().seed(...world.facts), runs: { runAt: () => null }, closedDays: () => DEFAULT_CLOSED_LANE_DAYS },
         target: { plans: handoffPlans, inFlight, awaiting: async () => { calls.push('awaiting'); return world.awaiting; } },
         claims,
+        flush: (tab, why): Promise<void> => { flushes.push(`${String(tab)} ${why} at ${calls.length}`); return Promise.resolve(); },
         refresh: async (tab) => {
             calls.push(`refresh ${tab}`);
             world.onRefresh();
@@ -146,7 +149,7 @@ export function harness(over: Partial<FlowWorld> = {}, sender: Pick<HandoffSende
         now: () => NOW,
         log: (line) => { logs.push(line); },
     };
-    return { flow: new HandoffFlow(deps), world, claims, calls, pauses, sent, renders, logs };
+    return { flow: new HandoffFlow(deps), world, claims, calls, pauses, sent, renders, logs, flushes };
 }
 
 export function request(over: Partial<HandoffRequestRow> = {}): HandoffRequestRow {

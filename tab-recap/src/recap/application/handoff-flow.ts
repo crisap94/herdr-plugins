@@ -33,6 +33,7 @@ export interface HandoffFlowDeps {
     readonly target: Omit<TargetDeps, 'lanes'>;
     readonly claims: Pick<LaneClaims, 'has' | 'claimAll' | 'release'>;
     readonly refresh: (tab: string, lanes: readonly Lane[]) => Promise<RefreshStatus>;
+    readonly flush: (tab: TabId, why: 'handoff') => Promise<void>;
     readonly render: HandoffRender;
     readonly sender: Pick<HandoffSender, 'send'>;
     readonly pause: (ms: number) => Promise<void>;
@@ -77,6 +78,7 @@ export class HandoffFlow {
         if (early.kind !== 'ready') {
             return unrendered(early);
         }
+        await this.deps.flush(request.tab, 'handoff');
         const refresh = request.refreshFirst ? await this.refreshed(request.tab) : 'not-requested';
         const rendered = await this.rendered(request, refresh);
         if (rendered.kind !== 'text') {

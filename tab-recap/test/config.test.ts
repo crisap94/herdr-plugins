@@ -224,3 +224,29 @@ test('recapLanguageSource: the settings file, then the environment, then the sys
         rmSync(dir, { recursive: true });
     }
 });
+
+test('TAB_RECAP_RUN_PACING: turn by default; smart takes the quiet and max wait in ms, and anything else falls back to turn or the defaults', () => {
+    const keys = ['HERDR_PLUGIN_CONFIG_DIR', 'TAB_RECAP_RUN_PACING', 'TAB_RECAP_RUN_QUIET_MS', 'TAB_RECAP_RUN_MAX_WAIT_MS'] as const;
+    const saved = keys.map((key) => process.env[key]);
+    const dir = mkdtempSync(join(tmpdir(), 'recap-config-'));
+    try {
+        process.env['HERDR_PLUGIN_CONFIG_DIR'] = dir;
+        for (const key of keys.slice(1)) delete process.env[key];
+        assert.deepEqual(loadConfig().pacing, { kind: 'turn' });
+        process.env['TAB_RECAP_RUN_PACING'] = ' Smart ';
+        assert.deepEqual(loadConfig().pacing, { kind: 'smart', quiet: 45000, maxWait: 1200000 });
+        process.env['TAB_RECAP_RUN_QUIET_MS'] = '20000';
+        process.env['TAB_RECAP_RUN_MAX_WAIT_MS'] = '90000';
+        assert.deepEqual(loadConfig().pacing, { kind: 'smart', quiet: 20000, maxWait: 90000 });
+        for (const [quiet, maxWait, expected] of [['9999', '90000', { quiet: 45000, maxWait: 90000 }], ['600001', '90000', { quiet: 45000, maxWait: 90000 }], ['20000', '59999', { quiet: 20000, maxWait: 1200000 }], ['soon', 'soon', { quiet: 45000, maxWait: 1200000 }]] as const) {
+            process.env['TAB_RECAP_RUN_QUIET_MS'] = quiet;
+            process.env['TAB_RECAP_RUN_MAX_WAIT_MS'] = maxWait;
+            assert.deepEqual(loadConfig().pacing, { kind: 'smart', ...expected }, `${quiet} ${maxWait}`);
+        }
+        process.env['TAB_RECAP_RUN_PACING'] = 'hurry';
+        assert.deepEqual(loadConfig().pacing, { kind: 'turn' });
+    } finally {
+        keys.forEach((key, at) => { const value = saved[at]; if (value === undefined) { delete process.env[key]; } else { process.env[key] = value; } });
+        rmSync(dir, { recursive: true, force: true });
+    }
+});

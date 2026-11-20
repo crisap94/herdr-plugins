@@ -227,7 +227,7 @@ export interface HandoffWiring {
     readonly transcripts: TranscriptRegistry;
     readonly repos: LaneRepo;
     readonly claims: LaneClaims;
-    readonly recaps: Pick<TabRecaps, 'refresh'>;
+    readonly recaps: Pick<TabRecaps, 'refresh' | 'flush'>;
     readonly board: () => Board;
     readonly mirror: HandoffMirror;
     readonly pause: (span: Duration) => Promise<void>;
@@ -256,7 +256,7 @@ export function wireHandoffs(parts: HandoffWiring): HandoffRunner {
         lanes: (): readonly Lane[] => [...board().lanes.values()], records: store.records, ledger: store.ledger,
         closed: { closures: store.closedLanes, ledger: store.ledger, runs: store.closedLanes, closedDays: (): ClosedLaneDays => store.closedDays },
         target: { plans: handoffPlans, inFlight: new TranscriptInFlight(transcripts), awaiting: awaitingNow },
-        claims, refresh: refreshVia(recaps, store.records),
+        claims, refresh: refreshVia(recaps, store.records), flush: (tab, why): Promise<void> => recaps.flush(tab, why),
         render: renderHandoff({
             records: store.records,
             transcripts,

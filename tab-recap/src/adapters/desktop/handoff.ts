@@ -1,6 +1,7 @@
 import { loadConfig, stateDir } from '#src/daemon/config.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
 import type { HandoffPrinter } from '#src/ports/handoff-print.ts';
+import type { FlushTab } from '#src/ports/frontend.ts';
 import { EditCounts } from '#src/recap/application/edit-counts.ts';
 import { PrintedHandoffs } from '#src/recap/application/handoff-print.ts';
 import { databasePath } from '../db/database.ts';
@@ -10,7 +11,7 @@ import { GitWorksiteReader } from '../git/worksite.ts';
 import { SystemClock } from '../os/system-clock.ts';
 import { modalTranscriptRegistry } from '../transcripts/registry.ts';
 
-export function desktopPrinter(fleet: Pick<Fleet, 'read' | 'agents'>): HandoffPrinter {
+export function desktopPrinter(fleet: Pick<Fleet, 'read' | 'agents'>, flush: FlushTab): HandoffPrinter {
     const transcripts = modalTranscriptRegistry();
     return new PrintedHandoffs({
         openStore: () => openPrintStore(databasePath(stateDir()), loadConfig().closedLaneDays),
@@ -20,6 +21,7 @@ export function desktopPrinter(fleet: Pick<Fleet, 'read' | 'agents'>): HandoffPr
         target: fleet.agents(),
         closedDays: loadConfig().closedLaneDays,
         now: Date.now,
+        flush,
         log: (): void => undefined,
     });
 }

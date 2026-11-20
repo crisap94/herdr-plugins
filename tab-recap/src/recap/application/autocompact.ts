@@ -23,14 +23,12 @@ import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { autocompactState } from './autocompact-state.ts';
 import { QUESTIONS } from './autocompact-questions.ts';
-import { busyOf, detailOf, flightTextOf, recheckDue, unchangedOf } from './autocompact-gates.ts';
-import type { CeilingReach, Recheck } from './autocompact-gates.ts';
+import { busyOf, detailOf, flightTextOf, recheckDue, unchangedOf, type CeilingReach, type Recheck } from './autocompact-gates.ts';
 import { lineOf, moneyOf, type Effect } from './autocompact-line.ts';
 import { flightOf, flightReason, holdsLane, NOT_AWAITING, NOTHING_IN_FLIGHT, awaitedNames, unreadable, type Flight, type Observed } from '#src/recap/domain/in-flight.ts';
 import { continuationNote, type ContinuationNote } from '#src/recap/domain/continuation-note.ts';
 import type { LaneEvents } from './lane-events.ts';
-import { busyDetailOf, idleMsOf, policyForLane, reachOf } from './autocompact-shapes.ts';
-import type { Asking, CoverageHold, DeciderHealth, Marks, Stop } from './autocompact-shapes.ts';
+import { busyDetailOf, idleMsOf, policyForLane, reachOf, type Asking, type CoverageHold, type DeciderHealth, type Marks, type Stop } from './autocompact-shapes.ts';
 
 type RecapState = 'recapped' | 'unrecapped';
 
@@ -71,6 +69,7 @@ export interface AutocompactDeps {
     readonly queue: CompactionQueue;
     hasRecap(tab: TabId): RecapState;
     refresh: RecapRefresh;
+    flush(tab: TabId, why: 'autocompact'): Promise<void>;
     lanes(tab: TabId): readonly Lane[];
     now(): Instant;
     log(line: Text): void;
@@ -210,6 +209,7 @@ export class Autocompact {
         if (policy === null) return;
         const tuning = this.tuning();
         const { tab, pane } = lane;
+        await deps.flush(tab, 'autocompact');
         const use = deps.contexts.of(pane);
         if (use === null) { this.skip(lane, 'no-context', null, NO_CONTEXT); return; }
         const { gate, effect, detail, flight, atCeiling } = await this.gated(lane, policy, use, tuning);

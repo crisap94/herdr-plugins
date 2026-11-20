@@ -67,7 +67,7 @@ async function decisionUnder(keys: Readonly<Record<string, string>>, closes: num
         transcripts: registryWith({ [transcripts.agent]: transcripts }),
         contexts: { of: () => ({ tokens: 620_000, window: 1_000_000, source: 'observed' }) } as unknown as LaneContexts,
         recent: { of: () => Promise.resolve([]) } as unknown as LaneRecent,
-        recaps: { refresh: (): Promise<void> => Promise.resolve() } satisfies Pick<TabRecaps, 'refresh'>,
+        recaps: { refresh: (): Promise<void> => Promise.resolve(), flush: (): Promise<void> => Promise.resolve() } satisfies Pick<TabRecaps, 'refresh' | 'flush'>,
         informer: { current: emptyBoard() } as unknown as Informer,
         decider: () => decider,
         events: { lane: () => undefined, inWorkspace: () => undefined },
@@ -94,7 +94,7 @@ test('the daemon wiring reads the safe key: warnings of 0.42 wait under eager\'s
             config: () => configOf(keys), awaiting: () => Promise.resolve({ kind: 'clear' }), store, claims: new LaneClaims(),
             transcripts: registryWith({ claude: inertTranscripts() }),
             contexts: { of: () => ({ tokens: 620_000, window: 1_000_000, source: 'observed' }) } as unknown as LaneContexts,
-            recent: { of: () => Promise.resolve([]) } as unknown as LaneRecent, recaps: { refresh: (): Promise<void> => Promise.resolve() } satisfies Pick<TabRecaps, 'refresh'>,
+            recent: { of: () => Promise.resolve([]) } as unknown as LaneRecent, recaps: { refresh: (): Promise<void> => Promise.resolve(), flush: (): Promise<void> => Promise.resolve() } satisfies Pick<TabRecaps, 'refresh' | 'flush'>,
             informer: { current: emptyBoard() } as unknown as Informer, decider: () => decider,
             events: { lane: () => undefined, inWorkspace: () => undefined }, log: () => undefined,
         });

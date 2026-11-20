@@ -50,6 +50,7 @@ import type { ClaudePolicyAck } from '#src/recap/domain/claude-policy-ack.ts';
 import type { RepairMode } from '#src/recap/application/job-kit/repair.ts';
 import type { CloseEvidence, Pipeline } from '#src/recap/domain/pipeline.ts';
 import type { Debounce } from '#src/recap/domain/debounce.ts';
+import type { Pacing } from '#src/recap/domain/pacing.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
 import type { Text } from '#src/recap/domain/text.ts';
@@ -70,6 +71,7 @@ export interface Config {
     readonly writerCloseEvidence: CloseEvidence;
     readonly writerAnswer?: JobAnswer;
     readonly recapDebounce: Debounce;
+    readonly pacing: Pacing;
     readonly reconcileEvery: number;
     readonly locale: Locale;
     readonly recapLanguage: string;

@@ -9,6 +9,8 @@ import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports
 import { keyOf, pluginEngine, scopeOf, type PluginEnginePlugs } from '#src/engine/engine-adapter.ts';
 import { tabRecaps } from '#src/engine/tab-recaps.ts';
 import { onBeatOf } from '#src/daemon/follow-board.ts';
+import { PACING_TURN, type Pacing } from '#src/recap/domain/pacing.ts';
+import { createFakeEngine, duration } from '@stateforge-labs/session-ledger/testkit';
 import { emptyBoard, type Board } from '#src/recap/domain/board.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
@@ -62,7 +64,7 @@ test('a board with two lanes, published with no turn ended and no refresh, makes
     const engine = pluginEngine(plugs);
     const recaps = tabRecaps(engine);
     let board: Board = emptyBoard();
-    const beat = onBeatOf((): void => undefined, recaps, (): Board => board);
+    const beat = onBeatOf((): void => undefined, recaps, (): Board => board, PACING_TURN);
     const scope = scopeOf(tabId(TAB));
     const key = keyOf(first.pane);
     if (scope === null || key === null) {
@@ -81,4 +83,24 @@ test('a board with two lanes, published with no turn ended and no refresh, makes
     engine.compacted(scope, key);
     await settled();
     assert.equal(located.length, before);
+});
+
+function beatsUnder(pacing: Pacing): readonly string[] {
+    const engine = createFakeEngine();
+    let board: Board = emptyBoard();
+    const beat = onBeatOf((): void => undefined, tabRecaps(engine), (): Board => board, pacing);
+    beat();
+    board = boardWith(lanes);
+    beat();
+    board = boardWith(lanes.slice(0, 1));
+    beat();
+    board = boardWith(lanes);
+    beat();
+    return engine.calls();
+}
+
+test('under smart pacing the first beat with lanes ends a turn on every tab, which also follows its sessions, and later beats only follow; under turn pacing no beat ends a turn', () => {
+    const smart: Pacing = { kind: 'smart', quiet: duration(45_000), maxWait: duration(1_200_000) };
+    assert.deepEqual(beatsUnder(smart), ['follow', 'follow', 'turnEnded', 'unfollow', 'unfollow', 'follow', 'unfollow', 'follow', 'follow']);
+    assert.deepEqual(beatsUnder(PACING_TURN), ['follow', 'follow', 'unfollow', 'unfollow', 'follow', 'unfollow', 'follow', 'follow']);
 });

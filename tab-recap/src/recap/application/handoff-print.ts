@@ -39,6 +39,7 @@ interface TargetStatus {
 
 export interface PrintDeps {
     readonly openStore: () => PrintStore;
+    readonly flush: (tab: TabId, why: 'handoff print') => Promise<void>;
     readonly transcripts: TranscriptRegistry;
     readonly worksite: WorksiteDeps;
     readonly tokens: PaneTokens;
@@ -100,13 +101,15 @@ export class PrintedHandoffs implements HandoffPrinter {
             return refusedWith('source-unavailable');
         }
         const tabRef = tabId(tab);
+        await this.deps.flush(tabRef, 'handoff print');
         const lanes = store.views.readTab(tab)?.lanes ?? [];
         const sourceLanes: readonly SourceLane[] = lanes.map((lane) => ({ tab: tabRef, pane: paneId(lane.pane) }));
         const found = resolveSource('live', { tab: tabRef, pane: request.from }, { lanes: sourceLanes, records: store.records, ledger: store.ledger, now: this.deps.now() });
         return this.outcome(store, request, found, { tab: tabRef, lanes });
     }
 
-    private closed(store: PrintStore, request: PrintRequest, identity: ClosedLaneIdentity): Promise<PrintResult> {
+    private async closed(store: PrintStore, request: PrintRequest, identity: ClosedLaneIdentity): Promise<PrintResult> {
+        await this.deps.flush(identity.tab, 'handoff print');
         const deps = { closures: store.closures, ledger: store.ledger, runs: store.closures, closedDays: this.deps.closedDays, now: instant(this.deps.now()) };
         return this.outcome(store, request, resolveSource('closed', identity, deps), null);
     }

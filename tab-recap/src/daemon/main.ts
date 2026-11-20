@@ -6,7 +6,7 @@ import type { Store } from '#src/adapters/db/database.ts';
 import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
 import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { frontendFor } from '#src/adapters/frontend.ts';
-import type { Frontend } from '#src/ports/frontend.ts';
+import type { FlushTab, Frontend } from '#src/ports/frontend.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
 import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
@@ -32,6 +32,7 @@ import { tabId } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { wireEngine } from './engine-wire.ts';
+import type { Viewers } from './view/viewers.ts';
 import { onBeatOf } from './follow-board.ts';
 import type { Engine, LedgerEvent } from '@stateforge-labs/session-ledger';
 import type { Clock } from '#src/ports/clock.ts';
@@ -68,7 +69,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import type { HandoffRequests } from '#src/recap/domain/handoff-requests.ts';
 import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import { wireWorktrees, type Worktrees } from './worktrees.ts';
-import { ASK_KEEP_MS, CHECKPOINT_EVERY, EVENT_STOP_MS, INTENT_MS, REQUEST_POLL_MS, RESYNC_MS, RETENTION_EVERY } from './timing.ts';
+import { ASK_KEEP_MS, CHECKPOINT_EVERY, EVENT_STOP_MS, FLUSH_STOP_MS, INTENT_MS, REQUEST_POLL_MS, RESYNC_MS, RETENTION_EVERY } from './timing.ts';
 
 type ExitCode = 0 | 1;
 
@@ -84,6 +85,7 @@ const ledgerTaps = taps<LedgerEvent>(log);
 
 interface Wired {
     readonly informer: Informer;
+    readonly viewers: Viewers;
     readonly fleet: Fleet;
     readonly backends: Backends;
     readonly store: Store;
@@ -115,7 +117,7 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
     const curate = wireCurate({ store, curator: () => backends.curator(), transcripts, log });
     const box: Box = { informer: null, autocompact: null };
     const board = (): Board => box.informer?.current ?? emptyBoard();
-    const { engine, recaps } = wireEngine({ store, backends, transcripts, clock, repos, curate, events, board, ledger: ledgerTaps.emit, log });
+    const { engine, recaps, viewers } = wireEngine({ store, backends, transcripts, clock, repos, curate, events, board, ledger: ledgerTaps.emit, log });
     const worktrees = wireWorktrees(store, log);
     const answers = new CompactRequests({ enabled: herdrEventsOn, board, requests: store.requests, asks: store.asks, tokens: fleet, now: nowInstant, log });
     const exchange = handoffExchangeOf({ store, tokens: fleet, events, board, sharing: (): HerdrEvents => loadConfig().herdrEvents, requests: handoffRequestsOn, log });
@@ -137,7 +139,7 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
         },
         onBlind: (blindness: Blindness): void => { log(`blind at ${blindness.at}: ${blindness.saying}`); },
         onUnknownKind: (): void => { },
-        onBeat: onBeatOf((current: Board): void => { worktrees.registry.beat(current); }, recaps, board),
+        onBeat: onBeatOf((current: Board): void => { worktrees.registry.beat(current); }, recaps, board, loadConfig().pacing),
         onStatus: parseStatusPush.bind(undefined, turns),
         onPaneTokens: paneTokensTo(worktrees, answers, exchange),
         sessionIdentity: sessionOfForKind,
@@ -151,7 +153,7 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
         briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact, checkedBriefs: store.autocompactBriefs, answers, asks: store.asks, events, claims,
         typing: new TypingLease({ tokens: fleet, panes: fleet, now: nowInstant, pause: sleep, log }),
     });
-    return { informer, fleet, backends, store, engine, recaps, transcripts, clock, statuses: statusTaps.tap, ledger: ledgerTaps.tap, compaction, retention: new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: () => loadSettings().keepInputDays, briefRetention: (): BriefRetention => loadConfig().keepBrief, log }), curate, sweep: new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log }), laneTokens, answers, events, worktrees, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror: exchange.mirror, pause: sleep, log: write }) };
+    return { informer, fleet, backends, store, engine, recaps, transcripts, clock, viewers, statuses: statusTaps.tap, ledger: ledgerTaps.tap, compaction, retention: new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: () => loadSettings().keepInputDays, briefRetention: (): BriefRetention => loadConfig().keepBrief, log }), curate, sweep: new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log }), laneTokens, answers, events, worktrees, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror: exchange.mirror, pause: sleep, log: write }) };
 }
 
 function versionOf(): Version | null { const version = codeVersion(); return version === null ? null : parseVersion(version); }
@@ -191,7 +193,11 @@ async function boot(root: Directory, pidfile: Pidfile): Promise<Wired | ExitCode
         pidfile.release(process.pid);
         return 1;
     }
-    return wire(root, frontend, frontend.wrap(opened, log));
+    const flushing: { run: FlushTab | null } = { run: null };
+    const flush: FlushTab = (tab, why) => flushing.run === null ? Promise.resolve() : flushing.run(tab, why);
+    const wired = wire(root, frontend, frontend.wrap(opened, log, flush));
+    flushing.run = (tab, why): Promise<void> => wired.recaps.flush(tab, why);
+    return wired;
 }
 
 async function start(): Promise<ExitCode> {
@@ -201,7 +207,7 @@ async function start(): Promise<ExitCode> {
     if (typeof booted === 'number') {
         return booted;
     }
-    const { informer, fleet, backends, store, retention, sweep, events, handoffs, worktrees, engine, recaps, transcripts, clock, statuses, ledger } = booted;
+    const { informer, fleet, backends, store, retention, sweep, events, handoffs, worktrees, engine, recaps, transcripts, clock, viewers, statuses, ledger } = booted;
     let stopping = false;
     let slots: Slots | null = null;
     const stop = (): void => {
@@ -209,7 +215,7 @@ async function start(): Promise<ExitCode> {
             return;
         }
         stopping = true;
-        void boundedBy(events.daemon('daemon-stopping', codeVersion() ?? 'unknown'), duration(EVENT_STOP_MS)).then(() => shutDown(fleet, informer, log)).then(() => boundedBy(slots?.stop() ?? Promise.resolve(), duration(EVENT_STOP_MS))).finally(() => { store.close(); pidfile.release(process.pid); process.exit(0); });
+        void boundedBy(events.daemon('daemon-stopping', codeVersion() ?? 'unknown'), duration(EVENT_STOP_MS)).then(() => shutDown(fleet, informer, log)).then(() => boundedBy(slots?.stop() ?? Promise.resolve(), duration(EVENT_STOP_MS))).then(() => boundedBy(recaps.flushAll(), duration(FLUSH_STOP_MS))).finally(() => { store.close(); pidfile.release(process.pid); process.exit(0); });
     };
     process.on('SIGTERM', stop).on('SIGINT', stop);
     const restarted = answerRestart({
@@ -242,7 +248,7 @@ async function start(): Promise<ExitCode> {
         void backends.refresh();
     }, RESYNC_MS).unref();
     await backends.refresh();
-    slots = await startSlots(SLOT_TABLE, contextOf({ root: parseRoot(root), store, fleet, engine, recaps, transcripts, events, board: (): Board => informer.current, observe: (observation): void => { informer.push(observation); }, statuses, ledger, clock, log }, versionOf(), (key: SlotKey): Switch => parseSwitch(configGetter()(key))));
+    slots = await startSlots(SLOT_TABLE, contextOf({ root: parseRoot(root), store, fleet, engine, recaps, transcripts, events, board: (): Board => informer.current, observe: (observation): void => { informer.push(observation); }, statuses, ledger, clock, viewers, log }, versionOf(), (key: SlotKey): Switch => parseSwitch(configGetter()(key))));
     log(`daemon ${process.pid} up, state in ${root}`);
     void events.daemon('daemon-started', codeVersion() ?? 'unknown');
     await informer.enterSubscription();

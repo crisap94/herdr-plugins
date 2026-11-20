@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
-import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { ClosedLane } from '#src/recap/domain/closures.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
@@ -27,9 +26,9 @@ function recorder(fail = false): { readonly records: ClosedLane[]; readonly port
     };
 }
 
-function dispatchWith(port: ClosureRecorder | undefined, days: string, log: (line: string) => void): Dispatch {
+function dispatchWith(port: ClosureRecorder | undefined, days: string, log: (line: string) => void, flushed: string[] = []): Dispatch {
     return new Dispatch({
-        columns: {} as Columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: {} as Pick<TabRecaps, 'turnEnded'>,
+        columns: {} as Columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (tab, why): Promise<void> => { flushed.push(`${String(tab)} ${why}`); return Promise.resolve(); } },
         prompts: noPrompts, webs: noWebs, log, board: () => emptyBoard(), sizing: () => ({ fraction: 0.3, minCols: 36, maxCols: 64 }),
         feedback: noop, ...silentClosures, ...(port === undefined ? {} : { closures: port }), closedDays: () => closedLaneDaysOf(days),
     });
@@ -56,4 +55,11 @@ test('a recorder that throws is logged without content and does not stop the dis
 
 test('no recorder wired means nothing is recorded and nothing fails', async () => {
     await dispatchWith(undefined, '14', noop).send({ kind: 'lane-closed', closed });
+});
+
+test('a lane closure flushes the closed tab\'s pending recap, even when the window records nothing', async () => {
+    const flushed: string[] = [];
+    await dispatchWith(recorder().port, '14', noop, flushed).send({ kind: 'lane-closed', closed });
+    await dispatchWith(recorder().port, '0', noop, flushed).send({ kind: 'lane-closed', closed });
+    assert.deepEqual(flushed, ['w1:t1 closed', 'w1:t1 closed']);
 });
