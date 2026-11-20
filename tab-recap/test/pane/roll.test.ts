@@ -146,8 +146,8 @@ test('an unknown start version never rolls', async () => {
     assert.equal(state.terminated, 0);
 });
 
-test('the roll slot is off by default', () => {
-    assert.equal(defaultOn, 'off');
+test('the roll slot is on by default', () => {
+    assert.equal(defaultOn, 'on');
     const entry = SLOT_TABLE.find((candidate) => candidate.name === 'roll');
-    assert.equal(entry?.defaultOn, 'off');
+    assert.equal(entry?.defaultOn, 'on');
 });

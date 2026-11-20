@@ -2,7 +2,7 @@ import type { Line, Mode, Running, SlotContext, SlotModule } from '../slots.ts';
 import type { Activity, Successor } from '../view/roll.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
 
-export const defaultOn: Mode = 'off';
+export const defaultOn: Mode = 'on';
 
 const WAITER = 'while kill -0 "$1" 2>/dev/null; do sleep 0.2; done; exec "$2" "$3" ensure';
 
