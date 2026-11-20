@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { foldedRun, throwingLedger } from '@stateforge-labs/session-ledger/unstable/recap/application/run-fold.ts';
+import { accomplishedOf, foldedRun, throwingLedger } from '@stateforge-labs/session-ledger/unstable/recap/application/run-fold.ts';
 import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import type { Fact, TaskId } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
 import type { Operation } from '@stateforge-labs/session-ledger/unstable/recap/domain/ops.ts';
 import type { CheckedLedger } from '@stateforge-labs/session-ledger/unstable/ports/ledger.ts';
+import { unknown, type Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
+import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 
 const HOUR = 3_600_000;
 const AT = 100 * HOUR;
@@ -55,4 +57,16 @@ test('throwingLedger turns an unknown read into an error that says why', () => {
         historyOf: () => [],
     };
     assert.throws(() => throwingLedger(checked).openOf({ ...OWNER, key: 'a' }), { message: 'the ledger not found' });
+});
+
+test('accomplishedOf reports the done facts that are new after the run, and an unknown read reports nothing and logs once', () => {
+    const task = { id: 'a', name: 'A', lanes: [] };
+    const old = factOf('fct_old', { section: 'done' });
+    const fresh = factOf('fct_new', { section: 'done' });
+    const logged: string[] = [];
+    const unreported = (failure: Unknown): void => { logged.push(failure.why.why); };
+    assert.deepEqual(accomplishedOf([{ task, facts: [old] }], [{ task, facts: [old, fresh] }], instant(AT), unreported).map((item) => item.fact.id), ['fct_new']);
+    assert.deepEqual(logged, []);
+    assert.deepEqual(accomplishedOf([{ task, facts: [old] }], [{ task, facts: unknown({ why: 'not-found', what: 'the ledger' }) }], instant(AT), unreported), []);
+    assert.deepEqual(logged, ['not-found']);
 });

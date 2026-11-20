@@ -21,7 +21,7 @@ const orElseOf2 = <A, B, R>(read: (first: A, second: B) => R | Unknown, fallback
 
 export const checkedRecords = (records: GuardedRecapRecords): CheckedRecapRecords => ({
     readRecap: records.readRecap.bind(records),
-    lastRunOf: orElse(records.lastRunOf.bind(records), null),
+    lastRunOf: records.lastRunOf.bind(records),
     beginRun: records.beginRun.bind(records),
     recordRun: records.recordRun.bind(records),
     failRun: records.failRun.bind(records),
@@ -31,15 +31,15 @@ export const checkedRecords = (records: GuardedRecapRecords): CheckedRecapRecord
 export const checkedLedger = (ledger: GuardedLedger): CheckedLedger => ({
     openOf: ledger.openOf.bind(ledger),
     recentlyClosed: ledger.recentlyClosed.bind(ledger),
-    allOf: orElse(ledger.allOf.bind(ledger), []),
+    allOf: ledger.allOf.bind(ledger),
     keysOf: ledger.keysOf.bind(ledger),
     historyOf: ledger.historyOf.bind(ledger),
 });
 
-export const fallbackLedger = (ledger: GuardedLedger): Ledger => ({
+export const fallbackLedger = (ledger: GuardedLedger, unreported: (failure: Unknown) => void): Ledger => ({
     openOf: orElse(ledger.openOf.bind(ledger), []),
     recentlyClosed: orElseOf2(ledger.recentlyClosed.bind(ledger), []),
-    allOf: orElse(ledger.allOf.bind(ledger), []),
+    allOf: (task) => { const found = ledger.allOf(task); if (isUnknownRead(found)) { unreported(found); return []; } return found; },
     keysOf: orElse(ledger.keysOf.bind(ledger), []),
     historyOf: ledger.historyOf.bind(ledger),
 });

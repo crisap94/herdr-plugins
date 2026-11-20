@@ -89,9 +89,6 @@ const pluginUnknown = (value: sl.Unknown): Unknown => ({ kind: 'unknown', why: p
 
 const isLedgerUnknown = (value: unknown): value is sl.Unknown => typeof value === 'object' && value !== null && 'kind' in value && value.kind === 'unknown';
 
-const orFallback = <T>(value: T | sl.Unknown, fallback: T): T => (isLedgerUnknown(value) ? fallback : value);
-const orNull = <T>(value: T | null | sl.Unknown): T | null => orFallback<T | null>(value, null);
-const orEmpty = <T>(value: readonly T[] | sl.Unknown): readonly T[] => orFallback<readonly T[]>(value, []);
 
 const scopeOf = (tab: string): sl.ScopeId => must(parseScopeId(tab));
 const keyOf = (pane: string): sl.SessionKey => must(parseSessionKey(pane));
@@ -101,7 +98,10 @@ const pluginRecords = (records: sl.Records): CheckedRecapRecords => ({
         const found = records.readRecap(scopeOf(tab));
         return isLedgerUnknown(found) ? pluginUnknown(found) : found;
     },
-    lastRunOf: (tab: string): LastRun | null => orNull(records.lastRunOf(scopeOf(tab))),
+    lastRunOf: (tab: string): LastRun | null | Unknown => {
+        const found = records.lastRunOf(scopeOf(tab));
+        return isLedgerUnknown(found) ? pluginUnknown(found) : found;
+    },
     beginRun: (tab: string, backend: string | null, at: number): void => {
         records.beginRun(scopeOf(tab), backend, at);
     },
@@ -121,7 +121,7 @@ const passedUnknown = <S, T>(value: S | sl.Unknown, convert: (each: S) => T): T 
 const pluginLedger = (facts: sl.FactStore): CheckedLedger => ({
     openOf: (task) => passedUnknown(facts.openOf(task), (open) => open.map(pluginFact)),
     recentlyClosed: (task, sinceMs) => passedUnknown(facts.recentlyClosed(task, sinceMs), (closed) => closed.map(pluginFact)),
-    allOf: (task) => orEmpty(facts.allOf(task)).map(pluginFact),
+    allOf: (task) => passedUnknown(facts.allOf(task), (all) => all.map(pluginFact)),
     keysOf: (tab) => { const found = facts.keysOf(scopeOf(tab)); return isLedgerUnknown(found) ? pluginUnknown(found) : found.map((key) => must(parseText(key))); },
     historyOf: (tab, pane) => facts.historyOf(scopeOf(tab), keyOf(pane)),
 });

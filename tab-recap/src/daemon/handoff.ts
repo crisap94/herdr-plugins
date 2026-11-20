@@ -260,6 +260,7 @@ export function wireHandoffs(parts: HandoffWiring): HandoffRunner {
         render: renderHandoff({
             records: store.records,
             transcripts,
+            log,
             locate: (lane: HandoffLane): Promise<FsPath | null> => sourceOf(transcripts, board, lane),
             worksite: { reader: new GitWorksiteReader(), repo: repos, edits: new EditCounts(transcripts) },
             tokens: fleet,
