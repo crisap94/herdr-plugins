@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Break, CompactionRow, Row, SessionRecap } from '@stateforge-labs/recap-view';
+import { parseAgentLabel, parseAgentName, parseBranchName, parseCurating, parseDirectory, parseDuration, parseFilePath, parseFromScreen, parseInstant, parsePaneId, parseProse, parseQueued, parseRepoName, parseRunning, parseTaskName, parseTitle, parseTokens, parseWebBase } from '@stateforge-labs/recap-view';
 import type { TextColumnView, TextExpandedView } from '@stateforge-labs/recap-view/unstable/model.ts';
 import { figuresOf, stageClockOf, stageLine } from '@stateforge-labs/recap-view/unstable/compaction-stage.ts';
 import { EXPANDED_TWO_COLUMNS, columnWidth, expanded } from '@stateforge-labs/recap-view/unstable/expanded.ts';
@@ -10,7 +11,7 @@ import { badge, firstItem, footer, present, presentBar } from '@stateforge-labs/
 import { sessionLines, spanOf } from '@stateforge-labs/recap-view/unstable/session-lines.ts';
 import { clockOf, dateLines, dayOf, timelineOf } from '@stateforge-labs/recap-view/unstable/timeline.ts';
 import { breakLine, breakText, chaptersFact } from '@stateforge-labs/recap-view/unstable/timeline-breaks.ts';
-import { assertAmount, assertCount, assertMinutes, assertPercent, assertSeconds } from '@stateforge-labs/recap-view/unstable/wording.ts';
+import { assertAmount, assertCount, assertMinutes, assertPercent, assertSeconds, parseCount, parsePercent } from '@stateforge-labs/recap-view/unstable/wording.ts';
 import type { TextWording } from '@stateforge-labs/recap-view/unstable/wording.ts';
 import { plain } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 
@@ -76,12 +77,12 @@ const wording: TextWording = {
     },
 };
 
-const row = (id: string, extra: Partial<Row> = {}): Row => ({ id, agent: 'claude', state: 'working', title: null, cwd: null, fromScreen: false, harnessRecap: null, ...extra });
+const row = (id: string, extra: Partial<Row> = {}): Row => ({ id: parsePaneId(id), agent: parseAgentName('claude'), state: 'working', title: null, cwd: null, fromScreen: parseFromScreen(false), harnessRecap: null, ...extra });
 
 const view = (extra: Partial<TextColumnView> = {}): TextColumnView => ({
-    rows: [row('p1', { title: 'Build', lastPrompt: 'ship it', fromScreen: true })],
+    rows: [row('p1', { title: parseTitle('Build'), lastPrompt: parseProse('ship it'), fromScreen: parseFromScreen(true) })],
     daemonVersion: '1.0.0',
-    recap: { tasks: [{ name: 'build', members: ['p1'], sections: null, markdown: '## Now\n- writing tests' }], at: 0, running: false, backend: null, error: null },
+    recap: { tasks: [{ name: parseTaskName('build'), members: [parsePaneId('p1')], sections: null, markdown: parseProse('## Now\n- writing tests') }], at: parseInstant(0), running: parseRunning(false), backend: null, error: null },
     notes: new Map(),
     warnings: [],
     now: 60_000,
@@ -91,16 +92,16 @@ const view = (extra: Partial<TextColumnView> = {}): TextColumnView => ({
     ...extra,
 });
 
-const record: CompactionRow = { pane: 'p1', stage: 'compacted', brief: 'written', writer: null, why: null, stageAt: 0, queued: false, tokensBefore: 150_000, tokensAfter: 30_000, tookMs: 65_000 };
+const record: CompactionRow = { pane: parsePaneId('p1'), stage: 'compacted', brief: 'written', writer: null, why: null, stageAt: parseInstant(0), queued: parseQueued(false), tokensBefore: parseTokens(150_000), tokensAfter: parseTokens(30_000), tookMs: parseDuration(65_000) };
 
 const facts: SessionRecap = {
-    started: { at: 0, forMs: 90 * 60_000 },
-    runs: { total: 3, byCause: [{ cause: 'focused', count: 3 }] },
-    compactions: { count: 2, byOrigin: { operator: 1, auto: 1 }, measured: [] },
+    started: { at: parseInstant(0), forMs: parseDuration(90 * 60_000) },
+    runs: { total: parseCount(3), byCause: [{ cause: 'focused', count: parseCount(3) }] },
+    compactions: { count: parseCount(2), byOrigin: { operator: parseCount(1), auto: parseCount(1) }, measured: [] },
     agents: [],
-    repo: { name: 'app', branch: 'main' },
+    repo: { name: parseRepoName('app'), branch: parseBranchName('main') },
     files: [],
-    chapters: 3,
+    chapters: parseCount(3),
     autocompact: null,
 };
 
@@ -108,6 +109,21 @@ test('the brand assertions pass a number and refuse anything else', () => {
     for (const assertBrand of [assertCount, assertAmount, assertPercent, assertSeconds, assertMinutes]) {
         assert.doesNotThrow(() => assertBrand(2));
         assert.throws(() => assertBrand('2'), TypeError);
+    }
+});
+
+test('each view-model parser passes its carrier and refuses another', () => {
+    for (const parse of [parseInstant, parseDuration, parseTokens, parseCount, parsePercent]) {
+        assert.equal(parse(2), 2);
+        assert.throws(() => parse('2'), TypeError);
+    }
+    for (const parse of [parsePaneId, parseAgentLabel, parseAgentName, parseTitle, parseProse, parseTaskName, parseDirectory, parseFilePath, parseRepoName, parseBranchName, parseWebBase]) {
+        assert.equal(parse('a'), 'a');
+        assert.throws(() => parse(2), TypeError);
+    }
+    for (const parse of [parseFromScreen, parseRunning, parseQueued, parseCurating]) {
+        assert.equal(parse(true), true);
+        assert.throws(() => parse('true'), TypeError);
     }
 });
 
@@ -121,7 +137,7 @@ test('present draws the row header, its prompt and the recap of the one task', (
 });
 
 test('presentBar shows the stage of a compaction before the recap lead', () => {
-    assert.match(presentBar(view({ compactions: [{ ...record, agent: 'claude', startedAt: 0 }] }), 80)[0] ?? '', /claude compacted 150k → 30k · 65 s/);
+    assert.match(presentBar(view({ compactions: [{ ...record, agent: parseAgentName('claude'), startedAt: parseInstant(0) }] }), 80)[0] ?? '', /claude compacted 150k → 30k · 65 s/);
     assert.match(presentBar(view(), 80)[0] ?? '', /writing tests/);
 });
 
@@ -133,7 +149,7 @@ test('badge, footer and firstItem read the wording and the markdown', () => {
 
 test('groupsOf splits the rows by the members of each task', () => {
     const rows = [row('p1'), row('p2')];
-    assert.deepEqual(groupsOf(rows, [{ name: 'a', members: ['p1'], sections: null, markdown: '' }, { name: 'b', members: ['p2'], sections: null, markdown: '' }]).map((group) => group.lanes.map((each) => each.id)), [['p1'], ['p2']]);
+    assert.deepEqual(groupsOf(rows, [{ name: parseTaskName('a'), members: [parsePaneId('p1')], sections: null, markdown: parseProse('') }, { name: parseTaskName('b'), members: [parsePaneId('p2')], sections: null, markdown: parseProse('') }]).map((group) => group.lanes.map((each) => each.id)), [['p1'], ['p2']]);
 });
 
 test('the compaction stage draws its clock, its figures and its line', () => {
@@ -154,14 +170,14 @@ test('the session lines and the timeline read the session recap', () => {
 });
 
 test('a chapter break names the compaction and its figures', () => {
-    const found: Break = { kind: 'compacted', at: 0, trigger: 'auto', tokensBefore: 150_000, tokensAfter: 30_000, tookMs: 65_000 };
+    const found: Break = { kind: 'compacted', at: parseInstant(0), trigger: 'auto', tokensBefore: parseTokens(150_000), tokensAfter: parseTokens(30_000), tookMs: parseDuration(65_000) };
     assert.equal(breakText(found, wording.chapters), 'compacted 150k → 30k · 1 min 5 s');
     assert.equal(breakLine({ ...found, kind: 'switched' }, wording.chapters), '── new session ──');
     assert.equal(chaptersFact(3, wording.chapters), '3 chapters');
 });
 
 test('expanded draws the story head and the session; wide views split into columns', () => {
-    const expandedView: TextExpandedView = { tasks: [{ name: '', facts: [], story: { text: 'the story so far', at: 0 }, curating: false }], session: facts, width: 60, wording, style: plain, now: 0, zone: 'UTC', webs: [] };
+    const expandedView: TextExpandedView = { tasks: [{ name: parseTaskName(''), facts: [], story: { text: parseProse('the story so far'), at: parseInstant(0) }, curating: parseCurating(false) }], session: facts, width: 60, wording, style: plain, now: 0, zone: 'UTC', webs: [] };
     const lines = expanded(expandedView);
     assert.equal(lines[0], 'STORY · 00:00');
     assert.ok(lines.includes('SESSION'));

@@ -4,12 +4,13 @@ import { hyperlink } from '@stateforge-labs/recap-view/unstable/hyperlink.ts';
 import { linked } from '@stateforge-labs/recap-view/unstable/linked.ts';
 import { contextOf, linkify } from '@stateforge-labs/recap-view/unstable/links.ts';
 import type { Web } from '@stateforge-labs/recap-view';
+import { parseBranchName, parseWebBase } from '@stateforge-labs/recap-view';
 
-const github: Web = { base: 'https://github.com/acme/app', forge: 'github', branch: 'main' };
+const github: Web = { base: parseWebBase('https://github.com/acme/app'), forge: 'github', branch: parseBranchName('main') };
 
 test('contextOf keeps the shared web and drops a branch the contexts disagree on', () => {
-    assert.deepEqual(contextOf([null, github, { ...github, branch: 'dev' }]), { ...github, branch: null });
-    assert.equal(contextOf([github, { ...github, base: 'https://github.com/acme/other' }]), null);
+    assert.deepEqual(contextOf([null, github, { ...github, branch: parseBranchName('dev') }]), { ...github, branch: null });
+    assert.equal(contextOf([github, { ...github, base: parseWebBase('https://github.com/acme/other') }]), null);
     assert.equal(contextOf([null]), null);
 });
 

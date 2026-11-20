@@ -2,10 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { messagesFor } from '#src/i18n/index.ts';
 import type { Break } from '#src/ports/boundaries.ts';
-import { breakLine, chaptersFact } from '#src/recap/render/timeline-breaks.ts';
+import { breakLine as drawBreak, chaptersFact } from '#src/recap/render/timeline-breaks.ts';
+import { viewBreakOf } from '#src/view-model/column.ts';
 
 const [en, es] = [messagesFor('en').chapters, messagesFor('es').chapters];
 const compacted = (over: Partial<Break> = {}): Break => ({ kind: 'compacted', at: 1, trigger: 'auto', tokensBefore: 800_000, tokensAfter: 14_000, tookMs: 15_588, ...over });
+const breakLine = (found: Break, say: typeof en, width: number | null = null): string => drawBreak(viewBreakOf(found), say, width);
 const switched: Break = { kind: 'switched', at: 1, trigger: null, tokensBefore: null, tokensAfter: null, tookMs: null };
 
 test('golden: a compaction with its tokens and time, with its tokens only, with nothing, with a time only', () => {

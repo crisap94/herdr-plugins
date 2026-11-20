@@ -17,6 +17,8 @@ import type { Material } from './compaction-message.ts';
 import type { Trail } from './compaction-trail.ts';
 import { withTypingLease } from './typing-scope.ts';
 import type { Lease } from './typing-scope.ts';
+import { parseDuration, parseTokens } from '@stateforge-labs/recap-view';
+import { maybe } from '#src/view-model/column.ts';
 
 const RESTORING_MS = 2 * 60_000;
 const RESTORE_SETTLE_MS = 15_000;
@@ -146,7 +148,7 @@ export class Sender {
         const { compaction } = this.deps.messages();
         const figures = { tokensBefore: verdict.tokensBefore ?? null, tokensAfter: verdict.tokensAfter ?? null, tookMs: verdict.tookMs ?? this.deps.now() - ended.began };
         trail.end(verdict.outcome, { ...figures, retried, ...(verdict.outcome === 'failed' ? { why: compaction.stage.selfFailed } : {}) });
-        const said = figuresOf(figures, this.deps.messages());
+        const said = figuresOf({ tokensBefore: maybe(figures.tokensBefore, parseTokens), tokensAfter: maybe(figures.tokensAfter, parseTokens), tookMs: parseDuration(figures.tookMs) }, this.deps.messages());
         await this.tell(must(parseText(compaction.title(String(lane.agent)))), must(parseText(compaction.outcome(String(lane.agent), verdict.outcome, retried, { tokens: said.tokens, took: said.took }))));
     }
 

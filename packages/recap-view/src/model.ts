@@ -1,6 +1,26 @@
 import type { ClosedWhy, ContextUse, Fact, RecapSections } from '@stateforge-labs/session-ledger';
 import type { Brand } from './kernel.ts';
-import type { Wording } from './wording.ts';
+import type { Count, Percent, Wording } from './wording.ts';
+import type {
+    AgentLabel,
+    AgentName,
+    BranchName,
+    Curating,
+    Directory,
+    Duration,
+    FilePath,
+    FromScreen,
+    Instant,
+    PaneId,
+    Prose,
+    Queued,
+    RepoName,
+    Running,
+    TaskName,
+    Title,
+    Tokens,
+    WebBase,
+} from './values.ts';
 
 export type StyleName = 'bold' | 'dim' | 'italic' | 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan' | 'gray';
 export type Width = Brand<number, 'Width'>;
@@ -17,11 +37,10 @@ export type EndStage = 'compacted' | 'failed' | 'unconfirmed' | 'skipped';
 export type Stage = ActiveStage | EndStage;
 export type BriefOrigin = 'written' | 'template';
 export type RunCause = 'turn-ended' | 'focused' | 'requested';
-
 export interface Web {
-    readonly base: string;
+    readonly base: WebBase;
     readonly forge: Forge;
-    readonly branch: string | null;
+    readonly branch: BranchName | null;
 }
 
 export interface Note {
@@ -31,68 +50,58 @@ export interface Note {
     readonly mark?: string;
 }
 
-export interface BreakOf<Figure> {
+export interface Break {
     readonly kind: BoundaryKind;
-    readonly at: Figure;
+    readonly at: Instant;
     readonly trigger: Trigger | null;
-    readonly tokensBefore: Figure | null;
-    readonly tokensAfter: Figure | null;
-    readonly tookMs: Figure | null;
+    readonly tokensBefore: Tokens | null;
+    readonly tokensAfter: Tokens | null;
+    readonly tookMs: Duration | null;
 }
 
-export interface Break extends BreakOf<number> {}
-
-export interface RowOf<Text, Figure, Flag> {
-    readonly id: Text;
-    readonly agent: Text;
+export interface Row {
+    readonly id: PaneId;
+    readonly agent: AgentName;
     readonly state: RowState;
-    readonly title: Text | null;
-    readonly cwd: Text | null;
-    readonly lastPrompt?: Text | null;
+    readonly title: Title | null;
+    readonly cwd: Directory | null;
+    readonly lastPrompt?: Prose | null;
     readonly web?: Web | null;
     readonly context?: ContextUse | null;
-    readonly since?: Figure | null;
-    readonly fromScreen: Flag;
-    readonly harnessRecap: Text | null;
+    readonly since?: Instant | null;
+    readonly fromScreen: FromScreen;
+    readonly harnessRecap: Prose | null;
 }
 
-export interface Row extends RowOf<string, number, boolean> {}
-
-export interface ColumnTaskOf<Text> {
-    readonly name: Text;
-    readonly members: readonly Text[];
+export interface ColumnTask {
+    readonly name: TaskName;
+    readonly members: readonly PaneId[];
     readonly sections: RecapSections | null;
-    readonly markdown: Text;
+    readonly markdown: Prose;
 }
 
-export interface ColumnTask extends ColumnTaskOf<string> {}
-
-export interface RecapColumnOf<Text, Figure, Flag> {
+export interface RecapColumn {
     readonly tasks: readonly ColumnTask[];
-    readonly at: Figure | null;
-    readonly running: Flag;
-    readonly backend: Text | null;
-    readonly error: Text | null;
+    readonly at: Instant | null;
+    readonly running: Running;
+    readonly backend: AgentName | null;
+    readonly error: Prose | null;
 }
 
-export interface RecapColumn extends RecapColumnOf<string, number, boolean> {}
-
-export interface CompactionRowOf<Text, Figure, Flag> {
-    readonly pane: Text;
-    readonly agent?: Text;
-    readonly startedAt?: Figure;
+export interface CompactionRow {
+    readonly pane: PaneId;
+    readonly agent?: AgentName;
+    readonly startedAt?: Instant;
     readonly stage: Stage;
     readonly brief: BriefOrigin | null;
-    readonly writer: Text | null;
-    readonly why: Text | null;
-    readonly stageAt: Figure;
-    readonly queued: Flag;
-    readonly tokensBefore: Figure | null;
-    readonly tokensAfter: Figure | null;
-    readonly tookMs: Figure | null;
+    readonly writer: AgentName | null;
+    readonly why: Prose | null;
+    readonly stageAt: Instant;
+    readonly queued: Queued;
+    readonly tokensBefore: Tokens | null;
+    readonly tokensAfter: Tokens | null;
+    readonly tookMs: Duration | null;
 }
-
-export interface CompactionRow extends CompactionRowOf<string, number, boolean> {}
 
 export interface ColumnView<Text> {
     readonly rows: readonly Row[] | null;
@@ -110,100 +119,81 @@ export interface ColumnView<Text> {
 
 export interface TextColumnView extends ColumnView<string> {}
 
-export interface SessionStartedOf<Figure> {
-    readonly at: Figure;
-    readonly forMs: Figure;
+export interface SessionStarted {
+    readonly at: Instant;
+    readonly forMs: Duration;
 }
 
-export interface SessionStarted extends SessionStartedOf<number> {}
-
-export interface SessionRunOf<Figure> {
+export interface SessionRun {
     readonly cause: RunCause;
-    readonly count: Figure;
+    readonly count: Count;
 }
 
-export interface SessionRun extends SessionRunOf<number> {}
-
-export interface SessionRunsOf<Figure> {
-    readonly total: Figure;
+export interface SessionRuns {
+    readonly total: Count;
     readonly byCause: readonly SessionRun[];
 }
 
-export interface SessionRuns extends SessionRunsOf<number> {}
-
-export interface SessionTokenPairOf<Figure> {
-    readonly before: Figure;
-    readonly after: Figure;
+export interface SessionTokenPair {
+    readonly before: Tokens;
+    readonly after: Tokens;
 }
 
-export interface SessionTokenPair extends SessionTokenPairOf<number> {}
+export interface SessionOrigins {
+    readonly operator: Count;
+    readonly auto: Count;
+}
 
-export interface SessionCompactionsOf<Figure> {
-    readonly count: Figure;
-    readonly byOrigin: { readonly operator: Figure; readonly auto: Figure };
+export interface SessionCompactions {
+    readonly count: Count;
+    readonly byOrigin: SessionOrigins;
     readonly measured: readonly SessionTokenPair[];
 }
 
-export interface SessionCompactions extends SessionCompactionsOf<number> {}
-
-export interface SessionAgentOf<Text, Figure> {
-    readonly label: Text;
-    readonly share: Figure;
-    readonly window: Figure;
+export interface SessionAgent {
+    readonly label: AgentLabel;
+    readonly share: Percent;
+    readonly window: Tokens;
 }
 
-export interface SessionAgent extends SessionAgentOf<string, number> {}
-
-export interface SessionRepoOf<Text> {
-    readonly name: Text;
-    readonly branch: Text | null;
+export interface SessionRepo {
+    readonly name: RepoName;
+    readonly branch: BranchName | null;
 }
 
-export interface SessionRepo extends SessionRepoOf<string> {}
-
-export interface SessionFileOf<Text, Figure> {
-    readonly path: Text;
-    readonly count: Figure;
+export interface SessionFile {
+    readonly path: FilePath;
+    readonly count: Count;
 }
 
-export interface SessionFile extends SessionFileOf<string, number> {}
-
-export interface SessionAutocompactOf<Figure> {
-    readonly decisions: Figure;
-    readonly compacted: Figure;
-    readonly waited: Figure;
+export interface SessionAutocompact {
+    readonly decisions: Count;
+    readonly compacted: Count;
+    readonly waited: Count;
 }
 
-export interface SessionAutocompact extends SessionAutocompactOf<number> {}
-
-export interface SessionRecapOf<Figure> {
+export interface SessionRecap {
     readonly started: SessionStarted | null;
     readonly runs: SessionRuns | null;
     readonly compactions: SessionCompactions | null;
     readonly agents: readonly SessionAgent[];
     readonly repo: SessionRepo | null;
     readonly files: readonly SessionFile[];
-    readonly chapters: Figure | null;
+    readonly chapters: Count | null;
     readonly autocompact: SessionAutocompact | null;
 }
 
-export interface SessionRecap extends SessionRecapOf<number> {}
-
-export interface ExpandedStoryOf<Text, Figure> {
-    readonly text: Text;
-    readonly at: Figure;
+export interface ExpandedStory {
+    readonly text: Prose;
+    readonly at: Instant;
 }
 
-export interface ExpandedStory extends ExpandedStoryOf<string, number> {}
-
-export interface ExpandedTaskOf<Text, Flag> {
-    readonly name: Text;
+export interface ExpandedTask {
+    readonly name: TaskName;
     readonly facts: readonly Fact[];
     readonly story: ExpandedStory | null;
-    readonly curating: Flag;
+    readonly curating: Curating;
 }
-
-export interface ExpandedTask extends ExpandedTaskOf<string, boolean> {}
 
 export interface ExpandedView<Text> {
     readonly tasks: readonly ExpandedTask[];

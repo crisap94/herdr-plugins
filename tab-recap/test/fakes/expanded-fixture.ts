@@ -4,6 +4,7 @@ import { sessionFactsOf } from '#src/recap/domain/session-facts.ts';
 import type { ExpandedView } from '#src/recap/render/expanded.ts';
 import { plain } from '#src/recap/render/wrap.ts';
 import { fact } from './fact-at.ts';
+import { parseCurating, parseInstant, parseProse, parseTaskName } from '@stateforge-labs/recap-view';
 
 export const NOW = Date.parse('2026-10-07T16:30:00Z');
 const at = (clock: string, day = '2026-10-07'): number => Date.parse(`${day}T${clock}:00Z`);
@@ -25,7 +26,7 @@ export const FACTS = [
 
 export function sampleView(width: number, locale: 'en' | 'es' = 'en', over: Partial<ExpandedView> = {}): ExpandedView {
     return {
-        tasks: [{ name: '', facts: FACTS, story: { text: 'The 2.0 engine is being built in four changes; the expanded view is drawn from the ledger and waits on one answer.', at: at('16:10') }, curating: false }],
+        tasks: [{ name: parseTaskName(''), facts: FACTS, story: { text: parseProse('The 2.0 engine is being built in four changes; the expanded view is drawn from the ledger and waits on one answer.'), at: parseInstant(at('16:10')) }, curating: parseCurating(false) }],
         session: sessionFactsOf({
             firstSeen: at('09:12'), now: NOW, runs: { 'turn-ended': 36, focused: 3, requested: 2 },
             compactions: [{ tokensBefore: 800_000, tokensAfter: 14_000, origin: 'operator' }, { tokensBefore: 39_000, tokensAfter: 3_000, origin: 'operator' }],

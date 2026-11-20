@@ -9,6 +9,8 @@ import { coloured, plain, visibleLength } from '#src/recap/render/wrap.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import type { CompactionRecord } from '#src/ports/compaction-records.ts';
 import type { Messages } from '#src/i18n/messages.ts';
+import { parseDuration, parseTokens } from '@stateforge-labs/recap-view';
+import { maybe } from '#src/view-model/column.ts';
 
 const base: CompactionRecord = { id: 'cmp_x', tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'compacting', brief: 'written', writer: 'codex · gpt-6-luna · high', templateWhy: null, startedAt: 0, stageAt: 0, finishedAt: null, tokensBefore: null, tokensAfter: null, tookMs: null, retried: false, queued: false, why: null, origin: 'operator' };
 const done = { finishedAt: 1, tokensBefore: 39532, tokensAfter: 3057, tookMs: 15588 };
@@ -107,7 +109,7 @@ test('on the bar, the newest compaction of the tab speaks, prefixed with its age
 });
 
 const line = (patch: Partial<CompactionRecord>): string => stageLine({ ...base, ...patch }, 0, { messages: en, style: coloured });
-const said = (tokensBefore: number | null, tokensAfter: number | null, tookMs: number | null): object => figuresOf({ tokensBefore, tokensAfter, tookMs }, en);
+const said = (tokensBefore: number | null, tokensAfter: number | null, tookMs: number | null): object => figuresOf({ tokensBefore: maybe(tokensBefore, parseTokens), tokensAfter: maybe(tokensAfter, parseTokens), tookMs: maybe(tookMs, parseDuration) }, en);
 
 test('the stage is coloured: yellow while it runs, green when done (the template tag gray), red when it failed, gray otherwise', () => {
     const [yellow, green, red, gray] = ['\u001B[33m', '\u001B[32m', '\u001B[31m', '\u001B[90m'];

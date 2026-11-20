@@ -1,16 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { contextOf, linkify } from '#src/recap/render/links.ts';
-import type { LaneWeb } from '#src/ports/tab-views.ts';
+import { parseBranchName, parseWebBase, type Web } from '@stateforge-labs/recap-view';
 
-const GITLAB: LaneWeb = { base: 'https://gitlab.example/acme/shop', forge: 'gitlab', branch: 'feat/cart' };
-const GITHUB: LaneWeb = { base: 'https://github.com/acme/shop', forge: 'github', branch: 'feat/cart' };
+const GITLAB: Web = { base: parseWebBase('https://gitlab.example/acme/shop'), forge: 'gitlab', branch: parseBranchName('feat/cart') };
+const GITHUB: Web = { base: parseWebBase('https://github.com/acme/shop'), forge: 'github', branch: parseBranchName('feat/cart') };
 const SHA = 'a1b2c3d4';
 
-const refs = (text: string, web: LaneWeb | null = GITLAB): [string, string][] =>
+const refs = (text: string, web: Web | null = GITLAB): [string, string][] =>
     linkify(text, [web]).flatMap((piece) => (piece.url === undefined ? [] : [[piece.text, piece.url] as [string, string]]));
 
-const TABLE: readonly (readonly [string, string, LaneWeb, string])[] = [
+const TABLE: readonly (readonly [string, string, Web, string])[] = [
     ['a GitLab merge request', '!252 merged', GITLAB, 'https://gitlab.example/acme/shop/-/merge_requests/252'],
     ['a GitLab issue', 'see #7', GITLAB, 'https://gitlab.example/acme/shop/-/issues/7'],
     ['a GitHub pull request', 'see #12', GITHUB, 'https://github.com/acme/shop/pull/12'],
@@ -59,7 +59,7 @@ test('a SHA needs seven hex characters with a digit and a letter; words and numb
 
 test('backticks decide for paths and branches: a bare path, a command, a directory name or a plain-word branch is not linked', () => {
     assert.deepEqual(refs('edit src/cart.ts, run `npm test`, on main'), []);
-    assert.deepEqual(refs('on `main`', { ...GITLAB, branch: 'main' }).map(([, url]) => url), ['https://gitlab.example/acme/shop/-/tree/main']);
+    assert.deepEqual(refs('on `main`', { ...GITLAB, branch: parseBranchName('main') }).map(([, url]) => url), ['https://gitlab.example/acme/shop/-/tree/main']);
     assert.deepEqual(refs('`../secrets.txt` `/etc/passwd` `~/x.md`'), []);
     assert.deepEqual(refs('`release/1.2`').map(([, url]) => url), ['https://gitlab.example/acme/shop/-/tree/release/1.2']);
 });
@@ -71,13 +71,13 @@ test('a GitHub has no !N; with no branch there are no file or branch pages; with
 });
 
 test('path pieces of a URL in a ref are percent-encoded', () => {
-    assert.equal(refs('`a b/c.ts`', { ...GITLAB, branch: 'feat/x y' }).length, 0, 'a path with a space is no path');
-    assert.equal(refs('`src/c.ts`', { ...GITLAB, branch: 'feat/x?y' })[0]?.[1], 'https://gitlab.example/acme/shop/-/blob/feat/x%3Fy/src/c.ts');
+    assert.equal(refs('`a b/c.ts`', { ...GITLAB, branch: parseBranchName('feat/x y') }).length, 0, 'a path with a space is no path');
+    assert.equal(refs('`src/c.ts`', { ...GITLAB, branch: parseBranchName('feat/x?y') })[0]?.[1], 'https://gitlab.example/acme/shop/-/blob/feat/x%3Fy/src/c.ts');
 });
 
 test('one context per task: lanes of one repository share it, two repositories give nothing, a lane with no web does not veto', () => {
-    const other: LaneWeb = { ...GITLAB, base: 'https://gitlab.example/acme/other' };
-    assert.deepEqual(contextOf([GITLAB, { ...GITLAB, branch: 'main' }]), { ...GITLAB, branch: null });
+    const other: Web = { ...GITLAB, base: parseWebBase('https://gitlab.example/acme/other') };
+    assert.deepEqual(contextOf([GITLAB, { ...GITLAB, branch: parseBranchName('main') }]), { ...GITLAB, branch: null });
     assert.deepEqual(contextOf([GITLAB, null, undefined]), GITLAB);
     assert.equal(contextOf([GITLAB, other]), null);
     assert.equal(contextOf([]), null);
@@ -87,7 +87,7 @@ test('one context per task: lanes of one repository share it, two repositories g
 
 test('links: a lane branch with dashes, dots and plus signs is linked bare and backticked, and never throws', () => {
     for (const branch of ['feat/payments-v2', 'release-1.8.x', 'fix/a+b', 'docs/0013-absorb-openrig']) {
-        const web: LaneWeb = { ...GITLAB, branch };
+        const web: Web = { ...GITLAB, branch: parseBranchName(branch) };
         const tree = `https://gitlab.example/acme/shop/-/tree/${branch.split('/').map(encodeURIComponent).join('/')}`;
         assert.doesNotThrow(() => linkify(`pushed ${branch} today, see \`src/a.ts\` and !3`, [web]));
         assert.equal(refs(`pushed ${branch} today`, web).at(0)?.[1], tree, branch);

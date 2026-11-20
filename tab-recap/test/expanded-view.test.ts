@@ -6,6 +6,7 @@ import { expanded } from '#src/recap/render/expanded.ts';
 import { visibleLength } from '#src/recap/render/wrap.ts';
 import { stripVTControlCharacters } from 'node:util';
 import { sampleView } from '#test/fakes/expanded-fixture.ts';
+import { parseCurating, parseTaskName } from '@stateforge-labs/recap-view';
 
 const GOLDENS = join(import.meta.dirname, 'fixtures');
 
@@ -71,9 +72,9 @@ test('two columns scroll together: one row per zipped line, left padded', () => 
 test('the story shows its time, and "updating…" while the curator runs, and nothing when there is neither', () => {
     const [task] = sampleView(120).tasks;
     assert.ok(task);
-    const running = expanded(sampleView(120, 'en', { tasks: [{ ...task, curating: true }] })).join('\n');
+    const running = expanded(sampleView(120, 'en', { tasks: [{ ...task, curating: parseCurating(true) }] })).join('\n');
     assert.match(running, /SESSION SO FAR · 16:10 · updating…/u);
-    const first = expanded(sampleView(120, 'en', { tasks: [{ ...task, story: null, curating: true }] }));
+    const first = expanded(sampleView(120, 'en', { tasks: [{ ...task, story: null, curating: parseCurating(true) }] }));
     assert.equal(first[0], 'SESSION SO FAR · updating…');
     assert.ok(!expanded(sampleView(120, 'en', { tasks: [{ ...task, story: null }] })).join('\n').includes('SESSION SO FAR'));
 });
@@ -81,7 +82,7 @@ test('the story shows its time, and "updating…" while the curator runs, and no
 test('several tasks: each is headed by its name and the session facts come once, last', () => {
     const [task] = sampleView(120).tasks;
     assert.ok(task);
-    const lines = expanded(sampleView(120, 'en', { tasks: [{ ...task, name: 'Engine' }, { ...task, name: 'Docs' }] }));
+    const lines = expanded(sampleView(120, 'en', { tasks: [{ ...task, name: parseTaskName('Engine') }, { ...task, name: parseTaskName('Docs') }] }));
     assert.ok(lines.includes('▌ Engine') && lines.includes('▌ Docs'));
     assert.equal(lines.filter((line) => line === 'SESSION').length, 1);
 });

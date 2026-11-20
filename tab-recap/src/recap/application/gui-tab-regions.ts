@@ -1,5 +1,4 @@
-import type { Break } from '#src/ports/boundaries.ts';
-import type { LaneWeb } from '#src/ports/tab-views.ts';
+import type { Break, Web } from '@stateforge-labs/recap-view';
 import { must } from '#src/protocol/result.ts';
 import { breakText } from '#src/recap/render/timeline-breaks.ts';
 import { clockOf, dateLines, timelineOf, type Entry } from '#src/recap/render/timeline.ts';
@@ -13,7 +12,7 @@ import { duration, instant, type Duration, type Instant } from '#src/recap/domai
 import type { Story } from '#src/ports/stories.ts';
 import { spansOf } from './gui-tab-spans.ts';
 
-type Webs = readonly (LaneWeb | null | undefined)[];
+type Webs = readonly (Web | null | undefined)[];
 
 const NOT_RECORDED = '(not recorded)';
 
