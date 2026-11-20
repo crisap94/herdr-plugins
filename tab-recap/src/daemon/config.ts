@@ -191,7 +191,7 @@ const screenAgentsFrom = (get: SettingGet): readonly AgentKind[] => screenKindsO
     return parsed.kind === 'ok' ? [parsed.value] : [];
 });
 
-const pacingOf = (get: SettingGet): Pacing => parsePacing(get('TAB_RECAP_RUN_PACING')?.trim().toLowerCase(), numberIn(get('TAB_RECAP_RUN_QUIET_MS'), 10_000, 600_000, true) ?? 45_000, numberIn(get('TAB_RECAP_RUN_MAX_WAIT_MS'), 60_000, 3_600_000, true) ?? 1_200_000);
+const pacingOf = (get: SettingGet): Pacing => parsePacing(get('TAB_RECAP_RUN_PACING')?.trim().toLowerCase() === 'turn' ? 'turn' : 'smart', numberIn(get('TAB_RECAP_RUN_QUIET_MS'), 10_000, 600_000, true) ?? 45_000, numberIn(get('TAB_RECAP_RUN_MAX_WAIT_MS'), 60_000, 3_600_000, true) ?? 1_200_000);
 
 const reconcileEveryFrom = (get: SettingGet): PositiveCount => positiveOr(parsePositiveCount(Math.max(1, Math.floor(numberIn(get('TAB_RECAP_RECONCILE_EVERY'), POSITIVE.min, POSITIVE.max) ?? RECONCILE_EVERY))), must(parsePositiveCount(RECONCILE_EVERY)));
 
