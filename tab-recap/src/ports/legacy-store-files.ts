@@ -14,7 +14,7 @@ export type LegacyViewFile = Row;
 export type LegacyHidden = Row;
 export type LegacyVisibility = Row;
 
-const isRow = (input: unknown): input is Row => typeof input === 'object' && input !== null;
+const isRow = (input: unknown): input is Row => typeof input === 'object' && input !== null && !Array.isArray(input);
 
 const sectionsOf = (value: Row): RecapSections => ({
     goal: typeof value.goal === 'string' ? value.goal : '',

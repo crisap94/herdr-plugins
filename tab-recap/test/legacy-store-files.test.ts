@@ -48,10 +48,11 @@ test('a visibility ask keeps a boolean or toggle request and refuses an empty ta
     assert.deepEqual(parseLegacyVisibility({ target: 'w1:t1', hidden: 'maybe' }), { kind: 'err', error: { kind: 'out-of-range' } });
 });
 
-test('each parser refuses a non-object input as not-a-row', () => {
+test('each parser refuses a non-object input and an array as not-a-row', () => {
     for (const parse of [parseLegacyRecapFile, parseLegacyViewFile, parseLegacyHidden, parseLegacyVisibility]) {
         assert.deepEqual(parse(null), { kind: 'err', error: { kind: 'not-a-row' } });
         assert.deepEqual(parse('text'), { kind: 'err', error: { kind: 'not-a-row' } });
+        assert.deepEqual(parse([]), { kind: 'err', error: { kind: 'not-a-row' } });
     }
 });
 
