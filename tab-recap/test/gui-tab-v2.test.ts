@@ -19,6 +19,7 @@ import { fact } from '#test/fakes/fact-at.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { NOW } from '#test/fakes/expanded-fixture.ts';
 import { v2Problems } from '#test/gui-schema-support.ts';
+import { parseCurating, parseTaskName } from '@stateforge-labs/recap-view';
 
 const MIN = 60_000;
 
@@ -111,7 +112,7 @@ test('the last resort also clears warnings, recaps and lane notes, so it fits wh
 test('a cached expanded read is matched to its task by name, never by position', () => {
     const { document, expanded } = fixture();
     const kept = present(expanded.tasks[0]);
-    const stale = { ...expanded, tasks: [{ name: 'A', facts: [], story: null, curating: false }, { ...kept, name: 'B' }] };
+    const stale = { ...expanded, tasks: [{ name: parseTaskName('A'), facts: [], story: null, curating: parseCurating(false) }, { ...kept, name: parseTaskName('B') }] };
     const recap = { ...blankRecap('w1:t1'), at: NOW, tasks: [{ id: 't2', name: 'B', lanes: ['w1:p1'], sections: null, markdown: '' }] };
     const built = guiTabOf(recap, view, instant(NOW), { ...BLANK_READS, expanded: stale, zone: must(parseText('UTC')) });
     assert.deepEqual(present(built.tasks[0]).facts.map((one) => one.text), present(document.tasks[0]).facts.map((one) => one.text));

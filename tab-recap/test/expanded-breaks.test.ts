@@ -10,6 +10,8 @@ import type { ExpandedView } from '#src/recap/render/expanded.ts';
 import { visibleLength } from '#src/recap/render/wrap.ts';
 import { NOW, sampleView } from '#test/fakes/expanded-fixture.ts';
 import { fact } from '#test/fakes/fact-at.ts';
+import { parseCurating, parseTaskName } from '@stateforge-labs/recap-view';
+import { viewBreakOf } from '#src/view-model/column.ts';
 
 const at = (clock: string, day = '2026-10-07'): number => Date.parse(`${day}T${clock}:00Z`);
 const BREAKS: readonly Break[] = [
@@ -19,7 +21,7 @@ const BREAKS: readonly Break[] = [
 ];
 
 const withBreaks = (width: number, locale: 'en' | 'es'): ExpandedView => sampleView(width, locale, {
-    breaks: BREAKS,
+    breaks: BREAKS.map(viewBreakOf),
     session: sessionFactsOf({
         firstSeen: at('09:12'), now: NOW, runs: { 'turn-ended': 36, focused: 3, requested: 2 },
         compactions: [{ tokensBefore: 800_000, tokensAfter: 14_000, origin: 'operator' }, { tokensBefore: 39_000, tokensAfter: 3000, origin: 'auto' }],
@@ -72,7 +74,7 @@ test('the Decisions region hides the import\'s `rewritten` closes and a "(not re
     const real = fact('d1', 'decisions', 'Retry three times, not five', at('10:00'), { why: 'the gateway rate-limits after four', state: 'closed', closedWhy: 'superseded', closedAt: at('11:00') });
     const imported = fact('d2', 'decisions', 'Use the old cart endpoint', at('09:00'), { why: '(not recorded)', state: 'closed', closedWhy: 'rewritten', closedAt: at('09:30') });
     const unrecorded = fact('d3', 'decisions', 'Keep SQLite', at('09:10'), { why: '(not recorded)' });
-    const lines = expanded(sampleView(60, 'en', { tasks: [{ name: '', facts: [real, imported, unrecorded], story: null, curating: false }], breaks: [] })).map((line) => stripVTControlCharacters(line));
+    const lines = expanded(sampleView(60, 'en', { tasks: [{ name: parseTaskName(''), facts: [real, imported, unrecorded], story: null, curating: parseCurating(false) }], breaks: [] })).map((line) => stripVTControlCharacters(line));
     const text = lines.join('\n');
     const decisions = lines.slice(lines.indexOf('DECISIONS'), lines.indexOf('TIMELINE')).join('\n');
     assert.ok(decisions.includes('Retry three times, not five · closed: superseded') && decisions.includes('the gateway rate-limits after four'));

@@ -4,6 +4,8 @@ import type { Break } from '#src/ports/boundaries.ts';
 import type { Fact, FactId } from '#src/recap/domain/fact.ts';
 import { sessionFactsOf } from '#src/recap/domain/session-facts.ts';
 import { expanded } from '#src/recap/render/expanded.ts';
+import { parseCurating, parseInstant, parseProse, parseTaskName } from '@stateforge-labs/recap-view';
+import { viewBreakOf, webOf } from '#src/view-model/column.ts';
 
 const NOW = 1_760_000_000_000;
 const MIN = 60_000;
@@ -37,13 +39,13 @@ const BREAKS: readonly Break[] = [
 /** The lines of the screenshot, at `width` cells. */
 export function expandedLines(width: number): readonly string[] {
     return expanded({
-        tasks: [{ name: '', facts: FACTS, story: { text: 'Checkout is moving to the v2 payments API behind a flag. The mapping is merged; the canary waits on one answer about gift cards.', at: ago(10) }, curating: false }],
+        tasks: [{ name: parseTaskName(''), facts: FACTS, story: { text: parseProse('Checkout is moving to the v2 payments API behind a flag. The mapping is merged; the canary waits on one answer about gift cards.'), at: parseInstant(ago(10)) }, curating: parseCurating(false) }],
         session: sessionFactsOf({
             firstSeen: ago(430), now: NOW, runs: { 'turn-ended': 31, focused: 4, requested: 2 },
             compactions: [{ tokensBefore: 812_000, tokensAfter: 14_000, origin: 'operator' }],
             lanes: [{ agent: 'claude', label: 'Checkout migration', context: { tokens: 120_000, window: 1_000_000, source: 'catalogue' } }, { agent: 'codex', label: null, context: { tokens: 61_000, window: 258_400, source: 'agent' } }],
             webs: [SHOP], edits: [{ path: 'src/payments/v2/client.ts', count: 9 }, { path: 'src/payments/v2/map.ts', count: 4 }], chapters: 3,
         }),
-        width, messages: en, now: NOW, zone: 'UTC', webs: [SHOP], breaks: BREAKS,
+        width, messages: en, now: NOW, zone: 'UTC', webs: [webOf(SHOP)], breaks: BREAKS.map(viewBreakOf),
     });
 }

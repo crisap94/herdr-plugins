@@ -29,9 +29,6 @@
     "return": 9,
     "property": 5
   },
-  "src/model.ts": {
-    "property": 2
-  },
   "src/present.ts": {
     "parameter": 23,
     "return": 13,

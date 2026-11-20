@@ -13,6 +13,8 @@ import type { FileCount } from './edit-counts.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseTabId } from '#src/recap/domain/ids.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
+import { parseCurating, parseInstant, parseProse, parseTaskName } from '@stateforge-labs/recap-view';
+import { viewBreakOf, webOf } from '#src/view-model/column.ts';
 
 export const CURATING_MS = 10 * 60_000;
 const LABEL_CHARS = 20;
@@ -66,7 +68,8 @@ export class ExpandedModel {
             this.asked.set(key, { change, at: now });
         }
         const waiting = this.asked.get(key);
-        return { task: { name: task.name, facts, story, curating: stale && waiting !== undefined && now - waiting.at < CURATING_MS }, asks };
+        const told = story === null ? null : { text: parseProse(story.text), at: parseInstant(story.at) };
+        return { task: { name: parseTaskName(task.name), facts, story: told, curating: parseCurating(stale && waiting !== undefined && now - waiting.at < CURATING_MS) }, asks };
     }
 
     read(tab: string, view: TabView | null, now: number): ExpandedData {
@@ -84,6 +87,6 @@ export class ExpandedModel {
             chapters: this.deps.boundaries.chapterCount(tab),
             ...(this.deps.autocompact === undefined ? {} : { autocompact: counted.kind === 'ok' ? this.deps.autocompact.countsFor(counted.value) : NO_DECISIONS }),
         });
-        return { tasks: found.map((one) => one.task), session, webs: lanes.map((lane) => lane.web), breaks: this.deps.boundaries.breaksOf(tab) };
+        return { tasks: found.map((one) => one.task), session, webs: lanes.map((lane) => (lane.web === undefined || lane.web === null ? lane.web : webOf(lane.web))), breaks: this.deps.boundaries.breaksOf(tab).map(viewBreakOf) };
     }
 }

@@ -14,6 +14,8 @@ import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '#src
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { groupsOf } from '#src/recap/render/groups.ts';
 import type { ExpandedTask } from '#src/recap/render/expanded.ts';
+import { parseCurating, parseTaskName } from '@stateforge-labs/recap-view';
+import { webOf } from '#src/view-model/column.ts';
 import { guiLaneOf, type LaneDraw } from './gui-tab-lanes.ts';
 import { BLANK_READS, type GuiReads } from './gui-tab-reads.ts';
 import { breakOf, factOf, regionsOf, storyOf, timelineRowsOf } from './gui-tab-regions.ts';
@@ -41,7 +43,7 @@ interface TaskDraw {
     readonly webs: Parameters<typeof factOf>[1];
 }
 
-const BLANK_EXPANDED: ExpandedTask = { name: '', facts: [], story: null, curating: false };
+const BLANK_EXPANDED: ExpandedTask = { name: parseTaskName(''), facts: [], story: null, curating: parseCurating(false) };
 
 function guiTask(task: RecapTask, found: ExpandedTask | undefined, draw: TaskDraw): GuiTask {
     const expanded = found ?? BLANK_EXPANDED;
@@ -79,7 +81,7 @@ const claudeRecapsOf = (recap: TabRecap): readonly Text[] => recap.lanes.flatMap
 
 const expandedOf = (reads: GuiReads, task: RecapTask): ExpandedTask | undefined => reads.expanded?.tasks.find((each) => each.name === task.name);
 
-const websOf = (view: TabView | null, reads: GuiReads): TaskDraw['webs'] => reads.expanded?.webs ?? (view?.lanes ?? []).map((lane) => lane.web);
+const websOf = (view: TabView | null, reads: GuiReads): TaskDraw['webs'] => reads.expanded?.webs ?? (view?.lanes ?? []).map((lane) => (lane.web === undefined || lane.web === null ? lane.web : webOf(lane.web)));
 
 const sessionOf = (reads: GuiReads): GuiTab['session'] => (reads.expanded === null ? null : guiSessionOf(reads.expanded.session));
 

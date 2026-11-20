@@ -3,6 +3,7 @@ import type { LaneWeb } from '#src/ports/tab-views.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { webOf } from '#src/view-model/column.ts';
 
 export const MESSAGE_LIMIT = 3000;
 
@@ -33,7 +34,7 @@ const RESTORE_LEAD = must(parseText('We just compacted this conversation. This i
 
 
 function resolved(line: Text, web: LaneWeb | null): Text {
-    const joined = linkify(line, [web]).map((part) => (part.url === undefined || part.url === part.text ? part.text : `${part.text} (${part.url})`)).join('');
+    const joined = linkify(line, [web === null ? null : webOf(web)]).map((part) => (part.url === undefined || part.url === part.text ? part.text : `${part.text} (${part.url})`)).join('');
     return must(parseText(joined));
 }
 

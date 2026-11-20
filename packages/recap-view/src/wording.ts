@@ -15,6 +15,16 @@ export function assertCount(input: unknown): asserts input is Count {
     }
 }
 
+export function parseCount(input: unknown): Count {
+    assertCount(input);
+    return input;
+}
+
+export function parsePercent(input: unknown): Percent {
+    assertPercent(input);
+    return input;
+}
+
 export function assertAmount(input: unknown): asserts input is Amount {
     if (typeof input !== 'number') {
         throw new TypeError('an amount is a number');
