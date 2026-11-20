@@ -12,12 +12,13 @@ import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
 import type { Unknown, Unknowable } from '#src/ports/unknowable.ts';
 import type { Fact, FactId, Section } from '#src/recap/domain/fact.ts';
 import type { Operation, Refusal } from '#src/recap/domain/ops.ts';
-import type { Lane } from '#src/recap/domain/lane-shape.ts';
+import type { Lane, TabId } from '#src/recap/domain/lane-shape.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { parseDuration, parseInstant, type Duration } from '#src/recap/domain/time.ts';
 import { parseFailureCause, type FailureCause } from '#src/recap/domain/failure-cause.ts';
 import { FULL_WRITER_VIEW, keepNewestOf, nextHoursOf, prunedWriterView, type HiddenCounts, type PositiveCount, type WriterView } from '#src/recap/domain/writer-view.ts';
 import type { Debounce } from '#src/recap/domain/debounce.ts';
+import { PACING_TURN, type Pacing } from '#src/recap/domain/pacing.ts';
 import type { EnginePlugs as LegacyPlugs, RestoreFacts as LegacyRestoreFacts } from '#src/recap/application/engine.ts';
 import { curate } from './curate.ts';
 import { followedOf } from './translate.ts';
@@ -203,6 +204,8 @@ const pluginWriterView = (view: sl.WriterView): WriterView =>
 
 const pluginDebounce = (debounce: sl.Debounce): Debounce => (debounce.kind === 'off' ? debounce : { kind: 'window', window: durationOf(debounce.window) });
 
+const pluginPacing = (pacing: sl.Pacing): Pacing => (pacing.kind === 'turn' ? PACING_TURN : { kind: 'smart', quiet: durationOf(pacing.quiet), maxWait: durationOf(pacing.maxWait) });
+
 export const legacyPlugsOf = (plugs: sl.EnginePlugs): FacadePlugs => {
     const { settings } = plugs;
     return {
@@ -223,6 +226,8 @@ export const legacyPlugsOf = (plugs: sl.EnginePlugs): FacadePlugs => {
             ...(settings.keepInput === undefined ? {} : { keepInput: () => settings.keepInput?.() === true }),
             ...(settings.pipeline === undefined ? {} : { pipeline: () => settings.pipeline?.() ?? 'one' }),
             ...(settings.debounce === undefined ? {} : { debounce: () => pluginDebounce(settings.debounce?.() ?? { kind: 'off' }) }),
+            ...(settings.pacing === undefined ? {} : { pacing: () => pluginPacing(settings.pacing?.() ?? { kind: 'turn' }) }),
+            ...(settings.visible === undefined ? {} : { visible: (id: TabId) => settings.visible?.(must(parseScopeId(String(id)))) ?? 'shown' }),
         },
         curate: curate(plugs),
         restore: {

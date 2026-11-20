@@ -165,6 +165,8 @@ function spy(): Spy {
         turnEnded: (): void => undefined,
         sessionStarted: (): void => undefined,
         refresh: (): Promise<void> => Promise.resolve(),
+        flush: (): Promise<void> => Promise.resolve(),
+        flushAll: (): Promise<void> => Promise.resolve(),
         compacted: (): RestoreText => { throw new Error('sync does not compact'); },
         history: (): readonly HistoryFact[] => [],
         curate: (): Promise<void> => Promise.resolve(),

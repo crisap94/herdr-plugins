@@ -12,13 +12,15 @@ import { isUnknown, saying, type Unknown } from '#src/ports/unknowable.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import { DEFAULT_PIPELINE, type CloseEvidence, type Pipeline } from '#src/recap/domain/pipeline.ts';
 import { DEBOUNCE_OFF, type Debounce } from '#src/recap/domain/debounce.ts';
+import { PACING_TURN, type Pacing, type Shown } from '#src/recap/domain/pacing.ts';
+import { AT_ONCE, laneSet, pacedOf, pendingOf, type Pending, type Start } from './pending-plan.ts';
 import { keptGrouping, type PlacedLane, type TaskShape } from '#src/recap/domain/grouping.ts';
 import { taskFactsOf } from './ledger-input.ts';
 import { groundOf } from './extract-ground.ts';
 import type { Extracted, Ground } from './extract-job.ts';
 import { extractPiped } from './extract-pipeline.ts';
 import type { RunEvent } from './ledger-reconcile.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { marksOf } from './boundaries.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { inputOf } from './recap-input.ts';
@@ -39,13 +41,14 @@ export interface RecapJobDeps {
     closeEvidence?(): CloseEvidence;
     writerView(): WriterView;
     debounce?(): Debounce;
+    pacing?(): Pacing;
+    visible?(tab: TabId): Shown;
     enumerator?(): Enumerators | null;
     ran?(event: RunEvent): void;
     mint(): FactId;
     log(line: string): void;
 }
 
-const TURN_SETTLE_MS = 2500;
 const READ_BUDGET = 768 * 1024;
 async function placeOf(seat: Lane, repos: LaneRepo): Promise<PlacedLane> {
     const found = seat.cwd === null ? null : await repos.repoOf(seat.cwd);
@@ -56,48 +59,12 @@ interface Reading { readonly lane: Lane; readonly cursor: LaneCursor; readonly c
 
 interface Located { readonly reader: Transcripts; readonly source: string }
 
-type Start = { readonly kind: 'after'; readonly delay: number } | { readonly kind: 'at'; readonly deadline: number };
-
-interface Pending { readonly lanes: readonly Lane[]; readonly cause: RecapCause; readonly forced: boolean; readonly start: Start }
-
 interface Run { started(at: ReturnType<Clock['now']>): void; advanced(readings: readonly Reading[]): void }
 
 interface Plan { readonly want: string; readonly was: string; readonly switched: boolean; readonly cause: RecapCause; readonly keys: readonly string[] }
 interface Prepared { readonly tasks: readonly TaskShape[]; readonly request: RecapRequest; readonly ground: Ground }
 
-interface Slot { timer: ReturnType<typeof setTimeout> | null; running: boolean; pending: Pending | null; lastStart: number | null; lastLanes: ReadonlySet<Lane['pane']>; waiting: (() => void)[] }
-
-const forcedCause = (cause: RecapCause): boolean => cause !== 'turn-ended';
-
-function stronger(previous: Pending | null, next: Pending): Pending {
-    return previous !== null && previous.forced && !next.forced ? { ...previous, lanes: next.lanes } : next;
-}
-
-function laneSet(lanes: readonly Lane[]): ReadonlySet<Lane['pane']> {
-    return new Set(lanes.map((entry) => entry.pane));
-}
-
-function sameLanes(left: ReadonlySet<Lane['pane']>, right: ReadonlySet<Lane['pane']>): boolean {
-    return left.size === right.size && [...left].every((pane) => right.has(pane));
-}
-
-function pendingOf(slot: Slot, lanes: readonly Lane[], cause: RecapCause, debounce: Debounce, clock: () => number): Pending {
-    switch (debounce.kind) {
-        case 'off':
-            return { lanes, cause, forced: forcedCause(cause), start: { kind: 'after', delay: cause === 'turn-ended' ? TURN_SETTLE_MS : 0 } };
-        case 'window': {
-            const now = clock();
-            const lastStart = slot.lastStart;
-            const forced = forcedCause(cause) || lastStart === null || !sameLanes(slot.lastLanes, laneSet(lanes));
-            const deadline = lastStart === null || forced ? now : Math.max(lastStart + debounce.window, now + TURN_SETTLE_MS);
-            return stronger(slot.pending, { lanes, cause, forced, start: { kind: 'at', deadline } });
-        }
-        default: {
-            const exhaustive: never = debounce;
-            return exhaustive;
-        }
-    }
-}
+interface Slot { readonly tab: TabId; timer: ReturnType<typeof setTimeout> | null; running: boolean; pending: Pending | null; lastStart: Instant | null; lastLanes: ReadonlySet<Lane['pane']>; waiting: (() => void)[] }
 
 function delayOf(start: Start, clock: () => number): number {
     return start.kind === 'after' ? start.delay : Math.max(0, start.deadline - clock());
@@ -112,11 +79,31 @@ export class RecapJob {
 
     request(tab: TabId, lanes: readonly Lane[], cause: RecapCause): void {
         const key = String(tab);
-        const slot = this.slots.get(key) ?? { timer: null, running: false, pending: null, lastStart: null, lastLanes: new Set(), waiting: [] };
+        const slot = this.slots.get(key) ?? { tab, timer: null, running: false, pending: null, lastStart: null, lastLanes: new Set(), waiting: [] };
         this.slots.set(key, slot);
-        const debounce = this.deps.debounce?.() ?? DEBOUNCE_OFF;
-        slot.pending = pendingOf(slot, lanes, cause, debounce, () => Number(this.deps.clock.now()));
+        const pacing = this.deps.pacing?.() ?? PACING_TURN;
+        slot.pending = pacing.kind === 'smart'
+            ? pacedOf(slot, lanes, cause, { pacing, shown: this.deps.visible?.(tab) ?? 'shown', now: this.deps.clock.now() })
+            : pendingOf(slot, lanes, cause, this.deps.debounce?.() ?? DEBOUNCE_OFF, () => this.deps.clock.now());
         this.arm(slot, tab);
+    }
+
+    flush(tab: TabId): Promise<void> {
+        const slot = this.slots.get(String(tab));
+        if (slot !== undefined) this.release(slot);
+        return this.idle(tab);
+    }
+
+    async flushAll(): Promise<void> {
+        const slots = [...this.slots.values()];
+        for (const slot of slots) this.release(slot);
+        await Promise.all(slots.map((slot) => this.idle(slot.tab)));
+    }
+
+    private release(slot: Slot): void {
+        if (slot.pending === null) return;
+        slot.pending = { ...slot.pending, start: AT_ONCE };
+        this.arm(slot, slot.tab);
     }
 
     private arm(slot: Slot, tab: TabId): void {
@@ -134,7 +121,7 @@ export class RecapJob {
         slot.timer = null;
         slot.running = true;
         const covered = pending.start.kind === 'at' ? slot.waiting.splice(0) : [];
-        const run: Run = { started: (at) => { slot.lastStart = Number(at); slot.lastLanes = laneSet(pending.lanes); }, advanced: (readings) => { if (readings.some((r) => r.chunk?.more === true) && slot.pending === null) slot.pending = { lanes: pending.lanes, cause: pending.cause, forced: true, start: { kind: 'after', delay: 0 } }; } };
+        const run: Run = { started: (at) => { slot.lastStart = at; slot.lastLanes = laneSet(pending.lanes); }, advanced: (readings) => { if (readings.some((r) => r.chunk?.more === true) && slot.pending === null) slot.pending = { lanes: pending.lanes, cause: pending.cause, urge: 'forced', start: AT_ONCE, burst: null }; } };
         try {
             await this.recap(tab, pending.lanes, pending.cause, run);
         } catch (error) {

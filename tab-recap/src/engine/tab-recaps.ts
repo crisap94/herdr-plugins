@@ -9,6 +9,8 @@ export interface TabRecaps {
     sync(tab: TabId, lanes: readonly Lane[]): void;
     turnEnded(tab: TabId, lanes: readonly Lane[], cause: RecapCause): void;
     refresh(tab: TabId, lanes: readonly Lane[]): Promise<void>;
+    flush(tab: TabId): Promise<void>;
+    flushAll(): Promise<void>;
     history(tab: TabId, lane: Lane): readonly HistoryFact[];
 }
 
@@ -49,6 +51,11 @@ export function tabRecaps(engine: Engine): TabRecaps {
             const scope = scopeOf(tab);
             return scope === null ? Promise.resolve() : engine.refresh(scope);
         },
+        flush: (tab: TabId): Promise<void> => {
+            const scope = scopeOf(tab);
+            return scope === null ? Promise.resolve() : engine.flush(scope);
+        },
+        flushAll: (): Promise<void> => engine.flushAll(),
         history: (tab: TabId, lane: Lane): readonly HistoryFact[] => {
             const scope = scopeOf(tab);
             const key = keyOf(lane.pane);

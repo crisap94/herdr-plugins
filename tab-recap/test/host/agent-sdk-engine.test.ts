@@ -32,6 +32,14 @@ const recording = (engine: Engine): FakeEngine => {
             log.push('refresh');
             return engine.refresh(scope);
         },
+        flush: (scope) => {
+            log.push('flush');
+            return engine.flush(scope);
+        },
+        flushAll: () => {
+            log.push('flushAll');
+            return engine.flushAll();
+        },
         compacted: (scope, key) => {
             log.push('compacted');
             return engine.compacted(scope, key);

@@ -7,7 +7,6 @@
   "./unstable/facade/plugs.ts legacyPlugsOf",
   "./unstable/facade/session-started.ts sessionStarted",
   "./unstable/facade/translate.ts tabOf",
-  "./unstable/facade/translate.ts laneOf",
   "./unstable/facade/translate.ts followedOf",
   "./unstable/facade/translate.ts writtenOf",
   "./unstable/facade/translate.ts emptyRestore",
