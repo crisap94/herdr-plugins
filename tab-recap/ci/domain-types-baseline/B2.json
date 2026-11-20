@@ -2,10 +2,6 @@
   "src/recap/domain/legacy.ts": {
     "legacy": 146
   },
-  "src/recap/domain/retention.ts": {
-    "parameter": 2,
-    "return": 2
-  },
   "src/recap/domain/twins/lane/legacy.ts": {
     "legacy": 8
   },
@@ -14,6 +10,9 @@
   },
   "src/recap/domain/twins/policy/legacy.ts": {
     "legacy": 12
+  },
+  "src/recap/domain/twins/retention/legacy.ts": {
+    "legacy": 4
   },
   "src/recap/domain/twins/session-identity/legacy.ts": {
     "legacy": 1
