@@ -198,7 +198,9 @@ export function eventValue(seq: string, kind: EventKind, detail?: string | null)
 
 export interface SeenColumn { readonly tabId: string; readonly paneId: string; readonly shape: Shape; }
 
-export interface Reconciliation { readonly focusedTab?: string | null; readonly at?: number; readonly lanes: readonly SeenLane[]; readonly panes: readonly string[]; readonly columns: readonly SeenColumn[]; readonly widths: ReadonlyMap<string, number>; readonly tabs?: readonly TabId[]; }
+export interface DeadColumn { readonly tab: TabId; readonly pane: PaneId }
+
+export interface Reconciliation { readonly focusedTab?: string | null; readonly at?: number; readonly lanes: readonly SeenLane[]; readonly panes: readonly string[]; readonly columns: readonly SeenColumn[]; readonly widths: ReadonlyMap<string, number>; readonly tabs?: readonly TabId[]; readonly dead?: readonly DeadColumn[]; }
 
 export interface StatusObservation { readonly kind: 'status'; readonly pane: PaneId; readonly status: string; }
 export interface SessionObservation { readonly kind: 'session'; readonly pane: PaneId; readonly session: string; }

@@ -2,6 +2,7 @@ import { lanesOf, put, removed, tabOfColumn, tabsWithLanes, without } from './bo
 import type { Board, HiddenState, Placement, Visibility, VisibilityTarget } from './board.ts';
 import { closureOf, closuresBetween, incarnating } from './closures.ts';
 import type { ClosedLane, RestoredLane } from './closures.ts';
+import { deadColumnsAfter } from './dead-columns.ts';
 import type { PaneId, TabId } from './ids.ts';
 import type { Intent, RecapCause } from './intent.ts';
 import { parsePaneId, parseTabId, sessionId } from './ids.ts';
@@ -200,7 +201,8 @@ function onReconciled(board: Board, seen: Reconciliation, now: Instant, policy: 
     const published: Intent[] = publishedTabs.map((tab) => ({ kind: 'publish', tab }));
     const reads: Intent[] = [...lanes.values()].filter((lane) => !board.lanes.has(lane.pane)).map((lane) => ({ kind: 'read-prompt', lane }));
     const closes: Intent[] = extras.map((extra) => ({ kind: 'close-column', tab: extra.tab, column: extra.pane }));
-    return step(next, [...closedIntents(closures), ...goneTabs(board, seen, now), ...turnsEndedBetween(board, next), ...published, ...reads, ...closes], sameSet ? 'unchanged' : 'changed');
+    const dead = deadColumnsAfter(next, seen, now, policy);
+    return step(dead.board, [...closedIntents(closures), ...goneTabs(board, seen, now), ...turnsEndedBetween(board, next), ...published, ...reads, ...closes, ...dead.intents], sameSet ? 'unchanged' : 'changed');
 }
 
 function onRestored(board: Board, lanes: readonly RestoredLane[]): Step {
