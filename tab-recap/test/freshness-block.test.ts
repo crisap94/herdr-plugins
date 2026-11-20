@@ -47,37 +47,37 @@ const cursorAt = (transcript: string, cursor: number, tail: string | null = null
 });
 
 test('a tab with no good run is the ledger-empty outcome, whatever the transcript holds', async () => {
-    const outcome = await freshnessOf({ records: records(null), transcripts: registryWith({ claude: reader([user('hi')]) }) }, input());
+    const outcome = await freshnessOf({ unreported: () => undefined, records: records(null), transcripts: registryWith({ claude: reader([user('hi')]) }) }, input());
     assert.deepEqual(outcome, { kind: 'ledger-empty' });
 });
 
 test('the Freshness block carries the last good run, the status and the refresh result', async () => {
-    const outcome = await freshnessOf({ records: records(LAST), transcripts: registryWith({ claude: reader([]) }) }, input({ status: 'working', refresh: 'refreshed' }));
+    const outcome = await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts: registryWith({ claude: reader([]) }) }, input({ status: 'working', refresh: 'refreshed' }));
     assert.deepEqual(outcome, {
         kind: 'fresh', freshness: { lastRun: LAST, status: 'working', newerPrompts: { kind: 'none' }, refresh: 'refreshed' },
     });
 });
 
 test('newer prompts: the user prompts after the cursor are counted as at least N', async () => {
-    const outcome = await freshnessOf({ records: records(LAST), transcripts: registryWith({ claude: reader([agent('a'), user('one'), tool('edit'), user('two'), user('three')]) }) }, input({ cursor: cursorAt('session-a.jsonl', 40, 'tail') }));
+    const outcome = await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts: registryWith({ claude: reader([agent('a'), user('one'), tool('edit'), user('two'), user('three')]) }) }, input({ cursor: cursorAt('session-a.jsonl', 40, 'tail') }));
     assert.equal(outcome.kind, 'fresh');
     assert.deepEqual(outcome.freshness.newerPrompts, { kind: 'at-least', count: 3 });
 });
 
 test('newer prompts: a queued prompt is a user prompt and counts as one', async () => {
-    const outcome = await freshnessOf({ records: records(LAST), transcripts: registryWith({ claude: reader([agent('a'), { role: 'user', text: 'later', queued: true }]) }) }, input({ cursor: cursorAt('session-a.jsonl', 40, 'tail') }));
+    const outcome = await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts: registryWith({ claude: reader([agent('a'), { role: 'user', text: 'later', queued: true }]) }) }, input({ cursor: cursorAt('session-a.jsonl', 40, 'tail') }));
     assert.equal(outcome.kind, 'fresh');
     assert.deepEqual(outcome.freshness.newerPrompts, { kind: 'at-least', count: 1 });
 });
 
 test('newer prompts: a transcript that grew with agent output only is none', async () => {
-    const outcome = await freshnessOf({ records: records(LAST), transcripts: registryWith({ claude: reader([agent('a'), tool('b')]) }) }, input());
+    const outcome = await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts: registryWith({ claude: reader([agent('a'), tool('b')]) }) }, input());
     assert.equal(outcome.kind, 'fresh');
     assert.deepEqual(outcome.freshness.newerPrompts, { kind: 'none' });
 });
 
 test('newer prompts: a transcript that cannot be read is unknown, and the lane is still reported', async () => {
-    const outcome = await freshnessOf({ records: records(LAST), transcripts: registryWith({ claude: reader(null) }) }, input());
+    const outcome = await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts: registryWith({ claude: reader(null) }) }, input());
     assert.equal(outcome.kind, 'fresh');
     assert.deepEqual(outcome.freshness.newerPrompts, { kind: 'unknown' });
     assert.equal(outcome.freshness.status, 'idle');
@@ -86,9 +86,9 @@ test('newer prompts: a transcript that cannot be read is unknown, and the lane i
 test('newer prompts: a source with no reader, no source or a screen source is unknown, and nothing is read', async () => {
     const asked: Asked[] = [];
     const transcripts = registryWith({ claude: reader([user('x')], asked) });
-    const noReader = await freshnessOf({ records: records(LAST), transcripts }, input({ agent: 'zed' }));
-    const noSource = await freshnessOf({ records: records(LAST), transcripts }, input({ source: null }));
-    const screen = await freshnessOf({ records: records(LAST), transcripts }, input({ source: `${SCREEN_PREFIX}w1:p1` }));
+    const noReader = await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts }, input({ agent: 'zed' }));
+    const noSource = await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts }, input({ source: null }));
+    const screen = await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts }, input({ source: `${SCREEN_PREFIX}w1:p1` }));
     for (const outcome of [noReader, noSource, screen]) {
         assert.equal(outcome.kind, 'fresh');
         assert.deepEqual(outcome.freshness.newerPrompts, { kind: 'unknown' });
@@ -99,16 +99,23 @@ test('newer prompts: a source with no reader, no source or a screen source is un
 test('the cursor applies only while the stored transcript equals the source', async () => {
     const asked: Asked[] = [];
     const transcripts = registryWith({ claude: reader([], asked) });
-    await freshnessOf({ records: records(LAST), transcripts }, input({ cursor: cursorAt('session-a.jsonl', 40, 'tail') }));
-    await freshnessOf({ records: records(LAST), transcripts }, input({ cursor: cursorAt('session-old.jsonl', 40, 'tail') }));
-    await freshnessOf({ records: records(LAST), transcripts }, input({ cursor: null }));
+    await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts }, input({ cursor: cursorAt('session-a.jsonl', 40, 'tail') }));
+    await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts }, input({ cursor: cursorAt('session-old.jsonl', 40, 'tail') }));
+    await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts }, input({ cursor: null }));
     assert.deepEqual(asked.map((call) => call.was), [{ cursor: 40, tail: 'tail' }, UNREAD, UNREAD]);
     assert.ok(asked.every((call) => call.budget === TRANSCRIPT_READ_BUDGET_BYTES));
 });
 
 test('the located source is the one read, so the daemon and the CLI share one function', async () => {
     const asked: Asked[] = [];
-    await freshnessOf({ records: records(LAST), transcripts: registryWith({ claude: reader([], asked) }) }, input({ source: 'located.jsonl' }));
+    await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts: registryWith({ claude: reader([], asked) }) }, input({ source: 'located.jsonl' }));
     assert.deepEqual(asked.map((call) => call.source), ['located.jsonl']);
 });
 
+
+test('an unreadable last run is reported once and comes back as ledger-unreadable, not ledger-empty', async () => {
+    const told: string[] = [];
+    const failed = unknown({ why: 'unreadable', detail: causeOf('locked') });
+    const outcome = await freshnessOf({ unreported: () => { told.push('reported'); }, records: { lastRunOf: () => failed }, transcripts: registryWith({ claude: reader([user('hi')]) }) }, input());
+    assert.deepEqual([outcome.kind, told], ['ledger-unreadable', ['reported']]);
+});

@@ -1,7 +1,7 @@
 import { isUnknownRead, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import { isScreenSource } from '#src/ports/screens.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
+import { isUnknown, type Unknown } from '#src/ports/unknowable.ts';
 import { UNREAD, type Position } from '#src/ports/transcripts.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { newerPromptsOf, type Freshness, type RefreshStatus } from '#src/recap/domain/freshness.ts';
@@ -18,11 +18,12 @@ export interface FreshnessInput {
     readonly refresh: RefreshStatus;
 }
 
-export type FreshnessOutcome = { readonly kind: 'fresh'; readonly freshness: Freshness } | { readonly kind: 'ledger-empty' };
+export type FreshnessOutcome = { readonly kind: 'fresh'; readonly freshness: Freshness } | { readonly kind: 'ledger-empty' } | { readonly kind: 'ledger-unreadable' };
 
 export interface FreshnessDeps {
     readonly records: Pick<GuardedRecapRecords, 'lastRunOf'>;
     readonly transcripts: TranscriptRegistry;
+    readonly unreported: (failure: Unknown) => void;
 }
 
 function positionOf(input: FreshnessInput): Position {
@@ -49,8 +50,12 @@ export function closedFreshnessOf(view: ClosedView): FreshnessOutcome {
 
 export async function freshnessOf(deps: FreshnessDeps, input: FreshnessInput): Promise<FreshnessOutcome> {
     const lastRun = deps.records.lastRunOf(input.tab);
-    if (lastRun === null || isUnknownRead(lastRun)) {
+    if (lastRun === null) {
         return { kind: 'ledger-empty' };
+    }
+    if (isUnknownRead(lastRun)) {
+        deps.unreported(lastRun);
+        return { kind: 'ledger-unreadable' };
     }
     const count = await newerPromptCount(deps.transcripts, input);
     return { kind: 'fresh', freshness: { lastRun, status: input.status, newerPrompts: newerPromptsOf(count), refresh: input.refresh } };

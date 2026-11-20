@@ -144,6 +144,7 @@ export class PrintedHandoffs implements HandoffPrinter {
         const render = renderHandoff({
             records: store.records,
             transcripts: this.deps.transcripts,
+            log: this.deps.log,
             locate: (): Promise<Text | null> => Promise.resolve(transcriptOf(view.cursor)),
             worksite: this.deps.worksite,
             tokens: this.deps.tokens,

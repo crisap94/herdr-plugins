@@ -35,6 +35,8 @@ export interface RenderMetrics {
 
 export type RenderedText = { readonly kind: 'text'; readonly text: string } & RenderMetrics;
 
-export type HandoffRenderResult = RenderedText | RenderRefusal;
+export type RenderFailure = Extract<HandoffOutcome, { readonly kind: 'failed'; readonly reason: 'source-unreadable' }>;
+
+export type HandoffRenderResult = RenderedText | RenderRefusal | RenderFailure;
 
 export type HandoffRender = (input: HandoffRenderInput) => Promise<HandoffRenderResult>;

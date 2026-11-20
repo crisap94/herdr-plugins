@@ -51,6 +51,7 @@ export function depsOf(over: { readonly lastRun?: LastRun | null; readonly reade
     return {
         records: { lastRunOf: () => (over.lastRun === undefined ? LAST_RUN : over.lastRun) },
         transcripts: registryWith({ claude: claudeReader(2) }),
+        log: () => undefined,
         locate: async () => SOURCE_FILE,
         worksite: { reader: over.reader ?? worksiteWith(), repo: { repoOf: async () => ({ kind: 'no-repo' }) }, edits: { of: async () => [] } },
         tokens: { read: async () => ({ kind: 'tokens', tokens: new Map() }) },

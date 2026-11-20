@@ -14,6 +14,6 @@ export interface RunFacts {
     readonly costUsd: number;
 }
 
-export type CheckedRecapRecords = Omit<RecapRecords, 'readRecap'> & {
-    readonly [K in 'readRecap']: (...args: Parameters<RecapRecords[K]>) => ReturnType<RecapRecords[K]> | Unknown;
+export type CheckedRecapRecords = Omit<RecapRecords, 'readRecap' | 'lastRunOf'> & {
+    readonly [K in 'readRecap' | 'lastRunOf']: (...args: Parameters<RecapRecords[K]>) => ReturnType<RecapRecords[K]> | Unknown;
 };

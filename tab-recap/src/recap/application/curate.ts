@@ -43,7 +43,7 @@ export class CurateTasks {
 
     constructor(deps: CurateDeps) {
         this.deps = deps;
-        this.plain = { ...deps, ledger: fallbackLedger(deps.ledger) };
+        this.plain = { ...deps, ledger: fallbackLedger(deps.ledger, (failure) => deps.log(`curate: facts not read, ${saying(failure.why)}`)) };
         this.reconciling = new Reconciling(this.plain);
     }
 

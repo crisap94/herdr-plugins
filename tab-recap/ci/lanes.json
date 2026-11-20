@@ -356,6 +356,7 @@
       "test/tab-views-live-lanes.test.ts",
       "test/text-collapse.test.ts",
       "test/typing-lease.test.ts",
+      "test/unknown-read-paths.test.ts",
       "test/visibility.test.ts",
       "test/watchdog.test.ts",
       "test/worksite-text.test.ts",

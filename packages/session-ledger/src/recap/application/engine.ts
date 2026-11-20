@@ -61,7 +61,12 @@ function restoreFactsOf(store: EngineStore, environment: EngineEnvironment, at: 
         const closed = store.ledger.recentlyClosed(owned, at - CLOSED_SHOWN_MS);
         return { open: 'kind' in open ? [] : open, closed: 'kind' in closed ? [] : closed };
     });
-    return { at, lastRun: store.records.lastRunOf(id), open: facts.flatMap((task) => task.open), closed: facts.flatMap((task) => task.closed) };
+    const last = store.records.lastRunOf(id);
+    const lastKnown = last === null || !('kind' in last);
+    if (!lastKnown) {
+        environment.log(`restore ${id}: last run unknown, ${saying(last.why)}`);
+    }
+    return { at, lastRun: lastKnown ? last : null, open: facts.flatMap((task) => task.open), closed: facts.flatMap((task) => task.closed) };
 }
 
 export function createEngine(plugs: EnginePlugs): Engine {

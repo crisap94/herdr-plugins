@@ -1,6 +1,6 @@
 import type { Text } from '#src/recap/domain/text.ts';
 import { byteBudgetOf } from '#src/recap/domain/byte-budget.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
+import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { PaneTokens } from '#src/ports/pane-tokens.ts';
 import type { HandoffReference } from '#src/recap/render/handoff-markdown.ts';
 import { omittedTotal } from '#src/recap/render/handoff-markdown.ts';
@@ -15,12 +15,14 @@ import type { FreshnessDeps } from './freshness-block.ts';
 import { HANDOFF_WORKSITE_BYTES } from './handoff-limits.ts';
 import type { HandoffLane, HandoffRender, HandoffRenderInput, HandoffRenderResult } from './handoff-render.ts';
 import { handoffTextOf } from './handoff-text.ts';
+import type { HandoffLog } from './handoff-mirror.ts';
 import { worksiteOf } from './worksite-section.ts';
 import type { WorksiteDeps } from './worksite-section.ts';
 
 export interface HandoffPipelineDeps {
     readonly records: FreshnessDeps['records'];
     readonly transcripts: FreshnessDeps['transcripts'];
+    readonly log: HandoffLog;
     readonly locate: (lane: HandoffLane) => Promise<string | null>;
     readonly worksite: WorksiteDeps;
     readonly tokens: PaneTokens;
@@ -37,10 +39,13 @@ export function renderHandoff(deps: HandoffPipelineDeps): HandoffRender {
     return async (input: HandoffRenderInput): Promise<HandoffRenderResult> => {
         const { lane, cursor, closed } = input;
         const freshness = closed === undefined
-            ? await freshnessOf({ records: deps.records, transcripts: deps.transcripts }, { tab: String(lane.tab), agent: String(lane.agent), source: await deps.locate(lane), cursor, status: lane.status, refresh: input.refresh })
+            ? await freshnessOf({ records: deps.records, transcripts: deps.transcripts, unreported: (failure) => deps.log(must(parseText(`handoff ${String(lane.tab)}: ledger unreadable, ${saying(failure.why)}`))) }, { tab: String(lane.tab), agent: String(lane.agent), source: await deps.locate(lane), cursor, status: lane.status, refresh: input.refresh })
             : closedFreshnessOf(closed);
         if (freshness.kind === 'ledger-empty') {
             return { kind: 'refused', reason: 'ledger-empty' };
+        }
+        if (freshness.kind === 'ledger-unreadable') {
+            return { kind: 'failed', reason: 'source-unreadable' };
         }
         const worksite = await worksiteOf(deps.worksite, { directory: lane.cwd, cursor, tokens: closed === undefined ? await tokensOf(deps.tokens, lane) : null });
         const body = buildHandoffContent({

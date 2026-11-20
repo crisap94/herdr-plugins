@@ -10,7 +10,7 @@ export interface Applied {
     readonly refused: readonly Refusal[];
 }
 
-type Reads = 'openOf' | 'recentlyClosed' | 'keysOf';
+type Reads = 'openOf' | 'recentlyClosed' | 'keysOf' | 'allOf';
 
 export type CheckedLedger = Omit<Ledger, Reads> & {
     readonly [K in Reads]: (...args: Parameters<Ledger[K]>) => ReturnType<Ledger[K]> | Unknown;
