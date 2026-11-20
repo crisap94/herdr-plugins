@@ -1,19 +1,4 @@
 {
-  "src/recap/application/delivery-mark.ts": {
-    "return": 3
-  },
-  "src/recap/application/edit-counts.ts": {
-    "parameter": 2,
-    "return": 1,
-    "container": 2,
-    "property": 2
-  },
-  "src/recap/application/eval-label.ts": {
-    "parameter": 11,
-    "return": 2,
-    "container": 5,
-    "property": 4
-  },
   "src/recap/application/eval-options.ts": {
     "parameter": 15,
     "return": 7,
@@ -27,7 +12,7 @@
     "property": 16
   },
   "src/recap/application/eval-run.ts": {
-    "parameter": 7,
+    "parameter": 6,
     "return": 1,
     "container": 5,
     "property": 1
@@ -233,6 +218,12 @@
   },
   "src/recap/application/twins/decode/legacy.ts": {
     "legacy": 4
+  },
+  "src/recap/application/twins/delivery-mark/legacy.ts": {
+    "legacy": 3
+  },
+  "src/recap/application/twins/edit-counts/legacy.ts": {
+    "legacy": 5
   },
   "src/recap/application/twins/ledgers/legacy.ts": {
     "legacy": 2
