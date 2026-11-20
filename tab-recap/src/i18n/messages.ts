@@ -203,6 +203,7 @@ export interface ChaptersMessages {
 
 export interface DatabaseMessages {
     readonly newer: (backup: Text | null) => Text;
+    readonly stale: (found: Count, known: Count) => Text;
 }
 
 export interface KeyBinding {

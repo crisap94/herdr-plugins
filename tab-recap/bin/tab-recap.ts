@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 import { openSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { openCliStore } from '#src/daemon/cli-store.ts';
+import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import type { Requests } from '#src/ports/requests.ts';
 import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
@@ -149,7 +149,7 @@ function requests(): Requests | null {
     if (store.kind === 'ready') {
         return store.requests;
     }
-    console.error(`tab-recap: 1 — ${m().database.newer(store.backup)}`);
+    console.error(`tab-recap: 1 — ${notReadyLine(store, m())}`);
     return null;
 }
 

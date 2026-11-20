@@ -145,7 +145,7 @@ export const english: Catalog = {
         seconds: (seconds) => must(parseText(`${seconds} s`)),
         minutes: (minutes, seconds) => must(parseText(seconds === 0 ? `${minutes} min` : `${minutes} min ${seconds} s`)),
     },
-    database: { newer: (backup) => must(parseText(`database is newer than this plugin — ${backup === null ? 'restore a backup' : `restore ${backup}`} or upgrade`)) },
+    database: { newer: (backup) => must(parseText(`database is newer than this plugin — ${backup === null ? 'restore a backup' : `restore ${backup}`} or upgrade`)), stale: (found, known) => must(parseText(`the state store is at v${found}, this plugin needs v${known} — start the daemon: tab-recap start`)) },
     cli: {
         daemonRunning: (pid) => must(parseText(`daemon already running (pid ${pid})`)),
         daemonStillStopping: must(parseText('the previous daemon is still closing its columns: not starting a second daemon, try again when it has exited')),

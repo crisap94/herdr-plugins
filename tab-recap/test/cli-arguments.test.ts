@@ -10,13 +10,24 @@ import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSy
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { BUN_CACHE_OFF } from './support/bun-env.ts';
+import { stateStore as ownerStore } from '#src/adapters/db/database.ts';
 
 const entry = join(import.meta.dirname, '..', 'bin', 'tab-recap.ts');
 
 function run(...args: string[]): { status: number | null; stdout: string; stderr: string; config: string; state: string; done: () => void } {
+    return runWith(false, args);
+}
+
+function runWith(store: boolean, args: readonly string[]): { status: number | null; stdout: string; stderr: string; config: string; state: string; done: () => void } {
     const root = mkdtempSync(join(tmpdir(), 'tab-recap-cli-'));
     const config = join(root, 'config');
     const state = join(root, 'state');
+    if (store) {
+        const owner = ownerStore(state);
+        if (owner.kind === 'ready') {
+            owner.close();
+        }
+    }
     const ran = spawnSync(process.execPath, [entry, ...args], {
         encoding: 'utf8',
         env: { PATH: process.env['PATH'] ?? '', HOME: root, HERDR_PLUGIN_CONFIG_DIR: config, TAB_RECAP_STATE: state, TAB_RECAP_LOCALE: 'en', ...BUN_CACHE_OFF },
@@ -147,7 +158,7 @@ test('`autocompact`: three decisions print three rows newest first with share, v
 });
 
 test('`autocompact` with nothing decided says so and still prints the total', () => {
-    const ran = run('autocompact');
+    const ran = runWith(true, ['autocompact']);
     try {
         assert.equal(ran.status, 0, ran.stderr);
         assert.match(ran.stdout, /no autocompact decisions yet\nlast 24 h: 0 decisions, \$0/);

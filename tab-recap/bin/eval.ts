@@ -1,6 +1,6 @@
 import { createInterface } from 'node:readline';
 import { RUBRIC_TEXT } from '#src/adapters/job/prompts/rubric.ts';
-import { openCliStore } from '#src/daemon/cli-store.ts';
+import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { AUTO_ORDER, availableIn, judgeFor, summarizerWork } from '#src/daemon/backends.ts';
@@ -43,7 +43,7 @@ export async function evalCommand(argv: readonly string[]): Promise<number> {
     }
     const store = openCliStore();
     if (store.kind !== 'ready') {
-        console.error(`tab-recap: 1 — ${messagesOf().database.newer(store.backup)}`);
+        console.error(`tab-recap: 1 — ${notReadyLine(store, messagesOf())}`);
         return 1;
     }
     const operator = lines();

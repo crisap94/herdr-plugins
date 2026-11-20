@@ -85,7 +85,13 @@ test('a source that is a label rather than a lane is refused source-unavailable 
         assert.equal(store.kind, 'ready');
         assert.deepEqual(store.requests.takeHandoffs(), []);
         store.close();
-    }, runningDaemon(codeVersion() ?? 'unknown'));
+    }, (state) => {
+        const owner = stateStore(state);
+        if (owner.kind === 'ready') {
+            owner.close();
+        }
+        runningDaemon(codeVersion() ?? 'unknown')(state);
+    });
 });
 
 test('print with no state database exits 1 on stderr and creates no database', () => {

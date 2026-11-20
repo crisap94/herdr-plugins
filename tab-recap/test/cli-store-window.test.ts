@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { stateStore } from '#src/adapters/db/database.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
@@ -34,10 +35,15 @@ function withEnv(days: string | undefined, body: (state: string) => void): void 
 
 function protectedAfter(days: string | undefined, closedDaysAgo: number): readonly string[] {
     let found: readonly string[] = [];
-    withEnv(days, () => {
+    withEnv(days, (state) => {
+        const owner = stateStore(state);
+        if (owner.kind !== 'ready') {
+            assert.fail('the owner creates a fresh store');
+        }
+        owner.close();
         const store = openCliStore();
         if (store.kind !== 'ready') {
-            assert.fail('a fresh state directory opens ready');
+            assert.fail('the reader opens the current store');
         }
         const now = Date.now();
         store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
