@@ -148,3 +148,19 @@ test('a hidden tab logs one deferral per deferred run, a visible one logs none, 
     await engine.flushAll();
     assert.deepEqual([said('flushed (shutdown)'), world.located().length], [2, 3]);
 });
+
+test('a turn end that says a session needs the user runs after the settle even on a hidden tab', async () => {
+    const { world, engine } = setup({ pacing: smart(50, 60_000), visible: false });
+    engine.turnEnded(TAB, key('a'), 'turn-ended', 'needs-you');
+    await pause(3000);
+    await world.settle();
+    assert.equal(world.located().length, 1);
+});
+
+test('a turn end with no attention on a hidden tab still waits', async () => {
+    const { world, engine } = setup({ pacing: smart(50, 60_000), visible: false });
+    engine.turnEnded(TAB, key('a'), 'turn-ended', 'none');
+    await pause(3000);
+    await world.settle();
+    assert.equal(world.located().length, 0);
+});

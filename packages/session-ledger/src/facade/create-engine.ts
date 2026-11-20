@@ -1,4 +1,4 @@
-import type { CreateEngine, Engine, FlushWhy } from '#src/contract/engine.ts';
+import type { Attention, CreateEngine, Engine, FlushWhy } from '#src/contract/engine.ts';
 import type { HistoryFact } from '#src/contract/facts.ts';
 import type { AccomplishmentEstablished, LedgerEvent, TurnRecorded } from '#src/contract/events.ts';
 import { instant } from '#src/contract/kernel.ts';
@@ -130,7 +130,7 @@ export function engineOver(plugs: FacadePlugs): Engine {
             set.unfollow(scope, key);
         },
         followedBy: (harness, session): FollowedBy | null => followedBy(set, harness, session),
-        turnEnded: (scope: ScopeId, key: SessionKey | null, cause: RecapCause): void => {
+        turnEnded: (scope: ScopeId, key: SessionKey | null, cause: RecapCause, attention: Attention = 'none'): void => {
             const tab = tabOf(scope);
             if (tab === null) {
                 return;
@@ -139,7 +139,8 @@ export function engineOver(plugs: FacadePlugs): Engine {
                 plugs.environment.log(`engine-adapter: turn ended for a session that is not followed: ${scope} ${key}`);
                 return;
             }
-            legacy.turnEnded(tab, set.lanesOf(scope), cause);
+            const lanes = set.lanesOf(scope);
+            legacy.turnEnded(tab, attention === 'needs-you' ? lanes.map((lane) => ({ ...lane, status: 'blocked' as const })) : lanes, cause);
         },
         sessionStarted: (scope: ScopeId, key: SessionKey, now: Started): void => {
             if (set.followed(scope, key) === undefined) {
