@@ -19,6 +19,7 @@ export const spanish: Catalog = {
     claudeOwn: must(parseText('El resumen propio de Claude, hasta que se escriba el de la pestaña:')),
     noRecapYet: must(parseText('Aún no hay resumen. Se escribe cuando un agente de esta pestaña termina un turno; pulsa r para escribirlo ahora.')),
     noRecapShort: must(parseText('aún sin resumen')),
+    allDoneShort: must(parseText('todo hecho')),
     autocompactSettings: { ceilingOverride: (enabled) => must(parseText(`límite anula cobertura ${(enabled === 'present') ? 'sí' : 'no'}`)), coverageBackoff: (window) => must(parseText(`espera de cobertura ${window}`)), missedFacts: (choice) => must(parseText(`datos que faltan ${choice}`)) },
     git: { unpushed: (count) => must(parseText(`${count} sin subir`)), changed: (count) => must(parseText(count === 1 ? '1 cambiado' : `${count} cambiados`)) },
     recapError: (error) => must(parseText(`resumen: ${error}`)),

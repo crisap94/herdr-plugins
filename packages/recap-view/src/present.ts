@@ -217,6 +217,12 @@ function leads(recap: RecapColumn | null): { needs: string | null; now: string |
     return { needs: found.find((lead) => lead.needs !== null)?.needs ?? null, now: found.find((lead) => lead.now !== null)?.now ?? null };
 }
 
+function finishedTasks(recap: RecapColumn | null): readonly ColumnTask[] {
+    const tasks = recap?.tasks ?? [];
+    const open = tasks.some((task) => (task.sections === null ? firstItem(task.markdown, 'next') : (task.sections.next[0] ?? null)) !== null);
+    return open ? [] : tasks.filter((task) => (task.sections === null ? firstItem(task.markdown, 'done') : (task.sections.done[0] ?? null)) !== null);
+}
+
 function headline(view: TextColumnView): string {
     const style = paint(view);
     const shown = (view.compactions ?? []).toSorted((a, b) => (b.startedAt ?? 0) - (a.startedAt ?? 0) || b.stageAt - a.stageAt)[0];
@@ -227,7 +233,8 @@ function headline(view: TextColumnView): string {
     if (needs !== null) {
         return style.red(view.wording.needsYou(needs));
     }
-    return now ?? view.rows?.find((c) => c.harnessRecap !== null)?.harnessRecap ?? view.wording.noRecapShort;
+    const finished = finishedTasks(view.recap).length > 0;
+    return now ?? view.rows?.find((c) => c.harnessRecap !== null)?.harnessRecap ?? (finished ? view.wording.allDoneShort : view.wording.noRecapShort);
 }
 
 const BAR_MIN_HEAD = 20;

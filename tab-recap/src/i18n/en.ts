@@ -18,6 +18,7 @@ export const english: Catalog = {
     claudeOwn: must(parseText("Claude's own recap, until the tab's is written:")),
     noRecapYet: must(parseText('No recap yet. It is written when an agent in this tab finishes a turn — press r to write it now.')),
     noRecapShort: must(parseText('no recap yet')),
+    allDoneShort: must(parseText('all done')),
     autocompactSettings: { ceilingOverride: (enabled) => must(parseText(`ceiling override ${(enabled === 'present') ? 'on' : 'off'}`)), coverageBackoff: (window) => must(parseText(`coverage backoff ${window}`)), missedFacts: (choice) => must(parseText(`missed facts ${choice}`)) },
     git: { unpushed: (count) => must(parseText(`${count} unpushed`)), changed: (count) => must(parseText(`${count} changed`)) },
     recapError: (error) => must(parseText(`recap: ${error}`)),

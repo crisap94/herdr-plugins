@@ -128,6 +128,7 @@ export interface Wording<Text> {
     readonly claudeOwn: Text;
     readonly noRecapYet: Text;
     readonly noRecapShort: Text;
+    readonly allDoneShort: Text;
     readonly recapError: (error: Text) => Text;
     readonly needsYou: (what: Text) => Text;
     readonly ago: (amount: Amount, unit: AgoUnit) => Text;
