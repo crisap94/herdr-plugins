@@ -16,25 +16,26 @@ import type { Records } from './compaction-trail.ts';
 import type { LaneEvents } from './lane-events.ts';
 import type { LaneClaims } from './lane-claims.ts';
 import type { RecapRefresh } from './recap-wait.ts';
-import type { PaneId, SessionId } from '#src/recap/domain/ids.ts';
-import type { Duration } from '#src/recap/domain/time.ts';
+import type { PaneId, SessionId, TabId } from '#src/recap/domain/ids.ts';
+import type { Duration, Instant } from '#src/recap/domain/time.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { CompactionPlans } from '#src/ports/compaction-plans.ts';
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
 import type { AskLedger } from '#src/ports/ask-ledger.ts';
+import type { AnswerStage, RequestId } from '#src/protocol/primitives.ts';
 
-interface BriefPort { enabled(): Presence; job(): string | null; write(document: Text, own: Text, correction?: Text): Promise<Written> }
+export interface BriefPort { enabled(): Presence; job(): Text | null; write(document: Text, own: Text, correction?: Text): Promise<Written> }
 
-interface CoveragePort { check(brief: string, facts: readonly CoverageFact[]): Promise<Coverage> }
+export interface CoveragePort { check(brief: Text, facts: readonly CoverageFact[]): Promise<Coverage> }
 
-interface TypingPort { acquire(pane: PaneId): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: PaneId): Promise<void> }
+export interface TypingPort { acquire(pane: PaneId): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: PaneId): Promise<void> }
 
-interface LaneWebs { of(pane: PaneId): LaneWeb | null }
+export interface LaneWebs { of(pane: PaneId): LaneWeb | null }
 
 export interface RestoreHandoff { offer(session: SessionId, text: Text): void; take(session: SessionId): Text | null }
 
-export interface CompactionDeps {
+export interface CompactionPorts {
     readonly compactionPlans: CompactionPlans;
     readonly agents: Agents;
     readonly notifier: Notifier;
@@ -47,9 +48,9 @@ export interface CompactionDeps {
     coverage(): CoveragePort | null;
     readonly decisions: Pick<AutocompactRecords, 'linkLatest' | 'amend' | 'lastDecision'> | null;
     readonly checkedBriefs?: AutocompactBriefs;
-    ceilingOverride?(): boolean;
+    ceilingOverride?(): Presence;
     missedFacts?(): MissedFacts;
-    answer?(id: string, pane: string, stage: string): void;
+    answer?(id: RequestId, pane: PaneId, stage: AnswerStage): void;
     readonly asks?: Pick<AskLedger, 'attach'>;
     readonly typing?: TypingPort;
     readonly events?: LaneEvents;
@@ -58,13 +59,13 @@ export interface CompactionDeps {
     recent(lane: Lane): Promise<readonly Entry[]>;
     marks(lane: Lane): Promise<readonly Mark[]>;
     pause(ms: Duration): Promise<void>;
-    now(): number;
+    now(): Instant;
     readonly webs: LaneWebs;
-    lanes(tab: string): readonly Lane[];
-    listsPane(pane: string): boolean;
-    focused(tab: string): Promise<string | null>;
+    lanes(tab: TabId): readonly Lane[];
+    listsPane(pane: PaneId): Presence;
+    focused(tab: TabId): Promise<PaneId | null>;
     refresh: RecapRefresh;
     target(): CompactTarget;
     messages(): Messages;
-    log(line: string): void;
+    log(line: Text): void;
 }

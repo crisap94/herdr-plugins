@@ -14,7 +14,6 @@ import { parseCount, parsePositiveCount } from '#src/recap/domain/count.ts';
 import { parseProbability, type Probability } from '#src/recap/domain/probability.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { checkCoverage, checkedFactsOf, correctionFor, KEPT_AT_LEAST, questionsOf, unmetLinesOf, unmetOf, type CheckedCoverage, type MissingPart, type UnmetFact } from './brief-coverage.ts';
-import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import { parseWireText } from '#src/protocol/primitives.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import { parseAskId } from '#src/recap/domain/compact-request.ts';

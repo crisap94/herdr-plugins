@@ -483,6 +483,7 @@
       "src/recap/application/transcript-tail.ts",
       "src/recap/application/twins/compact-requests/legacy.ts",
       "src/recap/application/twins/compaction-input/legacy.ts",
+      "src/recap/application/twins/compaction-wiring/legacy.ts",
       "src/recap/application/twins/counted-writer/legacy.ts",
       "src/recap/application/twins/ledgers/legacy.ts",
       "src/recap/application/twins/restart/legacy.ts",

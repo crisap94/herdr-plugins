@@ -3,7 +3,7 @@ import { parseAnswerTally, type AnswerTally } from '#src/ports/autocompact-recor
 import { must } from '#src/protocol/result.ts';
 import { correctionOf, factsOf } from './brief-coverage.ts';
 import type { Coverage } from './brief-coverage.ts';
-import type { CompactionDeps } from './compaction-deps.ts';
+import type { CompactionPorts } from './compaction-deps.ts';
 import { parseCheckedFact, type CheckedFact, type CoverageOutcome } from '#src/recap/domain/autocompact.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
@@ -51,7 +51,7 @@ const waiting = (parts: WaitingParts): Checked => ({
     brief: parts.brief, coverage: parts.coverage ?? null, outcome: parts.outcome, why: parts.why, coverageMs: parts.coverageMs ?? duration(0), coverageCostUsd: parts.coverageCostUsd ?? null,
 });
 
-type CoverageCheck = Pick<NonNullable<ReturnType<CompactionDeps['coverage']>>, 'check'>;
+type CoverageCheck = Pick<NonNullable<ReturnType<CompactionPorts['coverage']>>, 'check'>;
 
 interface BestParts {
     readonly coverage: CoverageCheck;
@@ -70,7 +70,7 @@ interface Best {
 async function bestBrief(parts: BestParts): Promise<Best> {
     const { coverage, first, facts, rewrite, log, flow } = parts;
     let brief = first;
-    let result = await coverage.check(first.text ?? '', facts);
+    let result = await coverage.check(first.text ?? must(parseText('')), facts);
     if (!result.ok && result.unknown === null) {
         log(must(parseText(`autocompact: the brief misses ${result.missingFacts.length} fact(s); written again`)));
         const again = await rewrite(must(parseText(correctionOf(result.missing))));
@@ -84,7 +84,7 @@ async function bestBrief(parts: BestParts): Promise<Best> {
     return { brief, result };
 }
 
-export async function checkedBrief(deps: Pick<CompactionDeps, 'coverage' | 'log' | 'now'>, first: Briefed, history: readonly HistoryFact[], rewrite: (correction: Text) => Promise<Briefed>, flow: CoverageFlow): Promise<Checked> {
+export async function checkedBrief(deps: Pick<CompactionPorts, 'coverage' | 'log' | 'now'>, first: Briefed, history: readonly HistoryFact[], rewrite: (correction: Text) => Promise<Briefed>, flow: CoverageFlow): Promise<Checked> {
     const started = deps.now();
     const coverage = deps.coverage();
     if (coverage === null) return waiting({ brief: first, why: must(parseText('no decider is set up')), outcome: { kind: 'unchecked', reason: 'no-decider' } });

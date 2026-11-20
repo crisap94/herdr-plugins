@@ -18,7 +18,7 @@ import type { Briefed, Checked, CoverageFlow } from './compaction-coverage.ts';
 import { factsOf } from './brief-coverage.ts';
 import { blockedByCoverage, coverageLog, coverageWhy } from './coverage-verdict.ts';
 import { compactionInput } from './compaction-input.ts';
-import type { CompactionDeps } from './compaction-deps.ts';
+import type { CompactionPorts } from './compaction-deps.ts';
 import type { Material } from './compaction-message.ts';
 
 export type Trigger = 'auto' | 'operator';
@@ -38,9 +38,9 @@ export interface Drafted extends Briefed {
 }
 
 export class Briefing {
-    private readonly deps: CompactionDeps;
+    private readonly deps: CompactionPorts;
 
-    constructor(deps: CompactionDeps) {
+    constructor(deps: CompactionPorts) {
         this.deps = deps;
     }
 
@@ -86,7 +86,7 @@ export class Briefing {
         const messages = this.deps.messages();
         const blocked = blockedByCoverage(saved, flow) === 'present';
         const line = flow.appends === 'present' ? coverageLog(saved.outcome, messages) : null;
-        if (line !== null) this.deps.log(`${flow.atCeiling === 'present' ? 'autocompact ceiling' : 'autocompact'}: ${line}`);
+        if (line !== null) this.deps.log(must(parseText(`${flow.atCeiling === 'present' ? 'autocompact ceiling' : 'autocompact'}: ${line}`)));
         if (decision !== null) this.deps.decisions?.amend(decision, { coverage: saved.coverage === null ? null : Object.fromEntries(saved.coverage), outcome: saved.outcome, coverageMs: saved.coverageMs, coverageCostUsd: saved.coverageCostUsd, why: blocked ? saved.why : coverageWhy(saved.outcome, saved.why, messages), block: blocked });
     }
 
@@ -105,13 +105,13 @@ export class Briefing {
     }
 
     private flowOf(gate: LinkedDecision['gate'] | undefined): CoverageFlow {
-        const atCeiling = gate === 'ceiling' && this.deps.ceilingOverride?.() !== false;
+        const atCeiling = gate === 'ceiling' && this.deps.ceilingOverride?.() !== 'absent';
         const missedFacts: MissedFacts = this.deps.missedFacts?.() ?? MISSED_FACTS_DEFAULT;
         const appends = atCeiling || missedFacts === 'append';
         return { atCeiling: atCeiling ? 'present' : 'absent', appends: appends ? 'present' : 'absent' };
     }
 
     listed(lane: Lane): Presence {
-        return this.deps.listsPane(String(lane.pane)) ? 'present' : 'absent';
+        return this.deps.listsPane(lane.pane);
     }
 }
