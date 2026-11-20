@@ -205,7 +205,7 @@ test('dispatch: a read-prompt of a lane that is idle or done tells the settled h
     assert.deepEqual(told, ['w1:p1:idle', 'w1:p1:done']);
 });
 
-test('autocompact flushes the lane\'s pending recap before it reads the context and asks the decider', async () => {
+test('autocompact flushes the lane\'s pending recap after its gates pass and before it asks the decider (asked 0 at the flush)', async () => {
     const w = world();
     await w.service.consider(lane());
     assert.deepEqual([w.flushed, w.asked.length], [['w1:t1 autocompact asked 0'], 1]);
