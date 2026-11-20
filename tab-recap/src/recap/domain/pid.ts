@@ -7,10 +7,14 @@ export type Pid = Brand<number, 'Pid'>;
 const DECIMAL_DIGITS = /^[0-9]+$/u;
 
 export function parsePid(input: unknown): Result<Pid, ParseFailure> {
-    if (typeof input === 'string' && !DECIMAL_DIGITS.test(input)) {
-        return err({ kind: 'not-a-number' });
+    if (typeof input === 'string') {
+        if (!DECIMAL_DIGITS.test(input)) {
+            return err({ kind: 'not-a-number' });
+        }
+        const digits = Number(input);
+        return digits < 1 || !Number.isSafeInteger(digits) ? err({ kind: 'out-of-range' }) : ok(brand<number, 'Pid'>(digits));
     }
-    const value = typeof input === 'string' ? Number(input) : input;
+    const value = input;
     if (typeof value !== 'number') {
         return err({ kind: 'not-a-number' });
     }

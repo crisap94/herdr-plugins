@@ -8,7 +8,7 @@ test('a pid accepts the process id of this process and a decimal string of digit
 });
 
 test('a pid refuses zero, a negative number and an unsafe integer with the out-of-range failure', () => {
-    for (const input of [0, -1, 2 ** 53]) {
+    for (const input of [0, -1, 2 ** 53, '0', '9007199254740993', '9'.repeat(400)]) {
         assert.deepEqual(parsePid(input), { kind: 'err', error: { kind: 'out-of-range' } });
     }
 });
