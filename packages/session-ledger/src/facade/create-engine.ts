@@ -139,8 +139,8 @@ export function engineOver(plugs: FacadePlugs): Engine {
                 plugs.environment.log(`engine-adapter: turn ended for a session that is not followed: ${scope} ${key}`);
                 return;
             }
-            const lanes = set.lanesOf(scope);
-            legacy.turnEnded(tab, attention === 'needs-you' ? lanes.map((lane) => ({ ...lane, status: 'blocked' as const })) : lanes, cause);
+            const followed = set.lanesOf(scope);
+            legacy.turnEnded(tab, attention === 'needs-you' ? followed.map((one) => ({ ...one, status: 'blocked' as const })) : followed, cause);
         },
         sessionStarted: (scope: ScopeId, key: SessionKey, now: Started): void => {
             if (set.followed(scope, key) === undefined) {
