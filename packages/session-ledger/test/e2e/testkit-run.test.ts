@@ -96,7 +96,7 @@ test('the registry exports hold the FOL, TRN and STA engine cases and the REC an
             'HIS-1', 'HIS-2', 'HIS-3', 'HIS-4', 'HIS-5',
             'REF-1', 'REF-2', 'REF-3', 'REF-4', 'REF-5', 'REF-6', 'REF-7', 'REF-8',
             'RUN-1', 'RUN-2', 'RUN-3', 'RUN-4', 'RUN-5', 'RUN-6', 'RUN-7', 'RUN-8',
-            'CSR-1', 'CSR-2', 'CSR-3', 'CSR-4', 'CSR-5', 'CSR-6', 'CSR-7', 'CSR-8',
+            'CSR-1', 'CSR-2', 'CSR-3', 'CSR-4', 'CSR-5', 'CSR-6', 'CSR-7', 'CSR-8', 'CSR-9',
             'LNG-1', 'LNG-2', 'LNG-3', 'LNG-4', 'LNG-5', 'LNG-6', 'LNG-7',
             'RDF-1', 'RDF-2', 'RDF-3', 'RDF-4', 'RDF-5', 'RDF-6',
             'PRT-1', 'PRT-2', 'PRT-3', 'PRT-4', 'PRT-5', 'PRT-6',

@@ -2,6 +2,7 @@ import type { Position } from '#src/ports/transcripts.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { parseFilledText, parseLine, parseRow, parseRows, readJsonlFrom, tailSpan, toolBriefOf, type Row } from './jsonl.ts';
 
@@ -14,6 +15,7 @@ export interface LegacyJsonlRead {
     readonly lines: readonly Text[];
     readonly position: Position;
     readonly grew: boolean;
+    readonly more: Presence;
 }
 
 const pathOf = (path: string): FsPath => must(parseFsPath(path));
@@ -54,5 +56,5 @@ export function tailOf(path: string, budget: number): LegacyTail {
 
 export function readJsonl(path: string, was: Position, budget: number): LegacyJsonlRead {
     const read = readJsonlFrom(pathOf(path), was, countOf(budget));
-    return { lines: read.lines, position: read.position, grew: read.grew === 'present' };
+    return { lines: read.lines, position: read.position, grew: read.grew === 'present', more: read.more };
 }

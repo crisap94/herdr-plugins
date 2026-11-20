@@ -32,6 +32,7 @@ export interface JsonlRead {
     readonly lines: readonly Text[];
     readonly position: Position;
     readonly grew: Presence;
+    readonly more: Presence;
 }
 
 const isObjectValue = (value: unknown): value is Row => typeof value === 'object' && value !== null;
@@ -112,10 +113,22 @@ export function tailSpan(path: FsPath, budget: Count): Tail {
     return { lines: readLines(path, must(parseCount(Math.max(0, size - budget))), budget).lines, truncated: size > budget ? 'present' : 'absent' };
 }
 
+function forwardSpan(path: FsPath, from: Count, size: Count, budget: Count): LineSpan {
+    for (let window: number = budget; ; window *= 2) {
+        const span = readLines(path, from, must(parseCount(window)));
+        if (span.end > from || from + window >= size) {
+            return span;
+        }
+    }
+}
+
 export function readJsonlFrom(path: FsPath, was: Position, budget: Count): JsonlRead {
-    const size = statSync(path).size;
-    const { lines, end } = readLines(path, must(parseCount(Math.max(was.cursor, size - budget, 0))), budget);
-    return { lines, position: { cursor: end, tail: null }, grew: size > was.cursor ? 'present' : 'absent' };
+    const size = must(parseCount(statSync(path).size));
+    const span = was.cursor > 0
+        ? forwardSpan(path, must(parseCount(was.cursor)), size, budget)
+        : readLines(path, must(parseCount(Math.max(0, size - budget))), budget);
+    const more = was.cursor > 0 && span.end > was.cursor && size - span.end > budget;
+    return { lines: span.lines, position: { cursor: span.end, tail: null }, grew: size > was.cursor ? 'present' : 'absent', more: more ? 'present' : 'absent' };
 }
 
 const SAME_START_CHUNK = 64 * 1024;

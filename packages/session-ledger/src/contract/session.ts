@@ -53,6 +53,7 @@ export interface Chunk {
     readonly marks?: readonly Mark[];
     readonly position: Position;
     readonly grew: boolean;
+    readonly more?: boolean;
 }
 
 export type Located = { readonly kind: 'located'; readonly source: string } | Unknown;
