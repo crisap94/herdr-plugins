@@ -2,6 +2,7 @@ import type { GuardedLedger, GuardedRecapRecords } from '#src/ports/guarded-read
 import type { Messages } from '#src/i18n/index.ts';
 import type { CompactTarget } from '#src/recap/domain/compaction.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 import type { Agents } from '#src/ports/agents.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
 import type { Notifier } from '#src/ports/notifier.ts';
@@ -16,7 +17,7 @@ import type { Records } from './compaction-trail.ts';
 import type { LaneEvents } from './lane-events.ts';
 import type { LaneClaims } from './lane-claims.ts';
 import type { RecapRefresh } from './recap-wait.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { PaneId, SessionId } from '#src/recap/domain/ids.ts';
 import type { Duration } from '#src/recap/domain/time.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
@@ -52,6 +53,7 @@ export interface CompactionDeps {
     readonly typing?: TypingPort;
     readonly events?: LaneEvents;
     readonly claims: LaneClaims;
+    hookRestoredAt?(session: SessionId): Instant | null;
     recent(lane: Lane): Promise<readonly Entry[]>;
     marks(lane: Lane): Promise<readonly Mark[]>;
     pause(ms: Duration): Promise<void>;

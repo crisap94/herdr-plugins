@@ -128,7 +128,8 @@ export class Sender {
 
     private async restore(lane: Lane, text: Text, plan: CompactionPlan, trail: Trail): Promise<void> {
         const followUp = plan.followUp;
-        if (followUp.kind === 'none') {
+        const hookRestored = lane.session === null ? null : (this.deps.hookRestoredAt?.(lane.session) ?? null);
+        if (followUp.kind === 'none' || hookRestored !== null) {
             return;
         }
         trail.to('restoring');

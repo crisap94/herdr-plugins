@@ -49,7 +49,11 @@ export function createReceiver(deps: ReceiverDeps): HookReceiver {
     const sessionStarted = (call: HookCall, session: SessionId, scope: ScopeId, key: SessionKey): HookAnswer => {
         if (call.source === 'compact') {
             const text = deps.engine.compacted(scope, key);
-            return text !== '' && deps.restoreMode() === 'on' ? { kind: 'context', text } : NOTHING;
+            if (text === '' || deps.restoreMode() !== 'on') {
+                return NOTHING;
+            }
+            deps.preCompacts.restored(session, deps.clock.now());
+            return { kind: 'context', text };
         }
         const read = call.cwd === null ? null : parseDirectory(call.cwd);
         const cwd = read !== null && read.kind === 'ok' ? ledgerDirectoryOf(read.value) : null;

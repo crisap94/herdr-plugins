@@ -255,6 +255,12 @@ typed once more; Codex's `compacted` row means it compacted (the context before 
 they are read again a moment later. The records are the ones of the session herdr reports for the agent's pane now,
 so a new agent, or one resumed into a new session, is confirmed in its own session.
 
+**One restore per compaction.** When the hook listener is on, a Claude or Codex compaction gets its restore text from the
+SessionStart hook (`source` `compact`), which returns the compacted context to the agent at the start of the new session.
+That is the default; the typed restore message is then skipped for that session, so the agent gets the context once, not twice.
+The skip holds only while that hook record is newer than the session's last PreCompact mark: a later PreCompact means the
+typed restore is due again.
+
 **One compaction per lane.** A lane has one compaction at a time, whatever asked for it (you, autocompact, or
 another tool's `compact-req-<tool>` token). A request for a lane that is already queued or compacting joins that
 compaction and starts no second one. The operator's toast says so (`already compacting: this request joins that

@@ -234,6 +234,7 @@
       "test/compact-requests-enqueue.test.ts",
       "test/compact-requests-take.test.ts",
       "test/compaction-confirm.test.ts",
+      "test/compaction-hook-restore.test.ts",
       "test/compaction-plans.test.ts",
       "test/compaction-refusal-ask.test.ts",
       "test/compaction.test.ts",
