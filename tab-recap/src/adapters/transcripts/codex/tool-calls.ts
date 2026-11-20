@@ -1,8 +1,9 @@
 import type { CodexToolUse } from '@stateforge-labs/harness-adapters/codex';
-import type { Text } from '#src/recap/domain/text.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { toolBriefOf } from '../jsonl.ts';
 import type { Row } from '../jsonl.ts';
-import { shell, squash } from '../tool-calls.ts';
+import { shell, squashText } from '../tool-calls.ts';
 import type { ToolCall } from '../tool-calls.ts';
 
 export { codexCalls } from './legacy.ts';
@@ -15,10 +16,10 @@ function callsOf(use: CodexToolUse, name: Text, input: Row): readonly ToolCall[]
             return [shell(use.command ?? '')];
         case 'apply_patch': {
             const files = use.files ?? [];
-            return files.length > 0 ? files.map((file): ToolCall => ({ kind: 'edit', text: file })) : [{ kind: 'edit', text: '' }];
+            return files.length > 0 ? files.map((file): ToolCall => ({ kind: 'edit', text: must(parseText(file)) })) : [{ kind: 'edit', text: must(parseText('')) }];
         }
         case 'web':
-            return [{ kind: 'web', text: squash(use.query ?? WEB_FALLBACK) }];
+            return [{ kind: 'web', text: squashText(must(parseText(use.query ?? WEB_FALLBACK))) }];
         default:
             return [{ kind: 'other', text: toolBriefOf(name, input) }];
     }
