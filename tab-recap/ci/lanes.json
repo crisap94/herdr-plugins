@@ -1,6 +1,7 @@
 {
   "lanes": {
     "B1": [
+      "src/ports/active-install.ts",
       "src/ports/agents.ts",
       "src/ports/ask-ledger.ts",
       "src/ports/autocompact-briefs.ts",
@@ -349,6 +350,7 @@
       "test/recap-job-window.test.ts",
       "test/requests-contract.test.ts",
       "test/retention.test.ts",
+      "test/roll-active-install.test.ts",
       "test/run-ids.test.ts",
       "test/screen-reading.test.ts",
       "test/session-facts.test.ts",
@@ -751,6 +753,7 @@
       "src/adapters/herdr-core/sdk-core.ts",
       "src/adapters/herdr-core/seen.ts",
       "src/adapters/herdr-core/sessions.ts",
+      "src/adapters/herdr/active-install.ts",
       "src/adapters/herdr/agents.ts",
       "src/adapters/herdr/client.ts",
       "src/adapters/herdr/column-panes.ts",
