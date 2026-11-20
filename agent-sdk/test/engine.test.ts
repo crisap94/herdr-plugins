@@ -19,9 +19,9 @@ const recording = (engine: Engine): FakeEngine => {
             log.push('followedBy');
             return engine.followedBy(harness, session);
         },
-        turnEnded: (scope, key, cause) => {
+        turnEnded: (scope, key, cause, attention) => {
             log.push('turnEnded');
-            engine.turnEnded(scope, key, cause);
+            engine.turnEnded(scope, key, cause, attention);
         },
         sessionStarted: (scope, key, now) => {
             log.push('sessionStarted');
@@ -30,6 +30,14 @@ const recording = (engine: Engine): FakeEngine => {
         refresh: (scope) => {
             log.push('refresh');
             return engine.refresh(scope);
+        },
+        flush: (scope, why) => {
+            log.push('flush');
+            return engine.flush(scope, why);
+        },
+        flushAll: () => {
+            log.push('flushAll');
+            return engine.flushAll();
         },
         compacted: (scope, key) => {
             log.push('compacted');
