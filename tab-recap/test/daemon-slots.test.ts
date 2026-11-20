@@ -83,9 +83,9 @@ test('a slot starts when its key is on, or when the key is unset and its default
     }
 });
 
-test('with the hooks key off and the others unset the real table starts nothing and logs no slot line', async () => {
+test('with the hooks and self-roll keys off and the others unset the real table starts nothing and logs no slot line', async () => {
     const book = ledger();
-    await startSlots(SLOT_TABLE, contextWith({ TAB_RECAP_HOOKS: 'off' }, book));
+    await startSlots(SLOT_TABLE, contextWith({ TAB_RECAP_HOOKS: 'off', TAB_RECAP_SELF_ROLL: 'off' }, book));
     assert.deepEqual(book.logs, []);
     assert.deepEqual(book.starts, []);
 });

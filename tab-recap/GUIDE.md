@@ -370,6 +370,7 @@ variables win over the file, except for the two language keys, where the file (w
 | `TAB_RECAP_KEEP_INPUT_DAYS` | `14` | days the input of each run is kept for the judge (`0` = never keep) |
 | `TAB_RECAP_KEEP_DAYS` | `30` | days a closed tab is kept before the daemon's daily retention pass removes it (`0` = keep everything) |
 | `TAB_RECAP_HOOKS` | `on` | the hook listener: Claude Code and Codex call the daemon at each turn's end (*restart*; see [Hooks](#hooks)) |
+| `TAB_RECAP_SELF_ROLL` | `on` | after a plugin upgrade the daemon restarts itself on the new code once no autocompact is running; `off` keeps the old code (*restart*; see [Self-roll](docs/REFERENCE.md#self-roll)) |
 
 ## Troubleshooting
 

@@ -11,6 +11,7 @@ the desktop app, the other tools and the state. The [README](../README.md) has t
 - [Chapters and retention](#chapters-and-retention)
 - [How the recap is kept](#how-the-recap-is-kept)
 - [Hooks](#hooks)
+- [Self-roll](#self-roll)
 - [Compaction](#compaction)
 - [Handoff](#handoff)
 - [Autocompact](#autocompact)
@@ -215,6 +216,18 @@ so the writer runs once per turn and is not woken by polling. Each harness gets 
 
 Exit codes of the command: 0 when it wrote or found the entries, 1 when it refused (with the reason), 2 for a usage
 error, 3 when the hooks switch is off.
+
+## Self-roll
+
+With `TAB_RECAP_SELF_ROLL=on` (the default), the daemon notices a plugin upgrade and restarts itself on the new code. It
+reads the version in the installed `herdr-plugin.toml`. When that version differs from the one the daemon started on and
+stays the same for two checks in a row, the daemon starts a successor on the new code and then stops. The successor
+starts once the old daemon has exited, so a restart happens once per upgrade, not in a loop.
+
+- **Idle first.** A restart waits while an autocompact is running, and the next check after it ends rolls the daemon.
+- **No restart without an upgrade.** Nothing rolls while the installed version equals the running one.
+- **Off.** `TAB_RECAP_SELF_ROLL=off` keeps the daemon on the version it started on until you restart it yourself. The key
+  is read once at daemon start.
 
 ## Compaction
 
@@ -732,7 +745,7 @@ protocol. Token names are `[A-Za-z0-9_-]`, 1 to 32 characters.
 
 ## Configuration reference
 
-Key new with the hooks: `TAB_RECAP_HOOKS` (`on` by default: the daemon's listener for Claude Code and Codex turn-end, session-start and pre-compact calls; `off` starts none). `TAB_RECAP_HOOKS_RESTORE` (`on` by default: the SessionStart compact hook returns the restore text; `off` leaves it to the typed restore). See [Hooks](#hooks). Nothing is written into the agents' settings until `tab-recap hooks install` runs.
+Key new with the hooks: `TAB_RECAP_HOOKS` (`on` by default: the daemon's listener for Claude Code and Codex turn-end, session-start and pre-compact calls; `off` starts none). `TAB_RECAP_HOOKS_RESTORE` (`on` by default: the SessionStart compact hook returns the restore text; `off` leaves it to the typed restore). See [Hooks](#hooks). Nothing is written into the agents' settings until `tab-recap hooks install` runs. Key new with the self-roll: `TAB_RECAP_SELF_ROLL` (`on` by default: the daemon restarts itself on the new code after a plugin upgrade, once idle; `off` keeps it on the old code). See [Self-roll](#self-roll).
 
 Key new with herdr events: `TAB_RECAP_HERDR_EVENTS` (`off` by default, or `on`: lanes are shared on herdr's event stream as pane tokens, and another tool's `compact-req-<tool>` request is answered in `tab-recap-compact`; see the setting "Herdr events"). Off writes no token and answers no request; the typing leases and `awaiting` tokens of other tools are honoured either way. `TAB_RECAP_HANDOFF_REQUESTS` (`off` by default, or `on`, effective only with herdr events on) lets another tool ask for a handoff of its lane, answered in `tab-recap-handoff` (see "For other tools").
 
