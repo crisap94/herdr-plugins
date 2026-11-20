@@ -1,7 +1,7 @@
 import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { Engine, FollowedSession, LedgerEvent, RestoreText, ScopeId, SessionKey } from '@stateforge-labs/session-ledger';
+import type { Engine, FollowedSession, HistoryFact as LedgerHistoryFact, LedgerEvent, RestoreText, ScopeId, SessionKey } from '@stateforge-labs/session-ledger';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { createEngine, type Engine as LegacyEngine, type EnginePlugs } from '#src/recap/application/engine.ts';
 import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
@@ -168,7 +168,7 @@ function spy(): Spy {
         flush: (): Promise<void> => Promise.resolve(),
         flushAll: (): Promise<void> => Promise.resolve(),
         compacted: (): RestoreText => { throw new Error('sync does not compact'); },
-        history: (): readonly HistoryFact[] => [],
+        history: (): readonly LedgerHistoryFact[] => [],
         curate: (): Promise<void> => Promise.resolve(),
     };
     return { calls, engine };

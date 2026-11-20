@@ -1,4 +1,4 @@
-import type { Brand } from '../recap/domain/brand.ts';
+import { brand, type Brand } from '../recap/domain/brand.ts';
 
 export type { Brand };
 
@@ -11,9 +11,7 @@ export const err = <E>(error: E): Result<never, E> => ({ kind: 'err', error });
 export type Instant = Brand<number, 'Instant'>;
 export type Duration = Brand<number, 'Duration'>;
 
-export function instant(ms: number): Instant {
-    return ms as Instant;
-}
+export const instant = brand<number, 'Instant'>;
 
 export type ParseFailure =
     | { readonly kind: 'not-a-string' }
@@ -32,13 +30,15 @@ export type TabId = Brand<string, 'TabId'>;
 export type PaneId = Brand<string, 'PaneId'>;
 export type AgentKind = Brand<string, 'AgentKind'>;
 export type DecisionId = Brand<string, 'DecisionId'>;
+export type FailureCause = Brand<string, 'FailureCause'>;
+export type ExitCode = Brand<number, 'ExitCode'>;
 
 export type Unknowable =
     | { readonly why: 'timeout'; readonly after: Duration }
-    | { readonly why: 'unreadable'; readonly detail: string }
-    | { readonly why: 'unreachable'; readonly detail: string }
-    | { readonly why: 'not-found'; readonly what: string }
-    | { readonly why: 'failed'; readonly code: number; readonly detail: string }
+    | { readonly why: 'unreadable'; readonly detail: FailureCause }
+    | { readonly why: 'unreachable'; readonly detail: FailureCause }
+    | { readonly why: 'not-found'; readonly what: Text }
+    | { readonly why: 'failed'; readonly code: ExitCode; readonly detail: FailureCause }
     | { readonly why: 'lease'; readonly after: Duration };
 
 export type Unknown = { readonly kind: 'unknown'; readonly why: Unknowable };
@@ -47,6 +47,7 @@ export function unknown(why: Unknowable): Unknown {
     return { kind: 'unknown', why };
 }
 
-export function isUnknown(result: { readonly kind: string }): result is Unknown {
-    return result.kind === 'unknown';
+export function isUnknown<Other>(result: Other | Unknown): result is Extract<Other | Unknown, Unknown> {
+    const seen: unknown = result;
+    return typeof seen === 'object' && seen !== null && 'kind' in seen && seen.kind === 'unknown';
 }

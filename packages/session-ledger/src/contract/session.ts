@@ -1,4 +1,5 @@
-import type { Brand, Unknown } from './kernel.ts';
+import { brand } from '../recap/domain/brand.ts';
+import type { Brand, Count, Text, Unknown } from './kernel.ts';
 import type { Directory, HarnessKind, SessionId, SessionKey } from './ids.ts';
 
 export interface FollowedSession {
@@ -6,7 +7,7 @@ export interface FollowedSession {
     readonly harness: HarnessKind;
     readonly session: SessionId | null;
     readonly cwd: Directory | null;
-    readonly title: string | null;
+    readonly title: Text | null;
 }
 export type RecapCause = 'turn-ended' | 'focused' | 'requested';
 
@@ -27,12 +28,14 @@ export interface AgentNote {
     readonly text: string;
 }
 
+export type Cursor = Brand<number, 'Cursor'>;
+
 export interface Position {
-    readonly cursor: number;
-    readonly tail: string | null;
+    readonly cursor: Cursor;
+    readonly tail: Text | null;
 }
 
-export const UNREAD: Position = { cursor: 0, tail: null };
+export const UNREAD: Position = { cursor: brand<number, 'Cursor'>(0), tail: null };
 
 export interface Mark {
     readonly kind: 'compacted' | 'compaction-failed';
@@ -56,7 +59,14 @@ export interface Chunk {
     readonly more?: boolean;
 }
 
-export type Located = { readonly kind: 'located'; readonly source: string } | Unknown;
+export type SourcePath = Brand<string, 'SourcePath'>;
+
+export interface LocatedSource {
+    readonly kind: 'located';
+    readonly source: SourcePath;
+}
+
+export type Located = LocatedSource | Unknown;
 
 export type RunningCount = Brand<number, 'RunningCount'>;
 export type FlightReason = Brand<string, 'FlightReason'>;
@@ -96,10 +106,10 @@ export interface ContextUse {
 export interface SessionReader {
     readonly harness: HarnessKind;
     locate(session: FollowedSession): Promise<Located>;
-    read(source: string, was: Position, budget: number): Promise<Chunk | Unknown>;
+    read(source: SourcePath, was: Position, budget: Count): Promise<Chunk | Unknown>;
     carry?(from: Located, to: Located, at: Position): Promise<Position>;
 }
 export interface SessionSource {
     readerFor(harness: HarnessKind): SessionReader | undefined;
-    unavailableReason(harness: HarnessKind): string;
+    unavailableReason(harness: HarnessKind): Text;
 }

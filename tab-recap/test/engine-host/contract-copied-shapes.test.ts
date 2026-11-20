@@ -123,7 +123,7 @@ const SECTION_ROW: Copied = { contract: 'packages/session-ledger/src/contract/fa
 
 test('every copied declaration of the contract equals its declaration on main', () => {
     const rows = allRows();
-    assert.ok(rows.some(({ row }) => row.export === 'HistoryFact'));
+    assert.ok(rows.some(({ row }) => row.export === 'Chunk'));
     assert.ok(rows.some(({ row }) => row.export === 'Recap'));
     assert.deepEqual(rows.flatMap((copied) => differencesOf(copied, read(copied.contract), read(copied.row.origin))), []);
 });

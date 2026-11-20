@@ -1,3 +1,4 @@
+import { brand } from '../recap/domain/brand.ts';
 import { err, ok, type Brand, type ParseFailure, type Result } from './kernel.ts';
 
 export type ScopeId = Brand<string, 'ScopeId'>;
@@ -14,7 +15,7 @@ export function parseScopeId(input: unknown): Result<ScopeId, ParseFailure> {
     if (input.trim() === '') {
         return err({ kind: 'empty' });
     }
-    return ok(input as ScopeId);
+    return ok(brand<string, 'ScopeId'>(input));
 }
 
 export function parseSessionKey(input: unknown): Result<SessionKey, ParseFailure> {
@@ -24,7 +25,7 @@ export function parseSessionKey(input: unknown): Result<SessionKey, ParseFailure
     if (input.trim() === '') {
         return err({ kind: 'empty' });
     }
-    return ok(input as SessionKey);
+    return ok(brand<string, 'SessionKey'>(input));
 }
 
 export function parseHarnessKind(input: unknown): Result<HarnessKind, ParseFailure> {
@@ -34,7 +35,7 @@ export function parseHarnessKind(input: unknown): Result<HarnessKind, ParseFailu
     if (input.trim() === '') {
         return err({ kind: 'empty' });
     }
-    return ok(input as HarnessKind);
+    return ok(brand<string, 'HarnessKind'>(input));
 }
 
 export function parseSessionId(input: unknown): Result<SessionId, ParseFailure> {
@@ -44,7 +45,7 @@ export function parseSessionId(input: unknown): Result<SessionId, ParseFailure> 
     if (input.trim() === '') {
         return err({ kind: 'empty' });
     }
-    return ok(input as SessionId);
+    return ok(brand<string, 'SessionId'>(input));
 }
 
 export function parseDirectory(input: unknown): Result<Directory, ParseFailure> {
@@ -54,5 +55,5 @@ export function parseDirectory(input: unknown): Result<Directory, ParseFailure> 
     if (input.trim() === '') {
         return err({ kind: 'empty' });
     }
-    return ok(input as Directory);
+    return ok(brand<string, 'Directory'>(input));
 }

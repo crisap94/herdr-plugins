@@ -1,5 +1,4 @@
 [
-  { "export": "HistoryFact", "origin": "packages/session-ledger/src/ports/legacy.ts" },
   { "export": "FactId", "origin": "packages/session-ledger/src/recap/domain/fact.ts" },
   { "export": "RunId", "origin": "packages/session-ledger/src/recap/domain/fact.ts" },
   { "export": "TaskId", "origin": "packages/session-ledger/src/recap/domain/legacy.ts" },

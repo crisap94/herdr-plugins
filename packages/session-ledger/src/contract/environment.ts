@@ -1,4 +1,5 @@
-import type { Instant, Unknown } from './kernel.ts';
+import type { Brand, Instant, Unknown } from './kernel.ts';
+import type { Directory } from './ids.ts';
 
 export type Forge = 'gitlab' | 'github';
 
@@ -13,5 +14,7 @@ export type RepoResult =
     | Unknown;
 
 export interface Clock { now(): Instant }
-export interface Ids { next(): string }
-export interface Workplaces { repoOf(cwd: string): Promise<RepoResult> }
+export type MintedId = Brand<string, 'MintedId'>;
+
+export interface Ids { next(): MintedId }
+export interface Workplaces { repoOf(cwd: Directory): Promise<RepoResult> }

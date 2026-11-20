@@ -4,6 +4,7 @@ import type { Case } from '../run.ts';
 import { followed, key, scope, session } from '../ids.ts';
 import type { Behaviour, EngineWorld, WrittenAnswer } from '../world.ts';
 import { causeOf, countOf, NO_OPS, spoken } from './support.ts';
+import { failure } from '../values.ts';
 
 const TAB = scope('one');
 const OTHER = scope('two');
@@ -13,7 +14,7 @@ const quietOf = (): Behaviour<Chunk> => ({
     value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: UNREAD, grew: false },
 });
 
-const FAILED = { why: 'failed' as const, code: 1, detail: 'scripted writer failure' };
+const FAILED = failure(1, 'scripted writer failure');
 
 const HELD: Behaviour<WrittenAnswer> = {
     kind: 'block',

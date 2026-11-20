@@ -4,10 +4,11 @@ import type { Case } from '../run.ts';
 import { followed, harness, key, scope, session } from '../ids.ts';
 import type { Behaviour, EngineWorld, LocatedAnswer, WrittenAnswer } from '../world.ts';
 import { chunkAt, countOf, cursorsOf, NO_OPS, quietAt, recapOf } from './support.ts';
+import { failure, notFound } from '../values.ts';
 
 const TAB = scope('one');
-const FAILED = { why: 'failed' as const, code: 1, detail: 'scripted writer failure' };
-const READ_FAILED = { why: 'failed' as const, code: 1, detail: 'scripted read failure' };
+const FAILED = failure(1, 'scripted writer failure');
+const READ_FAILED = failure(1, 'scripted read failure');
 
 const failWriter: Behaviour<WrittenAnswer> = { kind: 'fail', why: FAILED };
 
@@ -107,7 +108,7 @@ export const CSR_CASES: readonly Case<EngineWorld, Engine>[] = [
             world.setLocate((target) => {
                 const answer: Behaviour<LocatedAnswer> =
                     target.key === key('b')
-                        ? { kind: 'fail', why: { why: 'not-found', what: 'transcript' } }
+                        ? { kind: 'fail', why: notFound('transcript') }
                         : { kind: 'answer', value: { kind: 'located', source: target.key } };
                 return answer;
             });

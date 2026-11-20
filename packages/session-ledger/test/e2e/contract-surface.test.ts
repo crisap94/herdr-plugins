@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import ts from 'typescript';
 import * as root from '@stateforge-labs/session-ledger';
+import { notFound } from '@stateforge-labs/session-ledger/testkit';
 
 const packageRoot = join(dirname(new URL(import.meta.url).pathname), '..', '..');
 const surfaceDir = join(packageRoot, 'test', 'e2e', 'surface');
@@ -99,7 +100,7 @@ test('ok, err, instant, unknown, isUnknown and UNREAD keep the shapes of main', 
     assert.deepEqual(root.ok(1), { kind: 'ok', value: 1 });
     assert.deepEqual(root.err('x'), { kind: 'err', error: 'x' });
     assert.equal(root.instant(1234), 1234);
-    const failed = root.unknown({ why: 'not-found', what: 'transcript' });
+    const failed = root.unknown(notFound('transcript'));
     assert.deepEqual(failed, { kind: 'unknown', why: { why: 'not-found', what: 'transcript' } });
     assert.equal(root.isUnknown(failed), true);
     assert.equal(root.isUnknown(root.ok(1)), false);

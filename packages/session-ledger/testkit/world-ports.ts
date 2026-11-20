@@ -15,6 +15,7 @@ import {
     type Workplaces,
 } from '@stateforge-labs/session-ledger';
 import type { Behaviour, Run } from './behaviour.ts';
+import { minted, sourcePath, text } from './values.ts';
 
 export interface ManualClock extends Clock {
     set(ms: number): void;
@@ -37,7 +38,7 @@ export const idsOf = (): Ids => {
     return {
         next: () => {
             serial += 1;
-            return `id-${serial}`;
+            return minted(`id-${serial}`);
         },
     };
 };
@@ -64,9 +65,10 @@ export const sessionsOf = (run: Run, locateOf: (session: FollowedSession) => Beh
         }
         return {
             harness,
-            locate: (session: FollowedSession) => {
+            locate: async (session: FollowedSession): Promise<Located> => {
                 probes.located.push(session);
-                return run(locateOf(session));
+                const found = await run(locateOf(session));
+                return found.kind === 'located' ? { kind: 'located', source: sourcePath(found.source) } : found;
             },
             read: (source: string, was: Position, budget: number) => {
                 probes.reads.push(source);
@@ -79,7 +81,7 @@ export const sessionsOf = (run: Run, locateOf: (session: FollowedSession) => Beh
     };
     return {
         readerFor,
-        unavailableReason: (harness: HarnessKind) => `no scripted reader for ${harness}`,
+        unavailableReason: (harness: HarnessKind) => text(`no scripted reader for ${harness}`),
     };
 };
 
