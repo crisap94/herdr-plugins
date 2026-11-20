@@ -8,6 +8,19 @@ All notable changes are documented here. The format follows
 
 ### [Unreleased]
 
+### [3.3.2] — 2026-11-20
+
+#### Changed
+
+- feat(tab-recap): popups, the column and the CLI open the store as reader; the daemon stays owner (M2b-2) (!342)
+- tab-recap: restore a compaction once, through the SessionStart hook (H3b) (!344)
+- feat(tab-recap): self-roll on by default, documented (SW-RT1) (!345)
+- tab-recap: the relay pane is the column and the view server is on by default (M4) (!346)
+
+#### Fixed
+
+- fix(tab-recap): a finished tab says "all done", not "no recap yet" (BAR-1) (!338)
+
 ### [3.3.1] — 2026-11-20
 
 #### Changed
@@ -365,7 +378,8 @@ First public release.
 - A pane is taken for a recap column only if its title is exactly `tab-recap` or `tab-recap:bar`, it hosts no agent and, when herdr reports one, its label is the manifest's. Before, any pane whose title merely *started with* `tab-recap` (for example an agent session named `tab-recap-harness-config`) was adopted as a column and closed with the columns when the daemon stopped.
 - A recap never closes, resizes or moves a pane that hosts an agent: enforced where the board adopts columns, in the close-column intents, and at the herdr edge, which checks the pane in a fresh snapshot before `pane.close`, `pane.resize` and `pane.swap` and refuses (with a log line) if it hosts an agent.
 
-[Unreleased]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.3.1...HEAD
+[Unreleased]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.3.2...HEAD
+[3.3.2]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.3.1...tab-recap-v3.3.2
 [3.3.1]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.3.0...tab-recap-v3.3.1
 [3.3.0]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.2.0...tab-recap-v3.3.0
 [3.2.0]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.1.1...tab-recap-v3.2.0
