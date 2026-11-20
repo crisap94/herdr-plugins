@@ -67,19 +67,14 @@
     "container": 1,
     "property": 3
   },
-  "src/adapters/db/session-source.ts": {
-    "parameter": 3,
-    "return": 2,
-    "container": 4,
-    "property": 2
+  "src/adapters/db/session-source/legacy.ts": {
+    "legacy": 6
   },
   "src/adapters/db/tab-row/legacy.ts": {
     "legacy": 2
   },
-  "src/adapters/db/tab-views.ts": {
-    "parameter": 3,
-    "return": 2,
-    "container": 9
+  "src/adapters/db/tab-views/legacy.ts": {
+    "legacy": 4
   },
   "src/adapters/db/transcripts.ts": {
     "parameter": 5,
@@ -88,8 +83,7 @@
   "src/adapters/db/typeid/legacy.ts": {
     "legacy": 4
   },
-  "src/adapters/db/verdicts.ts": {
-    "parameter": 2,
-    "container": 2
+  "src/adapters/db/verdicts/legacy.ts": {
+    "legacy": 3
   }
 }

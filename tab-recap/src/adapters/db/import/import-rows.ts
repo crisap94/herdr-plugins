@@ -10,7 +10,7 @@ import { LedgerRows } from '../ledger-rows.ts';
 import { RequestsRepository } from '../requests.ts';
 import { RunRows } from '../run-write/legacy.ts';
 import { TabRow } from '../tab-row/legacy.ts';
-import { TabViewsRepository } from '../tab-views.ts';
+import { TabViewsRepository } from '../tab-views/legacy.ts';
 import { TranscriptRows } from '../transcripts.ts';
 import { typeIdOf } from '../typeid.ts';
 import { ids } from '../uuid7.ts';

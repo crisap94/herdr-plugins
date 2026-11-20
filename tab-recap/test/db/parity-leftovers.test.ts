@@ -6,7 +6,7 @@ import { ClosedLanesRepository } from '#src/adapters/db/closed-lanes.ts';
 import { LedgerHistory } from '#src/adapters/db/ledger-history.ts';
 import { RunInputRows, RunInputsRepository } from '#src/adapters/db/run-inputs/legacy.ts';
 import { typeIdOf } from '#src/adapters/db/typeid.ts';
-import { VerdictsRepository } from '#src/adapters/db/verdicts.ts';
+import { VerdictsRepository } from '#src/adapters/db/verdicts/legacy.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import { must } from '#src/protocol/result.ts';
 import type { ClosedLane } from '#src/recap/domain/closures.ts';
