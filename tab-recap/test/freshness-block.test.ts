@@ -112,3 +112,10 @@ test('the located source is the one read, so the daemon and the CLI share one fu
     assert.deepEqual(asked.map((call) => call.source), ['located.jsonl']);
 });
 
+
+test('an unreadable last run is reported once and comes back as ledger-unreadable, not ledger-empty', async () => {
+    const told: string[] = [];
+    const failed = unknown({ why: 'unreadable', detail: causeOf('locked') });
+    const outcome = await freshnessOf({ unreported: () => { told.push('reported'); }, records: { lastRunOf: () => failed }, transcripts: registryWith({ claude: reader([user('hi')]) }) }, input());
+    assert.deepEqual([outcome.kind, told], ['ledger-unreadable', ['reported']]);
+});

@@ -18,7 +18,7 @@ export interface FreshnessInput {
     readonly refresh: RefreshStatus;
 }
 
-export type FreshnessOutcome = { readonly kind: 'fresh'; readonly freshness: Freshness } | { readonly kind: 'ledger-empty' };
+export type FreshnessOutcome = { readonly kind: 'fresh'; readonly freshness: Freshness } | { readonly kind: 'ledger-empty' } | { readonly kind: 'ledger-unreadable' };
 
 export interface FreshnessDeps {
     readonly records: Pick<GuardedRecapRecords, 'lastRunOf'>;
@@ -55,7 +55,7 @@ export async function freshnessOf(deps: FreshnessDeps, input: FreshnessInput): P
     }
     if (isUnknownRead(lastRun)) {
         deps.unreported(lastRun);
-        return { kind: 'ledger-empty' };
+        return { kind: 'ledger-unreadable' };
     }
     const count = await newerPromptCount(deps.transcripts, input);
     return { kind: 'fresh', freshness: { lastRun, status: input.status, newerPrompts: newerPromptsOf(count), refresh: input.refresh } };

@@ -44,6 +44,9 @@ export function renderHandoff(deps: HandoffPipelineDeps): HandoffRender {
         if (freshness.kind === 'ledger-empty') {
             return { kind: 'refused', reason: 'ledger-empty' };
         }
+        if (freshness.kind === 'ledger-unreadable') {
+            return { kind: 'failed', reason: 'source-unreadable' };
+        }
         const worksite = await worksiteOf(deps.worksite, { directory: lane.cwd, cursor, tokens: closed === undefined ? await tokensOf(deps.tokens, lane) : null });
         const body = buildHandoffContent({
             at: instant(input.at),
