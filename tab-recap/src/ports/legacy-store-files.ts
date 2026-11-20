@@ -8,8 +8,6 @@ import type { TabLane, TabView } from '#src/ports/tab-views.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 
 type Row = Record<string, unknown>;
-type Text = string;
-type Count = number;
 
 export type LegacyRecapFile = Row;
 export type LegacyViewFile = Row;
@@ -18,25 +16,21 @@ export type LegacyVisibility = Row;
 
 const isRow = (input: unknown): input is Row => typeof input === 'object' && input !== null;
 
-const isText = (input: unknown): input is Text => typeof input === 'string';
-
-const isCount = (input: unknown): input is Count => typeof input === 'number';
-
 const sectionsOf = (value: Row): RecapSections => ({
     goal: typeof value.goal === 'string' ? value.goal : '',
-    now: Array.isArray(value.now) ? value.now.filter(isText) : [],
-    needs: Array.isArray(value.needs) ? value.needs.filter(isText) : [],
-    done: Array.isArray(value.done) ? value.done.filter(isText) : [],
-    decisions: Array.isArray(value.decisions) ? value.decisions.filter(isText) : [],
-    next: Array.isArray(value.next) ? value.next.filter(isText) : [],
-    links: Array.isArray(value.links) ? value.links.filter(isText) : [],
+    now: Array.isArray(value.now) ? value.now.filter((entry) => typeof entry === 'string') : [],
+    needs: Array.isArray(value.needs) ? value.needs.filter((entry) => typeof entry === 'string') : [],
+    done: Array.isArray(value.done) ? value.done.filter((entry) => typeof entry === 'string') : [],
+    decisions: Array.isArray(value.decisions) ? value.decisions.filter((entry) => typeof entry === 'string') : [],
+    next: Array.isArray(value.next) ? value.next.filter((entry) => typeof entry === 'string') : [],
+    links: Array.isArray(value.links) ? value.links.filter((entry) => typeof entry === 'string') : [],
     rules: [],
 });
 
 const taskOf = (item: Row): RecapTask => ({
     id: typeof item.id === 'string' ? item.id : '',
     name: typeof item.name === 'string' ? item.name : '',
-    lanes: Array.isArray(item.lanes) ? item.lanes.filter(isText) : [],
+    lanes: Array.isArray(item.lanes) ? item.lanes.filter((entry) => typeof entry === 'string') : [],
     sections: isRow(item.sections) ? sectionsOf(item.sections) : null,
     markdown: typeof item.markdown === 'string' ? item.markdown : '',
 });
@@ -44,7 +38,7 @@ const taskOf = (item: Row): RecapTask => ({
 const legacyTasks = (stored: Row): RecapTask[] => {
     const markdown = typeof stored.markdown === 'string' ? stored.markdown : '';
     if (markdown === '') return [];
-    const lanes = Array.isArray(stored.lanes) ? stored.lanes.flatMap((lane) => (isRow(lane) && isText(lane.pane) ? [lane.pane] : [])) : [];
+    const lanes = Array.isArray(stored.lanes) ? stored.lanes.flatMap((lane) => (isRow(lane) && typeof lane.pane === 'string' ? [lane.pane] : [])) : [];
     return [{ id: 't1', name: '', lanes, sections: isRow(stored.sections) ? sectionsOf(stored.sections) : null, markdown }];
 };
 
@@ -57,10 +51,10 @@ const tasksOf = (stored: Row): RecapTask[] => {
 };
 
 const cursorOf = (input: Row): Result<LaneCursor, ParseFailure> => {
-    if (!isText(input.pane)) return err({ kind: 'not-a-string' });
-    if (!isText(input.agent)) return err({ kind: 'not-a-string' });
-    if (!isText(input.transcript)) return err({ kind: 'not-a-string' });
-    if (!isCount(input.cursor)) return err({ kind: 'not-a-number' });
+    if (typeof input.pane !== 'string') return err({ kind: 'not-a-string' });
+    if (typeof input.agent !== 'string') return err({ kind: 'not-a-string' });
+    if (typeof input.transcript !== 'string') return err({ kind: 'not-a-string' });
+    if (typeof input.cursor !== 'number') return err({ kind: 'not-a-number' });
     return ok({
         pane: input.pane,
         agent: input.agent,
@@ -74,9 +68,9 @@ const cursorOf = (input: Row): Result<LaneCursor, ParseFailure> => {
 };
 
 const laneOf = (input: Row): Result<TabLane, ParseFailure> => {
-    if (!isText(input.pane)) return err({ kind: 'not-a-string' });
-    if (!isText(input.agent)) return err({ kind: 'not-a-string' });
-    if (!isText(input.status)) return err({ kind: 'not-a-string' });
+    if (typeof input.pane !== 'string') return err({ kind: 'not-a-string' });
+    if (typeof input.agent !== 'string') return err({ kind: 'not-a-string' });
+    if (typeof input.status !== 'string') return err({ kind: 'not-a-string' });
     return ok({
         pane: input.pane,
         agent: input.agent,
@@ -126,23 +120,23 @@ const recapMetaOf = (input: Row): RecapMeta => ({
 
 export function parseLegacyRecapFile(input: unknown): Result<TabRecap, ParseFailure> {
     if (!isRow(input)) return err({ kind: 'not-a-row' });
-    if (!isText(input.tab)) return err({ kind: 'not-a-string' });
+    if (typeof input.tab !== 'string') return err({ kind: 'not-a-string' });
     const lanes = cursorsOf(input);
     if (lanes.kind === 'err') return lanes;
-    const costUsd = isCount(input.costUsd) ? input.costUsd : 0;
+    const costUsd = typeof input.costUsd === 'number' ? input.costUsd : 0;
     return ok({ tab: input.tab, lanes: lanes.value, tasks: tasksOf(input), costUsd, ...recapMetaOf(input) });
 }
 
 export function parseLegacyViewFile(input: unknown): Result<TabView, ParseFailure> {
     if (!isRow(input)) return err({ kind: 'not-a-row' });
-    if (!isText(input.tab)) return err({ kind: 'not-a-string' });
+    if (typeof input.tab !== 'string') return err({ kind: 'not-a-string' });
     const lanes = viewLanesOf(input);
     if (lanes.kind === 'err') return lanes;
     return ok({
         tab: input.tab,
         column: typeof input.column === 'string' ? input.column : null,
         lanes: lanes.value,
-        at: isCount(input.at) ? input.at : 0,
+        at: typeof input.at === 'number' ? input.at : 0,
         daemonVersion: typeof input.daemonVersion === 'string' ? input.daemonVersion : null,
     });
 }
@@ -151,14 +145,14 @@ export function parseLegacyHidden(input: unknown): Result<HiddenState, ParseFail
     if (!isRow(input)) return err({ kind: 'not-a-row' });
     return ok({
         all: input.all === true,
-        hidden: Array.isArray(input.hidden) ? input.hidden.filter(isText) : [],
-        shown: Array.isArray(input.shown) ? input.shown.filter(isText) : [],
+        hidden: Array.isArray(input.hidden) ? input.hidden.filter((entry) => typeof entry === 'string') : [],
+        shown: Array.isArray(input.shown) ? input.shown.filter((entry) => typeof entry === 'string') : [],
     });
 }
 
 export function parseLegacyVisibility(input: unknown): Result<VisibilityRequest, ParseFailure> {
     if (!isRow(input)) return err({ kind: 'not-a-row' });
-    if (!isText(input.target)) return err({ kind: 'not-a-string' });
+    if (typeof input.target !== 'string') return err({ kind: 'not-a-string' });
     if (input.target === '') return err({ kind: 'empty' });
     if (input.hidden === 'toggle') return ok({ target: input.target, hidden: 'toggle' });
     if (typeof input.hidden !== 'boolean') return err({ kind: 'out-of-range' });
