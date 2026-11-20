@@ -32,7 +32,7 @@ import { MIGRATIONS } from './schema/index.ts';
 import { RecapRecordsRepository } from './recap-records.ts';
 import { RequestsRepository } from './requests.ts';
 import type { AskLedger } from '#src/ports/ask-ledger.ts';
-import { RunInputsRepository } from './run-inputs.ts';
+import { RunInputsRepository } from './run-inputs/legacy.ts';
 import { VerdictsRepository } from './verdicts.ts';
 import { SessionSourceRepository } from './session-source.ts';
 import { StoriesRepository } from './stories.ts';

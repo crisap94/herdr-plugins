@@ -15,7 +15,7 @@ import { BadRow, guarded, isRow, maybeText, maybeWhole, one, text, whole } from 
 import type { Row } from './rows.ts';
 import { lane as laneTable, tab as tabTable } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
-import { TabRow } from './tab-row.ts';
+import { TabRow } from './tab-row/legacy.ts';
 
 function webOf(row: Row): LaneWeb | null {
     const base = maybeText(row, 'web_base');

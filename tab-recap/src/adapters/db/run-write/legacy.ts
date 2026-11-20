@@ -4,12 +4,12 @@ import type { RunFacts } from '#src/ports/recap-records.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
-import { chapter as chapters, run as runs, runRead as reads, runTask as runTasks, runTaskLane as laneRows, task as tasks } from './drizzle/index.ts';
-import { ormOf, type Orm } from './orm.ts';
-import { blob } from './rows.ts';
-import { ids } from './uuid7.ts';
-import { RunInputRows, statsText } from './run-inputs.ts';
-import type { Moved, TranscriptRows } from './transcripts.ts';
+import { chapter as chapters, run as runs, runRead as reads, runTask as runTasks, runTaskLane as laneRows, task as tasks } from '../drizzle/index.ts';
+import { ormOf, type Orm } from '../orm.ts';
+import { blob } from '../rows.ts';
+import { ids } from '../uuid7.ts';
+import { RunInputRows, statsText } from '../run-inputs/legacy.ts';
+import type { Moved, TranscriptRows } from '../transcripts.ts';
 
 export const microsOf = (usd: number): number => Math.round(usd * 1e6);
 

@@ -44,15 +44,15 @@
     "legacy": 33
   },
   "src/adapters/db/run-inputs.ts": {
-    "parameter": 8,
-    "return": 4,
-    "container": 6,
-    "assertion": 1
-  },
-  "src/adapters/db/run-write.ts": {
-    "parameter": 5,
+    "parameter": 2,
     "return": 1,
-    "property": 2
+    "container": 4
+  },
+  "src/adapters/db/run-inputs/legacy.ts": {
+    "legacy": 8
+  },
+  "src/adapters/db/run-write/legacy.ts": {
+    "legacy": 8
   },
   "src/adapters/db/schema/018-lane-status.ts": {
     "parameter": 1,
@@ -73,8 +73,8 @@
     "container": 4,
     "property": 2
   },
-  "src/adapters/db/tab-row.ts": {
-    "parameter": 2
+  "src/adapters/db/tab-row/legacy.ts": {
+    "legacy": 2
   },
   "src/adapters/db/tab-views.ts": {
     "parameter": 3,

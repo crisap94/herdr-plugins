@@ -14,8 +14,8 @@ import { writeTx } from './connection.ts';
 import { LedgerRows } from './ledger-rows.ts';
 import { RecapReader } from './recap-read.ts';
 import { guardedRead } from './rows.ts';
-import { RunRows } from './run-write.ts';
-import { TabRow } from './tab-row.ts';
+import { RunRows } from './run-write/legacy.ts';
+import { TabStore } from './tab-row.ts';
 import { TranscriptRows } from './transcripts.ts';
 
 type LastCause = RecapCause | 'imported';
@@ -25,7 +25,7 @@ const isLastCause = (raw: unknown): raw is LastCause => raw === 'imported' || RE
 export class RecapRecordsRepository implements GuardedRecapRecords {
     private readonly db: Database;
     private readonly reader: RecapReader;
-    private readonly tabs: TabRow;
+    private readonly tabs: TabStore;
     private readonly transcripts: TranscriptRows;
     private readonly runs: RunRows;
     private readonly ledger: LedgerRows;
@@ -37,7 +37,7 @@ export class RecapRecordsRepository implements GuardedRecapRecords {
         this.orm = ormOf(db);
         this.ledger = new LedgerRows(db);
         this.reader = new RecapReader(db, this.ledger);
-        this.tabs = new TabRow(db);
+        this.tabs = new TabStore(db);
         this.transcripts = new TranscriptRows(db);
         this.runs = new RunRows(db, this.transcripts);
         this.boundaries = new BoundaryRows(db, this.transcripts);
@@ -58,14 +58,14 @@ export class RecapRecordsRepository implements GuardedRecapRecords {
 
     beginRun(tab: string, backend: string | null, at: number): void {
         writeTx(this.db, () => {
-            this.tabs.ensure(tab, at);
+            this.tabs.ensure(tabId(tab), instant(at));
             this.orm.update(tabs).set({ running: 1, backend }).where(eq(tabs.id, tabId(tab))).run();
         });
     }
 
     recordRun(run: RecordedRun): void {
         writeTx(this.db, () => {
-            this.tabs.ensure(run.tab, run.at);
+            this.tabs.ensure(tabId(run.tab), instant(run.at));
             const moved = this.transcripts.attach(run.tab, run.lanes, run.at);
             this.boundaries.record(tabId(run.tab), { at: instant(run.at), marks: run.marks ?? [], moved });
             const id = this.runs.insertRun(run, null, run.gateStats ?? null);
@@ -81,7 +81,7 @@ export class RecapRecordsRepository implements GuardedRecapRecords {
 
     failRun(run: FailedRun): void {
         writeTx(this.db, () => {
-            this.tabs.ensure(run.tab, run.at);
+            this.tabs.ensure(tabId(run.tab), instant(run.at));
             const moved = this.transcripts.attach(run.tab, run.lanes, run.at);
             this.boundaries.record(tabId(run.tab), { at: instant(run.at), marks: run.marks ?? [], moved });
             this.runs.insertRun(run, run.error);
@@ -91,7 +91,7 @@ export class RecapRecordsRepository implements GuardedRecapRecords {
 
     advance(move: Advance): void {
         writeTx(this.db, () => {
-            this.tabs.ensure(move.tab, move.at);
+            this.tabs.ensure(tabId(move.tab), instant(move.at));
             const moved = this.transcripts.attach(move.tab, move.lanes, move.at);
             this.boundaries.record(tabId(move.tab), { at: instant(move.at), marks: move.marks ?? [], moved });
             this.orm.update(tabs).set({ error: move.error }).where(eq(tabs.id, tabId(move.tab))).run();

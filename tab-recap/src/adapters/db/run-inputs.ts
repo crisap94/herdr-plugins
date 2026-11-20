@@ -1,103 +1,87 @@
-import { gunzipSync, gzipSync } from 'node:zlib';
 import type { Database } from 'bun:sqlite';
+import { gunzipSync } from 'node:zlib';
 import { and, desc, eq, gte, inArray, isNotNull, lt, sql } from 'drizzle-orm';
-import type { GateCount, ItemsMode, RunInputs, RunItem, RunQuery, StoredRun } from '#src/ports/run-inputs.ts';
-import type { GateStats } from '#src/recap/domain/gates/index.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import type { RunId } from '#src/recap/domain/run-ids.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { parseGateTally, parseRunEntry, parseRunRecord, type GateTally, type ItemsMode, type RunEntry, type RunFilter, type RunInputReader, type RunRecord } from '#src/ports/run-inputs.ts';
 import { run as runs, runInput } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { blob, flag, guarded, maybeText, text, whole } from './rows.ts';
-import type { Row } from './rows.ts';
 import { idOf, typeIdOf } from './typeid.ts';
-
-export const statsText = (stats: GateStats | null): string | null => (stats === null ? null : JSON.stringify(stats));
-
-const counts = (value: unknown): Record<string, number> =>
-    typeof value === 'object' && value !== null ? Object.fromEntries(Object.entries(value).flatMap(([gate, n]) => (typeof n === 'number' ? [[gate, n]] : []))) : {};
-
-function statsOf(raw: string | null): GateStats | null {
-    if (raw === null) {
-        return null;
-    }
-    const found: unknown = JSON.parse(raw);
-    const fields = typeof found === 'object' && found !== null ? (found as Record<string, unknown>) : {};
-    return { refused: counts(fields['refused']), flagged: counts(fields['flagged']), dropped: typeof fields['dropped'] === 'number' ? fields['dropped'] : 0 };
-}
-
-export class RunInputRows {
-    private readonly orm: Orm;
-
-    constructor(db: Database) {
-        this.orm = ormOf(db);
-    }
-
-    put(run: Uint8Array, document: string): void {
-        this.orm.insert(runInput).values({ runId: run, document: gzipSync(document), bytes: Buffer.byteLength(document) }).run();
-    }
-}
 
 const SECTION_ORDER = sql.raw("CASE f.section WHEN 'goal' THEN 0 WHEN 'now' THEN 1 WHEN 'needs' THEN 2 WHEN 'done' THEN 3 WHEN 'decisions' THEN 4 WHEN 'next' THEN 5 WHEN 'links' THEN 6 ELSE 7 END");
 
-const storedRun = (row: Row): StoredRun => ({
-    id: typeIdOf('run', blob(row, 'id')), tab: text(row, 'tab_id'), at: whole(row, 'at'), language: text(row, 'language'),
-    backend: maybeText(row, 'backend'), hasInput: flag(row, 'has_input'), gateStats: statsOf(maybeText(row, 'gate_stats')),
-});
+function parseStatsJson(raw: unknown): unknown {
+    return typeof raw === 'string' ? JSON.parse(raw) : null;
+}
 
-const itemOf = (row: Row, prefix: string): RunItem => ({
-    key: `${prefix}${text(row, 'task')}/${text(row, 'section')}/${whole(row, 'position')}`, section: text(row, 'section'), text: text(row, 'text'),
-    fact: typeIdOf('fact', blob(row, 'fact')), born: flag(row, 'born'), anchor: maybeText(row, 'anchor'),
-});
+function runRecordOf(row: Record<string, unknown>): RunRecord {
+    return must(parseRunRecord({
+        id: typeIdOf('run', blob(row, 'id')), tab: text(row, 'tab_id'), at: whole(row, 'at'), language: text(row, 'language'),
+        backend: maybeText(row, 'backend'), input: flag(row, 'has_input') ? 'present' : 'absent', gateStats: parseStatsJson(row['gate_stats']),
+    }));
+}
 
-export class RunInputsRepository implements RunInputs {
+function runEntryOf(row: Record<string, unknown>, prefix: '' | 'state/'): RunEntry {
+    return must(parseRunEntry({
+        key: `${prefix}${text(row, 'task')}/${text(row, 'section')}/${whole(row, 'position')}`, section: text(row, 'section'), text: text(row, 'text'),
+        fact: typeIdOf('fact', blob(row, 'fact')), birth: flag(row, 'born') ? 'born' : 'carried', anchor: maybeText(row, 'anchor'),
+    }));
+}
+
+export class RunInputStore implements RunInputReader {
     private readonly orm: Orm;
 
     constructor(db: Database) {
         this.orm = ormOf(db);
     }
 
-    runs(query: RunQuery): readonly StoredRun[] {
+    runs(query: RunFilter): readonly RunRecord[] {
         const tab = query.tab;
-        const since = query.since ?? 0;
-        const withInput = query.withInput ? 1 : 0;
-        return guarded(() => this.orm.all<Row>(sql`SELECT r.id, c.tab_id, r.at, r.language, r.backend, r.gate_stats, i.run_id IS NOT NULL AS has_input
+        const since = query.since ?? instant(0);
+        const withInput = query.input === 'with-input' ? 1 : 0;
+        return guarded(() => this.orm.all<Record<string, unknown>>(sql`SELECT r.id, c.tab_id, r.at, r.language, r.backend, r.gate_stats, i.run_id IS NOT NULL AS has_input
           FROM run r JOIN chapter c ON c.id = r.chapter_id LEFT JOIN run_input i ON i.run_id = r.id
           WHERE EXISTS (SELECT 1 FROM fact WHERE born_run = r.id) AND (${tab} IS NULL OR c.tab_id = ${tab}) AND r.at >= ${since} AND (${withInput} = 0 OR i.run_id IS NOT NULL)
-          ORDER BY r.id DESC LIMIT ${query.limit}`).map(storedRun), []);
+          ORDER BY r.id DESC LIMIT ${query.limit}`).map(runRecordOf), []);
     }
 
-    document(run: string): string | null {
+    document(run: RunId): Text | null {
         const id = idOf('run', run);
         const row = id === null ? undefined : this.orm.select({ document: runInput.document }).from(runInput).where(eq(runInput.runId, id)).get();
         const packed = row?.document ?? null;
-        return guarded(() => (packed instanceof Uint8Array ? gunzipSync(packed).toString('utf8') : null), null);
+        return guarded(() => (packed instanceof Uint8Array ? must(parseText(gunzipSync(packed).toString('utf8'))) : null), null);
     }
 
-    itemsOf(run: string, mode: ItemsMode): readonly RunItem[] {
+    itemsOf(run: RunId, mode: ItemsMode): readonly RunEntry[] {
         const id = idOf('run', run);
         if (id === null) {
             return [];
         }
         return guarded(() => (mode === 'state'
-            ? this.orm.all<Row>(sql`SELECT t.key AS task, f.section, f.text, f.id AS fact, f.anchor, f.born_run = ${id} AS born, ROW_NUMBER() OVER (PARTITION BY f.task_id, f.section ORDER BY f.id) - 1 AS position
+            ? this.orm.all<Record<string, unknown>>(sql`SELECT t.key AS task, f.section, f.text, f.id AS fact, f.anchor, f.born_run = ${id} AS born, ROW_NUMBER() OVER (PARTITION BY f.task_id, f.section ORDER BY f.id) - 1 AS position
           FROM fact f JOIN task t ON t.id = f.task_id
           WHERE f.tab_id = (SELECT c.tab_id FROM run r JOIN chapter c ON c.id = r.chapter_id WHERE r.id = ${id})
             AND f.born_run <= ${id} AND (f.closed_at IS NULL OR f.closed_at > (SELECT at FROM run WHERE id = ${id}))
-          ORDER BY t.key, ${SECTION_ORDER}, f.id`).map((row) => itemOf(row, 'state/'))
-            : this.orm.all<Row>(sql`SELECT t.key AS task, f.section, f.text, f.id AS fact, f.anchor, f.born_run = ${id} AS born, ROW_NUMBER() OVER (PARTITION BY f.task_id, f.section ORDER BY f.id) - 1 AS position
+          ORDER BY t.key, ${SECTION_ORDER}, f.id`).map((row) => runEntryOf(row, 'state/'))
+            : this.orm.all<Record<string, unknown>>(sql`SELECT t.key AS task, f.section, f.text, f.id AS fact, f.anchor, f.born_run = ${id} AS born, ROW_NUMBER() OVER (PARTITION BY f.task_id, f.section ORDER BY f.id) - 1 AS position
           FROM fact f JOIN task t ON t.id = f.task_id LEFT JOIN run_task rt ON rt.run_id = f.born_run AND rt.task_id = f.task_id
           WHERE f.born_run = ${id}
-          ORDER BY COALESCE(rt.position, 0), ${SECTION_ORDER}, f.id`).map((row) => itemOf(row, ''))), []);
+          ORDER BY COALESCE(rt.position, 0), ${SECTION_ORDER}, f.id`).map((row) => runEntryOf(row, ''))), []);
     }
 
-    gateCounts(since: number | null): readonly GateCount[] {
+    gateCounts(since: Instant | null): readonly GateTally[] {
         return guarded(() => this.orm.select({ at: runs.at, gate_stats: runs.gateStats }).from(runs)
-            .where(and(isNotNull(runs.gateStats), gte(runs.at, since ?? 0))).orderBy(desc(runs.id)).all().flatMap((row): GateCount[] => {
-                const stats = statsOf(row.gate_stats);
-                return stats === null ? [] : [{ at: row.at, stats }];
-            }), []);
+            .where(and(isNotNull(runs.gateStats), gte(runs.at, since ?? instant(0)))).orderBy(desc(runs.id)).all()
+            .map((row) => must(parseGateTally({ at: row.at, stats: parseStatsJson(row.gate_stats) }))), []);
     }
 
-    prune(before: number): number {
-        return this.orm.delete(runInput).where(inArray(runInput.runId, this.orm.select({ id: runs.id }).from(runs).where(lt(runs.at, before))))
+    prune(before: Instant): Count {
+        const removed = this.orm.delete(runInput).where(inArray(runInput.runId, this.orm.select({ id: runs.id }).from(runs).where(lt(runs.at, before))))
             .returning({ runId: runInput.runId }).all().length;
+        return must(parseCount(removed));
     }
 }
