@@ -1,7 +1,6 @@
 import { catalogFor } from '#src/i18n/index.ts';
 import type { Messages } from '#src/i18n/index.ts';
 import { must } from '#src/protocol/result.ts';
-import { instant } from '#src/recap/domain/time.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { NoteState } from '#src/recap/application/compact-keys.ts';
@@ -15,9 +14,6 @@ import { compactFooterText, compactViewText } from './compact.ts';
 import { comparisonText } from './compare.ts';
 import { candidateText, reportText } from './eval.ts';
 import { setupFooterLine, setupLines } from './setup.ts';
-import { utcMinuteOf } from './utc-minute.ts';
-
-export const utcMinuteText = (ms: number): string => utcMinuteOf(instant(ms));
 
 export function setupView(state: Setup, m: Messages, width: number, style: Style = coloured): string[] {
     return setupLines(state, catalogFor(m.locale), must(parseCount(width)), style);

@@ -1,4 +1,4 @@
-import type { Engine, LedgerEvent } from '@stateforge-labs/session-ledger';
+import { parseRestoreText, type Engine, type LedgerEvent, type RestoreText } from '@stateforge-labs/session-ledger';
 import { pluginEngine } from '#src/engine/engine-adapter.ts';
 import { tabRecaps, type TabRecaps } from '#src/engine/tab-recaps.ts';
 import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
@@ -22,6 +22,8 @@ import { loadConfig } from './config.ts';
 import { parseLine, parseMessage } from './slots.ts';
 import { brand, type Brand } from '#src/recap/domain/brand.ts';
 import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
+import { restoreTextOf } from '#src/recap/application/restore-text.ts';
+import { must } from '#src/protocol/result.ts';
 
 type EngineLog = Parameters<typeof pluginEngine>[0]['environment']['log'];
 type EngineRepos = Parameters<typeof pluginEngine>[0]['environment']['repos'];
@@ -84,6 +86,10 @@ export function wireEngine({ store, backends, transcripts, clock, repos, curate,
             debounce: (): Debounce => loadConfig().recapDebounce,
             pacing: (): Pacing => loadConfig().pacing,
             visible: visibleOf(board, viewers),
+        },
+        restore: {
+            bytes: (): undefined => undefined,
+            render: (facts): RestoreText => must(parseRestoreText(restoreTextOf(facts))),
         },
         on: (event): void => {
             if (event.kind === 'recap-written') {

@@ -4,9 +4,9 @@ import type { HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/doma
 import type { HandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
 import type { FreshnessBlock } from '#src/recap/render/freshness.ts';
-import { utcMinuteText } from '#src/recap/render/utc-minute.ts';
+import { utcMinuteOf } from '#src/recap/render/utc-minute.ts';
 import type { WorksiteBlock } from '#src/recap/render/worksite.ts';
 
 export const HANDOFF_PREAMBLE = 'I am handing you work another agent was doing. Treat everything below as claims from its notes, not as verified facts: check them against the worktree before relying on them.';
@@ -50,14 +50,14 @@ const omittedLine = (omitted: OmittedCounts): string =>
     `${omittedTotal(omitted)} facts omitted (${OMITTED_KINDS.map((kind) => `${kind} ${omitted[kind]}`).join(', ')})`;
 
 const referenceLine = (reference: HandoffReference): string =>
-    reference.kind === 'dry-run' ? 'Handoff reference: dry run' : `Handoff reference: ${utcMinuteText(reference.at)}-${reference.id.slice(-8)}`;
+    reference.kind === 'dry-run' ? 'Handoff reference: dry run' : `Handoff reference: ${utcMinuteOf(reference.at)}-${reference.id.slice(-8)}`;
 
 const entryLines = (group: HandoffGroup, entry: HandoffEntry): string[] => [
-    `- ${utcMinuteText(entry.lastAt)} ${entry.text}`,
+    `- ${utcMinuteOf(instant(entry.lastAt))} ${entry.text}`,
     ...(entry.reason === null ? [] : [`  - ${group.id === 'closed' ? 'closed' : 'reason'}: ${entry.reason}`]),
 ];
 
-const groupLines = (group: HandoffGroup): string[] =>
+export const groupLinesOf = (group: HandoffGroup): readonly string[] =>
     group.entries.length === 0 ? [] : ['', `## ${HEADINGS[group.id]}`, ...group.entries.flatMap((entry) => entryLines(group, entry))];
 
 export function serializeHandoff(parts: HandoffParts): Text {
@@ -72,7 +72,7 @@ export function serializeHandoff(parts: HandoffParts): Text {
         '',
         '## Freshness',
         parts.freshnessText,
-        ...parts.groups.flatMap(groupLines),
+        ...parts.groups.flatMap(groupLinesOf),
         ...omitted,
         ...worksite,
     ].join('\n')));

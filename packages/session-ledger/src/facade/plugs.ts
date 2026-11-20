@@ -238,6 +238,8 @@ export const legacyPlugsOf = (plugs: sl.EnginePlugs): FacadePlugs => {
         restore: {
             bytes: () => settings.restoreBytes?.(),
             render: (facts: LegacyRestoreFacts) => settings.restoreText?.({
+                at: facts.at,
+                lastRun: facts.lastRun,
                 open: facts.open.map(ledgerFact),
                 closed: facts.closed.map(ledgerFact),
             }),
