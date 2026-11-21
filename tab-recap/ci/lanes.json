@@ -622,6 +622,7 @@
       "src/adapters/db/import/import-rows.ts",
       "src/adapters/db/import/items-to-facts.ts",
       "src/adapters/db/import/legacy-files.ts",
+      "src/adapters/db/import/legacy.ts",
       "src/adapters/db/import/sections-to-ops.ts",
       "src/adapters/db/imported-chapters.ts",
       "src/adapters/db/imported.ts",

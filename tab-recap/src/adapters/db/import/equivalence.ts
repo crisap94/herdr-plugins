@@ -1,7 +1,13 @@
 import { isDeepStrictEqual } from 'node:util';
+import { must } from '#src/protocol/result.ts';
 import type { TabRecap } from '#src/ports/recap-records.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { microsOf } from '../run-write/legacy.ts';
+
+export { holdsAnything, recapDifferences, viewDifferences } from './legacy.ts';
+
+export type Presence = 'present' | 'absent';
 
 export function canonicalRecap(file: TabRecap): TabRecap {
     const costUsd = typeof file.costUsd === 'number' ? file.costUsd : 0;
@@ -11,28 +17,29 @@ export function canonicalRecap(file: TabRecap): TabRecap {
     return { ...file, at, error, costUsd, running: file.running, backend: typeof file.backend === 'string' ? file.backend : null, language: hasRun ? file.language : 'en' };
 }
 
-export const holdsAnything = (file: TabRecap): boolean =>
-    file.lanes.length > 0 || file.tasks.length > 0 || file.at !== null || file.error !== null || file.costUsd > 0 || file.running || file.backend !== null;
+export const holdingOf = (file: TabRecap): Presence =>
+    file.lanes.length > 0 || file.tasks.length > 0 || file.at !== null || file.error !== null || file.costUsd > 0 || file.running || file.backend !== null ? 'present' : 'absent';
 
 export function canonicalView(file: TabView): TabView {
     return { ...file, column: typeof file.column === 'string' ? file.column : null, daemonVersion: file.daemonVersion ?? null };
 }
 
-function fieldsDiffering(was: object, now: object): readonly string[] {
-    const left = was as Readonly<Record<string, unknown>>;
-    const right = now as Readonly<Record<string, unknown>>;
-    return [...new Set([...Object.keys(left), ...Object.keys(right)])].filter((key) => !isDeepStrictEqual(left[key], right[key]));
-}
-
 const inMillionths = (recap: TabRecap): TabRecap => ({ ...recap, costUsd: microsOf(recap.costUsd) });
 
-export function recapDifferences(was: TabRecap, now: TabRecap | null): readonly string[] {
+export function recapDifferenceLines(was: TabRecap, now: TabRecap | null): readonly Text[] {
     if (now === null) {
-        return [`recap ${was.tab}: reads back as nothing`];
+        return [must(parseText(`recap ${was.tab}: reads back as nothing`))];
     }
-    return fieldsDiffering(inMillionths(was), inMillionths(now)).map((field) => `recap ${was.tab}: ${field} differs`);
+    const left = new Map(Object.entries(inMillionths(was)));
+    const right = new Map(Object.entries(inMillionths(now)));
+    return [...new Set([...left.keys(), ...right.keys()])].filter((field) => !isDeepStrictEqual(left.get(field), right.get(field))).map((field) => must(parseText(`recap ${was.tab}: ${field} differs`)));
 }
 
-export function viewDifferences(was: TabView, now: TabView | null): readonly string[] {
-    return now === null ? [`view ${was.tab}: reads back as nothing`] : fieldsDiffering(was, now).map((field) => `view ${was.tab}: ${field} differs`);
+export function viewDifferenceLines(was: TabView, now: TabView | null): readonly Text[] {
+    if (now === null) {
+        return [must(parseText(`view ${was.tab}: reads back as nothing`))];
+    }
+    const left = new Map(Object.entries(was));
+    const right = new Map(Object.entries(now));
+    return [...new Set([...left.keys(), ...right.keys()])].filter((field) => !isDeepStrictEqual(left.get(field), right.get(field))).map((field) => must(parseText(`view ${was.tab}: ${field} differs`)));
 }
