@@ -559,10 +559,7 @@
     ],
     "B4": [
       "src/column/command.ts",
-      "src/column/compact.ts",
       "src/column/expanded-modal.ts",
-      "src/column/launch.mjs",
-      "src/column/main.ts",
       "src/i18n/catalogs.ts",
       "src/i18n/en.ts",
       "src/i18n/es.ts",
