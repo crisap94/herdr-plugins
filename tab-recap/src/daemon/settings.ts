@@ -69,6 +69,8 @@ export type SettingName =
     | 'TAB_RECAP_KEEP_BRIEF_DAYS'
     | 'TAB_RECAP_CURATOR_REPAIR'
     | 'TAB_RECAP_AUTOCOMPACT_COVERAGE_BY'
+    | 'TAB_RECAP_AUTOCOMPACT_COVERAGE_MODEL'
+    | 'TAB_RECAP_AUTOCOMPACT_COVERAGE_EFFORT'
     | 'TAB_RECAP_KEEP_DAYS'
     | 'TAB_RECAP_CLOSED_LANE_DAYS'
     | 'TAB_RECAP_TIMEOUT_MS'
@@ -110,6 +112,7 @@ export interface Settings {
     readonly tuning: AutocompactTuning;
     readonly decider: DeciderJob;
     readonly coverage: CoverageBy;
+    readonly coverageJob: DeciderJob;
     readonly jev: JevSettings;
     readonly keepDays: Count;
     readonly closedLaneDays: ClosedLaneDays;

@@ -52,7 +52,7 @@ export function deciderFor(config: Config, available: readonly BackendId[], work
 }
 
 export function coverageDeciderFor(config: Config, available: readonly BackendId[], work: Directory, runtime: HarnessRuntime, log?: LogLine): Decider | null {
-    const { by } = config.decider;
+    const { by } = config.coverageJob;
     const jevKeyFound = config.coverage === 'auto' && jevKey(configGetter(), keyFileVia(readKeyFile), process.env['HOME'] ?? homedir()) !== null;
     if (config.coverage === 'jev' || jevKeyFound) {
         return jevDecider(config);
@@ -60,5 +60,5 @@ export function coverageDeciderFor(config: Config, available: readonly BackendId
     if (by === 'jev') {
         return jevDecider(config);
     }
-    return harnessDeciderFor(config, { ...config.decider, by }, available, (id, tag) => MAKERS[id](config, work, runtime, tag, log), 'coverageCheck');
+    return harnessDeciderFor(config, { ...config.coverageJob, by }, available, (id, tag) => MAKERS[id](config, work, runtime, tag, log), 'coverageCheck');
 }

@@ -10,7 +10,7 @@ import { EFFORTS } from './effort.ts';
 import type { Effort } from './effort.ts';
 import type { DeciderJob, Job } from './legacy.ts';
 
-export { compactJobOf, curateJobOf, deciderJobOf, judgeJobOf, keepDaysOf, placementOf } from './legacy.ts';
+export { compactJobOf, coverageJobOf, curateJobOf, deciderJobOf, judgeJobOf, keepDaysOf, placementOf } from './legacy.ts';
 export type { DeciderJob, Job, RecapChoices } from './legacy.ts';
 
 export type JobBy = BackendChoice | 'recap' | 'off';
@@ -45,7 +45,7 @@ export interface RecapSetting {
 
 export type JobPrefix = 'TAB_RECAP_JUDGE' | 'TAB_RECAP_COMPACT' | 'TAB_RECAP_CURATE' | 'TAB_RECAP_AUTOCOMPACT';
 
-export type JobKey = `${JobPrefix}_${'BY' | 'MODEL' | 'EFFORT'}` | 'TAB_RECAP_CURATE_TIMEOUT_MS' | 'TAB_RECAP_CURATE_ANSWER';
+export type JobKey = `${JobPrefix}_${'BY' | 'MODEL' | 'EFFORT'}` | 'TAB_RECAP_CURATE_TIMEOUT_MS' | 'TAB_RECAP_CURATE_ANSWER' | 'TAB_RECAP_AUTOCOMPACT_COVERAGE_MODEL' | 'TAB_RECAP_AUTOCOMPACT_COVERAGE_EFFORT';
 
 export type JobReader = (key: JobKey) => Text | undefined;
 
@@ -97,6 +97,12 @@ export function curateSettingOf(get: JobReader): JobSetting {
 }
 
 export const deciderSettingOf = (get: JobReader): DeciderSetting => settingFrom(get, 'TAB_RECAP_AUTOCOMPACT', DECIDER_SETTING, DECIDER_BY_CHOICES);
+
+export function coverageSettingOf(get: JobReader, decider: DeciderSetting): DeciderSetting {
+    const model = textOf(get('TAB_RECAP_AUTOCOMPACT_COVERAGE_MODEL'));
+    const effort = EFFORTS.find((choice) => choice === textOf(get('TAB_RECAP_AUTOCOMPACT_COVERAGE_EFFORT')).toLowerCase());
+    return { by: decider.by, model: model === '' ? decider.model : model, effort: effort ?? decider.effort };
+}
 
 export function keepDaysCountOf(raw: Text | undefined): Count {
     const text = textOf(raw);
