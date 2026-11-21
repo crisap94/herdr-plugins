@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 import { readLabelled, readPoints } from '#src/adapters/experiment/data.ts';
+import type { Point } from '#src/adapters/experiment/point.ts';
 import { appendJsonl, doneKeys } from '#src/adapters/experiment/io.ts';
 import { spawnSync } from 'node:child_process';
 import { CODEX_BINARY } from '@stateforge-labs/harness-adapters/codex';
@@ -40,7 +41,7 @@ async function labelPoints(dir: string, limit: number | null, runtime: HarnessRu
 
 function tally(dir: string): void {
     const [points, labels] = [readPoints(join(dir, 'corpus.jsonl')), readLabelled(join(dir, 'labels.jsonl'))];
-    const byId = new Map(points.map((point) => [point.id, point]));
+    const byId = new Map(points.map((point): [string, Point] => [point.id, point]));
     const rows = labels.flatMap((label) => { const point = byId.get(label.id); return point === undefined ? [] : [{ model: label.labels['needs_verbatim'] ?? 0, code: crossCheck(point) }]; });
     const result = {
         labelled: labels.length, points: points.length, positives: Object.fromEntries(IDS.map((id) => [id, labels.filter((l) => l.labels[id] === 1).length])),

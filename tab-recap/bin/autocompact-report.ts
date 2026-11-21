@@ -49,7 +49,7 @@ const questionTable = (arms: Readonly<Record<string, Reps>>, labels: Labels, bri
 export function main(dir: string): string {
     const points = readPoints(join(dir, 'corpus.jsonl'));
     const labels: Labels = new Map(readLabelled(join(dir, 'labels.jsonl')).map((row) => [row.id, row.labels]));
-    const high = new Set(points.filter((point) => (point.share ?? 0) >= 40).map((point) => point.id));
+    const high = new Set<string>(points.filter((point) => (point.share ?? 0) >= 40).map((point) => point.id));
     const arms = Object.fromEntries(ARMS.map((arm) => [arm, repsOf(dir, arm)]));
     const briefs = briefLabels(dir);
     const boundaries = existsSync(join(dir, 'outcomes.jsonl')) ? (readJsonl(join(dir, 'outcomes.jsonl')) as readonly BoundaryRow[]) : [];

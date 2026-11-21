@@ -1,5 +1,6 @@
 import type { Row } from '#src/adapters/transcripts/jsonl.ts';
 import { must } from '#src/protocol/result.ts';
+import { ExperimentStore } from './store.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { existsSync, readFileSync } from 'node:fs';
@@ -65,3 +66,5 @@ export class Labeller {
         return this.runner.ask(must(parseText(instructions)), input, (reply) => parse(reply), must(parseText(name)));
     }
 }
+
+export const storeAt = (path: string, live?: string): ExperimentStore => (live === undefined ? new ExperimentStore(pathOf(path)) : new ExperimentStore(pathOf(path), pathOf(live)));

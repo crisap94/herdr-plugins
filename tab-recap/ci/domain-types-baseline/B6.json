@@ -5,19 +5,6 @@
   "src/adapters/experiment/data.ts": {
     "assertion": 2
   },
-  "src/adapters/experiment/point.ts": {
-    "parameter": 6,
-    "return": 2,
-    "container": 1,
-    "property": 10
-  },
-  "src/adapters/experiment/store.ts": {
-    "parameter": 8,
-    "return": 4,
-    "container": 5,
-    "property": 9,
-    "assertion": 1
-  },
   "src/adapters/git/legacy.ts": {
     "legacy": 2
   },
@@ -142,6 +129,6 @@
     "property": 1
   },
   "src/adapters/experiment/legacy.ts": {
-    "legacy": 25
+    "legacy": 27
   }
 }
