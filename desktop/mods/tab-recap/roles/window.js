@@ -19,6 +19,7 @@ import { fleetView } from "./fleet.js";
 import { NeedDone } from "./need-done.js";
 import { WindowActions } from "./window-actions.js";
 
+const VIEW_PINNED = "timeline";
 const VIEW_FN = { brief, story, timeline, session };
 
 export default class Window extends WindowActions {
@@ -100,7 +101,9 @@ export default class Window extends WindowActions {
     const entry = this.store.docOf(this.sel);
     const lines = notice(c, entry, this.store, this.restarting, (cx) => this.restart(cx));
     const view = this.model ? VIEW_FN[this.view](c) : null;
-    return v_flex().id("body").flex_1().min_h(0).overflow_y_scrollbar().gap(SIZE.gapMd).px(SIZE.gutter).py(SIZE.cardPadV).children(lines).when(Boolean(view), (e) => e.child(view));
+    const pinned = this.view === VIEW_PINNED;
+    const frame = v_flex().id("body").flex_1().min_h(0).gap(SIZE.gapMd).px(SIZE.gutter).py(SIZE.cardPadV);
+    return (pinned ? frame.overflow_y_hidden() : frame.overflow_y_scrollbar()).children(lines).when(Boolean(view), (e) => e.child(view));
   }
 
   render() {

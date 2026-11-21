@@ -3,7 +3,7 @@ export const SIZE = {
   gap: 8, gapSm: 4, gapMd: 12, pad: 16, padSm: 10, bar: 38, icon: 14, iconSm: 12, iconLg: 16, status: 16, statusSm: 10,
   meterH: 6, meterBox: 12, meterTick: 2, meterFleet: 110, meterStrip: 64, meterLane: 100, meterSession: 120, accent: 3,
   lane: 300, laneMax: 420, laneRow: 70, popW: 340, popH: 76, popTop: 8, plotH: 104, binsH: 66, binMax: 16, binMin: 6, barMax: 64,
-  axisH: 22, feedMax: 280, dayW: 44, tagW: 78, fact: 180, listW: 780, tick: 4, tickH: 16, chipRing: 6, stripH: 34, search: 200, searchTl: 220,
+  axisH: 22, dayW: 44, tagW: 78, fact: 180, listW: 780, tick: 4, tickH: 16, chipRing: 6, stripH: 34, search: 200, searchTl: 220,
   footerGap: 14, banner: 8, decWhy: 13, popAt: 6, lineLeft: 2, noteRows: 3, msgH: 96, pickMax: 120, copyW: 76,
 };
 export const LOOP = { ring: { from: 0.25, to: 1, period: 1800 }, dim: 0.5, tickAlpha: 0.7 };

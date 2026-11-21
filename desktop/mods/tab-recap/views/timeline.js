@@ -23,6 +23,6 @@ export function timeline(c) {
   const shown = c.model.events.filter((e) => (!filter.sections.size || filter.sections.has(e.sec)) && (!filter.q || e.text.toLowerCase().includes(filter.q)));
   const made = bins(shown, c.now);
   const picked = c.bin >= 0 ? made.bins[c.bin] : null;
-  return v_flex().relative().gap(SIZE.gap).child(filters(c)).child(plot(c, made))
+  return v_flex().relative().flex_1().min_h(0).gap(SIZE.gap).child(filters(c)).child(plot(c, made))
     .child(feedView(c, { ...filter, bin: picked }, made.older)).when(c.hoverBin !== null, (e) => e.child(hoverCard(c, made.bins[c.hoverBin])));
 }
