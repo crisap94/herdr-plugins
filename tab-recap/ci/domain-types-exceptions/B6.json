@@ -1,0 +1,79 @@
+[
+  {
+    "class": "callback",
+    "file": "src/adapters/transcripts/opencode/transcripts.ts",
+    "function": "read",
+    "parameter": "source",
+    "reason": "callback: the Transcripts port of src/ports/transcripts.ts, frozen with packages/session-ledger/src/ports/legacy.ts, fixes read(source: string, was, budget: number)"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/transcripts/opencode/transcripts.ts",
+    "function": "read",
+    "parameter": "budget",
+    "reason": "callback: the Transcripts port of src/ports/transcripts.ts, frozen with packages/session-ledger/src/ports/legacy.ts, fixes read(source: string, was, budget: number)"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/transcripts/opencode/transcripts.ts",
+    "function": "latestPrompt",
+    "parameter": "source",
+    "reason": "callback: the Transcripts port of src/ports/transcripts.ts, frozen with packages/session-ledger/src/ports/legacy.ts, fixes latestPrompt(source: string)"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/transcripts/opencode/transcripts.ts",
+    "function": "observed",
+    "parameter": "source",
+    "reason": "callback: the Transcripts port of src/ports/transcripts.ts, frozen with packages/session-ledger/src/ports/legacy.ts, fixes observed(source: string)"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/transcripts/opencode/transcripts.ts",
+    "function": "<anonymous>",
+    "parameter": "source",
+    "reason": "callback: the SupportedInFlight read of src/ports/transcripts.ts, frozen with packages/session-ledger/src/ports/legacy.ts, fixes read(source: string, budget: number)"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/transcripts/screen.ts",
+    "function": "read",
+    "parameter": "source",
+    "reason": "callback: the Transcripts read port, frozen with frozen port: packages/session-ledger/src/ports/legacy.ts fixes read(source: string, was, budget: number)"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/transcripts/screen.ts",
+    "function": "read",
+    "parameter": "budget",
+    "reason": "callback: the Transcripts read port, frozen with frozen port: packages/session-ledger/src/ports/legacy.ts fixes read(source: string, was, budget: number)"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/transcripts/screen.ts",
+    "function": "<anonymous>",
+    "parameter": null,
+    "reason": "callback: the ScreenWants predicate, a boolean callback supplied by the daemon wantsScreen(agent: string) and the tests"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/transcripts/registry.ts",
+    "function": "unavailableReason",
+    "parameter": "kind",
+    "reason": "callback: the TranscriptRegistry port, frozen with frozen port: packages/session-ledger/src/ports/legacy.ts fixes unavailable: (kind: string) => string"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/transcripts/registry.ts",
+    "function": "unavailableReason",
+    "parameter": null,
+    "reason": "callback: the TranscriptRegistry port, frozen with frozen port: packages/session-ledger/src/ports/legacy.ts fixes unavailable: (kind: string) => string"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/transcripts/registry.ts",
+    "function": "readersOf",
+    "parameter": null,
+    "reason": "callback: the TranscriptRegistry port, frozen with frozen port: packages/session-ledger/src/ports/legacy.ts fixes readers: Readonly<Record<string, Transcripts>>"
+  }
+]

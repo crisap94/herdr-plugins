@@ -1,15 +1,19 @@
 import type { Mark } from '#src/ports/transcripts.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import { isCompaction, readRollout, tokenCounts } from '@stateforge-labs/harness-adapters/codex';
 import type { CodexRow } from '@stateforge-labs/harness-adapters/codex';
 
-const countOf = (row: CodexRow): number | undefined => {
-    const last = tokenCounts([row])[0]?.last;
-    return typeof last === 'number' && last > 0 ? last : undefined;
+export { codexMarks } from './legacy.ts';
+
+const countOf = (row: CodexRow): Count | undefined => {
+    const last = parseCount(tokenCounts([row])[0]?.last);
+    return last.kind === 'ok' && last.value > 0 ? last.value : undefined;
 };
 
 export function marksOf(rows: readonly CodexRow[]): readonly Mark[] {
     const marks: { mark: Mark; waiting: boolean }[] = [];
-    let last: number | undefined;
+    let last: Count | undefined;
     for (const row of rows) {
         const counted = countOf(row);
         if (counted !== undefined) {
@@ -25,6 +29,6 @@ export function marksOf(rows: readonly CodexRow[]): readonly Mark[] {
     return marks.map((entry) => entry.mark);
 }
 
-export function codexMarks(lines: readonly string[]): readonly Mark[] {
+export function codexMarksOf(lines: readonly Text[]): readonly Mark[] {
     return marksOf(readRollout(lines).rows);
 }

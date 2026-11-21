@@ -1,7 +1,10 @@
 import type { Observed } from '#src/recap/domain/compaction.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import { contextUsage, readRollout } from '@stateforge-labs/harness-adapters/codex';
 
-export function codexObserved(lines: readonly string[]): Observed | null {
+export { codexObserved } from './legacy.ts';
+
+export function codexObservedOf(lines: readonly Text[]): Observed | null {
     const usage = contextUsage(readRollout(lines).rows);
     if (usage === null) {
         return null;

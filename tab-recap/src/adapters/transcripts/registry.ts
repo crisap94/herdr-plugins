@@ -1,10 +1,8 @@
-import { harnessOfTranscriptPath } from '@stateforge-labs/harness-adapters';
 import { ClaudeTranscripts } from './claude/transcripts.ts';
 import { CodexTranscripts } from './codex/transcripts.ts';
 import { OpencodeTranscripts } from './opencode/transcripts.ts';
 import { ScreenTranscripts } from './screen.ts';
-import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
-import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
+import type { ScreenWants } from './screen.ts';
 import type { Screens } from '#src/ports/screens.ts';
 import { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
@@ -12,16 +10,20 @@ import { supported } from '#src/ports/capability.ts';
 import type { Capability } from '#src/ports/capability.ts';
 import type { HistoryWhy, InFlightWhy } from '#src/ports/capability-reasons.ts';
 import { capabilityWording } from '#src/ports/capability-reasons.ts';
+import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
+import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 
 export { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
+export { readerKindOf, replayKindOf } from './legacy.ts';
 
-const CODEX_HOME_MARKER = '/.codex/';
+type ReaderSet = Readonly<Record<RegisteredKind, Capability<() => Transcripts, HistoryWhy>>>;
+
 
 const READERS = {
     claude: supported(() => new ClaudeTranscripts()),
     codex: supported(() => new CodexTranscripts()),
     opencode: supported(() => new OpencodeTranscripts()),
-} satisfies Readonly<Record<RegisteredKind, Capability<() => Transcripts, HistoryWhy>>>;
+} satisfies ReaderSet;
 
 export const IN_FLIGHT_CAPABILITIES = {
     claude: supported('reader'),
@@ -29,7 +31,7 @@ export const IN_FLIGHT_CAPABILITIES = {
     opencode: supported('reader'),
 } satisfies Readonly<Record<RegisteredKind, Capability<'reader', InFlightWhy>>>;
 
-function readersOf(readers: typeof READERS): Readonly<Record<string, Transcripts>> {
+function readersOf(readers: ReaderSet): Readonly<Record<string, Transcripts>> {
     return Object.fromEntries(Object.entries(readers).flatMap(([kind, capability]) => capability.kind === 'supported' ? [[kind, capability.value()]] : []));
 }
 
@@ -40,15 +42,7 @@ function unavailableReason(kind: string): string {
     return capability.kind === 'unsupported' ? capabilityWording(capability.why, kind) : capabilityWording('history-unavailable', kind);
 }
 
-export function readerKindOf(raw: string): RegisteredKind | null {
-    return registeredKindOf(raw);
-}
-
-export function replayKindOf(flag: string | null, file: string): RegisteredKind | null {
-    return readerKindOf(flag ?? harnessOfTranscriptPath(file) ?? (file.includes(CODEX_HOME_MARKER) ? 'codex' : 'claude'));
-}
-
-export function daemonTranscriptRegistry(screens: Screens, wants: (kind: string) => boolean): TranscriptRegistry {
+export function daemonTranscriptRegistry(screens: Screens, wants: ScreenWants): TranscriptRegistry {
     return new TranscriptRegistry(readersOf(READERS), new ScreenTranscripts(screens, wants), unavailableReason);
 }
 

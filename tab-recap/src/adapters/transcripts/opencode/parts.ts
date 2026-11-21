@@ -2,10 +2,14 @@ import { humanText, parseMessage, parsePart } from '@stateforge-labs/harness-ada
 import type { OpenCodeMessage, OpenCodePart } from '@stateforge-labs/harness-adapters/opencode';
 import type { OpenCodeStore, StoredMessage } from '@stateforge-labs/harness-adapters/opencode/store';
 import type { AgentNote, Entry, Mark } from '#src/ports/transcripts.ts';
+import { parseInstant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import { opencodeObserved } from './context.ts';
 import { namedCall, toolEntry } from '../tool-calls.ts';
 
-function partEntry(role: string, part: OpenCodePart, at: number | undefined): Entry | null {
+type PartRole = 'user' | 'assistant';
+
+function partEntry(role: PartRole, part: OpenCodePart, at: Instant | undefined): Entry | null {
     const when = at === undefined ? {} : { at };
     const text = humanText(part);
     if (text !== null) {
@@ -25,13 +29,14 @@ export interface Parts { readonly entries: readonly Entry[]; readonly notes: rea
 export function partsOf(store: Pick<OpenCodeStore, 'partsOf'>, message: StoredMessage): Parts {
     const parsed = parseMessage(message.data);
     const info = parsed.ok ? parsed.record : null;
-    const role = info?.role ?? 'assistant';
+    const role = info?.role === 'user' ? 'user' : 'assistant';
     const entries = store.partsOf(message.id).flatMap((raw) => {
         const part = parsePart(raw);
         if (!part.ok) {
             return [];
         }
-        const entry = partEntry(role, part.record, part.record.startedAt ?? info?.createdAt ?? undefined);
+        const started = parseInstant(part.record.startedAt ?? info?.createdAt);
+        const entry = partEntry(role, part.record, started.kind === 'ok' ? started.value : undefined);
         return entry === null ? [] : [entry];
     });
     if (info === null || !info.isCompaction) {

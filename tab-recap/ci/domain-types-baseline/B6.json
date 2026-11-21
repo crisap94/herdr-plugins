@@ -168,81 +168,24 @@
     "parameter": 1,
     "return": 1
   },
-  "src/adapters/transcripts/claude/context.ts": {
-    "container": 1
+  "src/adapters/transcripts/claude/legacy.ts": {
+    "legacy": 19
   },
-  "src/adapters/transcripts/claude/in-flight.ts": {
-    "parameter": 2,
-    "container": 2,
-    "property": 2
-  },
-  "src/adapters/transcripts/claude/rows.ts": {
-    "return": 2,
-    "container": 1,
-    "property": 3
-  },
-  "src/adapters/transcripts/claude/transcripts.ts": {
-    "parameter": 15,
-    "container": 2,
-    "property": 4
-  },
-  "src/adapters/transcripts/codex/context.ts": {
-    "container": 1
-  },
-  "src/adapters/transcripts/codex/in-flight.ts": {
-    "parameter": 1,
-    "container": 1
-  },
-  "src/adapters/transcripts/codex/marks.ts": {
-    "return": 1,
-    "container": 1
-  },
-  "src/adapters/transcripts/codex/tool-calls.ts": {
-    "parameter": 3
-  },
-  "src/adapters/transcripts/codex/transcripts.ts": {
-    "parameter": 13,
-    "container": 1,
-    "property": 2
+  "src/adapters/transcripts/codex/legacy.ts": {
+    "legacy": 22
   },
   "src/adapters/transcripts/context-values.ts": {
     "parameter": 1,
     "return": 1,
     "container": 1
   },
-  "src/adapters/transcripts/in-flight.ts": {
-    "return": 4
-  },
   "src/adapters/transcripts/legacy.ts": {
-    "legacy": 19
+    "legacy": 36
   },
-  "src/adapters/transcripts/opencode/in-flight.ts": {
-    "parameter": 2
-  },
-  "src/adapters/transcripts/opencode/parts.ts": {
-    "parameter": 2
+  "src/adapters/transcripts/opencode/legacy.ts": {
+    "legacy": 6
   },
   "src/adapters/transcripts/opencode/transcripts.ts": {
-    "parameter": 14,
-    "return": 1,
-    "property": 2
-  },
-  "src/adapters/transcripts/registry.ts": {
-    "parameter": 6,
-    "return": 2,
-    "container": 1
-  },
-  "src/adapters/transcripts/screen.ts": {
-    "parameter": 5,
-    "return": 3
-  },
-  "src/adapters/transcripts/slice.ts": {
-    "parameter": 6,
-    "container": 2
-  },
-  "src/adapters/transcripts/tool-calls.ts": {
-    "parameter": 8,
-    "return": 4,
-    "property": 2
+    "property": 1
   }
 }

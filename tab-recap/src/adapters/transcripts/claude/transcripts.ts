@@ -1,112 +1,71 @@
 import { statSync } from 'node:fs';
-import { claudeProjectsRoot, locateClaudeTranscript } from '@stateforge-labs/harness-adapters/claude';
-import type { Lane } from '#src/recap/domain/lane.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
-import { UNREAD, type ChunkResult, type InFlightResult, type Located, type ObservedResult, type Position, type PromptResult, type SupportedInFlight, type Transcripts } from '#src/ports/transcripts.ts';
-import { isUnknown, unknown } from '#src/ports/unknowable.ts';
+import { type ChunkResult, type InFlightResult, type ObservedResult, type Position, type PromptResult } from '#src/ports/transcripts.ts';
+import { isUnknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
-import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import { readJsonl, sameStart, tailLines, tailOf } from '../jsonl.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import { parseFsPath } from '#src/recap/domain/fs-path.ts';
-import { claudeObserved } from './context.ts';
-import { extractClaude } from './rows.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import type { FsPath } from '#src/recap/domain/fs-path.ts';
+import { readJsonlFrom, tailSpan } from '../jsonl.ts';
+import { claudeObservedOf } from './context.ts';
 import { CLAUDE_SPLIT, IN_FLIGHT_MAX_BYTES, answerOf, scanFlight } from './in-flight.ts';
+import { extractClaudeOf } from './rows.ts';
 
-export { extractClaude };
+export { ClaudeTranscripts, extractClaude } from './legacy.ts';
 
 export const CLAUDE_KIND = 'claude' satisfies RegisteredKind;
 
-function answerAt(source: string, budget: number): InFlightResult {
-    let bytes = budget;
-    let tail = tailOf(source, bytes);
+export const KEPT_UNKNOWN_MAX = 256;
+
+export interface KeptUnknown {
+    readonly size: Count;
+    readonly answer: InFlightResult;
+}
+
+function answerAt(path: FsPath, budget: Count): InFlightResult {
+    let bytes: number = budget;
+    let tail = tailSpan(path, budget);
     let scan = scanFlight(tail.lines);
-    while (tail.truncated && scan?.unseen === true && bytes < IN_FLIGHT_MAX_BYTES) {
+    while (tail.truncated === 'present' && scan?.unseen === 'present' && bytes < IN_FLIGHT_MAX_BYTES) {
         bytes = Math.min(bytes * 2, IN_FLIGHT_MAX_BYTES);
-        tail = tailOf(source, bytes);
+        tail = tailSpan(path, must(parseCount(bytes)));
         scan = scanFlight(tail.lines);
     }
     return answerOf(scan, tail.truncated, CLAUDE_SPLIT);
 }
 
-export const KEPT_UNKNOWN_MAX = 256;
+export class ClaudeReader {
+    private readonly unknownAt = new Map<FsPath, KeptUnknown>();
 
-export class ClaudeTranscripts implements Transcripts {
-    readonly agent = CLAUDE_KIND;
-    private readonly root: string;
-    private readonly unknownAt = new Map<string, { readonly size: number; readonly answer: InFlightResult }>();
-    readonly inFlight: SupportedInFlight = { kind: 'supported', split: CLAUDE_SPLIT, read: (source, budget) => this.readInFlight(source, budget) };
-
-    constructor(root = claudeProjectsRoot()) {
-        this.root = root;
+    latestPrompt(path: FsPath, budget: Count): PromptResult {
+        const found = extractClaudeOf(tailSpan(path, budget).lines);
+        return { kind: 'prompt', text: found.entries.findLast((entry) => entry.role === 'user')?.text ?? found.lastPrompt };
     }
 
-    locate(lane: Lane): Promise<Located> {
-        return Promise.resolve(this.find(lane));
+    observed(path: FsPath, budget: Count): ObservedResult {
+        return { kind: 'observed', observed: claudeObservedOf(tailSpan(path, budget).lines) };
     }
 
-    private find(lane: Lane): Located {
-        if (lane.session === null) {
-            return unknown({ why: 'not-found', what: `a session id for ${lane.pane}` });
-        }
-        const found = locateClaudeTranscript(lane.session, this.root);
-        return found === null ? unknown({ why: 'not-found', what: `the transcript of ${lane.session}` }) : { kind: 'located', source: found.path };
+    read(path: FsPath, was: Position, budget: Count): ChunkResult {
+        const { lines, position, grew, more } = readJsonlFrom(path, was, budget);
+        return { kind: 'chunk', ...extractClaudeOf(lines), position, grew: grew === 'present', more: more === 'present' };
     }
 
-    latestPrompt(source: string, budget: number): Promise<PromptResult> {
-        try {
-            const found = extractClaude(tailLines(source, budget));
-            return Promise.resolve({ kind: 'prompt', text: found.entries.findLast((entry) => entry.role === 'user')?.text ?? found.lastPrompt });
-        } catch (error) {
-            return Promise.resolve(unknown({ why: 'unreadable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) }));
-        }
+    inFlight(path: FsPath, budget: Count): InFlightResult {
+        const size = must(parseCount(statSync(path).size));
+        const kept = this.unknownAt.get(path);
+        if (kept !== undefined && kept.size === size) return kept.answer;
+        const answer = answerAt(path, budget);
+        if (isUnknown(answer)) this.keep(path, { size, answer });
+        else this.unknownAt.delete(path);
+        return answer;
     }
 
-    observed(source: string, budget: number): Promise<ObservedResult> {
-        try {
-            return Promise.resolve({ kind: 'observed', observed: claudeObserved(tailLines(source, budget)) });
-        } catch (error) {
-            return Promise.resolve(unknown({ why: 'unreadable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) }));
-        }
-    }
-
-    private keep(source: string, kept: { readonly size: number; readonly answer: InFlightResult }): void {
-        this.unknownAt.delete(source);
-        this.unknownAt.set(source, kept);
+    private keep(path: FsPath, kept: KeptUnknown): void {
+        this.unknownAt.delete(path);
+        this.unknownAt.set(path, kept);
         for (const oldest of this.unknownAt.keys()) {
             if (this.unknownAt.size <= KEPT_UNKNOWN_MAX) break;
             this.unknownAt.delete(oldest);
         }
-    }
-
-    private readInFlight(source: string, budget: number): Promise<InFlightResult> {
-        try {
-            const size = statSync(source).size;
-            const kept = this.unknownAt.get(source);
-            if (kept !== undefined && kept.size === size) return Promise.resolve(kept.answer);
-            const answer = answerAt(source, budget);
-            if (isUnknown(answer)) this.keep(source, { size, answer });
-            else this.unknownAt.delete(source);
-            return Promise.resolve(answer);
-        } catch (error) {
-            return Promise.resolve(unknown({ why: 'unreadable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) }));
-        }
-    }
-
-    read(source: string, was: Position, budget: number): Promise<ChunkResult> {
-        try {
-            const { lines, position, grew, more } = readJsonl(source, was, budget);
-            return Promise.resolve({ kind: 'chunk', ...extractClaude(lines), position, grew, more: more === 'present' });
-        } catch (error) {
-            return Promise.resolve(unknown({ why: 'unreadable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) }));
-        }
-    }
-
-    carry(from: Located, to: Located, at: Position): Promise<Position> {
-        if (from.kind !== 'located' || to.kind !== 'located') return Promise.resolve(UNREAD);
-        const [was, now, cursor] = [parseFsPath(from.source), parseFsPath(to.source), parseCount(at.cursor)];
-        if (was.kind !== 'ok' || now.kind !== 'ok' || cursor.kind !== 'ok') return Promise.resolve(UNREAD);
-        return Promise.resolve(sameStart(was.value, now.value, cursor.value) === 'present' ? at : UNREAD);
     }
 }

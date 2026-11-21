@@ -6,16 +6,18 @@ import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
+import type { Directory } from '#src/recap/domain/directory.ts';
+import type { SessionId } from '#src/recap/domain/ids.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import { IN_FLIGHT_CAPABILITIES } from './registry.ts';
 
 const TAIL_BYTES = 512 * 1024;
 
 const LOCATING_KEYS = {
-    claude: (lane: Lane): string | null => lane.session,
-    codex: (lane: Lane): string | null => lane.cwd,
-    opencode: (lane: Lane): string | null => lane.cwd,
-} satisfies Readonly<Record<RegisteredKind, (lane: Lane) => string | null>>;
+    claude: (lane: Lane): SessionId | null => lane.session,
+    codex: (lane: Lane): Directory | null => lane.cwd,
+    opencode: (lane: Lane): Directory | null => lane.cwd,
+} satisfies Readonly<Record<RegisteredKind, (lane: Lane) => SessionId | Directory | null>>;
 
 function unlocated(lane: Lane, registered: RegisteredKind | null, located: Unknown): InFlightReading {
     const why = saying(located.why);
