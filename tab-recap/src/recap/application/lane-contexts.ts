@@ -3,6 +3,8 @@ import type { ContextUse, Observed } from '#src/recap/domain/compaction.ts';
 import type { CompactLimits } from '#src/ports/compact-limits.ts';
 import type { ContextWindows } from '#src/ports/context-windows.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
+import type { Count } from '#src/recap/domain/count.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { ObservedResult } from '#src/ports/transcripts.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
@@ -14,6 +16,14 @@ const REMEMBERED = 200;
 const keyOf = (use: ContextUse | null | undefined): string => (use === null || use === undefined ? '' : `${use.tokens} ${use.window} ${use.source}`);
 
 type ObservedOutcome = ObservedResult | null;
+
+const capAt = (base: Count, percent: Count | null): Count => {
+    if (percent === null) {
+        return base;
+    }
+    const count = parseCount(Math.floor(base * percent / 100));
+    return count.kind === 'ok' ? count.value : base;
+};
 
 export class LaneContexts {
     private readonly transcripts: TranscriptRegistry;
@@ -55,8 +65,14 @@ export class LaneContexts {
 
     private capped(use: ContextUse, lane: Lane, observed: Observed): ContextUse {
         const model = parseText(observed.model);
-        const limit = this.limits.limitOf(lane.agent, model.kind === 'ok' ? model.value : null, lane.cwd);
-        return limit !== null && limit < use.window ? { tokens: use.tokens, window: limit, source: 'agent' } : use;
+        const limit = this.limits.limitOf(lane.agent, model.kind === 'ok' ? model.value : null, lane.cwd, lane.session);
+        const measured = parseCount(use.window);
+        if (measured.kind !== 'ok') {
+            return use;
+        }
+        const base = limit.window !== null && limit.window < measured.value ? limit.window : measured.value;
+        const cap = capAt(base, limit.percent);
+        return cap < measured.value ? { tokens: use.tokens, window: cap, source: 'agent' } : use;
     }
 
     async refresh(lane: Lane): Promise<boolean> {

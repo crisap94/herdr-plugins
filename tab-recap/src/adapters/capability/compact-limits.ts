@@ -3,20 +3,24 @@ import type { Stats } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { must } from '#src/protocol/result.ts';
-import type { CompactLimits } from '#src/ports/compact-limits.ts';
+import type { ClaudeLaunch, ClaudeLaunchEnv, ClaudeLaunches } from '#src/ports/claude-launch.ts';
+import type { CompactLimit, CompactLimits } from '#src/ports/compact-limits.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
-import type { AgentKind } from '#src/recap/domain/ids.ts';
+import type { AgentKind, SessionId } from '#src/recap/domain/ids.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Directory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
+import { MIN_CLAUDE_WINDOW, parseCompactPercentEnv, parseCompactWindowEnv } from './claude-compact-env.ts';
+import { ClaudeLaunchPosix } from './claude-launch-posix.ts';
 
-const MIN_CLAUDE_WINDOW = 100_000;
 const CODEX_LIMIT = /^model_auto_compact_token_limit\s*=\s*(\d+)\s*(?:#.*)?$/;
 const SECTION_HEADER = /^\s*\[/;
 const MANAGED_SETTINGS = ['/etc/claude-code/managed-settings.json', '/Library/Application Support/ClaudeCode/managed-settings.json'];
+const NO_LIMIT: CompactLimit = { window: null, percent: null };
+const NO_ENV: ClaudeLaunchEnv = { window: null, percent: null };
 
 export type AutoCompactWindow = Count;
 
@@ -25,6 +29,7 @@ export type ModelWindows = ReadonlyMap<Text, AutoCompactWindow>;
 export interface ClaudeSettings {
     readonly top: AutoCompactWindow | null;
     readonly models: ReadonlyMap<Text, AutoCompactWindow>;
+    readonly env: ClaudeLaunchEnv;
 }
 
 export interface CompactLimitPaths {
@@ -59,13 +64,26 @@ export function parseModelWindows(input: unknown): ModelWindows {
     return models;
 }
 
+export type ClaudeEnv = ClaudeLaunchEnv;
+
+export function parseClaudeEnv(input: unknown): ClaudeEnv {
+    if (typeof input !== 'object' || input === null || !('env' in input) || typeof input.env !== 'object' || input.env === null) {
+        return NO_ENV;
+    }
+    return {
+        window: 'CLAUDE_CODE_AUTO_COMPACT_WINDOW' in input.env ? parseCompactWindowEnv(input.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW) : null,
+        percent: 'CLAUDE_AUTOCOMPACT_PCT_OVERRIDE' in input.env ? parseCompactPercentEnv(input.env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE) : null,
+    };
+}
+
 export function parseClaudeSettings(input: unknown): ClaudeSettings {
     if (typeof input !== 'object' || input === null) {
-        return { top: null, models: new Map<Text, AutoCompactWindow>() };
+        return { top: null, models: new Map<Text, AutoCompactWindow>(), env: NO_ENV };
     }
     return {
         top: 'autoCompactWindow' in input ? parseAutoCompactWindow(input.autoCompactWindow) : null,
         models: parseModelWindows('modelSettings' in input ? input.modelSettings : null),
+        env: parseClaudeEnv(input),
     };
 }
 
@@ -97,6 +115,18 @@ const claudeLimitIn = (settings: ClaudeSettings, model: Text | null): AutoCompac
     const perModel = model === null ? undefined : settings.models.get(model);
     return perModel ?? settings.top;
 };
+
+const firstOf = <T>(layers: readonly ClaudeSettings[], pick: (layer: ClaudeSettings) => T | null): T | null => {
+    for (const layer of layers) {
+        const value = pick(layer);
+        if (value !== null) {
+            return value;
+        }
+    }
+    return null;
+};
+
+const present = <T>(value: T | null): value is T => value !== null;
 
 class ParsedFile<T> {
     private readonly parse: (text: Text) => T;
@@ -137,38 +167,45 @@ class ParsedFile<T> {
 
 export class CompactLimitFiles implements CompactLimits {
     private readonly paths: CompactLimitPaths;
+    private readonly launches: ClaudeLaunches | null;
     private readonly claudeFiles = new ParsedFile(parseClaudeFile);
     private readonly codexFiles = new ParsedFile(codexLimitIn);
 
-    constructor(paths: CompactLimitPaths) {
+    constructor(paths: CompactLimitPaths, launches: ClaudeLaunches | null = null) {
         this.paths = paths;
+        this.launches = launches;
     }
 
-    limitOf(kind: AgentKind, model: Text | null, cwd: Directory | null): Count | null {
+    limitOf(kind: AgentKind, model: Text | null, cwd: Directory | null, session: SessionId | null): CompactLimit {
         switch (String(kind)) {
             case 'claude':
-                return this.claude(model, cwd);
+                return this.claude(model, cwd, session);
             case 'codex':
-                return this.codex();
+                return { window: this.codex(), percent: null };
             default:
-                return null;
+                return NO_LIMIT;
         }
     }
 
-    private claude(model: Text | null, cwd: Directory | null): Count | null {
-        for (const file of this.claudeSettingsFiles(cwd)) {
-            const settings = this.claudeFiles.read(file);
-            const limit = settings === null ? null : claudeLimitIn(settings, model);
-            if (limit !== null) {
-                return limit;
-            }
-        }
-        return null;
+    private claude(model: Text | null, cwd: Directory | null, session: SessionId | null): CompactLimit {
+        const launch = session === null ? null : this.launches?.launchOf(session) ?? null;
+        const layers = this.claudeLayers(cwd, launch);
+        return {
+            window: launch?.env.window ?? firstOf(layers, (layer) => layer.env.window) ?? firstOf(layers, (layer) => claudeLimitIn(layer, model)),
+            percent: launch?.env.percent ?? firstOf(layers, (layer) => layer.env.percent),
+        };
     }
 
-    private claudeSettingsFiles(cwd: Directory | null): FsPath[] {
+    private claudeLayers(cwd: Directory | null, launch: ClaudeLaunch | null): ClaudeSettings[] {
+        const managed = this.paths.managed.map((file) => this.claudeFiles.read(file));
+        const flagged = launch === null || launch.settings === null ? null : parseClaudeFile(launch.settings);
+        const files = this.projectAndUser(cwd).map((file) => this.claudeFiles.read(file));
+        return [...managed, flagged, ...files].filter(present);
+    }
+
+    private projectAndUser(cwd: Directory | null): FsPath[] {
         const project = cwd === null ? [] : [must(parseFsPath(join(cwd, '.claude', 'settings.local.json'))), must(parseFsPath(join(cwd, '.claude', 'settings.json')))];
-        return [...this.paths.managed, ...project, must(parseFsPath(join(this.paths.home, '.claude', 'settings.json')))];
+        return [...project, must(parseFsPath(join(this.paths.home, '.claude', 'settings.json')))];
     }
 
     private codex(): Count | null {
@@ -177,5 +214,7 @@ export class CompactLimitFiles implements CompactLimits {
 }
 
 export function systemCompactLimits(): CompactLimits {
-    return new CompactLimitFiles({ home: must(parseFsPath(homedir())), managed: MANAGED_SETTINGS.map((path) => must(parseFsPath(path))) });
+    const home = must(parseFsPath(homedir()));
+    const managed = MANAGED_SETTINGS.map((path) => must(parseFsPath(path)));
+    return new CompactLimitFiles({ home, managed }, new ClaudeLaunchPosix({ home, proc: must(parseFsPath('/proc')) }));
 }

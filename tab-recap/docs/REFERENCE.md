@@ -321,7 +321,7 @@ are not offered compaction.
 10–95) of its window shows `compact? 45% of 1M`. It never compacts by itself. The window is found at
 runtime: Codex's own `model_context_window`; opencode's and Claude's model looked up in opencode's local
 models.dev catalogue (`~/.cache/opencode/models.json`) when it exists; else, for Claude, a small family
-table; raised when the tokens actually used prove it bigger. Claude's `autoCompactWindow` (per model in `modelSettings`, from the managed, project and user settings files) and Codex's `model_auto_compact_token_limit` cap the window when they are smaller, since the agent compacts there. `TAB_RECAP_CONTEXT_WINDOW` overrides it.
+table; raised when the tokens actually used prove it bigger. Claude's `autoCompactWindow` (per model in `modelSettings`, from the managed, project and user settings files) and Codex's `model_auto_compact_token_limit` cap the window when they are smaller, since the agent compacts there. On Linux a Claude session's own `CLAUDE_CODE_AUTO_COMPACT_WINDOW`, `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` and `--settings` are honoured too, read from the running process (its pid file under `~/.claude/sessions`, then `/proc`); the `env` object of a settings file sets the same two variables. `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` lowers the cap to that percentage of the window. `TAB_RECAP_CONTEXT_WINDOW` overrides it.
 
 ## Handoff
 
