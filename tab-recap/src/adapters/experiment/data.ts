@@ -1,6 +1,17 @@
-import type { Labelled } from '#src/experiment/kappa-report.ts';
-import { readJsonl } from './io.ts';
+import type { Labelled as LabelledRow } from '#src/experiment/kappa-report.ts';
+import type { FsPath } from '#src/recap/domain/fs-path.ts';
+
+import { readRecords } from './io.ts';
 import type { Point } from './point.ts';
 
-export const readPoints = (path: string): readonly Point[] => readJsonl(path) as readonly Point[];
-export const readLabelled = (path: string): readonly Labelled[] => readJsonl(path) as readonly Labelled[];
+export { readLabelled, readPoints } from './legacy.ts';
+
+export const readPointsAt = (path: FsPath): readonly Point[] => {
+    const rows: readonly unknown[] = readRecords(path);
+    return rows as readonly Point[];
+};
+
+export const readLabelledAt = (path: FsPath): readonly LabelledRow[] => {
+    const rows: readonly unknown[] = readRecords(path);
+    return rows as readonly LabelledRow[];
+};
