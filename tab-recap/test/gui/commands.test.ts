@@ -177,7 +177,7 @@ test('opening a second tab clears the first marker before it touches the second'
     press(view.render(), 'enter', view.cx);
     await settle();
     press(view.render(), 'escape', view.cx);
-    press(view.render(), 'j', view.cx);
+    press(view.render(), 'down', view.cx);
     press(view.render(), 'enter', view.cx);
     await settle();
     const marks = world.execLog.filter((call) => call.command === 'touch' || call.command === 'rm');

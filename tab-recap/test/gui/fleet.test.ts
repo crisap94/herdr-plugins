@@ -40,30 +40,30 @@ test('the first row in urgency order is selected, with the accent edge and the s
     assert.deepEqual(colors(second, 'border_color'), [DARK['surface']]);
 });
 
-test('j and k move the selection and stop at both ends', async () => {
+test('the arrow keys move the selection and stop at both ends', async () => {
     const view = await mount({ role: 'fleet' });
     const selected = (): string => idsOf(view.render(), 'row-').find((id) => colors(byId(view.render(), id), 'border_color')[0] === DARK['accent']) ?? '';
-    press(view.render(), 'k', view.cx);
+    press(view.render(), 'up', view.cx);
     assert.equal(selected(), ROWS[0]);
-    press(view.render(), 'j', view.cx);
+    press(view.render(), 'down', view.cx);
     assert.equal(selected(), ROWS[1]);
-    press(view.render(), 'j', view.cx);
-    press(view.render(), 'j', view.cx);
-    press(view.render(), 'j', view.cx);
+    press(view.render(), 'down', view.cx);
+    press(view.render(), 'down', view.cx);
+    press(view.render(), 'down', view.cx);
     assert.equal(selected(), ROWS[3]);
-    press(view.render(), 'k', view.cx);
+    press(view.render(), 'up', view.cx);
     assert.equal(selected(), ROWS[2]);
 });
 
 test('modifier chords do not move the selection', async () => {
     const view = await mount({ role: 'fleet' });
-    press(view.render(), 'j', view.cx, { control: true });
+    press(view.render(), 'down', view.cx, { control: true });
     assert.deepEqual(colors(byId(view.render(), ROWS[0] ?? ''), 'border_color'), [DARK['accent']]);
 });
 
 test('Enter opens the selected tab as a brief, Esc returns to the fleet, a second Esc closes the window', async () => {
     const view = await mount({ role: 'fleet', overlay: 'win-1' });
-    press(view.render(), 'j', view.cx);
+    press(view.render(), 'down', view.cx);
     press(view.render(), 'enter', view.cx);
     await settle();
     assert.ok(hasId(view.render(), 'back'));

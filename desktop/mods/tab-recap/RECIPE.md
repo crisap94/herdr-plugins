@@ -14,7 +14,7 @@ Fleet and Brief are one persistent window (`key: "tab-recap"`); the role only sa
 
 ## Keys
 
-`j` `k` move, `Enter` open, `/` search, `1`-`4` views, `c` compact, `r` refresh, `Esc` back, then close. Keys are ignored while a field has the keyboard, and with Ctrl, Alt or the platform key held.
+`Up` `Down` move, `Enter` open, `/` search, `1`-`4` views, `c` compact, `r` refresh, `Esc` back, then close. Keys are ignored while a field has the keyboard, and with Ctrl, Alt or the platform key held.
 
 ## Opt-in layout recipe
 

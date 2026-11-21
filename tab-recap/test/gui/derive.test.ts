@@ -194,13 +194,15 @@ test('a missing localStorage global never throws either', () => {
 });
 
 test('keys map to actions, ignore modifiers and ignore everything while typing', () => {
-    const map: [string, string][] = [['j', 'down'], ['k', 'up'], ['enter', 'open'], ['/', 'search'], ['c', 'compact'], ['r', 'refresh'], ['escape', 'back']];
+    const map: [string, string][] = [['down', 'down'], ['up', 'up'], ['enter', 'open'], ['/', 'search'], ['c', 'compact'], ['r', 'refresh'], ['escape', 'back']];
     for (const [key, action] of map) {
         assert.deepEqual(keys.keyAction({ key }, false), { action, arg: null }, key);
-        assert.equal(keys.keyAction({ key }, true), null, key);
+        assert.equal(keys.keyAction({ key }, true)?.action ?? null, key === 'enter' ? 'open' : null, key);
     }
     assert.deepEqual(keys.keyAction({ key: '3' }, false), { action: 'view', arg: 2 });
     assert.equal(keys.keyAction({ key: '5' }, false), null);
-    assert.equal(keys.keyAction({ key: 'j', modifiers: { control: true } }, false), null);
-    assert.equal(keys.keyAction({ key: 'j', modifiers: { shift: true } }, false)?.action, 'down');
+    assert.equal(keys.keyAction({ key: 'j' }, false), null);
+    assert.equal(keys.keyAction({ key: 'k' }, false), null);
+    assert.equal(keys.keyAction({ key: 'down', modifiers: { control: true } }, false), null);
+    assert.equal(keys.keyAction({ key: 'down', modifiers: { shift: true } }, false)?.action, 'down');
 });

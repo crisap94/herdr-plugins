@@ -21,7 +21,7 @@ export const DOC_VERSIONS = [1, 2];
 export const NEWER = "newer";
 
 export const KEYS = {
-  down: "j", up: "k", open: "enter", search: "/", compact: "c", refresh: "r", back: "escape",
+  down: "down", up: "up", open: "enter", search: "/", compact: "c", refresh: "r", back: "escape",
   views: ["1", "2", "3", "4"],
   blocked: ["control", "alt", "platform"],
 };
@@ -29,7 +29,7 @@ export const ACTION = {
   down: "down", up: "up", open: "open", search: "search", compact: "compact", refresh: "refresh", back: "back", view: "view",
 };
 export const FOOTER = [
-  { keys: [KEYS.down, KEYS.up], label: "move" },
+  { keys: ["\u2191", "\u2193"], label: "move" },
   { keys: ["Enter"], label: "open" },
   { keys: [KEYS.search], label: "search" },
   { keys: ["1-4"], label: "views" },
