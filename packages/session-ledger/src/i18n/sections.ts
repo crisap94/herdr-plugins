@@ -17,16 +17,4 @@ export const SECTIONS: readonly Section[] = [
     { id: 'links', en: 'Links', es: 'Enlaces', hint: 'files, branches, merge requests, commands, hosts worth keeping' },
 ];
 
-const LEGACY: Readonly<Record<string, SectionId>> = {
-    'waiting on you': 'needs',
-    'esperando tu respuesta': 'needs',
-    'key refs': 'links',
-    'referencias clave': 'links',
-    'próximos pasos': 'next',
-};
-
-export function sectionOf(heading: string): SectionId | null {
-    const text = heading.replace(/^#+\s*/, '').trim().toLowerCase();
-    const legacy = Object.entries(LEGACY).find(([name]) => text.startsWith(name));
-    return legacy?.[1] ?? SECTIONS.find((section) => text.startsWith(section.en.toLowerCase()) || text.startsWith(section.es.toLowerCase()))?.id ?? null;
-}
+export { sectionOf } from './legacy.ts';
