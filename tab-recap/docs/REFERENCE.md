@@ -43,10 +43,7 @@ stays in the story with its reason.
 - **The expanded view** (Enter or a tap) draws all of it — see below.
 - **Where the view draws from.** The column, the bar and the modal are drawn by the relay pane (`src/pane/launch.mjs`)
   from the daemon's view server, which `TAB_RECAP_VIEW_SERVER` turns on (`on` by default). The pane reads no store.
-  To go back to the in-process column, set `TAB_RECAP_VIEW_SERVER=off` in `config.env`, restart the daemon and
-  reopen the panes: the pane reads the same key at start and hands itself over to the old column process
-  (`src/column/launch.mjs`), which reads the store itself. The full revert of this release is two lines: the `column`
-  entry of `herdr-plugin.toml` back to `src/column/launch.mjs`, and `defaultOn` in `src/daemon/slots/view.ts` back to `off`.
+  `off` stops the daemon's view server and the Recap panes show that the daemon is not reachable; there is no in-process column any more.
 - **From 1.x:** migration 6 imports the lines your old recaps carried as facts (equal lines of a task across
   runs become one fact; the last good run's are open, the rest closed as `rewritten`); every task's column
   reads the same after the upgrade as before. The old `item` table is kept read-only.

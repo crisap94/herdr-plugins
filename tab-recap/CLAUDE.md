@@ -17,7 +17,7 @@ src/i18n/               PURE catalogs: `Messages` (en, es), the recap's sections
 src/extensions/         notes shown under a lane (stored-notes)
 src/transport/          herdr's socket wire (one connection per RPC, one per subscription)
 src/daemon/             composition root + loop (never exits)
-src/column/             composition root of the column pane process
+src/column/             the column's shared pieces: the `s`/`c` command launcher table (`command.ts`) and the expanded modal (`expanded-modal.ts`); the relay pane draws the column
 src/setup/              composition root of the settings modal (a popup pane); the state is `recap/application/setup-state.ts`, what it writes `setup-changes.ts` (lock keys + config entries: a new row adds its lines there), the keys `setup-keys.ts`, the view `recap/render/setup.ts`
 src/compact/             composition root of the compaction popup (a note, then a request); the reducer is `recap/application/compact-keys.ts`, the flow `compaction.ts`, the words `compaction-message.ts` (pure; never names the plugin)
 src/host/               PLAIN JAVASCRIPT (`.mjs` + `.d.mts`, no TypeScript syntax): the host policy (`policy.mjs`: `MIN_BUN`, `bunAtLeast`, `supportOf`, the refusal's steps and English text), the Host adapter (`bun-host.mjs`) and `launch.mjs`, which every launcher calls
