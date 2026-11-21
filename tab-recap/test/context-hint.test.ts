@@ -14,7 +14,7 @@ import type { CompactLimits } from '#src/ports/compact-limits.ts';
 import { memoryStore } from './db/support.ts';
 
 const noGlow = (): null => null;
-const noLimits: CompactLimits = { limitOf: () => null };
+const noLimits: CompactLimits = { limitOf: () => ({ window: null, percent: null }) };
 const view = (context: ContextUse | null, compactHint: number | null, messages: typeof en = en): string => present({
     tab: { tab: 'w1:t1', column: null, at: 0, lanes: [{ pane: 'w1:p1', agent: 'codex', status: 'idle', title: 'Fix it', cwd: null, context }] },
     recap: null, notes: new Map(), warnings: [], now: 0, messages, compactHint,
