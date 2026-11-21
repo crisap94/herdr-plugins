@@ -179,39 +179,13 @@
     "return": 1,
     "container": 1
   },
-  "src/adapters/transcripts/in-flight.ts": {
-    "return": 4
-  },
   "src/adapters/transcripts/legacy.ts": {
-    "legacy": 19
+    "legacy": 36
   },
-  "src/adapters/transcripts/opencode/in-flight.ts": {
-    "parameter": 2
-  },
-  "src/adapters/transcripts/opencode/parts.ts": {
-    "parameter": 2
+  "src/adapters/transcripts/opencode/legacy.ts": {
+    "legacy": 6
   },
   "src/adapters/transcripts/opencode/transcripts.ts": {
-    "parameter": 14,
-    "return": 1,
-    "property": 2
-  },
-  "src/adapters/transcripts/registry.ts": {
-    "parameter": 6,
-    "return": 2,
-    "container": 1
-  },
-  "src/adapters/transcripts/screen.ts": {
-    "parameter": 5,
-    "return": 3
-  },
-  "src/adapters/transcripts/slice.ts": {
-    "parameter": 6,
-    "container": 2
-  },
-  "src/adapters/transcripts/tool-calls.ts": {
-    "parameter": 8,
-    "return": 4,
-    "property": 2
+    "property": 1
   }
 }

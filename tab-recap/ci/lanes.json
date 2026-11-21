@@ -853,6 +853,7 @@
       "src/adapters/transcripts/legacy.ts",
       "src/adapters/transcripts/opencode/context.ts",
       "src/adapters/transcripts/opencode/in-flight.ts",
+      "src/adapters/transcripts/opencode/legacy.ts",
       "src/adapters/transcripts/opencode/parts.ts",
       "src/adapters/transcripts/opencode/transcripts.ts",
       "src/adapters/transcripts/registry.ts",
