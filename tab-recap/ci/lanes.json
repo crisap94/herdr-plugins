@@ -502,6 +502,8 @@
       "src/recap/application/twins/eval-options/legacy.ts",
       "src/recap/application/twins/eval-report/legacy.ts",
       "src/recap/application/twins/eval-run/legacy.ts",
+      "src/recap/application/twins/eval-stats/legacy.ts",
+      "src/recap/application/twins/expanded-view/legacy.ts",
       "src/recap/application/twins/ledgers/legacy.ts",
       "src/recap/application/twins/restart/legacy.ts",
       "src/recap/application/twins/typing-lease-deps/legacy.ts",
