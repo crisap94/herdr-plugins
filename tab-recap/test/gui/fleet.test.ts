@@ -55,6 +55,17 @@ test('the arrow keys move the selection and stop at both ends', async () => {
     assert.equal(selected(), ROWS[2]);
 });
 
+test('Enter opens the selected tab in the detail view, and Escape comes back', async () => {
+    const view = await mount({ role: 'fleet' });
+    press(view.render(), 'down', view.cx);
+    press(view.render(), 'enter', view.cx);
+    await settle();
+    assert.ok(hasId(view.render(), 'back'));
+    assert.ok(!hasId(view.render(), 'fleet-list'));
+    press(view.render(), 'escape', view.cx);
+    assert.ok(hasId(view.render(), 'fleet-list'));
+});
+
 test('modifier chords do not move the selection', async () => {
     const view = await mount({ role: 'fleet' });
     press(view.render(), 'down', view.cx, { control: true });

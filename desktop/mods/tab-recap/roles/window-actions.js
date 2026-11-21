@@ -97,12 +97,20 @@ export class WindowActions {
     const brief = this.scene === SCENES.brief;
     if (hit.action === ACTION.down) this.move(1, cx);
     else if (hit.action === ACTION.up) this.move(-1, cx);
-    else if (hit.action === ACTION.open && !brief && this.sel) this.open(this.sel, cx);
+    else if (hit.action === ACTION.open) this.openSelected(cx);
     else if (hit.action === ACTION.search) (brief ? this.tqState : this.qState).focus();
     else if (hit.action === ACTION.view && this.sel) { if (!brief) this.open(this.sel, cx); this.view = VIEWS[hit.arg]; this.bin = -1; cx.notify(); }
     else if (hit.action === ACTION.compact && brief) this.compactKey(cx);
     else if (hit.action === ACTION.refresh) this.refresh(cx, !brief);
     else if (hit.action === ACTION.back) this.escape(cx);
+  }
+
+  openSelected(cx) {
+    if (this.scene === SCENES.brief) return;
+    if (this.typing) { this.typing = false; this.handle.focus(); }
+    const list = visible(this.rows(), this.filter, this.q);
+    const target = list.find((r) => r.id === this.sel) ?? list[0];
+    if (target) this.open(target.id, cx);
   }
 
   compactKey(cx) {

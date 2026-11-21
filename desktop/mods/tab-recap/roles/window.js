@@ -111,7 +111,7 @@ export default class Window extends WindowActions {
     const c = this.context(t, rows, row, now);
     const brief = this.scene === SCENES.brief;
     return v_flex().id("tab-recap").size_full().bg(t.surface).text_color(t.fg).text_size(SIZE.body).track_focus(this.handle)
-      .on_key_down((e, cx) => this.onKey(e, cx)).child(brief ? briefBar(c) : fleetBar(c))
+      .on_key_down((e, cx) => this.onKey(e, cx)).on_mouse_down("left", () => { if (!this.typing) this.handle.focus(); }).child(brief ? briefBar(c) : fleetBar(c))
       .child(brief ? this.body(c) : fleetView(c)).child(footer(t));
   }
 }

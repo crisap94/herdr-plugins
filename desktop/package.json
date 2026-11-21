@@ -7,6 +7,10 @@
     "./tab-recap/contract": {
       "types": "./types/tab-recap-constants.d.ts",
       "default": "./mods/tab-recap/constants.js"
+    },
+    "./tab-recap/keys": {
+      "types": "./types/tab-recap-keys.d.ts",
+      "default": "./mods/tab-recap/keys.js"
     }
   },
   "scripts": {
