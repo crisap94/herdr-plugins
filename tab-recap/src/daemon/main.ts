@@ -45,7 +45,7 @@ import { boundedBy } from './bounded.ts';
 import { capabilityNow, failureLog, herdrEventsOn, listeningIn, logVia, paneTokensTo, wantsScreen } from './legacy.ts';
 import { shutDown } from './shutdown.ts';
 import { openState } from './state.ts';
-import type { Autocompact, IdleClaim } from '#src/recap/application/autocompact.ts';
+import type { Autocompact } from '#src/recap/application/autocompact.ts';
 import { wireAutocompact } from './autocompact.ts';
 import { AutocompactSweep } from './autocompact-sweep.ts';
 import { wireCompaction } from './compaction.ts';
@@ -208,9 +208,7 @@ async function start(): Promise<ExitCode> {
     const root = stateDirectory();
     const pidfile = new Pidfile(root);
     const booted = await boot(root, pidfile);
-    if (typeof booted === 'number') {
-        return booted;
-    }
+    if (typeof booted === 'number') return booted;
     const { informer, fleet, backends, store, retention, sweep, events, handoffs, worktrees, engine, recaps, transcripts, clock, viewers, statuses, ledger } = booted;
     let stopping = false;
     let slots: Slots | null = null;
@@ -252,7 +250,7 @@ async function start(): Promise<ExitCode> {
         void backends.refresh();
     }, RESYNC_MS).unref();
     await backends.refresh();
-    slots = await startSlots(SLOT_TABLE, contextOf({ root: parseRoot(root), store, fleet, engine, recaps, transcripts, events, board: (): Board => informer.current, observe: (observation): void => { informer.push(observation); }, statuses, ledger, clock, viewers, preCompacts, claimIdle: (lane): IdleClaim => booted.autocompact.claimIdle(lane), log }, versionOf(), (key: SlotKey): Switch => parseSwitch(configGetter()(key))));
+    slots = await startSlots(SLOT_TABLE, contextOf({ root: parseRoot(root), store, fleet, engine, recaps, transcripts, events, board: (): Board => informer.current, observe: (observation): void => { informer.push(observation); }, statuses, ledger, clock, viewers, preCompacts, claimIdle: (lane) => booted.autocompact.claimIdle(lane), log }, versionOf(), (key: SlotKey): Switch => parseSwitch(configGetter()(key))));
     log(`daemon ${process.pid} up, state in ${root}`);
     void events.daemon('daemon-started', codeVersion() ?? 'unknown');
     await informer.enterSubscription();
