@@ -1,13 +1,9 @@
 {
-  "src/recap/application/ask-back.ts": {
-    "parameter": 1,
-    "return": 3,
-    "property": 3
+  "src/recap/application/ask-back/legacy.ts": {
+    "legacy": 7
   },
-  "src/recap/application/chunking.ts": {
-    "parameter": 2,
-    "return": 3,
-    "property": 5
+  "src/recap/application/chunking/legacy.ts": {
+    "legacy": 10
   },
   "src/recap/application/correction-input.ts": {
     "parameter": 6,
@@ -55,7 +51,7 @@
     "container": 3
   },
   "src/recap/application/legacy.ts": {
-    "legacy": 27
+    "legacy": 21
   },
   "src/recap/application/local-time.ts": {
     "parameter": 6,
@@ -83,15 +79,14 @@
     "property": 9,
     "container": 3
   },
-  "src/recap/application/recap-shape.ts": {
-    "parameter": 4,
-    "return": 4,
-    "property": 1
+  "src/recap/application/recap-shape/legacy.ts": {
+    "legacy": 9
   },
-  "src/recap/application/triggers.ts": {
-    "parameter": 2,
-    "return": 1,
-    "property": 5
+  "src/recap/application/triggers/legacy.ts": {
+    "legacy": 8
+  },
+  "src/recap/application/writer-clip/legacy.ts": {
+    "legacy": 6
   },
   "src/recap/application/writer-context.ts": {
     "parameter": 5,

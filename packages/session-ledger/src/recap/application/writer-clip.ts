@@ -1,2 +1,2 @@
-export { clipHead, clipTurn } from './legacy.ts';
-export type { Clipped } from './legacy.ts';
+export { clipHead, clipTurn } from './writer-clip/legacy.ts';
+export type { Clipped } from './writer-clip/legacy.ts';
