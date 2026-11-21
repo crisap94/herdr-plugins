@@ -44,7 +44,7 @@ const catalogue = (windows: Record<string, number>): ModelCatalogue => ({ window
 const claudeAt = (home: string, setting: number | null = null): LaneContexts => new LaneContexts(
     registryWith({ claude: reader('claude', 'claude-opus-5-5', 240_000, null) }),
     contextWindows(catalogue({ 'claude-opus-5-5': 1_000_000 })),
-    new CompactLimitFiles({ home: must(parseFsPath(home)), managed: must(parseFsPath(join(home, 'managed-settings.json'))) }),
+    new CompactLimitFiles({ home: must(parseFsPath(home)), managed: [must(parseFsPath(join(home, 'managed-settings.json')))] }),
     () => setting,
 );
 
@@ -107,7 +107,7 @@ test('a Codex model_auto_compact_token_limit before the first section caps the w
     const codex = (): LaneContexts => new LaneContexts(
         registryWith({ codex: reader('codex', 'gpt-6-luna', 116_000, 258_400) }),
         contextWindows(catalogue({})),
-        new CompactLimitFiles({ home: must(parseFsPath(home)), managed: must(parseFsPath(join(home, 'managed-settings.json'))) }),
+        new CompactLimitFiles({ home: must(parseFsPath(home)), managed: [must(parseFsPath(join(home, 'managed-settings.json')))] }),
         () => null,
     );
     write(join(home, '.codex', 'config.toml'), 'model = "gpt-6-luna"\nmodel_auto_compact_token_limit = 200000\n\n[profiles.big]\nmodel_auto_compact_token_limit = 900000\n');

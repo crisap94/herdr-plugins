@@ -16,7 +16,7 @@ import type { Directory } from '@stateforge-labs/session-ledger/unstable/recap/d
 const MIN_CLAUDE_WINDOW = 100_000;
 const CODEX_LIMIT = /^model_auto_compact_token_limit\s*=\s*(\d+)\s*(?:#.*)?$/;
 const SECTION_HEADER = /^\s*\[/;
-const MANAGED_SETTINGS = '/etc/claude-code/managed-settings.json';
+const MANAGED_SETTINGS = ['/etc/claude-code/managed-settings.json', '/Library/Application Support/ClaudeCode/managed-settings.json'];
 
 export type AutoCompactWindow = Count;
 
@@ -29,7 +29,7 @@ export interface ClaudeSettings {
 
 export interface CompactLimitPaths {
     readonly home: FsPath;
-    readonly managed: FsPath;
+    readonly managed: readonly FsPath[];
 }
 
 interface Entry<T> {
@@ -168,7 +168,7 @@ export class CompactLimitFiles implements CompactLimits {
 
     private claudeSettingsFiles(cwd: Directory | null): FsPath[] {
         const project = cwd === null ? [] : [must(parseFsPath(join(cwd, '.claude', 'settings.local.json'))), must(parseFsPath(join(cwd, '.claude', 'settings.json')))];
-        return [this.paths.managed, ...project, must(parseFsPath(join(this.paths.home, '.claude', 'settings.json')))];
+        return [...this.paths.managed, ...project, must(parseFsPath(join(this.paths.home, '.claude', 'settings.json')))];
     }
 
     private codex(): Count | null {
@@ -177,5 +177,5 @@ export class CompactLimitFiles implements CompactLimits {
 }
 
 export function systemCompactLimits(): CompactLimits {
-    return new CompactLimitFiles({ home: must(parseFsPath(homedir())), managed: must(parseFsPath(MANAGED_SETTINGS)) });
+    return new CompactLimitFiles({ home: must(parseFsPath(homedir())), managed: MANAGED_SETTINGS.map((path) => must(parseFsPath(path))) });
 }
