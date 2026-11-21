@@ -14,6 +14,7 @@ import { codeVersion } from '#src/adapters/os/plugin-version.ts';
 import { SystemClock } from '#src/adapters/os/system-clock.ts';
 import { LocalCatalogue } from '#src/adapters/capability/catalogue.ts';
 import { contextWindows } from '#src/adapters/capability/context-window.ts';
+import { systemCompactLimits } from '#src/adapters/capability/compact-limits.ts';
 import type { Compaction } from '#src/recap/application/compaction.ts';
 import { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
@@ -125,7 +126,7 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
     const exchange = handoffExchangeOf({ store, tokens: fleet, events, board, sharing: (): HerdrEvents => loadConfig().herdrEvents, requests: handoffRequestsOn, log });
     const hub = new SettleHub({ agents: fleet.agents(), listening: listeningIn(box), pause: sleep, now: nowInstant });
     const webs = new LaneWebs(repos);
-    const contexts = new LaneContexts(transcripts, contextWindows(new LocalCatalogue()), () => loadSettings().compaction.window);
+    const contexts = new LaneContexts(transcripts, contextWindows(new LocalCatalogue()), systemCompactLimits(), () => loadSettings().compaction.window);
     const laneTokens = new LaneTokenPublisher({ tokens: fleet, enabled: herdrEventsOn, board, facts: (lane): LaneFacts => factsOf(lane, { contexts, records: store.records, ledger: store.ledger }), capability: capabilityNow, now: nowInstant, log, events });
 
     const dispatch = dispatchFor(box, { fleet, store, recaps, transcripts, webs, contexts, events, sharing: (): Sharing => (herdrEventsOn() ? 'on' : 'off') }, log);

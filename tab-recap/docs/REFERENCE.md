@@ -317,7 +317,7 @@ are not offered compaction.
 10–95) of its window shows `compact? 45% of 1M`. It never compacts by itself. The window is found at
 runtime: Codex's own `model_context_window`; opencode's and Claude's model looked up in opencode's local
 models.dev catalogue (`~/.cache/opencode/models.json`) when it exists; else, for Claude, a small family
-table; raised when the tokens actually used prove it bigger. `TAB_RECAP_CONTEXT_WINDOW` overrides it.
+table; raised when the tokens actually used prove it bigger. Claude's `autoCompactWindow` (per model in `modelSettings`, from the managed, project and user settings files) and Codex's `model_auto_compact_token_limit` cap the window when they are smaller, since the agent compacts there. `TAB_RECAP_CONTEXT_WINDOW` overrides it.
 
 ## Handoff
 

@@ -1,7 +1,9 @@
 import { contextOf } from '#src/recap/domain/compaction.ts';
-import type { ContextUse } from '#src/recap/domain/compaction.ts';
+import type { ContextUse, Observed } from '#src/recap/domain/compaction.ts';
+import type { CompactLimits } from '#src/ports/compact-limits.ts';
 import type { ContextWindows } from '#src/ports/context-windows.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import type { ObservedResult } from '#src/ports/transcripts.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
@@ -16,12 +18,14 @@ type ObservedOutcome = ObservedResult | null;
 export class LaneContexts {
     private readonly transcripts: TranscriptRegistry;
     private readonly windows: ContextWindows;
+    private readonly limits: CompactLimits;
     private readonly setting: () => number | null;
     private readonly known = new Map<string, ContextUse | null>();
 
-    constructor(transcripts: TranscriptRegistry, windows: ContextWindows, setting: () => number | null) {
+    constructor(transcripts: TranscriptRegistry, windows: ContextWindows, limits: CompactLimits, setting: () => number | null) {
         this.transcripts = transcripts;
         this.windows = windows;
+        this.limits = limits;
         this.setting = setting;
     }
 
@@ -42,7 +46,17 @@ export class LaneContexts {
             return undefined;
         }
         const { observed } = found;
-        return observed === null ? null : contextOf({ observed, setting: this.setting() }, this.windows.windowOf(String(lane.agent)));
+        if (observed === null) {
+            return null;
+        }
+        const use = contextOf({ observed, setting: this.setting() }, this.windows.windowOf(String(lane.agent)));
+        return use === null || use.source === 'setting' ? use : this.capped(use, lane, observed);
+    }
+
+    private capped(use: ContextUse, lane: Lane, observed: Observed): ContextUse {
+        const model = parseText(observed.model);
+        const limit = this.limits.limitOf(lane.agent, model.kind === 'ok' ? model.value : null, lane.cwd);
+        return limit !== null && limit < use.window ? { tokens: use.tokens, window: limit, source: 'agent' } : use;
     }
 
     async refresh(lane: Lane): Promise<boolean> {
