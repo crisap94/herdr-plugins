@@ -13,7 +13,8 @@ export function codexSettings(path: FsPath = codexSettingsPath()): HarnessSettin
         harness: 'codex',
         path,
         events,
-        add: (document, shim) => addCommandHooks(document, shim, events),
-        remove: (document, shim) => removeCommandHooks(document, shim),
+        preCompactScript: 'library',
+        add: (document, commands) => addCommandHooks(document, commands.shim, events),
+        remove: (document, commands) => removeCommandHooks(document, commands.shim),
     };
 }

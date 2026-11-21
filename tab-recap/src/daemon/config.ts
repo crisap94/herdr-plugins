@@ -17,6 +17,7 @@ import { closedLaneDaysOrDefault, parseClosedLaneDays, tabKeepDaysOf } from '#sr
 import { effortOf } from '#src/recap/domain/effort.ts';
 import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
 import { parseHandoffRequests } from '#src/recap/domain/handoff-requests.ts';
+import { parseIdleHold } from '#src/recap/domain/idle-hold.ts';
 import { compactNoteOf } from '#src/recap/domain/compact-note.ts';
 import { telemetryTagsOf } from '#src/recap/domain/telemetry-tags.ts';
 import { CLAUDE_POLICY_ACK_DEFAULT, CLAUDE_POLICY_ACKS } from '#src/recap/domain/claude-policy-ack.ts';
@@ -237,6 +238,7 @@ export function loadSettings(): Settings {
         timeoutMs: must(parseDuration(numberIn(get('TAB_RECAP_TIMEOUT_MS'), POSITIVE.min, POSITIVE.max) ?? 180_000)),
         herdrEvents,
         handoffRequests: parseHandoffRequests(get('TAB_RECAP_HANDOFF_REQUESTS'), herdrEvents),
+        holdIdle: parseIdleHold(get('TAB_RECAP_AUTOCOMPACT_HOLD_IDLE')),
         compactNote: compactNoteOf(get('TAB_RECAP_COMPACT_NOTE')),
         writerView: get('TAB_RECAP_WRITER_PRUNE') === 'on' ? writerViewSettings : FULL_WRITER_VIEW,
         writerViewSettings,

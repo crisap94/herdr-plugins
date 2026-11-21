@@ -8,6 +8,7 @@ import type { Sizing } from '#src/recap/domain/layout.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
 import type { HandoffRequests } from '#src/recap/domain/handoff-requests.ts';
+import type { IdleHold } from '#src/recap/domain/idle-hold.ts';
 import type { CompactNote } from '#src/recap/domain/compact-note.ts';
 import type { TelemetryTags } from '#src/recap/domain/telemetry-tags.ts';
 import type { ClaudePolicyAck } from '#src/recap/domain/claude-policy-ack.ts';
@@ -75,6 +76,7 @@ export type SettingName =
     | 'TAB_RECAP_CLOSED_LANE_DAYS'
     | 'TAB_RECAP_TIMEOUT_MS'
     | 'TAB_RECAP_HANDOFF_REQUESTS'
+    | 'TAB_RECAP_AUTOCOMPACT_HOLD_IDLE'
     | 'TAB_RECAP_COMPACT_NOTE'
     | 'TAB_RECAP_TELEMETRY_TAGS'
     | 'TAB_RECAP_CLAUDE_POLICY_ACK';
@@ -120,6 +122,7 @@ export interface Settings {
     readonly timeoutMs: Duration;
     readonly herdrEvents: HerdrEvents;
     readonly handoffRequests: HandoffRequests;
+    readonly holdIdle: IdleHold;
     readonly compactNote: CompactNote;
     readonly writerView: WriterView;
     readonly writerViewSettings: PrunedWriterView;

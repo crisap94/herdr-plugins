@@ -7,7 +7,10 @@ import type { Observation } from '#src/recap/domain/fold.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { parseSessionId, type PaneId, type SessionId, type TabId } from '#src/recap/domain/ids.ts';
-import type { HookAnswer, HookCall, HookHarness, HookReceiver } from '#src/wire/hooks/contract.ts';
+import type { HookAnswer, HookCall, HookHarness, HookReceiver, PreCompactAnswer } from '#src/wire/hooks/contract.ts';
+import { PRE_COMPACT_HOLD_REASON } from '#src/wire/hooks/contract.ts';
+import type { PreCompactCall, PreCompactReceiver } from '#src/adapters/hooks/endpoint.ts';
+import type { IdleClaim } from '#src/recap/application/autocompact.ts';
 import { turnSignalOf } from '#src/wire/hooks/turn-signal.ts';
 import type { PreCompacts } from '#src/adapters/hooks/pre-compacts.ts';
 import type { TurnEnds } from '#src/adapters/hooks/turn-ends.ts';
@@ -28,12 +31,14 @@ export interface ReceiverDeps {
     engine: Pick<Engine, 'sessionStarted' | 'compacted'>;
     turnEnds: TurnEnds;
     preCompacts: PreCompacts;
+    claimIdle(lane: Lane): IdleClaim;
     restoreMode(): RestoreMode;
     clock: Clock;
     log(line: Line): void;
 }
 
 const NOTHING: HookAnswer = { kind: 'nothing' };
+const PRE_COMPACT_NOTHING: PreCompactAnswer = { kind: 'nothing' };
 
 const stopped = (deps: ReceiverDeps, followed: Followed): void => {
     const signal = turnSignalOf(followed.lane, deps.turnEnds.endedAt(followed.pane), deps.clock.now());
@@ -45,23 +50,42 @@ const stopped = (deps: ReceiverDeps, followed: Followed): void => {
     }
 };
 
-export function createReceiver(deps: ReceiverDeps): HookReceiver {
-    const sessionStarted = (call: HookCall, session: SessionId, scope: ScopeId, key: SessionKey): HookAnswer => {
-        if (call.source === 'compact') {
-            const facts = deps.engine.compacted(scope, key);
-            if (deps.restoreMode() !== 'on') {
-                return NOTHING;
-            }
-            const held = deps.preCompacts.served(session);
-            const text = held.kind === 'offered' ? held.text : facts;
-            return held.kind === 'typed' || text === '' ? NOTHING : { kind: 'context', text };
+const sessionStartedAnswer = (deps: ReceiverDeps, call: HookCall, session: SessionId, scope: ScopeId, key: SessionKey): HookAnswer => {
+    if (call.source === 'compact') {
+        const facts = deps.engine.compacted(scope, key);
+        if (deps.restoreMode() !== 'on') {
+            return NOTHING;
         }
-        const read = call.cwd === null ? null : parseDirectory(call.cwd);
-        const cwd = read !== null && read.kind === 'ok' ? ledgerDirectoryOf(read.value) : null;
-        deps.engine.sessionStarted(scope, key, { session: ledgerSessionOf(session), cwd });
-        return NOTHING;
-    };
+        const held = deps.preCompacts.served(session);
+        const text = held.kind === 'offered' ? held.text : facts;
+        return held.kind === 'typed' || text === '' ? NOTHING : { kind: 'context', text };
+    }
+    const read = call.cwd === null ? null : parseDirectory(call.cwd);
+    const cwd = read !== null && read.kind === 'ok' ? ledgerDirectoryOf(read.value) : null;
+    deps.engine.sessionStarted(scope, key, { session: ledgerSessionOf(session), cwd });
+    return NOTHING;
+};
 
+const preCompactAnswer = (deps: ReceiverDeps, call: PreCompactCall): PreCompactAnswer => {
+    if (call.session === null) {
+        return PRE_COMPACT_NOTHING;
+    }
+    const session = parseSessionId(call.session);
+    if (session.kind === 'err') {
+        return PRE_COMPACT_NOTHING;
+    }
+    const followed = deps.followed('claude', session.value);
+    if (followed === null) {
+        return PRE_COMPACT_NOTHING;
+    }
+    deps.preCompacts.mark(session.value, deps.clock.now());
+    if (call.trigger !== 'auto') {
+        return PRE_COMPACT_NOTHING;
+    }
+    return deps.claimIdle(followed.lane) === 'claimed' ? { kind: 'hold', reason: PRE_COMPACT_HOLD_REASON } : PRE_COMPACT_NOTHING;
+};
+
+export function createReceiver(deps: ReceiverDeps): HookReceiver & PreCompactReceiver {
     const route = (call: HookCall): HookAnswer => {
         if (call.session === null || call.kind === 'other') {
             return NOTHING;
@@ -84,7 +108,7 @@ export function createReceiver(deps: ReceiverDeps): HookReceiver {
                 stopped(deps, followed);
                 return NOTHING;
             case 'session-start':
-                return sessionStarted(call, session.value, scope, key);
+                return sessionStartedAnswer(deps, call, session.value, scope, key);
             case 'pre-compact':
                 deps.preCompacts.mark(session.value, deps.clock.now());
                 return NOTHING;
@@ -100,6 +124,14 @@ export function createReceiver(deps: ReceiverDeps): HookReceiver {
             } catch (error) {
                 deps.log(parseLine(`hook receiver: ${parseMessage(error)}`));
                 return NOTHING;
+            }
+        },
+        preCompact: (call: PreCompactCall): PreCompactAnswer => {
+            try {
+                return preCompactAnswer(deps, call);
+            } catch (error) {
+                deps.log(parseLine(`hook receiver: ${parseMessage(error)}`));
+                return PRE_COMPACT_NOTHING;
             }
         },
     };

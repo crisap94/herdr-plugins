@@ -3,6 +3,8 @@ import type { AutocompactPolicy, Gate } from '#src/recap/domain/autocompact.ts';
 import { must } from '#src/protocol/result.ts';
 import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
+import type { Count } from '#src/recap/domain/count.ts';
+import { READY } from '#src/recap/domain/status.ts';
 import { shareOf } from '#src/recap/domain/compaction.ts';
 import type { Flight } from '#src/recap/domain/in-flight.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
@@ -52,4 +54,25 @@ export function busyDetailOf(busy: Busy): BusyDetail | null {
 
 export function idleMsOf(tuning: AutocompactTuning): Milliseconds | null {
     return tuning.recheckIdleMs === null ? null : must(parseMilliseconds(tuning.recheckIdleMs));
+}
+
+export interface BackoffFacts {
+    readonly policy: AutocompactPolicy;
+    readonly last: LastDecision | null;
+    readonly now: Instant;
+    readonly tokens: Count;
+    readonly window: Count;
+    readonly lastBreakAt: Instant | null;
+}
+
+export function coverageBackoffActive(input: BackoffFacts): CoverageHold {
+    const { policy, last, now, tokens, window, lastBreakAt } = input;
+    if (policy.coverageBackoff.kind !== 'window' || last === null) return 'open';
+    return last.gate === 'coverage' && last.verdict === 'wait' && now - last.at < policy.coverageBackoff.ms && tokens - last.tokens <= window * 0.1 && (lastBreakAt === null || lastBreakAt <= last.at) ? 'backing-off' : 'open';
+}
+
+export type Eligibility = 'eligible' | 'ineligible';
+
+export function idleEligibility(policy: LanePolicy | null, lane: Lane, use: ContextUse | null): Eligibility {
+    return policy === null || policy.mode !== 'on' || !READY.has(lane.status) || !policy.kinds.includes(lane.agent) || use === null || shareOf(use) < policy.minimum ? 'ineligible' : 'eligible';
 }

@@ -13,14 +13,15 @@ import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { NO, YES } from '#src/recap/domain/gui-tab-parts.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { installHooks, retireSharedShim, systemInstallIo, uninstallHooks, type InstallIo } from '#src/adapters/hooks/install.ts';
+import { renderPreCompactScript } from '#src/adapters/hooks/pre-compact-script.ts';
 import { HOOK_LIMITS } from '#src/wire/hooks/contract.ts';
 import { hookShimPath, hooksSocketPath } from '#src/wire/paths.ts';
+import { hookPreCompactPath } from '#src/adapters/hooks/install.ts';
 import { hookFixture, readHookCases, runShim } from '#test/contracts/wire/fakes/fake-harness.ts';
 import { startFakeHookEndpoint, type FakeHookBehaviour } from '#test/contracts/wire/fakes/fake-hook-endpoint.ts';
 
 const SAMPLE = new URL('./fixtures/claude-settings.sample.json', import.meta.url);
 const PLUGIN_ROOT = fileURLToPath(new URL('../../', import.meta.url));
-const EVENTS = ['Stop', 'SessionStart', 'PreCompact'];
 const SLOW_ROW_MS = 20_000;
 const BEHAVIOURS: readonly FakeHookBehaviour[] = ['absent', 'refuses', 'status-500', 'status-403', 'body-text', 'slow'];
 
@@ -80,20 +81,39 @@ test('install, install, uninstall leaves the sample settings file byte-identical
         assert.deepEqual(uninstallHooks(room.stateDir, settings), { kind: 'done', changed: YES });
         assert.equal(read(room.settingsPath), original);
         assert.equal(existsSync(hookShimPath(room.stateDir, 'claude')), false);
+        assert.equal(existsSync(hookPreCompactPath(room.stateDir)), false);
     });
 });
 
-test('install appends one group per event, keeps the other keys in order, and writes hook.sh with mode 0700', async () => {
+test('install appends one group per event, keeps the other keys in order, and writes hook.sh and the PreCompact script with mode 0700', async () => {
     await inRoom((room) => {
         installHooks(room.stateDir, claudeSettings(room.settingsPath), goodCurl);
         const shim = hookShimPath(room.stateDir, 'claude');
+        const script = hookPreCompactPath(room.stateDir);
         const json: { hooks: Record<string, unknown[]> } = JSON.parse(read(room.settingsPath));
         assert.deepEqual(Object.keys(json), ['model', 'permissions', 'hooks', 'effortLevel']);
         assert.deepEqual(Object.keys(json.hooks), ['SessionStart', 'Stop', 'PreCompact']);
         assert.equal(json.hooks['SessionStart']?.length, 2);
-        for (const event of EVENTS) assert.deepEqual(json.hooks[event]?.at(-1), { hooks: [{ type: 'command', command: `${shim} ${event}` }] }, event);
+        for (const event of ['Stop', 'SessionStart']) assert.deepEqual(json.hooks[event]?.at(-1), { hooks: [{ type: 'command', command: `${shim} ${event}` }] }, event);
+        assert.deepEqual(json.hooks['PreCompact']?.at(-1), { hooks: [{ type: 'command', command: `${script} PreCompact` }] });
         assert.equal(statSync(shim).mode & 0o777, 0o700);
         assert.equal(read(shim), renderCurlShim({ harness: 'claude', socketPath: hooksSocketPath(room.stateDir), timeoutMs: HOOK_LIMITS.shimMs, tokenSource: 'none', failClosed: false }));
+        assert.equal(statSync(script).mode & 0o777, 0o700);
+        assert.equal(read(script), renderPreCompactScript(fsPath(hooksSocketPath(room.stateDir))));
+    });
+});
+
+test('an old PreCompact entry that points at the shared shim is replaced by the script entry', async () => {
+    await inRoom((room) => {
+        const shim = hookShimPath(room.stateDir, 'claude');
+        const sample: { hooks: Record<string, unknown[]> } = JSON.parse(read(room.settingsPath));
+        sample.hooks['PreCompact'] = [{ hooks: [{ type: 'command', command: `${shim} PreCompact` }] }];
+        writeFileSync(room.settingsPath, JSON.stringify(sample, null, 2) + '\n');
+        installHooks(room.stateDir, claudeSettings(room.settingsPath), goodCurl);
+        const text = read(room.settingsPath);
+        assert.equal(text.includes(`${shim} PreCompact`), false);
+        assert.ok(text.includes(`${hookPreCompactPath(room.stateDir)} PreCompact`));
+        assert.deepEqual(installHooks(room.stateDir, claudeSettings(room.settingsPath), goodCurl), { kind: 'done', changed: NO });
     });
 });
 
@@ -106,7 +126,9 @@ test("a second state directory's entries survive the first's uninstall", async (
         uninstallHooks(room.stateDir, settings);
         const text = read(room.settingsPath);
         assert.equal(text.includes(hookShimPath(room.stateDir, 'claude')), false);
-        for (const event of EVENTS) assert.ok(text.includes(`${hookShimPath(room.otherStateDir, 'claude')} ${event}`), event);
+        for (const event of ['Stop', 'SessionStart']) assert.ok(text.includes(`${hookShimPath(room.otherStateDir, 'claude')} ${event}`), event);
+        assert.ok(text.includes(`${hookPreCompactPath(room.otherStateDir)} PreCompact`));
+        assert.equal(text.includes(hookPreCompactPath(room.stateDir)), false);
         assert.ok(existsSync(hookShimPath(room.otherStateDir, 'claude')));
         uninstallHooks(room.otherStateDir, settings);
         assert.equal(read(room.settingsPath), original);

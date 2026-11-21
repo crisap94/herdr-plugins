@@ -49,7 +49,7 @@ export function wireAutocompact(parts: AutocompactParts): Autocompact {
     const flight = new TranscriptInFlight(parts.transcripts);
     const read = parts.config ?? loadConfig;
     return new Autocompact({
-        policy: () => read().autocompact, tuning: () => read().tuning, decider: parts.decider, contexts: parts.contexts, inFlight: (lane) => flightOf(flight, lane), awaiting: parts.awaiting ?? awaitingPane, events: parts.events, recent: (lane) => parts.recent.of(lane), startedAt: instant(Date.now() - process.uptime() * 1000),
+        policy: () => read().autocompact, tuning: () => read().tuning, idleHold: () => read().holdIdle, decider: parts.decider, contexts: parts.contexts, inFlight: (lane) => flightOf(flight, lane), awaiting: parts.awaiting ?? awaitingPane, events: parts.events, recent: (lane) => parts.recent.of(lane), startedAt: instant(Date.now() - process.uptime() * 1000),
         ledger: store.ledger, boundaries: store.boundaries, compactions: store.compactions, decisions: store.autocompact, requests: store.requests, claims: parts.claims, queue: store.requests,
         hasRecap: (tab) => { const recap = knownOr(store.records.readRecap(tab), null); return recap !== null && hasRecap(recap) ? 'recapped' : 'unrecapped'; },
         refresh: refreshVia(parts.recaps, store.records),

@@ -8,12 +8,20 @@ export type HookEvent = (typeof HOOK_EVENTS)[HookHarness][number];
 
 export type SettingsDocument = Brand<Fields, 'SettingsDocument'>;
 
+export type PreCompactHook = 'script' | 'library';
+
+export interface HookCommands {
+    readonly shim: FsPath;
+    readonly preCompactScript: FsPath;
+}
+
 export interface HarnessSettings {
     readonly harness: HookHarness;
     readonly path: FsPath;
     readonly events: readonly HookEvent[];
-    add(document: SettingsDocument, shim: FsPath): SettingsDocument;
-    remove(document: SettingsDocument, shim: FsPath): SettingsDocument;
+    readonly preCompactScript: PreCompactHook;
+    add(document: SettingsDocument, commands: HookCommands): SettingsDocument;
+    remove(document: SettingsDocument, commands: HookCommands): SettingsDocument;
 }
 
 const DEFAULT_INDENT = '  ';
@@ -49,6 +57,21 @@ export function addCommandHooks(document: SettingsDocument, shim: FsPath, events
         hooks[event] = [...list, { hooks: [{ type: 'command', command: `${word} ${event}` }] }];
     }
     return missing.length === 0 ? document : must(parseSettingsDocument({ ...document, hooks }));
+}
+
+export function dropCommandHook(document: SettingsDocument, shim: FsPath, event: HookEvent): SettingsDocument {
+    const before = document['hooks'];
+    if (!isFields(before) || !Array.isArray(before[event])) return document;
+    const exact = `${shellWord(shim)} ${event}`;
+    const groups: readonly unknown[] = before[event];
+    if (!groups.some((group) => isFields(group) && Array.isArray(group['hooks']) && group['hooks'].some((handler) => isFields(handler) && handler['command'] === exact))) return document;
+    const kept = groups.flatMap((group) => {
+        if (!isFields(group) || !Array.isArray(group['hooks'])) return [group];
+        const handlers = group['hooks'].filter((handler) => !(isFields(handler) && handler['command'] === exact));
+        if (handlers.length === group['hooks'].length) return [group];
+        return handlers.length === 0 ? [] : [{ ...group, hooks: handlers }];
+    });
+    return must(parseSettingsDocument({ ...document, hooks: { ...before, [event]: kept } }));
 }
 
 export function removeCommandHooks(document: SettingsDocument, shim: FsPath): SettingsDocument {

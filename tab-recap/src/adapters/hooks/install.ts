@@ -12,7 +12,8 @@ import { HOOK_LIMITS, type HookHarness } from '#src/wire/hooks/contract.ts';
 import { hookShimPath, hooksSocketPath } from '#src/wire/paths.ts';
 import { claudeSettings } from './claude-settings.ts';
 import { codexSettings } from './codex-settings.ts';
-import { parseSettingsDocument, serializeSettings, type HarnessSettings, type SettingsDocument } from './settings.ts';
+import { parseSettingsDocument, serializeSettings, type HarnessSettings, type HookCommands, type SettingsDocument } from './settings.ts';
+import { renderPreCompactScript } from './pre-compact-script.ts';
 
 export type RefusalReason = 'malformed' | 'curl-missing' | 'curl-old' | 'unwritable';
 
@@ -50,10 +51,18 @@ const SETTINGS_OF: ReadonlyMap<HookHarness, () => HarnessSettings> = new Map<Hoo
 
 const refused = (why: RefusalReason, detail: Text): Refused => ({ kind: 'refused', why, detail });
 
+export const hookPreCompactPath = (stateDir: FsPath): FsPath => must(parseFsPath(join(stateDir, 'hook-claude-pre-compact.sh')));
+
 const sharedShimPath = (stateDir: FsPath): FsPath => must(parseFsPath(join(stateDir, 'hook.sh')));
 
+const commandsOf = (stateDir: FsPath, settings: HarnessSettings): HookCommands => ({
+    shim: must(parseFsPath(hookShimPath(stateDir, settings.harness))),
+    preCompactScript: hookPreCompactPath(stateDir),
+});
+
 function withoutSharedShim(stateDir: FsPath, settings: HarnessSettings, document: SettingsDocument): SettingsDocument {
-    return settings.remove(document, sharedShimPath(stateDir));
+    const shared = sharedShimPath(stateDir);
+    return settings.remove(document, { shim: shared, preCompactScript: shared });
 }
 
 function sharedShimUse(stateDir: FsPath, settings: HarnessSettings): Flag {
@@ -105,11 +114,26 @@ function writeSettings(path: FsPath, document: SettingsDocument, original: Text 
     renameSync(temporary, target);
 }
 
-function writeShim(stateDir: FsPath, settings: HarnessSettings): Flag {
-    const path = hookShimPath(stateDir, settings.harness);
-    const text = renderCurlShim({ harness: settings.harness, socketPath: hooksSocketPath(stateDir), timeoutMs: HOOK_LIMITS.shimMs, tokenSource: 'none', failClosed: false });
+function writeExecutable(path: FsPath, text: Text): Flag {
     if (existsSync(path) && readFileSync(path, 'utf8') === text && (statSync(path).mode & PERMISSION_BITS) === SHIM_MODE) return NO;
     writeAtomically(path, text, SHIM_MODE);
+    return YES;
+}
+
+function writeShim(stateDir: FsPath, settings: HarnessSettings): Flag {
+    const text = renderCurlShim({ harness: settings.harness, socketPath: hooksSocketPath(stateDir), timeoutMs: HOOK_LIMITS.shimMs, tokenSource: 'none', failClosed: false });
+    return writeExecutable(must(parseFsPath(hookShimPath(stateDir, settings.harness))), must(parseText(text)));
+}
+
+function writePreCompactScript(stateDir: FsPath, settings: HarnessSettings): Flag {
+    if (settings.preCompactScript !== 'script') return NO;
+    return writeExecutable(hookPreCompactPath(stateDir), renderPreCompactScript(must(parseFsPath(hooksSocketPath(stateDir)))));
+}
+
+function removePreCompactScript(stateDir: FsPath, settings: HarnessSettings): Flag {
+    const path = hookPreCompactPath(stateDir);
+    if (settings.preCompactScript !== 'script' || !existsSync(path)) return NO;
+    rmSync(path, { force: true });
     return YES;
 }
 
@@ -118,12 +142,13 @@ export function installHooks(stateDir: FsPath, settings: HarnessSettings, io: In
     if (curl !== null) return curl;
     const loaded = load(settings.path);
     if (loaded.kind === 'refused') return loaded;
-    const next = settings.add(withoutSharedShim(stateDir, settings, loaded.document), must(parseFsPath(hookShimPath(stateDir, settings.harness))));
+    const next = settings.add(withoutSharedShim(stateDir, settings, loaded.document), commandsOf(stateDir, settings));
     const settingsChanged = loaded.original === null || !isDeepStrictEqual(next, loaded.document);
     try {
         const shimChanged = writeShim(stateDir, settings);
+        const scriptChanged = writePreCompactScript(stateDir, settings);
         if (settingsChanged) writeSettings(settings.path, next, loaded.original);
-        return { kind: 'done', changed: settingsChanged || shimChanged === YES ? YES : NO };
+        return { kind: 'done', changed: settingsChanged || [shimChanged, scriptChanged].includes(YES) ? YES : NO };
     } catch (error) {
         return refused('unwritable', must(parseText(error instanceof Error ? error.message : String(error))));
     }
@@ -132,14 +157,15 @@ export function installHooks(stateDir: FsPath, settings: HarnessSettings, io: In
 export function uninstallHooks(stateDir: FsPath, settings: HarnessSettings): InstallResult {
     const loaded = load(settings.path);
     if (loaded.kind === 'refused') return loaded;
-    const shim = must(parseFsPath(hookShimPath(stateDir, settings.harness)));
-    const next = settings.remove(withoutSharedShim(stateDir, settings, loaded.document), shim);
+    const commands = commandsOf(stateDir, settings);
+    const next = settings.remove(withoutSharedShim(stateDir, settings, loaded.document), commands);
     const settingsChanged = loaded.original !== null && !isDeepStrictEqual(next, loaded.document);
-    const shimFound = existsSync(shim);
+    const shimFound = existsSync(commands.shim);
     try {
         if (settingsChanged) writeSettings(settings.path, next, loaded.original);
-        rmSync(shim, { force: true });
-        return { kind: 'done', changed: settingsChanged || shimFound ? YES : NO };
+        rmSync(commands.shim, { force: true });
+        const scriptRemoved = removePreCompactScript(stateDir, settings);
+        return { kind: 'done', changed: settingsChanged || shimFound || scriptRemoved === YES ? YES : NO };
     } catch (error) {
         return refused('unwritable', must(parseText(error instanceof Error ? error.message : String(error))));
     }
