@@ -581,7 +581,6 @@
       "src/recap/render/setup.ts",
       "src/recap/render/utc-minute.ts",
       "src/recap/render/worksite.ts",
-      "test/expanded-modal.test.ts",
       "test/handoff-markdown.test.ts",
       "test/host-policy.test.ts",
       "test/i18n-golden-data.ts",
