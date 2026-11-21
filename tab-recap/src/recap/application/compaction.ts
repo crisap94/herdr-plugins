@@ -4,34 +4,31 @@ import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { READY } from '#src/recap/domain/status.ts';
 import type { CompactionEnd } from '#src/ports/compaction-records.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
-import { finalAnswerOf } from '#src/recap/domain/compact-request.ts';
+import { finalAnswerOf, parseAskId } from '#src/recap/domain/compact-request.ts';
 import { linkAsk } from './compaction-asks.ts';
 import { failureStage } from '#src/protocol/exchange.ts';
-import { COMPACT_EVENTS, COMPACT_FAILURES, COMPACT_STAGES } from '#src/protocol/exchanges/compact.ts';
-import type { CompactFailure } from '#src/protocol/exchanges/compact.ts';
-import { laneBusyRefusal, laneClosedRefusal, splitByClaim } from './compaction-lanes.ts';
-import { LANE_CLOSED } from '#src/recap/domain/lane-closed.ts';
-import type { ClosePoint } from '#src/recap/domain/lane-closed.ts';
-import type { Asked, Refusal } from './compaction-lanes.ts';
+import { COMPACT_EVENTS, COMPACT_FAILURES, COMPACT_STAGES, type CompactFailure } from '#src/protocol/exchanges/compact.ts';
+import { laneBusyRefusal, laneClosedRefusal, splitByClaim, type Asked, type Refusal } from './compaction-lanes.ts';
+import { LANE_CLOSED, type ClosePoint } from '#src/recap/domain/lane-closed.ts';
 import { withNote } from '#src/recap/domain/continuation-note.ts';
 import { clean } from './compaction-brief.ts';
-import type { CoverageFlow } from './compaction-coverage.ts';
-import type { Briefed, Checked } from './compaction-coverage.ts';
+import type { CoverageFlow, Briefed, Checked } from './compaction-coverage.ts';
 import { blockedByCoverage } from './coverage-verdict.ts';
-import type { CompactionDeps } from './compaction-deps.ts';
+import type { CompactionPorts } from './compaction-deps.ts';
+import { wiringOf, type CompactionDeps } from './twins/compaction-wiring/legacy.ts';
 import type { Material } from './compaction-message.ts';
 import { Briefing } from './compaction-briefing.ts';
-import { Sender } from './compaction-send.ts';
-import type { Placed, Placement } from './compaction-send.ts';
+import { Sender, type Placed, type Placement } from './compaction-send.ts';
 import { scopeOf } from './compaction-targets.ts';
 import { Trail } from './compaction-trail.ts';
 import { paneId, parseCompactionId } from '#src/recap/domain/ids.ts';
-import type { AgentKind, PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { AgentKind, CompactionId, PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { parseAnswerStage, type AnswerStage } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 
-export type { CompactionDeps } from './compaction-deps.ts';
+export type { CompactionDeps } from './twins/compaction-wiring/legacy.ts';
 
 type Gate = { readonly kind: 'refused'; readonly refusal: Refusal } | ({ readonly kind: 'proceed' } & Placed);
 
@@ -42,19 +39,20 @@ interface Start {
     readonly pane: PaneId;
     readonly agent: AgentKind;
     readonly stage: 'briefing' | 'compacting';
-    readonly writer: string | null;
+    readonly writer: Text | null;
 }
 
 interface TypedAt { readonly lane: Lane; readonly tab: TabId; readonly request: CompactRequest; readonly trail: Trail }
 
 interface CoverageStop { readonly lane: Lane; readonly checked: Checked; readonly flow: CoverageFlow; readonly trail: Trail; readonly said: (text: Text) => Text; readonly messages: Messages['compaction'] }
 
-export class Compaction {
-    private readonly deps: CompactionDeps;
+
+export class Compactor {
+    private readonly deps: CompactionPorts;
     private readonly sender: Sender;
     private readonly briefing: Briefing;
 
-    constructor(deps: CompactionDeps) {
+    constructor(deps: CompactionPorts) {
         this.deps = deps;
         this.sender = new Sender(deps);
         this.briefing = new Briefing(deps);
@@ -63,7 +61,7 @@ export class Compaction {
     private async tell(title: Text, body: Text): Promise<void> {
         const shown = await this.deps.notifier.notify(title, body);
         if (isUnknown(shown)) {
-            this.deps.log(`compaction: toast not shown (${saying(shown.why)})`);
+            this.deps.log(must(parseText(`compaction: toast not shown (${saying(shown.why)})`)));
         }
     }
 
@@ -87,13 +85,14 @@ export class Compaction {
         return { kind: 'refused', refusal: { stage: 'skipped', reason, why: must(parseText(badge[state.status])), toast: must(parseText(compaction.skipped(agent, state.status))) } };
     }
 
-    private answerOne(request: CompactRequest | null, pane: string, stage: string): void {
-        if (request?.answer !== undefined && pane !== '') {
-            this.deps.answer?.(request.answer, pane, stage);
+    private answerOne(request: CompactRequest | null, pane: PaneId, stage: AnswerStage): void {
+        const id = request?.answer === undefined ? null : parseAskId(request.answer);
+        if (id !== null && pane !== '') {
+            this.deps.answer?.(id, pane, stage);
         }
     }
 
-    private answer(request: CompactRequest | null, pane: string, stage: string): void {
+    private answer(request: CompactRequest | null, pane: PaneId, stage: AnswerStage): void {
         this.answerOne(request, pane, stage);
         for (const joined of this.deps.claims.joinedOf(pane)) {
             this.answerOne(joined, pane, stage);
@@ -101,31 +100,31 @@ export class Compaction {
     }
 
     private joinRunning(lane: Lane, request: CompactRequest): void {
-        const [pane, agent] = [String(lane.pane), lane.agent];
+        const [pane, agent] = [lane.pane, lane.agent];
         const { compaction } = this.deps.messages();
         this.deps.claims.join(pane, request);
-        this.answerOne(request, pane, COMPACT_STAGES.queued);
+        this.answerOne(request, pane, must(parseAnswerStage(COMPACT_STAGES.queued)));
         if (request.origin !== 'auto') {
             void this.tell(must(parseText(compaction.title(agent))), must(parseText(compaction.joined(agent, request.note !== null))));
         }
     }
 
-    private claimed(lane: Lane, request: CompactRequest): boolean {
+    private claimed(lane: Lane, request: CompactRequest): Presence {
         if (this.deps.claims.claim(String(lane.pane), 'compaction')) {
-            return true;
+            return 'present';
         }
         this.joinRunning(lane, request);
-        return false;
+        return 'absent';
     }
 
     private async refuse(lane: Lane, tab: TabId, trail: Trail | null, refusal: Refusal, asked: Asked): Promise<void> {
         const { origin, request } = asked;
         if (trail === null) {
-            const pane = String(lane.pane);
+            const pane = lane.pane;
             const id = this.deps.compactions.begin({ tab, pane, agent: String(lane.agent), stage: refusal.stage, at: this.deps.now(), why: refusal.why, origin, answer: request?.answer ?? null });
-            linkAsk(this.deps.asks, request, paneId(pane), must(parseText(id)));
+            linkAsk(this.deps.asks, request, pane, must(parseText(id)));
             if (refusal.closedAt === undefined) this.deps.events?.lane(pane, COMPACT_EVENTS.failed, `${id}:${refusal.why}`);
-            this.answer(request, pane, failureStage(refusal.reason));
+            this.answer(request, pane, must(parseAnswerStage(failureStage(refusal.reason))));
         } else {
             trail.end(refusal.stage, { why: refusal.why }, refusal.reason);
         }
@@ -134,7 +133,7 @@ export class Compaction {
     }
 
     private logClosed(lane: Lane, point: ClosePoint | undefined): void {
-        if (point !== undefined) this.deps.log(this.deps.messages().compaction.laneClosed(String(lane.agent), String(lane.pane), point));
+        if (point !== undefined) this.deps.log(must(parseText(this.deps.messages().compaction.laneClosed(String(lane.agent), String(lane.pane), point))));
     }
 
     private endClosed(lane: Lane, trail: Trail, point: ClosePoint): void {
@@ -150,15 +149,15 @@ export class Compaction {
         return gate;
     }
 
-    private begun(request: CompactRequest, start: Start): string {
-        const id = this.deps.compactions.begin({ ...start, at: this.deps.now(), origin: request.origin ?? 'operator', answer: request.answer ?? null });
+    private begun(request: CompactRequest, start: Start): CompactionId {
+        const id = must(parseCompactionId(this.deps.compactions.begin({ ...start, at: this.deps.now(), origin: request.origin ?? 'operator', answer: request.answer ?? null })));
         linkAsk(this.deps.asks, request, start.pane, must(parseText(id)));
         this.deps.events?.lane(start.pane, COMPACT_EVENTS.queued, id);
         return id;
     }
 
-    private ended(request: CompactRequest, pane: PaneId, id: string, end: CompactionEnd, reason: CompactFailure | null): void {
-        this.answer(request, pane, finalAnswerOf(end.stage, reason));
+    private ended(request: CompactRequest, pane: PaneId, id: CompactionId, end: CompactionEnd, reason: CompactFailure | null): void {
+        this.answer(request, pane, must(parseAnswerStage(finalAnswerOf(end.stage, reason))));
         if (end.why === LANE_CLOSED) return;
         this.deps.events?.lane(pane, end.stage === 'compacted' ? COMPACT_EVENTS.done : COMPACT_EVENTS.failed, end.stage === 'compacted' ? id : `${id}:${end.why ?? end.stage}`);
     }
@@ -166,9 +165,9 @@ export class Compaction {
     private opened(lane: Lane, tab: TabId, request: CompactRequest): Trail {
         const pane = lane.pane;
         const id = this.begun(request, { tab, pane, agent: lane.agent, stage: this.deps.brief.enabled() === 'present' ? 'briefing' : 'compacting', writer: this.deps.brief.job() });
-        this.answer(request, pane, COMPACT_STAGES.running);
+        this.answer(request, pane, must(parseAnswerStage(COMPACT_STAGES.running)));
         this.deps.events?.lane(pane, COMPACT_EVENTS.running, id);
-        return new Trail(this.deps.compactions, must(parseCompactionId(id)), () => instant(this.deps.now()), (end, reason) => { this.ended(request, pane, id, end, reason); });
+        return new Trail(this.deps.compactions, id, () => this.deps.now(), (end, reason) => { this.ended(request, pane, id, end, reason); });
     }
 
     private beginning(agent: AgentKind, placement: Placement): Text {
@@ -179,7 +178,7 @@ export class Compaction {
 
     private async compact(lane: Lane, tab: TabId, request: CompactRequest, placement: Placement): Promise<void> {
         const { compaction } = this.deps.messages();
-        const [pane, agent, auto] = [String(lane.pane), lane.agent, request.origin === 'auto'];
+        const [pane, agent, auto] = [lane.pane, lane.agent, request.origin === 'auto'];
         const trail = this.opened(lane, tab, request);
         if (this.briefing.listed(lane) === 'absent') {
             this.endClosed(lane, trail, 'before-writer');
@@ -187,14 +186,14 @@ export class Compaction {
         }
         const said = (text: Text): Text => must(parseText(auto ? compaction.auto(text) : text));
         await this.tell(said(must(parseText(compaction.title(agent)))), said(this.beginning(agent, placement)));
-        const material = this.briefing.materialOf(tab, paneId(pane), request.note === null ? null : must(parseText(request.note)));
-        const link = this.briefing.linkedDecision(auto ? 'auto' : 'operator', tab, paneId(pane), trail.id);
+        const material = this.briefing.materialOf(tab, pane, request.note === null ? null : must(parseText(request.note)));
+        const link = this.briefing.linkedDecision(auto ? 'auto' : 'operator', tab, pane, trail.id);
         const verified = await this.briefing.verified(lane, tab, material, link);
         if (verified.kind === 'closed') {
             this.endClosed(lane, trail, verified.at);
             return;
         }
-        if (await this.stoppedByCoverage({ lane, checked: verified.checked, flow: link.flow, trail, said, messages: compaction })) return;
+        if ((await this.stoppedByCoverage({ lane, checked: verified.checked, flow: link.flow, trail, said, messages: compaction })) === 'present') return;
         await this.typed({ lane, tab, request, trail }, material, verified.checked.brief);
     }
 
@@ -214,27 +213,27 @@ export class Compaction {
         }
     }
 
-    private keptNote(brief: string | null, request: CompactRequest): Text | null {
-        const parsed = brief === null ? null : must(parseText(brief));
-        return parsed !== null && request.origin === 'auto' && request.note !== null ? withNote(parsed, must(parseText(request.note))) : parsed;
+    private keptNote(brief: Text | null, request: CompactRequest): Text | null {
+        return brief !== null && request.origin === 'auto' && request.note !== null ? withNote(brief, must(parseText(request.note))) : brief;
     }
 
-    private async stoppedByCoverage(parts: CoverageStop): Promise<boolean> {
+    private async stoppedByCoverage(parts: CoverageStop): Promise<Presence> {
         const { lane, checked, flow, trail, said, messages } = parts;
-        if (blockedByCoverage(checked, flow) === 'absent') return false;
+        if (blockedByCoverage(checked, flow) === 'absent') return 'absent';
         trail.end('skipped', { why: 'coverage' });
         await this.tell(said(must(parseText(messages.title(String(lane.agent))))), must(parseText(messages.coverageMissed(String(lane.agent)))));
-        return true;
+        return 'present';
     }
 
     private async withoutTarget(request: CompactRequest): Promise<void> {
         const { compaction } = this.deps.messages();
-        if (request.origin === 'auto' && request.pane !== null && !this.deps.listsPane(request.pane)) {
-            this.answer(request, request.pane, failureStage(COMPACT_FAILURES.skipped));
-            this.deps.log(compaction.laneClosed(null, request.pane, 'before-writer'));
+        const pane = request.pane === null || request.pane === '' ? null : paneId(request.pane);
+        if (request.origin === 'auto' && pane !== null && this.deps.listsPane(pane) === 'absent') {
+            this.answer(request, pane, must(parseAnswerStage(failureStage(COMPACT_FAILURES.skipped))));
+            this.deps.log(must(parseText(compaction.laneClosed(null, pane, 'before-writer'))));
             return;
         }
-        this.answer(request, request.pane ?? '', failureStage(COMPACT_FAILURES.noTarget));
+        if (pane !== null) this.answer(request, pane, must(parseAnswerStage(failureStage(COMPACT_FAILURES.noTarget))));
         await this.tell(must(parseText(compaction.title(request.tab))), must(parseText(compaction.nothing)));
     }
 
@@ -246,7 +245,7 @@ export class Compaction {
         }
         const { tab, lanes, targets } = scope;
         const origin = request.origin ?? 'operator';
-        const { owned, held } = splitByClaim(this.deps.claims, targets, (lane) => (this.claimed(lane, request) ? 'present' : 'absent'));
+        const { owned, held } = splitByClaim(this.deps.claims, targets, (lane) => this.claimed(lane, request));
         try {
             await Promise.all(held.map((lane) => this.refuse(lane, tab, null, laneBusyRefusal(this.deps.messages(), lane), { origin, request })));
             if (owned.length === 0) {
@@ -261,7 +260,7 @@ export class Compaction {
             await Promise.all(ready.map(({ lane, placement }) => this.compact(lane, tab, request, placement)));
         } catch (error) {
             for (const lane of owned) {
-                this.answer(request, String(lane.pane), failureStage(COMPACT_FAILURES.error));
+                this.answer(request, lane.pane, must(parseAnswerStage(failureStage(COMPACT_FAILURES.error))));
             }
             throw error;
         } finally {
@@ -270,4 +269,10 @@ export class Compaction {
             }
         }
     }
+}
+
+export class Compaction {
+    private readonly compactor: Compactor;
+    constructor(deps: CompactionDeps) { this.compactor = new Compactor(wiringOf(deps)); }
+    run(request: CompactRequest): Promise<void> { return this.compactor.run(request); }
 }

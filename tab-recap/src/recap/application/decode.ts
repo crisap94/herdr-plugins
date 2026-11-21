@@ -1,9 +1,11 @@
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { paneId, sessionIdFromAgentValue, sessionPathFromAgentValue, tabId } from '#src/recap/domain/ids.ts';
-import type { AgentSession, SessionId } from '#src/recap/domain/ids.ts';
+import type { AgentSession, PaneId, SessionId } from '#src/recap/domain/ids.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import type { Frame } from '#src/ports/fleet-source.ts';
 import type { SessionOf } from '#src/ports/session-identity.ts';
+import type { PaneSession, PaneTokens } from './twins/decode/legacy.ts';
 
 export interface ResyncDecoded {
     readonly kind: 'resync';
@@ -11,7 +13,7 @@ export interface ResyncDecoded {
 
 export interface UnknownDecoded {
     readonly kind: 'unknown';
-    readonly rawKind: string;
+    readonly rawKind: Text;
 }
 
 export type Decoded =
@@ -19,30 +21,47 @@ export type Decoded =
     | ResyncDecoded
     | UnknownDecoded;
 
-export interface PaneSession {
-    readonly pane: string;
-    readonly session: string;
+export interface JsonObject {
+    readonly [key: string]: unknown;
 }
 
-export interface PaneTokens {
-    readonly pane: string;
-    readonly tokens: Readonly<Record<string, string>>;
+export interface PaneSessionRef {
+    readonly pane: PaneId;
+    readonly session: SessionId;
 }
 
-function text(value: unknown): string | null {
-    return typeof value === 'string' && value !== '' ? value : null;
+export interface PaneTokenMap {
+    readonly pane: PaneId;
+    readonly tokens: ReadonlyMap<Text, Text>;
 }
 
-function nested(data: Readonly<Record<string, unknown>>, key: string): Readonly<Record<string, unknown>> {
+type WireKey = 'agent' | 'agent_status' | 'cwd' | 'foreground_cwd' | 'pane_id' | 'tab_id' | 'terminal_title_stripped' | 'value' | 'workspace_id';
+
+type NestedKey = 'agent_session' | 'pane';
+
+const EMPTY: JsonObject = {};
+
+const RESYNC: ReadonlySet<string> = new Set(['pane_created', 'pane_moved', 'tab_closed', 'tab_created', 'layout_updated']);
+
+function isJsonObject(value: unknown): value is JsonObject {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function textAt(data: JsonObject, key: WireKey): Text | null {
+    const value = parseText(data[key]);
+    return value.kind === 'ok' && value.value.length > 0 ? value.value : null;
+}
+
+function nestedAt(data: JsonObject, key: NestedKey): JsonObject {
     const value = data[key];
-    return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
+    return isJsonObject(value) ? value : EMPTY;
 }
 
-function field(data: Readonly<Record<string, unknown>>, key: string): string | null {
-    return text(data[key]) ?? text(nested(data, 'pane')[key]);
+function field(data: JsonObject, key: WireKey): Text | null {
+    return textAt(data, key) ?? textAt(nestedAt(data, 'pane'), key);
 }
 
-export function seenFrom(data: Readonly<Record<string, unknown>>, identity: SessionOf): SeenLane | null {
+export function seenFrom(data: JsonObject, identity: SessionOf): SeenLane | null {
     const pane = field(data, 'pane_id');
     const tab = field(data, 'tab_id');
     const workspace = field(data, 'workspace_id');
@@ -62,8 +81,8 @@ export function seenFrom(data: Readonly<Record<string, unknown>>, identity: Sess
     };
 }
 
-function agentSessionOf(info: Readonly<Record<string, unknown>>): AgentSession | null {
-    const value = text(info['value']);
+function agentSessionOf(info: JsonObject): AgentSession | null {
+    const value = textAt(info, 'value');
     if (value === null) {
         return null;
     }
@@ -73,35 +92,51 @@ function agentSessionOf(info: Readonly<Record<string, unknown>>): AgentSession |
     return info['kind'] === 'path' ? { kind: 'path', value: sessionPathFromAgentValue(value) } : null;
 }
 
-export function sessionOf(data: Readonly<Record<string, unknown>>, identity: SessionOf): SessionId | null {
+export function sessionOf(data: JsonObject, identity: SessionOf): SessionId | null {
     const agent = field(data, 'agent');
-    for (const info of [nested(data, 'agent_session'), nested(nested(data, 'pane'), 'agent_session')]) {
+    for (const info of [nestedAt(data, 'agent_session'), nestedAt(nestedAt(data, 'pane'), 'agent_session')]) {
         const session = agentSessionOf(info);
         if (session !== null) {
-            return identity(agent ?? text(info['agent']) ?? '', session);
+            return identity(agent ?? textAt(info, 'agent') ?? '', session);
         }
     }
     return null;
 }
 
-export function paneSessionOf(data: Readonly<Record<string, unknown>>, identity: SessionOf): PaneSession | null {
+export function paneSessionRefOf(data: JsonObject, identity: SessionOf): PaneSessionRef | null {
     const pane = field(data, 'pane_id');
     const session = sessionOf(data, identity);
-    return pane === null || session === null ? null : { pane, session };
+    return pane === null || session === null ? null : { pane: paneId(pane), session };
 }
 
-export function tokensOf(data: Readonly<Record<string, unknown>>): PaneTokens | null {
+export function paneSessionOf(data: JsonObject, identity: SessionOf): PaneSession | null {
+    const found = paneSessionRefOf(data, identity);
+    return found === null ? null : { pane: found.pane, session: found.session };
+}
+
+export function paneTokenMapOf(data: JsonObject): PaneTokenMap | null {
     const pane = field(data, 'pane_id');
-    const raw = nested(data, 'pane')['tokens'] ?? data['tokens'];
-    if (pane === null || typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    const raw = nestedAt(data, 'pane')['tokens'] ?? data['tokens'];
+    if (pane === null || !isJsonObject(raw)) {
         return null;
     }
-    return { pane, tokens: Object.fromEntries(Object.entries(raw).filter((entry): entry is [string, string] => typeof entry[1] === 'string')) };
+    const tokens = new Map<Text, Text>();
+    for (const [name, value] of Object.entries(raw)) {
+        const key = parseText(name);
+        const text = parseText(value);
+        if (key.kind === 'ok' && text.kind === 'ok') {
+            tokens.set(key.value, text.value);
+        }
+    }
+    return { pane: paneId(pane), tokens };
 }
 
-const RESYNC = new Set(['pane_created', 'pane_moved', 'tab_closed', 'tab_created', 'layout_updated']);
+export function tokensOf(data: JsonObject): PaneTokens | null {
+    const found = paneTokenMapOf(data);
+    return found === null ? null : { pane: found.pane, tokens: Object.fromEntries(found.tokens) };
+}
 
-function decodeKnown(kind: string, data: Readonly<Record<string, unknown>>, identity: SessionOf): Decoded | null {
+function decodeKnown(kind: Text, data: JsonObject, identity: SessionOf): Decoded | null {
     const pane = field(data, 'pane_id');
     if (kind === 'pane_closed' && pane !== null) {
         return { kind: 'closed', pane: paneId(pane) };
@@ -114,7 +149,7 @@ function decodeKnown(kind: string, data: Readonly<Record<string, unknown>>, iden
         const seen = seenFrom(data, identity);
         return seen === null ? { kind: 'resync' } : { kind: 'detected', lane: seen };
     }
-    const tab = text(data['tab_id']);
+    const tab = textAt(data, 'tab_id');
     if (kind === 'tab_focused' && tab !== null) {
         return { kind: 'focused', tab: tabId(tab) };
     }
@@ -122,10 +157,14 @@ function decodeKnown(kind: string, data: Readonly<Record<string, unknown>>, iden
 }
 
 export function decode(frame: Frame, identity: SessionOf): Decoded {
-    const kind = frame.event.replaceAll('.', '_');
-    const known = decodeKnown(kind, frame.data, identity);
+    const raw = parseText(frame.event);
+    const kind = parseText(frame.event.replaceAll('.', '_'));
+    if (raw.kind === 'err' || kind.kind === 'err') {
+        return { kind: 'resync' };
+    }
+    const known = decodeKnown(kind.value, frame.data, identity);
     if (known !== null) {
         return known;
     }
-    return RESYNC.has(kind) ? { kind: 'resync' } : { kind: 'unknown', rawKind: frame.event };
+    return RESYNC.has(kind.value) ? { kind: 'resync' } : { kind: 'unknown', rawKind: raw.value };
 }

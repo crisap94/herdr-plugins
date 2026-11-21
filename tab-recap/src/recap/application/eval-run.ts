@@ -1,6 +1,10 @@
 import type { Judge } from '#src/ports/judge.ts';
 import type { RunInputs, RunQuery } from '#src/ports/run-inputs.ts';
 import type { Verdicts } from '#src/ports/verdicts.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { agreeLines, candidateLines, gateLines, reportLines } from '#src/recap/render/eval.ts';
 import type { Style } from '#src/recap/render/wrap.ts';
 import { answerOf, candidatesOf, labelVerdicts } from './eval-label.ts';
@@ -47,16 +51,16 @@ async function sample(options: EvalOptions, deps: EvalDeps): Promise<number> {
     return results.length > 0 && results.every((result) => result.kind === 'not-judged') ? 1 : 0;
 }
 
-async function labelOne(candidate: Candidate, position: string, deps: EvalDeps, check: string | null): Promise<boolean> {
+async function labelOne(candidate: Candidate, position: string, deps: EvalDeps, check: Text | null): Promise<boolean> {
     deps.out(candidateLines(candidate, position, deps.style).join('\n'));
     for (;;) {
         const line = await deps.ask(check === null ? 'ok / fail [I1…I7 S-section …] / skip / quit > ' : `${check}: ok / fail / skip / quit > `);
-        const answer = line === null ? { kind: 'quit' } as const : answerOf(line, candidate.section, check);
+        const answer = line === null ? { kind: 'quit' } as const : answerOf(must(parseText(line)), candidate.section, check);
         if (answer.kind === 'again') {
             deps.err(answer.why);
         } else if (answer.kind === 'pass' || answer.kind === 'fail') {
             const reason = answer.kind === 'fail' ? ((await deps.ask('why? > ')) ?? '').trim() : '';
-            deps.verdicts.add(labelVerdicts(candidate, answer, reason, deps.now(), check));
+            deps.verdicts.add(labelVerdicts(candidate, answer, must(parseText(reason)), instant(deps.now()), check));
             return true;
         } else {
             return answer.kind === 'skip';
@@ -66,14 +70,16 @@ async function labelOne(candidate: Candidate, position: string, deps: EvalDeps, 
 
 async function label(options: EvalOptions, deps: EvalDeps): Promise<number> {
     const runs = deps.inputs.runs(queryOf(options, deps, LABEL_RUNS, false));
-    const items = candidatesOf(runs, deps.inputs, deps.verdicts.labelled(options.check), options.count, options.check);
+    const check = options.check === null ? null : must(parseText(options.check));
+    const labelled = new Set([...deps.verdicts.labelled(options.check)].map((key) => must(parseText(key))));
+    const items = candidatesOf(runs, deps.inputs, labelled, must(parseCount(options.count)), check);
     if (items.length === 0) {
         deps.out(options.check === null ? 'no unlabelled items in the period' : `no items in the period that ${options.check} has not been asked about`);
         return 0;
     }
     let done = 0;
     for (const [at, item] of items.entries()) {
-        if (!(await labelOne(item, `${at + 1}/${items.length}`, deps, options.check))) {
+        if (!(await labelOne(item, `${at + 1}/${items.length}`, deps, check))) {
             break;
         }
         done += 1;

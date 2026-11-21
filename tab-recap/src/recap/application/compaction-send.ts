@@ -6,12 +6,12 @@ import { must } from '#src/protocol/result.ts';
 import { LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
 import { parseText, type Text as Prose } from '#src/recap/domain/text.ts';
-import { duration, instant, type Instant } from '#src/recap/domain/time.ts';
+import { duration, type Instant } from '#src/recap/domain/time.ts';
 import { figuresOf } from '#src/recap/render/compaction-stage.ts';
 import { COMPACT_FAILURES } from '#src/protocol/exchanges/compact.ts';
 import { confirmedOutcomeOf, outcomeOf, queuedOutcomeOf } from './compaction-outcome.ts';
 import type { QueuedDeps, Verdict } from './compaction-outcome.ts';
-import type { CompactionDeps } from './compaction-deps.ts';
+import type { CompactionPorts } from './compaction-deps.ts';
 import { guidanceOf, restoreFrom, restoreOf } from './compaction-message.ts';
 import type { Material } from './compaction-message.ts';
 import type { Trail } from './compaction-trail.ts';
@@ -57,14 +57,14 @@ interface Ended {
 type Unsent = Exclude<Prompted, { kind: 'sent' }>;
 
 export class Sender {
-    private readonly deps: CompactionDeps;
+    private readonly deps: CompactionPorts;
 
-    constructor(deps: CompactionDeps) {
+    constructor(deps: CompactionPorts) {
         this.deps = deps;
     }
 
     private now(): Instant {
-        return instant(this.deps.now());
+        return this.deps.now();
     }
 
     private async typed(pane: PaneId, type: () => Promise<Prompted>): Promise<Prompted> {
@@ -115,7 +115,7 @@ export class Sender {
     private async tell(title: Prose, body: Prose): Promise<void> {
         const shown = await this.deps.notifier.notify(title, body);
         if (shown.kind === 'unknown') {
-            this.deps.log('compaction: toast not shown');
+            this.deps.log(must(parseText('compaction: toast not shown')));
         }
     }
 

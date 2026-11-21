@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { Briefing } from '#src/recap/application/compaction-briefing.ts';
-import type { CompactionDeps } from '#src/recap/application/compaction-deps.ts';
+import type { CompactionPorts } from '#src/recap/application/compaction-deps.ts';
 import { guidanceOf } from '#src/recap/application/compaction-message.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { parseText } from '#src/recap/domain/text.ts';
@@ -29,7 +29,7 @@ const seededWorld = async (): Promise<World> => {
     return world;
 };
 
-const briefingOver = (world: World): Briefing => new Briefing({ records: world.store.records, webs: { of: (): null => null }, brief: { enabled: (): boolean => { throw new Error('a model was asked'); }, write: (): never => { throw new Error('a model was asked'); } } } as unknown as CompactionDeps);
+const briefingOver = (world: World): Briefing => new Briefing({ records: world.store.records, webs: { of: (): null => null }, brief: { enabled: (): boolean => { throw new Error('a model was asked'); }, write: (): never => { throw new Error('a model was asked'); } } } as unknown as CompactionPorts);
 
 function tableCounts(world: World): Record<string, number> {
     const names = world.store.db.prepare("SELECT name FROM sqlite_schema WHERE type = 'table' AND name NOT LIKE 'sqlite_%'").all() as { name: string }[];
@@ -160,7 +160,7 @@ for (const shape of SHAPES) {
         const records = { readRecap: (): TabRecap | null => shape.recap };
         const views = { readTab: (): TabView | null => shape.view };
         const webs = { of: (pane: string): LaneWeb | null => shape.view?.lanes.find((each) => each.pane === pane)?.web ?? null };
-        const briefing = new Briefing({ records, webs, brief: { enabled: (): boolean => { throw new Error('a model was asked'); }, write: (): never => { throw new Error('a model was asked'); } } } as unknown as CompactionDeps);
+        const briefing = new Briefing({ records, webs, brief: { enabled: (): boolean => { throw new Error('a model was asked'); }, write: (): never => { throw new Error('a model was asked'); } } } as unknown as CompactionPorts);
         const made = compactPreviewOf({ records, views }, tabId(TAB), paneId(PANE), must(parseText(shape.note)));
         const expected = guidanceOf(briefing.materialOf(tabId(TAB), paneId(PANE), requestNoteOf(shape.note)));
         assert.deepEqual(made, { kind: 'guidance', text: expected });
