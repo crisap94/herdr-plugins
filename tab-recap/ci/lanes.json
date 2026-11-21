@@ -12,6 +12,7 @@
       "src/ports/closed-lanes.ts",
       "src/ports/column-visibility.ts",
       "src/ports/columns.ts",
+      "src/ports/compact-limits.ts",
       "src/ports/compaction-briefs.ts",
       "src/ports/compaction-plans.ts",
       "src/ports/compaction-records.ts",
@@ -237,6 +238,7 @@
       "test/column-dead-shell.test.ts",
       "test/column-safety-relay.test.ts",
       "test/column-safety.test.ts",
+      "test/compact-limits.test.ts",
       "test/compact-note.test.ts",
       "test/compact-requests-enqueue.test.ts",
       "test/compact-requests-take.test.ts",
@@ -730,6 +732,7 @@
     ],
     "B6": [
       "src/adapters/capability/catalogue.ts",
+      "src/adapters/capability/compact-limits.ts",
       "src/adapters/capability/compaction-plans.ts",
       "src/adapters/capability/context-window.ts",
       "src/adapters/capability/handoff-plans.ts",
