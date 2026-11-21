@@ -89,6 +89,7 @@ export interface Config {
     readonly tuning: AutocompactTuning;
     readonly decider: DeciderJob;
     readonly coverage: CoverageBy;
+    readonly coverageJob: DeciderJob;
     readonly jev: JevSettings;
     readonly keepDays: Count;
     readonly closedLaneDays: ClosedLaneDays;

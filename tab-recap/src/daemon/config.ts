@@ -7,7 +7,7 @@ import type { LanguageSource, Locale, Messages } from '#src/i18n/index.ts';
 import { duration, parseDuration } from '#src/recap/domain/time.ts';
 import { DEFAULT_POLICY, screenKindsOf } from '#src/recap/domain/policy.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
-import { compactJobOf, curateJobOf, deciderJobOf, judgeJobOf, keepDaysOf } from '#src/recap/domain/job.ts';
+import { compactJobOf, coverageJobOf, curateJobOf, deciderJobOf, judgeJobOf, keepDaysOf } from '#src/recap/domain/job.ts';
 import { parseBriefRetention, parseCoverageBy, jevOf, policyOf } from '#src/recap/domain/autocompact.ts';
 import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
 import { HINT_DEFAULT, hintOf, targetOf, windowOf } from '#src/recap/domain/compaction.ts';
@@ -229,6 +229,7 @@ export function loadSettings(): Settings {
         tuning: tuningOf(legacy),
         decider: deciderJobOf(legacy),
         coverage: parseCoverageBy(get('TAB_RECAP_AUTOCOMPACT_COVERAGE_BY')),
+        coverageJob: coverageJobOf(legacy),
         jev: jevOf(legacy),
         keepDays: countOr(parseCount(tabKeepDaysOf(get('TAB_RECAP_KEEP_DAYS'))), must(parseCount(tabKeepDaysOf(undefined)))),
         closedLaneDays: closedLaneDaysOrDefault(parseClosedLaneDays(get('TAB_RECAP_CLOSED_LANE_DAYS'))),

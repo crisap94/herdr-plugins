@@ -3,7 +3,7 @@ import type { ParsedValue } from '#src/protocol/codec.ts';
 import { BACKEND_IDS, harnessLabels, type BackendChoice, type BackendId } from '@stateforge-labs/session-ledger/unstable/recap/domain/backend.ts';
 import { parseText, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import type { Milliseconds } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import { placementFor, judgeSettingOf, compactSettingOf, curateSettingOf, deciderSettingOf, keepDaysCountOf } from './job.ts';
+import { placementFor, judgeSettingOf, compactSettingOf, coverageSettingOf, curateSettingOf, deciderSettingOf, keepDaysCountOf } from './job.ts';
 import type { DeciderBy, JobAnswer, JobBy, JobPlacement, JobReader } from './job.ts';
 import type { Effort } from './effort.ts';
 import { COMPACT_FAILURES, COMPACT_STAGES, type CompactFailure } from '#src/protocol/exchanges/compact.ts';
@@ -277,6 +277,8 @@ export const compactJobOf = (get: TuningReader): Job => compactSettingOf(readerO
 export const curateJobOf = (get: TuningReader): Job => curateSettingOf(readerOf(get));
 
 export const deciderJobOf = (get: TuningReader): DeciderJob => deciderSettingOf(readerOf(get));
+
+export const coverageJobOf = (get: TuningReader): DeciderJob => coverageSettingOf(readerOf(get), deciderSettingOf(readerOf(get)));
 
 export function keepDaysOf(raw: string | undefined): number { return keepDaysCountOf(textValue(raw)); }
 

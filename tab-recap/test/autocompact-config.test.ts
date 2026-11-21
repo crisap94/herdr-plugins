@@ -187,3 +187,14 @@ test('coverageDeciderFor: jev with no key cannot answer, so the check fails clos
         rmSync(home, { recursive: true, force: true });
     }
 });
+
+test('the brief check runs on its own model and effort when set, else on the moment decider\'s', () => {
+    withHome(() => withEnv({ TAB_RECAP_AUTOCOMPACT_BY: 'codex', TAB_RECAP_AUTOCOMPACT_MODEL: 'gpt-6.1-sol', TAB_RECAP_AUTOCOMPACT_COVERAGE_MODEL: 'gpt-6.1-terra', TAB_RECAP_AUTOCOMPACT_COVERAGE_EFFORT: 'medium' }, () => {
+        const loaded = loadConfig();
+        assert.deepEqual(loaded.coverageJob, { by: 'codex', model: 'gpt-6.1-terra', effort: 'medium' });
+        assert.deepEqual(loaded.decider, { by: 'codex', model: 'gpt-6.1-sol', effort: 'low' }, 'the moment decider keeps its own setting');
+    }));
+    withHome(() => withEnv({ TAB_RECAP_AUTOCOMPACT_BY: 'codex', TAB_RECAP_AUTOCOMPACT_MODEL: 'gpt-6.1-sol', TAB_RECAP_AUTOCOMPACT_COVERAGE_EFFORT: 'loud' }, () => {
+        assert.deepEqual(loadConfig().coverageJob, { by: 'codex', model: 'gpt-6.1-sol', effort: 'low' }, 'unset model and an unknown effort fall back to the decider');
+    }));
+});
