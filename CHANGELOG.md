@@ -8,6 +8,16 @@ All notable changes are documented here. The format follows
 
 ### [Unreleased]
 
+### [3.5.0] — 2026-11-21
+
+#### Added
+
+- tab-recap: Claude's own automatic compaction waits for autocompact on an idle lane (!362)
+
+#### Fixed
+
+- tab-recap: autocompact measures a lane against the window its agent compacts at (!360)
+
 ### [3.4.0] — 2026-11-21
 
 #### Added
@@ -390,7 +400,8 @@ First public release.
 - A pane is taken for a recap column only if its title is exactly `tab-recap` or `tab-recap:bar`, it hosts no agent and, when herdr reports one, its label is the manifest's. Before, any pane whose title merely *started with* `tab-recap` (for example an agent session named `tab-recap-harness-config`) was adopted as a column and closed with the columns when the daemon stopped.
 - A recap never closes, resizes or moves a pane that hosts an agent: enforced where the board adopts columns, in the close-column intents, and at the herdr edge, which checks the pane in a fresh snapshot before `pane.close`, `pane.resize` and `pane.swap` and refuses (with a log line) if it hosts an agent.
 
-[Unreleased]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.4.0...HEAD
+[Unreleased]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.5.0...HEAD
+[3.5.0]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.4.0...tab-recap-v3.5.0
 [3.4.0]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.3.3...tab-recap-v3.4.0
 [3.3.3]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.3.2...tab-recap-v3.3.3
 [3.3.2]: https://github.com/crisap94/herdr-plugins/compare/tab-recap-v3.3.1...tab-recap-v3.3.2
