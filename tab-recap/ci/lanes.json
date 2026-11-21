@@ -194,6 +194,7 @@
       "src/recap/domain/twins/lane/legacy.ts",
       "src/recap/domain/twins/layout/legacy.ts",
       "src/recap/domain/twins/policy/legacy.ts",
+      "src/recap/domain/twins/retention/legacy.ts",
       "src/recap/domain/twins/session-identity/legacy.ts",
       "src/recap/domain/twins/status/legacy.ts",
       "src/recap/domain/twins/telemetry-tags/legacy.ts",
