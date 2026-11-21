@@ -1,16 +1,24 @@
 import { stripClaudeContextSuffix } from '@stateforge-labs/harness-adapters/claude';
 import { opencodeModelsFile, readOpencodeCatalogue } from '@stateforge-labs/harness-adapters/opencode';
 import type { OpenCodeCatalogue } from '@stateforge-labs/harness-adapters/opencode';
-import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
+import type { ModelWindows } from '#src/ports/model-catalogue.ts';
+import { must } from '#src/protocol/result.ts';
+import { countFromLibrary } from './legacy.ts';
+import type { Count } from '#src/recap/domain/count.ts';
+import { parseFsPath } from '#src/recap/domain/fs-path.ts';
+import type { FsPath } from '#src/recap/domain/fs-path.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+
+export { LocalCatalogue } from './legacy.ts';
 
 const ANTHROPIC = 'anthropic';
 const SEPARATOR = '/';
 
-export class LocalCatalogue implements ModelCatalogue {
-    private readonly file: string;
+export class CatalogueWindows implements ModelWindows {
+    private readonly file: FsPath;
     private loaded: OpenCodeCatalogue | null | undefined = undefined;
 
-    constructor(file = opencodeModelsFile()) {
+    constructor(file: FsPath = must(parseFsPath(opencodeModelsFile()))) {
         this.file = file;
     }
 
@@ -21,7 +29,7 @@ export class LocalCatalogue implements ModelCatalogue {
         return this.loaded;
     }
 
-    windowOf(model: string): number | null {
+    windowOf(model: Text): Count | null {
         const catalogue = this.catalogue();
         if (catalogue === null) {
             return null;
@@ -29,9 +37,9 @@ export class LocalCatalogue implements ModelCatalogue {
         const id = stripClaudeContextSuffix(model);
         const slash = id.indexOf(SEPARATOR);
         if (slash > 0) {
-            return catalogue.contextWindow(id.slice(0, slash), id.slice(slash + 1));
+            return countFromLibrary(catalogue.contextWindow(id.slice(0, slash), id.slice(slash + 1)));
         }
         const order = [ANTHROPIC, ...catalogue.providers().filter((name) => name !== ANTHROPIC)];
-        return order.map((name) => catalogue.contextWindow(name, id)).find((found) => found !== null) ?? null;
+        return order.map((name) => countFromLibrary(catalogue.contextWindow(name, id))).find((found) => found !== null) ?? null;
     }
 }

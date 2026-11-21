@@ -75,5 +75,12 @@
     "function": "readersOf",
     "parameter": null,
     "reason": "callback: the TranscriptRegistry port, frozen with frozen port: packages/session-ledger/src/ports/legacy.ts fixes readers: Readonly<Record<string, Transcripts>>"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/git/lane-repo.ts",
+    "function": "repoOf",
+    "parameter": "cwd",
+    "reason": "callback: the LaneRepo port of packages/session-ledger/src/ports/legacy.ts, frozen, fixes repoOf(cwd: string)"
   }
 ]
