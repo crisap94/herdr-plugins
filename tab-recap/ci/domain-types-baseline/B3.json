@@ -1,10 +1,4 @@
 {
-  "src/recap/application/eval-options.ts": {
-    "parameter": 15,
-    "return": 7,
-    "container": 2,
-    "property": 18
-  },
   "src/recap/application/eval-report.ts": {
     "parameter": 6,
     "return": 5,
@@ -224,6 +218,9 @@
   },
   "src/recap/application/twins/edit-counts/legacy.ts": {
     "legacy": 5
+  },
+  "src/recap/application/twins/eval-options/legacy.ts": {
+    "legacy": 14
   },
   "src/recap/application/twins/ledgers/legacy.ts": {
     "legacy": 2
