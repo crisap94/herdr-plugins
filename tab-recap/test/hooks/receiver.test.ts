@@ -113,6 +113,7 @@ function world(setup: Setup): World {
             take: (session) => preCompacts.take(session),
             served: (session) => preCompacts.served(session),
         },
+        claimIdle: () => 'declined',
         restoreMode: () => (setup.restoreOn ? 'on' : 'off'),
         clock,
         log: (line) => {

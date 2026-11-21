@@ -10,6 +10,8 @@ import type { PaneId } from '#src/recap/domain/ids.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { PreCompacts } from '#src/adapters/hooks/pre-compacts.ts';
+import type { IdleClaim } from '#src/recap/application/autocompact.ts';
+import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Viewers } from './view/viewers.ts';
 import { brand, type Brand } from '#src/recap/domain/brand.ts';
 
@@ -43,6 +45,7 @@ export interface SlotContext {
     readonly clock: Clock;
     readonly viewers: Viewers;
     readonly preCompacts: PreCompacts;
+    readonly claimIdle: (lane: Lane) => IdleClaim;
     readonly setting: (key: SlotKey) => Switch;
     readonly log: (line: Line) => void;
 }

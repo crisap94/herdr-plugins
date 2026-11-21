@@ -218,6 +218,10 @@ so the writer runs once per turn and is not woken by polling. Each harness gets 
   is never held up.
 - **Codex trust.** Codex runs a new hook only after you trust it on its `/hooks` screen.
 - **Restart.** The key is read once at daemon start: restart the daemon after changing it.
+- **Claude's PreCompact.** Claude's `PreCompact` entry runs its own script, `hook-claude-pre-compact.sh` in the state
+  folder, which posts to the socket and prints the daemon's answer. It prints nothing unless the daemon holds an automatic
+  compaction (see Idle hold under Autocompact); the library's `{}` would otherwise be read as summary instructions.
+  `hooks install` replaces an older `PreCompact` entry that pointed at the shared shim, and `hooks uninstall` removes both.
 - **Off.** `TAB_RECAP_HOOKS=off` starts no listener, and `tab-recap hooks` exits 3 (not available).
 
 Exit codes of the command: 0 when it wrote or found the entries, 1 when it refused (with the reason), 2 for a usage
@@ -399,6 +403,14 @@ their decisions appear in the same `tab-recap autocompact` list. Held-lane skips
 automatic compaction goes through the same path as yours and is marked `(auto)` in its notification, and the expanded
 view's session facts count the tab's compactions by origin
 (`compactions 4 (3 by you · 1 auto)`).
+
+**Idle hold.** Claude Code compacts an idle session on its own, about 54 minutes after a turn, once the context is at
+200k tokens or more, and it sends that compaction as an automatic one. With `TAB_RECAP_AUTOCOMPACT_HOLD_IDLE=on` (the default),
+the daemon answers that automatic `PreCompact` with a block when it can compact the lane itself: autocompact is `on`,
+the lane is an idle or done Claude agent, its context share is known and at or above the minimum, and no compaction is
+in flight or queued for it. The block makes Claude skip its own compaction, and the daemon starts its own decision for the
+lane right away. Each hold is logged as `held Claude's idle compaction`. Manual compactions are never held, and `off` lets
+Claude compact as before.
 
 **The decider** is a job like the others: `TAB_RECAP_AUTOCOMPACT_BY` is `recap` (the recap writer's harness, the
 default, at `low` effort), `auto`, a harness name, `jev` (the TypeSafe System One API) or `off`; `_MODEL` and `_EFFORT`

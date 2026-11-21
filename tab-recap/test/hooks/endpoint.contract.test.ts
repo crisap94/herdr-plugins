@@ -16,7 +16,6 @@ import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
-import type { HookReceiver } from '#src/wire/hooks/contract.ts';
 import { SOCKET_PATH_MAX } from '#src/wire/socket-claim.ts';
 import { postHook, readHookCases } from '#test/contracts/wire/fakes/fake-harness.ts';
 import type { HookCase } from '#test/contracts/wire/fakes/fake-harness.ts';
@@ -40,7 +39,7 @@ type LaneStatusName = NonNullable<HookCase['lane']>['status'];
 const laneOf = (status: LaneStatusName): Lane =>
     laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: laneStatus(status), session: 's-lane', cwd: '/work/repo' });
 
-function receiverFor(c: HookCase | null): HookReceiver {
+function receiverFor(c: HookCase | null): ReturnType<typeof createReceiver> {
     const lane = laneOf(c?.lane?.status ?? 'idle');
     const restore = restoreOf(c?.answer.kind === 'context' ? c.answer.text : '');
     const clock = { now: (): Instant => instant(NOW) };
@@ -52,6 +51,7 @@ function receiverFor(c: HookCase | null): HookReceiver {
         engine: { sessionStarted: () => {}, compacted: () => restore },
         turnEnds: createTurnEnds(clock),
         preCompacts: createPreCompacts(),
+        claimIdle: () => 'declined',
         restoreMode: () => 'on',
         clock,
         log: () => {},

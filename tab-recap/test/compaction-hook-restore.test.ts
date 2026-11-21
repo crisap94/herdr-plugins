@@ -45,6 +45,7 @@ const hookOf = (preCompacts: PreCompacts, mode: RestoreMode): ((call: HookCall) 
         },
         turnEnds: createTurnEnds(clock),
         preCompacts,
+        claimIdle: () => 'declined',
         restoreMode: () => mode,
         clock,
         log: () => undefined,
