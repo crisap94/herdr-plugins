@@ -174,15 +174,22 @@ test('the meter turns amber at the hint and flips only from the hint upward', as
     assert.doesNotMatch(text(byId(tree, 'row-w1:t2')), /compact\?/);
 });
 
-test('a live tab without an index row still shows, named by the live tab and described by its agent title', async () => {
+test('a live tab without an index row still shows, named by its agent title', async () => {
     live([{ id: 'w1:t9', name: 'scratch', status: 'working' }, { id: 'w1:t1', name: 'shop', status: 'blocked' }]);
     world.agents = [{ tab: 'w1:t9', title: 'fixing lint', address: 'w1:p9', status: 'working' }];
     const view = await mount({ role: 'fleet' });
     const tree = view.render();
     assert.deepEqual(idsOf(tree, 'row-'), ['row-w1:t1', 'row-w1:t9']);
-    assert.match(text(byId(tree, 'row-w1:t9')), /scratch/);
     assert.match(text(byId(tree, 'row-w1:t9')), /fixing lint/);
+    assert.doesNotMatch(text(byId(tree, 'row-w1:t9')), /scratch/);
     assert.match(text(byId(tree, 'row-w1:t9')), /no recap yet/);
+});
+
+test('a live tab with neither an index row nor an agent title is named by its label', async () => {
+    live([{ id: 'w1:t9', name: 'scratch', status: 'working' }, { id: 'w1:t1', name: 'shop', status: 'blocked' }]);
+    world.agents = [];
+    const view = await mount({ role: 'fleet' });
+    assert.match(text(byId(view.render(), 'row-w1:t9')), /scratch/);
 });
 
 test('a row whose tab is no longer open is dropped', async () => {

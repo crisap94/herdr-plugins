@@ -9,7 +9,7 @@ import { SIZE } from "../metrics.js";
 
 export class WindowActions {
   rows() {
-    return tabRows(this.store.rows);
+    return tabRows(this.store.rows, (tab) => { const entry = this.store.docOf(tab); return entry.state === "ok" ? entry.doc.tasks : null; });
   }
 
   order() {

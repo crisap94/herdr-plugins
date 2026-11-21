@@ -8,6 +8,10 @@
       "types": "./types/tab-recap-constants.d.ts",
       "default": "./mods/tab-recap/constants.js"
     },
+    "./tab-recap/naming": {
+      "types": "./types/tab-recap-naming.d.ts",
+      "default": "./mods/tab-recap/naming.js"
+    },
     "./tab-recap/keys": {
       "types": "./types/tab-recap-keys.d.ts",
       "default": "./mods/tab-recap/keys.js"

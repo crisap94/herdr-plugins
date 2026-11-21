@@ -93,6 +93,7 @@ export const GUIDE = { loading: "loading", ready: "ready", error: "error", compa
 export const MESSAGE_LIMIT = 3000;
 export const DETAIL_MAX = 90;
 export const ELLIPSIS = "\u2026";
+export const NAME = { max: 48, minCut: 24, markup: /[`*#>]/g, sentence: /^(.+?[.!?])(\s|$)/ };
 export const NOT_FOUND = { [ERR.unknownTab]: REASON.unknownTab, [ERR.unknownPane]: REASON.unknownPane };
 export const FENCE = "`";
 export const QUERY = { pane: "pane", note: "note", from: "from", to: "to" };

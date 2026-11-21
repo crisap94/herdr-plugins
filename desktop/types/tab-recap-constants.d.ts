@@ -71,6 +71,7 @@ export declare const NEED_PHASE: { readonly idle: string; readonly confirm: stri
 export declare const GUIDE: { readonly loading: string; readonly ready: string; readonly error: string; readonly compact: string; readonly handoff: string; readonly kind: { readonly compact: string; readonly handoff: string; }; };
 export declare const MESSAGE_LIMIT: 3000;
 export declare const DETAIL_MAX: 90;
+export declare const NAME: { readonly max: number; readonly minCut: number; readonly markup: RegExp; readonly sentence: RegExp };
 export declare const ELLIPSIS: "\u2026";
 export declare const NOT_FOUND: { readonly [code: string]: string };
 export declare const FENCE: "`";
