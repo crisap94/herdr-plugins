@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { askBackFor, MAX_FACT_QUESTIONS, THIN_CHARS, wanted } from '@stateforge-labs/session-ledger/unstable/recap/application/ask-back.ts';
 import { chunksOf, CHUNK_CHARS, newestOf } from '@stateforge-labs/session-ledger/unstable/recap/application/chunking.ts';
-import { answerTextOf, headlineOf, objectIn, renderRecap, tidy } from '@stateforge-labs/session-ledger/unstable/recap/application/recap-shape/legacy.ts';
+import { answerTextOf, headlineOf, objectIn, renderRecap, tidy } from '@stateforge-labs/session-ledger/unstable/recap/application/recap-shape.ts';
 import { capStubs, MAX_STUBS, triggersOf, type Stub } from '@stateforge-labs/session-ledger/unstable/recap/application/triggers.ts';
 import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import { clipHead, clipTurn } from '@stateforge-labs/session-ledger/unstable/recap/application/writer-clip.ts';
@@ -61,11 +61,11 @@ test('the trigger cap keeps the most important stubs in their original order', (
 });
 
 test('the recap text is tidied, its JSON object is read, and its headline is the first need or now line', () => {
-    assert.equal(tidy('- **Ship**   the build  '), 'Ship the build');
-    assert.equal(tidy('none'), '');
-    assert.equal(tidy('a b c d e f g h i j k l m n o p q', 4), 'a b c d…');
-    assert.deepEqual(objectIn('note {"goal":"x"} trailing'), { goal: 'x' });
-    assert.equal(objectIn('no braces here'), undefined);
+    assert.equal(tidy(textOf('- **Ship**   the build  ')), 'Ship the build');
+    assert.equal(tidy(textOf('none')), '');
+    assert.equal(tidy(textOf('a b c d e f g h i j k l m n o p q'), count(4)), 'a b c d…');
+    assert.deepEqual(objectIn(textOf('note {"goal":"x"} trailing')), { goal: 'x' });
+    assert.equal(objectIn(textOf('no braces here')), undefined);
     assert.equal(answerTextOf(textOf('{"a":1}')), '{"a":1}');
     assert.equal(answerTextOf(textOf('here: {"goal":"x"}')), '{"goal":"x"}');
     assert.equal(answerTextOf(textOf('plain words')), 'plain words');

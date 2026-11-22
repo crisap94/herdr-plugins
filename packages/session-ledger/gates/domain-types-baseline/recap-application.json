@@ -44,9 +44,6 @@
     "property": 15,
     "container": 3
   },
-  "src/recap/application/legacy.ts": {
-    "legacy": 21
-  },
   "src/recap/application/local-time.ts": {
     "parameter": 6,
     "return": 2,
@@ -68,13 +65,10 @@
     "assertion": 4
   },
   "src/recap/application/recap-job.ts": {
-    "parameter": 5,
+    "parameter": 4,
     "return": 2,
-    "property": 9,
+    "property": 8,
     "container": 3
-  },
-  "src/recap/application/recap-shape/legacy.ts": {
-    "legacy": 9
   },
   "src/recap/application/writer-context.ts": {
     "parameter": 5,

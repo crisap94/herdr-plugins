@@ -1,11 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { numbered, writerFacts } from '#src/recap/application/ledger-input.ts';
-import { inputOf } from '#src/recap/application/recap-input.ts';
+import { inputOf, SEEN_BEFORE } from '#src/recap/application/recap-input.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { keepNewestOf, nextHoursOf, prunedWriterView } from '#src/recap/domain/writer-view.ts';
 import { factOf } from './fakes/facts.ts';
 import { agentOf, NO_REPOS } from '#test/support.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 
 const view = prunedWriterView(keepNewestOf(2), nextHoursOf(24));
 const wide = prunedWriterView(keepNewestOf(10), nextHoursOf(24));
@@ -55,8 +56,8 @@ test('the next window hides facts older than its hours, keeps a fact exactly at 
 });
 
 test('the writer input applies the next window at the tab clock, so an old next fact is neither shown nor numbered', async () => {
-    const built = await inputOf([{ lane, cursor, chunk: null, fresh: false }], {
-        tab: 'w1:t1', repos: NO_REPOS, now: NOW, tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }],
+    const built = await inputOf([{ lane, cursor, chunk: null, fresh: SEEN_BEFORE }], {
+        tab: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(NOW), tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }],
         facts: [{ key: 't1', open: nextFacts, closed: [] }], writerView: wide,
     });
     const ledger = built.input.ledgers.at(0);

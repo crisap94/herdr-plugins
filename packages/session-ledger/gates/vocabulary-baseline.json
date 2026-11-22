@@ -20,7 +20,6 @@
   "src/recap/application/extract-ground.ts": 6,
   "src/recap/application/extract-pipeline.ts": 6,
   "src/recap/application/lane-hints.ts": 8,
-  "src/recap/application/legacy.ts": 35,
   "src/recap/application/ledger-reconcile.ts": 25,
   "src/recap/application/ops-gating.ts": 3,
   "src/recap/application/recap-input.ts": 14,

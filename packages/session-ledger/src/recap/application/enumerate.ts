@@ -37,7 +37,7 @@ export interface Enumeration {
 }
 
 const flaggedOf = (stub: Stub, agent: string): InputCandidate =>
-    ({ section: stub.section, text: tidy(stub.anchor, 16) || stub.anchor, why: null, ref: stub.ref, at: stub.at, anchor: stub.anchor, agent, flagged: true });
+    ({ section: stub.section, text: tidy(stub.anchor, brand<number, 'Count'>(16)) || stub.anchor, why: null, ref: stub.ref, at: stub.at, anchor: stub.anchor, agent, flagged: true });
 
 export function deduplicated(candidates: readonly InputCandidate[]): readonly InputCandidate[] {
     const kept: InputCandidate[] = [];

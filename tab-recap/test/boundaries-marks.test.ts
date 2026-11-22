@@ -1,10 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { marksOf } from '#src/recap/application/boundaries.ts';
+import { ADVANCED, marksOf, NOT_ADVANCED } from '#src/recap/application/boundaries.ts';
 import type { Read } from '#src/recap/application/boundaries.ts';
 import { compactedFrom, settledBefore, triggerOf } from '#src/recap/domain/boundary.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 import type { Chunk, Mark } from '#src/ports/transcripts.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 const AT = Date.parse('2026-10-07T16:38:09.490Z');
 const read = (marks: readonly Mark[], pane = 'w1:p1'): Read => ({
@@ -17,7 +18,7 @@ const CODEX: Mark = { kind: 'compacted', at: Date.parse('2026-10-06T13:09:05.181
 const OPENCODE: Mark = { kind: 'compacted', at: 1_790_000_009_000, tokensBefore: 1020, tookMs: 7000 };
 
 test('each agent\'s own mark becomes one candidate with its time, tokens and the read\'s end cursor; a failed summarizer is none', () => {
-    const found = marksOf([read([CLAUDE, { kind: 'compaction-failed', at: AT }]), read([CODEX], 'w1:p2'), read([OPENCODE], 'w1:p3')], 5, true);
+    const found = marksOf([read([CLAUDE, { kind: 'compaction-failed', at: AT }]), read([CODEX], 'w1:p2'), read([OPENCODE], 'w1:p3')], instant(5), ADVANCED);
     assert.deepEqual(found, [
         { pane: 'w1:p1', at: AT, cursor: 900, tokensBefore: 39_532, tokensAfter: 3057, tookMs: 15_588, trigger: 'manual' },
         { pane: 'w1:p2', at: CODEX.at, cursor: 900, tokensBefore: 17_133, tokensAfter: 4617 },
@@ -26,13 +27,13 @@ test('each agent\'s own mark becomes one candidate with its time, tokens and the
 });
 
 test('a lane that could not be read, and an agent that left no mark, add nothing', () => {
-    assert.deepEqual(marksOf([{ lane: { pane: paneId('w1:p1') }, chunk: null }, read([])], 5, true), []);
+    assert.deepEqual(marksOf([{ lane: { pane: paneId('w1:p1') }, chunk: null }, read([])], instant(5), ADVANCED), []);
 });
 
 test('a record without a time is dated by the read, but only when the read moves on', () => {
     const undated = read([{ kind: 'compacted', at: null }]);
-    assert.deepEqual(marksOf([undated], 777, true), [{ pane: 'w1:p1', at: 777, cursor: 900 }]);
-    assert.deepEqual(marksOf([undated], 777, false), []);
+    assert.deepEqual(marksOf([undated], instant(777), ADVANCED), [{ pane: 'w1:p1', at: 777, cursor: 900 }]);
+    assert.deepEqual(marksOf([undated], instant(777), NOT_ADVANCED), []);
 });
 
 test('triggerOf: plugin from the start of the plugin\'s compaction up to ten minutes after it; else the agent\'s word; else auto', () => {

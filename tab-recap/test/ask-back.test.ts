@@ -7,11 +7,11 @@ import { brand } from '#src/recap/domain/brand.ts';
 import { READBACK } from '#src/recap/domain/questions.ts';
 
 const count = brand<number, 'Count'>;
-const text = brand<string, 'Text'>;
+const asText = brand<string, 'Text'>;
 
 const candidate = (section: InputCandidate['section'], text: string, ref: string | null = null): InputCandidate => ({ section, text, why: null, ref, at: null, anchor: 'a', agent: 'a1', flagged: false });
 const fact = (id: string, text: string, over: Partial<InputFact> = {}): InputFact => ({ id, section: 'now', text, state: 'open', first: 1, last: 2, why: null, ref: null, anchor: null, agent: null, closed: null, ...over });
-const found = (over: Partial<Parameters<typeof askBackFor>[0]> = {}): Parameters<typeof askBackFor>[0] => ({ chunks: count(1), chars: count(4_000), candidates: [], open: [], said: text(''), ...over });
+const found = (over: Partial<Parameters<typeof askBackFor>[0]> = {}): Parameters<typeof askBackFor>[0] => ({ chunks: count(1), chars: count(4_000), candidates: [], open: [], said: asText(''), ...over });
 
 test('a second look is due when the run took more than one chunk, or read at least one rate-unit and gave fewer than one candidate per 2 000 characters', () => {
     assert.equal(wanted({ chunks: count(2), chars: count(100), candidates: [candidate('done', 'x'), candidate('next', 'y')] }), true, 'long');
@@ -42,11 +42,11 @@ test('what changed about an open fact is asked for the facts the turns mention (
         fact('f4', 'Retry the uploader with backoff'),
         fact('f5', 'Closed already', { state: 'closed' }),
     ];
-    const said = text('I ran test/migrate.test.ts again. The release notes draft is ready for review. Retry the uploader now.');
+    const said = asText('I ran test/migrate.test.ts again. The release notes draft is ready for review. Retry the uploader now.');
     const asked = askBackFor(found({ chunks: count(2), open, said, candidates: [candidate('next', 'Retry the uploader with exponential backoff')] }));
     const about = asked.filter((each) => each.text.startsWith('What changed')).map((each) => each.text);
     assert.deepEqual(about, ['What changed about the open fact "Migration test fails on the staging database"?', 'What changed about the open fact "Review the release notes draft"?'], 'f3 is not mentioned, f4 has a candidate, f5 is closed');
-    const many = askBackFor(found({ chunks: count(2), said: text('alpha bravo charlie'), open: Array.from({ length: 9 }, (_, at) => fact(`f${at}`, 'alpha bravo charlie')) }));
+    const many = askBackFor(found({ chunks: count(2), said: asText('alpha bravo charlie'), open: Array.from({ length: 9 }, (_, at) => fact(`f${at}`, 'alpha bravo charlie')) }));
     assert.equal(many.filter((each) => each.text.startsWith('What changed')).length, MAX_FACT_QUESTIONS);
 });
 

@@ -62,8 +62,7 @@
     "parameter": 13,
     "return": 2,
     "container": 19,
-    "property": 9,
-    "assertion": 1
+    "property": 9
   },
   "src/recap/application/judge-context.ts": {
     "return": 7,

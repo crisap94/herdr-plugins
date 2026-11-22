@@ -5,6 +5,7 @@ import type { ClosedWhy } from '#src/recap/domain/fact.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { localTime } from './local-time.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { objectIn, tidy } from './recap-shape.ts';
 
 export const WHY_WORDS = 24;
@@ -28,9 +29,9 @@ export interface Resolving {
     readonly clock: { readonly now: number; readonly zone: string };
 }
 
-const text = (value: unknown): string => (typeof value === 'string' ? tidy(value) : '');
+const text = (value: unknown): string => (typeof value === 'string' ? tidy(brand<string, 'Text'>(value)) : '');
 const maybe = (value: unknown, words = 16): string | null => {
-    const one = typeof value === 'string' ? tidy(value, words) : '';
+    const one = typeof value === 'string' ? tidy(brand<string, 'Text'>(value), brand<number, 'Count'>(words)) : '';
     return one === '' ? null : one;
 };
 
@@ -104,7 +105,7 @@ const isFields = (value: unknown): value is Fields => typeof value === 'object' 
 
 function objectOf(raw: string): Fields | string {
     try {
-        const found = objectIn(raw);
+        const found = objectIn(brand<string, 'Text'>(raw));
         return isFields(found) ? found : 'the answer holds no JSON object';
     } catch {
         return 'the answer is not valid JSON';

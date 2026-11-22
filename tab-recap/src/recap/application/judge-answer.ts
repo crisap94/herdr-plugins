@@ -1,4 +1,5 @@
 import { objectIn } from '@stateforge-labs/session-ledger/unstable/recap/application/recap-shape.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 
 export const ITEM_CHECKS: readonly string[] = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7'];
 
@@ -33,9 +34,13 @@ const unusable = (why: string): UnusableParse => ({ kind: 'unusable', why });
 type Fields = Readonly<Record<string, unknown>>;
 
 function fieldsOf(text: string): Fields | string {
+    const readable = parseText(text);
+    if (readable.kind === 'err') {
+        return 'the answer is not valid JSON';
+    }
     try {
-        const found = objectIn(text);
-        return typeof found === 'object' && found !== null && !Array.isArray(found) ? (found as Fields) : 'the answer holds no JSON object';
+        const found = objectIn(readable.value);
+        return found === undefined || Array.isArray(found) ? 'the answer holds no JSON object' : found;
     } catch {
         return 'the answer is not valid JSON';
     }

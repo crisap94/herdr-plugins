@@ -1,12 +1,50 @@
-import type { RecapInput, InputAgent } from '#src/ports/recap-input.ts';
+import type { Lane } from '#src/recap/domain/lane-shape.ts';
+import type { LaneRepo } from '#src/ports/lane-repo.ts';
+import type { RecapInput, InputAgent, InputNote } from '#src/ports/recap-input.ts';
+import type { Count } from '#src/contract/kernel.ts';
+import { brand, type Brand } from '#src/recap/domain/brand.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 import { isScreenSource } from '#src/ports/transcript-source.ts';
+import type { LaneCursor } from '#src/ports/recap-records.ts';
+import type { Chunk } from '#src/ports/transcripts.ts';
+import type { TaskShape } from '#src/recap/domain/grouping.ts';
+import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { numbered } from './ledger-input.ts';
-import type { Numbering } from './ledger-input.ts';
+import type { Numbering, TaskFacts } from './ledger-input.ts';
 import { hintOf } from './lane-hints.ts';
-import { idOf, notesOf } from './legacy.ts';
-import type { InputWorld, Observed } from './legacy.ts';
 
-export type { InputWorld, Observed } from './legacy.ts';
+export type Fresh = Brand<boolean, 'Fresh'>;
+
+export const FRESH = brand<boolean, 'Fresh'>(true);
+export const SEEN_BEFORE = brand<boolean, 'Fresh'>(false);
+
+export interface Observed {
+    readonly lane: Lane;
+    readonly cursor: LaneCursor;
+    readonly chunk: Chunk | null;
+    readonly fresh: Fresh;
+}
+
+const count = brand<number, 'Count'>;
+
+const idOf = (index: Count): Text => brand<string, 'Text'>(`a${index + 1}`);
+
+function notesOf(seen: Observed, agent: Text): readonly InputNote[] {
+    const all = seen.chunk?.notes ?? [];
+    const found: readonly InputNote[] = all.filter((note, index) => !all.slice(index + 1).some((later) => later.kind === note.kind)).map((note) => ({ kind: note.kind, at: note.at, text: note.text, agent }));
+    const left = seen.cursor.claudeRecap;
+    return seen.fresh && left !== null && !found.some((note) => note.kind === 'away_summary') ? [{ kind: 'away_summary', at: null, text: left, agent }, ...found] : found;
+}
+
+export interface InputWorld {
+    readonly tab: Text;
+    readonly repos: LaneRepo;
+    readonly now: Instant;
+    readonly tasks: readonly TaskShape[];
+    readonly facts: readonly TaskFacts[];
+    readonly writerView: WriterView;
+}
 
 export interface Built {
     readonly input: RecapInput;
@@ -15,7 +53,7 @@ export interface Built {
 
 export async function inputOf(seen: readonly Observed[], world: InputWorld): Promise<Built> {
     const agents: InputAgent[] = await Promise.all(seen.map(async (one, index) => ({
-        id: idOf(index), kind: String(one.lane.agent), label: one.cursor.title ?? '', pane: String(one.lane.pane),
+        id: idOf(count(index)), kind: String(one.lane.agent), label: one.cursor.title ?? '', pane: String(one.lane.pane),
         source: isScreenSource(one.cursor.transcript) ? 'screen' as const : 'transcript' as const,
         ...(await hintOf(one.lane, one.chunk?.entries ?? [], world.repos)),
     })));
@@ -25,8 +63,8 @@ export async function inputOf(seen: readonly Observed[], world: InputWorld): Pro
         agents,
         tasks: seen.length > 1 ? world.tasks.map(({ id, name, lanes }) => ({ id, name, lanes })) : [],
         ledgers: numbering.ledgers,
-        notes: seen.flatMap((one, index) => notesOf(one, idOf(index))),
-        transcripts: seen.flatMap((one, index) => (one.chunk === null ? [] : [{ agent: idOf(index), entries: one.chunk.entries }])),
+        notes: seen.flatMap((one, index) => notesOf(one, idOf(count(index)))),
+        transcripts: seen.flatMap((one, index) => (one.chunk === null ? [] : [{ agent: idOf(count(index)), entries: one.chunk.entries }])),
     };
     return { input, numbering };
 }
