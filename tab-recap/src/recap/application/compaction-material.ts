@@ -1,6 +1,7 @@
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
 import { settledBefore } from '#src/recap/domain/boundary.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
@@ -9,7 +10,7 @@ import { localTime } from '@stateforge-labs/session-ledger/unstable/recap/applic
 import { turnsOf } from '@stateforge-labs/session-ledger/unstable/recap/application/writer-transcript.ts';
 import { element, leaf } from '@stateforge-labs/session-ledger/unstable/recap/application/xml.ts';
 
-export const RECENT_BUDGET = 12_000;
+export const RECENT_BUDGET = must(parseCount(12_000));
 const NEST = '\n';
 
 export interface MaterialAgent {

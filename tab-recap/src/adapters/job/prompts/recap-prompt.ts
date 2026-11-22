@@ -48,10 +48,10 @@ export function fitText(text: Text, max: Count): Text {
 
 export function fittedAsk(request: RecapRequest, limit: Count): HarnessAsk {
     const rules = instructions(request);
-    let budget = TRANSCRIPT_BUDGET;
+    let budget: Count = TRANSCRIPT_BUDGET;
     let input = writerContext(request, budget);
     while (Buffer.byteLength(input) + Buffer.byteLength(rules) > limit && budget > 0) {
-        budget = budget < 500 ? 0 : Math.floor(budget / 2);
+        budget = must(parseCount(budget < 500 ? 0 : Math.floor(budget / 2)));
         input = writerContext(request, budget);
     }
     return { instructions: must(parseText(rules)), input: must(parseText(input)) };

@@ -1,5 +1,7 @@
 import type { Entry } from '#src/ports/transcripts.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { localTime } from './local-time.ts';
 import { turnsOf } from './writer-transcript.ts';
 import { element, leaf } from './xml.ts';
@@ -16,7 +18,7 @@ export const documentId = (at: number): string => `f${at + 1}`;
 
 export function curatorInput(material: CuratorMaterial, reconcile?: { readonly tail: string }): { readonly document: string; readonly facts: ReadonlyMap<string, Fact> } {
     const { clock } = material;
-    const at = (ms: number): string => localTime(ms, clock.now, clock.zone);
+    const at = (ms: number): string => localTime(instant(ms), instant(clock.now), brand<string, 'Text'>(clock.zone));
     const named = new Map(material.facts.map((fact, index) => [documentId(index), fact] as const));
     const rows = [...named].map(([id, fact]) => `\n ${leaf('fact', {
         id, section: fact.section, state: fact.state, first: at(fact.firstAt), last: at(fact.lastAt), why: fact.why, ref: fact.ref, agent: fact.agent, closed: fact.closedWhy, closedat: fact.closedAt === null ? null : at(fact.closedAt),
@@ -49,7 +51,7 @@ export function stillTrueOf(rubric: string): string {
 
 export function reconcileInput(material: ReconcileMaterial): { readonly document: string; readonly facts: ReadonlyMap<string, Fact>; readonly tail: string } {
     const { clock } = material;
-    const shown = turnsOf(material.tail, clock, TAIL_CHARS);
+    const shown = turnsOf(material.tail, { now: instant(clock.now), zone: brand<string, 'Text'>(clock.zone) }, brand<number, 'Count'>(TAIL_CHARS));
     const { document, facts } = curatorInput({ ...material, rubric: stillTrueOf(material.rubric), facts: material.open }, { tail: element('tail', shown.attrs, shown.body) });
     return { document, facts, tail: shown.body };
 }

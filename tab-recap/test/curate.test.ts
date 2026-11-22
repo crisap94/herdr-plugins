@@ -52,7 +52,7 @@ test('the curator document stays byte-identical and includes every open fact whe
         return calls[0] ?? '';
     };
     const beforePruning = await runCurator();
-    const built = await inputOf([], { tab: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(NOW), tasks: [{ id: 't1', name: '', lanes: [] }], facts: [{ key: 't1', open, closed: [] }], writerView: prunedWriterView(keepNewestOf(10), nextHoursOf(24)) });
+    const built = await inputOf([], { tab: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(NOW), tasks: [{ id: 't1', name: '', lanes: [] }], facts: [{ key: brand<string, 'Text'>('t1'), open, closed: [] }], writerView: prunedWriterView(keepNewestOf(10), nextHoursOf(24)) });
     assert.match(writerContext({ ...requestOf(), input: built.input }), /<hidden section="done" count="10"\/>/u, 'the writer view really prunes in this run');
     const withPruning = await runCurator();
     assert.equal(withPruning, beforePruning);

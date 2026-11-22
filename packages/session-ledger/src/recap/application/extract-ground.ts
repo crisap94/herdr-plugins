@@ -1,6 +1,7 @@
 import type { Ledger } from '#src/ports/ledger.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
@@ -31,7 +32,7 @@ export function groundOf(world: GroundWorld): Ground {
             turns: world.entries.flatMap((entry) => (entry.at === undefined ? [] : [entry.at])), clock: { now, zone: built.input.tab.zone },
         },
         grounds: tasks.map((task) => ({
-            key: task.id, tab, shown: built.numbering.shown.get(task.id) ?? new Map(),
+            key: task.id, tab, shown: built.numbering.shown.get(brand<string, 'Text'>(task.id)) ?? new Map(),
             open: world.ledger.openOf({ tab, key: task.id }),
             closedLately: world.ledger.recentlyClosed({ tab, key: task.id }, now - REPEAT_WINDOW_MS), source, language: world.language, agents,
         })),

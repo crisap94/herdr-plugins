@@ -1,9 +1,4 @@
 {
-  "src/recap/application/correction-input.ts": {
-    "parameter": 6,
-    "return": 8,
-    "container": 2
-  },
   "src/recap/application/curator-input.ts": {
     "parameter": 4,
     "return": 5,
@@ -17,38 +12,17 @@
     "container": 8,
     "assertion": 1
   },
-  "src/recap/application/enumerate-input.ts": {
-    "parameter": 1,
-    "return": 5,
-    "property": 11
-  },
-  "src/recap/application/enumerate.ts": {
-    "parameter": 2,
-    "property": 12
-  },
   "src/recap/application/extract-job.ts": {
     "parameter": 8,
     "return": 1,
     "property": 7,
     "container": 2
   },
-  "src/recap/application/ledger-input.ts": {
-    "parameter": 4,
-    "return": 2,
-    "property": 1,
-    "container": 3
-  },
   "src/recap/application/ledger-reconcile.ts": {
     "parameter": 9,
     "return": 6,
     "property": 15,
     "container": 3
-  },
-  "src/recap/application/local-time.ts": {
-    "parameter": 6,
-    "return": 2,
-    "container": 1,
-    "assertion": 1
   },
   "src/recap/application/ops-answer.ts": {
     "parameter": 7,
@@ -69,16 +43,6 @@
     "return": 2,
     "property": 8,
     "container": 3
-  },
-  "src/recap/application/writer-context.ts": {
-    "parameter": 5,
-    "return": 9
-  },
-  "src/recap/application/writer-transcript.ts": {
-    "parameter": 4,
-    "return": 4,
-    "property": 6,
-    "container": 2
   },
   "src/recap/application/xml.ts": {
     "parameter": 8,

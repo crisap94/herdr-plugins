@@ -326,7 +326,7 @@ test('a task whose pane has session history renders none of it, only the ledger 
         recentlyClosed: (): readonly Fact[] => [],
         historyOf: (): string => 'SESSION-HISTORY-SENTINEL',
     };
-    const result = renderOf(contentOf(taskFactsOf(ledger, TASK, AT).open, taskFactsOf(ledger, TASK, AT).closed));
+    const result = renderOf(contentOf(taskFactsOf(ledger, TASK, instant(AT)).open, taskFactsOf(ledger, TASK, instant(AT)).closed));
     const text = shownOf(result).text;
     assert.equal(text.includes('SESSION-HISTORY-SENTINEL'), false);
     assert.equal(text.includes('the ledger goal'), true);

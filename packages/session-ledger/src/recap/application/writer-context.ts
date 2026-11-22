@@ -1,71 +1,83 @@
+import type { Count } from '#src/contract/kernel.ts';
 import type { InputAgent, RecapInput } from '#src/ports/recap-input.ts';
 import type { RecapRequest } from '#src/ports/summarizer.ts';
 import { brand } from '#src/recap/domain/brand.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { correctionDocument } from './correction-input.ts';
 import { clipHead } from './writer-clip.ts';
-import { localTime, isoSecond } from './local-time.ts';
+import { localTime, isoSecond, type LocalClock } from './local-time.ts';
 import { candidatesOf } from './writer-candidates.ts';
 import { transcriptOf } from './writer-transcript.ts';
+import type { Clock } from './writer-transcript.ts';
 import { element, leaf } from './xml.ts';
 import { serializeHidden } from './hidden-codec.ts';
 
-export const TRANSCRIPT_BUDGET = 60_000;
-const NOTE_CHARS = { 'away_summary': brand<number, 'Count'>(400), compaction: brand<number, 'Count'>(2_000) } as const;
+const textOf = brand<string, 'Text'>;
+const count = brand<number, 'Count'>;
+
+export const TRANSCRIPT_BUDGET = count(60_000);
+const NOTE_CHARS = { 'away_summary': count(400), compaction: count(2_000) } as const;
 const LABEL_CHARS = 30;
 const NEST = '\n';
 
-const basename = (path: string): string => path.split('/').findLast((part) => part !== '') ?? path;
+const basename = (path: Text): Text => textOf(path.split('/').findLast((part) => part !== '') ?? path);
 
-function agentOf(agent: InputAgent): string {
+function agentOf(agent: InputAgent): Text {
     const files = agent.files.map((file) => `\n ${leaf('file', {}, file)}`).join('');
-    const attrs = { id: agent.id, kind: agent.kind, label: agent.label.length > LABEL_CHARS ? `${agent.label.slice(0, LABEL_CHARS - 1)}…` : agent.label, pane: agent.pane, source: agent.source === 'screen' ? 'screen' : null, cwd: agent.cwd === agent.repo ? null : agent.cwd, repo: agent.repo === null ? null : basename(agent.repo), branch: agent.branch };
-    return `\n${element('agent', attrs, files === '' ? '' : `${files}\n`)}`;
+    const attrs = { id: agent.id, kind: agent.kind, label: agent.label.length > LABEL_CHARS ? `${agent.label.slice(0, LABEL_CHARS - 1)}…` : agent.label, pane: agent.pane, source: agent.source === 'screen' ? 'screen' : null, cwd: agent.cwd === agent.repo ? null : agent.cwd, repo: agent.repo === null ? null : basename(textOf(agent.repo)), branch: agent.branch };
+    return textOf(`\n${element('agent', attrs, files === '' ? '' : `${files}\n`)}`);
 }
 
-function tasksOf(input: RecapInput): string {
+function tasksOf(input: RecapInput): Text {
     const idOf = new Map(input.agents.map((agent) => [agent.pane, agent.id]));
     const tasks = input.tasks.flatMap((task) => {
         const agents = task.lanes.flatMap((pane) => idOf.get(pane) ?? []);
         return agents.length === 0 ? [] : [`\n${element('task', { id: task.id, name: task.name === '' ? null : task.name, agents: agents.join(' ') })}`];
     });
-    return input.agents.length < 2 || tasks.length === 0 ? '' : `${NEST}${element('current_tasks', {}, `${tasks.join('')}${NEST}`)}`;
+    return textOf(input.agents.length < 2 || tasks.length === 0 ? '' : `${NEST}${element('current_tasks', {}, `${tasks.join('')}${NEST}`)}`);
 }
 
-const clockOf = (input: RecapInput): ((at: number) => string) => (at) => localTime(at, input.tab.now, input.tab.zone);
+const turnClockOf = (input: RecapInput): Clock => ({ now: instant(input.tab.now), zone: textOf(input.tab.zone) });
 
-function ledgersOf(input: RecapInput): string {
+const clockOf = (input: RecapInput): LocalClock => {
+    const { now, zone } = turnClockOf(input);
+    return (at) => localTime(at, now, zone);
+};
+
+function ledgersOf(input: RecapInput): Text {
     const at = clockOf(input);
-    return input.ledgers.map((ledger) => {
+    return textOf(input.ledgers.map((ledger) => {
         const hidden = serializeHidden(ledger.hidden ?? new Map());
         const facts = ledger.facts.map((fact) => {
-            const attrs = { id: fact.id, section: fact.section, state: fact.state === 'open' ? null : 'closed', first: at(fact.first), last: at(fact.last), why: fact.why, ref: fact.ref, anchor: fact.anchor, agent: fact.agent, closed: fact.closed };
+            const attrs = { id: fact.id, section: fact.section, state: fact.state === 'open' ? null : 'closed', first: at(instant(fact.first)), last: at(instant(fact.last)), why: fact.why, ref: fact.ref, anchor: fact.anchor, agent: fact.agent, closed: fact.closed };
             return `\n ${leaf('fact', attrs, fact.text)}`;
         }).join('');
         return `${NEST}${element('ledger', { task: ledger.task }, `${hidden}${facts}${hidden === '' && facts === '' ? '' : '\n'}`)}`;
-    }).join('');
+    }).join(''));
 }
 
-function notesOf(input: RecapRequest['input']): string {
-    return input.notes.map((note) => {
-        const kept = clipHead(brand<string, 'Text'>(note.text), NOTE_CHARS[note.kind]);
-        return `${NEST}${leaf('agent_note', { agent: note.agent, kind: note.kind, at: note.at === null ? null : localTime(note.at, input.tab.now, input.tab.zone), clipped: kept.clipped ? 'tail' : null }, kept.text)}`;
-    }).join('');
+function notesOf(input: RecapRequest['input']): Text {
+    return textOf(input.notes.map((note) => {
+        const kept = clipHead(textOf(note.text), NOTE_CHARS[note.kind]);
+        return `${NEST}${leaf('agent_note', { agent: note.agent, kind: note.kind, at: note.at === null ? null : localTime(instant(note.at), turnClockOf(input).now, turnClockOf(input).zone), clipped: kept.clipped ? 'tail' : null }, kept.text)}`;
+    }).join(''));
 }
 
-function transcriptsOf(input: RecapInput, budget: number): string {
+function transcriptsOf(input: RecapInput, budget: Count): Text {
     const active = input.transcripts.filter((lane) => lane.entries.length > 0);
-    const share = Math.floor(budget / Math.max(1, active.length));
+    const share = count(Math.floor(budget / Math.max(1, active.length)));
     const lanes = active.length > 0 ? active : input.agents.slice(0, 1).map((agent) => ({ agent: agent.id, entries: [] }));
-    return lanes.map((lane) => `${NEST}${transcriptOf(lane.agent, lane.entries, input.tab, share)}`).join('');
+    return textOf(lanes.map((lane) => `${NEST}${transcriptOf(textOf(lane.agent), lane.entries, turnClockOf(input), share)}`).join(''));
 }
 
-export function writerContext(request: RecapRequest, budget = TRANSCRIPT_BUDGET): string {
+export function writerContext(request: RecapRequest, budget: Count = TRANSCRIPT_BUDGET): Text {
     if (request.retry !== undefined) {
         return correctionDocument({ ...request, retry: request.retry });
     }
     const { input } = request;
-    const tab = element('tab', { id: input.tab.id, now: isoSecond(input.tab.now), zone: input.tab.zone }, `${input.agents.map(agentOf).join('')}${NEST}`);
+    const tab = element('tab', { id: input.tab.id, now: isoSecond(instant(input.tab.now)), zone: input.tab.zone }, `${input.agents.map(agentOf).join('')}${NEST}`);
     const correction = request.correction === undefined ? '' : `${NEST}${leaf('correction', {}, request.correction)}`;
     const body = `${NEST}${tab}${tasksOf(input)}${ledgersOf(input)}${candidatesOf(input)}${notesOf(input)}${transcriptsOf(input, budget)}${correction}\n`;
-    return element('recap_input', { version: 2 }, body);
+    return textOf(element('recap_input', { version: 2 }, body));
 }

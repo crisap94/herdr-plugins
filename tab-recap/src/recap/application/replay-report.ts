@@ -1,3 +1,6 @@
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { jaccard } from '#src/recap/domain/gates/jaccard.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import { localTime } from '@stateforge-labs/session-ledger/unstable/recap/application/local-time.ts';
@@ -29,7 +32,7 @@ export function reportOf(title: string, facts: readonly Fact[]): string {
 }
 
 export function ledgerText(facts: readonly Fact[], zone: string): string {
-    const at = (ms: number): string => localTime(ms, ms, zone);
+    const at = (ms: number): string => localTime(instant(ms), instant(ms), must(parseText(zone)));
     return facts.map((fact) => `  ${fact.section.padEnd(9)} ${fact.state === 'open' ? 'open  ' : (fact.closedWhy ?? 'closed').padEnd(6)} ${at(fact.firstAt)}–${at(fact.lastAt)}  ${fact.text}${fact.why === null ? '' : ` — ${fact.why}`}`).join('\n');
 }
 

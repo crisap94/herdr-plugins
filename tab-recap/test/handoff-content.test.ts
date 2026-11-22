@@ -1,3 +1,4 @@
+import { brand } from '#src/recap/domain/brand.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildHandoffContent } from '#src/recap/application/handoff-content.ts';
@@ -27,7 +28,7 @@ const WORKSITE: WorksiteSnapshot = { kind: 'unavailable' };
 const closedFact = (id: string, section: Fact['section'], text: string, closedAt: number, closedWhy: Fact['closedWhy'] = 'superseded'): Fact =>
     fact(id, section, text, closedAt, { state: 'closed', closedWhy, closedAt, lastAt: closedAt });
 
-const taskOf = (open: readonly Fact[], closed: readonly Fact[] = []): TaskFacts => ({ key: TASK.key, open, closed });
+const taskOf = (open: readonly Fact[], closed: readonly Fact[] = []): TaskFacts => ({ key: brand<string, 'Text'>(TASK.key), open, closed });
 
 const inputOf = (task: TaskFacts, more: { readonly note?: string } = {}): HandoffInput => ({ at: instant(NOW), task, freshness: FRESHNESS, worksite: WORKSITE, note: more.note === undefined ? null : must(parseText(more.note)) });
 
@@ -145,7 +146,7 @@ test('the injected instant decides the recently closed window', () => {
             return [];
         },
     };
-    const task = taskFactsOf(ledger, TASK, NOW);
+    const task = taskFactsOf(ledger, TASK, instant(NOW));
     assert.deepEqual(since, [NOW - CLOSED_SHOWN_MS]);
     assert.deepEqual(task.closed, []);
 });
@@ -156,7 +157,7 @@ test('a task whose pane has session history renders none of it, only the ledger 
         recentlyClosed: (): readonly Fact[] => [],
         historyOf: (): never => assert.fail('session history must not be read'),
     };
-    const body = bodyOf(buildHandoffContent(inputOf(taskFactsOf(ledger, TASK, NOW))));
+    const body = bodyOf(buildHandoffContent(inputOf(taskFactsOf(ledger, TASK, instant(NOW)))));
     assert.deepEqual(textsOf(body, 'goal'), ['the ledger goal']);
     assert.equal(body.groups.reduce((count, group) => count + group.entries.length, 0), 1);
 });

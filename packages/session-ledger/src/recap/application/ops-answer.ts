@@ -4,6 +4,7 @@ import { ANCHOR_CHARS } from '#src/recap/domain/gates/g11-anchor.ts';
 import type { ClosedWhy } from '#src/recap/domain/fact.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
 import { parseText } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { localTime } from './local-time.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { objectIn, tidy } from './recap-shape.ts';
@@ -40,7 +41,7 @@ function resolveAt(label: unknown, resolving: Resolving): number | null {
         return null;
     }
     const { now, zone } = resolving.clock;
-    return resolving.turns.findLast((at) => localTime(at, now, zone) === label.trim()) ?? null;
+    return resolving.turns.findLast((at) => localTime(instant(at), instant(now), brand<string, 'Text'>(zone)) === label.trim()) ?? null;
 }
 
 function anchorOf(value: unknown): string | null {
