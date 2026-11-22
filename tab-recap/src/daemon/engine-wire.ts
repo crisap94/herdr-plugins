@@ -93,7 +93,7 @@ export function wireEngine({ store, backends, transcripts, clock, repos, curate,
         },
         on: (event): void => {
             if (event.kind === 'recap-written') {
-                ranRun(curate, events, board, { tab: event.scope, turns: event.turns, boundary: event.boundary, ...(event.cause === undefined ? {} : { cause: event.cause }) }, log);
+                ranRun(curate, events, board, { tab: tabId(event.scope), turns: event.turns, boundary: event.boundary, ...(event.cause === undefined ? {} : { cause: must(parseText(event.cause)) }) }, log);
             }
             ledger(event);
         },

@@ -68,7 +68,7 @@ async function called(run: EnumerateRun, material: EnumerateMaterial): Promise<C
     if (isUnknown(written)) {
         return { candidates: [], cost: usd(0), failed: textOf(`${run.enumerator.backend} gave none (${saying(written.why)})`) };
     }
-    const answer = answeredBy(written.text, { agent: material.agent, entries: material.chunk.entries, stubs: material.stubs, clock: material.tab });
+    const answer = answeredBy(textOf(written.text), { agent: material.agent, entries: material.chunk.entries, stubs: material.stubs, clock: material.tab });
     if (answer === null) {
         return { candidates: [], cost: usd(written.costUsd), failed: textOf('the enumeration answer is not a JSON object with "candidates"') };
     }

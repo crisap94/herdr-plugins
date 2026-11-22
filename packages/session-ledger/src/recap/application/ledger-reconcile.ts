@@ -16,8 +16,9 @@ import { parseText } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import type { Result } from '#src/protocol/result.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import { brand } from '#src/recap/domain/brand.ts';
+import { brand, type Brand } from '#src/recap/domain/brand.ts';
+import type { Boundary } from '#src/contract/events.ts';
+import type { Count, TabId } from '#src/contract/kernel.ts';
 import { answerTextOf } from './recap-shape.ts';
 import { reconcileInput } from './curator-input.ts';
 import { batch } from './job-kit/batch.ts';
@@ -26,24 +27,40 @@ import type { RepairMode } from './job-kit/repair.ts';
 import type { Judged, TaskGround } from './ops-gating.ts';
 
 const textOf = brand<string, 'Text'>;
+const count = brand<number, 'Count'>;
+
+export type Due = Brand<boolean, 'Due'>;
+type Wanted = Brand<boolean, 'Wanted'>;
+export type Ran = Brand<boolean, 'Ran'>;
+
+export interface ReconcileClock {
+    readonly now: Instant;
+    readonly zone: Text;
+}
+
+export interface CurateTarget {
+    readonly id: Text;
+    readonly name: Text;
+    readonly lanes: readonly Text[];
+}
 
 export interface ReconcileParts {
     readonly writer: Curators;
     readonly stories: Stories;
-    readonly language: string;
-    readonly rubric: string;
-    readonly clock: { readonly now: number; readonly zone: string };
+    readonly language: Text;
+    readonly rubric: Text;
+    readonly clock: ReconcileClock;
     readonly repair?: () => RepairMode;
-    log(line: string): void;
+    log(line: Text): void;
 }
 
 export interface ReconcileTask {
-    readonly tab: string;
-    readonly key: string;
-    readonly name: string;
+    readonly tab: TabId;
+    readonly key: Text;
+    readonly name: Text;
     readonly facts: readonly Fact[];
     readonly tail: readonly Entry[];
-    readonly agents: readonly string[];
+    readonly agents: readonly Text[];
 }
 
 const operationOf = (one: Reconciled): Operation => (one.op === 'close' ? { op: 'close', id: one.id, why: one.why } : { op: 'update', id: one.id, text: one.text, why: one.why });
@@ -67,23 +84,23 @@ async function repairedOf(parts: ReconcileParts, task: ReconcileTask, round: Rou
     }
     const { writer } = parts;
     const where = `curator ${task.tab} ${task.key}`;
-    parts.log(`${where}: reconcile repair — ${refusals} refused`);
+    parts.log(textOf(`${where}: reconcile repair — ${refusals} refused`));
     const repair = await writer.write(reconcileRepair(round.sent.value, round.said.value, round.checked, round.first), 'reconcile');
     if (isUnknown(repair)) {
-        parts.log(`${where}: ${writer.backend} gave no repair (${saying(repair.why)})`);
+        parts.log(textOf(`${where}: ${writer.backend} gave no repair (${saying(repair.why)})`));
         return round.first;
     }
     const rechecked = round.reading(repair);
     if (rechecked.refused.includes('the answer is not JSON')) {
-        parts.log(`${where}: reconcile repair refused — the answer is not JSON`);
+        parts.log(textOf(`${where}: reconcile repair refused — the answer is not JSON`));
         return round.first;
     }
     for (const why of rechecked.refused) {
-        parts.log(`${where}: reconcile refused — ${why}`);
+        parts.log(textOf(`${where}: reconcile refused — ${why}`));
     }
-    const judged = batch('reconcile', { gates: LEDGER_GATES, task: round.ground, at: instant(parts.clock.now) }, rechecked.ops.map(operationOf));
+    const judged = batch('reconcile', { gates: LEDGER_GATES, task: round.ground, at: parts.clock.now }, rechecked.ops.map(operationOf));
     for (const finding of judged.refused) {
-        parts.log(`${where}: reconcile refused — ${finding.gate} ${finding.reason}`);
+        parts.log(textOf(`${where}: reconcile refused — ${finding.gate} ${finding.reason}`));
     }
     return judged;
 }
@@ -95,10 +112,10 @@ export async function reconcileTask(parts: ReconcileParts, task: ReconcileTask):
     if (open.length === 0 || task.tail.length === 0) {
         return;
     }
-    const input = reconcileInput({ name: textOf(task.name), language: textOf(parts.language), rubric: textOf(parts.rubric), open, tail: task.tail, clock: { now: instant(clock.now), zone: textOf(clock.zone) } });
+    const input = reconcileInput({ name: task.name, language: parts.language, rubric: parts.rubric, open, tail: task.tail, clock });
     const answered = await writer.write(input.document, 'reconcile');
     if (isUnknown(answered)) {
-        parts.log(`${where}: ${writer.backend} gave none to reconcile (${saying(answered.why)})`);
+        parts.log(textOf(`${where}: ${writer.backend} gave none to reconcile (${saying(answered.why)})`));
         return;
     }
     const reading: Reading = (answer) => {
@@ -107,23 +124,23 @@ export async function reconcileTask(parts: ReconcileParts, task: ReconcileTask):
         return reconciliationOf(read.kind === 'ok' ? answerTextOf(read.value) : text, input.facts, input.tail);
     };
     const checked = reading(answered);
-    checked.refused.forEach((why) => { parts.log(`${where}: reconcile refused — ${why}`); });
+    checked.refused.forEach((why) => { parts.log(textOf(`${where}: reconcile refused — ${why}`)); });
     const openFacts = [...input.facts.values()].filter((fact) => fact.state === 'open');
     const ground: TaskGround = { key: task.key, tab: task.tab, shown: input.facts, open: openFacts, closedLately: [], source: '', language: parts.language, agents: task.agents };
-    const first = batch('reconcile', { gates: LEDGER_GATES, task: ground, at: instant(clock.now) }, checked.ops.map(operationOf));
-    first.refused.forEach((finding) => { parts.log(`${where}: reconcile refused — ${finding.gate} ${finding.reason}`); });
+    const first = batch('reconcile', { gates: LEDGER_GATES, task: ground, at: clock.now }, checked.ops.map(operationOf));
+    first.refused.forEach((finding) => { parts.log(textOf(`${where}: reconcile refused — ${finding.gate} ${finding.reason}`)); });
     const gated = await repairedOf(parts, task, { sent: parseText(input.document), said: parseText(answered.text), reading, ground, checked, first });
     if (gated.kept.length === 0) {
         return;
     }
     const applied = parts.stories.keep({ task: { tab: task.tab, key: task.key }, at: clock.now, language: parts.language }, { story: null, merges: [], reconciled: changes(gated.kept) });
-    applied.refused.forEach((one) => { parts.log(`${where}: the ledger refused ${one.op.op} — ${one.reason}`); });
-    parts.log(`${where}: reconciled ${applied.changed.length} facts`);
+    applied.refused.forEach((one) => { parts.log(textOf(`${where}: the ledger refused ${one.op.op} — ${one.reason}`)); });
+    parts.log(textOf(`${where}: reconciled ${applied.changed.length} facts`));
 }
 
 const GAP_MS = 5 * 60_000;
 
-export const RECONCILE_EVERY = 8;
+export const RECONCILE_EVERY = count(8);
 
 export type CurateWhy = 'open' | 'turns' | 'boundary';
 
@@ -139,10 +156,10 @@ export interface RunAccomplishment {
 }
 
 export interface RunEvent {
-    readonly tab: string;
-    readonly turns: number;
-    readonly boundary: boolean;
-    readonly cause?: string;
+    readonly tab: TabId;
+    readonly turns: Count;
+    readonly boundary: Boundary;
+    readonly cause?: Text;
     readonly entries?: readonly RunTurn[];
     readonly established?: readonly RunAccomplishment[];
 }
@@ -151,58 +168,58 @@ export interface ReconcilingDeps {
     readonly ledger: Ledger;
     readonly stories: Stories;
     readonly writer: () => Curators | null;
-    readonly clock: () => number;
-    readonly zone: () => string;
-    readonly language: () => string;
-    readonly rubric: string;
+    readonly clock: () => Instant;
+    readonly zone: () => Text;
+    readonly language: () => Text;
+    readonly rubric: Text;
     readonly tail?: (lanes: readonly LaneCursor[]) => Promise<readonly Entry[]>;
-    readonly every?: () => number;
+    readonly every?: () => Count;
     readonly repair?: () => RepairMode;
-    log(line: string): void;
+    log(line: Text): void;
 }
 
 export class Reconciling {
     private readonly deps: ReconcilingDeps;
-    private readonly lastRun = new Map<string, number>();
-    private readonly running = new Set<string>();
-    private readonly turns = new Map<string, number>();
+    private readonly lastRun = new Map<Text, Instant>();
+    private readonly running = new Set<Text>();
+    private readonly turns = new Map<TabId, Count>();
 
     constructor(deps: ReconcilingDeps) {
         this.deps = deps;
     }
 
-    due(event: RunEvent): boolean {
-        const turns = (this.turns.get(event.tab) ?? 0) + event.turns;
+    due(event: RunEvent): Due {
+        const turns = count((this.turns.get(event.tab) ?? 0) + event.turns);
         this.turns.set(event.tab, turns);
-        return event.boundary || turns >= (this.deps.every?.() ?? RECONCILE_EVERY);
+        return brand<boolean, 'Due'>(event.boundary || turns >= (this.deps.every?.() ?? RECONCILE_EVERY));
     }
 
-    settle(tab: string): void {
-        this.turns.set(tab, 0);
+    settle(tab: TabId): void {
+        this.turns.set(tab, count(0));
     }
 
-    private wanted(key: string, why: CurateWhy, tab: string, now: number): boolean {
+    private wanted(key: Text, why: CurateWhy, tab: TabId, now: Instant): Wanted {
         const last = this.lastRun.get(key);
         const fresh = why !== 'open' || last === undefined || (this.turns.get(tab) ?? 0) > 0;
-        return fresh && !this.running.has(key) && (last === undefined || now - last >= GAP_MS);
+        return brand<boolean, 'Wanted'>(fresh && !this.running.has(key) && (last === undefined || now - last >= GAP_MS));
     }
 
-    async task(tab: string, task: { readonly id: string; readonly name: string; readonly lanes: readonly string[] }, lanes: readonly LaneCursor[], why: CurateWhy): Promise<boolean> {
+    async task(tab: TabId, task: CurateTarget, lanes: readonly LaneCursor[], why: CurateWhy): Promise<Ran> {
         const { deps } = this;
-        const [key, now] = [`${tab}\u0000${task.id}`, deps.clock()];
+        const [key, now] = [textOf(`${tab}\u0000${task.id}`), deps.clock()];
         const writer = deps.writer();
         const facts = deps.ledger.allOf({ tab, key: task.id });
         if (deps.tail === undefined || writer === null || !facts.some((fact) => fact.state === 'open') || !this.wanted(key, why, tab, now)) {
-            return false;
+            return brand<boolean, 'Ran'>(false);
         }
         this.lastRun.set(key, now);
         this.running.add(key);
         try {
-            const mine = lanes.filter((seat) => task.lanes.length === 0 || task.lanes.includes(seat.pane));
+            const mine = lanes.filter((seat) => task.lanes.length === 0 || task.lanes.some((member) => member === seat.pane));
             const tail = await deps.tail(mine);
-            const parts = { writer, stories: deps.stories, language: deps.language(), rubric: deps.rubric, clock: { now, zone: deps.zone() }, ...(deps.repair === undefined ? {} : { repair: deps.repair }), log: (line: string): void => { deps.log(line); } };
-            await reconcileTask(parts, { tab, key: task.id, name: task.name, facts, tail, agents: mine.flatMap((lane) => [lane.agent, lane.title ?? '']).filter((name) => name !== '').map((name) => name.toLowerCase()) });
-            return true;
+            const parts = { writer, stories: deps.stories, language: deps.language(), rubric: deps.rubric, clock: { now, zone: deps.zone() }, ...(deps.repair === undefined ? {} : { repair: deps.repair }), log: (line: Text): void => { deps.log(line); } };
+            await reconcileTask(parts, { tab, key: task.id, name: task.name, facts, tail, agents: mine.flatMap((lane) => [lane.agent, lane.title ?? '']).filter((name) => name !== '').map((name) => textOf(name.toLowerCase())) });
+            return brand<boolean, 'Ran'>(true);
         } finally {
             this.running.delete(key);
         }

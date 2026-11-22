@@ -1,17 +1,4 @@
 {
-  "src/recap/application/enumerate-answer.ts": {
-    "parameter": 8,
-    "return": 6,
-    "property": 8,
-    "container": 8,
-    "assertion": 1
-  },
-  "src/recap/application/ledger-reconcile.ts": {
-    "parameter": 9,
-    "return": 6,
-    "property": 15,
-    "container": 3
-  },
   "src/recap/application/ops-answer.ts": {
     "parameter": 7,
     "return": 11,
