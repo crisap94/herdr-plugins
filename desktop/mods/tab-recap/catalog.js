@@ -146,7 +146,7 @@ export const MESSAGES = {
       recap: "Recap writer",
       compaction: "Compaction",
       autocompact: "Autocompact",
-      jobs: "Other jobs",
+      jobs: "Judge and curator",
       other: "Other",
     },
     settingLabels: {
@@ -208,7 +208,6 @@ export const MESSAGES = {
       recap: "As recap writer", shadow: "Shadow", gentle: "Gentle", balanced: "Balanced", eager: "Eager", append: "Append", wait: "Wait", ask: "Ask", skip: "Skip",
     },
     autoSystem: "Auto (system)",
-    numberPlaceholder: "number",
     textPlaceholder: "empty",
   },
   es: {
@@ -356,7 +355,7 @@ export const MESSAGES = {
       recap: "Redactor del recap",
       compaction: "Compactación",
       autocompact: "Autocompactar",
-      jobs: "Otras tareas",
+      jobs: "Juez y curador",
       other: "Otros",
     },
     settingLabels: {
@@ -418,7 +417,6 @@ export const MESSAGES = {
       recap: "Como el redactor", shadow: "Sombra", gentle: "Suave", balanced: "Equilibrado", eager: "Ágil", append: "Añadir", wait: "Esperar", ask: "Preguntar", skip: "Omitir",
     },
     autoSystem: "Auto (sistema)",
-    numberPlaceholder: "número",
     textPlaceholder: "vacío",
   },
 };

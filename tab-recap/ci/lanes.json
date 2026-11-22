@@ -950,6 +950,7 @@
       "test/autocompact-sweep.test.ts",
       "test/backends.test.ts",
       "test/config.test.ts",
+      "test/gui/settings.test.ts",
       "test/harness-makers.test.ts",
       "test/lane-turns.test.ts",
       "test/recall-config.test.ts",

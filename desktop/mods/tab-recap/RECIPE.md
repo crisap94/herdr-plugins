@@ -10,11 +10,13 @@ One mod, four roles, picked by `props().role`. Nothing here edits a shipped layo
 - `brief`: the same window on one tab: Brief, Story, Timeline and Session views, lane chips (each opens the compact popover), the "since you last looked" banner, the need card with Jump to lane and Mark done, Now, Decisions, Next and Links.
 - `compact`: the popover the window opens under a lane chip (a popup overlay, not a layout role). It also shows the engine's Compact message for the lane, with Copy and Copy handoff.
 
+Settings is a third scene of the same window, opened by the gear in either bar: the options of `tab-recap configure` in grouped cards (toggles, option buttons, text and number fields), each saved on its own through `tab-recap-desktop settings set <id>=<value>`, which uses the writer of the terminal pane. Escape or Back returns to Fleet.
+
 Fleet and Brief are one persistent window (`key: "tab-recap"`); the role only says which scene it opens in.
 
 ## Keys
 
-`Up` `Down` move, `Enter` open, `/` search, `1`-`4` views, `c` compact, `r` refresh, `Esc` back, then close. Keys are ignored while a field has the keyboard, and with Ctrl, Alt or the platform key held.
+`Up` `Down` move, `Enter` open (also right after typing in the filter), `/` search, `1`-`4` views, `c` compact, `r` refresh, `Esc` back, then close. Keys are ignored while a field has the keyboard, and with Ctrl, Alt or the platform key held.
 
 ## Opt-in layout recipe
 
@@ -32,8 +34,13 @@ to the `"floating"` list of the node that holds your terminals, and, in the tab 
 
 The strip replaces the `pane` header, so the split, zoom and close buttons of that header are not there. To open Fleet from a key, bind `"alt-r": "tab-recap.fleet"` under `"global"` in `keys.json` (the chip delivers it; `tab-recap.brief` opens the focused tab). Without a layout edit, `herdr-app do mod.open --name tab-recap` opens the window.
 
+## Language
+
+Every text is in `catalog.js` under `en` and `es`. The language is the `TAB_RECAP_LOCALE` setting of tab-recap (read with `tab-recap-desktop settings`); `auto` or an unreadable value follows `LANG` (a value starting with `es` is Spanish), and the default is English. Changing it in Settings switches every role live through the shared key `tab-recap.lang`.
+
 ## What the mod runs and reads
 
+- `printenv LANG`, and `tab-recap-desktop settings` (and `settings set id=value`) for the language and the Settings page.
 - `printenv TAB_RECAP_BIN` and `printenv TAB_RECAP_STATE` (unset means `tab-recap-desktop` on `PATH`, and `~/.local/state/herdr/plugins/tab-recap/desktop`).
 - `tab-recap-desktop ensure` on start, and `stop` then `start` then `ensure` for Restart. Refresh also runs `refresh <tab>` when the API is down.
 - With the API down: `touch` and `rm -f` on `<state>/gui/open.<tab>`, touched every 20 seconds while a Brief is open, removed when it closes (the daemon treats a marker older than 60 seconds as closed). With the API up the same two moments are `PUT` and `DELETE /v1/tabs/<tab>/open` (a 60 second lease the 20 second timer renews).

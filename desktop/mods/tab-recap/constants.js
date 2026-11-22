@@ -1,7 +1,12 @@
 export const MOD = "tab-recap";
 export const ROLES = { chip: "chip", strip: "strip", fleet: "fleet", brief: "brief", compact: "compact" };
 export const DEFAULT_ROLE = ROLES.fleet;
-export const SCENES = { fleet: "fleet", brief: "brief" };
+export const SCENES = { fleet: "fleet", brief: "brief", settings: "settings" };
+export const SETTINGS_STATE = { loading: "loading", ready: "ready", failed: "failed" };
+export const CONTROL = { toggle: "toggle", select: "select", number: "number", text: "text" };
+export const SWITCH_VALUES = ["on", "off"];
+export const MODEL_PREFIX = "model.";
+export const AUTO_LOCALE = "auto";
 export const VIEWS = ["brief", "story", "timeline", "session"];
 export const WINDOW = { key: MOD, kind: "window", width: 780, height: 620 };
 
@@ -51,7 +56,7 @@ export const SHARED = { rows: "tab-recap.rows", notified: "tab-recap.notified", 
 export const STORAGE = { seen: "tab-recap.seen" };
 
 export const MS = { second: 1000, minute: 60000, hour: 3600000, day: 86400000 };
-export const INTERVAL = { focus: 400, poll: 15000, marker: 20000, refreshMax: 8000, stageFresh: 600000, firstLook: 86400000, tick: 30000, copied: 2000, debounce: 500 };
+export const INTERVAL = { focus: 400, poll: 15000, marker: 20000, refreshMax: 8000, stageFresh: 600000, firstLook: 86400000, tick: 30000, copied: 2000, saved: 2500, debounce: 500 };
 export const HINT_DEFAULT = 40;
 export const NOTE_MAX = 280;
 export const BIN_COUNT = 32;

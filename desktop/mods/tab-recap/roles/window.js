@@ -1,6 +1,6 @@
 import { InputState, v_flex } from "gpui-base";
 import { props, shared } from "herdr";
-import { INTERVAL, MODE, ROLES, SCENES, SHARED, STATUS, VIEWS, WRITING } from "../constants.js";
+import { INTERVAL, MODE, ROLES, SCENES, SETTINGS_STATE, SHARED, STATUS, VIEWS, WRITING } from "../constants.js";
 import { clearMarker, touchMarker } from "../commands.js";
 import { hintOf } from "../derive.js";
 import { briefOf } from "../brief-model.js";
@@ -14,7 +14,8 @@ import { session } from "../views/session.js";
 import { story } from "../views/story.js";
 import { timeline } from "../views/timeline.js";
 import { notice } from "./notice.js";
-import { briefBar, fleetBar, footer } from "./chrome.js";
+import { briefBar, fleetBar, footer, settingsBar } from "./chrome.js";
+import { settingsView } from "../views/settings.js";
 import { fleetView } from "./fleet.js";
 import { NeedDone } from "./need-done.js";
 import { WindowActions } from "./window-actions.js";
@@ -40,6 +41,9 @@ export default class Window extends WindowActions {
     this.qFocus = false;
     this.tqFocus = false;
     this.refreshUntil = 0;
+    this.settings = { state: SETTINGS_STATE.loading, body: null, busy: false, message: null };
+    this.fields = new Map();
+    this.activeField = null;
     this.restarting = false;
     this.seenAt = 0;
     this.acx = cx;
@@ -58,6 +62,7 @@ export default class Window extends WindowActions {
 
   onLanguage(cx) {
     this.makeFields();
+    this.rebuildFields();
     cx.notify();
   }
 
@@ -90,6 +95,8 @@ export default class Window extends WindowActions {
     this.model = entry.state === "ok" ? briefOf(entry.doc, this.seenAt) : null;
     this.hint = hintOf(row);
     return {
+      scene: this.scene, settings: this.settings, fields: this.fields, activeField: this.activeField,
+      onSettings: (_e, cx) => (this.scene === SCENES.settings ? this.back(cx) : this.openSettings(cx)), onSave: (id, value, cx) => this.save(id, value, cx), onSettingsRetry: (_e, cx) => this.loadSettings(cx),
       t, rows, tab: row, now, model: this.model, hint: this.hint, sel: this.sel, view: this.view, filter: this.filter, q: this.q, qState: this.qState, qFocus: this.qFocus,
       refreshing: this.refreshUntil > now || row.writing === WRITING, openLane: shared(SHARED.popup)?.lane ?? -1, openDecs: this.openDecs, tlSec: this.tlSec,
       need: this.needDone.bind(this.store.mode === MODE.api),
@@ -122,8 +129,9 @@ export default class Window extends WindowActions {
     const row = rows.find((r) => r.id === this.sel) ?? { id: this.sel ?? "", name: this.sel ?? "", space: "", status: STATUS.idle, writing: "", hintPercent: null, recapAt: null };
     const c = this.context(t, rows, row, now);
     const brief = this.scene === SCENES.brief;
+    const prefs = this.scene === SCENES.settings;
     return v_flex().id("tab-recap").size_full().bg(t.surface).text_color(t.fg).text_size(SIZE.body).track_focus(this.handle)
-      .on_key_down((e, cx) => this.onKey(e, cx)).on_mouse_down("left", () => { if (!this.typing) this.handle.focus(); }).child(brief ? briefBar(c) : fleetBar(c))
-      .child(brief ? this.body(c) : fleetView(c)).child(footer(t));
+      .on_key_down((e, cx) => this.onKey(e, cx)).on_mouse_down("left", () => { if (!this.typing) this.handle.focus(); }).child(prefs ? settingsBar(c) : brief ? briefBar(c) : fleetBar(c))
+      .child(prefs ? settingsView(c) : brief ? this.body(c) : fleetView(c)).when(!prefs, (e) => e.child(footer(t)));
   }
 }

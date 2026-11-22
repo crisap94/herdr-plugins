@@ -20,6 +20,10 @@
       "types": "./types/tab-recap-language.d.ts",
       "default": "./mods/tab-recap/language.js"
     },
+    "./tab-recap/settings-model": {
+      "types": "./types/tab-recap-settings-model.d.ts",
+      "default": "./mods/tab-recap/settings-model.js"
+    },
     "./tab-recap/keys": {
       "types": "./types/tab-recap-keys.d.ts",
       "default": "./mods/tab-recap/keys.js"
