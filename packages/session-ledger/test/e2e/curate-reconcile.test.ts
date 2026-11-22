@@ -9,7 +9,7 @@ import { createEngineWorld, engineCases, type EngineWorld } from '@stateforge-la
 const text = brand<string, 'Text'>;
 const open = new Set([text('f1'), text('f2'), text('f3')]);
 
-for (const id of ['CUR-8', 'CUR-9', 'CUR-10', 'CUR-11', 'CUR-12']) {
+for (const id of ['CUR-8', 'CUR-9', 'CUR-10', 'CUR-11', 'CUR-12', 'CUR-13', 'CUR-14', 'CUR-15', 'CUR-16']) {
     test(`engine case ${id} holds on the engine`, async () => {
         const found = engineCases.find((kase) => kase.id === id);
         assert.ok(found);

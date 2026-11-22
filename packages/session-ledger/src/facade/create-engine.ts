@@ -44,6 +44,19 @@ const accomplishmentOf = (scope: ScopeId, done: RunAccomplishment): Accomplishme
     at: instant(done.at),
 });
 
+const afterRunFailed = (plugs: FacadePlugs, scope: ScopeId) => (error: Error): void => {
+    plugs.environment.log(`curator ${scope}: ${error.message}`);
+};
+
+const startedAfterRun = (plugs: FacadePlugs, scope: ScopeId, event: RunEvent): void => {
+    const failed = afterRunFailed(plugs, scope);
+    try {
+        plugs.afterRun?.(scope, event).catch(failed);
+    } catch (error) {
+        failed(error instanceof Error ? error : new Error(String(error)));
+    }
+};
+
 const reportRun = (plugs: FacadePlugs) => (event: RunEvent): void => {
     const written = writtenOf(event);
     if (written === null) {
@@ -58,6 +71,7 @@ const reportRun = (plugs: FacadePlugs) => (event: RunEvent): void => {
         emit(plugs, () => accomplishmentOf(scope, done));
     }
     emit(plugs, () => written);
+    startedAfterRun(plugs, scope, event);
 };
 
 type Moved = Pick<Advance, 'tab' | 'lanes'>;

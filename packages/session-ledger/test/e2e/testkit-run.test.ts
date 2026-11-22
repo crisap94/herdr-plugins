@@ -93,7 +93,7 @@ test('the registry exports hold the FOL, TRN and STA engine cases and the REC an
             'FBY-1', 'FBY-2', 'FBY-3', 'FBY-4', 'FBY-5', 'FBY-6', 'FBY-7', 'FBY-8', 'FBY-9',
             'EVT-1', 'EVT-2', 'EVT-3', 'EVT-4', 'EVT-5', 'EVT-6', 'EVT-7', 'EVT-8', 'EVT-9', 'EVT-10',
             'CMP-1', 'CMP-2', 'CMP-3', 'CMP-4', 'CMP-5', 'CMP-6', 'CMP-7', 'CMP-8', 'CMP-9', 'CMP-10',
-            'CUR-1', 'CUR-2', 'CUR-3', 'CUR-4', 'CUR-5', 'CUR-6', 'CUR-7', 'CUR-8', 'CUR-9', 'CUR-10', 'CUR-11', 'CUR-12',
+            'CUR-1', 'CUR-2', 'CUR-3', 'CUR-4', 'CUR-5', 'CUR-6', 'CUR-7', 'CUR-8', 'CUR-9', 'CUR-10', 'CUR-11', 'CUR-12', 'CUR-13', 'CUR-14', 'CUR-15', 'CUR-16',
             'HIS-1', 'HIS-2', 'HIS-3', 'HIS-4', 'HIS-5',
             'REF-1', 'REF-2', 'REF-3', 'REF-4', 'REF-5', 'REF-6', 'REF-7', 'REF-8',
             'RUN-1', 'RUN-2', 'RUN-3', 'RUN-4', 'RUN-5', 'RUN-6', 'RUN-7', 'RUN-8',
