@@ -6,7 +6,7 @@ import { BRIEF_INSTRUCTIONS } from '#src/adapters/job/prompts/brief-instructions
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { BriefDesk, clean, FORBIDDEN, vetted } from '#src/recap/application/compaction-brief.ts';
 import { MESSAGE_LIMIT as BRIEF_LIMIT } from '#src/recap/application/compaction-message.ts';
-import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
+import type { BriefWriter } from '#src/ports/compaction-briefs.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
@@ -48,10 +48,10 @@ test('the writer is told the same words the brief is held to', () => {
     assert.ok(FORBIDDEN.test('a recap') && !FORBIDDEN.test('a summary'));
 });
 
-function desk(writer: CompactionBriefs | null, log: string[] = []): BriefDesk {
+function desk(writer: BriefWriter | null, log: string[] = []): BriefDesk {
     return new BriefDesk({ writer: () => writer, log: (line) => { log.push(line); } });
 }
-const answering = (text: string): CompactionBriefs => ({ backend: 'codex/gpt-6-luna', job: 'codex · gpt-6-luna · high', write: () => Promise.resolve({ kind: 'briefed', text }) });
+const answering = (text: string): BriefWriter => ({ backend: textOf('codex/gpt-6-luna'), job: textOf('codex · gpt-6-luna · high'), write: () => Promise.resolve({ kind: 'briefed', text: textOf(text) }) });
 
 test('the desk returns a usable brief; no writer means no brief and no log; a failing or refused one is logged with its reason', async () => {
     assert.deepEqual(await desk(answering('I want X.')).write(t('<doc/>')), { text: 'I want X.', why: null });
@@ -62,7 +62,7 @@ test('the desk returns a usable brief; no writer means no brief and no log; a fa
     assert.equal(desk(null).enabled(), 'absent');
     assert.deepEqual(quiet, []);
     const log: string[] = [];
-    const failing: CompactionBriefs = { backend: 'codex/gpt-6-luna', job: 'codex · gpt-6-luna · high', write: () => Promise.resolve(unknown({ why: 'timeout', after: duration(120_000) })) };
+    const failing: BriefWriter = { backend: textOf('codex/gpt-6-luna'), job: textOf('codex · gpt-6-luna · high'), write: () => Promise.resolve(unknown({ why: 'timeout', after: duration(120_000) })) };
     assert.deepEqual(await desk(failing, log).write(t('<doc/>')), { text: null, why: 'timed out after 120000 ms' });
     assert.deepEqual(await desk(answering('a plugin said so'), log).write(t('<doc/>')), { text: null, why: 'the answer says "plugin"' });
     assert.match(log[0] ?? '', /codex\/gpt-6-luna gave none \(timed out after 120000 ms\); the template is used/);

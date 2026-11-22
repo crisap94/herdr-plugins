@@ -10,7 +10,9 @@ import { ANCHORS_PER_CHECK, anchorsOf, withText } from '#src/recap/application/j
 import { runEval } from '#src/recap/application/eval-run.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { parseEvalRequest } from '#src/recap/application/eval-options.ts';
-import type { Harness } from '#src/ports/harness.ts';
+import type { HarnessAsk, HarnessPort } from '#src/ports/harness.ts';
+import { choice } from '#test/fakes/harness-runtime.ts';
+import { parseUsd } from '#src/recap/domain/usd.ts';
 import type { Pair, Verdict } from '#src/ports/verdicts.ts';
 import { optionsOf, rig, seed } from '#test/eval-rig.ts';
 
@@ -66,10 +68,10 @@ test('where the operator overruled the judge on I5, the judge\'s next instructio
 test('a judge built with anchors hands them to the harness with its scoring call only', async () => {
     const { store } = seeded(3);
     const calls: string[] = [];
-    const harness = { id: 'fake', limit: null, label: () => 'fake', run: (call: { instructions: string }) => { calls.push(call.instructions); return Promise.resolve({ kind: 'ran', text: '{}', costUsd: 0 }); } } as unknown as Harness;
-    const judge = new HarnessJudge(harness, { model: '', effort: 'default' }, anchorsOf(withText(store.verdicts.disagreements(), store.inputs)));
-    await judge.ask('score', '<x/>');
-    await judge.ask('grade', '<x/>');
+    const harness: HarnessPort = { id: textOf('fake'), limit: null, label: () => textOf('fake'), run: (call: HarnessAsk) => { calls.push(call.instructions); return Promise.resolve({ kind: 'ran', text: textOf('{}'), costUsd: must(parseUsd(0)) }); } };
+    const judge = new HarnessJudge(harness, choice('', 'default'), anchorsOf(withText(store.verdicts.disagreements(), store.inputs)));
+    await judge.ask('score', textOf('<x/>'));
+    await judge.ask('grade', textOf('<x/>'));
     assert.match(calls[0] ?? '', /I5:\n- "Worked on it\."/);
     assert.doesNotMatch(calls[1] ?? '', /operator ruled/);
 });

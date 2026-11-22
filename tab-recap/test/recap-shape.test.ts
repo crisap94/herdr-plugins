@@ -7,7 +7,7 @@ import { parseText, textOf } from '#src/recap/domain/text.ts';
 
 const asText = brand<string, 'Text'>;
 const asCount = brand<number, 'Count'>;
-import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
+import { choice, fakeOutput, fakeRuntime, libraryHarness } from '#test/fakes/harness-runtime.ts';
 
 test('tidy: a line is at most 16 words, clipped with an ellipsis; bullets, bold and runs of spaces are tidied; a limit can be given', () => {
     const long = Array.from({ length: 30 }, (_, i) => `w${i}`).join(' ');
@@ -119,7 +119,6 @@ const opsOf = (text: string): number => (objectIn(asText(text)) as unknown as { 
 
 test('the operations contract survives every harness\'s way of handing the answer back', async () => {
     const { unfencedText } = await import('#src/adapters/job/prompts/recap-prompt.ts');
-    const { LibraryHarness } = await import('#src/adapters/harness/library.ts');
     const { RecapWriter } = await import('#src/adapters/job/writer.ts');
     const { requestOf } = await import('#test/support.ts');
     const answer = JSON.stringify({ ops: [{ op: 'add', section: 'now', text: 'running CI' }, { op: 'close', id: 'f2', why: 'done' }] });
@@ -127,7 +126,7 @@ test('the operations contract survives every harness\'s way of handing the answe
     for (const id of ['claude', 'codex', 'opencode'] as const) {
         for (const raw of [answer, fenced, `\n\n${fenced}\n`]) {
             const runtime = fakeRuntime({ scripts: { [id]: [fakeOutput({ text: raw })] } });
-            const written = await new RecapWriter(new LibraryHarness(runtime, id, 1000, undefined, true), { model: '', effort: 'default' }).write(requestOf());
+            const written = await new RecapWriter(libraryHarness(runtime, id, 1000, undefined, true), choice('', 'default')).write(requestOf());
             assert.ok(written.kind === 'written', id);
             assert.equal(opsOf(written.text), 2, id);
         }

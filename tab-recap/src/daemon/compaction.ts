@@ -10,7 +10,7 @@ import { BriefDesk } from '#src/recap/application/compaction-brief.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
 import type { Decider } from '#src/ports/decider.ts';
-import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
+import type { BriefWriter } from '#src/ports/compaction-briefs.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import { compactionPlanner } from '#src/adapters/capability/compaction-plans.ts';
 import type { PreCompacts } from '#src/adapters/hooks/pre-compacts.ts';
@@ -59,7 +59,7 @@ interface CompactionParts {
     readonly webs: CompactionWebs;
     readonly recaps: Pick<TabRecaps, 'refresh'>;
     readonly informer: Informer;
-    readonly briefs: () => CompactionBriefs | null;
+    readonly briefs: () => BriefWriter | null;
     readonly recent: LaneRecent;
     readonly coverageDecider: () => Decider | null;
     readonly decisions: AutocompactRecords;
@@ -79,7 +79,7 @@ export function coverageOf(decider: Decider | null, tuning: () => AutocompactTun
 
 export function wireCompaction(parts: CompactionParts): Compaction {
     const { fleet, informer, recaps } = parts;
-    const brief = new BriefDesk({ writer: (): CompactionBriefs | null => parts.briefs(), log: (line: Text): void => { parts.log(line); } });
+    const brief = new BriefDesk({ writer: (): BriefWriter | null => parts.briefs(), log: (line: Text): void => { parts.log(line); } });
     return new Compaction({
         compactionPlans: compactionPlanner,
         agents: fleet.agents(), notifier: fleet, records: parts.records, boundaries: parts.boundaries, ledger: parts.ledger, compactions: parts.compactions, settling: parts.settling, webs: parts.webs, log: (line: Text) => { parts.log(line); },

@@ -15,7 +15,6 @@ import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcri
 import { compactionPlanner } from '#src/adapters/capability/compaction-plans.ts';
 import { daemonTranscriptRegistry, IN_FLIGHT_CAPABILITIES, modalTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
 import { ScreenTranscripts } from '#src/adapters/transcripts/screen.ts';
-import { CustomHarness } from '#src/adapters/harness/custom.ts';
 import { wireAutocompact } from '#src/daemon/autocompact.ts';
 import { enumeratorFor } from '#src/daemon/backends.ts';
 import { must } from '#src/protocol/result.ts';
@@ -50,7 +49,6 @@ import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { InFlightReason } from '#src/ports/autocompact-reasons.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
 import type { DeciderPort } from '#src/ports/decider.ts';
-import type { Harness } from '#src/ports/harness.ts';
 import type { Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { ScreenOutcome, ScreenReader } from '#src/ports/screens.ts';
 import { UNREAD, sourcePathOf } from '#src/ports/transcripts.ts';
@@ -64,7 +62,7 @@ import type { LeaseSpy, World } from '#test/fakes/handoff-delivery.ts';
 import { harness as handoffHarness, NOW, recapOf, request, SOURCE_LISTED, T1, TAB, TARGET, TEXT, task } from '#test/fakes/handoff-flow-harness.ts';
 import type { FlowWorld } from '#test/fakes/handoff-flow-harness.ts';
 import { fact } from '#test/fakes/fact-at.ts';
-import { fakeRuntime } from '#test/fakes/harness-runtime.ts';
+import { choice, customHarness, fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import { textOf } from './fakes/decider-fixtures.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '#src/recap/domain/brand.ts';
@@ -328,8 +326,8 @@ test('every BACKEND_IDS id has a maker that names itself; custom has no model or
     for (const id of BACKEND_IDS.filter((each) => each !== 'custom')) {
         assert.notEqual(enumeratorFor({ ...config, backend: id }, [id], must(parseDirectory(dir)), runtime), null, `${id} enumerates`);
     }
-    const harness: Harness = new CustomHarness('my-llm --model x', dir, 1000);
-    assert.equal(harness.label({ model: 'gpt-x', effort: 'high' }), 'custom/my-llm');
+    const harness = customHarness('my-llm --model x', dir, 1000);
+    assert.equal(harness.label(choice('gpt-x', 'high')), 'custom/my-llm');
 });
 
 test('gemini refuses: not compactable, `no reader for gemini` in the recap, and autocompact stops the lane in-flight (with the kind enabled)', async () => {

@@ -6,10 +6,11 @@ import { join } from 'node:path';
 import { appendJsonl, doneKeys, readJsonl } from '#src/adapters/experiment/io.ts';
 import { Labeller } from '#src/adapters/experiment/labeller.ts';
 import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
-import type { Harness } from '#src/ports/harness.ts';
+import type { HarnessPort } from '#src/ports/harness.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseUsd } from '#src/recap/domain/usd.ts';
 
 const txt = (value: string): Text => must(parseText(value));
 const fsp = (value: string): FsPath => must(parseFsPath(value));
@@ -31,7 +32,7 @@ test('io: a missing file reads as empty; appended records round-trip and doneKey
 
 test('labeller: a usable first reply is returned with one attempt and no log line', async () => {
     const lines: Text[] = [];
-    const harness: Harness = { id: 'fake', label: () => 'fake', limit: null, run: async () => ({ kind: 'ran', text: 'yes', costUsd: 0 }) };
+    const harness: HarnessPort = { id: txt('fake'), label: () => txt('fake'), limit: null, run: async () => ({ kind: 'ran', text: txt('yes'), costUsd: must(parseUsd(0)) }) };
     const labeller = new Labeller({} as HarnessRuntime, 2, (line) => lines.push(line), undefined, () => harness);
     const made = await labeller.ask(txt('instructions'), {}, (reply) => (reply === 'yes' ? 1 : null), txt('abc'));
     assert.equal(made.answer, 1);

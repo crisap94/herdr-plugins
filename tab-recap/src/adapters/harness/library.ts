@@ -1,9 +1,10 @@
 import { CapabilityName, Engine, isUsable, TOOLS_OFF } from '@stateforge-labs/harness-adapters/runtime';
 import type { Capabilities, ConfinementCell as LibraryConfinementCell, Effort as LibraryEffort, HarnessId, JsonObject, Runtime, RunFailure, RunOutput } from '@stateforge-labs/harness-adapters/runtime';
 import { ANSWER_SCHEMAS } from '#src/adapters/job/prompts/answer-schemas.ts';
-import type { ConfinementCell, HarnessAsk, HarnessChoice, HarnessPort, HarnessRun, RanText, StructuredSupport, ToolSupport } from '#src/ports/harness.ts';
+import type { BackendHarness, ConfinementCell, HarnessAsk, HarnessChoice, HarnessRun, RanText, StructuredSupport, ToolSupport } from '#src/ports/harness.ts';
 import { unknown, exitCodeOf } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
+import { uncheckedBackendText, type BackendText } from '#src/recap/domain/ids.ts';
 import { MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
@@ -16,7 +17,6 @@ import { scrubbedFrom } from '../os/process/control.ts';
 import { LIBRARY_HARNESS } from './library-constants.ts';
 
 export { LIBRARY_IDS } from './library-constants.ts';
-export { LibraryHarness } from './legacy.ts';
 
 export type HarnessRuntime = Pick<Runtime, 'headless' | 'promptLimit' | 'capabilities' | 'policyNotice'>;
 
@@ -52,8 +52,8 @@ function ranOf(output: RunOutput): RanText {
     return { kind: 'ran', text: must(parseText(text)), costUsd: must(parseUsd(output.cost.usd ?? 0)), costBasis: output.cost.basis, confinement: output.confinement.map(cellOf) };
 }
 
-export class LibraryHarnessPort implements HarnessPort {
-    readonly id: Text;
+export class LibraryHarnessPort implements BackendHarness {
+    readonly id: BackendText;
     readonly limit: Count | null;
     readonly structured: StructuredSupport;
     readonly tools: ToolSupport = 'none';
@@ -66,7 +66,7 @@ export class LibraryHarnessPort implements HarnessPort {
     constructor(runtime: HarnessRuntime, library: LibraryId, timeoutMs: Milliseconds, jobTag?: JobTag, claudeAck: Acknowledgement = 'unacknowledged') {
         this.runtime = runtime;
         this.library = library;
-        this.id = must(parseText(library));
+        this.id = uncheckedBackendText(library);
         const limit = runtime.promptLimit(library);
         this.limit = limit === null ? null : must(parseCount(limit));
         this.structured = structuredOf(runtime.capabilities(library));

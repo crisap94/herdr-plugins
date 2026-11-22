@@ -14,7 +14,6 @@
   },
   "src/adapters/experiment/labeller.ts": {
     "property": 1,
-    "container": 5,
     "parameter": 1
   },
   "src/adapters/experiment/point.ts": {
@@ -27,9 +26,6 @@
     "property": 2,
     "assertion": 1
   },
-  "src/adapters/harness/legacy.ts": {
-    "legacy": 8
-  },
   "src/adapters/herdr/column-panes.ts": {
     "container": 1
   },
@@ -40,22 +36,8 @@
   "src/adapters/herdr/legacy.ts": {
     "legacy": 7
   },
-  "src/adapters/job/brief.ts": {
-    "parameter": 2,
-    "container": 1
-  },
-  "src/adapters/job/curator.ts": {
-    "container": 1
-  },
-  "src/adapters/job/enumerator.ts": {
-    "container": 1
-  },
   "src/adapters/job/judge.ts": {
-    "parameter": 1,
-    "container": 2
-  },
-  "src/adapters/job/legacy.ts": {
-    "legacy": 2
+    "container": 1
   },
   "src/adapters/job/prompts/legacy.ts": {
     "legacy": 1

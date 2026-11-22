@@ -1,7 +1,7 @@
+import { choice, customHarness } from '#test/fakes/harness-runtime.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { RUBRIC } from '#src/adapters/job/prompts/rubric.ts';
-import { CustomHarness } from '#src/adapters/harness/custom.ts';
 import { HarnessCurator } from '#src/adapters/job/curator.ts';
 import type { Curated, CuratorMode, Curators } from '#src/ports/curators.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
@@ -188,8 +188,8 @@ dtdTest('the reconcile document is valid against the DTD, holds only the open fa
 });
 
 test('the curator harness reconciles with its own instructions, and tells the story with the old ones', async () => {
-    const echo = new CustomHarness('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
-    const curator = new HarnessCurator(echo, { model: '', effort: 'medium' });
+    const echo = customHarness('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
+    const curator = new HarnessCurator(echo, choice('', 'medium'));
     const reconciled = await curator.write(must(parseText('<curator_input version="1" mode="reconcile"/>')), 'reconcile');
     assert.ok(reconciled.kind === 'curated' && reconciled.text.includes('Never add a fact.') && reconciled.text.includes('is NOT wrong') && !reconciled.text.includes('at most 120 words'));
     const told = await curator.write(must(parseText('<curator_input version="1"/>')));

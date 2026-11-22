@@ -1,9 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { deciderPortOf } from '#src/adapters/job/decider.ts';
+import { HarnessPortDecider } from '#src/adapters/job/decider.ts';
 import type { DeciderPort, Noul } from '#src/ports/decider.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import type { Harness, HarnessCall, Ran } from '#src/ports/harness.ts';
+import type { HarnessAsk, HarnessPort, HarnessRun } from '#src/ports/harness.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseUsd } from '#src/recap/domain/usd.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { documentOf, noulOf, textOf } from './fakes/decider-fixtures.ts';
@@ -13,14 +16,14 @@ const questions: ReadonlyMap<Text, Noul> = new Map<Text, Noul>([
     [textOf('stuck'), noulOf('same step failing?', 'retries', 'progress')],
 ]);
 
-function decider(reply: Ran | string, limit: number | null = null): { decider: DeciderPort; calls: HarnessCall[] } {
-    const calls: HarnessCall[] = [];
-    const harness: Harness = {
-        id: 'fake', limit, label: (settings) => `fake/${settings.model || 'default'}`,
-        run: (call): Promise<Ran> => { calls.push(call); return Promise.resolve(typeof reply === 'string' ? { kind: 'ran', text: reply, costUsd: 0.0004 } : reply); },
+function decider(reply: HarnessRun | string, limit: number | null = null): { decider: DeciderPort; calls: HarnessAsk[] } {
+    const calls: HarnessAsk[] = [];
+    const harness: HarnessPort = {
+        id: textOf('fake'), limit: limit === null ? null : must(parseCount(limit)), label: (settings) => textOf(`fake/${settings.model || 'default'}`),
+        run: (call): Promise<HarnessRun> => { calls.push(call); return Promise.resolve(typeof reply === 'string' ? { kind: 'ran', text: textOf(reply), costUsd: must(parseUsd(0.0004)) } : reply); },
     };
     let tick = 0;
-    return { decider: deciderPortOf(harness, { model: 'haiku', effort: 'low' }, () => instant((tick += 2200))), calls };
+    return { decider: new HarnessPortDecider(harness, { model: textOf('haiku'), effort: 'low' }, () => instant((tick += 2200))), calls };
 }
 
 test('harness decider: one call, the state as JSON input, every question listed; the probabilities come back with the harness cost', async () => {
@@ -29,7 +32,7 @@ test('harness decider: one call, the state as JSON input, every question listed;
     assert.equal(found.kind, 'decided');
     assert.deepEqual([Object.fromEntries(found.answers), found.costUsd, found.tookMs, found.model, ask.label], [{ closes_request: 0.92, stuck: 0.03 }, 0.0004, 2200, 'fake/haiku', 'fake · haiku · low']);
     assert.ok(found.tokens > 0);
-    const [call] = calls as [HarnessCall];
+    const [call] = calls as [HarnessAsk];
     assert.equal(calls.length, 1);
     assert.equal(call.input, '{"goal":"merge"}');
     assert.match(call.instructions, /- closes_request: Does last_reply[^\n]*\n {2}true when: it reports done\n {2}false when: it is an intermediate step\n- stuck: same step failing\?/);

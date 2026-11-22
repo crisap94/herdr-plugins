@@ -1,8 +1,9 @@
 import { mkdirSync } from 'node:fs';
 import { basename } from 'node:path';
-import type { HarnessAsk, HarnessPort, HarnessRun } from '#src/ports/harness.ts';
+import type { BackendHarness, HarnessAsk, HarnessRun } from '#src/ports/harness.ts';
 import { unknown, exitCodeOf } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
+import { uncheckedBackendText } from '#src/recap/domain/ids.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
@@ -10,9 +11,7 @@ import { duration, type Milliseconds } from '#src/recap/domain/time.ts';
 import { parseUsd } from '#src/recap/domain/usd.ts';
 import { run, scrubbedEnv } from '../os/process/control.ts';
 
-export { CustomHarness } from './legacy.ts';
-
-const CUSTOM_ID = must(parseText('custom'));
+const CUSTOM_ID = uncheckedBackendText('custom');
 const FREE = must(parseUsd(0));
 
 export function splitArgv(line: Text): Text[] {
@@ -38,7 +37,7 @@ export function splitArgv(line: Text): Text[] {
     return started ? [...argv, must(parseText(word))] : argv;
 }
 
-export class CustomHarnessPort implements HarnessPort {
+export class CustomHarnessPort implements BackendHarness {
     readonly id = CUSTOM_ID;
     readonly limit = null;
     private readonly argv: readonly Text[];

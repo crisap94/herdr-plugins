@@ -1,3 +1,4 @@
+import type { BackendText } from '#src/recap/domain/ids.ts';
 import type { ConfinementCell, ConfinementNoticeLine, ConfinementState, CostBasis } from '#src/recap/domain/confinement-notice.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
@@ -5,8 +6,6 @@ import type { Text } from '#src/recap/domain/text.ts';
 import type { Milliseconds } from '#src/recap/domain/time.ts';
 import type { Usd } from '#src/recap/domain/usd.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
-
-export type { Harness, HarnessCall, HarnessSettings, Ran } from './legacy.ts';
 
 export type AnswerSchema = 'writer' | 'reconcile' | 'story';
 
@@ -59,3 +58,5 @@ export interface HarnessPort<Id extends Text = Text> {
     readonly tools?: ToolSupport;
     run(call: HarnessAsk, settings: HarnessChoice): Promise<HarnessRun>;
 }
+
+export type BackendHarness = HarnessPort<BackendText>;

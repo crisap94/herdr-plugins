@@ -4,7 +4,7 @@ import { HarnessJudge } from '#src/adapters/job/judge.ts';
 import { HarnessCurator } from '#src/adapters/job/curator.ts';
 import { HarnessEnumerator } from '#src/adapters/job/enumerator.ts';
 import { RecapWriter } from '#src/adapters/job/writer.ts';
-import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
+import type { BriefWriter } from '#src/ports/compaction-briefs.ts';
 import type { Decider, DeciderPort } from '#src/ports/decider.ts';
 import type { Curators } from '#src/ports/curators.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
@@ -68,7 +68,7 @@ export function enumeratorFor(config: Config, available: Available, work: Direct
     return id === null || !enumeratesJob(id) ? null : new HarnessEnumerator(MAKERS[id](config, work, runtime, jobTagFor(config, 'enumerator'), log), { model: config.models[id], effort: 'low' });
 }
 
-export function briefFor(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): CompactionBriefs | null {
+export function briefFor(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): BriefWriter | null {
     const placed = placementFor(config.brief, { backend: config.backend, models: config.models }, available);
     return placed === null ? null : new HarnessBrief(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'compactionBrief'), log), { model: placed.model, effort: placed.effort });
 }
@@ -126,7 +126,7 @@ export class Backends {
         await this.notifier.notify(textOf('Tab Recap'), textOf(`No recap writer found — ${NONE}`));
     }
 
-    brief(): CompactionBriefs | null {
+    brief(): BriefWriter | null {
         return briefFor(loadConfig(), this.available, this.work, this.runtime, this.log);
     }
 

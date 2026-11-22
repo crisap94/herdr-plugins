@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { deciderPortOf } from '#src/adapters/job/decider.ts';
+import { HarnessPortDecider } from '#src/adapters/job/decider.ts';
 import { JevPortDecider } from '#src/adapters/job/jev-decider.ts';
 import { jevKey } from '#src/adapters/job/jev-key.ts';
 import type { Decider, DeciderPort } from '#src/ports/decider.ts';
@@ -11,18 +11,18 @@ import type { Config } from './config.ts';
 import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
 import { jobTagFor, MAKERS } from './harness-makers.ts';
 import type { JobCall, JobTag } from '#src/recap/domain/job-tag.ts';
-import type { Harness, LogLine } from '#src/ports/harness.ts';
+import type { BackendHarness, LogLine } from '#src/ports/harness.ts';
 import type { BackendId } from '#src/recap/domain/backend.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
 
-type HarnessFor = (harness: BackendId, tag: JobTag | undefined) => Harness<BackendId>;
+type HarnessFor = (harness: BackendId, tag: JobTag | undefined) => BackendHarness;
 
 function harnessDeciderFor(config: Config, job: JobSetting, available: readonly BackendId[], harnessFor: HarnessFor, call: JobCall): DeciderPort | null {
     const placed = placementFor(job, { backend: config.backend, models: config.models }, available);
-    return placed === null ? null : deciderPortOf(harnessFor(placed.harness, jobTagFor(config, call)), { model: placed.model, effort: placed.effort });
+    return placed === null ? null : new HarnessPortDecider(harnessFor(placed.harness, jobTagFor(config, call)), { model: placed.model, effort: placed.effort });
 }
 
 const readKeyFile = (path: FsPath): Text | null => {

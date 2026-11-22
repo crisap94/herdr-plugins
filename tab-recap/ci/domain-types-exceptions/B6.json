@@ -26,12 +26,5 @@
     "function": "repoOf",
     "parameter": "cwd",
     "reason": "callback: the LaneRepo port of packages/session-ledger/src/ports/legacy.ts, frozen, fixes repoOf(cwd: string)"
-  },
-  {
-    "class": "callback",
-    "file": "src/adapters/experiment/arms.ts",
-    "function": "<anonymous>",
-    "parameter": null,
-    "reason": "callback: the harness factory of harnessArms and the Jev decider key closure in deciderOf, both fixed by the port they feed"
   }
 ]

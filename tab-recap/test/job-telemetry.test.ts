@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
-import { LibraryHarness } from '#src/adapters/harness/library.ts';
+import { ask, choice, fakeOutput, fakeRuntime, libraryHarness } from '#test/fakes/harness-runtime.ts';
 import { mergeJobAttributes, SCRUBBED_ENV_NAMES, scrubEnvironment, scrubbedEnv, serializeJobAttributes } from '#src/adapters/os/process/control.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { JOB_TAGS } from '#src/recap/domain/job-tag.ts';
@@ -53,10 +52,10 @@ test('tagging on leaves the parent environment unchanged', () => {
 
 test('the tagged library harnesses add the job resource attribute to the environment they hand the runtime', async () => {
     const runtime = fakeRuntime({ scripts: { claude: [fakeOutput({ text: 'ok' })], codex: [fakeOutput({ text: 'ok' })], opencode: [fakeOutput({ text: 'ok' })] } });
-    const settings = { model: '', effort: 'low' } as const;
-    await new LibraryHarness(runtime, 'claude', 1000, 'recap-writer', true).run({ input: 'in', instructions: 'do' }, settings);
-    await new LibraryHarness(runtime, 'codex', 1000, 'judge').run({ input: 'in', instructions: 'do' }, settings);
-    await new LibraryHarness(runtime, 'opencode', 1000, 'curator').run({ input: 'in', instructions: 'do' }, settings);
+    const settings = choice('', 'low');
+    await libraryHarness(runtime, 'claude', 1000, 'recap-writer', true).run(ask('do', 'in'), settings);
+    await libraryHarness(runtime, 'codex', 1000, 'judge').run(ask('do', 'in'), settings);
+    await libraryHarness(runtime, 'opencode', 1000, 'curator').run(ask('do', 'in'), settings);
     const seen = runtime.calls.map((each) => {
         const env = each.options.env;
         return env?.kind === 'inherit' && env.transform !== undefined ? env.transform({ OTEL_RESOURCE_ATTRIBUTES: 'service.name=parent' })['OTEL_RESOURCE_ATTRIBUTES'] : undefined;

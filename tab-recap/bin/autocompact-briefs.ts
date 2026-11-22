@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { BRIEF_INSTRUCTIONS } from '#src/adapters/job/prompts/brief-instructions.ts';
 import { CLAUDE_KIND } from '#src/adapters/transcripts/claude/transcripts.ts';
-import { LIBRARY_IDS, LibraryHarness } from '#src/adapters/harness/library.ts';
+import { LIBRARY_IDS, LibraryHarnessPort } from '#src/adapters/harness/library.ts';
 import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
 import { readPoints } from '#src/adapters/experiment/data.ts';
 import { appendJsonl, doneKeys } from '#src/adapters/experiment/io.ts';
@@ -20,6 +20,7 @@ import { parseCount } from '#src/recap/domain/count.ts';
 import { parseFactIndex } from '#src/recap/domain/fact-index.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
+import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 const asText = (value: string): Text => must(parseText(value));
 const asFsPath = (value: string): FsPath => must(parseFsPath(value));
@@ -41,11 +42,11 @@ export async function labelBriefs(dir: string, runtime: HarnessRuntime): Promise
     const [file, log] = [join(dir, 'briefs.jsonl'), (line: string): void => { console.error(`${new Date().toISOString()} ${line}`); }];
     const done = doneKeys(asText(file), asText('id'));
     const todo = briefPoints(readPoints(asText(join(dir, 'corpus.jsonl')))).filter((point) => !done.has(asText(point.id)));
-    const writers = Array.from({ length: 6 }, () => new HarnessBrief(new LibraryHarness(runtime, LIBRARY_IDS.codex, 15 * 60_000), LABELLER));
+    const writers = Array.from({ length: 6 }, () => new HarnessBrief(new LibraryHarnessPort(runtime, LIBRARY_IDS.codex, uncheckedMilliseconds(15 * 60_000)), LABELLER));
     const labeller = new Labeller(runtime, 6, log);
     await pooledBy(todo, must(parseCount(6)), async (point, _index, lane) => {
         const began = Date.now();
-        const written = await (writers[lane] as HarnessBrief).write(documentOf(point));
+        const written = await (writers[lane] as HarnessBrief).write(textOf(documentOf(point)));
         if (isUnknown(written)) { log(`${point.id.slice(0, 8)}: no brief (${saying(written.why)})`); return; }
         const facts = factsOf(point.history);
         const asked = facts.map((fact, n) => ({ n, ...fact }));

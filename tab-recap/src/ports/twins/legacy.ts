@@ -37,14 +37,6 @@ export type Capability<Value, Why extends string> =
 
 export const unsupportedCapability = <Why extends string>(why: Why): Capability<never, Why> => ({ kind: 'unsupported', why });
 
-export type Briefed = { readonly kind: 'briefed'; readonly text: string } | Unknown;
-
-export interface CompactionBriefs {
-    readonly backend: string;
-    readonly job: string;
-    write(document: string, correction?: string): Promise<Briefed>;
-}
-
 export interface Note {
     readonly label: string;
     readonly at: number | null;
