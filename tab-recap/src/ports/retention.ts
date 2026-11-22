@@ -2,8 +2,6 @@ import type { Count } from '#src/recap/domain/count.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 
-export type { Removed, Retention } from './twins/runs/legacy.ts';
-
 export interface RemovedCounts {
     readonly runs: Count;
     readonly chapters: Count;

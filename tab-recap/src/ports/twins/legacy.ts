@@ -51,11 +51,6 @@ export interface CompactionPlans {
     forKind(rawKind: string, guidance: string): CompactionPlanResult;
 }
 
-export interface ConfigPaths {
-    readonly configDir: string;
-    readonly stateDir: string;
-}
-
 export interface ContextWindows {
     windowOf(kind: string): WindowOf;
 }

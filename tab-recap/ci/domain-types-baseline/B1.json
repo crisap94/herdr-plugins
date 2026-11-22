@@ -6,10 +6,10 @@
     "legacy": 3
   },
   "src/ports/twins/legacy.ts": {
-    "legacy": 101
+    "legacy": 99
   },
   "src/ports/twins/runs/legacy.ts": {
-    "legacy": 63
+    "legacy": 54
   },
   "src/ports/twins/verdicts/legacy.ts": {
     "legacy": 21

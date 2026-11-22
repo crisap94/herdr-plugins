@@ -1,7 +1,7 @@
 import { instant } from '#src/recap/domain/time.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { HandoffAnswers } from '#src/ports/handoff-answers.ts';
+import type { HandoffAnswerStore } from '#src/ports/handoff-answers.ts';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { memoryStore } from './db/support.ts';
@@ -9,7 +9,7 @@ import { MemoryHandoffAnswers } from './fakes/handoff-answers.ts';
 
 interface Subject {
     readonly name: string;
-    readonly make: (clock: { now: number }) => HandoffAnswers;
+    readonly make: (clock: { now: number }) => HandoffAnswerStore;
 }
 
 const subjects: readonly Subject[] = [
@@ -51,7 +51,7 @@ for (const { name, make } of subjects) {
         answers.answerHandoff(old, { kind: 'delivered' });
         clock.now = 50;
         answers.answerHandoff(recent, { kind: 'delivered' });
-        answers.prune(50);
+        answers.prune(instant(50));
         assert.equal(answers.handoffAnswer(old), null);
         assert.equal(answers.handoffAnswer(recent)?.at, 50);
     });

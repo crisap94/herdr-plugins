@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { HandoffRunner } from '#src/daemon/handoff.ts';
-import type { HandoffAnswerRow, HandoffAnswers } from '#src/ports/handoff-answers.ts';
+import type { HandoffAnswerRecord, HandoffAnswerStore } from '#src/ports/handoff-answers.ts';
 import type { HandoffRequestRow } from '#src/ports/requests.ts';
 import { unrendered } from '#src/recap/application/handoff-flow.ts';
 import { HandoffMirror } from '#src/recap/application/handoff-mirror.ts';
@@ -23,14 +23,14 @@ const HID: HandoffId = handoffIdOf(new Uint8Array(16).fill(7));
 
 const events: LaneEvents = { lane: (): void => undefined, inWorkspace: (): void => undefined };
 
-class MemoryAnswers implements HandoffAnswers {
+class MemoryAnswers implements HandoffAnswerStore {
     readonly rows = new Map<HandoffId, StoredHandoffOutcome>();
 
     answerHandoff(id: HandoffId, outcome: StoredHandoffOutcome): void {
         this.rows.set(id, outcome);
     }
 
-    handoffAnswer(): HandoffAnswerRow | null {
+    handoffAnswer(): HandoffAnswerRecord | null {
         return null;
     }
 
