@@ -32,4 +32,4 @@ export function deciderOf(arm: ArmName, runtime: HarnessRuntime): Decider {
     return new HarnessDecider(make(runtime), settings);
 }
 
-export const isArm = (name: string): name is ArmName => ARMS.some((arm) => arm === name);
+export const isArm = (input: unknown): input is ArmName => typeof input === 'string' && ARMS.some((arm) => arm === input);

@@ -4,7 +4,7 @@ import { promises as fsp, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { addRemote, init, resolveRef } from 'isomorphic-git';
 import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { duration, instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { makeRepo, scratch } from './fixtures/git-repo.ts';
 
@@ -96,7 +96,7 @@ test('cached per cwd until the TTL runs out; concurrent askers share one lookup'
     const repo = await makeRepo('lane-cache-', { 'a.txt': 'x\n' });
     try {
         let now = 0;
-        const repos = new GitLaneRepo({ now: (): Instant => instant(now) }, 1000);
+        const repos = new GitLaneRepo({ now: (): Instant => instant(now) }, duration(1000));
         const [first, second] = await Promise.all([repos.repoOf(repo.root), repos.repoOf(repo.root)]);
         assert.equal(first, second);
         writeFileSync(join(repo.root, '.git', 'HEAD'), 'ref: refs/heads/other\n');

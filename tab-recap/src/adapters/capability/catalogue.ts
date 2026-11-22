@@ -1,37 +1,57 @@
 import { stripClaudeContextSuffix } from '@stateforge-labs/harness-adapters/claude';
 import { opencodeModelsFile, readOpencodeCatalogue } from '@stateforge-labs/harness-adapters/opencode';
 import type { OpenCodeCatalogue } from '@stateforge-labs/harness-adapters/opencode';
-import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
+import type { ModelWindows } from '#src/ports/model-catalogue.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { countFromLibrary } from './legacy.ts';
+import type { Count } from '#src/recap/domain/count.ts';
+import { parseFsPath } from '#src/recap/domain/fs-path.ts';
+import type { FsPath } from '#src/recap/domain/fs-path.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+
+export { LocalCatalogue } from './legacy.ts';
 
 const ANTHROPIC = 'anthropic';
 const SEPARATOR = '/';
 
-export class LocalCatalogue implements ModelCatalogue {
-    private readonly file: string;
+export interface Candidate {
+    readonly provider: Text;
+    readonly model: Text;
+}
+
+const candidate = (provider: Text, model: Text): Candidate => ({ provider, model });
+
+export function candidatesOf(catalogue: OpenCodeCatalogue, model: Text): readonly Candidate[] {
+    const id = stripClaudeContextSuffix(model);
+    const slash = id.indexOf(SEPARATOR);
+    if (slash > 0) {
+        return [candidate(must(parseText(id.slice(0, slash))), must(parseText(id.slice(slash + 1))))];
+    }
+    const bare = must(parseText(id));
+    return [ANTHROPIC, ...catalogue.providers().filter((name) => name !== ANTHROPIC)].map((name) => candidate(must(parseText(name)), bare));
+}
+
+export class CatalogueWindows implements ModelWindows {
+    private readonly file: FsPath;
     private loaded: OpenCodeCatalogue | null | undefined = undefined;
 
-    constructor(file = opencodeModelsFile()) {
+    constructor(file: FsPath = must(parseFsPath(opencodeModelsFile()))) {
         this.file = file;
     }
 
-    private catalogue(): OpenCodeCatalogue | null {
+    opened(): OpenCodeCatalogue | null {
         if (this.loaded === undefined) {
             this.loaded = readOpencodeCatalogue(this.file);
         }
         return this.loaded;
     }
 
-    windowOf(model: string): number | null {
-        const catalogue = this.catalogue();
+    windowOf(model: Text): Count | null {
+        const catalogue = this.opened();
         if (catalogue === null) {
             return null;
         }
-        const id = stripClaudeContextSuffix(model);
-        const slash = id.indexOf(SEPARATOR);
-        if (slash > 0) {
-            return catalogue.contextWindow(id.slice(0, slash), id.slice(slash + 1));
-        }
-        const order = [ANTHROPIC, ...catalogue.providers().filter((name) => name !== ANTHROPIC)];
-        return order.map((name) => catalogue.contextWindow(name, id)).find((found) => found !== null) ?? null;
+        return candidatesOf(catalogue, model).map((one) => countFromLibrary(catalogue.contextWindow(one.provider, one.model))).find((found) => found !== null) ?? null;
     }
 }

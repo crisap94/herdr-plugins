@@ -1,30 +1,37 @@
 import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import type { HandoffPlan, HandoffPlanResult, LocatedBy, SettleTime } from '#src/recap/domain/handoff-plan.ts';
+import type { AgentKind } from '#src/recap/domain/ids.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
 import { duration } from '#src/recap/domain/time.ts';
-import type { HandoffPlans } from '#src/ports/handoff-plans.ts';
+import type { Duration } from '#src/recap/domain/time.ts';
+import type { Count } from '#src/recap/domain/count.ts';
+import type { HandoffPlanCatalogue } from '#src/ports/handoff-plans.ts';
 import { supported } from '#src/ports/capability.ts';
 import type { Capability } from '#src/ports/capability.ts';
 
+export { handoffPlans } from './legacy.ts';
+
 export const SETTLE_SOURCE = 'experiments/EXP-003-handoff-live/runs/R01-settle-and-handoff-proof/m4-trials.jsonl';
 
-const settleOf = (after: number, trials: number): SettleTime => ({ after: duration(after), evidence: { trials, source: SETTLE_SOURCE } });
+const settleOf = (after: Duration, trials: Count): SettleTime => ({ after, evidence: { trials, source: SETTLE_SOURCE } });
 
 const promptPlan = (settle: SettleTime, locatedBy: LocatedBy): HandoffPlan => ({ delivery: 'prompt', evidence: 'either', retry: 'none', settle, locatedBy });
 
 const HANDOFF_PLANS = {
-    claude: supported(promptPlan(settleOf(10_000, 130), 'session')),
-    codex: supported(promptPlan(settleOf(3_000, 130), 'directory')),
-    opencode: supported(promptPlan(settleOf(60_000, 77), 'directory')),
+    claude: supported(promptPlan(settleOf(duration(10_000), must(parseCount(130))), 'session')),
+    codex: supported(promptPlan(settleOf(duration(3_000), must(parseCount(130))), 'directory')),
+    opencode: supported(promptPlan(settleOf(duration(60_000), must(parseCount(77))), 'directory')),
 } satisfies Readonly<Record<RegisteredKind, Capability<HandoffPlan, 'no-plan'>>>;
 
-export const handoffPlans: HandoffPlans = {
-    forKind(rawKind: string): HandoffPlanResult {
-        const kind = registeredKindOf(rawKind);
-        if (kind === null) {
+export const handoffPlanner: HandoffPlanCatalogue = {
+    forKind(kind: AgentKind): HandoffPlanResult {
+        const registered = registeredKindOf(kind);
+        if (registered === null) {
             return { kind: 'unsupported', reason: 'no-plan' };
         }
-        const capability = HANDOFF_PLANS[kind];
+        const capability = HANDOFF_PLANS[registered];
         return capability.kind === 'supported' ? { kind: 'supported', plan: capability.value } : { kind: 'unsupported', reason: capability.why };
     },
 };

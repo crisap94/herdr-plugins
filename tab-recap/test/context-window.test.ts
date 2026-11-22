@@ -1,6 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { join } from 'node:path';
+import { writeFileSync } from 'node:fs';
 import { windowOfKind } from '#src/adapters/capability/context-window.ts';
+import { LocalCatalogue, claudeWindowOf, compactionPlans } from '#src/adapters/capability/legacy.ts';
+import { GitWorksiteReader } from '#src/adapters/git/legacy.ts';
+import { commitFiles, makeRepo, scratch } from './fixtures/git-repo.ts';
 import { contextOf } from '#src/recap/domain/compaction.ts';
 import type { Observed } from '#src/recap/domain/compaction.ts';
 import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
@@ -61,3 +66,52 @@ for (const row of rows) {
         assert.deepEqual(contextOf({ observed: row.observed, setting: row.setting }, windowOfKind(row.kind, catalogue)), row.expected, row.name);
     });
 }
+
+const seenOf = (model: string | null): Observed => ({ model, window: null, tokens: 1, peak: 1 });
+
+test('compaction with empty guidance still plans the bare command', () => {
+    const result = compactionPlans.forKind('claude', '');
+    assert.equal(result.kind, 'supported');
+    assert.equal('plan' in result ? result.plan.lines.length : 0, 1);
+    assert.equal(compactionPlans.forKind('codex', '').kind, 'supported');
+});
+
+test('an unknown or blank kind is still unsupported with its wording', () => {
+    assert.equal(compactionPlans.forKind('', '').kind, 'unsupported');
+    assert.equal(compactionPlans.forKind('gemini', 'x').kind, 'unsupported');
+});
+
+test('a catalogue window that is zero or fractional reaches the basis unchanged', () => {
+    for (const window of [0, 1000.5]) {
+        const catalogue: ModelCatalogue = { windowOf: () => window };
+        assert.deepEqual(windowOfKind('opencode', catalogue)(seenOf('m')), { window, source: 'catalogue', sizes: [] });
+        assert.equal(claudeWindowOf(catalogue)(seenOf('m'))?.window, window);
+    }
+});
+
+test('the local catalogue returns a fractional window and tolerates a blank file name', () => {
+    const dir = scratch('catalogue-');
+    try {
+        const file = join(dir.root, 'models.json');
+        writeFileSync(file, JSON.stringify({ anthropic: { models: { m: { limit: { context: 1000.5 } } } } }));
+        assert.equal(new LocalCatalogue(file).windowOf('m'), 1000.5);
+        assert.equal(new LocalCatalogue('   ').windowOf('m'), null);
+        assert.equal(new LocalCatalogue('').windowOf('m'), null);
+    } finally {
+        dir.clean();
+    }
+});
+
+test('a commit with an empty subject is still a commit, and a blank directory is not found', async () => {
+    const repo = await makeRepo('legacy-empty-subject-', { 'a.txt': 'x\n' });
+    try {
+        const reader = new GitWorksiteReader();
+        await commitFiles(repo.root, { 'b.txt': 'y\n' }, '\n');
+        const found = await reader.lastCommit(repo.root);
+        assert.equal(found.kind, 'commit');
+        assert.equal('subject' in found ? found.subject : null, '');
+        assert.deepEqual(await reader.lastCommit(''), { kind: 'unknown', why: { why: 'not-found', what: 'directory' } });
+    } finally {
+        repo.clean();
+    }
+});

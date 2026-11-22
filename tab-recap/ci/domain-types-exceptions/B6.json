@@ -75,5 +75,33 @@
     "function": "readersOf",
     "parameter": null,
     "reason": "callback: the TranscriptRegistry port, frozen with frozen port: packages/session-ledger/src/ports/legacy.ts fixes readers: Readonly<Record<string, Transcripts>>"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/git/lane-repo.ts",
+    "function": "repoOf",
+    "parameter": "cwd",
+    "reason": "callback: the LaneRepo port of packages/session-ledger/src/ports/legacy.ts, frozen, fixes repoOf(cwd: string)"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/experiment/arms.ts",
+    "function": "readKeyFile",
+    "parameter": "path",
+    "reason": "callback: the read callback jevKey receives from the jev key config, a frozen (path: string) => string | null contract"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/experiment/arms.ts",
+    "function": "readKeyFile",
+    "parameter": null,
+    "reason": "callback: the read callback jevKey receives from the jev key config, a frozen (path: string) => string | null contract"
+  },
+  {
+    "class": "callback",
+    "file": "src/adapters/experiment/arms.ts",
+    "function": "<anonymous>",
+    "parameter": null,
+    "reason": "callback: the harness factory of harnessArms and the JevDecider key closure in deciderOf, both fixed by the port they feed"
   }
 ]
