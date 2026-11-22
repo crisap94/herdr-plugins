@@ -10,11 +10,11 @@ const SESSION_OF = {
     claude: supported(sessionFromAgentSession),
     codex: supported(sessionFromAgentSession),
     opencode: supported(sessionFromAgentSession),
-} satisfies Readonly<Record<RegisteredKind, Capability<(kind: string, agentSession: AgentSession) => SessionId, never>>>;
+} satisfies Readonly<Record<RegisteredKind, Capability<(agentSession: AgentSession) => SessionId, never>>>;
 
 export function sessionOfForKind(kind: string, agentSession: AgentSession): SessionId | null {
     const registered = registeredKindOf(textOf(kind));
-    if (registered === null) return sessionFromAgentSession(kind, agentSession);
+    if (registered === null) return sessionFromAgentSession(agentSession);
     const capability = SESSION_OF[registered];
-    return capability.kind === 'supported' ? capability.value(kind, agentSession) : null;
+    return capability.kind === 'supported' ? capability.value(agentSession) : null;
 }

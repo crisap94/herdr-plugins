@@ -2,9 +2,9 @@ import type { Clock } from '#src/ports/clock.ts';
 import type { ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { Retention } from '#src/ports/retention.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { countOf, parseCount } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
-import { cutoffOf } from '#src/recap/domain/retention.ts';
+import { cutoffAt } from '#src/recap/domain/retention.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 
 export interface SweepDeps {
@@ -16,7 +16,7 @@ export interface SweepDeps {
 }
 
 export function removeExpiredTabs(deps: SweepDeps, now: Instant): Count {
-    const cutoff = cutoffOf(now, deps.days());
+    const cutoff = cutoffAt(now, countOf(deps.days()));
     if (cutoff === null) {
         return must(parseCount(0));
     }

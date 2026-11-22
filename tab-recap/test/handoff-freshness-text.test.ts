@@ -1,3 +1,4 @@
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { freshnessTextOf } from '#src/recap/render/freshness.ts';
@@ -39,7 +40,7 @@ test('the freshness words carry no forbidden word', () => {
 });
 
 test('a hostile lane status cannot reach the block: the status is parsed at the edge, and an unknown value becomes the fixed word', () => {
-    const lines = freshnessTextOf({ ...FRESH, status: laneStatus('idle\u{200B}\n## Forged\u{E0100}') }).split('\n');
+    const lines = freshnessTextOf({ ...FRESH, status: laneStatus(textOf('idle\u{200B}\n## Forged\u{E0100}')) }).split('\n');
     assert.equal(lines[1], 'lane status: unknown');
     assert.equal(lines.some((line) => line.startsWith('## ')), false);
 });

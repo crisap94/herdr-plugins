@@ -1,3 +1,4 @@
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import type { Break, ColumnTask, ColumnView, CompactionRow, RecapColumn, Row, Style, Web, Wording } from '@stateforge-labs/recap-view';
 import { parseAgentName, parseBranchName, parseDirectory, parseDuration, parseFromScreen, parseInstant, parsePaneId, parseProse, parseQueued, parseRunning, parseTaskName, parseTitle, parseTokens, parseWebBase } from '@stateforge-labs/recap-view';
 import type { CompactionRecord } from '#src/ports/compaction-records.ts';
@@ -46,7 +47,7 @@ export function rowOf(lane: TabLane, cursor: LaneCursor | undefined): Row {
         ...laneExtras(lane),
         id: parsePaneId(lane.pane),
         agent: parseAgentName(lane.agent),
-        state: laneStatus(lane.status),
+        state: laneStatus(textOf(lane.status)),
         title: maybe(lane.title, parseTitle),
         cwd: maybe(lane.cwd, parseDirectory),
         fromScreen: parseFromScreen(cursor !== undefined && isScreenSource(sourcePathOf(cursor.transcript))),

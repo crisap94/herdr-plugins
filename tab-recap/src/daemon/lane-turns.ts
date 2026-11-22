@@ -1,3 +1,4 @@
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import type { CompactionRecords } from '#src/ports/compaction-records.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { parsePaneId, type PaneId } from '#src/recap/domain/ids.ts';
@@ -33,6 +34,6 @@ export function laneTurns(parts: LaneTurnsParts): (push: StatusPush) => void {
 export function parseStatusPush(turns: (push: StatusPush) => void, rawPane: unknown, rawStatus: unknown): void {
     const pane = parsePaneId(rawPane);
     if (pane.kind === 'ok') {
-        turns({ pane: pane.value, status: laneStatus(typeof rawStatus === 'string' ? rawStatus : undefined) });
+        turns({ pane: pane.value, status: laneStatus(typeof rawStatus === 'string' ? textOf(rawStatus) : undefined) });
     }
 }

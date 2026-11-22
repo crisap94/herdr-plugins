@@ -13,7 +13,7 @@ import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
 import { HINT_DEFAULT, hintOf, targetOf, windowOf } from '#src/recap/domain/compaction.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 import { BACKEND_IDS, environmentName, harnessLabels, modelOf, type BackendChoice, type BackendId, type EnvironmentName } from '#src/recap/domain/backend.ts';
-import { closedLaneDaysOrDefault, parseClosedLaneDays, tabKeepDaysOf } from '#src/recap/domain/retention.ts';
+import { closedLaneDaysOrDefault, parseClosedLaneDays, tabKeepCountOf } from '#src/recap/domain/retention.ts';
 import { effortOf } from '#src/recap/domain/effort.ts';
 import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
 import { parseHandoffRequests } from '#src/recap/domain/handoff-requests.ts';
@@ -27,10 +27,11 @@ import { closeEvidenceOr, DEFAULT_PIPELINE, parseCloseEvidence, pipelineOf } fro
 import { debounceOf } from '#src/recap/domain/debounce.ts';
 import { parsePacing, type Pacing } from '#src/recap/domain/pacing.ts';
 import { FULL_WRITER_VIEW, KEEP_NEWEST_RANGE, NEXT_HOURS_RANGE, keepNewestOf, nextHoursOf, prunedWriterView, type PrunedWriterView } from '#src/recap/domain/writer-view.ts';
-import { parseCount, parsePositiveCount, type Count, type PositiveCount } from '#src/recap/domain/count.ts';
+import { uncheckedRatio } from '#src/recap/domain/ids.ts';
+import { countOf, parseCount, parsePositiveCount, type Count, type PositiveCount } from '#src/recap/domain/count.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import { err, must, ok, type Result } from '#src/protocol/result.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, textOf as uncheckedText, type Text } from '#src/recap/domain/text.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
 import { parseAgentKind, type AgentKind } from '#src/recap/domain/ids.ts';
 import { numberIn } from '#src/recap/domain/legacy.ts';
@@ -160,17 +161,17 @@ export function recapLanguageSource(): LanguageSource {
 }
 
 const sizingFrom = (get: SettingGet): Sizing => ({
-    fraction: Math.min(0.6, numberIn(get('TAB_RECAP_WIDTH'), POSITIVE.min, POSITIVE.max) ?? 0.3),
-    minCols: numberIn(get('TAB_RECAP_MIN_COLS'), POSITIVE.min, POSITIVE.max) ?? 36,
-    maxCols: numberIn(get('TAB_RECAP_MAX_COLS'), POSITIVE.min, POSITIVE.max) ?? 64,
+    fraction: uncheckedRatio(Math.min(0.6, numberIn(get('TAB_RECAP_WIDTH'), POSITIVE.min, POSITIVE.max) ?? 0.3)),
+    minCols: countOf(numberIn(get('TAB_RECAP_MIN_COLS'), POSITIVE.min, POSITIVE.max) ?? 36),
+    maxCols: countOf(numberIn(get('TAB_RECAP_MAX_COLS'), POSITIVE.min, POSITIVE.max) ?? 64),
 });
 
 const listOf = (raw: Text | undefined): readonly Text[] | undefined => raw?.split(',').flatMap((item) => (item.trim() === '' ? [] : [must(parseText(item.trim()))]));
 
 const policyFrom = (get: SettingGet, screenAgents: readonly AgentKind[]): Policy => ({
     ...DEFAULT_POLICY,
-    kinds: [...new Set([...(listOf(get('TAB_RECAP_AGENTS')) ?? DEFAULT_POLICY.kinds), ...screenAgents])],
-    minTabCols: numberIn(get('TAB_RECAP_MIN_TAB_COLS'), POSITIVE.min, POSITIVE.max) ?? DEFAULT_POLICY.minTabCols,
+    kinds: [...new Set([...(listOf(get('TAB_RECAP_AGENTS')) ?? DEFAULT_POLICY.kinds), ...screenAgents.map((agent) => uncheckedText(agent))])],
+    minTabCols: countOf(numberIn(get('TAB_RECAP_MIN_TAB_COLS'), POSITIVE.min, POSITIVE.max) ?? DEFAULT_POLICY.minTabCols),
     giveUpFor: duration(numberIn(get('TAB_RECAP_GIVE_UP_MS'), POSITIVE.min, POSITIVE.max) ?? DEFAULT_POLICY.giveUpFor),
     closeGrace: duration(numberIn(get('TAB_RECAP_CLOSE_GRACE_MS'), POSITIVE.min, POSITIVE.max) ?? DEFAULT_POLICY.closeGrace),
     onlyTabs: listOf(get('TAB_RECAP_TABS')) ?? [],
@@ -232,7 +233,7 @@ export function loadSettings(): Settings {
         coverage: parseCoverageBy(get('TAB_RECAP_AUTOCOMPACT_COVERAGE_BY')),
         coverageJob: coverageJobOf(legacy),
         jev: jevOf(legacy),
-        keepDays: countOr(parseCount(tabKeepDaysOf(get('TAB_RECAP_KEEP_DAYS'))), must(parseCount(tabKeepDaysOf(undefined)))),
+        keepDays: tabKeepCountOf(get('TAB_RECAP_KEEP_DAYS')),
         closedLaneDays: closedLaneDaysOrDefault(parseClosedLaneDays(get('TAB_RECAP_CLOSED_LANE_DAYS'))),
         glow: GLOWS.find((choice) => choice === get('TAB_RECAP_GLOW')) ?? 'auto',
         timeoutMs: must(parseDuration(numberIn(get('TAB_RECAP_TIMEOUT_MS'), POSITIVE.min, POSITIVE.max) ?? 180_000)),

@@ -8,34 +8,7 @@
   "src/recap/domain/twins/lane/legacy.ts": {
     "legacy": 8
   },
-  "src/recap/domain/twins/layout/legacy.ts": {
-    "legacy": 21
-  },
-  "src/recap/domain/twins/policy/legacy.ts": {
-    "legacy": 11
-  },
-  "src/recap/domain/twins/retention/legacy.ts": {
-    "legacy": 4
-  },
-  "src/recap/domain/twins/session-identity/legacy.ts": {
-    "legacy": 1
-  },
-  "src/recap/domain/twins/status/legacy.ts": {
-    "legacy": 2
-  },
-  "src/recap/domain/twins/telemetry-tags/legacy.ts": {
-    "legacy": 1
-  },
-  "src/recap/domain/twins/text-collapse/legacy.ts": {
-    "legacy": 4
-  },
   "src/recap/domain/twins/values/legacy.ts": {
     "legacy": 18
-  },
-  "src/recap/domain/twins/visibility/legacy.ts": {
-    "legacy": 3
-  },
-  "src/recap/domain/twins/worksite/legacy.ts": {
-    "legacy": 10
   }
 }

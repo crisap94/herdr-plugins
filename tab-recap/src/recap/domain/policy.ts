@@ -1,16 +1,61 @@
 import { added, lanesOf, put, removed, tabsWithLanes, without } from './board.ts';
 import type { Board, Placement, Shape } from './board.ts';
-import type { TabId } from './ids.ts';
+import type { PaneId, TabId } from './ids.ts';
 import type { Intent } from './intent.ts';
 import { isHidden } from './visibility.ts';
 import { parseCount } from './count.ts';
+import type { Count } from './count.ts';
 import type { Presence } from './presence.ts';
 import { must } from '#src/protocol/result.ts';
-import { elapsed, instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import { lingering, type Policy } from './twins/policy/legacy.ts';
+import { duration, elapsed, instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import type { Duration, Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { REGISTERED_KINDS, kindsWith } from '@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts';
+import type { RegisteredKindTable } from '@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts';
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import type { Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 
-export * from './twins/policy/legacy.ts';
+export const ANY_KIND = textOf('*');
+
+export interface Policy {
+    readonly kinds: readonly Text[];
+    readonly minTabCols: Count;
+    readonly reopenLimit: Count;
+    readonly reopenWindow: Duration;
+    readonly giveUpFor: Duration;
+    readonly closeGrace: Duration;
+    readonly onlyTabs: readonly Text[];
+}
+
+export function defaultPolicyKinds<T extends RegisteredKindTable>(table: T): readonly (keyof T)[] {
+    return kindsWith(table, 'defaultPolicy');
+}
+
+export const DEFAULT_POLICY: Policy = {
+    kinds: defaultPolicyKinds(REGISTERED_KINDS).map((kind) => textOf(kind)),
+    minTabCols: must(parseCount(110)),
+    reopenLimit: must(parseCount(3)),
+    reopenWindow: duration(120_000),
+    giveUpFor: duration(600_000),
+    closeGrace: duration(30_000),
+    onlyTabs: [],
+};
+
+export const wantsKind = (policy: Policy, agent: Text): Presence => (policy.kinds.includes(ANY_KIND) || policy.kinds.includes(agent) ? 'present' : 'absent');
+
+export function screenKindsOf(setting: Text | undefined): readonly Text[] {
+    const names = (setting ?? '').toLowerCase().split(/[\s,]+/).map((name) => name.replace(/[^a-z0-9_-]/g, '')).filter((name) => name !== '');
+    return names.includes('all') ? [ANY_KIND] : [...new Set(names)].map(textOf);
+}
+
+export function screenSetting(setting: Text | undefined): Text {
+    const kinds = screenKindsOf(setting);
+    return kinds.includes(ANY_KIND) ? textOf('all') : textOf(kinds.join(','));
+}
+
+export function lingering(board: Board, pane: PaneId, now: Instant, policy: Policy): Presence {
+    const since = board.closing.get(pane);
+    return since !== undefined && elapsed(since, now) < policy.closeGrace ? 'present' : 'absent';
+}
 
 export function shapeFor(board: Board, tab: TabId, policy: Policy): Shape {
     const width = board.widths.get(tab);
@@ -24,8 +69,8 @@ function isGivenUp(board: Board, tab: TabId, now: Instant): Presence {
 
 export function deserves(board: Board, tab: TabId, now: Instant, policy: Policy): Presence {
     return (board.enabled
-        && !isHidden(board, tab)
-        && (policy.onlyTabs.length === 0 || policy.onlyTabs.includes(String(tab)))
+        && isHidden(board, tab) === 'absent'
+        && (policy.onlyTabs.length === 0 || policy.onlyTabs.includes(textOf(tab)))
         && lanesOf(board, tab).length > 0
         && isGivenUp(board, tab, now) === 'absent')
         ? 'present'
@@ -57,7 +102,7 @@ function closed(board: Board, now: Instant, policy: Policy): [Board, Intent[]] {
     const flips = (tab: TabId, placed: Placement): Presence =>
         placed.shape !== shapeFor(board, tab, policy) && isGivenUp(board, tab, now) === 'absent' ? 'present' : 'absent';
     const unwanted = (tab: TabId): Presence =>
-        !board.enabled || isHidden(board, tab) || lanesOf(board, tab).length === 0 ? 'present' : 'absent';
+        !board.enabled || isHidden(board, tab) === 'present' || lanesOf(board, tab).length === 0 ? 'present' : 'absent';
     const closing = new Map(board.closing);
     const intents: Intent[] = [];
     let next = board;
@@ -66,7 +111,7 @@ function closed(board: Board, now: Instant, policy: Policy): [Board, Intent[]] {
         if (!gone && isGivenUp(board, tab, now) === 'present') {
             closing.delete(placed.pane);
         }
-        if (!gone || lingering(board, placed.pane, now, policy)) {
+        if (!gone || lingering(board, placed.pane, now, policy) === 'present') {
             continue;
         }
         const retry: RetryStep = board.closing.has(placed.pane) ? retried(next, tab, now, policy) : { board: next, again: 'present', intents: [] };

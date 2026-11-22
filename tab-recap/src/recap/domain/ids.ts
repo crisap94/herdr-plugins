@@ -71,5 +71,11 @@ export function parseSessionPath(input: unknown): Result<SessionPath, ParseFailu
     return ok(brand<string, 'SessionPath'>(text.value));
 }
 
+export const uncheckedTabId = brand<string, 'TabId'>;
+
+export const uncheckedRatio = brand<number, 'Probability'>;
+
+export const uncheckedPaneId = brand<string, 'PaneId'>;
+
 export { parseAgentKind, parseCompactionId, parseDecisionId, parsePaneId, parseTabId } from './timing-ids.ts';
 export { agentKind, handoffId, paneId, sessionId, sessionIdFromAgentValue, sessionPath, sessionPathFromAgentValue, tabId, workspaceId } from './legacy.ts';

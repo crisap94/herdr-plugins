@@ -10,6 +10,7 @@ import { refusalOfTokens } from './token-refusal.ts';
 import { OWNERS } from '#src/recap/domain/token-registry.ts';
 import { parseAgentKind, parseTabId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { uncheckedPaneId, uncheckedRatio } from '#src/recap/domain/ids.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import type { Milliseconds } from '#src/recap/domain/time.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
@@ -124,8 +125,8 @@ export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, Harne
                 width: width.value,
                 height: height.value,
                 focused: parseOptionalPaneId(str(found['focused_pane_id'])),
-                panes: list(found['panes']).map((pane) => ({ paneId: str(pane['pane_id']), rect: rectOf(pane['rect']) })),
-                splits: list(found['splits']).map((split) => ({ direction: str(split['direction']), ratio: typeof split['ratio'] === 'number' ? split['ratio'] : 0.5, rect: rectOf(split['rect']) })),
+                panes: list(found['panes']).map((pane) => ({ paneId: uncheckedPaneId(str(pane['pane_id'])), rect: rectOf(pane['rect']) })),
+                splits: list(found['splits']).map((split) => ({ direction: textOf(str(split['direction'])), ratio: uncheckedRatio(typeof split['ratio'] === 'number' ? split['ratio'] : 0.5), rect: rectOf(split['rect']) })),
             };
         } catch (error) {
             return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });

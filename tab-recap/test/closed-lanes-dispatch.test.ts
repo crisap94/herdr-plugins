@@ -11,6 +11,7 @@ import type { Columns } from '#src/ports/columns.ts';
 import type { ClosureRecorder } from '#src/ports/closed-lanes.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
+import { SIZING } from './fakes/layout-values.ts';
 
 const noop = (): void => undefined;
 const noWebs = { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) };
@@ -29,7 +30,7 @@ function recorder(fail = false): { readonly records: ClosedLane[]; readonly port
 function dispatchWith(port: ClosureRecorder | undefined, days: string, log: (line: string) => void, flushed: string[] = []): Dispatch {
     return new Dispatch({
         columns: {} as Columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (tab, why): Promise<void> => { flushed.push(`${String(tab)} ${why}`); return Promise.resolve(); } },
-        prompts: noPrompts, webs: noWebs, log, board: () => emptyBoard(), sizing: () => ({ fraction: 0.3, minCols: 36, maxCols: 64 }),
+        prompts: noPrompts, webs: noWebs, log, board: () => emptyBoard(), sizing: () => SIZING,
         feedback: noop, ...silentClosures, ...(port === undefined ? {} : { closures: port }), closedDays: () => closedLaneDaysOf(days),
     });
 }

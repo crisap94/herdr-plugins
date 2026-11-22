@@ -1,3 +1,4 @@
+import { brand } from '#src/recap/domain/brand.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -124,7 +125,7 @@ test('the freshness text is rendered under its heading, and the unavailable work
 });
 
 test('a known worksite block is appended exactly as given', () => {
-    const block = worksiteTextOf({ kind: 'known', directory: '/work/repo', repository: null, lastCommit: null, uncommitted: null, edited: [], tokens: [] }, byteBudgetOf(2_048));
+    const block = worksiteTextOf({ kind: 'known', directory: brand<string, 'Directory'>('/work/repo'), repository: null, lastCommit: null, uncommitted: null, edited: [], tokens: [] }, byteBudgetOf(2_048));
     const text = serializeHandoff(partsOf([groupOf('goal', [entryOf('g1', 'goal', AT)])], { worksiteText: block }));
     assert.ok(text.endsWith(`\n\n${block}`));
 });

@@ -1,3 +1,4 @@
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import { lanesOf, put, removed, tabOfColumn, tabsWithLanes, without } from './board.ts';
 import type { Board, HiddenState, Placement, Visibility, VisibilityTarget } from './board.ts';
 import { closureOf, closuresBetween, incarnating } from './closures.ts';
@@ -62,7 +63,7 @@ function withoutColumnAt(board: Board, seen: SeenLane): Board {
 
 function onDetected(held: Board, seen: SeenLane, now: Instant, policy: Policy): Step {
     const board = withoutColumnAt(held, seen);
-    if (!wantsKind(policy, seen.agent)) {
+    if (wantsKind(policy, textOf(seen.agent)) === 'absent') {
         return step(board);
     }
     const fresh = laneFrom(seen);
@@ -109,12 +110,12 @@ function onSession(board: Board, seen: SessionObservation): Step {
 function onStatus(board: Board, seen: StatusObservation): Step {
     const pane = seen.pane;
     const lane = board.lanes.get(pane);
-    const next = laneStatus(seen.status);
+    const next = laneStatus(textOf(seen.status));
     if (lane === undefined || lane.status === next) {
         return step(board);
     }
     const after: Board = { ...board, lanes: put(board.lanes, pane, withStatus(lane, next)) };
-    const ended = endsTurn(lane.status, next) ? recapsOf(after, [lane.tab], 'turn-ended') : [];
+    const ended = endsTurn(lane.status, next) === 'present' ? recapsOf(after, [lane.tab], 'turn-ended') : [];
     return step(after, [{ kind: 'publish', tab: lane.tab }, { kind: 'read-prompt', lane: withStatus(lane, next) }, ...ended]);
 }
 
@@ -122,7 +123,7 @@ function turnsEndedBetween(before: Board, after: Board): readonly Intent[] {
     const tabs: TabId[] = [];
     for (const [pane, lane] of after.lanes) {
         const prior = before.lanes.get(pane);
-        if (prior !== undefined && endsTurn(prior.status, lane.status)) {
+        if (prior !== undefined && endsTurn(prior.status, lane.status) === 'present') {
             tabs.push(lane.tab);
         }
     }
@@ -176,14 +177,14 @@ function seenTabs(board: Board, seen: Reconciliation): Pick<Board, 'widths' | 'f
 
 function onReconciled(board: Board, seen: Reconciliation, now: Instant, policy: Policy): Step {
     const lanes = new Map<PaneId, Lane>();
-    for (const raw of seen.lanes.filter((lane) => wantsKind(policy, lane.agent))) {
+    for (const raw of seen.lanes.filter((lane) => wantsKind(policy, textOf(lane.agent)) === 'present')) {
         const fresh = laneFrom(raw);
         const prior = board.lanes.get(fresh.pane) ?? board.persisted?.find((lane) => lane.pane === fresh.pane);
         const lane = incarnating(keepingSession(fresh, board.lanes.get(fresh.pane)), prior, now);
         lanes.set(lane.pane, lane);
     }
     const { columns, extras: found } = columnsAfter(board, seen);
-    const extras = found.filter((extra) => !lingering(board, extra.pane, now, policy));
+    const extras = found.filter((extra) => lingering(board, extra.pane, now, policy) === 'absent');
     const alive = new Set(seen.panes);
     let closing = new Map([...board.closing].filter(([pane]) => alive.has(pane)));
     for (const extra of extras) {

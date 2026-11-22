@@ -1,3 +1,4 @@
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { RestoreText } from '@stateforge-labs/session-ledger';
@@ -175,7 +176,7 @@ const turnSignalRows = hookFixture('turn-signal.tsv')
     .slice(1)
     .map((line) => {
         const [status = '', ago = '', signal = ''] = line.split('\t');
-        return { status: laneStatus(status), endedMsAgo: ago === '-' ? null : Number(ago), signal };
+        return { status: laneStatus(textOf(status)), endedMsAgo: ago === '-' ? null : Number(ago), signal };
     });
 
 for (const row of turnSignalRows) {

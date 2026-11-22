@@ -7,6 +7,7 @@ import type { HandoffEvidence } from '#src/recap/domain/handoff-plan.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import { collapsedText } from '#src/recap/domain/text-collapse.ts';
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import type { CurrentSession } from './lane-recent.ts';
 import type { Ready } from './handoff-target.ts';
 import { HANDOFF_OBSERVATIONS, HANDOFF_OBSERVE_MS, HANDOFF_PREFIX_CODE_POINTS, HANDOFF_PROMPT_TAIL_BYTES } from './handoff-limits.ts';
@@ -47,7 +48,7 @@ export interface ConfirmationDeps {
     readonly log: (line: string) => void;
 }
 
-const prefixOf = (text: string): string => collapsedText(Array.from(text).slice(0, HANDOFF_PREFIX_CODE_POINTS).join(''), 'space');
+const prefixOf = (text: string): string => collapsedText(textOf(Array.from(text).slice(0, HANDOFF_PREFIX_CODE_POINTS).join('')), 'space');
 
 function evidenceOf(plan: HandoffEvidence, before: Before): Evidence {
     if (before.kind === 'none') {
@@ -104,7 +105,7 @@ export class HandoffConfirmation {
         if (evidence.transcript !== null) {
             const read = await this.latestOf(lane);
             current = read.lane;
-            if (read.latest.kind === 'prompt' && read.latest.text !== null && read.latest.text !== evidence.transcript.before && collapsedText(read.latest.text, 'space').startsWith(prefix)) {
+            if (read.latest.kind === 'prompt' && read.latest.text !== null && read.latest.text !== evidence.transcript.before && collapsedText(textOf(read.latest.text), 'space').startsWith(prefix)) {
                 return { lane: current, confirmed: true };
             }
         }

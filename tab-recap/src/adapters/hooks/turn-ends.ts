@@ -26,7 +26,7 @@ export function createTurnEnds(clock: Clock): TurnEnds {
         noteStatus: (event, board): void => {
             const now = clock.now();
             expire(now);
-            if (board.lanes.get(event.pane)?.status === 'working' && endsTurn('working', event.status)) {
+            if (board.lanes.get(event.pane)?.status === 'working' && endsTurn('working', event.status) === 'present') {
                 ended.set(event.pane, now);
             }
         },

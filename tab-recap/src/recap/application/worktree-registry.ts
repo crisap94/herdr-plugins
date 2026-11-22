@@ -88,7 +88,7 @@ export class WorktreeRegistry {
         const shown = new Set<Directory>();
         for (const [pane, root] of this.panes) {
             const lane = board.lanes.get(pane);
-            if (lane !== undefined && !isHidden(board, lane.tab)) {
+            if (lane !== undefined && isHidden(board, lane.tab) === 'absent') {
                 shown.add(root);
             }
         }

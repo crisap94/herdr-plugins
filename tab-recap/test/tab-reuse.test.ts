@@ -33,6 +33,7 @@ import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { SIZING } from './fakes/layout-values.ts';
 
 const said: Record<string, string> = { old: 'migrate victoria', new: 'write the docs' };
 
@@ -84,7 +85,7 @@ async function dispatched(store: Store, intents: readonly Intent[]): Promise<rea
     const dispatch = new Dispatch({
         columns: {} as Columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() },
         prompts: { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) }, webs: { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) },
-        log: (line): void => { lines.push(String(line)); }, board: (): Board => emptyBoard(), sizing: (): Sizing => ({ fraction: 0.3, minCols: 36, maxCols: 64 }), feedback: (): void => undefined,
+        log: (line): void => { lines.push(String(line)); }, board: (): Board => emptyBoard(), sizing: (): Sizing => SIZING, feedback: (): void => undefined,
         ...silentClosures, closures: store.closedLanes, closedDays: (): ClosedLaneDays => closedDaysOf('14'), retirements: store.retention,
     });
     for (const intent of intents.filter((each) => each.kind === 'lane-closed' || each.kind === 'tab-gone')) {
