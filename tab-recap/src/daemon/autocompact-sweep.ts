@@ -1,6 +1,4 @@
-import type { Board } from '#src/recap/domain/board.ts';
-import { READY } from '#src/recap/domain/status.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { Candidate } from '@stateforge-labs/session-ledger/compaction-timing';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
@@ -8,14 +6,14 @@ import { parseCount, type Count } from '#src/recap/domain/count.ts';
 export const SWEEP_EVERY = 5;
 
 export interface Considers {
-    prune(board: readonly Lane[]): void;
-    consider(lane: Lane): Promise<void>;
+    prune(candidates: readonly Candidate[]): void;
+    consider(candidate: Candidate): Promise<void>;
 }
 
 type SweepRun = 'idle' | 'running';
 
 export interface SweepParts {
-    board(): Board;
+    candidates(): readonly Candidate[];
     autocompact(): Considers | null;
     log(line: Text): void;
 }
@@ -51,11 +49,11 @@ export class AutocompactSweep {
     async sweep(): Promise<void> {
         const autocompact = this.parts.autocompact();
         if (autocompact === null) return;
-        const snapshot = this.parts.board();
-        autocompact.prune([...snapshot.lanes.values()]);
-        for (const pane of snapshot.lanes.keys()) {
-            const lane = this.parts.board().lanes.get(pane);
-            if (lane !== undefined && READY.has(lane.status)) await autocompact.consider(lane);
+        const snapshot = this.parts.candidates();
+        autocompact.prune(snapshot);
+        for (const { key } of snapshot) {
+            const fresh = this.parts.candidates().find((found) => found.key === key);
+            if (fresh !== undefined && fresh.ready) await autocompact.consider(fresh);
         }
     }
 }

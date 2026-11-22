@@ -1,4 +1,5 @@
 import { parseCount } from '#src/recap/domain/count.ts';
+import { candidateFor } from './autocompact-world.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 import { test } from 'node:test';
@@ -75,7 +76,7 @@ async function decisionUnder(keys: Readonly<Record<string, string>>, closes: num
         log: () => undefined,
     });
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
-    await service.consider(lane);
+    await service.consider(candidateFor(lane));
     return store.autocompact.newest(must(parseCount(1)))[0]?.verdict;
 }
 
@@ -98,7 +99,7 @@ test('the daemon wiring reads the safe key: warnings of 0.42 wait under eager\'s
             informer: { current: emptyBoard() } as unknown as Informer, decider: () => decider,
             events: { lane: () => undefined, inWorkspace: () => undefined }, log: () => undefined,
         });
-        await service.consider(laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
+        await service.consider(candidateFor(laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' })));
         return store.autocompact.newest(must(parseCount(1)))[0]?.verdict;
     };
     assert.equal(await verdictWith({ TAB_RECAP_AUTOCOMPACT_STYLE: 'eager' }), 'wait');

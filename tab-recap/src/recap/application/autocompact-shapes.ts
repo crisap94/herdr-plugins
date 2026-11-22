@@ -4,10 +4,9 @@ import { must } from '#src/protocol/result.ts';
 import type { CompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import type { Count } from '#src/recap/domain/count.ts';
-import { READY } from '#src/recap/domain/status.ts';
 import { shareOf } from '#src/recap/domain/compaction.ts';
 import type { Flight } from '#src/recap/domain/in-flight.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { AgentKind, Placement } from '#src/recap/domain/timing-ids.ts';
 import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { parseMilliseconds, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
@@ -37,9 +36,9 @@ export interface LanePolicy extends Omit<AutocompactPolicy, 'mode'> {
     readonly mode: DecisionMode;
 }
 
-export function policyForLane(policy: AutocompactPolicy, lane: Lane): LanePolicy | null {
+export function policyForLane(policy: AutocompactPolicy, agent: AgentKind): LanePolicy | null {
     if (policy.mode === 'off') return null;
-    const registered = registeredKindOf(lane.agent);
+    const registered = registeredKindOf(agent);
     const shadowed = registered !== null && policy.shadowKinds.includes(registered);
     return { ...policy, mode: shadowed ? 'shadow' : policy.mode };
 }
@@ -73,6 +72,6 @@ export function coverageBackoffActive(input: BackoffFacts): CoverageHold {
 
 export type Eligibility = 'eligible' | 'ineligible';
 
-export function idleEligibility(policy: LanePolicy | null, lane: Lane, use: ContextUse | null): Eligibility {
-    return policy === null || policy.mode !== 'on' || !READY.has(lane.status) || !policy.kinds.includes(lane.agent) || use === null || shareOf(use) < policy.minimum ? 'ineligible' : 'eligible';
+export function idleEligibility(policy: LanePolicy | null, placed: Placement, use: ContextUse | null): Eligibility {
+    return policy === null || policy.mode !== 'on' || !placed.candidate.ready || !policy.kinds.includes(placed.agent) || use === null || shareOf(use) < policy.minimum ? 'ineligible' : 'eligible';
 }

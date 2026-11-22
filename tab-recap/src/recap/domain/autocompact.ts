@@ -6,7 +6,8 @@ import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/reca
 import { isSection, type Section } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
 import { holdsLane, type Flight } from '@stateforge-labs/session-ledger/unstable/recap/domain/in-flight.ts';
 import type { Duration, Instant, Milliseconds } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import { agentKind, type AgentKind } from './ids.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseAgentKind, type AgentKind } from './timing-ids.ts';
 import type { Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 
 export type CeilingPolicy = 'overrides-check' | 'blocked-by-check';
@@ -123,7 +124,7 @@ export type AutocompactKinds = readonly LaneKind[];
 export function parseAutocompactKinds(raw: unknown): AutocompactKinds {
     const text = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
     const kinds = [...new Set(text.split(',').map((kind) => kind.trim()).filter((kind) => kind !== ''))];
-    return kinds.length === 0 ? KINDS_DEFAULT : kinds.map((kind) => agentKind(kind));
+    return kinds.length === 0 ? KINDS_DEFAULT : kinds.map((kind) => must(parseAgentKind(kind)));
 }
 
 export type ShadowKinds = readonly RegisteredKind[];

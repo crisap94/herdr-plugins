@@ -5,6 +5,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { AutocompactSweep } from '#src/daemon/autocompact-sweep.ts';
+import type { Candidate } from '@stateforge-labs/session-ledger/compaction-timing';
+import { candidatesOf } from '#src/daemon/autocompact.ts';
 import type { Considers } from '#src/daemon/autocompact-sweep.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
@@ -71,7 +73,7 @@ test('a sweep over five lanes in shadow decides four (the 82 % one a ceiling, th
     const w = world({ mode: 'shadow' });
     w.byPane = { 'w1:p1': 15, 'w1:p2': 45, 'w1:p3': 60, 'w1:p4': 82, 'w1:p5': 5, 'w1:p6': 30 };
     const lanes = ['w1:p1', 'w1:p2', 'w1:p3', 'w1:p4', 'w1:p5'].map((pane) => at(pane));
-    const sweep = new AutocompactSweep({ board: (): Board => boardOf(lanes), autocompact: (): Considers => w.service, log: (): void => undefined });
+    const sweep = new AutocompactSweep({ candidates: (): readonly Candidate[] => candidatesOf(boardOf(lanes), (): void => undefined), autocompact: (): Considers => w.watch, log: (): void => undefined });
     await sweep.sweep();
     assert.deepEqual(rows(w).map((row) => row.pane).toSorted(), ['w1:p1', 'w1:p2', 'w1:p3', 'w1:p4']);
     assert.equal(rows(w).find((row) => row.pane === 'w1:p4')?.gate, 'ceiling');
@@ -79,10 +81,10 @@ test('a sweep over five lanes in shadow decides four (the 82 % one a ceiling, th
     assert.equal(w.asked.length, 3, 'one decider call per eligible lane below the ceiling: 15, 45 and 60 %');
     w.policy = { ...w.policy, minimum: brand<number, 'AutocompactPercent'>(40) };
     const idle30 = at('w1:p6');
-    await new AutocompactSweep({ board: (): Board => boardOf([...lanes, idle30]), autocompact: (): Considers => w.service, log: (): void => undefined }).sweep();
+    await new AutocompactSweep({ candidates: (): readonly Candidate[] => candidatesOf(boardOf([...lanes, idle30]), (): void => undefined), autocompact: (): Considers => w.watch, log: (): void => undefined }).sweep();
     assert.deepEqual(w.store.autocompact.skips().filter((skip) => skip.pane === 'w1:p6').map((skip) => [skip.gate, skip.detail]), [['below-minimum', 'below 40 %']]);
     w.policy = { ...w.policy, minimum: brand<number, 'AutocompactPercent'>(10) };
-    await new AutocompactSweep({ board: (): Board => boardOf([...lanes, idle30]), autocompact: (): Considers => w.service, log: (): void => undefined }).sweep();
+    await new AutocompactSweep({ candidates: (): readonly Candidate[] => candidatesOf(boardOf([...lanes, idle30]), (): void => undefined), autocompact: (): Considers => w.watch, log: (): void => undefined }).sweep();
     assert.equal(rows(w).find((row) => row.pane === 'w1:p6')?.verdict, 'compact', 'decided at the next sweep after the minimum dropped to 10');
 });
 

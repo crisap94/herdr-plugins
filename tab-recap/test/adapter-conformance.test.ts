@@ -1,4 +1,5 @@
 import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
+import { candidateFor } from './autocompact-world.ts';
 import { test, after } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
@@ -191,7 +192,7 @@ async function skipOf(readers: TranscriptRegistry, placed: Lane, kind: Kind): Pr
         decider: () => decider, events: { lane: () => undefined, inWorkspace: () => undefined },
         claims: new LaneClaims(), log: () => undefined,
     });
-    await service.consider(placed);
+    await service.consider(candidateFor(placed));
     const [skip] = store.autocompact.skips();
     return skip === undefined ? undefined : { gate: skip.gate, detail: skip.detail ?? null };
 }

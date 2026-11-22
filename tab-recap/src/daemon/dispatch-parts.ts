@@ -1,6 +1,7 @@
 import type { Store } from '#src/adapters/db/database.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
 import type { Autocompact } from '#src/recap/application/autocompact.ts';
+import { candidateOf } from './autocompact.ts';
 import { Dispatch } from '#src/recap/application/dispatch.ts';
 import type { Sharing } from '#src/recap/application/dispatch.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
@@ -45,6 +46,6 @@ export function dispatchFor(box: Box, parts: DispatchParts, log: (line: Text) =>
             return box.informer.current;
         },
         feedback: (observation: Observation): void => { box.informer?.push(observation); },
-        settled: (lane): void => { void box.autocompact?.consider(lane); },
+        settled: (lane): void => { const found = candidateOf(lane); if (found !== null) void box.autocompact?.consider(found); },
     });
 }

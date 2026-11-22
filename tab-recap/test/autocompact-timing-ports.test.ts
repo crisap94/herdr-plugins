@@ -16,7 +16,9 @@ import { registryWith } from '#test/fakes/transcript-registry.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
 import { memoryStore } from './db/support.ts';
 import { decidedAnswersOf, textOf } from './fakes/decider-fixtures.ts';
-import { SAFE } from './autocompact-world.ts';
+import { SAFE, candidateFor } from './autocompact-world.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
 
 interface Scripted {
     readonly store: ReturnType<typeof memoryStore>;
@@ -56,7 +58,7 @@ function scripted(claims: LaneClaims): Scripted {
 
 test('wireAutocompact over fake store, claims and events: a safe lane flushes the recap, requests one compaction and emits the decided value', async () => {
     const world = scripted(new LaneClaims());
-    await world.service.consider(world.lane);
+    await world.service.consider(candidateFor(world.lane));
     assert.deepEqual(world.flushed, ['w1:t1']);
     assert.deepEqual(world.store.requests.takeCompactions().map((ask) => [ask.tab, ask.pane, ask.origin]), [['w1:t1', 'w1:p1', 'auto']]);
     assert.deepEqual(world.events, ['w1:p1 autocompact-decided compact-62']);
@@ -66,7 +68,18 @@ test('wireAutocompact: a claimed lane is skipped as busy through the activity po
     const claims = new LaneClaims();
     claims.claim('w1:p1', 'compaction');
     const world = scripted(claims);
-    await world.service.consider(world.lane);
+    await world.service.consider(candidateFor(world.lane));
     assert.deepEqual(world.store.requests.takeCompactions(), []);
     assert.deepEqual(world.events, ['w1:p1 autocompact-skipped busy']);
+});
+
+test('wireAutocompact: the stored row keeps the status of the lane the candidate was made from, idle or done', async () => {
+    const statuses = ['idle', 'done'];
+    const stored: (string | null)[] = [];
+    for (const status of statuses) {
+        const world = scripted(new LaneClaims());
+        await world.service.consider(candidateFor(laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status })));
+        stored.push(world.store.autocompact.newest(must(parseCount(1)))[0]?.laneStatus ?? null);
+    }
+    assert.deepEqual(stored, ['idle', 'done']);
 });

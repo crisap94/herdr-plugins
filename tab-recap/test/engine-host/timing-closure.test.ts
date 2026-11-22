@@ -36,6 +36,8 @@ const TIMING: readonly string[] = [
     'src/recap/domain/probability.ts',
     'src/recap/domain/usd.ts',
     'src/recap/domain/idle-hold.ts',
+    'src/recap/domain/timing-ids.ts',
+    'src/recap/domain/token-amount.ts',
     'src/recap/application/autocompact-line.ts',
 ];
 
@@ -44,24 +46,10 @@ const ENGINE: readonly string[] = engineOf(JSON.parse(readFileSync(ENGINE_FILES_
 const KNOWN: readonly Edge[] = [
     { from: 'src/adapters/job/decider.ts', to: 'src/adapters/job/legacy.ts', kind: 're-export' },
     { from: 'src/adapters/job/decider.ts', to: 'src/ports/harness.ts', kind: 'import' },
-    { from: 'src/adapters/job/decider.ts', to: 'src/recap/domain/token-amount.ts', kind: 'import' },
-    { from: 'src/daemon/autocompact-sweep.ts', to: 'src/recap/domain/board.ts', kind: 'import' },
-    { from: 'src/daemon/autocompact-sweep.ts', to: 'src/recap/domain/lane.ts', kind: 'import' },
-    { from: 'src/daemon/autocompact-sweep.ts', to: 'src/recap/domain/status.ts', kind: 'import' },
     { from: 'src/ports/autocompact-records.ts', to: 'src/ports/legacy.ts', kind: 're-export' },
-    { from: 'src/ports/autocompact-records.ts', to: 'src/recap/domain/ids.ts', kind: 'import' },
-    { from: 'src/ports/autocompact-records.ts', to: 'src/recap/domain/ids.ts', kind: 'import' },
     { from: 'src/ports/decider.ts', to: 'src/ports/legacy.ts', kind: 're-export' },
-    { from: 'src/ports/decider.ts', to: 'src/recap/domain/token-amount.ts', kind: 'import' },
-    { from: 'src/recap/application/autocompact-gates.ts', to: 'src/recap/domain/ids.ts', kind: 'import' },
-    { from: 'src/recap/application/autocompact-shapes.ts', to: 'src/recap/domain/lane.ts', kind: 'import' },
-    { from: 'src/recap/application/autocompact-shapes.ts', to: 'src/recap/domain/status.ts', kind: 'import' },
-    { from: 'src/recap/application/autocompact.ts', to: 'src/recap/domain/ids.ts', kind: 'import' },
-    { from: 'src/recap/application/autocompact.ts', to: 'src/recap/domain/lane.ts', kind: 'import' },
-    { from: 'src/recap/application/autocompact.ts', to: 'src/recap/domain/status.ts', kind: 'import' },
     { from: 'src/recap/domain/autocompact-style.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
     { from: 'src/recap/domain/autocompact-style.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
-    { from: 'src/recap/domain/autocompact.ts', to: 'src/recap/domain/ids.ts', kind: 'import' },
     { from: 'src/recap/domain/autocompact.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
     { from: 'src/recap/domain/autocompact.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
     { from: 'src/recap/domain/autocompact.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
@@ -152,4 +140,11 @@ test('a re-export of legacy.ts is the only edge E14 stubs may keep', () => {
 test('no timing file imports a name from a legacy.ts: every edge into one is a re-export', () => {
     const imports = TIMING.flatMap(edgesOf).filter((edge) => edge.kind === 'import' && edge.to.endsWith('/legacy.ts'));
     assert.deepEqual(imports, []);
+});
+
+test('the known edges are the stub-carried re-exports and the decider adapter\'s one harness port import', () => {
+    assert.deepEqual(
+        KNOWN.filter((edge) => !STUB_CARRIED.some((stub) => keyOf(stub) === keyOf(edge))),
+        [{ from: 'src/adapters/job/decider.ts', to: 'src/ports/harness.ts', kind: 'import' }],
+    );
 });

@@ -6,6 +6,8 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
+import type { Candidate } from '@stateforge-labs/session-ledger/compaction-timing';
+import { candidatesOf } from '#src/daemon/autocompact.ts';
 
 const lane = (pane: string, status: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status });
 const boardOf = (lanes: readonly Lane[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((found) => [found.pane, found])) });
@@ -14,7 +16,7 @@ const settle = (): Promise<void> => new Promise<void>((resolve) => { setImmediat
 
 test('the first tick sweeps every idle and done lane of the board, in order, and the next four ticks do nothing', async () => {
     const considered: string[] = [];
-    const sweep = new AutocompactSweep({ board: (): Board => boardOf(idle), autocompact: (): Considers => ({ prune: (): void => undefined, consider: async (found: Lane): Promise<void> => { considered.push(found.pane); } }), log: (): void => undefined });
+    const sweep = new AutocompactSweep({ candidates: (): readonly Candidate[] => candidatesOf(boardOf(idle), (): void => undefined), autocompact: (): Considers => ({ prune: (): void => undefined, consider: async (found: Candidate): Promise<void> => { considered.push(found.key); } }), log: (): void => undefined });
     sweep.tick();
     await settle();
     assert.deepEqual(considered, ['w1:p1', 'w1:p3', 'w1:p4']);
@@ -29,7 +31,7 @@ test('the first tick sweeps every idle and done lane of the board, in order, and
 test('a sweep still running when the next is due is skipped, not stacked', async () => {
     let calls = 0;
     const held: { release: () => void } = { release: () => undefined };
-    const sweep = new AutocompactSweep({ board: (): Board => boardOf([lane('w1:p1', 'idle')]), autocompact: (): Considers => ({ prune: (): void => undefined, consider: (): Promise<void> => { calls += 1; return new Promise<void>((resolve) => { held.release = resolve; }); } }), log: (): void => undefined });
+    const sweep = new AutocompactSweep({ candidates: (): readonly Candidate[] => candidatesOf(boardOf([lane('w1:p1', 'idle')]), (): void => undefined), autocompact: (): Considers => ({ prune: (): void => undefined, consider: (): Promise<void> => { calls += 1; return new Promise<void>((resolve) => { held.release = resolve; }); } }), log: (): void => undefined });
     sweep.tick();
     await settle();
     for (let tick = 1; tick <= SWEEP_EVERY; tick += 1) sweep.tick();
@@ -45,11 +47,11 @@ test('a sweep still running when the next is due is skipped, not stacked', async
 
 test('no autocompact yet: a tick does nothing; a failing board is logged, and the sweep runs again later', async () => {
     const logs: string[] = [];
-    const quiet = new AutocompactSweep({ board: (): Board => boardOf(idle), autocompact: (): null => null, log: (line: string): void => { logs.push(line); } });
+    const quiet = new AutocompactSweep({ candidates: (): readonly Candidate[] => candidatesOf(boardOf(idle), (): void => undefined), autocompact: (): null => null, log: (line: string): void => { logs.push(line); } });
     quiet.tick();
     await settle();
     let broken = true;
-    const failing = new AutocompactSweep({ board: (): Board => { if (broken) throw new Error('no board yet'); return boardOf(idle); }, autocompact: (): Considers => ({ prune: (): void => undefined, consider: (): Promise<void> => Promise.resolve() }), log: (line: string): void => { logs.push(line); } });
+    const failing = new AutocompactSweep({ candidates: (): readonly Candidate[] => { if (broken) throw new Error('no board yet'); return candidatesOf(boardOf(idle), (): void => undefined); }, autocompact: (): Considers => ({ prune: (): void => undefined, consider: (): Promise<void> => Promise.resolve() }), log: (line: string): void => { logs.push(line); } });
     failing.tick();
     await settle();
     broken = false;
@@ -63,12 +65,12 @@ test('the board changes between two lanes: the second is re-read and skipped whe
     const considered: string[] = [];
     let current = boardOf([lane('w1:p1', 'idle'), lane('w1:p2', 'idle'), lane('w1:p3', 'idle')]);
     const sweep = new AutocompactSweep({
-        board: (): Board => current,
+        candidates: (): readonly Candidate[] => candidatesOf(current, (): void => undefined),
         autocompact: (): Considers => ({
             prune: (): void => undefined,
-            consider: async (found: Lane): Promise<void> => {
-                considered.push(found.pane);
-                if (found.pane === 'w1:p1') current = boardOf([lane('w1:p1', 'idle'), lane('w1:p2', 'working')]);
+            consider: async (found: Candidate): Promise<void> => {
+                considered.push(found.key);
+                if (found.key === 'w1:p1') current = boardOf([lane('w1:p1', 'idle'), lane('w1:p2', 'working')]);
             },
         }),
         log: (): void => undefined,
@@ -80,13 +82,34 @@ test('the board changes between two lanes: the second is re-read and skipped whe
 test('a sweep forgets the skips of the lanes that are not idle or done before it considers anything', async () => {
     const order: string[] = [];
     const sweep = new AutocompactSweep({
-        board: (): Board => boardOf([lane('w1:p1', 'idle'), lane('w1:p2', 'working')]),
+        candidates: (): readonly Candidate[] => candidatesOf(boardOf([lane('w1:p1', 'idle'), lane('w1:p2', 'working')]), (): void => undefined),
         autocompact: (): Considers => ({
-            prune: (board: readonly Lane[]): void => { order.push(`prune ${board.map((found) => found.pane).join(',')}`); },
-            consider: async (found: Lane): Promise<void> => { order.push(`consider ${found.pane}`); },
+            prune: (seen: readonly Candidate[]): void => { order.push(`prune ${seen.map((found) => found.key).join(',')}`); },
+            consider: async (found: Candidate): Promise<void> => { order.push(`consider ${found.key}`); },
         }),
         log: (): void => undefined,
     });
     await sweep.sweep();
     assert.deepEqual(order, ['prune w1:p1,w1:p2', 'consider w1:p1']);
+});
+
+test('candidatesOf gives one candidate per listed lane, ready exactly for the ready statuses, and the pane and tab strings are kept', () => {
+    const board = boardOf([lane('w1:p1', 'idle'), lane('w1:p2', 'working'), lane('w1:p3', 'done'), lane('w1:p4', 'blocked'), lane('w1:p5', 'unknown')]);
+    const found = candidatesOf(board, (): void => undefined);
+    assert.deepEqual(found.map((candidate) => [candidate.scope, candidate.key, candidate.harness, candidate.ready]), [
+        ['w1:t1', 'w1:p1', 'claude', true],
+        ['w1:t1', 'w1:p2', 'claude', false],
+        ['w1:t1', 'w1:p3', 'claude', true],
+        ['w1:t1', 'w1:p4', 'claude', false],
+        ['w1:t1', 'w1:p5', 'claude', false],
+    ]);
+});
+
+test('a lane whose pane is not a valid session key is skipped and logged, never thrown', () => {
+    const logs: string[] = [];
+    const odd = { ...lane('w1:p1', 'idle'), pane: ' ' as Lane['pane'] };
+    const board = { ...emptyBoard(), lanes: new Map([[odd.pane, odd], [lane('w1:p2', 'idle').pane, lane('w1:p2', 'idle')]]) };
+    const found = candidatesOf(board, (line: string): void => { logs.push(line); });
+    assert.deepEqual(found.map((candidate) => candidate.key), ['w1:p2']);
+    assert.equal(logs.length, 1);
 });

@@ -46,7 +46,7 @@ import { capabilityNow, failureLog, herdrEventsOn, listeningIn, logVia, paneToke
 import { shutDown } from './shutdown.ts';
 import { openState } from './state.ts';
 import type { Autocompact } from '#src/recap/application/autocompact.ts';
-import { wireAutocompact } from './autocompact.ts';
+import { candidateOf, candidatesOf, wireAutocompact } from './autocompact.ts';
 import { AutocompactSweep } from './autocompact-sweep.ts';
 import { wireCompaction } from './compaction.ts';
 import { createPreCompacts } from '#src/adapters/hooks/pre-compacts.ts';
@@ -157,7 +157,7 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
         briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact, checkedBriefs: store.autocompactBriefs, answers, asks: store.asks, events, claims, preCompacts,
         typing: new TypingLease({ tokens: fleet, panes: fleet, now: nowInstant, pause: sleep, log }),
     });
-    return { informer, fleet, backends, store, engine, recaps, transcripts, clock, viewers, autocompact, statuses: statusTaps.tap, ledger: ledgerTaps.tap, compaction, retention: new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: () => loadSettings().keepInputDays, briefRetention: (): BriefRetention => loadConfig().keepBrief, log }), curate, sweep: new AutocompactSweep({ board: (): Board => informer.current, autocompact: (): Autocompact | null => box.autocompact, log }), laneTokens, answers, events, worktrees, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror: exchange.mirror, pause: sleep, log: write }) };
+    return { informer, fleet, backends, store, engine, recaps, transcripts, clock, viewers, autocompact, statuses: statusTaps.tap, ledger: ledgerTaps.tap, compaction, retention: new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: () => loadSettings().keepInputDays, briefRetention: (): BriefRetention => loadConfig().keepBrief, log }), curate, sweep: new AutocompactSweep({ candidates: () => candidatesOf(informer.current, log), autocompact: (): Autocompact | null => box.autocompact, log }), laneTokens, answers, events, worktrees, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror: exchange.mirror, pause: sleep, log: write }) };
 }
 
 function versionOf(): Version | null { const version = codeVersion(); return version === null ? null : parseVersion(version); }
@@ -250,7 +250,7 @@ async function start(): Promise<ExitCode> {
         void backends.refresh();
     }, RESYNC_MS).unref();
     await backends.refresh();
-    slots = await startSlots(SLOT_TABLE, contextOf({ root: parseRoot(root), store, fleet, engine, recaps, transcripts, events, board: (): Board => informer.current, observe: (observation): void => { informer.push(observation); }, statuses, ledger, clock, viewers, preCompacts, claimIdle: (lane) => booted.autocompact.claimIdle(lane), log }, versionOf(), (key: SlotKey): Switch => parseSwitch(configGetter()(key))));
+    slots = await startSlots(SLOT_TABLE, contextOf({ root: parseRoot(root), store, fleet, engine, recaps, transcripts, events, board: (): Board => informer.current, observe: (observation): void => { informer.push(observation); }, statuses, ledger, clock, viewers, preCompacts, claimIdle: (lane) => { const found = candidateOf(lane); return found === null ? 'declined' : booted.autocompact.claimIdle(found); }, log }, versionOf(), (key: SlotKey): Switch => parseSwitch(configGetter()(key))));
     log(`daemon ${process.pid} up, state in ${root}`);
     void events.daemon('daemon-started', codeVersion() ?? 'unknown');
     await informer.enterSubscription();
