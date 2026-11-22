@@ -115,7 +115,7 @@
   },
   "src/adapters/os/pidfile.ts": {
     "parameter": 6,
-    "return": 9,
+    "return": 7,
     "property": 1
   },
   "src/adapters/os/plugin-version.ts": {

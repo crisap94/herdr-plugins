@@ -1,5 +1,8 @@
 import { existsSync, readFileSync, rmSync, statSync, utimesSync } from 'node:fs';
 import { join } from 'node:path';
+import { must } from '#src/protocol/result.ts';
+import { parsePid, type Pid } from '#src/recap/domain/pid.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { writeAtomically } from './atomic-file.ts';
 
 export class Pidfile {
@@ -21,7 +24,7 @@ export class Pidfile {
         return join(this.root, 'disabled');
     }
 
-    alive(): number | null {
+    alive(): Pid | null {
         let pid = 0;
         try { pid = Number(readFileSync(this.path, 'utf8').trim()); } catch { return null; }
         if (!Number.isInteger(pid) || pid <= 0) {
@@ -29,10 +32,11 @@ export class Pidfile {
         }
         try {
             process.kill(pid, 0);
-            return pid;
         } catch {
             return null;
         }
+        const parsed = parsePid(pid);
+        return parsed.kind === 'ok' ? parsed.value : null;
     }
 
     private get versionPath(): string {
@@ -44,12 +48,14 @@ export class Pidfile {
         writeAtomically(this.versionPath, `${version ?? ''}\n`);
     }
 
-    daemonVersion(): string | null {
+    daemonVersion(): Text | null {
+        let version = '';
         try {
-            return readFileSync(this.versionPath, 'utf8').trim() || null;
+            version = readFileSync(this.versionPath, 'utf8').trim();
         } catch {
             return null;
         }
+        return version === '' ? null : must(parseText(version));
     }
 
     release(pid: number): void {
