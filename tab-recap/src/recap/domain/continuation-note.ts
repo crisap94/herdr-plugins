@@ -1,6 +1,5 @@
 import { err, must, ok, type Result } from '#src/protocol/result.ts';
 import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import { plainText } from './coordination.ts';
 import type { AwaitedNames, Awaiting, BackgroundItem, BackgroundLabel, BackgroundTool } from '@stateforge-labs/session-ledger/unstable/recap/domain/in-flight.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 import { parseText, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
@@ -33,7 +32,9 @@ export const NOTE_LIMIT = must(parseNoteLimit(400));
 
 const ELLIPSIS = '…';
 
-const plain = (raw: NoteFragment): Text => must(parseText(plainText(raw.replaceAll(/\p{Cf}/gu, ' ').replaceAll('"', "'").replaceAll(/\s+/g, ' '))));
+const plainText = (raw: Text): Text => must(parseText(raw.replaceAll(/\p{Cc}/gu, ' ').replaceAll(/\s+/gu, ' ').trim()));
+
+const plain = (raw: NoteFragment): Text => plainText(must(parseText(raw.replaceAll(/\p{Cf}/gu, ' ').replaceAll('"', "'").replaceAll(/\s+/g, ' '))));
 
 const itemText = (item: BackgroundItem): Text => must(parseText(`${plain(item.tool)} "${plain(item.label)}"`));
 

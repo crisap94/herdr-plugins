@@ -8,9 +8,17 @@ import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import { parseProbability, type Probability } from '#src/recap/domain/probability.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { elapsed, instant, type Instant } from '#src/recap/domain/time.ts';
-import { unfencedText } from './prompts/recap-prompt.ts';
 
 export { HarnessDecider } from './legacy.ts';
+
+export function unfencedText(markdown: Text): Text {
+    const trimmed = markdown.trim();
+    const lines = trimmed.split('\n');
+    if (lines.length >= 2 && (lines[0] ?? '').startsWith('```') && (lines.at(-1) ?? '') === '```') {
+        return must(parseText(lines.slice(1, -1).join('\n').trim()));
+    }
+    return must(parseText(trimmed));
+}
 
 export function deciderInstructions(questions: ReadonlyMap<Text, Noul>): Text {
     const listed = [...questions].map(([id, noul]) => `- ${id}: ${noul.instructions}\n  true when: ${noul.criteria.true}\n  false when: ${noul.criteria.false}`);

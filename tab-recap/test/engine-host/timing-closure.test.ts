@@ -38,7 +38,6 @@ const ENGINE: readonly string[] = engineOf(JSON.parse(readFileSync(ENGINE_FILES_
 
 const KNOWN: readonly Edge[] = [
     { from: 'src/adapters/job/decider.ts', to: 'src/adapters/job/legacy.ts', kind: 're-export' },
-    { from: 'src/adapters/job/decider.ts', to: 'src/adapters/job/prompts/recap-prompt.ts', kind: 'import' },
     { from: 'src/adapters/job/decider.ts', to: 'src/ports/harness.ts', kind: 'import' },
     { from: 'src/adapters/job/decider.ts', to: 'src/recap/domain/count.ts', kind: 'import' },
     { from: 'src/adapters/job/decider.ts', to: 'src/recap/domain/probability.ts', kind: 'import' },
@@ -92,7 +91,6 @@ const KNOWN: readonly Edge[] = [
     { from: 'src/recap/domain/autocompact.ts', to: 'src/recap/domain/legacy.ts', kind: 'import' },
     { from: 'src/recap/domain/autocompact.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
     { from: 'src/recap/domain/autocompact.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
-    { from: 'src/recap/domain/continuation-note.ts', to: 'src/recap/domain/coordination.ts', kind: 'import' },
 ];
 
 const STUB_CARRIED: readonly Edge[] = [
