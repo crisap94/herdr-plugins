@@ -2,9 +2,10 @@ import { statSync } from 'node:fs';
 import { join } from 'node:path';
 import { RUBRIC_TEXT } from '#src/adapters/job/prompts/rubric.ts';
 import { replayKindOf, replayTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
-import { databasePath } from '#src/adapters/db/database.ts';
-import { factsOfTab } from '#src/adapters/db/imported.ts';
-import { importedChapters } from '#src/adapters/db/imported-chapters.ts';
+import { databaseFile } from '#src/adapters/db/database.ts';
+import { factsOfTabAt } from '#src/adapters/db/imported.ts';
+import { importedChaptersAt } from '#src/adapters/db/imported-chapters.ts';
+import { parseTabId } from '#src/recap/domain/ids.ts';
 import { operatorAnchors } from '#src/adapters/db/operator-anchors.ts';
 import { scratchStore } from '#src/adapters/db/scratch.ts';
 import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
@@ -14,7 +15,7 @@ import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { AUTO_ORDER, availableIn, enumeratorFor, judgeFor, summarizerFor, summarizerWork } from '#src/daemon/backends.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
-import { loadConfig, stateDir } from '#src/daemon/config.ts';
+import { loadConfig, stateDirectory } from '#src/daemon/config.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { Judge } from '#src/ports/judge.ts';
 import type { Summarizer } from '#src/ports/summarizer.ts';
@@ -57,7 +58,8 @@ export function ranLine(done: Replayed, jobs: { readonly view: WriterView; reado
 function printMechanical(done: Replayed, file: string, beside: string | null, ran: string): void {
     console.log(`${ran}\n${reportOf(`replay of ${file}: ${done.turns} turns`, done.facts)}\n\nthe ledger after the replay:\n${ledgerText(done.facts, Intl.DateTimeFormat().resolvedOptions().timeZone)}`);
     if (beside !== null) {
-        const imported = factsOfTab(databasePath(stateDir()), beside);
+        const besideId = parseTabId(beside);
+        const imported = besideId.kind === 'ok' ? factsOfTabAt(databaseFile(stateDirectory()), besideId.value) : null;
         console.log(`\n${imported === null ? `the imported facts of ${beside}: none (no ledger in the database yet)` : reportOf(`the imported facts of ${beside}`, imported)}`);
     }
 }
@@ -84,6 +86,11 @@ async function replayed(input: { readonly file: string; readonly reader: Transcr
     console.log(`\n${anchoredLine(done.facts)}\n${gateLines(gateReportOf(scratch.store.inputs.gateCounts(null)), styleFor(process.stdout)).join('\n')}`);
 }
 
+function importedBeside(tab: string | null): ReturnType<typeof importedChaptersAt> {
+    const id = tab === null ? null : parseTabId(tab);
+    return id?.kind === 'ok' ? importedChaptersAt(databaseFile(stateDirectory()), id.value) : null;
+}
+
 async function run(file: string, reader: Transcripts, options: EvalOptions, size: number): Promise<number> {
     const config = loadConfig();
     const found = await new PathHarnesses(AUTO_ORDER).available();
@@ -91,14 +98,14 @@ async function run(file: string, reader: Transcripts, options: EvalOptions, size
     const runtime = createRuntime();
     const scratch = scratchStore();
     const label = options.tab ?? 'replay:t1';
-    const judge: Judge | null = judgeFor(config, availableIn(available), must(parseDirectory(join(scratch.dir, 'judge'))), runtime, operatorAnchors(databasePath(stateDir())));
+    const judge: Judge | null = judgeFor(config, availableIn(available), must(parseDirectory(join(scratch.dir, 'judge'))), runtime, operatorAnchors(databaseFile(stateDirectory())));
     try {
         await replayed({ file, reader, options, size, judge: judge?.label ?? 'none' }, scratch, { config, available, runtime });
         if (judge === null) {
             console.log('\nmodel judging: off (no harness is available for the judge job); the checks above need no model');
             return 0;
         }
-        const imported = options.compareImported === null ? null : importedChapters(databasePath(stateDir()), options.compareImported);
+        const imported = importedBeside(options.compareImported);
         console.log(`\n${(await judgedReport({ judge, store: scratch.store, rubric: RUBRIC_TEXT, label, imported, beside: options.compareImported, style: styleFor(process.stdout), err: (line) => { console.error(line); } })).join('\n')}`);
         return 0;
     } catch (error) {

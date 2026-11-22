@@ -1,11 +1,12 @@
 import { test } from 'node:test';
+import type { Directory } from '#src/recap/domain/directory.ts';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openFixture } from './db/support.ts';
-import { stateStore } from '#src/adapters/db/database.ts';
+import { databaseFile, openStoreAt } from '#src/adapters/db/database.ts';
 import { BUN_CACHE_OFF } from './support/bun-env.ts';
 
 const entry = join(import.meta.dirname, '..', 'bin', 'tab-recap.ts');
@@ -24,13 +25,13 @@ function run(args: readonly string[], setting?: string, newer = false): { status
         db.exec('PRAGMA user_version = 9999');
         db.close();
     } else {
-        const owner = stateStore(state);
+        const owner = openStoreAt(databaseFile(state as Directory));
         if (owner.kind === 'ready') {
             owner.close();
         }
     }
     const ran = spawnSync(process.execPath, [entry, ...args], { encoding: 'utf8', env });
-    const store = stateStore(state);
+    const store = openStoreAt(databaseFile(state as Directory));
     const queued = store.kind === 'ready' ? store.requests.takeCompactions().map(({ tab, pane, note }) => ({ tab, pane, note })) : [];
     if (store.kind === 'ready') {
         store.close();

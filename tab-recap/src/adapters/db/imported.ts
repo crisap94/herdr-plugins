@@ -7,8 +7,6 @@ import { LedgerRows } from './ledger-rows.ts';
 import { all, text } from './rows.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
-export { factsOfTab } from './legacy.ts';
-
 export function factsOfTabAt(path: FsPath, tab: TabId): readonly Fact[] | null {
     if (!existsSync(path)) {
         return null;

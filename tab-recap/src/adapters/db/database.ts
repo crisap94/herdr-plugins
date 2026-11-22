@@ -83,9 +83,6 @@ export interface StoreSettings {
     readonly closedDays?: ClosedLaneDays;
 }
 
-export type { StoreOptions } from './legacy.ts';
-export { databasePath, openStore, stateStore } from './legacy.ts';
-
 export function storeOver(db: Database, options: StoreSettings = {}): Store {
     const ledger = new LedgerRepository(db);
     return {

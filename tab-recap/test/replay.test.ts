@@ -1,3 +1,5 @@
+import { tabId } from '#src/recap/domain/ids.ts';
+import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { test } from 'node:test';
@@ -8,7 +10,7 @@ import { join } from 'node:path';
 import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.ts';
 import { closeDatabase, connect } from '#src/adapters/db/connection.ts';
 import { storeOver } from '#src/adapters/db/database.ts';
-import { factsOfTab } from '#src/adapters/db/imported.ts';
+import { factsOfTabAt } from '#src/adapters/db/imported.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { scratchStore } from '#src/adapters/db/scratch.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
@@ -84,7 +86,7 @@ test('a 6-turn transcript: 6 extractor runs on the scratch ledger, each shown wh
             scratch.dispose();
         }
         assert.equal(hash(path), before, 'the live database file is byte for byte the same');
-        assert.equal(factsOfTab(path, 'replay:t1')?.length, 0, 'and holds nothing of the replay');
+        assert.equal(factsOfTabAt(path as FsPath, tabId('replay:t1'))?.length, 0, 'and holds nothing of the replay');
     } finally {
         rmSync(live, { recursive: true, force: true });
     }
@@ -93,12 +95,12 @@ test('a 6-turn transcript: 6 extractor runs on the scratch ledger, each shown wh
 test('imported facts of a tab are read beside the replay, read-only; no database, or one without a ledger, is none', () => {
     const dir = scratchDir('replay-imported');
     try {
-        assert.equal(factsOfTab(join(dir, 'missing.db'), 'w1:t1'), null);
+        assert.equal(factsOfTabAt(join(dir, 'missing.db') as FsPath, tabId('w1:t1')), null);
         const path = join(dir, 'tab-recap.db');
         const db = connect(path);
         db.exec('CREATE TABLE task (id BLOB)');
         db.close();
-        assert.equal(factsOfTab(path, 'w1:t1'), null, 'a database from before the ledger');
+        assert.equal(factsOfTabAt(path as FsPath, tabId('w1:t1')), null, 'a database from before the ledger');
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }

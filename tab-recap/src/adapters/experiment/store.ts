@@ -2,13 +2,13 @@ import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Database } from 'bun:sqlite';
 import type { Statement } from 'bun:sqlite';
-import { stateDir } from '#src/daemon/config.ts';
+import { stateDirectory } from '#src/daemon/config.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import { isClosedWhy, isSection } from '#src/recap/domain/fact.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { databasePath } from '../db/database.ts';
+import { databaseFile } from '../db/database.ts';
 import { BUSY_PRAGMA } from '../db/connection.ts';
 
 export interface StoredPoint {
@@ -61,7 +61,7 @@ export class ExperimentStore {
     private readonly facts: Statement;
     private readonly breaks: Statement;
 
-    constructor(path: Text, live: Text = must(parseText(databasePath(stateDir())))) {
+    constructor(path: Text, live: Text = must(parseText(databaseFile(stateDirectory())))) {
         if (onDisk(path) === onDisk(live)) throw new Error(`refusing to open the plugin's live store (${live}): give a copy of it with --db`);
         this.db = new Database(path, { readonly: true });
         this.db.exec(BUSY_PRAGMA);

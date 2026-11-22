@@ -1,10 +1,11 @@
 import { storeRead } from '#test/db/support.ts';
+import type { Directory } from '#src/recap/domain/directory.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { latestVersion } from '#src/adapters/db/migrate.ts';
-import { databasePath } from '#src/adapters/db/database.ts';
+import { databaseFile } from '#src/adapters/db/database.ts';
 import { openState } from '#src/daemon/state.ts';
 import type { Notified, Notifier } from '#src/ports/notifier.ts';
 import { openFixture, scratchDir } from './support.ts';
@@ -60,7 +61,7 @@ test('a database newer than this plugin: the daemon says which backup to restore
     const locale = process.env['TAB_RECAP_LOCALE'];
     process.env['TAB_RECAP_LOCALE'] = 'en';
     try {
-        const db = openFixture(databasePath(dir));
+        const db = openFixture(databaseFile(dir as Directory));
         db.exec(`PRAGMA user_version = ${latestVersion() + 1}`);
         db.close();
         const { notifier, told } = recorder();

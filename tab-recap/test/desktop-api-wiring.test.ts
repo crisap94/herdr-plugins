@@ -1,10 +1,11 @@
 import { test } from 'node:test';
+import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { connect } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { openStore, type Store } from '#src/adapters/db/database.ts';
+import { openStoreAt, type Store } from '#src/adapters/db/database.ts';
 import { desktopFrontend } from '#src/adapters/desktop/frontend.ts';
 import { parseSocketPath } from '#src/adapters/herdr-core/sdk-core.ts';
 import { DesktopBus } from '#src/adapters/desktop/bus.ts';
@@ -24,7 +25,7 @@ const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout
 
 function stateStore(): { root: string; store: Store } {
     const root = mkdtempSync(join(tmpdir(), 'desktop-wire-'));
-    const opened = openStore(join(root, 'tab-recap.db'));
+    const opened = openStoreAt(join(root, 'tab-recap.db') as FsPath);
     if (opened.kind !== 'ready') { throw new Error('store'); }
     return { root, store: opened };
 }

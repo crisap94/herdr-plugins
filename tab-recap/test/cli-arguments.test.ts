@@ -1,4 +1,5 @@
 import { parseUsd } from '#src/recap/domain/usd.ts';
+import type { Directory } from '#src/recap/domain/directory.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
@@ -10,7 +11,7 @@ import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSy
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { BUN_CACHE_OFF } from './support/bun-env.ts';
-import { stateStore as ownerStore } from '#src/adapters/db/database.ts';
+import { databaseFile, openStoreAt } from '#src/adapters/db/database.ts';
 
 const entry = join(import.meta.dirname, '..', 'bin', 'tab-recap.ts');
 
@@ -23,7 +24,7 @@ function runWith(store: boolean, args: readonly string[]): { status: number | nu
     const config = join(root, 'config');
     const state = join(root, 'state');
     if (store) {
-        const owner = ownerStore(state);
+        const owner = openStoreAt(databaseFile(state as Directory));
         if (owner.kind === 'ready') {
             owner.close();
         }
@@ -132,8 +133,7 @@ test('`autocompact`: three decisions print three rows newest first with share, v
     const root = mkdtempSync(join(tmpdir(), 'tab-recap-autocompact-'));
     const state = join(root, 'state');
     try {
-        const { stateStore } = await import('#src/adapters/db/database.ts');
-        const store = stateStore(state);
+        const store = openStoreAt(databaseFile(state as Directory));
         assert.equal(store.kind, 'ready');
         store.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 2)");
         const now = Date.now();

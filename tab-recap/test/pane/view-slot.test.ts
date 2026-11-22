@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, statSync } from 'node:fs';
@@ -6,7 +7,7 @@ import { createConnection } from 'node:net';
 import type { Socket } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { openStore } from '#src/adapters/db/database.ts';
+import { openStoreAt } from '#src/adapters/db/database.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import * as view from '#src/daemon/slots/view.ts';
 import type { ViewContext } from '#src/daemon/slots/view.ts';
@@ -24,7 +25,7 @@ import { instant } from '#src/recap/domain/time.ts';
 const HELLO: Hello = { t: 'hello', protocol: PROTOCOL, version: '9.9.9', role: 'column', tab: 't1', pane: null, cols: 40, rows: 6, colour: false };
 
 const storeOf = (): Store => {
-    const opened = openStore(':memory:');
+    const opened = openStoreAt(':memory:' as FsPath);
     if (opened.kind !== 'ready') {
         throw new Error('the in-memory store is not ready');
     }
