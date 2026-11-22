@@ -1,3 +1,4 @@
+import { textOf } from '../text.ts';
 import { LISTED, said } from './item-gate.ts';
 import type { Gate, Outcome } from './item-gate.ts';
 
@@ -7,6 +8,6 @@ export const pronounOpener: Gate = {
     id: 'G9',
     check: (item, context): Outcome | null => (!LISTED.includes(item.section) || !OPENERS.test(item.text) ? null : {
         kind: 'flag', gate: 'G9',
-        reason: said(context.language, 'opens with a pronoun: name the thing', 'empieza con un pronombre: nombra la cosa'),
+        reason: said(context.language, textOf('opens with a pronoun: name the thing'), textOf('empieza con un pronombre: nombra la cosa')),
     }),
 };

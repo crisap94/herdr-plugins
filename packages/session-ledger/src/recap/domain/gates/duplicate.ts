@@ -1,3 +1,4 @@
+import { textOf } from '../text.ts';
 import { said } from './item-gate.ts';
 import type { Gate, Outcome } from './item-gate.ts';
 import { jaccard, tokensOf } from './words.ts';
@@ -14,7 +15,7 @@ export const duplicate: Gate = {
         const kept = context.earlier.find((other) => other.section !== 'links' && jaccard(mine, tokensOf(other.text)) >= THRESHOLD);
         return kept === undefined ? null : {
             kind: 'refuse', gate: 'G2',
-            reason: said(context.language, `it repeats another item of this task: "${kept.text}" (${kept.section})`, `repite otro elemento de esta tarea: "${kept.text}" (${kept.section})`),
+            reason: said(context.language, textOf(`it repeats another item of this task: "${kept.text}" (${kept.section})`), textOf(`repite otro elemento de esta tarea: "${kept.text}" (${kept.section})`)),
         };
     },
 };

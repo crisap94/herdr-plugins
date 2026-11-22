@@ -6,7 +6,7 @@
   { "export": "TaskShape", "origin": "packages/session-ledger/src/recap/domain/grouping.ts" },
   { "export": "OwnTrigger", "origin": "packages/session-ledger/src/recap/domain/boundary.ts" },
   { "export": "SessionMark", "origin": "packages/session-ledger/src/recap/domain/legacy.ts", "originName": "LaneMark" },
-  { "export": "GateStats", "origin": "packages/session-ledger/src/recap/domain/gates/legacy.ts" },
+  { "export": "GateStats", "origin": "packages/session-ledger/src/recap/domain/gates/item-gate.ts" },
   { "export": "RunFacts", "origin": "packages/session-ledger/src/ports/recap-records.ts" },
   { "export": "RecordedRun", "origin": "packages/session-ledger/src/ports/legacy.ts" },
   { "export": "FailedRun", "origin": "packages/session-ledger/src/ports/legacy.ts" },

@@ -47,7 +47,7 @@ const flaggedOf = (stub: Stub, agent: Text): InputCandidate =>
 export function deduplicated(candidates: readonly InputCandidate[]): readonly InputCandidate[] {
     const kept: InputCandidate[] = [];
     for (const one of candidates) {
-        const twin = kept.findIndex((each) => each.section === one.section && jaccard(each.text, one.text) >= SAME);
+        const twin = kept.findIndex((each) => each.section === one.section && jaccard(textOf(each.text), textOf(one.text)) >= SAME);
         if (twin < 0) {
             kept.push(one);
         } else if (kept[twin]?.flagged === true && !one.flagged) {

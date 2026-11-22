@@ -5,6 +5,8 @@ import type { Extracted, Ground } from '#src/recap/application/extract-job.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import { writerContext } from '#src/recap/application/writer-context.ts';
 import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
+import { gateName } from '#src/recap/domain/gates/gatekeeper.ts';
+import type { GateContext } from '#src/recap/domain/gates/gate.ts';
 import { itemGate } from '#src/recap/domain/gates/item-gates.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
 import { factOf } from './fakes/facts.ts';
@@ -43,8 +45,8 @@ const run = (summarizer: Summarizer, ground = groundOf()): Promise<Extracted> =>
 const texts = (done: Extracted): readonly string[] => (done.kind === 'ops' ? done.tasks.flatMap((task) => task.ops.flatMap((op) => (op.op === 'add' ? op.text : []))) : []);
 
 test('the adapter: an add or update becomes the item it would put in the recap; a close puts nothing; a decision\'s why is its reason clause', () => {
-    const shown = new Map([['f1', factOf('decisions', 'Keep SQLite', { why: 'one file to back up' })]]);
-    const context = { now: 1, language: 'en', agents: ['claude'], shown, open: [...shown.values()], closedLately: [], source: 'go' };
+    const shown = new Map([[textOf('f1'), factOf('decisions', 'Keep SQLite', { why: 'one file to back up' })]]);
+    const context: GateContext = { now: instant(1), language: textOf('en'), agents: [textOf('claude')], shown, open: [...shown.values()], closedLately: [], source: textOf('go') };
     const found = (list: readonly Operation[]): readonly string[] => itemGate.check(list, context).map((finding) => `${finding.at}:${finding.gate}:${finding.outcome}`);
     assert.deepEqual(found([{ op: 'add', section: 'done', text: NARRATOR, why: null, ref: null, at: null, agent: null }]), ['0:G1:refuse']);
     assert.deepEqual(found([{ op: 'add', section: 'decisions', text: 'Leave the db tab alone.', why: null, ref: null, at: null, agent: null }]), ['0:G3:refuse']);
@@ -61,7 +63,7 @@ test('a refused add comes back as a correction that quotes it with the gate\'s r
     assert.match(retryDoc(asked[1]), /<operation op="add" section="done" anchor="go">claude completed the research and wrote its report\.<\/operation>\s*<reason gate="G1">the subject is an agent/);
     assert.doesNotMatch(retryDoc(asked[1]), /Both pipelines for !256 are green/, 'what passed is not sent back');
     assert.deepEqual(texts(done), ['Both pipelines for !256 are green.', FINE], 'what passed stays; the replacement follows it');
-    assert.ok(done.kind === 'ops' && done.stats.refused['G1'] === 1 && done.stats.dropped === 0 && done.cost === 0.02);
+    assert.ok(done.kind === 'ops' && done.stats.refused[gateName('G1')] === 1 && done.stats.dropped === 0 && done.cost === 0.02);
 });
 
 test('a writer that repeats a refused add loses only that one: it is dropped, the rest is kept', async () => {
@@ -69,7 +71,7 @@ test('a writer that repeats a refused add loses only that one: it is dropped, th
     const done = await run(summarizer);
     assert.equal(asked.length, 2, 'one retry, no more');
     assert.deepEqual(texts(done), [FINE, 'Review !256.']);
-    assert.ok(done.kind === 'ops' && done.stats.refused['G1'] === 2 && done.stats.dropped === 1);
+    assert.ok(done.kind === 'ops' && done.stats.refused[gateName('G1')] === 2 && done.stats.dropped === 1);
 });
 
 test('two refused adds are both listed in the correction', async () => {
@@ -85,7 +87,7 @@ test('a repeat inside the answer is the ledger gate\'s (G2) and is sent back, an
     const done = await run(summarizer);
     assert.deepEqual(texts(done).slice(0, 2), ['Both pipelines for !256 are green.', 'the thing from before'], 'the dead link is kept');
     assert.equal(texts(done).includes('Las pruebas fallan después de la fusión.'), false, 'the Spanish line was refused and the retry did not send it again');
-    assert.ok(done.kind === 'ops' && done.stats.flagged['G4'] === 1 && done.stats.refused['G5'] === 1 && done.stats.flagged['G5'] === undefined, 'the link is counted as flagged, the language as refused');
+    assert.ok(done.kind === 'ops' && done.stats.flagged[gateName('G4')] === 1 && done.stats.refused[gateName('G5')] === 1 && done.stats.flagged[gateName('G5')] === undefined, 'the link is counted as flagged, the language as refused');
     const correction = retryDoc(asked[1]);
     assert.match(correction, /Both pipelines for !256 are green, as checked\.<\/operation>\s*<reason gate="G2">it repeats another fact added in this answer/);
     assert.doesNotMatch(correction, /G4/, 'a dead link is flagged and kept, never sent back');
@@ -103,13 +105,13 @@ test('adds that name nothing concrete or open with a pronoun are kept and counte
     const done = await run(summarizer);
     assert.equal(asked.length, 1, 'nothing refused: no retry');
     assert.equal(texts(done).length, 3);
-    assert.ok(done.kind === 'ops' && done.stats.flagged['G8'] === 2 && done.stats.flagged['G9'] === 1 && Object.keys(done.stats.refused).length === 0);
+    assert.ok(done.kind === 'ops' && done.stats.flagged[gateName('G8')] === 2 && done.stats.flagged[gateName('G9')] === 1 && Object.keys(done.stats.refused).length === 0);
 });
 
 test('when the retry cannot be used the first answer is kept without its refused adds; with no usable first answer the run fails', async () => {
     const kept = await run(writer(ops(add('done', NARRATOR), add('done', FINE)), 'not json at all').summarizer);
     assert.deepEqual(texts(kept), [FINE]);
-    assert.ok(kept.kind === 'ops' && kept.stats.refused['G1'] === 1 && kept.stats.dropped === 1);
+    assert.ok(kept.kind === 'ops' && kept.stats.refused[gateName('G1')] === 1 && kept.stats.dropped === 1);
     assert.equal((await run(writer('nope', 'still nope').summarizer)).kind, 'failed');
 });
 

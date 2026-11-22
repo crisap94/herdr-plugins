@@ -7,12 +7,15 @@ import { correctionOf, gatekeeper } from '#src/recap/domain/gates/gatekeeper.ts'
 import type { GateContext } from '#src/recap/domain/gates/gate.ts';
 import { foldedOf } from '#src/recap/domain/gates/words.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { factOf } from './fakes/facts.ts';
 
-const INPUT = foldedOf('Merged !256 after both pipelines went green.\n  The release is tagged:   v1.9.0 — "ship it"\nERROR: lint failed');
+const INPUT = textOf(foldedOf('Merged !256 after both pipelines went green.\n  The release is tagged:   v1.9.0 — "ship it"\nERROR: lint failed'));
 const decision = factOf('decisions', 'Keep SQLite', { why: 'one file to back up' });
 const question = factOf('needs', 'Should guests keep their basket?');
-const context: GateContext = { now: 1, language: 'en', agents: [], shown: new Map([['f3', decision], ['f4', question]]), open: [decision, question], closedLately: [], source: INPUT };
+const context: GateContext = { now: instant(1), language: textOf('en'), agents: [], shown: new Map([[textOf('f3'), decision], [textOf('f4'), question]]), open: [decision, question], closedLately: [], source: INPUT };
 const add = (anchor: string | null | undefined): Operation => ({ op: 'add', section: 'done', text: 'Merged !256', why: null, ref: null, at: null, agent: null, ...(anchor === undefined ? {} : { anchor }) });
 const gates = [anchorGate, answeredGate];
 const update = (anchor?: string): Operation => ({ op: 'update', id: 'f3', text: 'Keep SQLite for 2.0', why: null, ...(anchor === undefined ? {} : { anchor }) });
@@ -33,7 +36,7 @@ test('G11: an add without an anchor, or with one the input does not hold, is ref
     assert.deepEqual(found.refused.map((finding) => [finding.at, finding.gate]), [[0, 'G11'], [1, 'G11'], [2, 'G11']]);
     assert.deepEqual(found.kept.length, 1);
     assert.match(found.refused[0]?.reason ?? '', /the anchor is missing: copy a quote of at most 120 characters/);
-    assert.match(correctionOf([add('the pipeline was green')], [{ at: 0, gate: 'G11', outcome: 'refuse', reason: found.refused[2]?.reason ?? '' }]), /G11: add done "Merged !256" — the anchor "the pipeline was green" is not in the input: copy it exactly/);
+    assert.match(correctionOf([add('the pipeline was green')], [{ at: brand<number, 'Count'>(0), gate: 'G11', outcome: 'refuse', reason: found.refused[2]?.reason ?? textOf('') }]), /G11: add done "Merged !256" — the anchor "the pipeline was green" is not in the input: copy it exactly/);
 });
 
 test('G11: an update may carry an anchor and then it is checked; a close never has one', () => {

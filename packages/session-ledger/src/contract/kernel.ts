@@ -23,6 +23,7 @@ export type ParseFailure =
 
 export type Text = Brand<string, 'Text'>;
 export type Count = Brand<number, 'Count'>;
+export type GateName = Brand<string, 'GateName'>;
 export type Usd = Brand<number, 'Usd'>;
 export type Probability = Brand<number, 'Probability'>;
 export type AutocompactPercent = Brand<number, 'AutocompactPercent'>;

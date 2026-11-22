@@ -3,7 +3,9 @@ import { forTask, judge } from '#src/recap/application/ops-gating.ts';
 import type { Judged, TaskGround } from '#src/recap/application/ops-gating.ts';
 import { live, staged, toolOf } from '#src/recap/application/job-kit/stage.ts';
 import type { Stage } from '#src/recap/application/job-kit/stage.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import type { Finding, Gate } from '#src/recap/domain/gates/gate.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 
 export interface KitGround {
@@ -17,14 +19,14 @@ export type CallVerdict =
     | { readonly kind: 'refused'; readonly stage: Stage; readonly findings: readonly Finding[] };
 
 export function callOf(stage: Stage, call: Tasked, ground: KitGround): CallVerdict {
-    const count = live(stage).length;
+    const count = brand<number, 'Count'>(live(stage).length);
     const next = staged(stage, call);
     if (next.kind === 'refused') {
         const reason = next.reason === 'stage-closed' ? 'the stage is submitted' : `${toolOf(stage.job, call.op)} is not in this job's tools`;
-        return { kind: 'refused', stage, findings: [{ at: count, gate: 'K', outcome: 'refuse', reason }] };
+        return { kind: 'refused', stage, findings: [{ at: count, gate: 'K', outcome: 'refuse', reason: textOf(reason) }] };
     }
     if (call.task !== ground.task.key) {
-        return { kind: 'refused', stage, findings: [{ at: count, gate: 'K', outcome: 'refuse', reason: 'the call names another task' }] };
+        return { kind: 'refused', stage, findings: [{ at: count, gate: 'K', outcome: 'refuse', reason: textOf('the call names another task') }] };
     }
     const ops = [...forTask(live(stage), ground.task.key), call.op];
     const judged = judge(ground.gates, ops, ground.task, ground.at);
