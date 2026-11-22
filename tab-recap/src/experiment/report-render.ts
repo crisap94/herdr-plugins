@@ -7,7 +7,6 @@ import type { Milliseconds } from '#src/recap/domain/time.ts';
 import type { Usd } from '#src/recap/domain/usd.ts';
 import type { CountMean } from './stats.ts';
 
-export { cell, table } from './legacy.ts';
 
 export type Metric = Count | Probability | Usd | Milliseconds | Kappa;
 

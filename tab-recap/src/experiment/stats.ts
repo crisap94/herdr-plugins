@@ -6,8 +6,6 @@ import { parseProbability, type Probability } from '#src/recap/domain/probabilit
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { parseMilliseconds, type Milliseconds } from '#src/recap/domain/time.ts';
 
-export { agreement, auc, brier, jaccard, kappa, mean, quantile, undecidedRate, wordsOf } from './legacy.ts';
-export type { Scored } from './legacy.ts';
 
 export type Label = 0 | 1;
 

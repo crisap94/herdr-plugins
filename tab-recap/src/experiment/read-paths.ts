@@ -2,7 +2,6 @@ import { ClaudeTool } from '@stateforge-labs/harness-hooks';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 
-export { readsOf, shellReads } from './legacy.ts';
 
 const LOOKERS = /^(cat|sed\s+-n|head|tail)\b/;
 

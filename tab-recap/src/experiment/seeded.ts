@@ -2,7 +2,6 @@ import type { Count } from '#src/recap/domain/count.ts';
 import { parseProbability, type Probability } from '#src/recap/domain/probability.ts';
 import { present } from './stats.ts';
 
-export { seeded, shuffled } from './legacy.ts';
 
 export type Draw = () => Probability;
 

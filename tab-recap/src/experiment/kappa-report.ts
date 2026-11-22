@@ -4,8 +4,6 @@ import type { Kappa } from '#src/recap/domain/kappa.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { kappaOf, type Label } from './stats.ts';
 
-export { kappaRows } from './legacy.ts';
-export type { KappaRow, Labelled } from './legacy.ts';
 
 export const KAPPA_USABLE = 0.6;
 

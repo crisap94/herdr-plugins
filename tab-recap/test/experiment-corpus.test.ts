@@ -1,33 +1,40 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { hindsightOf, agentTextOf } from '#src/experiment/hindsight.ts';
-import { outcomesOf } from '#src/experiment/outcomes.ts';
-import type { Event, Outcome } from '#src/experiment/outcomes.ts';
-import { readsOf, shellReads } from '#src/experiment/read-paths.ts';
-import { seeded, shuffled } from '#src/experiment/seeded.ts';
-import { stratify } from '#src/experiment/stratify.ts';
-import type { Candidate } from '#src/experiment/stratify.ts';
+import { boundaryOutcomes } from '#src/experiment/outcomes.ts';
+import type { Boundary, BoundaryOutcome, TranscriptEvent } from '#src/experiment/outcomes.ts';
+import { isReadingTool, parseToolInput, shellReadsOf, toolReads } from '#src/experiment/read-paths.ts';
+import { drawsOf, shuffledBy } from '#src/experiment/seeded.ts';
+import { stratifyMoments } from '#src/experiment/stratify.ts';
+import type { Moment } from '#src/experiment/stratify.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+import { parseFactIndex } from '#src/recap/domain/fact-index.ts';
+import type { Label } from '#src/experiment/stats.ts';
 import { onlyInRecent, verbatimLabel } from '#src/experiment/verbatim.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 
 const asText = (value: string): Text => must(parseText(value));
+const count = brand<number, 'Count'>;
+const seeded = (seed: number): ReturnType<typeof drawsOf> => drawsOf(count(seed));
+const shellReads = (command: string): readonly string[] => shellReadsOf(asText(command));
+const readsOf = (name: string, input: Record<string, unknown>): readonly string[] => (isReadingTool(name) ? toolReads(name, parseToolInput(input)) : []);
 
 test('seeded: the same seed gives the same order', () => {
-    assert.deepEqual(shuffled([1, 2, 3, 4, 5, 6], seeded(42)), shuffled([1, 2, 3, 4, 5, 6], seeded(42)));
-    assert.notDeepEqual(shuffled([1, 2, 3, 4, 5, 6, 7, 8], seeded(1)), shuffled([1, 2, 3, 4, 5, 6, 7, 8], seeded(2)));
+    assert.deepEqual(shuffledBy([1, 2, 3, 4, 5, 6], seeded(42)), shuffledBy([1, 2, 3, 4, 5, 6], seeded(42)));
+    assert.notDeepEqual(shuffledBy([1, 2, 3, 4, 5, 6, 7, 8], seeded(1)), shuffledBy([1, 2, 3, 4, 5, 6, 7, 8], seeded(2)));
 });
 
-const candidates = (): Candidate[] => Array.from({ length: 300 }, (_, i) => ({ id: `p${i}`, share: i % 3 === 0 ? 55 : 10, beforeBoundary: i % 25 === 0 }));
+const candidates = (): Moment[] => Array.from({ length: 300 }, (_, i) => ({ id: asText(`p${i}`), share: count(i % 3 === 0 ? 55 : 10), beforeBoundary: i % 25 === 0 ? 'yes' : 'no' }));
 
 test('stratify: quotas, no point twice, boundary points first, shortfalls recorded', () => {
-    const { picked, counts } = stratify(candidates());
+    const { picked, counts } = stratifyMoments(candidates());
     assert.equal(new Set(picked.map((p) => p.id)).size, picked.length);
     assert.equal(counts.boundary.got, 12);
     assert.equal(counts.high.got, 100 - 4);
     assert.deepEqual(counts.high.asked, 120);
     assert.equal(counts.random.got, 60);
-    assert.deepEqual(stratify(candidates()), stratify(candidates()));
+    assert.deepEqual(stratifyMoments(candidates()), stratifyMoments(candidates()));
     assert.ok(picked.filter((p) => p.stratum === 'boundary').every((p) => Number(p.id.slice(1)) % 25 === 0));
 });
 
@@ -40,23 +47,26 @@ test('read paths: Read, cat, sed -n, head, tail; not other commands', () => {
     assert.deepEqual(readsOf('Edit', { file_path: '/a/b.ts' }), []);
 });
 
-const tool = (...reads: string[]): Event => ({ kind: 'tool', reads });
-const boundary: Extract<Event, { kind: 'boundary' }> = { kind: 'boundary', pos: 10, at: 1, trigger: 'auto', pre: 900, post: 100 };
+type Event = TranscriptEvent;
+const tool = (...reads: string[]): Event => ({ kind: 'tool', reads: reads.map(asText) });
+const prompt = (text: string): Event => ({ kind: 'prompt', text: asText(text) });
+const boundary: Boundary = { kind: 'boundary', pos: count(10), at: instant(1), trigger: asText('auto'), pre: count(900), post: count(100) };
+const outcomesOf = (events: readonly Event[]): readonly BoundaryOutcome[] => boundaryOutcomes(events);
 
 test('outcomes: re-reads inside 50 before and 10 after, restated prompt by Jaccard', () => {
-    const before: Event[] = [{ kind: 'prompt', text: 'please fix the login bug in auth' }, tool('/a.ts', '/b.ts'), tool('/c.ts')];
-    const after: Event[] = [{ kind: 'prompt', text: 'fix the login bug in auth please' }, tool('/b.ts'), tool('/zzz.ts')];
-    const outcome = outcomesOf([...before, boundary, ...after])[0] as Outcome;
+    const before: Event[] = [prompt('please fix the login bug in auth'), tool('/a.ts', '/b.ts'), tool('/c.ts')];
+    const after: Event[] = [prompt('fix the login bug in auth please'), tool('/b.ts'), tool('/zzz.ts')];
+    const outcome = outcomesOf([...before, boundary, ...after])[0] as BoundaryOutcome;
     assert.equal(outcome.reReads, 1);
-    assert.equal(outcome.restated, true);
+    assert.equal(outcome.restated, 'yes');
     assert.equal(outcome.preTokens, 900);
 });
 
 test('outcomes: only the 10 calls after count, and a different prompt is not a restatement', () => {
-    const after: Event[] = [...Array.from({ length: 10 }, () => tool('/n.ts')), tool('/a.ts'), { kind: 'prompt', text: 'completely different words entirely' }];
-    const outcome = outcomesOf([{ kind: 'prompt', text: 'fix the login bug' }, tool('/a.ts'), boundary, ...after])[0] as Outcome;
+    const after: Event[] = [...Array.from({ length: 10 }, () => tool('/n.ts')), tool('/a.ts'), prompt('completely different words entirely')];
+    const outcome = outcomesOf([prompt('fix the login bug'), tool('/a.ts'), boundary, ...after])[0] as BoundaryOutcome;
     assert.equal(outcome.reReads, 0);
-    assert.equal(outcome.restated, false);
+    assert.equal(outcome.restated, 'no');
 });
 
 test('hindsight: six entries or the character budget, and the next operator prompt', () => {
@@ -78,8 +88,8 @@ test('verbatim: a path, error line or hash only in the recent turns that the age
 });
 
 import { sectionsOf } from '#src/experiment/coverage.ts';
-import { coverageLabelsOf, labelsOf } from '#src/experiment/label-prompt.ts';
-import { pooled, retried } from '#src/experiment/pool.ts';
+import { coverageLabelsIn, labelsIn } from '#src/experiment/label-prompt.ts';
+import { pooledBy, retriedBy } from '#src/experiment/pool.ts';
 
 const fact = (section: Section, text: string, state: 'open' | 'closed' = 'open', why: string | null = null): HistoryFact => ({ section, text: textOf(text), why: why === null ? null : textOf(why), state, closedWhy: null, closedAt: null, firstAt: instant(1), lastAt: instant(2) });
 
@@ -90,6 +100,16 @@ test('coverage: the recap sections the brief job is given, from the open facts',
     assert.deepEqual(sectionsOf(history).now, []);
     assert.deepEqual(sectionsOf(history).decisions, ['x']);
 });
+
+const labelsOf = (reply: string, ids: readonly string[]): Readonly<Record<string, Label>> | null => {
+    const found = labelsIn(asText(reply), ids.map(asText));
+    return found === null ? null : Object.fromEntries(found);
+};
+
+const coverageLabelsOf = (reply: string, facts: readonly { readonly n: number; readonly reason: boolean }[]): Readonly<Record<string, unknown>> | null => {
+    const found = coverageLabelsIn(asText(reply), facts.map((item) => ({ n: must(parseFactIndex(item.n)), reason: item.reason ? 'yes' as const : 'no' as const })));
+    return found === null ? null : Object.fromEntries(found);
+};
 
 test('labels: only 0 or 1 for every id; coverage labels need a reason for a decision', () => {
     assert.deepEqual(labelsOf('```json\n{"a":1,"b":0}\n```', ['a', 'b']), { a: 1, b: 0 });
@@ -103,27 +123,28 @@ test('labels: only 0 or 1 for every id; coverage labels need a reason for a deci
 test('pool: limit respected, order kept; retried: waits grow and the last answer returns', async () => {
     let live = 0;
     let peak = 0;
-    const out = await pooled([1, 2, 3, 4, 5, 6], 2, async (n) => { live += 1; peak = Math.max(peak, live); await new Promise((r) => setTimeout(r, 5)); live -= 1; return n * 2; });
+    const out = await pooledBy([1, 2, 3, 4, 5, 6], count(2), async (n) => { live += 1; peak = Math.max(peak, live); await new Promise((r) => setTimeout(r, 5)); live -= 1; return n * 2; });
     assert.deepEqual(out, [2, 4, 6, 8, 10, 12]);
     assert.equal(peak, 2);
     const waits: number[] = [];
     let calls = 0;
-    const last = await retried(() => { calls += 1; return Promise.resolve(calls); }, (n) => n >= 3, { baseMs: 10, sleep: (ms) => { waits.push(ms); return Promise.resolve(); } });
+    const last = await retriedBy(() => { calls += 1; return Promise.resolve(calls); }, (n) => (n >= 3 ? 'usable' : 'unusable'), { baseMs: brand<number, 'Milliseconds'>(10), sleep: (ms) => { waits.push(ms); return Promise.resolve(); } });
     assert.equal(last, 3);
     assert.deepEqual(waits, [10, 20]);
 });
 
 import type { HistoryFact } from '#src/ports/ledger.ts';
-import type { Labelled } from '#src/experiment/kappa-report.ts';
-import { kappaRows } from '#src/experiment/kappa-report.ts';
+import { kappaScores } from '#src/experiment/kappa-report.ts';
+import type { LabelledMoment } from '#src/experiment/kappa-report.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Section } from '#src/recap/domain/fact.ts';
 
 test('kappa rows: usable at 0.6 and enough points', () => {
     const ids = Array.from({ length: 12 }, (_, i) => `p${i}`);
-    const labeller: Labelled[] = ids.map((id, i) => ({ id, labels: { a: i % 2 === 0 ? 0 : 1, b: i % 3 === 0 ? 1 : 0 } }));
-    const operator: Labelled[] = ids.map((id, i) => ({ id, labels: { a: i % 2 === 0 ? 0 : 1, b: i % 2 === 0 ? 0 : 1 } }));
-    const rows = kappaRows(operator, labeller, ['a', 'b', 'c']);
-    assert.deepEqual(rows.map((row) => row.usable), [true, false, false]);
+    const moment = (id: string, labels: Readonly<Record<string, Label>>): LabelledMoment => ({ id: asText(id), labels: new Map(Object.entries(labels).map(([name, label]) => [asText(name), label])) });
+    const labeller = ids.map((id, i) => moment(id, { a: i % 2 === 0 ? 0 : 1, b: i % 3 === 0 ? 1 : 0 }));
+    const operator = ids.map((id, i) => moment(id, { a: i % 2 === 0 ? 0 : 1, b: i % 2 === 0 ? 0 : 1 }));
+    const rows = kappaScores(operator, labeller, ['a', 'b', 'c'].map(asText));
+    assert.deepEqual(rows.map((row) => row.usable), ['usable', 'unusable', 'unusable']);
     assert.deepEqual(rows.map((row) => row.n), [12, 12, 0]);
 });

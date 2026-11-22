@@ -8,8 +8,6 @@ import { parseMilliseconds, type Milliseconds } from '#src/recap/domain/time.ts'
 import { parseUsd, type Usd } from '#src/recap/domain/usd.ts';
 import { aucOf, brierOf, countMean, meanProbability, present, quantileMs, undecidedShare, type CountMean, type Label, type ScoredLabel } from './stats.ts';
 
-export { coverageAuc, drift, expandBriefs, policyMetrics, questionMetrics } from './legacy.ts';
-export type { Answer, PolicyMetrics, QuestionMetrics, Reps } from './legacy.ts';
 
 export type AnswerKind = 'point' | 'fact' | 'brief';
 

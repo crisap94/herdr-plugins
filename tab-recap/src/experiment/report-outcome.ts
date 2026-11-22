@@ -5,8 +5,6 @@ import type { Text } from '#src/recap/domain/text.ts';
 import { countMean, flagShare, type CountMean, type Flag } from './stats.ts';
 import { verdictOfAnswer, type ScoredReps } from './report-metrics.ts';
 
-export { outcomeGap } from './legacy.ts';
-export type { BoundaryRow, Group, OutcomeGap } from './legacy.ts';
 
 export interface Boundary { readonly pointId: Text | null; readonly reReads: Count; readonly restated: Flag; readonly followed: Flag }
 

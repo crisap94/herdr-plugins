@@ -4,7 +4,6 @@ import type { FactIndex } from '#src/recap/domain/fact-index.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { Flag, Label } from './stats.ts';
 
-export { coverageLabelsOf, labelsOf } from './legacy.ts';
 
 const listed = (questions: ReadonlyMap<Text, Noul>): readonly Text[] =>
     [...questions].map(([id, noul]) => must(parseText(`- ${id}: ${noul.instructions}\n  1 when: ${noul.criteria.true}\n  0 when: ${noul.criteria.false}`)));
