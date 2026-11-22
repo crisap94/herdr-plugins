@@ -3,13 +3,13 @@ import type { HarnessAsk, HarnessChoice, HarnessPort } from '#src/ports/harness.
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { objectIn } from '#src/recap/application/recap-shape.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import { parseProbability, type Probability } from '#src/recap/domain/probability.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { elapsed, instant, type Instant } from '#src/recap/domain/time.ts';
+import { parseTokenAmount } from '#src/recap/domain/token-amount.ts';
 
-export { HarnessDecider } from './legacy.ts';
+export { deciderPortOf } from './legacy.ts';
 
 export function unfencedText(markdown: Text): Text {
     const trimmed = markdown.trim();
@@ -69,6 +69,6 @@ export class HarnessPortDecider implements DeciderPort {
         const answers = probabilitiesOf(ran.text, [...questions.keys()]);
         return answers === null
             ? unknown({ why: 'unreadable', detail: causeOf(must(parseText(`${this.harness.id} did not answer with one probability per question`))) })
-            : { kind: 'decided', answers, tokens: must(parseCount(Math.ceil(bytes / 4))), costUsd: ran.costUsd, tookMs: elapsed(began, this.now()), model: this.harness.label(this.choice) };
+            : { kind: 'decided', answers, tokens: must(parseTokenAmount(Math.ceil(bytes / 4))), costUsd: ran.costUsd, tookMs: elapsed(began, this.now()), model: this.harness.label(this.choice) };
     }
 }

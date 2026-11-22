@@ -5,8 +5,8 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { HarnessDecider } from '#src/adapters/job/decider.ts';
-import { JevDecider } from '#src/adapters/job/jev-decider.ts';
+import { HarnessPortDecider } from '#src/adapters/job/decider.ts';
+import { JevPortDecider } from '#src/adapters/job/jev-decider.ts';
 import { COVERAGE_BY_DEFAULT, MINIMUM_DEFAULT, type AutocompactPercent, jevOf, parseAutocompactCeiling, parseAutocompactKinds, parseAutocompactMode, parseAutocompactPercent, parseCooldownMs, parseCoverageBy, parseMissedFacts, parseShadowKinds, policyOf } from '#src/recap/domain/autocompact.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { DECIDER_BY_CHOICES, DECIDER_DEFAULT, deciderJobOf, JOB_BY_CHOICES } from '#src/recap/domain/job.ts';
@@ -116,11 +116,11 @@ async function withEnvAsync(values: Readonly<Record<string, string>>, body: () =
 test('deciderFor: jev builds the Jev decider, a harness job a harness decider, off or nothing installed none', () => {
     withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_AUTOCOMPACT_BY: 'jev' }, () => {
         const jev = deciderFor(loadConfig(), [], WORK, runtime);
-        assert.ok(jev instanceof JevDecider);
+        assert.ok(jev instanceof JevPortDecider);
         assert.equal(jev.label, 'jev · jev-1.13.0');
     });
     withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_AUTOCOMPACT_BY: 'recap' }, () => {
-        assert.ok(deciderFor(loadConfig(), ['claude'], WORK, runtime) instanceof HarnessDecider);
+        assert.ok(deciderFor(loadConfig(), ['claude'], WORK, runtime) instanceof HarnessPortDecider);
         assert.equal(deciderFor(loadConfig(), [], WORK, runtime), null);
     });
     withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_AUTOCOMPACT_BY: 'off' }, () => {
@@ -155,20 +155,20 @@ function withHome(body: () => void): void {
 
 test('coverageDeciderFor: auto picks Jev when a key is found, else the moment decider', () => {
     withHome(() => withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_JEV_KEY: 'sk-test-coverage' }, () => {
-        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], WORK, runtime) instanceof JevDecider);
+        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], WORK, runtime) instanceof JevPortDecider);
     }));
     withHome(() => withEnv({ TAB_RECAP_BACKEND: 'auto' }, () => {
-        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], WORK, runtime) instanceof HarnessDecider);
+        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], WORK, runtime) instanceof HarnessPortDecider);
         assert.equal(coverageDeciderFor(loadConfig(), [], WORK, runtime), null, 'no key and no harness: no decider, so the check does not run');
     }));
 });
 
 test('coverageDeciderFor: decider is the moment decider even with a key; jev is Jev always', () => {
     withHome(() => withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_JEV_KEY: 'sk-test-coverage', TAB_RECAP_AUTOCOMPACT_COVERAGE_BY: 'decider' }, () => {
-        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], WORK, runtime) instanceof HarnessDecider);
+        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], WORK, runtime) instanceof HarnessPortDecider);
     }));
     withHome(() => withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_AUTOCOMPACT_COVERAGE_BY: 'jev' }, () => {
-        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], WORK, runtime) instanceof JevDecider);
+        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], WORK, runtime) instanceof JevPortDecider);
     }));
 });
 
@@ -179,7 +179,7 @@ test('coverageDeciderFor: jev with no key cannot answer, so the check fails clos
     try {
         await withEnvAsync({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_AUTOCOMPACT_COVERAGE_BY: 'jev' }, async () => {
             const decider = coverageDeciderFor(loadConfig(), ['claude'], WORK, runtime);
-            assert.ok(decider instanceof JevDecider);
+            assert.ok(decider instanceof JevPortDecider);
             assert.ok(isUnknown(await decider.ask(documentOf({}), new Map())), 'an unknown answer, never a probability');
         });
     } finally {

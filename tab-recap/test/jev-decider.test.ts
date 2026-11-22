@@ -1,8 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { JevDecider } from '#src/adapters/job/jev-decider.ts';
+import { JevPortDecider } from '#src/adapters/job/jev-decider.ts';
 import { jevKey } from '#src/adapters/job/jev-key.ts';
 import type { Noul } from '#src/ports/decider.ts';
+import type { EnvironmentName } from '#src/recap/domain/backend.ts';
+import { parseJevModel, parseJevUrl } from '#src/recap/domain/autocompact.ts';
+import type { FsPath } from '#src/recap/domain/fs-path.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { saying } from '#src/ports/unknowable.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { documentOf, noulOf, textOf } from './fakes/decider-fixtures.ts';
@@ -15,11 +19,11 @@ const questions: ReadonlyMap<Text, Noul> = new Map<Text, Noul>([
 const reply = (body: object, status = 200): Response => new Response(JSON.stringify(body), { status });
 const good = { model: 'jev-1.13.0', answers: { closes_request: { noul: 0.95 }, stuck: { noul: 0.04 } }, usage: { input_tokens: 732 } };
 
-function decider(respond: (url: string, init: RequestInit) => Promise<Response>, key: string | null = SENTINEL): { jev: JevDecider; seen: { url: string; init: RequestInit }[] } {
+function decider(respond: (url: string, init: RequestInit) => Promise<Response>, key: string | null = SENTINEL): { jev: JevPortDecider; seen: { url: string; init: RequestInit }[] } {
     const seen: { url: string; init: RequestInit }[] = [];
     const fetcher = ((url: string, init: RequestInit): Promise<Response> => { seen.push({ url, init }); return respond(url, init); }) as unknown as typeof fetch;
     let tick = 0;
-    return { jev: new JevDecider({ url: 'https://gateway.test/v1/systemone', model: 'jev-1.13.0', key: () => key, fetch: fetcher, now: () => (tick += 550) }), seen };
+    return { jev: new JevPortDecider({ url: parseJevUrl('https://gateway.test/v1/systemone'), model: parseJevModel('jev-1.13.0'), key: () => (key === null ? null : textOf(key)), fetch: fetcher, now: () => instant((tick += 550)) }), seen };
 }
 
 test('jev: posts {model, state, questions} with the bearer key; the answers, tokens, cost (input × 0.042 / 1e6) and time come back', async () => {
@@ -69,20 +73,28 @@ test('jev: a missing usage costs nothing', async () => {
     assert.deepEqual(found.kind === 'decided' ? [found.tokens, found.costUsd, found.model] : null, [0, 0, 'jev-1.13.0']);
 });
 
+const settings = (values: Readonly<Record<string, string>>): ((name: EnvironmentName) => Text | undefined) => (name) => {
+    const value = values[name];
+    return value === undefined ? undefined : textOf(value);
+};
+const fileOf = (content: string | null, seen: string[] = []): ((path: FsPath) => Text | null) => (path) => { seen.push(path); return content === null ? null : textOf(content); };
+
 test('the key: TAB_RECAP_JEV_KEY, then TYPESAFE_API_KEY, then the file in the home folder; blank counts as missing', () => {
-    assert.equal(jevKey((k) => ({ TAB_RECAP_JEV_KEY: ' a ', TYPESAFE_API_KEY: 'b' })[k], () => 'c', '/h'), 'a');
-    assert.equal(jevKey((k) => ({ TAB_RECAP_JEV_KEY: '  ', TYPESAFE_API_KEY: 'b' })[k], () => 'c', '/h'), 'b');
+    const home = textOf('/h');
+    assert.equal(jevKey(settings({ TAB_RECAP_JEV_KEY: ' a ', TYPESAFE_API_KEY: 'b' }), fileOf('c'), home), 'a');
+    assert.equal(jevKey(settings({ TAB_RECAP_JEV_KEY: '  ', TYPESAFE_API_KEY: 'b' }), fileOf('c'), home), 'b');
     const files: string[] = [];
-    assert.equal(jevKey(() => undefined, (path) => { files.push(path); return 'c\nignored\n'; }, '/h'), 'c');
+    assert.equal(jevKey(settings({}), fileOf('c\nignored\n', files), home), 'c');
     assert.deepEqual(files, ['/h/.config/typesafe-api-key']);
-    assert.equal(jevKey(() => undefined, () => null, '/h'), null);
-    assert.equal(jevKey(() => undefined, () => '\n', '/h'), null);
+    assert.equal(jevKey(settings({}), fileOf(null), home), null);
+    assert.equal(jevKey(settings({}), fileOf('\n'), home), null);
+    assert.equal(jevKey(settings({}), fileOf('k'), textOf('')), 'k', 'a blank HOME still reads /.config/typesafe-api-key');
 });
 
 test('jev: a fractional token count is kept and priced, and a clock that steps back gives a negative time', async () => {
     const fetcher = ((): Promise<Response> => Promise.resolve(reply({ ...good, usage: { input_tokens: 12.5 } }))) as unknown as typeof fetch;
     const clock = [5_000, 4_000];
-    const jev = new JevDecider({ url: 'https://gateway.test/v1/systemone', model: 'jev-1.13.0', key: (): string => SENTINEL, fetch: fetcher, now: (): number => clock.shift() ?? 0 });
+    const jev = new JevPortDecider({ url: parseJevUrl('https://gateway.test/v1/systemone'), model: parseJevModel('jev-1.13.0'), key: (): Text => textOf(SENTINEL), fetch: fetcher, now: (): Instant => instant(clock.shift() ?? 0) });
     const found = await jev.ask(documentOf({}), questions);
     assert.deepEqual(found.kind === 'decided' ? [found.tokens, found.costUsd, found.tookMs] : found, [12.5, 12.5 * 0.042 / 1e6, -1_000]);
 });

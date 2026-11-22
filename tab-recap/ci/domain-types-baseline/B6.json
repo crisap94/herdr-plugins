@@ -69,22 +69,12 @@
     "parameter": 1,
     "container": 1
   },
-  "src/adapters/job/jev-decider.ts": {
-    "parameter": 5,
-    "return": 3,
-    "container": 1,
-    "property": 5
-  },
-  "src/adapters/job/jev-key.ts": {
-    "parameter": 4,
-    "return": 4
-  },
   "src/adapters/job/judge.ts": {
     "parameter": 1,
     "container": 2
   },
   "src/adapters/job/legacy.ts": {
-    "legacy": 3
+    "legacy": 2
   },
   "src/adapters/job/prompts/legacy.ts": {
     "legacy": 16
