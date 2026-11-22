@@ -1,11 +1,11 @@
 import { getConfig, log, resolveRef, currentBranch, Errors } from 'isomorphic-git';
 import { ok, type Result } from '#src/protocol/result.ts';
-import type { LastCommit } from '#src/ports/worksite-reader.ts';
 import type { AheadCount } from '#src/recap/domain/porcelain.ts';
 import type { BranchName } from '#src/recap/domain/porcelain.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import type { LastCommitRecord } from '#src/ports/worksite-reader.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { WebBase } from '#src/ports/lane-repo.ts';
 import { webOf } from './remote-web.ts';
@@ -74,13 +74,13 @@ export async function aheadOf(handle: Handle, branch: BranchName): Promise<Resul
     }
 }
 
-export async function lastCommitOf(handle: Handle): Promise<LastCommit | null> {
+export async function lastCommitOf(handle: Handle): Promise<LastCommitRecord | null> {
     try {
         const top = (await log({ fs: handle.fs, dir: handle.dir, gitdir: handle.gitdir, ref: HEAD_REF, depth: 1 }))[0];
         if (top === undefined) {
             return null;
         }
-        return { hash: top.oid.slice(0, SHORT_HASH), subject: top.commit.message.split('\n')[0] ?? '' };
+        return { hash: textOf(top.oid.slice(0, SHORT_HASH)), subject: textOf(top.commit.message.split('\n')[0] ?? '') };
     } catch (error) {
         if (error instanceof Errors.NotFoundError) {
             return null;

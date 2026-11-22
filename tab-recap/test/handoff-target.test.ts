@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveTarget } from '#src/recap/application/handoff-target.ts';
 import type { TargetDeps } from '#src/recap/application/handoff-target.ts';
-import { handoffPlans } from '#src/adapters/capability/handoff-plans.ts';
+import { handoffPlanner } from '#src/adapters/capability/handoff-plans.ts';
 import type { InFlight, InFlightReading } from '#src/ports/in-flight.ts';
 import type { Waiting } from '#src/recap/application/autocompact.ts';
 import { unknown } from '#src/ports/unknowable.ts';
@@ -26,7 +26,7 @@ function probeOf(reading: InFlightReading): { readonly port: InFlight; readonly 
 
 function depsOf(lanes: readonly Lane[], reading: InFlightReading, awaiting: Waiting = clear): TargetDeps & { readonly reads: () => number } {
     const probe = probeOf(reading);
-    return { lanes, plans: handoffPlans, inFlight: probe.port, awaiting: () => Promise.resolve(awaiting), reads: probe.reads };
+    return { lanes, plans: handoffPlanner, inFlight: probe.port, awaiting: () => Promise.resolve(awaiting), reads: probe.reads };
 }
 
 const notStarted: InFlightReading = { kind: 'not-started', why: 'the transcript of sess-new not found' };

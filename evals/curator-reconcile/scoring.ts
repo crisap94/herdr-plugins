@@ -1,4 +1,4 @@
-import { unfenced } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
+import { unfencedText } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
 import { judge } from '../../packages/session-ledger/src/recap/application/ops-gating.ts';
 import { LEDGER_GATES } from '../../packages/session-ledger/src/recap/domain/gates/ledger-gates.ts';
 import type { Operation } from '../../packages/session-ledger/src/recap/domain/ops.ts';
@@ -34,7 +34,7 @@ export interface Checked {
 
 export function entriesOf(text: string): readonly unknown[] | null {
     try {
-        const parsed: unknown = JSON.parse(unfenced(text));
+        const parsed: unknown = JSON.parse(unfencedText(asText(text)));
         return isFields(parsed) && Array.isArray(parsed['ops']) ? (parsed['ops'] as unknown[]) : null;
     } catch {
         return null;
@@ -47,7 +47,7 @@ export function checkedOf(item: ReconcileItem, text: string): Checked | null {
     const entries = entriesOf(text);
     if (entries === null) return null;
     const built = builtOf(item);
-    const answer = unfenced(text);
+    const answer = unfencedText(asText(text));
     const checked = reconciliationOf(asText(answer), built.facts, asText(built.tail));
     const accepted: Fields[] = [];
     for (let size = 1; size <= entries.length && accepted.length < checked.ops.length; size += 1) {

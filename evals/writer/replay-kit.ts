@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { unfenced } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
+import { unfencedText } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
 import { batch } from '../../packages/session-ledger/src/recap/application/job-kit/batch.ts';
 import { parseAnswer } from '../../packages/session-ledger/src/recap/application/ops-answer.ts';
 import { forTask, judge } from '../../packages/session-ledger/src/recap/application/ops-gating.ts';
@@ -49,7 +49,7 @@ for (const row of readJsonl<Answer>(file)) {
     const item = items.get(row.id);
     if (item === undefined) throw new Error(`${NAME}: answer ${row.id} has no item in ${dataset}`);
     const { resolving, ground } = groundOf(item.input);
-    const parsed = parseAnswer(textOf(unfenced(row.text)), resolving);
+    const parsed = parseAnswer(unfencedText(textOf(row.text)), resolving);
     if (parsed.kind !== 'ops') continue;
     const now = item.input.input.tab.now;
     const ops = forTask(parsed.ops, ground.key);

@@ -118,7 +118,7 @@ test('headline: what needs the operator first, else what is happening now, else 
 const opsOf = (text: string): number => (objectIn(asText(text)) as unknown as { ops: unknown[] }).ops.length;
 
 test('the operations contract survives every harness\'s way of handing the answer back', async () => {
-    const { unfenced } = await import('#src/adapters/job/prompts/recap-prompt.ts');
+    const { unfencedText } = await import('#src/adapters/job/prompts/recap-prompt.ts');
     const { LibraryHarness } = await import('#src/adapters/harness/library.ts');
     const { RecapWriter } = await import('#src/adapters/job/writer.ts');
     const { requestOf } = await import('#test/support.ts');
@@ -133,7 +133,7 @@ test('the operations contract survives every harness\'s way of handing the answe
         }
     }
     for (const raw of [answer, fenced, `\n\n${fenced}\n`]) {
-        assert.equal(opsOf(unfenced(raw)), 2);
+        assert.equal(opsOf(unfencedText(asText(raw))), 2);
     }
 });
 

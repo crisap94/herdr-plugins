@@ -5,8 +5,6 @@ import { RUBRIC } from './rubric-text.ts';
 import type { AnchorCheck, AnchorChecks, JudgeTask } from '#src/ports/judge.ts';
 import { ANCHORS_PER_CHECK } from '#src/recap/application/judge-anchors.ts';
 
-export { judgeInstructions } from './legacy.ts';
-
 export const READBACK_TEXTS: readonly Text[] = QUESTIONS.map((question) => must(parseText(question.text)));
 
 export { READBACK_TEXTS as READBACK_QUESTIONS };

@@ -1,4 +1,4 @@
-import { unfenced } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
+import { unfencedText } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
 import { parseScore } from '../../tab-recap/src/recap/application/judge-answer.ts';
 import { cohenKappa, wilson } from '../lib/stats.ts';
 import type { Answer, Graded, Interval, Mark } from '../lib/types.ts';
@@ -22,7 +22,7 @@ export function expectedCells(item: JudgeItem): Cell[] {
 }
 
 export function verdictsOf(item: JudgeItem, text: string): Map<string, boolean> | null {
-    const parsed = parseScore(textOf(unfenced(text)), sectionsOf(item), carriersOf(item));
+    const parsed = parseScore(unfencedText(textOf(text)), sectionsOf(item), carriersOf(item));
     if (parsed.kind !== 'ok') return null;
     return new Map(parsed.value.verdicts.map((verdict) => [cellKey(verdict.item, verdict.check), verdict.pass === 'pass']));
 }

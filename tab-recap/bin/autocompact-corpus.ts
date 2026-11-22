@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { LocalCatalogue } from '#src/adapters/capability/catalogue.ts';
+import { CatalogueWindows } from '#src/adapters/capability/catalogue.ts';
 import { ExperimentStore } from '#src/adapters/experiment/store.ts';
 import { recentTranscripts, sha256Of, withBoundaries } from '#src/adapters/experiment/files.ts';
 import { pointOf, shareAt } from '#src/adapters/experiment/point.ts';
@@ -57,7 +57,7 @@ function outcomeRows(outcomes: ReadonlyMap<string, readonly BoundaryOutcome[]>, 
 async function main(): Promise<void> {
     const [db, out] = [arg('db'), arg('out')];
     mkdirSync(out, { recursive: true });
-    const [store, catalogue] = [new ExperimentStore(asText(db)), new LocalCatalogue()];
+    const [store, catalogue] = [new ExperimentStore(asText(db)), new CatalogueWindows()];
     const all = store.frame();
     const frame = all.filter((point) => existsSync(point.source));
     const bySource = new Map<string, Stored[]>();

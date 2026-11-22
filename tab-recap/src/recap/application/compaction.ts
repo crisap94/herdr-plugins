@@ -24,7 +24,7 @@ import { Trail } from './compaction-trail.ts';
 import { paneId, parseCompactionId } from '#src/recap/domain/ids.ts';
 import type { AgentKind, CompactionId, PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import { parseAnswerStage, type AnswerStage } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 
@@ -66,7 +66,7 @@ export class Compactor {
     }
 
     private queueing(agent: AgentKind): Queueing {
-        const plan = this.deps.compactionPlans.forKind(agent, '');
+        const plan = this.deps.compactionPlans.forKind(agent, textOf(''));
         return plan.kind === 'supported' && plan.plan.whileWorking.kind === 'queues' ? 'queues' : 'waits';
     }
 

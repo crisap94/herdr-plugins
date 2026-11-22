@@ -1,9 +1,8 @@
 import { textOf, type Text } from '#src/recap/domain/text.ts';
-import { countOf } from '#src/recap/domain/count.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
-import type { LastCommitResult, UncommittedResult, WorksiteReader } from '#src/ports/worksite-reader.ts';
+import type { LastCommitOutcome, UncommittedOutcome, WorksiteReaderPort } from '#src/ports/worksite-reader.ts';
 import { coordinationNamesOf } from '#src/recap/domain/coordination.ts';
 import { FILES_SHOWN } from '#src/recap/domain/session-facts.ts';
 import type { WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
@@ -19,12 +18,12 @@ export interface WorksiteInput {
 }
 
 export interface WorksiteDeps {
-    readonly reader: WorksiteReader;
+    readonly reader: WorksiteReaderPort;
     readonly repo: LaneRepo;
     readonly edits: EditSource;
 }
 
-function isGone(commit: LastCommitResult, uncommitted: UncommittedResult): boolean {
+function isGone(commit: LastCommitOutcome, uncommitted: UncommittedOutcome): boolean {
     return (isUnknown(commit) && commit.why.why === 'not-found') || (isUnknown(uncommitted) && uncommitted.why.why === 'not-found');
 }
 
@@ -34,8 +33,8 @@ export async function worksiteOf(deps: WorksiteDeps, input: WorksiteInput): Prom
         return { kind: 'unavailable' };
     }
     const [commit, uncommitted, repo, edits] = await Promise.all([
-        deps.reader.lastCommit(directory),
-        deps.reader.uncommitted(directory),
+        deps.reader.lastCommit(textOf(directory)),
+        deps.reader.uncommitted(textOf(directory)),
         deps.repo.repoOf(must(parseDirectory(directory))),
         deps.edits.of(input.cursor === null ? [] : [input.cursor]),
     ]);
@@ -46,8 +45,8 @@ export async function worksiteOf(deps: WorksiteDeps, input: WorksiteInput): Prom
         kind: 'known',
         directory: must(parseDirectory(directory)),
         repository: repo.kind === 'repo' ? { root: repo.root, branch: repo.branch } : null,
-        lastCommit: isUnknown(commit) ? null : { hash: textOf(commit.hash), subject: textOf(commit.subject) },
-        uncommitted: isUnknown(uncommitted) ? null : { count: countOf(uncommitted.count), paths: uncommitted.paths.slice(0, HANDOFF_PATHS_SHOWN).map(textOf) },
+        lastCommit: isUnknown(commit) ? null : { hash: commit.hash, subject: commit.subject },
+        uncommitted: isUnknown(uncommitted) ? null : { count: uncommitted.count, paths: uncommitted.paths.slice(0, HANDOFF_PATHS_SHOWN) },
         edited: edits.slice(0, FILES_SHOWN).map((file) => ({ path: file.path, edits: file.count })),
         tokens: input.tokens === null ? [] : coordinationNamesOf(input.tokens),
     };

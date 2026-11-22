@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import { LibraryHarness } from '#src/adapters/harness/library.ts';
-import { mergeResourceAttributes, SCRUBBED_ENV_NAMES, scrubEnvironment, scrubbedEnv, serializeJobAttributes } from '#src/adapters/os/process/control.ts';
+import { mergeJobAttributes, SCRUBBED_ENV_NAMES, scrubEnvironment, scrubbedEnv, serializeJobAttributes } from '#src/adapters/os/process/control.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { JOB_TAGS } from '#src/recap/domain/job-tag.ts';
 import type { JobTag } from '#src/recap/domain/job-tag.ts';
 
@@ -14,11 +15,11 @@ test('the sole serializer encodes every closed tag', () => {
 });
 
 test('the resource merge preserves unrelated entries and replaces only the exact trimmed key', () => {
-    assert.equal(mergeResourceAttributes(undefined, { 'tab_recap.job': 'judge' }), 'tab_recap.job=judge');
-    assert.equal(mergeResourceAttributes('', { 'tab_recap.job': 'judge' }), 'tab_recap.job=judge');
-    assert.equal(mergeResourceAttributes(',,a=b,,', { 'tab_recap.job': 'judge' }), 'a=b,tab_recap.job=judge');
-    assert.equal(mergeResourceAttributes('x=a=b,broken,, =v, tab_recap.job =old,z=3', { 'tab_recap.job': 'judge' }), 'x=a=b,broken, =v,z=3,tab_recap.job=judge');
-    assert.equal(mergeResourceAttributes('tab_recap.job-other=x, tab_recap.job=old', { 'tab_recap.job': 'judge' }), 'tab_recap.job-other=x,tab_recap.job=judge');
+    assert.equal(mergeJobAttributes(undefined, { 'tab_recap.job': 'judge' }), 'tab_recap.job=judge');
+    assert.equal(mergeJobAttributes(textOf(''), { 'tab_recap.job': 'judge' }), 'tab_recap.job=judge');
+    assert.equal(mergeJobAttributes(textOf(',,a=b,,'), { 'tab_recap.job': 'judge' }), 'a=b,tab_recap.job=judge');
+    assert.equal(mergeJobAttributes(textOf('x=a=b,broken,, =v, tab_recap.job =old,z=3'), { 'tab_recap.job': 'judge' }), 'x=a=b,broken, =v,z=3,tab_recap.job=judge');
+    assert.equal(mergeJobAttributes(textOf('tab_recap.job-other=x, tab_recap.job=old'), { 'tab_recap.job': 'judge' }), 'tab_recap.job-other=x,tab_recap.job=judge');
 });
 
 test('tagging off returns the scrubbed environment and leaves the parent unchanged', () => {

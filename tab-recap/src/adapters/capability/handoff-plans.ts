@@ -12,8 +12,6 @@ import { supported } from '#src/ports/capability.ts';
 import type { Capability } from '#src/ports/capability.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
-export { handoffPlans } from './legacy.ts';
-
 export const SETTLE_SOURCE = 'experiments/EXP-003-handoff-live/runs/R01-settle-and-handoff-proof/m4-trials.jsonl';
 
 const settleOf = (after: Duration, trials: Count): SettleTime => ({ after, evidence: { trials, source: SETTLE_SOURCE } });

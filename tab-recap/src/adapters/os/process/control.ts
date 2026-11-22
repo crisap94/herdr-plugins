@@ -10,7 +10,7 @@ import { posixProcess } from './control-posix.ts';
 
 export type { Runner, RunOptions, RunResult } from '#src/ports/process-control.ts';
 export { serializeJobAttributes, type JobAttributesRecord } from './attributes.ts';
-export { mergeResourceAttributes } from './legacy.ts';
+export { mergeJobAttributes } from './attributes.ts';
 export { KILL_AFTER_MS } from './core.ts';
 
 export const hostProcess: ProcessControl = posixProcess();

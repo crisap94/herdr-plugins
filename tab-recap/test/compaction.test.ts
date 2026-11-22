@@ -3,10 +3,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
-import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
+import { compactionPlanner } from '#src/adapters/capability/compaction-plans.ts';
 import { idleClaudePlans } from '#test/fakes/idle-claude-plans.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
-import type { CompactionPlans } from '#src/ports/compaction-plans.ts';
+import type { CompactionPlanner } from '#src/ports/compaction-plans.ts';
 import { QUEUES, unsupported } from '#src/recap/domain/compaction-plan.ts';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { targetsOf } from '#src/recap/application/compaction-targets.ts';
@@ -35,9 +35,9 @@ import { countOf } from '#src/recap/domain/count.ts';
 
 const lane = (pane: string, agent: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent });
 const LANES = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'gemini')];
-const queuingPlans: CompactionPlans = {
+const queuingPlans: CompactionPlanner = {
     forKind: (kind, guidance) => {
-        const planned = compactionPlans.forKind(kind, guidance);
+        const planned = compactionPlanner.forKind(kind, guidance);
         return planned.kind === 'supported' && kind === 'claude' ? { kind: 'supported', plan: { ...planned.plan, whileWorking: QUEUES } } : planned;
     },
 };
@@ -91,11 +91,11 @@ function ticking(clock: Clock, slices: readonly Slice[] = []): LaneSettling {
     } };
 }
 
-function queuing(world: ReturnType<typeof fleet>, clock: Clock, slices: readonly Slice[] = [], marksAt: (at: number) => readonly Mark[] = () => []): ReturnType<typeof fleet> & { readonly plans: CompactionPlans; readonly clock: () => number; readonly marks: () => Promise<readonly Mark[]> } {
+function queuing(world: ReturnType<typeof fleet>, clock: Clock, slices: readonly Slice[] = [], marksAt: (at: number) => readonly Mark[] = () => []): ReturnType<typeof fleet> & { readonly plans: CompactionPlanner; readonly clock: () => number; readonly marks: () => Promise<readonly Mark[]> } {
     return { ...world, plans: queuingPlans, clock: () => clock.t, settling: ticking(clock, slices), marks: () => Promise.resolve(marksAt(clock.t)) };
 }
 
-function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPlans; readonly clock?: () => number; readonly marks?: () => Promise<readonly Mark[]>; readonly answerTo?: (id: string, pane: string, stage: string) => void }, setting = 'focused', focused: string | null = 'w1:p1', briefing: Briefing | null = null, reads: readonly (readonly Mark[])[] = [[]]): Compaction {
+function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPlanner; readonly clock?: () => number; readonly marks?: () => Promise<readonly Mark[]>; readonly answerTo?: (id: string, pane: string, stage: string) => void }, setting = 'focused', focused: string | null = 'w1:p1', briefing: Briefing | null = null, reads: readonly (readonly Mark[])[] = [[]]): Compaction {
     let looked = 0;
     const store = world.store;
     const recap = { ...blankRecap(tabId('w1:t1')), tasks: oneTask('x', { ...NO_SECTIONS, goal: textOf('Ship the cart rewrite'), decisions: [textOf('The recap column shows three lines')], rules: [textOf('Never push to main')] }, ['w1:p1', 'w1:p2']) };
@@ -199,7 +199,7 @@ test('codex that cannot finish its /compact gets no restore message', async () =
 
 test('an unsupported send tells the operator after the started toast', async () => {
     const world = fleet({ 'w1:p2': 'idle' });
-    const plans: CompactionPlans = { forKind: () => unsupported(textOf('no compaction plan is registered for codex')) };
+    const plans: CompactionPlanner = { forKind: () => unsupported(textOf('no compaction plan is registered for codex')) };
     await flow({ ...world, plans }, 'focused', 'w1:p2').run({ tab: 'w1:t1', pane: null, note: null });
     assert.deepEqual(world.toasts, [
         'Compact codex | Compacting codex',
@@ -595,7 +595,7 @@ test('a request whose typing is refused for any other cause is answered failed-e
 
 test('a request for an agent with no compaction plan is answered failed-error', async () => {
     const world = fleet({ 'w1:p2': 'idle' });
-    const plans: CompactionPlans = { forKind: () => unsupported(textOf('no compaction plan is registered for codex')) };
+    const plans: CompactionPlanner = { forKind: () => unsupported(textOf('no compaction plan is registered for codex')) };
     await flow({ ...world, plans }, 'focused', 'w1:p2').run({ tab: 'w1:t1', pane: 'w1:p2', note: null, origin: 'request', answer: 'r7' });
     assert.deepEqual(world.answered, ['r7 w1:p2 running', 'r7 w1:p2 failed-error']);
 });

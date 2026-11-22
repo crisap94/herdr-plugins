@@ -2,23 +2,26 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import { writeFileSync } from 'node:fs';
-import { windowOfKind } from '#src/adapters/capability/context-window.ts';
-import { LocalCatalogue, claudeWindowOf, compactionPlans } from '#src/adapters/capability/legacy.ts';
-import { GitWorksiteReader } from '#src/adapters/git/legacy.ts';
+import { windowOfAgent } from '#src/adapters/capability/context-window.ts';
+import { CatalogueWindows } from '#src/adapters/capability/catalogue.ts';
+import { compactionPlanner } from '#src/adapters/capability/compaction-plans.ts';
+import { claudeWindowFor } from '#src/adapters/capability/context-window.ts';
+import { kindOf, pathOrNull } from '#test/fakes/agent-kind.ts';
+import { GitWorksite } from '#src/adapters/git/worksite.ts';
 import { commitFiles, makeRepo, scratch } from './fixtures/git-repo.ts';
 import { contextOf } from '#src/recap/domain/compaction.ts';
 import type { Observed } from '#src/recap/domain/compaction.ts';
-import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
+import type { ModelWindows } from '#src/ports/model-catalogue.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
 const seen = (model: string | null, window: number | null = null, tokens = 90_000, peak = tokens): Observed => ({ model: model === null ? null : textOf(model), window: window === null ? null : countOf(window), tokens: countOf(tokens), peak: countOf(peak) });
 
 test('an unregistered screen kind has no context window basis without a stated window, and keeps its stated window', () => {
-    const catalogue: ModelCatalogue = { windowOf: () => null };
+    const catalogue: ModelWindows = { windowOf: () => null };
     const observed: Observed = { tokens: countOf(1), peak: countOf(1), window: countOf(50), model: null };
-    assert.equal(windowOfKind('gemini', catalogue)({ ...observed, window: null }), null);
-    assert.deepEqual(windowOfKind('gemini', catalogue)(observed), { window: 50, source: 'agent', sizes: [] });
+    assert.equal(windowOfAgent(kindOf('gemini'), catalogue)({ ...observed, window: null }), null);
+    assert.deepEqual(windowOfAgent(kindOf('gemini'), catalogue)(observed), { window: 50, source: 'agent', sizes: [] });
 });
 
 interface Row {
@@ -64,30 +67,30 @@ const rows: readonly Row[] = [
 
 for (const row of rows) {
     test(row.name, () => {
-        const catalogue: ModelCatalogue = { windowOf: () => (row.catalogued === null ? null : countOf(row.catalogued)) };
-        assert.deepEqual(contextOf({ observed: row.observed, setting: row.setting === null ? null : countOf(row.setting) }, windowOfKind(row.kind, catalogue)), row.expected, row.name);
+        const catalogue: ModelWindows = { windowOf: () => (row.catalogued === null ? null : countOf(row.catalogued)) };
+        assert.deepEqual(contextOf({ observed: row.observed, setting: row.setting === null ? null : countOf(row.setting) }, windowOfAgent(kindOf(row.kind), catalogue)), row.expected, row.name);
     });
 }
 
 const seenOf = (model: string | null): Observed => ({ model: model === null ? null : textOf(model), window: null, tokens: countOf(1), peak: countOf(1) });
 
 test('compaction with empty guidance still plans the bare command', () => {
-    const result = compactionPlans.forKind('claude', '');
+    const result = compactionPlanner.forKind(kindOf('claude'), textOf(''));
     assert.equal(result.kind, 'supported');
     assert.equal('plan' in result ? result.plan.lines.length : 0, 1);
-    assert.equal(compactionPlans.forKind('codex', '').kind, 'supported');
+    assert.equal(compactionPlanner.forKind(kindOf('codex'), textOf('')).kind, 'supported');
 });
 
 test('an unknown or blank kind is still unsupported with its wording', () => {
-    assert.equal(compactionPlans.forKind('', '').kind, 'unsupported');
-    assert.equal(compactionPlans.forKind('gemini', 'x').kind, 'unsupported');
+    assert.equal(compactionPlanner.forKind(kindOf(''), textOf('')).kind, 'unsupported');
+    assert.equal(compactionPlanner.forKind(kindOf('gemini'), textOf('x')).kind, 'unsupported');
 });
 
 test('a catalogue window that is zero or fractional reaches the basis unchanged', () => {
     for (const window of [0, 1000.5]) {
-        const catalogue: ModelCatalogue = { windowOf: () => window };
-        assert.deepEqual(windowOfKind('opencode', catalogue)(seenOf('m')), { window, source: 'catalogue', sizes: [] });
-        assert.equal(claudeWindowOf(catalogue)(seenOf('m'))?.window, window);
+        const catalogue: ModelWindows = { windowOf: () => countOf(window) };
+        assert.deepEqual(windowOfAgent(kindOf('opencode'), catalogue)(seenOf('m')), { window, source: 'catalogue', sizes: [] });
+        assert.equal(claudeWindowFor(catalogue)(seenOf('m'))?.window, window);
     }
 });
 
@@ -96,9 +99,9 @@ test('the local catalogue returns a fractional window and tolerates a blank file
     try {
         const file = join(dir.root, 'models.json');
         writeFileSync(file, JSON.stringify({ anthropic: { models: { m: { limit: { context: 1000.5 } } } } }));
-        assert.equal(new LocalCatalogue(file).windowOf('m'), 1000.5);
-        assert.equal(new LocalCatalogue('   ').windowOf('m'), null);
-        assert.equal(new LocalCatalogue('').windowOf('m'), null);
+        assert.equal(new CatalogueWindows(pathOrNull(file)).windowOf(textOf('m')), 1000.5);
+        assert.equal(new CatalogueWindows(pathOrNull('   ')).windowOf(textOf('m')), null);
+        assert.equal(new CatalogueWindows(pathOrNull('')).windowOf(textOf('m')), null);
     } finally {
         dir.clean();
     }
@@ -107,12 +110,12 @@ test('the local catalogue returns a fractional window and tolerates a blank file
 test('a commit with an empty subject is still a commit, and a blank directory is not found', async () => {
     const repo = await makeRepo('legacy-empty-subject-', { 'a.txt': 'x\n' });
     try {
-        const reader = new GitWorksiteReader();
+        const reader = new GitWorksite();
         await commitFiles(repo.root, { 'b.txt': 'y\n' }, '\n');
-        const found = await reader.lastCommit(repo.root);
+        const found = await reader.lastCommit(textOf(repo.root));
         assert.equal(found.kind, 'commit');
         assert.equal('subject' in found ? found.subject : null, '');
-        assert.deepEqual(await reader.lastCommit(''), { kind: 'unknown', why: { why: 'not-found', what: 'directory' } });
+        assert.deepEqual(await reader.lastCommit(textOf('')), { kind: 'unknown', why: { why: 'not-found', what: 'directory' } });
     } finally {
         repo.clean();
     }

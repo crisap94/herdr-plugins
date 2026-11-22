@@ -1,14 +1,11 @@
 import type { Harness, HarnessAsk, HarnessCall, HarnessChoice, HarnessSettings, Ran, StructuredSupport, ToolSupport } from '#src/ports/harness.ts';
-import type { HarnessDirectory, HarnessList } from '#src/ports/harnesses.ts';
 import { must } from '#src/protocol/result.ts';
 import type { JobTag } from '#src/recap/domain/job-tag.ts';
-import { parseAgentKind } from '#src/recap/domain/ids.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { parseMilliseconds } from '#src/recap/domain/time.ts';
 import { CustomHarnessPort } from './custom.ts';
 import { type Acknowledgement, type HarnessRuntime, type LibraryId, LibraryHarnessPort } from './library.ts';
-import { dirsOf, PathHarnessDirectory, presenceOnPath } from './on-path.ts';
 
 const choiceOf = (settings: HarnessSettings): HarnessChoice =>
     settings.timeoutMs === undefined
@@ -61,21 +58,5 @@ export class CustomHarness implements Harness {
 
     async run(call: HarnessCall): Promise<Ran> {
         return this.port.run(askOf(call));
-    }
-}
-
-export function onPath(command: string, path: string): boolean {
-    return presenceOnPath(must(parseAgentKind(command)), dirsOf(must(parseText(path)))) === 'present';
-}
-
-export class PathHarnesses implements HarnessDirectory {
-    private readonly directory: PathHarnessDirectory;
-
-    constructor(ids: readonly string[]) {
-        this.directory = new PathHarnessDirectory(ids.map((id) => must(parseAgentKind(id))));
-    }
-
-    available(): Promise<HarnessList> {
-        return this.directory.available();
     }
 }

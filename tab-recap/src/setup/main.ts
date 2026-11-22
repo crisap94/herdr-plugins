@@ -7,7 +7,7 @@ import { parseAgentKind, parsePaneId } from '#src/recap/domain/ids.ts';
 import { setValues } from '#src/adapters/os/config/file.ts';
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
-import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
+import { AUTO_PATH_KINDS, PathHarnessDirectory } from '#src/adapters/harness/on-path.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { BEL, FRAME_END, FRAME_HOME, LINE_END, RESET_SGR, SCREEN_OFF, SCREEN_ON, TITLE_OSC } from '#src/adapters/os/tui.ts';
 import type { RecapRequest } from '#src/ports/summarizer.ts';
@@ -19,7 +19,7 @@ import { messagesFor } from '#src/i18n/index.ts';
 import { draftFrom, initial, locksOf, saved, step, tested, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Draft, Effect, Setup } from '#src/recap/application/setup-keys.ts';
 import { coloured } from '#src/recap/render/wrap.ts';
-import { AUTO_ORDER, harnessLabels } from '#src/recap/domain/backend.ts';
+import { harnessLabels } from '#src/recap/domain/backend.ts';
 import { setupFooterLine, setupLines } from '#src/recap/render/setup.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { join } from 'node:path';
@@ -79,7 +79,7 @@ function draw(): void {
 }
 
 async function available(): Promise<void> {
-    const found = intersect(await fleet.available(), await new PathHarnesses(AUTO_ORDER).available());
+    const found = intersect(await fleet.available(), await new PathHarnessDirectory(AUTO_PATH_KINDS).available());
     state = withAvailable(state, isUnknown(found) ? [] : found.ids);
     draw();
 }

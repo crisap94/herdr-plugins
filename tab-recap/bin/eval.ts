@@ -1,9 +1,9 @@
 import { createInterface } from 'node:readline';
 import { RUBRIC_TEXT } from '#src/adapters/job/prompts/rubric.ts';
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
-import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
+import { AUTO_PATH_KINDS, PathHarnessDirectory } from '#src/adapters/harness/on-path.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
-import { AUTO_ORDER, availableIn, judgeFor, summarizerWork } from '#src/daemon/backends.ts';
+import { availableIn, judgeFor, summarizerWork } from '#src/daemon/backends.ts';
 import { loadConfig, messagesOf, stateDir } from '#src/daemon/config.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { textOf } from '#src/recap/domain/text.ts';
@@ -49,7 +49,7 @@ export async function evalCommand(argv: readonly string[]): Promise<number> {
     }
     const operator = lines();
     try {
-        const found = await new PathHarnesses(AUTO_ORDER).available();
+        const found = await new PathHarnessDirectory(AUTO_PATH_KINDS).available();
         const available = isUnknown(found) ? [] : found.ids;
         const runtime = createRuntime();
         return await runEval(parsed.options, {

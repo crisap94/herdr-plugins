@@ -1,5 +1,5 @@
 import type { HistoryFact } from '#src/ports/ledger.ts';
-import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
+import type { ModelWindows } from '#src/ports/model-catalogue.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { autocompactState } from '#src/recap/application/autocompact-state.ts';
 import type { AutocompactState } from '#src/recap/application/autocompact-state.ts';
@@ -10,7 +10,7 @@ import type { Gate } from '#src/recap/domain/autocompact.ts';
 import { flightOf, flightReason, NOT_AWAITING, observedFrom, runningCount, unreadable } from '#src/recap/domain/in-flight.ts';
 import { hindsightOf } from '#src/experiment/hindsight.ts';
 import type { Hindsight } from '#src/experiment/hindsight.ts';
-import { claudeWindowOf } from '../capability/context-window.ts';
+import { claudeWindowFor } from '../capability/context-window.ts';
 import { extractClaudeOf } from '../transcripts/claude/rows.ts';
 import { claudeInFlightOf } from '../transcripts/claude/in-flight.ts';
 import { claudeObservedOf } from '../transcripts/claude/context.ts';
@@ -63,9 +63,9 @@ function trimmed(entries: readonly Entry[]): readonly Entry[] {
     return kept.toReversed();
 }
 
-export function shareAt(source: Text, cursor: number, catalogue: ModelCatalogue): ShareReading | null {
+export function shareAt(source: Text, cursor: number, catalogue: ModelWindows): ShareReading | null {
     const observed = claudeObservedOf(linesBeforeOf(fsPathOf(source), countOf(cursor), countOf(TAIL_BYTES)));
-    const use = observed === null ? null : contextOf({ observed, setting: null }, claudeWindowOf(catalogue));
+    const use = observed === null ? null : contextOf({ observed, setting: null }, claudeWindowFor(catalogue));
     return use === null ? null : { tokens: use.tokens, window: use.window, share: shareOf(use) };
 }
 
@@ -77,7 +77,7 @@ function gateAt(stored: StoredPoint, lines: readonly Text[], lastBreakAt: number
     return { inFlight, gate };
 }
 
-export function pointOf(store: ExperimentStore, catalogue: ModelCatalogue, stored: FramePoint, stratum: Text): Point | null {
+export function pointOf(store: ExperimentStore, catalogue: ModelWindows, stored: FramePoint, stratum: Text): Point | null {
     try {
         const lines = linesBeforeOf(fsPathOf(stored.source), countOf(stored.cursor), countOf(TAIL_BYTES));
         const recent = trimmed(extractClaudeOf(lines).entries);

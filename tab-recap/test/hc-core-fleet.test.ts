@@ -6,7 +6,8 @@ import { duration } from '#src/adapters/herdr-core/sdk-core.ts';
 import { paneId, parseSessionId, tabId } from '#src/recap/domain/ids.ts';
 import { HcCoreFleet } from '#src/adapters/herdr-core/fleet.ts';
 import { desktopFrontend } from '#src/adapters/desktop/frontend.ts';
-import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
+import { PathHarnessDirectory } from '#src/adapters/harness/on-path.ts';
+import { kindOf } from '#test/fakes/agent-kind.ts';
 import type { CoreEventsTiming } from '#src/adapters/herdr-core/sdk-core.ts';
 import type { CoreLinkTiming } from '#src/adapters/herdr-core/sdk-core.ts';
 import type { SessionOfTerminal } from '#src/adapters/herdr-core/sessions.ts';
@@ -15,7 +16,7 @@ import { FakeFault, FakeHcCore, later } from '@stateforge-labs/herdr-sdk/core/te
 
 const LINK: CoreLinkTiming = { helloTimeout: duration(300), backoffBase: duration(40), backoffCap: duration(160) };
 const EVENTS: CoreEventsTiming = { backoffBase: duration(30), backoffCap: duration(120), silence: duration(5000) };
-const harnesses = new PathHarnesses(['claude']);
+const harnesses = new PathHarnessDirectory([kindOf('claude')]);
 const count = (value: number): Count => must(parseCount(value));
 
 function fleetOf(core: FakeHcCore, session: SessionOfTerminal = () => null): HcCoreFleet {

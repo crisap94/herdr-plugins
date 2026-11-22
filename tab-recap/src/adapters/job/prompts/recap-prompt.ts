@@ -7,7 +7,6 @@ import { TRANSCRIPT_BUDGET, writerContext } from '#src/recap/application/writer-
 import { unfencedText } from '../decider.ts';
 import { instructions } from './recap-instructions.ts';
 
-export { argvPrompt, fitBytes, fittedCall, message, prompt, unfenced } from './legacy.ts';
 export { instructions, unfencedText };
 
 export function messageText(request: RecapRequest): Text {

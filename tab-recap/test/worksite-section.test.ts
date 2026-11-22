@@ -11,7 +11,7 @@ import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { duration } from '#src/recap/domain/time.ts';
-import type { LastCommitResult, UncommittedResult } from '#src/ports/worksite-reader.ts';
+import type { LastCommitOutcome, UncommittedOutcome } from '#src/ports/worksite-reader.ts';
 import type { WorksiteFacts, WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 import { MemoryWorksite } from './fakes/worksite-reader.ts';
 import { agentKind, paneId } from '#src/recap/domain/ids.ts';
@@ -78,8 +78,8 @@ test('a directory outside any repository has no repository and no branch', async
 test('a git timeout omits the git values and keeps the rest of the section', async () => {
     const timed = unknown({ why: 'timeout', after: duration(1500) });
     const reader = {
-        lastCommit: (): Promise<LastCommitResult> => Promise.resolve(timed),
-        uncommitted: (): Promise<UncommittedResult> => Promise.resolve(timed),
+        lastCommit: (): Promise<LastCommitOutcome> => Promise.resolve(timed),
+        uncommitted: (): Promise<UncommittedOutcome> => Promise.resolve(timed),
     };
     const snapshot = await worksiteOf({ reader, repo: repoAt(timed), edits: edits([{ path: 'a.ts', count: 2 }]) }, input({ tokens: tokenEntries({ 'awaiting-review': 'yes' }) }));
     assert.deepEqual(snapshot, { kind: 'known', directory: DIR, repository: null, lastCommit: null, uncommitted: null, edited: [{ path: 'a.ts', edits: 2 }], tokens: ['awaiting-review'] });
@@ -126,8 +126,8 @@ test('unknown tokens leave the token list empty', async () => {
 
 test('a directory whose last commit is gone is unavailable even when its paths are readable', async () => {
     const reader = {
-        lastCommit: (): Promise<LastCommitResult> => Promise.resolve(unknown({ why: 'not-found', what: textOf('directory') })),
-        uncommitted: (): Promise<UncommittedResult> => Promise.resolve({ kind: 'paths', count: 0, paths: [] }),
+        lastCommit: (): Promise<LastCommitOutcome> => Promise.resolve(unknown({ why: 'not-found', what: textOf('directory') })),
+        uncommitted: (): Promise<UncommittedOutcome> => Promise.resolve({ kind: 'paths', count: countOf(0), paths: [] }),
     };
     assert.deepEqual(await worksiteOf({ reader, repo: repoAt(repo), edits: edits([]) }, input()), { kind: 'unavailable' });
 });

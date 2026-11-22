@@ -13,8 +13,6 @@ import type { CompactionWhy } from '#src/ports/capability-reasons.ts';
 import { capabilityWording } from '#src/ports/capability-reasons.ts';
 import { must } from '#src/protocol/result.ts';
 
-export { compactionPlans } from './legacy.ts';
-
 type HarnessKind = Parameters<typeof compactCommand>[0];
 type PlanFor = (guidance: Text) => CompactionPlanResult;
 

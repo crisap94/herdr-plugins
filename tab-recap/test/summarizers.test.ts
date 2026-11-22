@@ -10,7 +10,7 @@ import { parseText } from '#src/recap/domain/text.ts';
 import { readFileSync } from 'node:fs';
 import { HarnessBrief } from '#src/adapters/job/brief.ts';
 import { RecapWriter } from '#src/adapters/job/writer.ts';
-import { instructions, message } from '#src/adapters/job/prompts/recap-prompt.ts';
+import { instructions, messageText } from '#src/adapters/job/prompts/recap-prompt.ts';
 import type { Harness } from '#src/ports/harness.ts';
 import type { BackendId } from '#src/recap/domain/backend.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
@@ -56,7 +56,7 @@ test('splitArgv: whitespace, quotes, no shell', () => {
 });
 
 const custom = (command: string, cwd: string, ms: number): Harness<BackendId> => new CustomHarness(command, cwd, ms);
-const call = { instructions: instructions(request), input: message(request) };
+const call = { instructions: instructions(request), input: messageText(request) };
 const settings = { model: '', effort: 'default' as const };
 
 test('custom: the data and the instructions go in on stdin, the data first, and the answer comes out on stdout', async () => {

@@ -1,4 +1,4 @@
-import { unfenced } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
+import { unfencedText } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
 import type { InputFact } from '../../packages/session-ledger/src/ports/recap-input.ts';
 import type { RecapRequest } from '../../packages/session-ledger/src/ports/summarizer.ts';
 import { anchorSource } from '../../packages/session-ledger/src/recap/application/anchor-source.ts';
@@ -68,7 +68,7 @@ export function outcomeOf(item: WriterItem, text: string, closeEvidence?: CloseE
     const known = cache.get(key);
     if (known !== undefined) return known;
     const { resolving, ground } = groundOf(item.input);
-    const answer = parseAnswer(textOf(unfenced(text)), resolving);
+    const answer = parseAnswer(unfencedText(textOf(text)), resolving);
     let found: Outcome;
     if (answer.kind !== 'ops') {
         found = { kind: answer.kind, why: answer.kind === 'invalid' ? answer.why : 'the answer has the old recap shape', problems: [], given: [], refused: [], kept: [], ledger: [...ground.shown.values()], ground };

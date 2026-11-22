@@ -1,7 +1,4 @@
 {
-  "src/adapters/capability/legacy.ts": {
-    "legacy": 10
-  },
   "src/adapters/experiment/data.ts": {
     "assertion": 2
   },
@@ -30,11 +27,8 @@
     "property": 2,
     "assertion": 1
   },
-  "src/adapters/git/legacy.ts": {
-    "legacy": 2
-  },
   "src/adapters/harness/legacy.ts": {
-    "legacy": 12
+    "legacy": 8
   },
   "src/adapters/herdr/column-panes.ts": {
     "container": 1
@@ -64,7 +58,7 @@
     "legacy": 2
   },
   "src/adapters/job/prompts/legacy.ts": {
-    "legacy": 16
+    "legacy": 1
   },
   "src/adapters/job/prompts/recap-instructions.ts": {
     "parameter": 3,
@@ -99,9 +93,6 @@
     "parameter": 6,
     "container": 1,
     "property": 1
-  },
-  "src/adapters/os/process/legacy.ts": {
-    "legacy": 2
   },
   "src/adapters/os/terminal-style.ts": {
     "parameter": 1,

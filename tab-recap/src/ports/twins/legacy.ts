@@ -2,8 +2,7 @@ import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import type { CheckedFact } from '#src/recap/domain/autocompact.ts';
 import type { BoundaryKind, Trigger } from '#src/recap/domain/boundary.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
-import type { CompactionPlanResult } from '#src/recap/domain/compaction-plan.ts';
-import type { ContextUse, WindowOf } from '#src/recap/domain/compaction.ts';
+import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { Locale } from '#src/i18n/messages.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
@@ -44,14 +43,6 @@ export interface CompactionBriefs {
     readonly backend: string;
     readonly job: string;
     write(document: string, correction?: string): Promise<Briefed>;
-}
-
-export interface CompactionPlans {
-    forKind(rawKind: string, guidance: string): CompactionPlanResult;
-}
-
-export interface ContextWindows {
-    windowOf(kind: string): WindowOf;
 }
 
 export interface Note {
@@ -164,25 +155,6 @@ export interface TabViews {
     readTab(tab: string): TabView | null;
     writeTab(view: TabView): void;
     tabOf(pane: string): string | null;
-}
-
-export interface LastCommit {
-    readonly hash: string;
-    readonly subject: string;
-}
-
-export type LastCommitResult = ({ readonly kind: 'commit' } & LastCommit) | Unknown;
-
-export interface UncommittedPaths {
-    readonly count: number;
-    readonly paths: readonly string[];
-}
-
-export type UncommittedResult = ({ readonly kind: 'paths' } & UncommittedPaths) | Unknown;
-
-export interface WorksiteReader {
-    lastCommit(directory: string): Promise<LastCommitResult>;
-    uncommitted(directory: string): Promise<UncommittedResult>;
 }
 
 export interface CompactionTokens {

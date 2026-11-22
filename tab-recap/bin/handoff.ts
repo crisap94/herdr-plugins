@@ -3,7 +3,7 @@ import { databaseFile } from '#src/adapters/db/database.ts';
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import { openPrintStore } from '#src/adapters/db/print-store.ts';
 import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
-import { GitWorksiteReader } from '#src/adapters/git/worksite.ts';
+import { GitWorksite } from '#src/adapters/git/worksite.ts';
 import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { SystemClock } from '#src/adapters/os/system-clock.ts';
 import { modalTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
@@ -150,7 +150,7 @@ function printerOf(): HandoffPrinter {
     return new PrintedHandoffs({
         openStore: () => openPrintStore(databaseFile(stateDirectory()), loadConfig().closedLaneDays),
         transcripts,
-        worksite: { reader: new GitWorksiteReader(), repo: new GitLaneRepo(new SystemClock()), edits: new EditTally(transcripts) },
+        worksite: { reader: new GitWorksite(), repo: new GitLaneRepo(new SystemClock()), edits: new EditTally(transcripts) },
         tokens: fleet,
         target: { status: (pane) => fleet.agents().status(pane) },
         closedDays: loadConfig().closedLaneDays,

@@ -1,4 +1,4 @@
-import { unfenced } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
+import { unfencedText } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
 import { refusedIn, vetted } from '../../tab-recap/src/recap/application/compaction-brief.ts';
 import { MESSAGE_LIMIT } from '../../tab-recap/src/recap/application/compaction-message.ts';
 import { must } from '../../packages/session-ledger/src/protocol/result.ts';
@@ -28,7 +28,7 @@ export interface Inspected {
 }
 
 export function inspect(item: BriefItem, raw: string): Inspected {
-    const brief = unfenced(raw);
+    const brief = unfencedText(asText(raw));
     const own = asText(ownText(item));
     const line = squash(brief);
     const checked = vetted(asText(brief), own);
@@ -69,7 +69,7 @@ export function view(item: BriefItem, raw: string): JudgeView {
         listed('settled', expected.settled.map((pointer) => pointer.text)),
         listed('must_not_reopen', expected.must_not_reopen.map((pointer) => pointer.text)),
     ].join('\n');
-    return { case: `<document>\n${documentOf(item)}\n</document>\n<expected>\n${lists}\n</expected>`, answer: unfenced(raw) };
+    return { case: `<document>\n${documentOf(item)}\n</document>\n<expected>\n${lists}\n</expected>`, answer: unfencedText(asText(raw)) };
 }
 
 const sentence = (value: string): string => (/[.?!]$/u.test(value) ? value : `${value}.`);

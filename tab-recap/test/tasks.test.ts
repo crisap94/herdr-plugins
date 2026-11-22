@@ -8,7 +8,7 @@ import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
 import type { Store } from '#src/adapters/db/database.ts';
 import { memoryStore, seed, storeRead } from '#test/db/support.ts';
-import { instructions, message } from '#src/adapters/job/prompts/recap-prompt.ts';
+import { instructions, messageText } from '#src/adapters/job/prompts/recap-prompt.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
@@ -89,19 +89,19 @@ test('grouping: a tab that had one unnamed task and gets a lane elsewhere names 
 
 test('the document lists the current tasks only when the tab has several lanes, and carries the hints and one ledger per task', () => {
     const one = requestOf({ entries: [{ role: 'user', text: textOf('x') }] });
-    assert.ok(!message(one).includes('<current_tasks>') && !instructions(one).includes('<ledger task='), 'one agent: no grouping');
+    assert.ok(!messageText(one).includes('<current_tasks>') && !instructions(one).includes('<ledger task='), 'one agent: no grouping');
     const many = requestOf({
         agents: [agentOf('a1', { cwd: brand<string, 'Directory'>('/r/pay'), repo: brand<string, 'Directory'>('/r/pay'), branch: textOf('feat/v2'), files: [textOf('src/client.ts')] }), agentOf('a2', { kind: brand<string, 'AgentKind'>('codex'), cwd: brand<string, 'Directory'>('/tmp') })],
         tasks: [{ id: textOf('t1'), name: textOf('Payments'), lanes: [brand<string, 'PaneId'>('w1:p1')] }],
         ledgers: [{ task: textOf('t1'), facts: [] }],
     });
-    const text = message(many);
+    const text = messageText(many);
     assert.ok(text.includes('<agent id="a1" kind="claude" label="" pane="w1:p1" repo="pay" branch="feat/v2">'), 'the repository by name; the folder only when it is not the repository');
     assert.ok(text.includes('<file>src/client.ts</file>'));
     assert.ok(text.includes('<agent id="a2" kind="codex" label="" pane="w1:p2" cwd="/tmp"/>'));
     assert.ok(text.includes('<task id="t1" name="Payments" agents="a1"/>'));
     assert.ok(text.includes('<ledger task="t1"/>'));
-    assert.ok(!message({ ...many, input: { ...many.input, tasks: [] } }).includes('<current_tasks>'), 'no grouping yet: none shown');
+    assert.ok(!messageText({ ...many, input: { ...many.input, tasks: [] } }).includes('<current_tasks>'), 'no grouping yet: none shown');
 });
 
 const tool = (kind: 'edit' | 'read' | 'shell', text: string): Entry => ({ role: 'tool', kind, text: textOf(text) });

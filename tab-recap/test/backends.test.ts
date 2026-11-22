@@ -1,10 +1,11 @@
 import { requestOf } from '#test/support.ts';
+import { kindOf } from '#test/fakes/agent-kind.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { onPath, PathHarnesses } from '#src/adapters/harness/on-path.ts';
+import { dirsOf, PathHarnessDirectory, presenceOnPath } from '#src/adapters/harness/on-path.ts';
 import { Backends, intersect, pick } from '#src/daemon/backends.ts';
 import { backendOf, modelsOf } from '#src/daemon/config.ts';
 import type { HarnessList } from '#src/ports/harnesses.ts';
@@ -34,7 +35,7 @@ test('availability is herdr ∩ PATH; the PATH alone when herdr cannot be asked;
     assert.deepEqual(intersect(found('claude'), down), found('claude'));
 });
 
-test('PathHarnesses: only executables that resolve on PATH', async () => {
+test('PathHarnessDirectory: only executables that resolve on PATH', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'recap-path-'));
     const before = process.env['PATH'];
     try {
@@ -42,9 +43,9 @@ test('PathHarnesses: only executables that resolve on PATH', async () => {
         chmodSync(join(dir, 'opencode'), 0o755);
         writeFileSync(join(dir, 'codex'), 'not executable');
         process.env['PATH'] = dir;
-        assert.deepEqual(await new PathHarnesses(['claude', 'codex', 'opencode']).available(), found('opencode'));
-        assert.equal(onPath('opencode', dir), true);
-        assert.equal(onPath('claude', dir), false);
+        assert.deepEqual(await new PathHarnessDirectory([kindOf('claude'), kindOf('codex'), kindOf('opencode')]).available(), found('opencode'));
+        assert.equal(presenceOnPath(kindOf('opencode'), dirsOf(textOf(dir))), 'present');
+        assert.equal(presenceOnPath(kindOf('claude'), dirsOf(textOf(dir))), 'absent');
     } finally {
         process.env['PATH'] = before;
         rmSync(dir, { recursive: true });

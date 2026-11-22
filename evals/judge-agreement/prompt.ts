@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { judgeInstructions } from '../../tab-recap/src/adapters/job/prompts/judge-instructions.ts';
+import { judgeInstructionsOf } from '../../tab-recap/src/adapters/job/prompts/judge-instructions.ts';
 import { RUBRIC_TEXT } from '../../tab-recap/src/adapters/job/prompts/rubric.ts';
 import { scoringDocument } from '../../tab-recap/src/recap/application/judge-context.ts';
 import { writerContext } from '../../packages/session-ledger/src/recap/application/writer-context.ts';
@@ -39,7 +39,7 @@ export const CHECKS: readonly string[] = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I
 
 export const pooled = (check: string): string => (check.startsWith('S-') ? 'S' : check);
 
-export const SYSTEM: string = judgeInstructions('score', new Map());
+export const SYSTEM: string = judgeInstructionsOf('score', new Map());
 
 export const writerInput = (item: JudgeItem): string => writerContext(item.input.request);
 

@@ -1,7 +1,7 @@
 import { must } from '#src/protocol/result.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { en } from '#src/i18n/en.ts';
-import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
+import { compactionPlanner } from '#src/adapters/capability/compaction-plans.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
@@ -76,7 +76,7 @@ export function compactionDeps(world: Fleet, setting = 'focused', focused: strin
     let looked = 0;
     const recap = { ...blankRecap(tabId('w1:t1')), tasks: oneTask('x', { ...NO_SECTIONS, goal: textOf('Ship the cart rewrite'), decisions: [textOf('The recap column shows three lines')], rules: [textOf('Never push to main')] }, ['w1:p1', 'w1:p2']) };
     return {
-        compactionPlans,
+        compactionPlans: compactionPlanner,
         agents: world.agents,
         notifier: { notify: (title, body) => { world.toasts.push(`${title} | ${body}`); return Promise.resolve({ kind: 'shown' }); } },
         records: { readRecap: () => recap },

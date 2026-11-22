@@ -3,7 +3,7 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffPlan } from '#src/recap/domain/handoff-plan.ts';
-import type { HandoffPlans } from '#src/ports/handoff-plans.ts';
+import type { HandoffPlanCatalogue } from '#src/ports/handoff-plans.ts';
 import type { InFlight } from '#src/ports/in-flight.ts';
 import type { Waiting } from './autocompact.ts';
 
@@ -26,7 +26,7 @@ export type TargetResolution = Ready | TargetRefusal | Unsupported;
 
 export interface TargetDeps {
     readonly lanes: readonly Lane[];
-    readonly plans: HandoffPlans;
+    readonly plans: HandoffPlanCatalogue;
     readonly inFlight: InFlight;
     readonly awaiting: (pane: string) => Promise<Waiting>;
 }
@@ -65,7 +65,7 @@ export async function resolveTarget(source: PaneId | null, target: PaneId, deps:
     if (lane === undefined) {
         return { kind: 'refused', reason: 'not-a-lane' };
     }
-    const found = deps.plans.forKind(String(lane.agent));
+    const found = deps.plans.forKind(lane.agent);
     if (found.kind === 'unsupported') {
         return found;
     }

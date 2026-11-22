@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { LaneContexts } from '#src/recap/application/lane-contexts.ts';
-import { contextWindows } from '#src/adapters/capability/context-window.ts';
+import { agentWindows } from '#src/adapters/capability/context-window.ts';
 import { CompactLimitFiles } from '#src/adapters/capability/compact-limits.ts';
 import { ClaudeLaunchPosix } from '#src/adapters/capability/claude-launch-posix.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
@@ -13,7 +13,7 @@ import { must } from '#src/protocol/result.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import { parseSessionId, agentKind } from '#src/recap/domain/ids.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
-import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
+import type { ModelWindows } from '#src/ports/model-catalogue.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
@@ -76,7 +76,7 @@ function reader(model: string, tokens: number): Transcripts {
     };
 }
 
-const catalogue: ModelCatalogue = { windowOf: (model) => (model === 'claude-opus-5-5' ? 1_000_000 : null) };
+const catalogue: ModelWindows = { windowOf: (model) => (model === 'claude-opus-5-5' ? countOf(1_000_000) : null) };
 
 const laneOf = (cwd: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', cwd, session: SESSION });
 
@@ -92,7 +92,7 @@ async function measure(setup: Setup): Promise<ReturnType<LaneContexts['of']>> {
     if (setup.launch !== undefined) launchFixture(home, proc, cwd, setup.launch, setup.procAbsent !== true);
     const contexts = new LaneContexts(
         registryWith({ claude: reader('claude-opus-5-5', 240_000) }),
-        contextWindows(catalogue),
+        agentWindows(catalogue),
         new CompactLimitFiles({ home: must(parseFsPath(home)), managed: [must(parseFsPath(managed))] }, new ClaudeLaunchPosix({ home: must(parseFsPath(home)), proc: must(parseFsPath(proc)) })),
         () => null,
     );

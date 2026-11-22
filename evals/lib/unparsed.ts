@@ -3,7 +3,7 @@ import { curationOf } from '../../tab-recap/src/recap/domain/curation.ts';
 import { reconciliationOf } from '../../packages/session-ledger/src/recap/domain/reconciliation.ts';
 import { parseText } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import { answerTextOf } from '../../packages/session-ledger/src/recap/application/recap-shape.ts';
-import { unfenced } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
+import { unfencedText } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
 import { readJsonl } from './runner.ts';
 import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 
@@ -19,7 +19,7 @@ const NOT_JSON = 'the answer is not JSON';
 const NOT_OBJECT = 'the answer is not an object';
 
 function bodyOf(text: string, reader: Reader): string {
-    const body = unfenced(text);
+    const body = unfencedText(textOf(text));
     if (reader === 'today') return body;
     const read = parseText(body);
     return read.kind === 'ok' ? answerTextOf(read.value) : body;
