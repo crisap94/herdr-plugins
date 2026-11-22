@@ -1,4 +1,6 @@
 import type { StoredRun } from '#src/ports/run-inputs.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
 import type { Grade } from '../../judge-answer.ts';
 import { plus } from '../../judge-coverage.ts';
 import type { Measured } from '../../judge-coverage.ts';
@@ -86,7 +88,7 @@ const lineOf = (result: RunResult): RunLine =>
         ? { kind: 'judged', run: result.run, coverage: result.coverage, filler: result.filler, added: result.added, stateSize: result.stateSize, readback: result.readback, note: result.note }
         : { kind: 'not-judged', run: result.run, why: result.why };
 
-const NONE: Share = { passed: 0, total: 0 };
+const NONE: Share = { passed: must(parseCount(0)), total: must(parseCount(0)) };
 
 const medianOf = (numbers: readonly number[]): number | null => {
     const sorted = numbers.toSorted((a, b) => a - b);

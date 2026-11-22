@@ -52,12 +52,6 @@
     "return": 3,
     "property": 1
   },
-  "src/recap/application/judge-anchors.ts": {
-    "parameter": 3,
-    "return": 1,
-    "container": 2,
-    "property": 1
-  },
   "src/recap/application/judge-answer.ts": {
     "parameter": 13,
     "return": 2,

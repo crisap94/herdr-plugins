@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { HarnessJudge } from '#src/adapters/job/judge.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { judgeInstructions, JUDGE_INSTRUCTIONS } from '#src/adapters/job/prompts/judge-instructions.ts';
 import { agreementOf, kappaOf, trusted } from '#src/recap/application/eval-stats.ts';
 import { ANCHORS_PER_CHECK, anchorsOf, withText } from '#src/recap/application/judge-anchors.ts';
@@ -50,7 +52,7 @@ function seeded(count: number): ReturnType<typeof rig> {
 test('where the operator overruled the judge on I5, the judge\'s next instructions for I5 carry the item and the operator\'s reasons, newest first, at most five', () => {
     const { store } = seeded(7);
     const anchors = anchorsOf(withText(store.verdicts.disagreements(), store.inputs));
-    assert.equal(anchors.get('I5')?.length, ANCHORS_PER_CHECK);
+    assert.equal(anchors.get(must(parseText('I5')))?.length, ANCHORS_PER_CHECK);
     const rules = judgeInstructions('score', anchors);
     assert.ok(rules.startsWith(JUDGE_INSTRUCTIONS.score));
     assert.match(rules, /I5:\n- "Worked on it\." — the operator ruled FAIL: effort, not work\n- "t1\/x\/6" — .*reason 6\n- .*reason 5\n- .*reason 4\n- .*reason 3$/);

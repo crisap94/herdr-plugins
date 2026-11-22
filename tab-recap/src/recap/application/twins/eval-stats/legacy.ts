@@ -1,5 +1,7 @@
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import type { Pair } from '#src/ports/verdicts.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { percent, rankOf } from '../../eval-report.ts';
 import { perCheck, WORST_PER_CHECK } from '../../judge-anchors.ts';
 import type { Disagreed } from '../../judge-anchors.ts';
@@ -38,7 +40,7 @@ export function agreementOf(pairs: readonly Pair[], disagreed: readonly Disagree
             check, items: mine.length, agreed, percent: percent(agreed, mine.length),
             falsePasses: mine.filter((pair) => pair.judge && !pair.operator).length,
             falseFails: mine.filter((pair) => !pair.judge && pair.operator).length,
-            kappa: kappaOf(mine), worst: worst.get(check) ?? [],
+            kappa: kappaOf(mine), worst: worst.get(must(parseText(check))) ?? [],
         };
     });
 }

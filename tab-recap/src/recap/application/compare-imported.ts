@@ -111,7 +111,7 @@ async function carrying(deps: JudgeDeps, parts: CarryParts): Promise<Carried> {
     if (isUnknown(asked)) {
         return { found: must(parseText(saying(asked.why))), costUsd: ZERO };
     }
-    const parsed = parseCover(asked.text, new Map(parts.state.map((item) => [item.key, item.section])), parts.prior?.keyfacts ?? null);
+    const parsed = parseCover(must(parseText(asked.text)), new Map(parts.state.map((item): [Text, Text] => [must(parseText(item.key)), must(parseText(item.section))])), parts.prior?.keyfacts ?? null);
     return { found: parsed.kind === 'ok' ? parsed.value : must(parseText(parsed.why)), costUsd: must(parseUsd(asked.costUsd)) };
 }
 
@@ -146,8 +146,8 @@ async function compareChapter(deps: TypedCompareDeps, chapter: ImportedChapterRe
     return { result: { kind: 'compared', n: chapter.n, at: chapter.at, keyfacts: must(parseCount(own.found.keyfacts.length)), imported: imported.side, replay: replay.side }, costUsd };
 }
 
-const NONE: Share = { passed: 0, total: 0 };
-const passes = (side: Side): Share => ({ passed: side.readback?.filter((grade) => grade.pass).length ?? 0, total: side.readback === null ? 0 : 6 });
+const NONE: Share = { passed: must(parseCount(0)), total: must(parseCount(0)) };
+const passes = (side: Side): Share => ({ passed: must(parseCount(side.readback?.filter((grade) => grade.pass).length ?? 0)), total: must(parseCount(side.readback === null ? 0 : 6)) });
 
 function totalOf(results: readonly ChapterResult[], pick: (result: ComparedChapter) => Side): SideTotal {
     const compared = results.flatMap((result) => (result.kind === 'compared' ? [pick(result)] : []));
