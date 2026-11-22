@@ -8,7 +8,7 @@ import { MESSAGE_LIMIT as BRIEF_LIMIT } from '#src/recap/application/compaction-
 import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { compactJobOf, COMPACT_DEFAULT, placementOf } from '#src/recap/domain/job.ts';
 
 const t = (raw: string): Text => {
@@ -112,9 +112,9 @@ test('tab-recap and recap column stay refused unless the conversation itself con
 });
 
 test('the template obeys the same rule: recap items with a refused word are left out, unless the conversation uses it', () => {
-    const sections = { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['Keep SQLite', 'The recap column shows 3 lines'], next: ['Fix the browser tab leak', 'Ask herdr'], rules: ['Never push to main'] };
+    const sections = { ...NO_SECTIONS, goal: textOf('Ship the cart rewrite'), decisions: [textOf('Keep SQLite'), textOf('The recap column shows 3 lines')], next: [textOf('Fix the browser tab leak'), textOf('Ask herdr')], rules: [textOf('Never push to main')] };
     assert.deepEqual(clean(sections, t('')), { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['Keep SQLite'], rules: ['Never push to main'] });
     const kept = clean(sections, t('the browser tab leaks'));
     assert.deepEqual(kept.next, ['Fix the browser tab leak']);
-    assert.deepEqual(clean({ ...NO_SECTIONS, goal: 'Reduce the recap noise' }, t('')).goal, t(''), 'a goal with a refused word is left out');
+    assert.deepEqual(clean({ ...NO_SECTIONS, goal: textOf('Reduce the recap noise') }, t('')).goal, t(''), 'a goal with a refused word is left out');
 });

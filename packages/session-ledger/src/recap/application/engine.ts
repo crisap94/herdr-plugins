@@ -54,7 +54,7 @@ function restoreFactsOf(store: EngineStore, environment: EngineEnvironment, at: 
         environment.log(`restore ${id}: skipped, ${saying(recap.why)}`);
         return { at, lastRun: null, open: [], closed: [] };
     }
-    const tasks = (recap === null ? [] : recap.tasks).filter((task) => task.lanes.includes(String(heldBy(session))));
+    const tasks = (recap === null ? [] : recap.tasks).filter((task) => task.lanes.includes(heldBy(session)));
     const facts = tasks.map((task) => {
         const owned = { tab: id, key: task.id };
         const open = store.ledger.openOf(owned);

@@ -1,4 +1,4 @@
-import { parseCount } from '#src/recap/domain/count.ts';
+import { parseCount, countOf } from '#src/recap/domain/count.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { instant, duration } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
@@ -64,7 +64,7 @@ export function world(over: Partial<AutocompactPolicy> = {}, recap = true, start
     const statuses = new WeakMap<Candidate, string>();
     const queued = new Set<string>();
     const deps: AutocompactDeps = {
-        policy: () => state.policy, tuning: () => state.tuning, decider: () => decider, contexts: { of: (pane) => (state.known ? { tokens: (state.byPane[pane] ?? state.share) * 10_000, window: 1_000_000, source: 'observed' } : null) }, inFlight: () => { reads.push(1); return Promise.resolve(state.inFlight === 'unknown' ? unreadable(flightReason('test')) : observedFrom(runningCount(state.inFlight), state.background, flightReason(`${state.inFlight} running`))); },
+        policy: () => state.policy, tuning: () => state.tuning, decider: () => decider, contexts: { of: (pane) => (state.known ? { tokens: countOf((state.byPane[pane] ?? state.share) * 10_000), window: countOf(1_000_000), source: 'observed' } : null) }, inFlight: () => { reads.push(1); return Promise.resolve(state.inFlight === 'unknown' ? unreadable(flightReason(textOf('test'))) : observedFrom(runningCount(countOf(state.inFlight)), state.background, flightReason(textOf(`${state.inFlight} running`)))); },
         recent: () => Promise.resolve([{ role: 'user', text: textOf('publish it') }, { role: 'agent', text: textOf('Published.') }]), ledger: store.ledger, sessions: { lastBreakAt: (scope, key) => state.breakAt ?? store.boundaries.lastBreakAt(tabId(scope), paneId(key)) }, activity: { activeFor: (scope, key) => store.compactions.shownFor(tabId(scope)).some((record) => record.pane === key && ACTIVE.has(record.stage)) || claims.has(paneId(key)) || queued.has(key), automaticInProgress: () => store.compactions.autoInProgress() }, decisions: store.decisions,
         request: (ask) => { requests.push({ tab: tabId(ask.scope), pane: paneId(ask.key), note: ask.note, origin: 'auto' }); }, statusOf: (found) => parseLaneStatusAtDecision(statuses.get(found)), recaps: { ensure: (scope): Promise<void> => { flushed.push(`${String(scope)} autocompact asked ${asked.length}`); if (!recap) refreshed.push(scope); return Promise.resolve(); } }, idleHold: () => state.idleHold, now: () => instant(clock.at), log: (line) => { logs.push(line); }, startedAt: instant(startedAt),
         awaiting: () => { state.awaitingReads += 1; return Promise.resolve(awaitingOf(state)); },

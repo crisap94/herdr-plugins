@@ -7,6 +7,7 @@ import { grew, text as textOf } from '../values.ts';
 import type { Behaviour, CuratedAnswer, CuratorCall, EngineWorld } from '../world.ts';
 import { NO_OPS, recapOf, spoken } from './support.ts';
 import { TAB, seedOpen } from './curate.ts';
+import { tabIdOf } from '../../src/recap/domain/lane-shape.ts';
 
 const MINUTES = 60_000;
 
@@ -17,10 +18,10 @@ const RECONCILE_DONE = JSON.stringify({ ops: [{ op: 'close', id: 'f1', why: 'don
 const taskOf = (world: EngineWorld): TaskId => {
     const [only] = recapOf(world, TAB)?.tasks ?? [];
     assert.ok(only);
-    return { tab: TAB, key: key(only.id) };
+    return { tab: tabIdOf(TAB), key: textOf(key(only.id)) };
 };
 
-const openOf = (world: EngineWorld, id: string, firstAt: number, lastAt: number): Fact => factOf(id, { task: taskOf(world), text: `open work ${id}`, firstAt, lastAt });
+const openOf = (world: EngineWorld, id: string, firstAt: number, lastAt: number): Fact => factOf(id, { task: taskOf(world), text: textOf(`open work ${id}`), firstAt: instant(firstAt), lastAt: instant(lastAt) });
 
 const changeAt = (world: EngineWorld, index: number): StoryChange => {
     const found = world.changes()[index];

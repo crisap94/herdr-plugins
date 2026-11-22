@@ -11,7 +11,7 @@ import type { SessionId } from '#src/recap/domain/ids.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import { IN_FLIGHT_CAPABILITIES } from './registry.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 
 const TAIL_BYTES = 512 * 1024;
@@ -38,7 +38,7 @@ export class TranscriptInFlight implements InFlight {
     async read(lane: Lane): Promise<InFlightReading> {
         const agent = lane.agent;
         const subject = must(parseText(agent));
-        const registered = registeredKindOf(agent);
+        const registered = registeredKindOf(textOf(agent));
         if (registered !== null) {
             const capability = IN_FLIGHT_CAPABILITIES[registered];
             if (capability.kind === 'unsupported') return { kind: 'unknown', why: capabilityWording(capability.why, subject) };

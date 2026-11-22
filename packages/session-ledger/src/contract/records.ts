@@ -1,4 +1,4 @@
-import type { AgentKind, Brand, Count, GateName, Instant, PaneId, TabId, Text, Unknown, Usd } from './kernel.ts';
+import type { AgentKind, Brand, Count, Duration, GateName, Instant, PaneId, TabId, Text, Unknown, Usd } from './kernel.ts';
 import type { ScopeId, SessionKey } from './ids.ts';
 import type { Cursor, RecapCause, SourcePath } from './session.ts';
 import type { Fact, HistoryFact, Refusal, TaskId } from './facts.ts';
@@ -29,22 +29,22 @@ export interface Recap {
 }
 
 export interface RecapSections {
-    readonly goal: string;
-    readonly now: readonly string[];
-    readonly needs: readonly string[];
-    readonly done: readonly string[];
-    readonly decisions: readonly string[];
-    readonly next: readonly string[];
-    readonly links: readonly string[];
-    readonly rules: readonly string[];
+    readonly goal: Text;
+    readonly now: readonly Text[];
+    readonly needs: readonly Text[];
+    readonly done: readonly Text[];
+    readonly decisions: readonly Text[];
+    readonly next: readonly Text[];
+    readonly links: readonly Text[];
+    readonly rules: readonly Text[];
 }
 
 export interface RecapTask {
-    readonly id: string;
-    readonly name: string;
-    readonly lanes: readonly string[];
+    readonly id: Text;
+    readonly name: Text;
+    readonly lanes: readonly PaneId[];
     readonly sections: RecapSections | null;
-    readonly markdown: string;
+    readonly markdown: Text;
 }
 
 export type TaskShape = Pick<RecapTask, 'id' | 'name' | 'lanes'>;
@@ -52,12 +52,12 @@ export type TaskShape = Pick<RecapTask, 'id' | 'name' | 'lanes'>;
 export type OwnTrigger = 'auto' | 'manual';
 
 export interface SessionMark {
-    readonly pane: string;
-    readonly at: number;
-    readonly cursor: number;
-    readonly tokensBefore?: number;
-    readonly tokensAfter?: number;
-    readonly tookMs?: number;
+    readonly pane: PaneId;
+    readonly at: Instant;
+    readonly cursor: Count;
+    readonly tokensBefore?: Count;
+    readonly tokensAfter?: Count;
+    readonly tookMs?: Duration;
     readonly trigger?: OwnTrigger;
 }
 

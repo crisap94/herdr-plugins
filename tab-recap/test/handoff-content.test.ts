@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildHandoffContent } from '#src/recap/application/handoff-content.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { HandoffInput } from '#src/recap/application/handoff-content.ts';
 import { NOTE_LIMIT } from '#src/recap/application/compaction-message.ts';
@@ -18,15 +18,16 @@ import { isForbidden } from '#src/recap/domain/handoff-vetting.ts';
 import type { Freshness } from '#src/recap/domain/freshness.ts';
 import type { WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 import { fact } from './fakes/fact-at.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const NOW = Date.parse('2026-10-10T12:00:00Z');
-const TASK: TaskId = { tab: 'w1:t1', key: 't1' };
+const TASK: TaskId = { tab: tabIdOf('w1:t1'), key: textOf('t1') };
 
 const FRESHNESS: Freshness = { lastRun: { at: NOW - 60_000, cause: 'turn-ended' }, status: 'idle', newerPrompts: { kind: 'none' }, refresh: 'not-requested' };
 const WORKSITE: WorksiteSnapshot = { kind: 'unavailable' };
 
 const closedFact = (id: string, section: Fact['section'], text: string, closedAt: number, closedWhy: Fact['closedWhy'] = 'superseded'): Fact =>
-    fact(id, section, text, closedAt, { state: 'closed', closedWhy, closedAt, lastAt: closedAt });
+    fact(id, section, text, closedAt, { state: 'closed', closedWhy, closedAt: instant(closedAt), lastAt: instant(closedAt) });
 
 const taskOf = (open: readonly Fact[], closed: readonly Fact[] = []): TaskFacts => ({ key: brand<string, 'Text'>(TASK.key), open, closed });
 
@@ -52,7 +53,7 @@ test('every fact class is rendered in its group with its text and last-seen time
                         fact('n1', 'now', 'writing the content builder', NOW - 8_000),
                         fact('d1', 'needs', 'an answer about the budget', NOW - 7_000),
                         fact('o1', 'done', 'the freshness model is in', NOW - 6_000),
-                        fact('c1', 'decisions', 'keep the ledger as the one source', NOW - 5_000, { why: 'the reader needs one source' }),
+                        fact('c1', 'decisions', 'keep the ledger as the one source', NOW - 5_000, { why: textOf('the reader needs one source') }),
                         fact('x1', 'next', 'run the serializer brief', NOW - 4_000),
                         fact('l1', 'links', 'the design section on content', NOW - 3_000),
                         fact('r1', 'rules', 'no comments in code', NOW - 2_000),
@@ -81,7 +82,7 @@ test('a decision keeps its recorded reason and a closed fact keeps the reason it
         buildHandoffContent(
             inputOf(
                 taskOf(
-                    [fact('d1', 'decisions', 'use the outcome table', NOW - 1_000, { why: 'one table feeds three readers' }), fact('g1', 'goal', 'land the handoff', NOW - 2_000)],
+                    [fact('d1', 'decisions', 'use the outcome table', NOW - 1_000, { why: textOf('one table feeds three readers') }), fact('g1', 'goal', 'land the handoff', NOW - 2_000)],
                     [closedFact('c1', 'next', 'the probe plan', NOW - 1_500, 'answered')],
                 ),
             ),
@@ -101,7 +102,7 @@ test('the groups come in the fixed order, the recently closed group last', () =>
 });
 
 test('the newest facts are selected by last-seen time and rendered by first-seen time then id', () => {
-    const done = Array.from({ length: 16 }, (_, index) => fact(`d${index}`, 'done', `done ${index}`, 1_000 + index, { lastAt: index === 0 ? 9_000 : 2_000 + index }));
+    const done = Array.from({ length: 16 }, (_, index) => fact(`d${index}`, 'done', `done ${index}`, 1_000 + index, { lastAt: index === 0 ? instant(9_000) : instant(2_000 + index) }));
     const body = bodyOf(buildHandoffContent(inputOf(taskOf(done.toReversed(), [closedFact('c0', 'done', 'closed', NOW - 60_000)]))));
     const group = groupOf(body, 'done');
     assert.deepEqual(group.entries.map((entry) => entry.id), ['d0', ...Array.from({ length: 14 }, (_, index) => `d${index + 2}`)]);
@@ -110,7 +111,7 @@ test('the newest facts are selected by last-seen time and rendered by first-seen
 
 test('facts first seen in the same instant are rendered by fact id', () => {
     const body = bodyOf(
-        buildHandoffContent(inputOf(taskOf([fact('n3', 'now', 'third', NOW - 1_000, { firstAt: NOW - 5_000 }), fact('n1', 'now', 'first', NOW - 2_000, { firstAt: NOW - 5_000 }), fact('n2', 'now', 'second', NOW - 3_000, { firstAt: NOW - 5_000 })]))),
+        buildHandoffContent(inputOf(taskOf([fact('n3', 'now', 'third', NOW - 1_000, { firstAt: instant(NOW - 5_000) }), fact('n1', 'now', 'first', NOW - 2_000, { firstAt: instant(NOW - 5_000) }), fact('n2', 'now', 'second', NOW - 3_000, { firstAt: instant(NOW - 5_000) })]))),
     );
     assert.deepEqual(textsOf(body, 'now'), ['first', 'second', 'third']);
 });
@@ -176,8 +177,8 @@ test('a decision whose reason names a forbidden word is dropped whole and counte
             inputOf(
                 taskOf([
                     fact('g1', 'goal', 'keep the schema stable', NOW - 3_000),
-                    fact('d1', 'decisions', 'use the shared cache', NOW - 2_000, { why: 'the herdr panel reads it' }),
-                    fact('d2', 'decisions', 'keep the schema', NOW - 1_000, { why: 'the reader needs it' }),
+                    fact('d1', 'decisions', 'use the shared cache', NOW - 2_000, { why: textOf('the herdr panel reads it') }),
+                    fact('d2', 'decisions', 'keep the schema', NOW - 1_000, { why: textOf('the reader needs it') }),
                 ]),
             ),
         ),
@@ -190,7 +191,7 @@ test('a decision whose reason names a forbidden word is dropped whole and counte
 test('a decision whose text names a forbidden word is dropped whole, reason and all', () => {
     const body = bodyOf(
         buildHandoffContent(
-            inputOf(taskOf([fact('g1', 'goal', 'the goal', NOW - 2_000), fact('d1', 'decisions', 'the plugin keeps it', NOW - 1_000, { why: 'a clean reason' })])),
+            inputOf(taskOf([fact('g1', 'goal', 'the goal', NOW - 2_000), fact('d1', 'decisions', 'the plugin keeps it', NOW - 1_000, { why: textOf('a clean reason') })])),
         ),
     );
     assert.deepEqual(textsOf(body, 'decisions'), []);
@@ -296,7 +297,7 @@ test('a stored fact text has its control characters removed and its whitespace c
 });
 
 test('a decision reason whose control character would join a forbidden word is withheld whole', () => {
-    const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('d1', 'decisions', 'keep the ledger', NOW - 1_000, { why: 'her\u001bdr reads it' }), fact('g1', 'goal', 'the goal', NOW - 2_000)]))));
+    const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('d1', 'decisions', 'keep the ledger', NOW - 1_000, { why: textOf('her\u001bdr reads it') }), fact('g1', 'goal', 'the goal', NOW - 2_000)]))));
     assert.deepEqual(textsOf(body, 'decisions'), []);
     assert.equal(body.withheld, 1);
 });
@@ -313,7 +314,7 @@ test('format characters, bidi overrides and tag characters are removed from a st
 });
 
 test('U+2028, U+2029 and U+0085 in a fact and in a decision reason collapse to one space', () => {
-    const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('d1', 'decisions', 'a\u{2028}b\u{2029}c', NOW - 1_000, { why: 'x\u0085y' }), fact('g1', 'goal', 'the goal', NOW - 2_000)]))));
+    const body = bodyOf(buildHandoffContent(inputOf(taskOf([fact('d1', 'decisions', 'a\u{2028}b\u{2029}c', NOW - 1_000, { why: textOf('x\u0085y') }), fact('g1', 'goal', 'the goal', NOW - 2_000)]))));
     assert.deepEqual(textsOf(body, 'decisions'), ['a b c']);
     assert.equal(firstOf(body, 'decisions').reason, 'x y');
 });

@@ -16,6 +16,7 @@ import { ids } from '#src/adapters/db/uuid7.ts';
 import { VerdictsRepository } from '#src/adapters/db/verdicts/legacy.ts';
 import { LedgerRepository } from '#src/adapters/db/ledger.ts';
 import { expectSameEffect, expectSameRows, withParity } from './parity.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const hex = (bytes: Uint8Array): string => Buffer.from(bytes).toString('hex');
 const keyOf = (n: number): Uint8Array => Uint8Array.from({ length: 16 }, () => n);
@@ -142,7 +143,7 @@ describe('parity: finish (boundaries, reads, retention, session source, stories,
             seed: seedAll,
             raw: (db) => { db.prepare(STORY_UPDATE).run('new story', 40, 't1', 'k1'); },
             builder: (db) => {
-                new StoriesRepository(db, ledger).keep({ task: { tab: 't1', key: 'k1' }, at: instant(40), language: textOf('en') }, { story: must(parseText('new story')), merges: [] });
+                new StoriesRepository(db, ledger).keep({ task: { tab: tabIdOf('t1'), key: textOf('k1') }, at: instant(40), language: textOf('en') }, { story: must(parseText('new story')), merges: [] });
             },
             dump: (db) => db.prepare(TASKS).all(),
         });

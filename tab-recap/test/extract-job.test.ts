@@ -17,7 +17,7 @@ const textOf = brand<string, 'Text'>;
 const NOW = 10 * 3_600_000;
 const released = factOf('done', 'Released tab-recap 1.10.0 through the pipeline');
 const review = factOf('next', 'Review the migration test');
-const shut = factOf('done', 'Merged the lint fix', { state: 'closed', closedWhy: 'done', closedAt: NOW - 3_600_000 });
+const shut = factOf('done', 'Merged the lint fix', { state: 'closed', closedWhy: 'done', closedAt: instant(NOW - 3_600_000) });
 const numbering = numbered([{ key: brand<string, 'Text'>('t1'), open: [released, review], closed: [shut] }], [], severalOf(false), { kind: 'full' }, instant(0));
 const ground: Ground = {
     gates: LEDGER_GATES, now: instant(NOW), facts: new Map(numbering.ledgers.flatMap((ledger) => ledger.facts.map((fact) => [brand<string, 'Text'>(fact.id), fact] as const))),

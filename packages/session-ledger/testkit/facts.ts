@@ -1,5 +1,6 @@
 import { instant, type Fact, type FactId, type HistoryFact, type Recap, type RunId, type TabId, type TaskId } from '@stateforge-labs/session-ledger';
 import { running, text as textOf, usd } from './values.ts';
+import { tabIdOf } from '../src/recap/domain/lane-shape.ts';
 
 const isFactId = (text: string): text is FactId => typeof text === 'string';
 
@@ -21,19 +22,19 @@ export const runIdOf = (text: string): RunId => {
 
 export const factOf = (id: string, over: Partial<Omit<Fact, 'id'>> = {}): Fact => ({
     id: factIdOf(id),
-    task: { tab: 'tab-1', key: 'a' },
+    task: { tab: tabIdOf('tab-1'), key: textOf('a') },
     section: 'now',
-    text: '',
+    text: textOf(''),
     why: null,
     ref: null,
     agent: null,
     anchor: null,
-    firstAt: 0,
-    lastAt: 0,
+    firstAt: instant(0),
+    lastAt: instant(0),
     state: 'open',
     closedWhy: null,
     closedAt: null,
-    language: 'en',
+    language: textOf('en'),
     ...over,
 });
 
@@ -45,9 +46,9 @@ export const historyOf = ({ section, text, why, state, closedWhy, closedAt, firs
     why: why === null ? null : textOf(why),
     state,
     closedWhy,
-    closedAt: closedAt === null ? null : instant(closedAt),
-    firstAt: instant(firstAt),
-    lastAt: instant(lastAt),
+    closedAt: closedAt === null ? null : closedAt,
+    firstAt: firstAt,
+    lastAt: lastAt,
 });
 
 export const emptyRecap = (tab: TabId): Recap => ({

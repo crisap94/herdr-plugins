@@ -16,7 +16,7 @@ import { usdOf } from '#src/recap/domain/usd.ts';
 
 export const DAY = 86_400_000;
 export const NOW = 100 * DAY;
-export const SECTIONS = { goal: 'Ship retries', now: [], needs: [], done: ['Merged !256.', 'Worked on it.'], decisions: [], next: [], links: [], rules: [] };
+export const SECTIONS = { goal: textOf('Ship retries'), now: [], needs: [], done: [textOf('Merged !256.'), textOf('Worked on it.')], decisions: [], next: [], links: [], rules: [] };
 export const KEYS = ['t1/goal/0', 't1/done/0', 't1/done/1'];
 export const SCORE = JSON.stringify({
     verdicts: KEYS.flatMap((item) => ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7', item.includes('goal') ? 'S-goal' : 'S-done'].map((check) => ({ item, check, pass: !(item === 't1/done/1' && check === 'I3'), critique: item === 't1/done/1' && check === 'I3' ? 'names nothing concrete' : '' }))),
@@ -56,7 +56,7 @@ export function seed(store: Rig['store'], count: number, over: { readonly input?
     for (let n = 0; n < count; n += 1) {
         recordOps(store, {
             tab: tabId(over.tab ?? 'w1:t1'), at: instant(NOW - (over.first ?? 1) * DAY + n * 1000), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')],
-            ...withFacts(oneTask('', { ...SECTIONS, goal: `Ship retries ${n}` })), ...(over.input === false ? {} : { input: textOf(`<recap_input version="1">run ${n}</recap_input>`) }),
+            ...withFacts(oneTask('', { ...SECTIONS, goal: textOf(`Ship retries ${n}`) })), ...(over.input === false ? {} : { input: textOf(`<recap_input version="1">run ${n}</recap_input>`) }),
             ...(over.gate === true ? { gateStats: GATE_STATS } : {}),
         });
     }

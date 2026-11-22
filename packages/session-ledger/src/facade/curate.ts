@@ -11,11 +11,12 @@ import { curatorInput } from '#src/recap/application/curator-input.ts';
 import type { CurateWhy, RunEvent } from '#src/recap/application/ledger-reconcile.ts';
 import { answerTextOf } from '#src/recap/application/recap-shape.ts';
 import { brand } from '#src/recap/domain/brand.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { curationOf, type Curation } from './curation.ts';
 import type { CurateBridge, Reconcile, Reconciled, Round } from './reconcile-bridge.ts';
 import { reconcilingOver } from './reconcile-bridge.ts';
 import { acceptedRepair, storyRepair, type StoryReading } from './story-repair.ts';
+import { tabIdOf } from '#src/recap/domain/lane-shape.ts';
 
 const CURATE_GAP_MS = 5 * 60_000;
 
@@ -44,7 +45,7 @@ interface Asked extends Sent {
 
 const note = brand<string, 'Text'>;
 
-const taskOn = (scope: ScopeId, key: SessionKey): TaskId => ({ tab: scope, key });
+const taskOn = (scope: ScopeId, key: SessionKey): TaskId => ({ tab: tabIdOf(scope), key: textOf(key) });
 
 const storiesOver = (stories: Stories): LedgerStories => ({
     read: (tab: TabId, task: Text): KeptStory | null => stories.read(taskOn(brand<string, 'ScopeId'>(tab), brand<string, 'SessionKey'>(task))),
@@ -71,7 +72,7 @@ const keep = (round: Round, run: CurationRun, answer: Text, named: Named): void 
     const { environment } = round.plugs;
     const checked = curationOf(must(parseText(answerTextOf(answer))), namedOpen(named));
     checked.refused.forEach((why) => { environment.log(lineOf(round, note(`refused — ${why}`))); });
-    const merges = checked.merges.map((merge): CloseOp => ({ op: 'close', id: named.get(merge.id)?.id ?? '', why: 'merged' }));
+    const merges = checked.merges.map((merge): CloseOp => ({ op: 'close', id: named.get(merge.id)?.id ?? brand<string, 'FactId'>(''), why: 'merged' }));
     const applied = round.stories.keep(run, { story: checked.story, merges });
     applied.refused.forEach((one) => { environment.log(lineOf(round, note(`the ledger refused ${one.op.op} — ${one.reason}`))); });
     if (checked.story === null) {

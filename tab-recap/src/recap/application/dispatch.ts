@@ -1,5 +1,5 @@
 import { lanesOf } from '#src/recap/domain/board.ts';
-import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
+import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import type { Board, Shape } from '#src/recap/domain/board.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
@@ -139,7 +139,7 @@ export class LaneDispatch {
         try {
             this.deps.events.inWorkspace(String(workspace), 'lane-closed', String(closed.pane));
         } catch (error) {
-            this.deps.log(must(parseText(`lane ${closed.pane}: closure not announced (${failureCauseOf(error)})`)));
+            this.deps.log(must(parseText(`lane ${closed.pane}: closure not announced (${failureCauseOf(parseThrown(error))})`)));
         }
     }
 
@@ -149,7 +149,7 @@ export class LaneDispatch {
                 this.deps.log(must(parseText(`tab ${tab}: gone from herdr, its tasks are retired`)));
             }
         } catch (error) {
-            this.deps.log(must(parseText(`tab ${tab}: tasks not retired (${failureCauseOf(error)})`)));
+            this.deps.log(must(parseText(`tab ${tab}: tasks not retired (${failureCauseOf(parseThrown(error))})`)));
         }
     }
 
@@ -160,7 +160,7 @@ export class LaneDispatch {
         try {
             this.deps.closures.record(closed);
         } catch (error) {
-            this.deps.log(must(parseText(`lane ${closed.pane}: closure not recorded (${failureCauseOf(error)})`)));
+            this.deps.log(must(parseText(`lane ${closed.pane}: closure not recorded (${failureCauseOf(parseThrown(error))})`)));
         }
     }
 

@@ -5,6 +5,8 @@ import { grewOf } from '@stateforge-labs/session-ledger/unstable/ports/transcrip
 import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import { createEngineWorld, followed, key, scope, session, type Behaviour, type CuratedAnswer, type WrittenAnswer } from '@stateforge-labs/session-ledger/testkit';
+import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 
 const TAB = scope('one');
 const MINUTES = 60_000;
@@ -19,8 +21,8 @@ const spoken = (line: string): Behaviour<Chunk> => ({
 });
 
 const factOf = (id: string, task: TaskId, text: string, lastAt: number): Fact => ({
-    id: brand<string, 'FactId'>(id), task, section: 'now', text, why: null, ref: null, agent: null, anchor: null,
-    firstAt: 1, lastAt, state: 'open', closedWhy: null, closedAt: null, language: 'en',
+    id: brand<string, 'FactId'>(id), task, section: 'now', text: textOf(text), why: null, ref: null, agent: null, anchor: null,
+    firstAt: instant(1), lastAt: instant(lastAt), state: 'open', closedWhy: null, closedAt: null, language: textOf('en'),
 });
 
 test('a curator answer with no story leaves the stored story as it was', async () => {
@@ -43,7 +45,7 @@ test('a curator answer with no story leaves the stored story as it was', async (
     if (only === undefined || recap.tasks.length !== 1) {
         throw new Error('the turn did not write one task');
     }
-    const task: TaskId = { tab: TAB, key: key(only.id) };
+    const task: TaskId = { tab: tabIdOf(TAB), key: textOf(key(only.id)) };
     world.store.seed(null, [factOf('fct_1', task, 'open work', 1), factOf('fct_2', task, 'more work', 10 * MINUTES)]);
     world.setCurator(CURATED);
     await engine.curate(TAB);

@@ -3,11 +3,11 @@ import { guiIndexRow } from '#src/recap/application/gui-index-build.ts';
 import { guiTabOf } from '#src/recap/application/gui-tab-build.ts';
 import { BLANK_READS } from '#src/recap/application/gui-tab-reads.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { parseCount, countOf } from '#src/recap/domain/count.ts';
 import { guiFileName, type GuiTab } from '#src/recap/domain/gui-tab.ts';
 import { parseTabId, tabId } from '#src/recap/domain/ids.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
@@ -15,6 +15,7 @@ import { cursor, memoryStore, must as present, seed, storeRead } from '#test/db/
 import { fact } from '#test/fakes/fact-at.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { GUI_DIR, NOW, world } from './herdr.ts';
+import { tabIdOf, paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 export const MIN = 60_000;
 const ZONE = 'UTC';
@@ -63,16 +64,16 @@ const viewOf = (spec: TabSpec): TabView => ({
     tab: spec.tab, column: null, at: NOW,
     lanes: spec.lanes.map((lane) => ({
         pane: lane.pane, agent: AGENT, status: lane.status, title: lane.title ?? `lane ${lane.pane}`, cwd: null,
-        context: lane.tokens === undefined ? null : { tokens: lane.tokens, window: lane.window ?? 200_000, source: 'agent' }, web: null,
+        context: lane.tokens === undefined ? null : { tokens: countOf(lane.tokens), window: countOf(lane.window ?? 200_000), source: 'agent' }, web: null,
     })),
 });
 
 export function build(spec: TabSpec): Built {
     const store = memoryStore();
     const view = viewOf(spec);
-    seed(store, { ...blankRecap(tabId(spec.tab)), at: instant(NOW - 3 * 60 * MIN), lanes: spec.lanes.map((lane) => cursor(lane.pane)), tasks: [{ id: 't1', name: '', lanes: spec.lanes.map((lane) => lane.pane), sections: { ...NO_SECTIONS, goal: 'Ship it' }, markdown: '## Goal\n- Ship it' }] });
+    seed(store, { ...blankRecap(tabId(spec.tab)), at: instant(NOW - 3 * 60 * MIN), lanes: spec.lanes.map((lane) => cursor(lane.pane)), tasks: [{ id: textOf('t1'), name: textOf(''), lanes: spec.lanes.map((lane) => paneIdOf(lane.pane)), sections: { ...NO_SECTIONS, goal: textOf('Ship it') }, markdown: textOf('## Goal\n- Ship it') }] });
     const ledger = new MemoryLedger();
-    spec.facts.forEach((one) => ledger.seed(fact(one.id, one.section, one.text, NOW - one.minutesAgo * MIN, { task: { tab: spec.tab, key: 't1' }, why: one.why ?? null })));
+    spec.facts.forEach((one) => ledger.seed(fact(one.id, one.section, one.text, NOW - one.minutesAgo * MIN, { task: { tab: tabIdOf(spec.tab), key: textOf('t1') }, why: one.why === undefined ? null : textOf(one.why) })));
     const deps: ExpandedDeps = { records: store.records, ledger, stories: store.stories, session: store.session, boundaries: store.boundaries, requests: { requestCurate: (): void => undefined }, edits: () => [] };
     const expanded = new ExpandedModel(deps).read(spec.tab, view, NOW);
     const recap = present(storeRead(store.records.readRecap(tabId(spec.tab))));

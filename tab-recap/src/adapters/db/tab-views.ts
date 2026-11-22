@@ -7,7 +7,7 @@ import { parseAgentKind, parsePaneId, parseTabId, type PaneId, type TabId } from
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { parseInstant } from '#src/recap/domain/time.ts';
-import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
+import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import { parseTabViewRecord, type LiveLanes, type LiveLanesRead, type TabViewRecord, type TabViewStore } from '#src/ports/tab-views.ts';
 import { unreadableOf } from '#src/ports/unknowable.ts';
 import { writeTx } from './connection.ts';
@@ -108,7 +108,7 @@ export class TabViewRowStore implements TabViewStore, LiveLanes {
         try {
             return { kind: 'read', lanes: this.orm.select(LIVE_VIEW).from(laneTable).orderBy(asc(laneTable.tabId), asc(laneTable.position)).all().map((row) => restoredOrThrow(parseRestoredRow(row))) };
         } catch (error) {
-            return unreadableOf(failureCauseOf(error));
+            return unreadableOf(failureCauseOf(parseThrown(error)));
         }
     }
 

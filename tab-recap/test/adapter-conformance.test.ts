@@ -106,7 +106,7 @@ function rows(): Row[] {
     out.push({
         kind: 'claude', reader: new ClaudeTranscripts(join(dir, 'claude')),
         empty: lane('claude', { session: 'empty' }), recorded: lane('claude', { session: 'recorded' }), unplaced: lane('claude'),
-        observed: { tokens: 3057, peak: 39532, window: null, model: null },
+        observed: { tokens: countOf(3057), peak: countOf(39532), window: null, model: null },
         marks: [{ kind: 'compacted', at: instant(Date.parse('2026-10-07T16:38:09.490Z')), tokensBefore: countOf(39532), tokensAfter: countOf(3057), tookMs: duration(15588), trigger: 'manual' }],
         inFlight: true,
         prompt: 'keep going',
@@ -122,7 +122,7 @@ function rows(): Row[] {
     out.push({
         kind: 'codex', reader: new CodexTranscripts(codexRoot),
         empty: lane('codex', { cwd: '/empty' }), recorded: lane('codex', { cwd: '/repo' }), unplaced: lane('codex'),
-        observed: { tokens: 4617, peak: 4617, window: 258_400, model: null },
+        observed: { tokens: countOf(4617), peak: countOf(4617), window: countOf(258_400), model: null },
         marks: [{ kind: 'compacted', at: instant(Date.parse('2026-10-06T13:09:05.181Z')), tokensBefore: countOf(17133), tokensAfter: countOf(4617) }],
         inFlight: true,
         prompt: 'keep going',
@@ -137,7 +137,7 @@ function rows(): Row[] {
     out.push({
         kind: 'opencode', reader: new OpencodeTranscripts(database.db),
         empty: lane('opencode', { cwd: '/elsewhere' }), recorded: lane('opencode', { cwd: '/repo' }), unplaced: lane('opencode'),
-        observed: { tokens: 1020, peak: 1020, window: null, model: 'acme/big-1' },
+        observed: { tokens: countOf(1020), peak: countOf(1020), window: null, model: textOf('acme/big-1') },
         marks: [{ kind: 'compacted', at: instant(created), tokensBefore: countOf(1020), tookMs: duration(7000) }],
         inFlight: true,
         prompt: 'keep going',
@@ -478,7 +478,7 @@ function handoffRows(kind: RegisteredKind, pin: HandoffPin): void {
     });
 
     test(`${kind} handoff: a refresh that moves the source lane to another task renders that task`, async () => {
-        const f = fact('f2', 'goal', 'Ship the writer', NOW - 1000, { task: { tab: TAB, key: 't2' } });
+        const f = fact('f2', 'goal', 'Ship the writer', NOW - 1000, { task: { tab: TAB, key: textOf('t2') } });
         const h = handoffHarness({ targetAgent: kind, facts: [f], onRefresh: (): void => { h.world.recap = recapOf(task('t2', ['w1:p1'])); } });
         assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'delivered' });
         assert.deepEqual(h.renders.map((input) => input.facts), [[f]]);

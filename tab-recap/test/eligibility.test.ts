@@ -4,6 +4,7 @@ import { compactableKinds, COMPACTABLE } from '#src/recap/domain/compaction.ts';
 import { REGISTERED_KINDS } from '#src/recap/domain/registered-kinds.ts';
 import { autocompactDefaultKinds, KINDS_DEFAULT } from '#src/recap/domain/autocompact.ts';
 import { defaultPolicyKinds, DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
+import { capable } from '@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts';
 
 test('eligibility lists preserve the current defaults', () => {
     assert.deepEqual(COMPACTABLE, ['claude', 'codex', 'opencode']);
@@ -23,11 +24,11 @@ test('every agent kind declares each eligibility capability as a boolean', () =>
 
 test('each eligibility list reads its own capability from the supplied table', () => {
     const table = {
-        alpha: { hasTranscript: true, compactable: true, defaultPolicy: false, autocompactDefault: false },
-        beta: { hasTranscript: false, compactable: false, defaultPolicy: true, autocompactDefault: false },
-        gamma: { hasTranscript: false, compactable: false, defaultPolicy: false, autocompactDefault: true },
+        claude: { hasTranscript: capable(true), compactable: capable(true), defaultPolicy: capable(false), autocompactDefault: capable(false) },
+        codex: { hasTranscript: capable(false), compactable: capable(false), defaultPolicy: capable(true), autocompactDefault: capable(false) },
+        opencode: { hasTranscript: capable(false), compactable: capable(false), defaultPolicy: capable(false), autocompactDefault: capable(true) },
     } as const;
-    assert.deepEqual(compactableKinds(table), ['alpha']);
-    assert.deepEqual(defaultPolicyKinds(table), ['beta']);
-    assert.deepEqual(autocompactDefaultKinds(table), ['gamma']);
+    assert.deepEqual(compactableKinds(table), ['claude']);
+    assert.deepEqual(defaultPolicyKinds(table), ['codex']);
+    assert.deepEqual(autocompactDefaultKinds(table), ['opencode']);
 });

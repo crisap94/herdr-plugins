@@ -1,5 +1,7 @@
 import { brand } from './brand.ts';
 import type { Brand } from './brand.ts';
+import type { Count } from './count.ts';
+import type { Text } from './text.ts';
 
 export type RunningCount = Brand<number, 'RunningCount'>;
 export type FlightReason = Brand<string, 'FlightReason'>;
@@ -75,4 +77,20 @@ export function joinedDetail(parts: readonly FlightDetail[]): FlightDetail | nul
     return parts.length === 0 ? null : brand<string, 'FlightDetail'>(parts.join('; '));
 }
 
-export { awaitedNames, backgroundLabel, backgroundTool, flightDetail, flightReason, holdsLane, runningCount } from './legacy.ts';
+export type AtCeiling = Brand<boolean, 'AtCeiling'>;
+export const ceilingOf = brand<boolean, 'AtCeiling'>;
+export type HoldsLane = Brand<boolean, 'HoldsLane'>;
+
+export const runningCount = (raw: Count): RunningCount => runningOf(Math.max(0, Math.trunc(raw)));
+export const flightReason = (raw: Text): FlightReason => brand<string, 'FlightReason'>(raw);
+export const awaitedNames = (raw: Text): AwaitedNames => brand<string, 'AwaitedNames'>(raw);
+export const backgroundTool = (raw: Text): BackgroundTool => brand<string, 'BackgroundTool'>(raw);
+export const backgroundLabel = (raw: Text): BackgroundLabel => brand<string, 'BackgroundLabel'>(raw);
+
+export function holdsLane(flight: Flight, atCeiling: AtCeiling): HoldsLane {
+    return brand<boolean, 'HoldsLane'>(flight.foreground.kind !== 'none' || (flight.awaiting.kind === 'on' && !atCeiling));
+}
+
+export function flightDetail(flight: Flight, atCeiling: AtCeiling): FlightDetail | null {
+    return holdsLane(flight, atCeiling) ? holdingDetail(flight) : joinedDetail([...(atCeiling ? overridingDetail(flight) : []), ...keptDetail(flight)]);
+}

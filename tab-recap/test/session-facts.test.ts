@@ -60,8 +60,8 @@ test('compactions by origin: the operator\'s and autocompact\'s counted apart, z
 
 test('each agent\'s context share; an agent whose context is unknown has no line', () => {
     const lanes = [
-        { agent: 'claude', label: 'orchestrator', context: { tokens: 340_000, window: 1_000_000, source: 'table' as const } },
-        { agent: 'codex', label: null, context: { tokens: 32_640, window: 272_000, source: 'agent' as const } },
+        { agent: 'claude', label: 'orchestrator', context: { tokens: countOf(340_000), window: countOf(1_000_000), source: 'table' as const } },
+        { agent: 'codex', label: null, context: { tokens: countOf(32_640), window: countOf(272_000), source: 'agent' as const } },
         { agent: 'opencode', label: 'x', context: null },
     ];
     assert.deepEqual(lines({ ...nothing, lanes }), ['claude · orchestrator 34 % of 1M', 'codex 12 % of 272k']);

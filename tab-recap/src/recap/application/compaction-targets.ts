@@ -5,6 +5,7 @@ import { parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
 import type { CompactionPorts } from './compaction-deps.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 export interface TargetWhere {
     readonly pane: PaneId | null;
@@ -23,7 +24,7 @@ export function targetsOf(lanes: readonly Lane[], setting: CompactTarget, where:
         return eligible;
     }
     if (setting.kind === 'kinds') {
-        return eligible.filter((lane) => setting.kinds.includes(String(lane.agent)));
+        return eligible.filter((lane) => setting.kinds.includes(textOf(String(lane.agent))));
     }
     const focused = eligible.filter((lane) => lane.pane === where.focused);
     return focused.length > 0 || lanes.length !== 1 ? focused : eligible;

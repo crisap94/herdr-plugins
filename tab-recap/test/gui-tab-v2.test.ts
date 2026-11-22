@@ -6,11 +6,11 @@ import { guiTabOf } from '#src/recap/application/gui-tab-build.ts';
 import { BLANK_READS } from '#src/recap/application/gui-tab-reads.ts';
 import { must } from '#src/protocol/result.ts';
 import { fitGuiTab } from '#src/recap/domain/gui-fit.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { parseCount, countOf } from '#src/recap/domain/count.ts';
 import { GUI_TAB_LIMIT, encodeGuiTab, parseGuiIndex } from '#src/recap/domain/gui-tab.ts';
 import { parseGuiVersion, type GuiTab, type GuiTask } from '#src/recap/domain/gui-tab-types.ts';
 import type { GuiFactRow } from '#src/recap/domain/gui-tab-parts.ts';
-import { parseNonEmptyText, parseText } from '#src/recap/domain/text.ts';
+import { parseNonEmptyText, parseText, textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
@@ -21,18 +21,19 @@ import { NOW } from '#test/fakes/expanded-fixture.ts';
 import { v2Problems } from '#test/gui-schema-support.ts';
 import { parseCurating, parseTaskName } from '@stateforge-labs/recap-view';
 import { tabId } from '#src/recap/domain/ids.ts';
+import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const MIN = 60_000;
 
 const crowdedRow = (at: number): GuiFactRow => ({ kind: 'fact', fact: must(parseNonEmptyText(`f${at}`)), at: instant(at), clock: must(parseText('00:00 '.repeat(20))), day: null, closed: null });
 
 const view: TabView = {
-    tab: 'w1:t1', column: null, at: NOW, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'orchestrator', cwd: null, context: { tokens: 100_000, window: 200_000, source: 'agent' }, web: { base: 'https://git.example/acme/shop', forge: 'gitlab', branch: 'main' } }],
+    tab: 'w1:t1', column: null, at: NOW, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'orchestrator', cwd: null, context: { tokens: countOf(100_000), window: countOf(200_000), source: 'agent' }, web: { base: 'https://git.example/acme/shop', forge: 'gitlab', branch: 'main' } }],
 };
 
 function fixture(): { document: GuiTab; expanded: ReturnType<ExpandedModel['read']> } {
     const store = memoryStore();
-    seed(store, { ...blankRecap(tabId('w1:t1')), at: instant(NOW - 3 * 60 * MIN), lanes: [cursor('w1:p1')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'], sections: null, markdown: '## Goal\n- x' }] });
+    seed(store, { ...blankRecap(tabId('w1:t1')), at: instant(NOW - 3 * 60 * MIN), lanes: [cursor('w1:p1')], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')], sections: null, markdown: textOf('## Goal\n- x') }] });
     const ledger = new MemoryLedger()
         .seed(fact('d1', 'decisions', 'Use sqlite', NOW - 30 * MIN))
         .seed(fact('n1', 'needs', 'Need the API key', NOW - 25 * MIN))
@@ -114,7 +115,7 @@ test('a cached expanded read is matched to its task by name, never by position',
     const { document, expanded } = fixture();
     const kept = present(expanded.tasks[0]);
     const stale = { ...expanded, tasks: [{ name: parseTaskName('A'), facts: [], story: null, curating: parseCurating(false) }, { ...kept, name: parseTaskName('B') }] };
-    const recap = { ...blankRecap(tabId('w1:t1')), at: instant(NOW), tasks: [{ id: 't2', name: 'B', lanes: ['w1:p1'], sections: null, markdown: '' }] };
+    const recap = { ...blankRecap(tabId('w1:t1')), at: instant(NOW), tasks: [{ id: textOf('t2'), name: textOf('B'), lanes: [paneIdOf('w1:p1')], sections: null, markdown: textOf('') }] };
     const built = guiTabOf(recap, view, instant(NOW), { ...BLANK_READS, expanded: stale, zone: must(parseText('UTC')) });
     assert.deepEqual(present(built.tasks[0]).facts.map((one) => one.text), present(document.tasks[0]).facts.map((one) => one.text));
 });

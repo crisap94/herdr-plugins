@@ -15,6 +15,9 @@ import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { tabIdOf, paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const NOW = Date.parse('2026-10-11T10:00:00Z');
 const TAB = tabId('w1:t1');
@@ -24,7 +27,7 @@ const board = [
     laneFrom({ paneId: 'w1:p2', tabId: 'w1:t1', workspaceId: 'w1', agent: 'codex', status: 'idle', cwd: '/repo' }),
 ];
 
-const task = (key: string, lanes: readonly string[]): RecapTask => ({ id: key, name: key, lanes, sections: null, markdown: '' });
+const task = (key: string, lanes: readonly string[]): RecapTask => ({ id: textOf(key), name: textOf(key), lanes: lanes.map((lane) => paneIdOf(lane)), sections: null, markdown: textOf('') });
 
 const recapWith = (...tasks: readonly RecapTask[]): TabRecap => ({ ...blankRecap(tabId('w1:t1')), tasks });
 
@@ -46,8 +49,8 @@ function depsOf(parts: Parts = {}): SourceDeps {
     };
 }
 
-const T1: TaskId = { tab: 'w1:t1', key: 't1' };
-const T2: TaskId = { tab: 'w1:t1', key: 't2' };
+const T1: TaskId = { tab: tabIdOf('w1:t1'), key: textOf('t1') };
+const T2: TaskId = { tab: tabIdOf('w1:t1'), key: textOf('t2') };
 
 test('a tab with several tasks yields only the source task facts', () => {
     const mine = fact('f1', 'goal', 'mine', NOW - 1000, { task: T1 });
@@ -95,8 +98,8 @@ test('a task with no facts still resolves, so the flow decides ledger-empty afte
 });
 
 test('closed facts count only inside the closed window', () => {
-    const recent = fact('f1', 'done', 'recent', NOW - 1000, { task: T1, state: 'closed', closedAt: NOW - HANDOFF_CLOSED_WINDOW_MS + 1000, closedWhy: 'done' });
-    const stale = fact('f2', 'done', 'stale', NOW - 1000, { task: T1, state: 'closed', closedAt: NOW - HANDOFF_CLOSED_WINDOW_MS - 1000, closedWhy: 'done' });
+    const recent = fact('f1', 'done', 'recent', NOW - 1000, { task: T1, state: 'closed', closedAt: instant(NOW - HANDOFF_CLOSED_WINDOW_MS + 1000), closedWhy: 'done' });
+    const stale = fact('f2', 'done', 'stale', NOW - 1000, { task: T1, state: 'closed', closedAt: instant(NOW - HANDOFF_CLOSED_WINDOW_MS - 1000), closedWhy: 'done' });
     const resolved = resolveSource('live', SOURCE, depsOf({ facts: [recent, stale] }));
     assert.deepEqual(resolved, { kind: 'found', source: 'live', task: T1, facts: [recent] });
 });

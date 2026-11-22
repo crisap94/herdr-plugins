@@ -6,7 +6,7 @@ import { agentKind, paneId } from '#src/recap/domain/ids.ts';
 import { cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
-export const sections = { goal: 'ship', now: ['a'], needs: ['review'], done: ['b', 'c'], decisions: ['sqlite'], next: ['n'], links: ['x.ts'], rules: [] };
+export const sections = { goal: textOf('ship'), now: [textOf('a')], needs: [textOf('review')], done: [textOf('b'), textOf('c')], decisions: [textOf('sqlite')], next: [textOf('n')], links: [textOf('x.ts')], rules: [] };
 export const lane = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t/a.jsonl'), cursor: cursorOf(120), tail: null, title: textOf('T'), lastPrompt: textOf('p'), claudeRecap: null };
 const base = { running: false, backend: 'claude', error: null, costUsd: 0.12, language: 'en' };
 

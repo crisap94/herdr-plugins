@@ -5,10 +5,13 @@ import { legacyPlugsOf } from '@stateforge-labs/session-ledger/unstable/facade/p
 import { laneOf } from '@stateforge-labs/session-ledger/unstable/facade/translate.ts';
 import { createEngineWorld, createMemoryStore, factOf, followed, key, running, scope, session, tabId, text, usd } from '@stateforge-labs/session-ledger/testkit';
 import { instant } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { tabIdOf, paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { type RecapTask } from '@stateforge-labs/session-ledger/unstable/recap/domain/tasks.ts';
 
 const tab = 'tab-1';
 
-const recapTask = (id: string, lanes: readonly string[]): { id: string; name: string; lanes: readonly string[]; sections: null; markdown: string } => ({ id, name: id, lanes, sections: null, markdown: `task ${id}` });
+const recapTask = (id: string, lanes: readonly string[]): RecapTask => ({ id: textOf(id), name: textOf(id), lanes: lanes.map((lane) => paneIdOf(lane)), sections: null, markdown: textOf(`task ${id}`) });
 
 test('restore returns the open and recently closed facts of the task that holds the session, with the last run and the clock', () => {
     const world = createEngineWorld();
@@ -17,9 +20,9 @@ test('restore returns the open and recently closed facts of the task that holds 
         recap: { tab: tabId(tab), lanes: [], tasks: [recapTask('a', ['p1']), recapTask('b', ['p2'])], at: instant(5_000), running: running(false), backend: null, error: null, costUsd: usd(0), language: text('en') },
         lastRun: { at: instant(5_000), cause: 'focused' },
         facts: [
-            factOf('open-a', { task: { tab, key: 'a' }, text: 'open in a' }),
-            factOf('closed-a', { task: { tab, key: 'a' }, state: 'closed', closedAt: 9_000, text: 'closed in a' }),
-            factOf('open-b', { task: { tab, key: 'b' }, text: 'open in b' }),
+            factOf('open-a', { task: { tab: tabIdOf(tab), key: textOf('a') }, text: textOf('open in a') }),
+            factOf('closed-a', { task: { tab: tabIdOf(tab), key: textOf('a') }, state: 'closed', closedAt: instant(9_000), text: textOf('closed in a') }),
+            factOf('open-b', { task: { tab: tabIdOf(tab), key: textOf('b') }, text: textOf('open in b') }),
         ],
     });
     const plugs = legacyPlugsOf({ ...world.plugs, store: { records: store.records, facts: store.facts } });

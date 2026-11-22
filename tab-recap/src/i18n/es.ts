@@ -2,7 +2,7 @@ import type { Catalog } from './messages.ts';
 import { renderRefusal } from '#src/host/policy.mjs';
 import { SPANISH_REFUSAL } from './refusal.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { looseOf, type Messages } from './legacy.ts';
 import { agoTextOf } from './relative.ts';
 import { BACKEND_IDS, harnessChoiceLabels, harnessLabels } from '#src/recap/domain/backend.ts';
@@ -56,7 +56,7 @@ export const spanish: Catalog = {
         compactHintOff: must(parseText('off')),
         modelsHeading: must(parseText('Modelos — agente · modelo · esfuerzo, ←/→ elige una parte')),
         jobBy: { recap: must(parseText('como el redactor')), auto: must(parseText('auto')), ...harnessLabels((id) => must(parseText(id))), jev: must(parseText('jev (API de TypeSafe)')), off: must(parseText('off')) },
-        jobByChoices: { recap: must(parseText('como el redactor del resumen — el mismo agente')), auto: must(parseText('auto — el primero que se encuentre')), ...harnessLabels((id) => must(parseText(harnessChoiceLabels('tu propio comando, TAB_RECAP_CUSTOM_CMD')[id]))), jev: must(parseText('jev — la API de TypeSafe; la clave se lee del entorno o de ~/.config/typesafe-api-key, nunca se muestra aquí')), off: must(parseText('off — compacta con la plantilla, sin guion')) },
+        jobByChoices: { recap: must(parseText('como el redactor del resumen — el mismo agente')), auto: must(parseText('auto — el primero que se encuentre')), ...harnessLabels((id) => must(parseText(harnessChoiceLabels(textOf('tu propio comando, TAB_RECAP_CUSTOM_CMD'))[id]))), jev: must(parseText('jev — la API de TypeSafe; la clave se lee del entorno o de ~/.config/typesafe-api-key, nunca se muestra aquí')), off: must(parseText('off — compacta con la plantilla, sin guion')) },
         compactModelSame: must(parseText('el modelo del redactor')),
         curateJobHint: must(parseText('corre al abrir la vista de pantalla completa: fusiona hechos repetidos y escribe el párrafo «la sesión hasta ahora»; una vez por tarea, como mucho cada 5 minutos')),
         curateOff: must(parseText('apagado — sin párrafo ni fusiones')),

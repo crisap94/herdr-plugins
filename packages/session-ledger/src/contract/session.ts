@@ -100,8 +100,8 @@ export interface Flight extends Observed {
 export type WindowSource = 'agent' | 'catalogue' | 'table' | 'observed' | 'setting';
 
 export interface ContextUse {
-    readonly tokens: number;
-    readonly window: number;
+    readonly tokens: Count;
+    readonly window: Count;
     readonly source: WindowSource;
 }
 

@@ -10,6 +10,7 @@ import type { Count } from '#src/recap/domain/count.ts';
 import type { HandoffPlanCatalogue } from '#src/ports/handoff-plans.ts';
 import { supported } from '#src/ports/capability.ts';
 import type { Capability } from '#src/ports/capability.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 export { handoffPlans } from './legacy.ts';
 
@@ -27,7 +28,7 @@ const HANDOFF_PLANS = {
 
 export const handoffPlanner: HandoffPlanCatalogue = {
     forKind(kind: AgentKind): HandoffPlanResult {
-        const registered = registeredKindOf(kind);
+        const registered = registeredKindOf(textOf(kind));
         if (registered === null) {
             return { kind: 'unsupported', reason: 'no-plan' };
         }

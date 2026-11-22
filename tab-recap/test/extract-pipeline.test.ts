@@ -25,7 +25,7 @@ const numbering = numbered([{ key: brand<string, 'Text'>('t1'), open: [open], cl
 const ground: Ground = {
     gates: LEDGER_GATES, now: instant(NOW), facts: new Map(numbering.ledgers.flatMap((ledger) => ledger.facts.map((each) => [brand<string, 'Text'>(each.id), each] as const))),
     resolving: { tasks: [textOf('t1')], agents: [], taskOf: numbering.taskOf, turns: [], clock: { now: instant(NOW), zone: textOf('UTC') } },
-    grounds: [{ key: textOf('t1'), tab: textOf('w1:t1'), shown: numbering.shown.get(textOf('t1')) ?? new Map(), open: [open], closedLately: [], source: textOf(foldedOf('Add retries to the uploader Added a retry with backoff in src/upload.ts. git commit -m "uploader: retry"')), language: textOf('en'), agents: [] }],
+    grounds: [{ key: textOf('t1'), tab: textOf('w1:t1'), shown: numbering.shown.get(textOf('t1')) ?? new Map(), open: [open], closedLately: [], source: foldedOf(textOf('Add retries to the uploader Added a retry with backoff in src/upload.ts. git commit -m "uploader: retry"')), language: textOf('en'), agents: [] }],
 };
 const SMALL: readonly Entry[] = [
     { role: 'user', text: textOf('Add retries to the uploader'), at: instant(START) },

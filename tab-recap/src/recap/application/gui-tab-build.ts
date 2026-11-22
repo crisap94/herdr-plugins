@@ -10,8 +10,8 @@ import { NO, YES, type GuiBreak, type GuiFact, type GuiGroup, type GuiVersions }
 import { parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
 import { NO_SECTIONS, type RecapSections } from '#src/recap/domain/shape.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
-import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '#src/recap/domain/text.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { parseNonEmptyText, parseText, type NonEmptyText, type Text, textOf } from '#src/recap/domain/text.ts';
+import { type Instant } from '#src/recap/domain/time.ts';
 import { groupsOf } from '#src/recap/render/groups.ts';
 import type { ExpandedTask } from '#src/recap/render/expanded.ts';
 import { parseCurating, parseTaskName } from '@stateforge-labs/recap-view';
@@ -79,7 +79,7 @@ const breaksOf = (reads: GuiReads, messages: Messages): readonly GuiBreak[] => (
 
 const claudeRecapsOf = (recap: TabRecap): readonly Text[] => recap.lanes.flatMap((lane) => orElse(parseText(lane.claudeRecap), null) ?? []);
 
-const expandedOf = (reads: GuiReads, task: RecapTask): ExpandedTask | undefined => reads.expanded?.tasks.find((each) => each.name === task.name);
+const expandedOf = (reads: GuiReads, task: RecapTask): ExpandedTask | undefined => reads.expanded?.tasks.find((each) => textOf(each.name) === task.name);
 
 const websOf = (view: TabView | null, reads: GuiReads): TaskDraw['webs'] => reads.expanded?.webs ?? (view?.lanes ?? []).map((lane) => (lane.web === undefined || lane.web === null ? lane.web : webOf(lane.web)));
 
@@ -91,7 +91,7 @@ export function guiTabOf(recap: TabRecap, view: TabView | null, now: Instant, re
     const taskDraw: TaskDraw = { now, messages, reads, webs: websOf(view, reads) };
     return {
         version: GUI_TAB_VERSION, tab: must(parseTabId(recap.tab)), name: nameOf(recap), status: worstStatus(lanes), at: now,
-        recapAt: recap.at === null ? null : instant(recap.at), writing: recap.running ? 'writing' : 'resting', error: orElse(parseText(recap.error), null),
+        recapAt: recap.at === null ? null : recap.at, writing: recap.running ? 'writing' : 'resting', error: orElse(parseText(recap.error), null),
         lanes, tasks: recap.tasks.map((task) => guiTask(task, expandedOf(reads, task), taskDraw)),
         locale: reads.locale, zone: reads.zone, compactHint: reads.compactHint, backend: orElse(parseText(recap.backend), null), versions: versionsOf(view, reads), warnings: reads.warnings,
         claudeRecaps: claudeRecapsOf(recap), groups: groupsFor(view, recap), breaks: breaksOf(reads, messages), session: sessionOf(reads), cuts: [],

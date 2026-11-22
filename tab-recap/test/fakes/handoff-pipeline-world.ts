@@ -27,11 +27,11 @@ export const FACTS: readonly Fact[] = [
     fact('n1', 'now', 'Writing the tests', NOW - 4_000),
     fact('q1', 'needs', 'Confirm the schema', NOW - 3_500),
     fact('x1', 'done', 'Scaffolded the module', NOW - 2_000),
-    fact('d1', 'decisions', 'Use the existing lexer', NOW - 3_000, { why: 'it already handles the edge cases' }),
+    fact('d1', 'decisions', 'Use the existing lexer', NOW - 3_000, { why: brand<string, 'Text'>('it already handles the edge cases') }),
     fact('t1', 'next', 'Run the gate', NOW - 500),
     fact('l1', 'links', 'See the design note', NOW - 1_500),
     fact('k1', 'rules', 'Keep the public API stable', NOW - 1_000),
-    fact('c1', 'rules', 'Old rule', NOW - 3_600_000, { state: 'closed', closedAt: NOW - 3_600_000, closedWhy: 'superseded' }),
+    fact('c1', 'rules', 'Old rule', NOW - 3_600_000, { state: 'closed', closedAt: instant(NOW - 3_600_000), closedWhy: 'superseded' }),
 ];
 
 export function claudeReader(prompts: number): Transcripts {

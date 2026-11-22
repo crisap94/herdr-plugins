@@ -22,13 +22,15 @@ import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { MemoryLedger } from './memory-ledger.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 export const NOW = Date.parse('2026-10-11T10:00:00Z');
 export const SOURCE = paneId('w1:p1');
 export const TARGET = paneId('w1:p2');
 export const TAB = tabId('w1:t1');
 export const TARGET_TAB = tabId('w1:t2');
-export const T1: TaskId = { tab: TAB, key: 't1' };
+export const T1: TaskId = { tab: TAB, key: textOf('t1') };
 export const TEXT = 'Handoff text.';
 export const SETTLE_MS = 10_000;
 
@@ -58,7 +60,7 @@ export interface FlowWorld {
     onPause: (count: number) => void;
 }
 
-export const task = (id: string, lanes: readonly string[]): RecapTask => ({ id, name: id, lanes, sections: null, markdown: '' });
+export const task = (id: string, lanes: readonly string[]): RecapTask => ({ id: textOf(id), name: textOf(id), lanes: lanes.map((lane) => paneIdOf(lane)), sections: null, markdown: textOf('') });
 
 export const recapOf = (...tasks: readonly RecapTask[]): TabRecap => ({ ...blankRecap(tabId('w1:t1')), tasks });
 

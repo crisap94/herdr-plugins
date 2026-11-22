@@ -10,7 +10,7 @@ import { answer as answerOf, take } from '#src/protocol/responder.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import type { Board } from '#src/recap/domain/board.ts';
-import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
+import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import type { HandoffOffer, HandoffRefusal, RefreshAsk } from '#src/recap/domain/handoff-ask.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
@@ -127,7 +127,7 @@ export class HandoffExchangeResponder {
         try {
             this.deps.queue.queueHandoff({ ...key, requester, at: this.deps.now(), ref: null }, { tab: source.tab, pane: source.pane, toPane: target, note: null, refreshFirst: refresh === 'refresh', source: { kind: 'live' }, answer: id });
         } catch (error) {
-            this.deps.log(must(parseText(`handoff request ${id} on ${source.pane}: not queued (${failureCauseOf(error)})`)));
+            this.deps.log(must(parseText(`handoff request ${id} on ${source.pane}: not queued (${failureCauseOf(parseThrown(error))})`)));
             return;
         }
         this.deps.mirror.queued(route);

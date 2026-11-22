@@ -21,6 +21,7 @@ import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { exitCodeOf } from '#src/ports/unknowable.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const add = (section: string, text: string): Record<string, unknown> => ({ op: 'add', section, text, anchor: 'migrate victoria' });
 const answer = (...ops: readonly Record<string, unknown>[]): string => JSON.stringify({ ops });
@@ -89,7 +90,7 @@ async function rewriteWith(language: string, stored: string | undefined, cause: 
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
     const base = blankRecap(tabId('w1:t1'));
     seed(store, {
-        ...base, tasks: oneTask('## Goal\n- migrate', { goal: 'migrate', now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: instant(1),
+        ...base, tasks: oneTask('## Goal\n- migrate', { goal: textOf('migrate'), now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: instant(1),
         lanes: [{ pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t/w1:p1'), cursor: cursorOf(100), tail: null, title: null, lastPrompt: null, claudeRecap: null }],
         ...(stored === undefined ? {} : { language: textOf(stored) }),
     });
@@ -173,7 +174,7 @@ test('an unusable answer is retried ONCE with what was wrong; the second answer 
 });
 
 test('two unusable answers keep the previous recap, add an error line and do not advance the cursors', async () => {
-    const previous = { goal: 'old goal', now: ['old'], needs: [], done: [], decisions: [], next: [], links: [], rules: [] };
+    const previous = { goal: textOf('old goal'), now: [textOf('old')], needs: [], done: [], decisions: [], next: [], links: [], rules: [] };
     const { calls, recap } = await recapWith(['nope', '{"foo": 1}'], { tasks: oneTask('## Goal\nold goal', previous), at: instant(1) });
     assert.equal(calls.length, 2, 'one retry, not more');
     assert.deepEqual(firstTask(recap).sections, previous);
@@ -185,7 +186,7 @@ test('two unusable answers keep the previous recap, add an error line and do not
 });
 
 test('the ledger goes to the writer: the open facts numbered f1…fn, oldest seen first; the answer\'s ids are mapped back to them', async () => {
-    const sections = { goal: 'g', now: ['n'], needs: [], done: [], decisions: [], next: [], links: [], rules: [] };
+    const sections = { goal: textOf('g'), now: [textOf('n')], needs: [], done: [], decisions: [], next: [], links: [], rules: [] };
     const first = await recapWith([answer({ op: 'close', id: 'f2', why: 'done' }, add('done', 'finished n'))], { tasks: oneTask('rendered', sections, ['w1:p1']), at: instant(1) });
     const facts = first.calls[0]?.input.ledgers.flatMap((ledger) => ledger.facts.map((fact) => [fact.id, fact.section, fact.text, fact.state]));
     assert.deepEqual(facts, [['f1', 'goal', 'g', 'open'], ['f2', 'now', 'n', 'open']]);
@@ -213,7 +214,7 @@ test('the 1.x answer (a recap, not operations) is told so and may fix it; a cust
     await new Promise((resolve) => { setTimeout(resolve, 30); });
     assert.equal(calls.length, 1, 'no retry for a custom writer');
     assert.match(storeRead(store.records.readRecap(tabId('w1:t1')))?.error ?? '', /custom writer must answer operations \(see README\)/);
-    assert.equal(storeRead(store.ledger.allOf({ tab: 'w1:t1', key: 't1' })).length, 0, 'nothing stored');
+    assert.equal(storeRead(store.ledger.allOf({ tab: tabIdOf('w1:t1'), key: textOf('t1') })).length, 0, 'nothing stored');
 });
 
 test('a harness that fails outright is not retried', async () => {
@@ -265,7 +266,7 @@ test('the rewrite line stays while an open fact is still in the old language, an
     const store = memoryStore();
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
     seed(store, {
-        ...blankRecap(tabId('w1:t1')), tasks: oneTask('## Goal\n- migrate', { goal: 'migrate', now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: instant(1), language: textOf('en'),
+        ...blankRecap(tabId('w1:t1')), tasks: oneTask('## Goal\n- migrate', { goal: textOf('migrate'), now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: instant(1), language: textOf('en'),
         lanes: [{ pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t/w1:p1'), cursor: cursorOf(100), tail: null, title: null, lastPrompt: null, claudeRecap: null }],
     });
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS,
@@ -293,7 +294,7 @@ test('a recap already stamped in the wanted language but holding an open fact in
     const store = memoryStore();
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
     seed(store, {
-        ...blankRecap(tabId('w1:t1')), tasks: oneTask('## Goal\n- migrate', { goal: 'migrate', now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: instant(1), language: textOf('en'),
+        ...blankRecap(tabId('w1:t1')), tasks: oneTask('## Goal\n- migrate', { goal: textOf('migrate'), now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: instant(1), language: textOf('en'),
         lanes: [{ pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t/w1:p1'), cursor: cursorOf(100), tail: null, title: null, lastPrompt: null, claudeRecap: null }],
     });
     const jobWith = (transcripts: Transcripts): RecapJob => new RecapJob({
@@ -307,7 +308,7 @@ test('a recap already stamped in the wanted language but holding an open fact in
     };
     await once(jobWith(transcriptsOf('claude')), 'requested');
     assert.equal(storeRead(store.records.readRecap(tabId('w1:t1')))?.language, 'es');
-    assert.deepEqual(storeRead(store.ledger.keysOf(tabId('w1:t1'))).flatMap((key) => storeRead(store.ledger.openOf({ tab: 'w1:t1', key })).map((fact) => fact.language)), ['en']);
+    assert.deepEqual(storeRead(store.ledger.keysOf(tabId('w1:t1'))).flatMap((key) => storeRead(store.ledger.openOf({ tab: tabIdOf('w1:t1'), key })).map((fact) => fact.language)), ['en']);
     calls.length = 0;
     await once(jobWith(quiet), 'requested');
     await once(jobWith(quiet), 'focused');
@@ -324,7 +325,7 @@ test('the close-evidence setting reaches the writer request and the piped run; u
         };
         const store = memoryStore();
         seed(store, {
-            ...blankRecap(tabId('w1:t1')), tasks: oneTask('## Goal\n- migrate', { goal: 'migrate', now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: instant(1), language: textOf('en'),
+            ...blankRecap(tabId('w1:t1')), tasks: oneTask('## Goal\n- migrate', { goal: textOf('migrate'), now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: instant(1), language: textOf('en'),
             lanes: [{ pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t/w1:p1'), cursor: cursorOf(100), tail: null, title: null, lastPrompt: null, claudeRecap: null }],
         });
         const deps = { writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS,
@@ -336,6 +337,6 @@ test('the close-evidence setting reaches the writer request and the piped run; u
         await new Promise((resolve) => { setTimeout(resolve, 20); });
         const expected: CloseEvidence = setting ?? 'off';
         assert.equal(requests[0]?.closeEvidence, expected, String(setting));
-        assert.equal(storeRead(store.ledger.openOf({ tab: 'w1:t1', key: 't1' })).length, setting === 'on' ? 1 : 0, `open after ${String(setting)}`);
+        assert.equal(storeRead(store.ledger.openOf({ tab: tabIdOf('w1:t1'), key: textOf('t1') })).length, setting === 'on' ? 1 : 0, `open after ${String(setting)}`);
     }
 });

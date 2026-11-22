@@ -17,6 +17,7 @@ import { telemetryTagsOf } from '#src/recap/domain/telemetry-tags.ts';
 import type { TelemetryTags } from '#src/recap/domain/telemetry-tags.ts';
 import { compactNoteOf } from '#src/recap/domain/compact-note.ts';
 import type { CompactNote } from '#src/recap/domain/compact-note.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 export type RowId = 'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'telemetryTags' | 'compactTarget' | 'compactNote' | 'compactHint' | 'contextWindow' | 'autocompact' | 'autocompactAt' | 'autocompactStyle' | 'autocompactMissed' | 'autocompactJob' | 'herdrEvents';
 export const ROWS: readonly RowId[] = ['recapJob', 'compactJob', 'locale', 'recapLanguage', 'screenAgents', 'gitNote', 'compactTarget', 'compactNote', 'compactHint', 'contextWindow', 'judgeJob', 'curatorJob', 'autocompact', 'autocompactAt', 'autocompactStyle', 'autocompactMissed', 'autocompactJob', 'herdrEvents', 'telemetryTags'];
@@ -140,7 +141,7 @@ export function draftFrom(config: Pick<Draft, 'backend' | 'models'>, raw: RawSet
     const locale = LOCALE_CHOICES.find((choice) => choice === raw.locale) ?? 'auto';
     const gitNote = raw.gitNote?.trim().toLowerCase() === 'off' ? 'off' : 'on';
     const telemetryTags = telemetryTagsOf(raw.telemetryTags);
-    return { ...config, telemetryTags, herdrEvents: herdrEventsOf(raw.herdrEvents), compactNote: compactNoteOf(raw.compactNote), locale, recapLanguage: languageSetting(raw.recapLanguage), screenAgents: screenSetting(raw.screenAgents), gitNote, effort: effortOf(raw.effort), compactTarget: targetSetting(raw.compactTarget), compactHint: hintSetting(raw.compactHint), contextWindow: windowSetting(raw.contextWindow), compact: compactJobOf((key) => ({ TAB_RECAP_COMPACT_BY: raw.compactBy, TAB_RECAP_COMPACT_MODEL: raw.compactModel, TAB_RECAP_COMPACT_EFFORT: raw.compactEffort })[key]), judge: judgeJobOf((key) => ({ TAB_RECAP_JUDGE_BY: raw.judgeBy, TAB_RECAP_JUDGE_MODEL: raw.judgeModel, TAB_RECAP_JUDGE_EFFORT: raw.judgeEffort })[key]), curate: curateJobOf((key) => ({ TAB_RECAP_CURATE_BY: raw.curateBy, TAB_RECAP_CURATE_MODEL: raw.curateModel, TAB_RECAP_CURATE_EFFORT: raw.curateEffort })[key]), autocompact: parseAutocompactMode(raw.autocompact), autocompactAt: String(parseAutocompactPercent(raw.autocompactAt, MINIMUM_DEFAULT)), autocompactStyle: styleOf(raw.autocompactStyle), autocompactMissed: parseMissedFacts(raw.autocompactMissed), decide: deciderJobOf((key) => ({ TAB_RECAP_AUTOCOMPACT_BY: raw.decideBy, TAB_RECAP_AUTOCOMPACT_MODEL: raw.decideModel, TAB_RECAP_AUTOCOMPACT_EFFORT: raw.decideEffort })[key]) };
+    return { ...config, telemetryTags, herdrEvents: herdrEventsOf(raw.herdrEvents), compactNote: compactNoteOf(raw.compactNote), locale, recapLanguage: languageSetting(raw.recapLanguage), screenAgents: screenSetting(raw.screenAgents), gitNote, effort: effortOf(raw.effort), compactTarget: targetSetting(raw.compactTarget === undefined ? undefined : textOf(raw.compactTarget)), compactHint: hintSetting(raw.compactHint === undefined ? undefined : textOf(raw.compactHint)), contextWindow: windowSetting(raw.contextWindow === undefined ? undefined : textOf(raw.contextWindow)), compact: compactJobOf((key) => ({ TAB_RECAP_COMPACT_BY: raw.compactBy, TAB_RECAP_COMPACT_MODEL: raw.compactModel, TAB_RECAP_COMPACT_EFFORT: raw.compactEffort })[key]), judge: judgeJobOf((key) => ({ TAB_RECAP_JUDGE_BY: raw.judgeBy, TAB_RECAP_JUDGE_MODEL: raw.judgeModel, TAB_RECAP_JUDGE_EFFORT: raw.judgeEffort })[key]), curate: curateJobOf((key) => ({ TAB_RECAP_CURATE_BY: raw.curateBy, TAB_RECAP_CURATE_MODEL: raw.curateModel, TAB_RECAP_CURATE_EFFORT: raw.curateEffort })[key]), autocompact: parseAutocompactMode(raw.autocompact), autocompactAt: String(parseAutocompactPercent(raw.autocompactAt, MINIMUM_DEFAULT)), autocompactStyle: styleOf(raw.autocompactStyle), autocompactMissed: parseMissedFacts(raw.autocompactMissed), decide: deciderJobOf((key) => ({ TAB_RECAP_AUTOCOMPACT_BY: raw.decideBy, TAB_RECAP_AUTOCOMPACT_MODEL: raw.decideModel, TAB_RECAP_AUTOCOMPACT_EFFORT: raw.decideEffort })[key]) };
 }
 
 export function initial(draft: Draft, locks: Locks): Setup {
@@ -155,6 +156,6 @@ export const fieldOf = (state: Setup): FieldId => {
 };
 
 export function modelTarget(draft: Draft, available: readonly string[] | null): BackendId | null {
-    const backend = pick(draft.backend, available ?? []);
+    const backend = pick(draft.backend, (available ?? []).map((name) => textOf(name)));
     return backend === null || !hasModel(backend) ? null : backend;
 }

@@ -16,7 +16,7 @@ import type { Candidate, CompactionActivity, RecapReadiness, SafePointEvent, Ses
 import { flightReason, unreadable, type Observed } from '#src/recap/domain/in-flight.ts';
 import { instant, parseMilliseconds } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { hasRecap } from '#src/ports/recap-records.ts';
 import type { DeciderPort } from '#src/ports/decider.ts';
 import type { CompactTuning } from '#src/recap/domain/autocompact-style.ts';
@@ -116,7 +116,7 @@ const readinessOf = (parts: AutocompactParts): RecapReadiness => {
 
 const inFlightOf = (flight: TranscriptInFlight, candidate: Candidate): Promise<Observed> => {
     const lane = lanesBehind.get(candidate);
-    return lane === undefined ? Promise.resolve(unreadable(flightReason('no lane behind the candidate'))) : flightOf(flight, lane);
+    return lane === undefined ? Promise.resolve(unreadable(flightReason(textOf('no lane behind the candidate')))) : flightOf(flight, lane);
 };
 
 export function wireAutocompact(parts: AutocompactParts): Autocompact {

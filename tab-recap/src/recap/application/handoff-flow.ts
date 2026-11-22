@@ -6,7 +6,7 @@ import { tabId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
+import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import type { LaneClaims } from './lane-claims.ts';
 import type { HandoffRender, HandoffRenderResult, RenderMetrics } from './handoff-render.ts';
 import type { HandoffSender } from './handoff-sender.ts';
@@ -65,7 +65,7 @@ export class HandoffFlow {
         try {
             return await this.steps(request, mark);
         } catch (error) {
-            this.deps.log(`handoff ${request.id}: ${failureCauseOf(error)}`);
+            this.deps.log(`handoff ${request.id}: ${failureCauseOf(parseThrown(error))}`);
             return unrendered({ kind: 'failed', reason: 'internal-error' });
         }
     }
@@ -135,7 +135,7 @@ export class HandoffFlow {
         try {
             return await this.deps.refresh(String(tab), this.deps.lanes().filter((lane) => lane.tab === tab));
         } catch (error) {
-            this.deps.log(`handoff refresh ${tab}: ${failureCauseOf(error)}`);
+            this.deps.log(`handoff refresh ${tab}: ${failureCauseOf(parseThrown(error))}`);
             return 'failed';
         }
     }

@@ -4,6 +4,8 @@ import { scope } from '../ids.ts';
 import { factOf } from '../facts.ts';
 import type { StoreUnderTest } from '../memory-store.ts';
 import { agentKind, cursorAt, paneId, sourcePath, tabId, text, usd } from '../values.ts';
+import { textOf } from '../../src/recap/domain/text.ts';
+import { tabIdOf, type PaneId, paneIdOf } from '../../src/recap/domain/lane-shape.ts';
 
 export const isUnknownValue = (value: unknown): value is Unknown =>
     typeof value === 'object' && value !== null && 'kind' in value && value.kind === 'unknown';
@@ -19,7 +21,7 @@ export const cursor = (pane: string, transcript = `/transcripts/${pane}.jsonl`):
     claudeRecap: null,
 });
 
-export const shapeOf = (id: string, lanes: readonly string[]): TaskShape => ({ id, name: `Task ${id}`, lanes });
+export const shapeOf = (id: string, lanes: readonly PaneId[]): TaskShape => ({ id: textOf(id), name: textOf(`Task ${id}`), lanes });
 
 export const runOf = (over: Partial<RecordedRun> = {}): RecordedRun => ({
     tab: tabId('tab-1'),
@@ -30,7 +32,7 @@ export const runOf = (over: Partial<RecordedRun> = {}): RecordedRun => ({
     costUsd: usd(0.5),
     error: null,
     lanes: [cursor('p1')],
-    tasks: [shapeOf('a', ['p1'])],
+    tasks: [shapeOf('a', [paneIdOf('p1')])],
     changed: [],
     refused: [],
     ...over,
@@ -80,19 +82,19 @@ export const brokenFact = (): Fact => ({
     get id(): Fact['id'] {
         throw new Error('a broken fact');
     },
-    task: { tab: 'tab-1', key: 'b' },
+    task: { tab: tabIdOf('tab-1'), key: textOf('b') },
     section: 'now',
-    text: '',
+    text: textOf(''),
     why: null,
     ref: null,
     agent: null,
     anchor: null,
-    firstAt: 0,
-    lastAt: 0,
+    firstAt: instant(0),
+    lastAt: instant(0),
     state: 'open',
     closedWhy: null,
     closedAt: null,
-    language: 'en',
+    language: textOf('en'),
 });
 
 export const shapesOf = (recap: Recap): readonly TaskShape[] => recap.tasks.map((task) => ({ id: task.id, name: task.name, lanes: task.lanes }));

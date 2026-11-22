@@ -10,21 +10,22 @@ import type { Operation } from '#src/recap/domain/ops.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { factOf } from './fakes/facts.ts';
+import { factIdOf } from '#src/recap/domain/fact.ts';
 
 const textOf = brand<string, 'Text'>;
 const NOW = 10 * 3_600_000;
 const released = factOf('done', 'Released tab-recap 1.10.0 through the pipeline');
 const review = factOf('next', 'Review the migration test');
-const shut = factOf('done', 'Merged the lint fix', { state: 'closed', closedWhy: 'done', closedAt: NOW - 3_600_000 });
+const shut = factOf('done', 'Merged the lint fix', { state: 'closed', closedWhy: 'done', closedAt: instant(NOW - 3_600_000) });
 
 const task: TaskGround = {
     key: textOf('t1'), tab: textOf('w1:t1'), shown: new Map([[textOf('1'), released], [textOf('2'), review]]), open: [released, review], closedLately: [shut], source: textOf('go'), language: textOf('en'), agents: [],
 };
 const kit: KitGround = { gates: LEDGER_GATES, task, at: instant(NOW) };
 
-const add = (section: Section, text: string, anchor: string | null = 'go'): Operation => ({ op: 'add', section, text, why: null, ref: null, at: null, agent: null, anchor });
-const update = (id: string, text: string): Operation => ({ op: 'update', id, text, why: null });
-const close = (id: string, why: 'done' | 'answered' | null = 'done'): Operation => ({ op: 'close', id, why });
+const add = (section: Section, text: string, anchor: string | null = 'go'): Operation => ({ op: 'add', section, text: textOf(text), why: null, ref: null, at: null, agent: null, anchor: anchor === null ? null : textOf(anchor) });
+const update = (id: string, text: string): Operation => ({ op: 'update', id: factIdOf(id), text: textOf(text), why: null });
+const close = (id: string, why: 'done' | 'answered' | null = 'done'): Operation => ({ op: 'close', id: factIdOf(id), why });
 
 const cases: readonly (readonly [string, readonly Operation[], readonly string[]])[] = [
     ['no ops', [], []],

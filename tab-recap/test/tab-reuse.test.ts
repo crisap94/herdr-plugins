@@ -32,6 +32,7 @@ import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const said: Record<string, string> = { old: 'migrate victoria', new: 'write the docs' };
 
@@ -94,7 +95,7 @@ async function dispatched(store: Store, intents: readonly Intent[]): Promise<rea
 
 const OLD_FACTS = [add('goal', 'old payments work', 'migrate victoria'), add('now', 'migrating victoria', 'migrate victoria')];
 const NEW_FACTS = [add('goal', 'new docs work', 'write the docs')];
-const texts = (store: Store, tab: string, key: string): readonly string[] => storeRead(store.ledger.allOf({ tab, key })).map((fact) => `${fact.state}:${fact.text}`);
+const texts = (store: Store, tab: string, key: string): readonly string[] => storeRead(store.ledger.allOf({ tab: tabIdOf(tab), key: textOf(key) })).map((fact) => `${fact.state}:${fact.text}`);
 
 test('tab reuse: a tab id herdr hands to a new tab after its workspace closed starts from an empty ledger, and the old facts are kept apart', async () => {
     const store = memoryStore();

@@ -1,5 +1,5 @@
 import { isUnknownRead, type GuardedLedger, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
-import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
+import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
@@ -114,7 +114,7 @@ const liveResolver: SourceResolver<'live'> = (source, deps): SourceResolution =>
         }
         return { kind: 'found', source: 'live', task, facts: [...open, ...closed] };
     } catch (error) {
-        return { kind: 'unknown', why: failureCauseOf(error) };
+        return { kind: 'unknown', why: failureCauseOf(parseThrown(error)) };
     }
 };
 

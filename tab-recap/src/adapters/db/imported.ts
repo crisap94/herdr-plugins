@@ -5,6 +5,7 @@ import type { TabId } from '#src/recap/domain/ids.ts';
 import { connectReadOnly } from './connection.ts';
 import { LedgerRows } from './ledger-rows.ts';
 import { all, text } from './rows.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 export { factsOfTab } from './legacy.ts';
 
@@ -18,7 +19,7 @@ export function factsOfTabAt(path: FsPath, tab: TabId): readonly Fact[] | null {
             return null;
         }
         const rows = new LedgerRows(db);
-        return all(db.prepare('SELECT key FROM task WHERE tab_id = ? ORDER BY key'), tab).flatMap((row) => rows.allOf({ tab, key: text(row, 'key') }));
+        return all(db.prepare('SELECT key FROM task WHERE tab_id = ? ORDER BY key'), tab).flatMap((row) => rows.allOf({ tab, key: textOf(text(row, 'key')) }));
     } finally {
         db.close();
     }

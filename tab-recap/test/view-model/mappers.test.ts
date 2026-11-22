@@ -14,6 +14,7 @@ import { instant } from '#src/recap/domain/time.ts';
 import { sourcePathOf, cursorOf } from '#src/ports/transcripts.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
+import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const lane = (pane: string, status: string): TabLane => ({ pane, agent: 'claude', status, title: `title ${pane}`, cwd: '/repo', web: { base: 'https://gitlab.example/repo', forge: 'gitlab', branch: 'main' } });
 
@@ -22,7 +23,7 @@ const cursor = (pane: string, transcript: string): LaneCursor => ({ pane: paneId
 const recap: TabRecap = {
     tab: tabId('t1'),
     lanes: [cursor('p1', '/logs/p1.jsonl'), cursor('p2', 'screen:p2')],
-    tasks: [{ id: 'k1', name: 'build', lanes: ['p1', 'p2'], sections: null, markdown: '# build' }],
+    tasks: [{ id: textOf('k1'), name: textOf('build'), lanes: [paneIdOf('p1'), paneIdOf('p2')], sections: null, markdown: textOf('# build') }],
     at: instant(100),
     running: recapRunningOf(true),
     backend: textOf('claude'),

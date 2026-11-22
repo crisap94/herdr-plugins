@@ -18,6 +18,7 @@ import { ID, CURSOR, FACTS, LAST_RUN, NOW, claudeReader, depsOf, inputOf, textOf
 import { MemoryLedger } from './fakes/memory-ledger.ts';
 import { recapOf, task } from './fakes/handoff-flow-harness.ts';
 import { registryWith } from './fakes/transcript-registry.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 
 const FROM = paneId('w1:p1');
 const TO = paneId('w1:p2');
@@ -26,7 +27,7 @@ const VIEW: TabView = { tab: 'w1:t1', column: null, lanes: [{ pane: 'w1:p1', age
 const CLOSED_AT = instant(NOW - 1000);
 const CLOSED_ROW: ClosedLaneRead = {
     kind: 'row',
-    record: { tab: tabId('w1:t1'), pane: FROM, agent: agentKind('claude'), closedAt: CLOSED_AT, cwd: null, association: { task: { tab: tabId('w1:t1'), key: 't1' }, name: null } },
+    record: { tab: tabId('w1:t1'), pane: FROM, agent: agentKind('claude'), closedAt: CLOSED_AT, cwd: null, association: { task: { tab: tabId('w1:t1'), key: brand<string, 'Text'>('t1') }, name: null } },
 };
 const locked = (): Error => Object.assign(new Error('/home/coder/secret/db.sqlite is locked'), { name: 'SqliteError', code: 'SQLITE_BUSY' });
 

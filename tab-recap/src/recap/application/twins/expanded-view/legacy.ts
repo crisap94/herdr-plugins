@@ -59,7 +59,7 @@ export class ExpandedModel {
     }
 
     private taskOf(tab: string, task: TaskRef, now: number): FoundTask {
-        const facts = knownOr(this.deps.ledger.allOf({ tab, key: task.id }), []);
+        const facts = knownOr(this.deps.ledger.allOf({ tab: tabIdOf(tab), key: textOf(task.id) }), []);
         const story = this.deps.stories.read(tabIdOf(tab), textOf(task.id));
         const change = newestChange(facts);
         const stale = change !== null && (story === null || story.at < change);

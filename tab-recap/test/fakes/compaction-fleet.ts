@@ -74,7 +74,7 @@ export const failed: Mark = { kind: 'compaction-failed', at: instant(NOW + 5000)
 
 export function compactionDeps(world: Fleet, setting = 'focused', focused: string | null = 'w1:p1', reads: readonly (readonly Mark[])[] = [[]], lanes: readonly Lane[] = CLAUDE_CODEX_GEMINI): CompactionDeps {
     let looked = 0;
-    const recap = { ...blankRecap(tabId('w1:t1')), tasks: oneTask('x', { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['The recap column shows three lines'], rules: ['Never push to main'] }, ['w1:p1', 'w1:p2']) };
+    const recap = { ...blankRecap(tabId('w1:t1')), tasks: oneTask('x', { ...NO_SECTIONS, goal: textOf('Ship the cart rewrite'), decisions: [textOf('The recap column shows three lines')], rules: [textOf('Never push to main')] }, ['w1:p1', 'w1:p2']) };
     return {
         compactionPlans,
         agents: world.agents,

@@ -2,6 +2,7 @@ import type { Break } from './model.ts';
 import { assertCount, assertMinutes, assertSeconds } from './wording.ts';
 import type { TextChapters } from './wording.ts';
 import { tokensOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/compaction.ts';
+import { countOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/count.ts';
 
 const RULE = '─';
 const SIDE = RULE.repeat(2);
@@ -19,7 +20,7 @@ export function breakText(found: Break, say: TextChapters): string {
     if (found.kind === 'switched') {
         return say.newSession;
     }
-    const sizes = found.tokensBefore !== null && found.tokensAfter !== null ? `${tokensOf(found.tokensBefore)} → ${tokensOf(found.tokensAfter)}` : '';
+    const sizes = found.tokensBefore !== null && found.tokensAfter !== null ? `${tokensOf(countOf(found.tokensBefore))} → ${tokensOf(countOf(found.tokensAfter))}` : '';
     const time = found.tookMs === null ? '' : took(found.tookMs, say);
     const detail = [sizes, time].filter((part) => part !== '').join(' · ');
     return detail === '' ? say.compacted : `${say.compacted} ${detail}`;

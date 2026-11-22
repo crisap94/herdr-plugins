@@ -16,7 +16,7 @@ const [textOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Instant'>];
 
 const TAB = tabId('w1:t1');
 const LOCKED = unknown({ why: 'unreadable', detail: causeOf('locked') });
-const ONE_TASK: TabRecap = { ...blankRecap(tabId('w1:t1')), tasks: [{ id: 't1', name: 't1', lanes: [], sections: null, markdown: '' }] };
+const ONE_TASK: TabRecap = { ...blankRecap(tabId('w1:t1')), tasks: [{ id: textOf('t1'), name: textOf('t1'), lanes: [], sections: null, markdown: textOf('') }] };
 
 interface Seen { allOf: number; storyReads: number; writers: number }
 

@@ -7,7 +7,7 @@ import { Briefing } from '#src/recap/application/compaction-briefing.ts';
 import type { CompactionPorts } from '#src/recap/application/compaction-deps.ts';
 import { guidanceOf } from '#src/recap/application/compaction-message.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 import { compactPreviewOf } from '#src/recap/application/compact-preview.ts';
 import { blankRecap, type TabRecap } from '#src/ports/recap-records.ts';
@@ -18,6 +18,7 @@ import { cursor } from '#test/db/support.ts';
 import { apiProblems } from '#test/gui-schema-support.ts';
 import { add, api, OTHER_PANE, PANE, seedOther, seedRun, startWorld, TAB, type World } from '#test/desktop-engine-world.ts';
 import { BUN_CACHE_OFF } from './support/bun-env.ts';
+import { paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const compactPath = (query: string): string => `/v1/tabs/${encodeURIComponent(TAB)}/compact-message?${query}`;
 
@@ -57,10 +58,10 @@ const filesOf = (world: World): string => JSON.stringify(readdirSync(world.root,
 test('the compact message reads and writes nothing: no table changes, no model is asked', async () => {
     const world = await seededWorld();
     try {
-        const before = [tableCounts(world), JSON.stringify(world.store.ledger.allOf({ tab: TAB, key: 't1' })), filesOf(world)];
+        const before = [tableCounts(world), JSON.stringify(world.store.ledger.allOf({ tab: tabIdOf(TAB), key: textOf('t1') })), filesOf(world)];
         for (let n = 0; n < 3; n += 1) { assert.equal((await api(world, 'GET', compactPath(`pane=${PANE}&note=x`))).status, 200); }
         assert.equal((await api(world, 'GET', handoffPath(`from=${PANE}`))).status, 200);
-        assert.deepEqual([tableCounts(world), JSON.stringify(world.store.ledger.allOf({ tab: TAB, key: 't1' })), filesOf(world)], before);
+        assert.deepEqual([tableCounts(world), JSON.stringify(world.store.ledger.allOf({ tab: tabIdOf(TAB), key: textOf('t1') })), filesOf(world)], before);
     } finally { world.close(); }
 });
 
@@ -82,8 +83,8 @@ test('a note of 280 characters is taken and 281 is refused; an unknown pane, an 
 });
 
 test('the compact message drops the least important lines to fit 3000 characters, as the engine does', () => {
-    const sections = { ...NO_SECTIONS, goal: 'g'.repeat(500), decisions: Array.from({ length: 40 }, (_, n) => `Decision ${n}: ${'because '.repeat(30)}`) };
-    const records = { readRecap: (): TabRecap => ({ ...blankRecap(tabId(TAB)), lanes: [cursor(PANE)], tasks: [{ id: 't1', name: '', lanes: [PANE], sections, markdown: '' }] }) };
+    const sections = { ...NO_SECTIONS, goal: textOf('g'.repeat(500)), decisions: Array.from({ length: 40 }, (_, n) => textOf(`Decision ${n}: ${'because '.repeat(30)}`)) };
+    const records = { readRecap: (): TabRecap => ({ ...blankRecap(tabId(TAB)), lanes: [cursor(PANE)], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf(PANE)], sections, markdown: textOf('') }] }) };
     const made = compactPreviewOf({ records, views: { readTab: (): null => null } }, tabId(TAB), paneId(PANE), must(parseText('n'.repeat(280))));
     assert.ok(made.kind === 'guidance');
     assert.ok(made.text.length <= 3000);
@@ -120,7 +121,7 @@ test('the handoff message refuses what it cannot print: an unknown lane, an unkn
 
 const WEB = { base: 'https://github.com/acme/app', forge: 'github', branch: 'main' } as const;
 
-const sectionsOf = (goal: string, rest: Partial<RecapSections> = {}): RecapSections => ({ ...NO_SECTIONS, goal, ...rest });
+const sectionsOf = (goal: string, rest: Partial<RecapSections> = {}): RecapSections => ({ ...NO_SECTIONS, goal: textOf(goal), ...rest });
 
 interface Shape {
     readonly name: string;
@@ -135,15 +136,15 @@ const SHAPES: readonly Shape[] = [
     {
         name: 'two tasks, the lane in the second, a web, a note with newlines and unicode',
         recap: { ...blankRecap(tabId(TAB)), lanes: [cursor(PANE), cursor('w1:p2')], tasks: [
-            { id: 'a', name: 'A', lanes: ['w1:p2'], sections: sectionsOf('Other goal'), markdown: '' },
-            { id: 'b', name: 'B', lanes: [PANE], sections: sectionsOf('Ship it', { needs: ['Which db?'], links: ['PR #12', 'src/app.ts:4'], decisions: ['Use postgres: simpler ops'], now: ['Wiring'], next: ['Docs'], rules: ['Never touch main'] }), markdown: '' },
+            { id: textOf('a'), name: textOf('A'), lanes: [paneIdOf('w1:p2')], sections: sectionsOf('Other goal'), markdown: textOf('') },
+            { id: textOf('b'), name: textOf('B'), lanes: [paneIdOf(PANE)], sections: sectionsOf('Ship it', { needs: [textOf('Which db?')], links: [textOf('PR #12'), textOf('src/app.ts:4')], decisions: [textOf('Use postgres: simpler ops')], now: [textOf('Wiring')], next: [textOf('Docs')], rules: [textOf('Never touch main')] }), markdown: textOf('') },
         ] },
         view: { tab: TAB, column: null, at: 1, lanes: [lane(PANE, WEB), lane('w1:p2', null)] },
         note: 'keep\nthe  schema \té\u{1F600}\u0007',
     },
     {
         name: 'a closed lane: in the recap and no longer in the view; a task without sections',
-        recap: { ...blankRecap(tabId(TAB)), lanes: [cursor(PANE)], tasks: [{ id: 'a', name: 'A', lanes: [PANE], sections: null, markdown: '' }] },
+        recap: { ...blankRecap(tabId(TAB)), lanes: [cursor(PANE)], tasks: [{ id: textOf('a'), name: textOf('A'), lanes: [paneIdOf(PANE)], sections: null, markdown: textOf('') }] },
         view: { tab: TAB, column: null, at: 1, lanes: [] },
         note: '',
     },
@@ -168,7 +169,7 @@ for (const shape of SHAPES) {
 }
 
 test('over the limit the preview is exactly what compaction sends: nothing is cut, and no character is split in half', () => {
-    const records = { readRecap: (): TabRecap => ({ ...blankRecap(tabId(TAB)), lanes: [cursor(PANE)], tasks: [{ id: 't1', name: '', lanes: [PANE], sections: sectionsOf('\u{1F600}'.repeat(2000)), markdown: '' }] }) };
+    const records = { readRecap: (): TabRecap => ({ ...blankRecap(tabId(TAB)), lanes: [cursor(PANE)], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf(PANE)], sections: sectionsOf('\u{1F600}'.repeat(2000)), markdown: textOf('') }] }) };
     const made = compactPreviewOf({ records, views: { readTab: (): null => null } }, tabId(TAB), paneId(PANE), must(parseText('')));
     assert.ok(made.kind === 'guidance');
     assert.equal(made.text, guidanceOf({ sections: sectionsOf('\u{1F600}'.repeat(2000)), web: null, note: null }));

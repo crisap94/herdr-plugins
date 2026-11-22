@@ -1,7 +1,7 @@
 import { parseUsd } from '#src/recap/domain/usd.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseAutocompactPercent } from '#src/recap/domain/autocompact.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { parseCount, countOf } from '#src/recap/domain/count.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -12,8 +12,9 @@ import type { Decision } from '#src/ports/autocompact-records.ts';
 import { awaitedNames, backgroundItem, backgroundLabel, backgroundTool, flightOf, flightReason, NOT_AWAITING, NOTHING_IN_FLIGHT, observedFrom, runningCount } from '#src/recap/domain/in-flight.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
-const monitor = backgroundItem(backgroundTool('Monitor'), backgroundLabel('open merge requests'));
+const monitor = backgroundItem(backgroundTool(textOf('Monitor')), backgroundLabel(textOf('open merge requests')));
 
 const coverageWait = (tokens: number): Decision => ({
     tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 10 * 60_000), mode: 'on', share: 70, tokens: must(parseCount(tokens)), window: must(parseCount(1_000_000)), gate: 'coverage', verdict: 'wait', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null,
@@ -108,8 +109,8 @@ test('the wait answered, the lane goes through the remaining gates again', async
 });
 
 test('the in-flight count still applies when nothing awaits: the same detail as before', () => {
-    assert.equal(detailOf('in-flight', { now: instant(0), minimum: parseAutocompactPercent(10, 10), cooldownMs: duration(0), lastBreakAt: null, lastDecisionAt: null, busy: null, flight: flightOf(observedFrom(runningCount(2), [], flightReason('2 running')), NOT_AWAITING), atCeiling: 'below-ceiling' }), '2 running');
-    assert.equal(detailOf('in-flight', { now: instant(0), minimum: parseAutocompactPercent(10, 10), cooldownMs: duration(0), lastBreakAt: null, lastDecisionAt: null, busy: null, flight: flightOf(NOTHING_IN_FLIGHT, { kind: 'on', names: awaitedNames('reviewer') }), atCeiling: 'below-ceiling' }), 'awaiting reviewer');
+    assert.equal(detailOf('in-flight', { now: instant(0), minimum: parseAutocompactPercent(10, 10), cooldownMs: duration(0), lastBreakAt: null, lastDecisionAt: null, busy: null, flight: flightOf(observedFrom(runningCount(countOf(2)), [], flightReason(textOf('2 running'))), NOT_AWAITING), atCeiling: 'below-ceiling' }), '2 running');
+    assert.equal(detailOf('in-flight', { now: instant(0), minimum: parseAutocompactPercent(10, 10), cooldownMs: duration(0), lastBreakAt: null, lastDecisionAt: null, busy: null, flight: flightOf(NOTHING_IN_FLIGHT, { kind: 'on', names: awaitedNames(textOf('reviewer')) }), atCeiling: 'below-ceiling' }), 'awaiting reviewer');
 });
 
 test('events: a skip is written when its gate changes, not on each sweep; a decision is written with its verdict and share', async () => {

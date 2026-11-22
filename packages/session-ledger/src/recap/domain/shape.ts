@@ -1,4 +1,5 @@
-import type { RecapSections } from './legacy.ts';
+import { textOf } from './text.ts';
+import type { RecapSections } from './tasks.ts';
 
 export type ListSection = Exclude<keyof RecapSections, 'goal'>;
 
@@ -6,6 +7,6 @@ export const CAPS: Readonly<Record<ListSection, number>> = { now: 3, needs: 3, d
 
 export const MAX_WORDS = 16;
 
-export const NO_SECTIONS: RecapSections = { goal: '', now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] };
+export const NO_SECTIONS: RecapSections = { goal: textOf(''), now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] };
 
-export type { RecapSections } from './legacy.ts';
+export type { RecapSections } from './tasks.ts';

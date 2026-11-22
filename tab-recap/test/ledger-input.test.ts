@@ -8,8 +8,8 @@ import { agentOf } from '#test/support.ts';
 import { factOf } from './fakes/facts.ts';
 import { FULL_WRITER_VIEW } from '#src/recap/domain/writer-view.ts';
 
-const [old, fresh] = [factOf('now', 'Old', { lastAt: 10 }), factOf('now', 'Fresh', { lastAt: 90, agent: 'orchestrator' })];
-const shut = factOf('done', 'Shut', { state: 'closed', closedWhy: 'done', closedAt: 95, lastAt: 95 });
+const [old, fresh] = [factOf('now', 'Old', { lastAt: instant(10) }), factOf('now', 'Fresh', { lastAt: instant(90), agent: textOf('orchestrator') })];
+const shut = factOf('done', 'Shut', { state: 'closed', closedWhy: 'done', closedAt: instant(95), lastAt: instant(95) });
 const other = factOf('goal', 'Other task');
 
 test('ids run f1…fn across the document: a task\'s open facts oldest seen first (newest last), then those it closed lately', () => {

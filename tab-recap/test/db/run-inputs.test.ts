@@ -19,7 +19,7 @@ import { textOf } from '#src/recap/domain/text.ts';
 const DAY = 86_400_000;
 const count = brand<number, 'Count'>;
 const STATS: GateStats = { refused: { [gateName('G1')]: count(2) }, flagged: { [gateName('G8')]: count(1) }, dropped: count(1) };
-const SECTIONS = { goal: 'Ship retries', now: ['Review !256.'], needs: [], done: ['Merged !250.', 'Tagged 1.9.0.'], decisions: [], next: [], links: ['!256'], rules: [] };
+const SECTIONS = { goal: textOf('Ship retries'), now: [textOf('Review !256.')], needs: [], done: [textOf('Merged !250.'), textOf('Tagged 1.9.0.')], decisions: [], next: [], links: [textOf('!256')], rules: [] };
 
 const run = (at: number, extra: Partial<RunInput> = {}): RunInput => ({
     tab: tabId('w1:t1'), at: instant(at), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], ...withFacts(oneTask('', SECTIONS)), ...extra,

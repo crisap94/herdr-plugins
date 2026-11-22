@@ -26,6 +26,7 @@ import {
     type Subject,
 } from '@stateforge-labs/session-ledger/testkit';
 import { tabId, usd } from '@stateforge-labs/session-ledger/testkit';
+import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const request = (): RecapRequest => ({
     input: { tab: { id: textOf('tab-1'), now: instant(0), zone: textOf('UTC') }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] },
@@ -40,7 +41,7 @@ const listed = (value: readonly Fact[] | Unknown): readonly Fact[] => {
     throw new Error('the read was unknown');
 };
 
-const taskA = { tab: 'tab-1', key: 'a' };
+const taskA = { tab: tabIdOf('tab-1'), key: textOf('a') };
 
 test('a directory is the path it was given', () => {
     assert.equal(String(directory('/work')), '/work');
@@ -110,9 +111,9 @@ test('a scripted writer that throws rejects, and one that blocks answers after r
 test('the default writer answers with the open facts joined by newlines', async () => {
     const world: EngineWorld = createEngineWorld();
     world.store.seed(null, [
-        factOf('f1', { text: 'one' }),
-        factOf('f2', { text: 'two', state: 'closed', closedWhy: 'done', closedAt: 3 }),
-        factOf('f3', { text: 'three' }),
+        factOf('f1', { text: textOf('one') }),
+        factOf('f2', { text: textOf('two'), state: 'closed', closedWhy: 'done', closedAt: instant(3) }),
+        factOf('f3', { text: textOf('three') }),
     ]);
     assert.deepEqual(await world.plugs.models.writer().write(request()), { kind: 'written', text: 'one\nthree', costUsd: 0 });
 });
@@ -129,9 +130,9 @@ test('failReads makes the next read of that name Unknown, then the store answers
 test('openOf and recentlyClosed read the seeded facts of one task', () => {
     const world = createEngineWorld();
     world.store.seed(null, [
-        factOf('f1', { text: 'one' }),
-        factOf('f2', { text: 'two', state: 'closed', closedWhy: 'done', closedAt: 3 }),
-        factOf('f3', { text: 'three' }),
+        factOf('f1', { text: textOf('one') }),
+        factOf('f2', { text: textOf('two'), state: 'closed', closedWhy: 'done', closedAt: instant(3) }),
+        factOf('f3', { text: textOf('three') }),
     ]);
     const open = listed(world.plugs.store.facts.openOf(taskA));
     assert.deepEqual(
@@ -169,7 +170,7 @@ const recordedOf = (changed: readonly Fact[]): RecordedRun => ({ tab: tabId('tab
 
 test('recordRun keeps the changed facts it is given, and allOf returns them', () => {
     const store = createMemoryStore();
-    const kept = factOf('f1', { task: taskA, section: 'now', text: 'first' });
+    const kept = factOf('f1', { task: taskA, section: 'now', text: textOf('first') });
     store.records.recordRun(recordedOf([kept]));
     assert.deepEqual(listed(store.facts.allOf(taskA)), [kept]);
 });

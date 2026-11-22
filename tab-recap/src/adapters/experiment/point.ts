@@ -16,6 +16,8 @@ import { claudeObserved } from '../transcripts/claude/context.ts';
 import { linesAfter, linesBefore } from '../transcripts/slice.ts';
 import type { ExperimentStore, FramePoint, StoredPoint } from './store.ts';
 import type { Text } from '#src/recap/domain/text.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 const TAIL_BYTES = 256 * 1024;
 const EXPERIMENT_MINIMUM = 40;
@@ -68,7 +70,7 @@ export function shareAt(source: Text, cursor: number, catalogue: ModelCatalogue)
 function gateAt(stored: StoredPoint, lines: readonly string[], lastBreakAt: number | null, share: number): GateReading {
     const flight = claudeInFlight(lines);
     const inFlight = flight.kind === 'in-flight' ? flight.count : 'unknown';
-    const observed = flight.kind === 'in-flight' ? observedFrom(runningCount(flight.count), flight.background, flightReason('running')) : unreadable(flightReason('unreadable'));
+    const observed = flight.kind === 'in-flight' ? observedFrom(runningCount(countOf(flight.count)), flight.background, flightReason(textOf('running'))) : unreadable(flightReason(textOf('unreadable')));
     const gate = gateOf({ kind: 'claude', kinds: KINDS_DEFAULT, shadowKinds: [], busy: false, flight: flightOf(observed, NOT_AWAITING), share, minimum: EXPERIMENT_MINIMUM, ceiling: CEILING_DEFAULT, now: stored.at, lastBreakAt, lastDecisionAt: null, cooldownMs: COOLDOWN_DEFAULT_MS, unchanged: false }).gate;
     return { inFlight, gate };
 }

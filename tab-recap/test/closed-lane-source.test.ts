@@ -20,6 +20,8 @@ import { instant } from '#src/recap/domain/time.ts';
 import { MemoryClosedLanes } from '#test/fakes/closed-lanes-memory.ts';
 import { fact } from '#test/fakes/fact-at.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const DAY = 86_400_000;
 const NOW = instant(Date.parse('2026-10-11T10:00:00Z'));
@@ -27,7 +29,7 @@ const CLOSED = instant(NOW - DAY);
 const TAB = tabId('w1:t1');
 const PANE = paneId('w1:p1');
 const AGENT = agentKind('claude');
-const T1: TaskId = { tab: 'w1:t1', key: 't1' };
+const T1: TaskId = { tab: tabIdOf('w1:t1'), key: textOf('t1') };
 const IDENTITY: ClosedLaneIdentity = { tab: TAB, pane: PANE, closedAt: CLOSED };
 const FOURTEEN = closedLaneDaysOf('14');
 const DISABLED = closedLaneDaysOf('0');
@@ -52,9 +54,9 @@ function depsOf(read: ClosedLaneRead, parts: { readonly ledger?: ClosedSourceDep
 const withoutView = (resolution: ClosedLaneResolution | SourceResolution): object => (resolution.kind === 'found' ? { kind: resolution.kind, task: resolution.task, facts: resolution.facts } : resolution);
 
 const F_OPEN = fact('f1', 'goal', 'open before the close', CLOSED - 5000, { task: T1 });
-const F_LATER = fact('f2', 'now', 'closed after the close', CLOSED - 1000, { task: T1, state: 'closed', closedAt: CLOSED + 1000, closedWhy: 'done' });
-const F_EDGE = fact('f3', 'done', 'closed exactly two hours before the close', CLOSED - 9000, { task: T1, state: 'closed', closedAt: CLOSED - CLOSED_SHOWN_MS, closedWhy: 'done' });
-const F_STALE = fact('f4', 'done', 'closed one millisecond beyond two hours', CLOSED - 9000, { task: T1, state: 'closed', closedAt: CLOSED - CLOSED_SHOWN_MS - 1, closedWhy: 'done' });
+const F_LATER = fact('f2', 'now', 'closed after the close', CLOSED - 1000, { task: T1, state: 'closed', closedAt: instant(CLOSED + 1000), closedWhy: 'done' });
+const F_EDGE = fact('f3', 'done', 'closed exactly two hours before the close', CLOSED - 9000, { task: T1, state: 'closed', closedAt: instant(CLOSED - CLOSED_SHOWN_MS), closedWhy: 'done' });
+const F_STALE = fact('f4', 'done', 'closed one millisecond beyond two hours', CLOSED - 9000, { task: T1, state: 'closed', closedAt: instant(CLOSED - CLOSED_SHOWN_MS - 1), closedWhy: 'done' });
 const F_FUTURE = fact('f5', 'goal', 'first seen after the close', CLOSED + 1000, { task: T1 });
 const F_LATER_AS_OPEN: Fact = { ...F_LATER, state: 'open', closedAt: null, closedWhy: null };
 const LEDGER_FACTS: readonly Fact[] = [F_OPEN, F_LATER, F_EDGE, F_STALE, F_FUTURE];

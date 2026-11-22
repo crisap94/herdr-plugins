@@ -34,7 +34,7 @@ function seeded(): ReturnType<typeof run> {
     const state = join(root, 'state');
     const store = stateStore(state);
     assert.ok(store.kind === 'ready');
-    recordOps(store, { tab: tabId('w1:t1'), at: instant(Date.now()), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], ...withFacts(oneTask('', { goal: 'Ship retries', now: [], needs: [], done: ['Merged !256.'], decisions: [], next: [], links: [], rules: [] })), input: textOf('<recap_input version="1"/>') });
+    recordOps(store, { tab: tabId('w1:t1'), at: instant(Date.now()), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], ...withFacts(oneTask('', { goal: textOf('Ship retries'), now: [], needs: [], done: [textOf('Merged !256.')], decisions: [], next: [], links: [], rules: [] })), input: textOf('<recap_input version="1"/>') });
     store.close();
     return { status: null, stdout: '', stderr: '', state, done: () => { rmSync(root, { recursive: true, force: true }); } };
 }

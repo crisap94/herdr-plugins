@@ -29,9 +29,9 @@ const [textOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Instant'>];
 
 const NOW = Date.parse('2026-10-11T10:00:00Z');
 const TAB = tabId('w1:t1');
-const T1: TaskId = { tab: TAB, key: 't1' };
+const T1: TaskId = { tab: TAB, key: textOf('t1') };
 const LOCKED = unknown({ why: 'unreadable', detail: causeOf('locked') });
-const SECTIONS = { goal: 'Ship retries', now: [], needs: [], done: ['Merged !256.'], decisions: [], next: [], links: [], rules: [] };
+const SECTIONS = { goal: textOf('Ship retries'), now: [], needs: [], done: [textOf('Merged !256.')], decisions: [], next: [], links: [], rules: [] };
 const VIEW: TabView = { tab: TAB, column: null, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: '/repo' }], at: NOW };
 
 interface Probe {

@@ -14,7 +14,7 @@ import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import { storedOutcomeOf } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
-import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
+import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { LaneEvents } from './lane-events.ts';
@@ -77,7 +77,7 @@ export async function reportWrite(tokens: LaneTokens, log: HandoffLog, pane: Pan
             log(must(parseText(`handoff answer on ${pane}: not written (${saying(done.why)})`)));
         }
     } catch (error) {
-        log(must(parseText(`handoff answer on ${pane}: not written (${failureCauseOf(error)})`)));
+        log(must(parseText(`handoff answer on ${pane}: not written (${failureCauseOf(parseThrown(error))})`)));
     }
 }
 

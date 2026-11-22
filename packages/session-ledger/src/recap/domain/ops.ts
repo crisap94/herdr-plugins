@@ -1,8 +1,19 @@
-import type { ClosedWhy } from './fact.ts';
-import type { AddOp, CloseOp, Fact, RunRef, UpdateOp } from './legacy.ts';
-import { sameTask } from './legacy.ts';
+import { brand, type Brand } from './brand.ts';
+import { sameTask, type ClosedWhy, type Fact, type FactId, type RunId, type Section, type TaskId } from './fact.ts';
+import type { Text } from './text.ts';
+import { instant, type Instant } from './time.ts';
+
+export interface AddOp { readonly op: 'add'; readonly section: Section; readonly text: Text; readonly why: Text | null; readonly ref: Text | null; readonly at: Instant | null; readonly agent: Text | null; readonly anchor?: Text | null; }
+
+export interface UpdateOp { readonly op: 'update'; readonly id: FactId; readonly text: Text; readonly why: Text | null; readonly anchor?: Text | null; }
+
+export interface CloseOp { readonly op: 'close'; readonly id: FactId; readonly why: ClosedWhy | null; readonly anchor?: Text; }
 
 export type Operation = AddOp | UpdateOp | CloseOp;
+
+export interface TaskOps { readonly task: Text; readonly ops: readonly Operation[]; }
+
+export interface RunRef { readonly id: RunId; readonly task: TaskId; readonly at: Instant; readonly language: Text; mint(): FactId; }
 
 export type Reason = 'unknown-id' | 'closed' | 'no-why' | 'second-goal';
 
@@ -22,7 +33,7 @@ interface Stepped {
     readonly refusal: Refusal | null;
 }
 
-const closedBy = (fact: Fact, why: ClosedWhy, run: Omit<RunRef, 'id'>): Fact => ({ ...fact, state: 'closed', closedWhy: why, closedAt: run.at, lastAt: Math.max(fact.lastAt, run.at) });
+const closedBy = (fact: Fact, why: ClosedWhy, run: Omit<RunRef, 'id'>): Fact => ({ ...fact, state: 'closed', closedWhy: why, closedAt: run.at, lastAt: instant(Math.max(fact.lastAt, run.at)) });
 
 function closeOne(facts: readonly Fact[], op: CloseOp, run: Omit<RunRef, 'id'>): Stepped {
     const target = facts.find((fact) => fact.id === op.id);
@@ -51,14 +62,14 @@ function updateOne(facts: readonly Fact[], op: UpdateOp, run: Omit<RunRef, 'id'>
     if (target.section === 'decisions' && why === null) {
         return { facts, refusal: { op, reason: 'no-why' } };
     }
-    return { facts: facts.map((fact) => (fact === target ? { ...fact, text: op.text, why, anchor: op.anchor ?? fact.anchor, lastAt: Math.max(fact.lastAt, run.at), language: run.language } : fact)), refusal: null };
+    return { facts: facts.map((fact) => (fact === target ? { ...fact, text: op.text, why, anchor: op.anchor ?? fact.anchor, lastAt: instant(Math.max(fact.lastAt, run.at)), language: run.language } : fact)), refusal: null };
 }
 
 function addOne(facts: readonly Fact[], op: AddOp, run: Omit<RunRef, 'id'>): Stepped {
     if (op.section === 'decisions' && op.why === null) {
         return { facts, refusal: { op, reason: 'no-why' } };
     }
-    const first = Math.min(op.at ?? run.at, run.at);
+    const first = instant(Math.min(op.at ?? run.at, run.at));
     const fact: Fact = {
         id: run.mint(), task: run.task, section: op.section, text: op.text, why: op.why, ref: op.ref, agent: op.agent, anchor: op.anchor ?? null,
         firstAt: first, lastAt: run.at, state: 'open', closedWhy: null, closedAt: null, language: run.language,
@@ -109,5 +120,10 @@ export function foldSwept(ledger: readonly Fact[], ops: readonly Operation[], ru
     return changedFrom(ledger, ops.length === 0 ? facts : supersedeNow(facts, ledger, ops, run), refused);
 }
 
-export type { AddOp, CloseOp, RunRef, TaskOps, UpdateOp } from './legacy.ts';
-export { apply } from './legacy.ts';
+export type SweepNow = Brand<boolean, 'SweepNow'>;
+
+export const sweepOf = brand<boolean, 'SweepNow'>;
+
+export function apply(ledger: readonly Fact[], ops: readonly Operation[], run: RunRef, sweepNow: SweepNow = sweepOf(false)): Folded {
+    return sweepNow ? foldSwept(ledger, ops, run) : fold(ledger, ops, run);
+}

@@ -1,6 +1,6 @@
 {
   "src/recap/domain/legacy.ts": {
-    "legacy": 131
+    "legacy": 130
   },
   "src/recap/domain/twins/curation/legacy.ts": {
     "legacy": 15
@@ -12,7 +12,7 @@
     "legacy": 21
   },
   "src/recap/domain/twins/policy/legacy.ts": {
-    "legacy": 12
+    "legacy": 11
   },
   "src/recap/domain/twins/retention/legacy.ts": {
     "legacy": 4

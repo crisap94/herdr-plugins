@@ -10,13 +10,14 @@ import type { Operation } from '#src/recap/domain/ops.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { factOf } from './fakes/facts.ts';
+import { factIdOf } from '#src/recap/domain/fact.ts';
 
 const NOW = 10 * 3_600_000;
 const f4 = factOf('done', 'Released tab-recap 1.10.0 through the pipeline');
 const f5 = factOf('next', 'Review the migration test');
-const shut = factOf('done', 'Fixed the flaky lint job on main', { state: 'closed', closedWhy: 'done', closedAt: NOW - 3 * 3_600_000 });
+const shut = factOf('done', 'Fixed the flaky lint job on main', { state: 'closed', closedWhy: 'done', closedAt: instant(NOW - 3 * 3_600_000) });
 const context: GateContext = { now: instant(NOW), language: textOf('en'), agents: [], shown: new Map([[textOf('f4'), f4], [textOf('f5'), f5]]), open: [f4, f5], closedLately: [shut], source: textOf('the pipeline went green and the release was tagged') };
-const add = (text: string, section: 'done' | 'next' = 'done'): Operation => ({ op: 'add', section, text, why: null, ref: null, at: null, agent: null, anchor: 'the pipeline went green' });
+const add = (text: string, section: 'done' | 'next' = 'done'): Operation => ({ op: 'add', section, text: textOf(text), why: null, ref: null, at: null, agent: null, anchor: textOf('the pipeline went green') });
 const gates = [duplicateGate, unknownIdGate, closeWhyGate];
 
 test('jaccard counts words of three letters or more, lower-cased', () => {
@@ -58,14 +59,14 @@ test('G2 against facts closed in the last day needs 0.8, and the fact itself is 
 });
 
 test('G2: a close and an add of the same line in one answer is not a duplicate, and two alike adds are', () => {
-    const pair: readonly Operation[] = [{ op: 'close', id: 'f5', why: 'done' }, add('Review the migration test again', 'next')];
+    const pair: readonly Operation[] = [{ op: 'close', id: factIdOf('f5'), why: 'done' }, add('Review the migration test again', 'next')];
     assert.equal(gatekeeper(gates, pair, context).refused.length, 0);
     const twins = gatekeeper(gates, [add('Wrote the ledger gates'), add('Wrote the ledger gates and tests')], context);
     assert.deepEqual(twins.refused.map((f) => f.at), [1]);
 });
 
 test('G6 refuses an unknown id and G10 a close without a why; the rest of the answer is kept', () => {
-    const ops: readonly Operation[] = [{ op: 'close', id: 'f99', why: 'done' }, { op: 'close', id: 'f5', why: null }, { op: 'update', id: 'f4', text: 'Released 1.10.1', why: null }];
+    const ops: readonly Operation[] = [{ op: 'close', id: factIdOf('f99'), why: 'done' }, { op: 'close', id: factIdOf('f5'), why: null }, { op: 'update', id: factIdOf('f4'), text: textOf('Released 1.10.1'), why: null }];
     const found = gatekeeper(gates, ops, context);
     assert.deepEqual(found.refused.map((f) => [f.gate, f.at]), [['G6', 0], ['G10', 1]]);
     assert.deepEqual(found.kept, [ops[2]]);

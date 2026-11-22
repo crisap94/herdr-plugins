@@ -24,7 +24,6 @@ import { groundOf } from './extract-ground.ts';
 import type { Extracted, Ground } from './extract-job.ts';
 import { extractPiped } from './extract-pipeline.ts';
 import type { RunEvent } from './ledger-reconcile.ts';
-import { instant } from '#src/recap/domain/time.ts';
 import { ADVANCED, marksOf, NOT_ADVANCED } from './boundaries.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { FRESH, inputOf, SEEN_BEFORE } from './recap-input.ts';
@@ -60,7 +59,8 @@ export interface RecapJobDeps {
 const READ_BUDGET = 768 * 1024;
 async function placeOf(seat: Lane, repos: LaneRepo): Promise<PlacedLane> {
     const found = seat.cwd === null ? null : await repos.repoOf(seat.cwd);
-    return { pane: String(seat.pane), place: found?.kind === 'repo' ? found.root : seat.cwd };
+    const place = found?.kind === 'repo' ? found.root : seat.cwd;
+    return { pane: seat.pane, place: place === null ? null : textOf(place) };
 }
 
 export class RecapJob {
@@ -268,8 +268,8 @@ export class RecapJob {
     }
 
     private written(base: Omit<RecordedRun, 'tasks' | 'changed' | 'refused' | 'marks' | 'input' | 'gateStats'>, run: WrittenRun): void {
-        const owner = { tab: base.tab }, marks = marksOf(run.readings, instant(base.at), ADVANCED), before = run.tasks.map((task) => ({ task, facts: this.deps.ledger.allOf({ ...owner, key: task.id }) })), entries = run.parts.flatMap((r) => (r.chunk?.entries ?? []).filter((entry) => entry.role === 'user' && entry.queued !== true).map((entry) => ({ key: r.lane.pane, at: instant(entry.at ?? base.at) })));
+        const owner = { tab: base.tab }, marks = marksOf(run.readings, base.at, ADVANCED), before = run.tasks.map((task) => ({ task, facts: this.deps.ledger.allOf({ ...owner, key: task.id }) })), entries = run.parts.flatMap((r) => (r.chunk?.entries ?? []).filter((entry) => entry.role === 'user' && entry.queued !== true).map((entry) => ({ key: r.lane.pane, at: entry.at ?? base.at })));
         this.deps.records.recordRun({ ...base, tasks: run.tasks, ...foldedRun(throwingLedger(this.deps.ledger), run.asked.tasks, { owner, at: base.at, language: base.language, mint: () => this.deps.mint() }), gateStats: run.asked.stats, marks, ...(this.deps.keepInput?.() ?? true ? { input: writerContext(run.request) } : {}) });
-        this.deps.ran?.({ tab: brand<string, 'TabId'>(base.tab), turns: count(entries.length), boundary: brand<boolean, 'Boundary'>(marks.length > 0), cause: textOf(base.cause), entries, established: accomplishedOf(before, run.tasks.map((task) => ({ task, facts: this.deps.ledger.allOf({ ...owner, key: task.id }) })), instant(base.at), (failure) => this.deps.log(`recap ${base.cause}: accomplishments not reported, ${saying(failure.why)}`)) });
+        this.deps.ran?.({ tab: brand<string, 'TabId'>(base.tab), turns: count(entries.length), boundary: brand<boolean, 'Boundary'>(marks.length > 0), cause: textOf(base.cause), entries, established: accomplishedOf(before, run.tasks.map((task) => ({ task, facts: this.deps.ledger.allOf({ ...owner, key: task.id }) })), base.at, (failure) => this.deps.log(`recap ${base.cause}: accomplishments not reported, ${saying(failure.why)}`)) });
     }
 }

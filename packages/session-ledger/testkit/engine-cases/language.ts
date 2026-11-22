@@ -7,6 +7,8 @@ import type { Behaviour, EngineWorld, WrittenAnswer } from '../world.ts';
 import { countOf, NO_OPS, quietAt, recapOf, spoken } from './support.ts';
 import { failure, running, usd, text, tabId } from '../values.ts';
 import { instant } from '@stateforge-labs/session-ledger';
+import { textOf } from '../../src/recap/domain/text.ts';
+import { tabIdOf, paneIdOf } from '../../src/recap/domain/lane-shape.ts';
 
 const TAB = scope('one');
 const FAILED = failure(1, 'scripted writer failure');
@@ -20,7 +22,7 @@ const written = (world: EngineWorld, factLanguage: string): void => {
     const recap: Recap = {
         tab: tabId('one'),
         lanes: [],
-        tasks: [{ id: 't1', name: 'work', lanes: [key('a')], sections: null, markdown: 'editing src/app.ts v2' }],
+        tasks: [{ id: textOf('t1'), name: textOf('work'), lanes: [paneIdOf(key('a'))], sections: null, markdown: textOf('editing src/app.ts v2') }],
         at: instant(0),
         running: running(false),
         backend: null,
@@ -28,7 +30,7 @@ const written = (world: EngineWorld, factLanguage: string): void => {
         costUsd: usd(0),
         language: text('en'),
     };
-    world.store.seed(recap, [factOf('fct_1', { task: { tab: TAB, key: 't1' }, text: 'editing src/app.ts v2', language: factLanguage })]);
+    world.store.seed(recap, [factOf('fct_1', { task: { tab: tabIdOf(TAB), key: textOf('t1') }, text: textOf('editing src/app.ts v2'), language: textOf(factLanguage) })]);
 };
 
 export const LNG_CASES: readonly Case<EngineWorld, Engine>[] = [

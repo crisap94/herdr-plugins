@@ -98,7 +98,7 @@ function queuing(world: ReturnType<typeof fleet>, clock: Clock, slices: readonly
 function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPlans; readonly clock?: () => number; readonly marks?: () => Promise<readonly Mark[]>; readonly answerTo?: (id: string, pane: string, stage: string) => void }, setting = 'focused', focused: string | null = 'w1:p1', briefing: Briefing | null = null, reads: readonly (readonly Mark[])[] = [[]]): Compaction {
     let looked = 0;
     const store = world.store;
-    const recap = { ...blankRecap(tabId('w1:t1')), tasks: oneTask('x', { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['The recap column shows three lines'], rules: ['Never push to main'] }, ['w1:p1', 'w1:p2']) };
+    const recap = { ...blankRecap(tabId('w1:t1')), tasks: oneTask('x', { ...NO_SECTIONS, goal: textOf('Ship the cart rewrite'), decisions: [textOf('The recap column shows three lines')], rules: [textOf('Never push to main')] }, ['w1:p1', 'w1:p2']) };
     const deps: CompactionDeps = {
         compactionPlans: world.plans ?? idleClaudePlans,
         agents: world.agents,

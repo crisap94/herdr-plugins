@@ -39,6 +39,11 @@ export class LaneContexts {
         this.setting = setting;
     }
 
+    private settingCount(): Count | null {
+        const value = this.setting();
+        return value === null ? null : countOf(value);
+    }
+
     of(pane: string): ContextUse | null {
         return this.known.get(pane) ?? null;
     }
@@ -59,7 +64,7 @@ export class LaneContexts {
         if (observed === null) {
             return null;
         }
-        const use = contextOf({ observed, setting: this.setting() }, this.windows.windowOf(String(lane.agent)));
+        const use = contextOf({ observed, setting: this.settingCount() }, this.windows.windowOf(String(lane.agent)));
         return use === null || use.source === 'setting' ? use : this.capped(use, lane, observed);
     }
 

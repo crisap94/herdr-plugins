@@ -11,6 +11,7 @@ import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/reca
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
+import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 type Row = Record<string, unknown>;
 
@@ -22,36 +23,36 @@ export type LegacyVisibility = Row;
 const isRow = (input: unknown): input is Row => typeof input === 'object' && input !== null && !Array.isArray(input);
 
 const sectionsOf = (value: Row): RecapSections => ({
-    goal: typeof value.goal === 'string' ? value.goal : '',
-    now: Array.isArray(value.now) ? value.now.filter((entry) => typeof entry === 'string') : [],
-    needs: Array.isArray(value.needs) ? value.needs.filter((entry) => typeof entry === 'string') : [],
-    done: Array.isArray(value.done) ? value.done.filter((entry) => typeof entry === 'string') : [],
-    decisions: Array.isArray(value.decisions) ? value.decisions.filter((entry) => typeof entry === 'string') : [],
-    next: Array.isArray(value.next) ? value.next.filter((entry) => typeof entry === 'string') : [],
-    links: Array.isArray(value.links) ? value.links.filter((entry) => typeof entry === 'string') : [],
+    goal: typeof value.goal === 'string' ? textOf(value.goal) : textOf(''),
+    now: Array.isArray(value.now) ? value.now.flatMap((entry) => (typeof entry === 'string' ? [textOf(entry)] : [])) : [],
+    needs: Array.isArray(value.needs) ? value.needs.flatMap((entry) => (typeof entry === 'string' ? [textOf(entry)] : [])) : [],
+    done: Array.isArray(value.done) ? value.done.flatMap((entry) => (typeof entry === 'string' ? [textOf(entry)] : [])) : [],
+    decisions: Array.isArray(value.decisions) ? value.decisions.flatMap((entry) => (typeof entry === 'string' ? [textOf(entry)] : [])) : [],
+    next: Array.isArray(value.next) ? value.next.flatMap((entry) => (typeof entry === 'string' ? [textOf(entry)] : [])) : [],
+    links: Array.isArray(value.links) ? value.links.flatMap((entry) => (typeof entry === 'string' ? [textOf(entry)] : [])) : [],
     rules: [],
 });
 
 const taskOf = (item: Row): RecapTask => ({
-    id: typeof item.id === 'string' ? item.id : '',
-    name: typeof item.name === 'string' ? item.name : '',
-    lanes: Array.isArray(item.lanes) ? item.lanes.filter((entry) => typeof entry === 'string') : [],
+    id: typeof item.id === 'string' ? textOf(item.id) : textOf(''),
+    name: typeof item.name === 'string' ? textOf(item.name) : textOf(''),
+    lanes: Array.isArray(item.lanes) ? item.lanes.flatMap((entry) => (typeof entry === 'string' ? [paneIdOf(entry)] : [])) : [],
     sections: isRow(item.sections) ? sectionsOf(item.sections) : null,
-    markdown: typeof item.markdown === 'string' ? item.markdown : '',
+    markdown: typeof item.markdown === 'string' ? textOf(item.markdown) : textOf(''),
 });
 
 const legacyTasks = (stored: Row): RecapTask[] => {
     const markdown = typeof stored.markdown === 'string' ? stored.markdown : '';
     if (markdown === '') return [];
-    const lanes = Array.isArray(stored.lanes) ? stored.lanes.flatMap((lane) => (isRow(lane) && typeof lane.pane === 'string' ? [lane.pane] : [])) : [];
-    return [{ id: 't1', name: '', lanes, sections: isRow(stored.sections) ? sectionsOf(stored.sections) : null, markdown }];
+    const lanes = Array.isArray(stored.lanes) ? stored.lanes.flatMap((lane) => (isRow(lane) && typeof lane.pane === 'string' ? [paneIdOf(lane.pane)] : [])) : [];
+    return [{ id: textOf('t1'), name: textOf(''), lanes, sections: isRow(stored.sections) ? sectionsOf(stored.sections) : null, markdown: textOf(markdown) }];
 };
 
 const tasksOf = (stored: Row): RecapTask[] => {
     if (!Array.isArray(stored.tasks)) return legacyTasks(stored);
     return stored.tasks.map((item, index) => {
         const task = taskOf(isRow(item) ? item : {});
-        return task.id === '' ? { ...task, id: `t${index + 1}` } : task;
+        return task.id === '' ? { ...task, id: textOf(`t${index + 1}`) } : task;
     });
 };
 
@@ -150,8 +151,8 @@ export function parseLegacyHidden(input: unknown): Result<HiddenState, ParseFail
     if (!isRow(input)) return err({ kind: 'not-a-row' });
     return ok({
         all: input.all === true,
-        hidden: Array.isArray(input.hidden) ? input.hidden.filter((entry) => typeof entry === 'string') : [],
-        shown: Array.isArray(input.shown) ? input.shown.filter((entry) => typeof entry === 'string') : [],
+        hidden: Array.isArray(input.hidden) ? input.hidden.flatMap((entry) => (typeof entry === 'string' ? [textOf(entry)] : [])) : [],
+        shown: Array.isArray(input.shown) ? input.shown.flatMap((entry) => (typeof entry === 'string' ? [textOf(entry)] : [])) : [],
     });
 }
 

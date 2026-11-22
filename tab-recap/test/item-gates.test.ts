@@ -13,6 +13,7 @@ import { factOf } from './fakes/facts.ts';
 import { requestOf } from './support.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { factIdOf } from '#src/recap/domain/fact.ts';
 
 const textOf = brand<string, 'Text'>;
 const NARRATOR = 'claude completed the research and wrote its report.';
@@ -45,15 +46,15 @@ const run = (summarizer: Summarizer, ground = groundOf()): Promise<Extracted> =>
 const texts = (done: Extracted): readonly string[] => (done.kind === 'ops' ? done.tasks.flatMap((task) => task.ops.flatMap((op) => (op.op === 'add' ? op.text : []))) : []);
 
 test('the adapter: an add or update becomes the item it would put in the recap; a close puts nothing; a decision\'s why is its reason clause', () => {
-    const shown = new Map([[textOf('f1'), factOf('decisions', 'Keep SQLite', { why: 'one file to back up' })]]);
+    const shown = new Map([[textOf('f1'), factOf('decisions', 'Keep SQLite', { why: textOf('one file to back up') })]]);
     const context: GateContext = { now: instant(1), language: textOf('en'), agents: [textOf('claude')], shown, open: [...shown.values()], closedLately: [], source: textOf('go') };
     const found = (list: readonly Operation[]): readonly string[] => itemGate.check(list, context).map((finding) => `${finding.at}:${finding.gate}:${finding.outcome}`);
-    assert.deepEqual(found([{ op: 'add', section: 'done', text: NARRATOR, why: null, ref: null, at: null, agent: null }]), ['0:G1:refuse']);
-    assert.deepEqual(found([{ op: 'add', section: 'decisions', text: 'Leave the db tab alone.', why: null, ref: null, at: null, agent: null }]), ['0:G3:refuse']);
-    assert.deepEqual(found([{ op: 'add', section: 'decisions', text: 'Leave the db tab alone.', why: 'it is not part of this task', ref: null, at: null, agent: null }]), ['0:G8:flag'], 'passes (flagged only: it names nothing concrete)');
-    assert.deepEqual(found([{ op: 'update', id: 'f1', text: 'Keep SQLite for 2.0', why: null }]), [], 'an update keeps the fact\'s why');
-    assert.deepEqual(found([{ op: 'update', id: 'f9', text: NARRATOR, why: null }, { op: 'close', id: 'f1', why: 'done' }]), [], 'an unknown id is G6\'s, a close has no text');
-    assert.deepEqual(found([{ op: 'add', section: 'done', text: FINE, why: null, ref: null, at: null, agent: null }, { op: 'update', id: 'f1', text: NARRATOR, why: null }]), ['1:G1:refuse']);
+    assert.deepEqual(found([{ op: 'add', section: 'done', text: textOf(NARRATOR), why: null, ref: null, at: null, agent: null }]), ['0:G1:refuse']);
+    assert.deepEqual(found([{ op: 'add', section: 'decisions', text: textOf('Leave the db tab alone.'), why: null, ref: null, at: null, agent: null }]), ['0:G3:refuse']);
+    assert.deepEqual(found([{ op: 'add', section: 'decisions', text: textOf('Leave the db tab alone.'), why: textOf('it is not part of this task'), ref: null, at: null, agent: null }]), ['0:G8:flag'], 'passes (flagged only: it names nothing concrete)');
+    assert.deepEqual(found([{ op: 'update', id: factIdOf('f1'), text: textOf('Keep SQLite for 2.0'), why: null }]), [], 'an update keeps the fact\'s why');
+    assert.deepEqual(found([{ op: 'update', id: factIdOf('f9'), text: textOf(NARRATOR), why: null }, { op: 'close', id: factIdOf('f1'), why: 'done' }]), [], 'an unknown id is G6\'s, a close has no text');
+    assert.deepEqual(found([{ op: 'add', section: 'done', text: textOf(FINE), why: null, ref: null, at: null, agent: null }, { op: 'update', id: factIdOf('f1'), text: textOf(NARRATOR), why: null }]), ['1:G1:refuse']);
 });
 
 test('a refused add comes back as a correction that quotes it with the gate\'s reason; a rewrite passes and the counts remember the refusal', async () => {

@@ -1,7 +1,7 @@
 import type { Catalog } from './messages.ts';
 import { ENGLISH, renderRefusal } from '#src/host/policy.mjs';
 import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { looseOf, type Messages } from './legacy.ts';
 import { agoTextOf } from './relative.ts';
 import { BACKEND_IDS, harnessChoiceLabels, harnessLabels } from '#src/recap/domain/backend.ts';
@@ -55,7 +55,7 @@ export const english: Catalog = {
         compactHintOff: must(parseText('off')),
         modelsHeading: must(parseText('Models — harness · model · effort, ←/→ pick a part')),
         jobBy: { recap: must(parseText('as the recap writer')), auto: must(parseText('auto')), ...harnessLabels((id) => must(parseText(id))), jev: must(parseText('jev (TypeSafe API)')), off: must(parseText('off')) },
-        jobByChoices: { recap: must(parseText('as the recap writer — the same harness')), auto: must(parseText('auto — the first one found')), ...harnessLabels((id) => must(parseText(harnessChoiceLabels('your own command, TAB_RECAP_CUSTOM_CMD')[id]))), jev: must(parseText('jev — the TypeSafe API; the key is read from the environment or ~/.config/typesafe-api-key, never shown here')), off: must(parseText('off — compact with the template, no brief')) },
+        jobByChoices: { recap: must(parseText('as the recap writer — the same harness')), auto: must(parseText('auto — the first one found')), ...harnessLabels((id) => must(parseText(harnessChoiceLabels(textOf('your own command, TAB_RECAP_CUSTOM_CMD'))[id]))), jev: must(parseText('jev — the TypeSafe API; the key is read from the environment or ~/.config/typesafe-api-key, never shown here')), off: must(parseText('off — compact with the template, no brief')) },
         compactModelSame: must(parseText("the recap writer's model")),
         curateJobHint: must(parseText('runs when the full-screen view opens: merges duplicate facts and writes the "session so far" paragraph; once per task at most every 5 minutes')),
         curateOff: must(parseText('off — no paragraph, no merges')),

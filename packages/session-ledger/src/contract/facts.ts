@@ -1,4 +1,4 @@
-import type { Brand, Instant, Text } from './kernel.ts';
+import type { Brand, Instant, TabId, Text } from './kernel.ts';
 
 export interface HistoryFact {
     readonly section: Section;
@@ -15,8 +15,8 @@ export type FactId = Brand<string, 'FactId'>;
 export type RunId = Brand<string, 'RunId'>;
 
 export interface TaskId {
-    readonly tab: string;
-    readonly key: string;
+    readonly tab: TabId;
+    readonly key: Text;
 }
 
 export type Section = 'goal' | 'now' | 'needs' | 'done' | 'decisions' | 'next' | 'links' | 'rules';
@@ -28,41 +28,41 @@ export interface Fact {
     readonly id: FactId;
     readonly task: TaskId;
     readonly section: Section;
-    readonly text: string;
-    readonly why: string | null;
-    readonly ref: string | null;
-    readonly agent: string | null;
-    readonly anchor: string | null;
-    readonly firstAt: number;
-    readonly lastAt: number;
+    readonly text: Text;
+    readonly why: Text | null;
+    readonly ref: Text | null;
+    readonly agent: Text | null;
+    readonly anchor: Text | null;
+    readonly firstAt: Instant;
+    readonly lastAt: Instant;
     readonly state: 'open' | 'closed';
     readonly closedWhy: ClosedWhy | null;
-    readonly closedAt: number | null;
-    readonly language: string;
+    readonly closedAt: Instant | null;
+    readonly language: Text;
 }
 
 export interface AddOp {
     readonly op: 'add';
     readonly section: Section;
-    readonly text: string;
-    readonly why: string | null;
-    readonly ref: string | null;
-    readonly at: number | null;
-    readonly agent: string | null;
-    readonly anchor?: string | null;
+    readonly text: Text;
+    readonly why: Text | null;
+    readonly ref: Text | null;
+    readonly at: Instant | null;
+    readonly agent: Text | null;
+    readonly anchor?: Text | null;
 }
 
 export interface UpdateOp {
     readonly op: 'update';
-    readonly id: string;
-    readonly text: string;
-    readonly why: string | null;
-    readonly anchor?: string | null;
+    readonly id: FactId;
+    readonly text: Text;
+    readonly why: Text | null;
+    readonly anchor?: Text | null;
 }
 
 export interface CloseOp {
     readonly op: 'close';
-    readonly id: string;
+    readonly id: FactId;
     readonly why: ClosedWhy | null;
     readonly anchor?: Text;
 }
@@ -70,7 +70,7 @@ export interface CloseOp {
 export type Operation = AddOp | UpdateOp | CloseOp;
 
 export interface TaskOps {
-    readonly task: string;
+    readonly task: Text;
     readonly ops: readonly Operation[];
 }
 
@@ -84,8 +84,8 @@ export interface Refusal {
 export interface RunRef {
     readonly id: RunId;
     readonly task: TaskId;
-    readonly at: number;
-    readonly language: string;
+    readonly at: Instant;
+    readonly language: Text;
     mint(): FactId;
 }
 

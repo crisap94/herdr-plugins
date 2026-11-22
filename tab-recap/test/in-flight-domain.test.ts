@@ -2,13 +2,15 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { gateOf } from '#src/recap/domain/autocompact.ts';
 import type { GateInput } from '#src/recap/domain/autocompact.ts';
-import { awaitedNames, backgroundItem, backgroundLabel, backgroundTool, flightDetail, flightOf, flightReason, holdsLane, NOT_AWAITING, NOTHING_IN_FLIGHT, observedFrom, runningCount, unreadable } from '#src/recap/domain/in-flight.ts';
+import { awaitedNames, backgroundItem, backgroundLabel, backgroundTool, flightDetail, flightOf, flightReason, holdsLane, NOT_AWAITING, NOTHING_IN_FLIGHT, observedFrom, runningCount, unreadable, ceilingOf } from '#src/recap/domain/in-flight.ts';
 import type { Awaiting, BackgroundItem, Flight } from '#src/recap/domain/in-flight.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 const NOW = 10_000_000;
-const monitor = backgroundItem(backgroundTool('Monitor'), backgroundLabel('open merge requests'));
-const waitingOn = (names: string): Awaiting => ({ kind: 'on', names: awaitedNames(names) });
-const flight = (count: number, background: readonly BackgroundItem[], awaiting: Awaiting): Flight => flightOf(observedFrom(runningCount(count), background, flightReason(`${count} running`)), awaiting);
+const monitor = backgroundItem(backgroundTool(textOf('Monitor')), backgroundLabel(textOf('open merge requests')));
+const waitingOn = (names: string): Awaiting => ({ kind: 'on', names: awaitedNames(textOf(names)) });
+const flight = (count: number, background: readonly BackgroundItem[], awaiting: Awaiting): Flight => flightOf(observedFrom(runningCount(countOf(count)), background, flightReason(textOf(`${count} running`))), awaiting);
 const lane = (over: Partial<GateInput> = {}): GateInput => ({ kind: 'claude', kinds: ['claude'], shadowKinds: [], busy: false, flight: null, share: 62, minimum: 40, ceiling: 80, now: NOW, lastBreakAt: null, lastDecisionAt: null, cooldownMs: 600_000, unchanged: false, ...over });
 
 test('only foreground work holds the gate, at any share; background work never does', () => {
@@ -19,7 +21,7 @@ test('only foreground work holds the gate, at any share; background work never d
 });
 
 test('an unreadable reader holds the gate at any share', () => {
-    const unknownFlight = flightOf(unreadable(flightReason('no transcript reader for claude')), NOT_AWAITING);
+    const unknownFlight = flightOf(unreadable(flightReason(textOf('no transcript reader for claude'))), NOT_AWAITING);
     assert.equal(gateOf(lane({ flight: unknownFlight })).gate, 'in-flight');
     assert.equal(gateOf(lane({ flight: unknownFlight, share: 95 })).gate, 'in-flight');
 });
@@ -41,21 +43,21 @@ test('the cheap gates still come first', () => {
 });
 
 test('holdsLane is the one place the rule lives', () => {
-    assert.equal(holdsLane(flightOf(NOTHING_IN_FLIGHT, NOT_AWAITING), false), false);
-    assert.equal(holdsLane(flightOf(NOTHING_IN_FLIGHT, waitingOn('a')), false), true);
-    assert.equal(holdsLane(flightOf(NOTHING_IN_FLIGHT, waitingOn('a')), true), false);
+    assert.equal(holdsLane(flightOf(NOTHING_IN_FLIGHT, NOT_AWAITING), ceilingOf(false)), false);
+    assert.equal(holdsLane(flightOf(NOTHING_IN_FLIGHT, waitingOn('a')), ceilingOf(false)), true);
+    assert.equal(holdsLane(flightOf(NOTHING_IN_FLIGHT, waitingOn('a')), ceilingOf(true)), false);
 });
 
 test('the detail says what held the lane, what the ceiling overrode, and what kept running', () => {
-    assert.equal(flightDetail(flight(2, [], NOT_AWAITING), false), '2 running');
-    assert.equal(flightDetail(flightOf(unreadable(flightReason('screen transcripts do not contain in-flight work')), NOT_AWAITING), true), 'screen transcripts do not contain in-flight work');
-    assert.equal(flightDetail(flight(0, [], waitingOn('reviewer')), false), 'awaiting reviewer');
-    assert.equal(flightDetail(flight(0, [], waitingOn('reviewer')), true), 'ceiling-overrides-wait (awaiting reviewer)');
-    assert.equal(flightDetail(flight(0, [monitor, monitor], NOT_AWAITING), false), 'background: 2 kept running');
-    assert.equal(flightDetail(flight(0, [monitor], waitingOn('reviewer')), true), 'ceiling-overrides-wait (awaiting reviewer); background: 1 kept running');
-    assert.equal(flightDetail(flight(0, [], NOT_AWAITING), true), null);
+    assert.equal(flightDetail(flight(2, [], NOT_AWAITING), ceilingOf(false)), '2 running');
+    assert.equal(flightDetail(flightOf(unreadable(flightReason(textOf('screen transcripts do not contain in-flight work'))), NOT_AWAITING), ceilingOf(true)), 'screen transcripts do not contain in-flight work');
+    assert.equal(flightDetail(flight(0, [], waitingOn('reviewer')), ceilingOf(false)), 'awaiting reviewer');
+    assert.equal(flightDetail(flight(0, [], waitingOn('reviewer')), ceilingOf(true)), 'ceiling-overrides-wait (awaiting reviewer)');
+    assert.equal(flightDetail(flight(0, [monitor, monitor], NOT_AWAITING), ceilingOf(false)), 'background: 2 kept running');
+    assert.equal(flightDetail(flight(0, [monitor], waitingOn('reviewer')), ceilingOf(true)), 'ceiling-overrides-wait (awaiting reviewer); background: 1 kept running');
+    assert.equal(flightDetail(flight(0, [], NOT_AWAITING), ceilingOf(true)), null);
 });
 
 test('a background item without a label is named by its tool', () => {
-    assert.deepEqual(backgroundItem(backgroundTool('Bash'), null), { tool: 'Bash', label: 'Bash' });
+    assert.deepEqual(backgroundItem(backgroundTool(textOf('Bash')), null), { tool: 'Bash', label: 'Bash' });
 });

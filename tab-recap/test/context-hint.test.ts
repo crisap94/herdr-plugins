@@ -14,6 +14,8 @@ import type { CompactLimits } from '#src/ports/compact-limits.ts';
 import { memoryStore } from './db/support.ts';
 import { agentKind } from '#src/recap/domain/ids.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
+import { countOf } from '#src/recap/domain/count.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const noGlow = (): null => null;
 const noLimits: CompactLimits = { limitOf: () => ({ window: null, percent: null }) };
@@ -23,11 +25,11 @@ const view = (context: ContextUse | null, compactHint: number | null, messages: 
 }, 60, noGlow).join('\n');
 
 test('a lane header shows the hint with the percentage and the window it was measured against once the threshold is reached', () => {
-    const use: ContextUse = { tokens: 116_280, window: 258_400, source: 'agent' };
+    const use: ContextUse = { tokens: countOf(116_280), window: countOf(258_400), source: 'agent' };
     assert.match(view(use, 40), /compact\? 45% of 258k/);
-    assert.match(view({ tokens: 450_000, window: 1_000_000, source: 'table' }, 40), /compact\? 45% of 1M/);
+    assert.match(view({ tokens: countOf(450_000), window: countOf(1_000_000), source: 'table' }, 40), /compact\? 45% of 1M/);
     assert.match(view(use, 40, es), /¿compactar\? 45% de 258k/);
-    assert.ok(!view({ ...use, tokens: 100_000 }, 40).includes('compact?'), 'under the threshold: nothing');
+    assert.ok(!view({ ...use, tokens: countOf(100_000) }, 40).includes('compact?'), 'under the threshold: nothing');
     assert.ok(!view(use, null).includes('compact?'), 'hint off: nothing');
     assert.ok(!view(null, 40).includes('compact?'), 'unknown use: nothing');
     assert.ok(!view(use, 50).includes('compact?'), 'the threshold is the operator\'s');
@@ -42,7 +44,7 @@ function reader(agent: string, model: string | null, tokens: number, window: num
         locate: () => Promise.resolve({ kind: 'located', source: sourcePathOf('s') }),
         read: () => Promise.reject(new Error('not used')),
         latestPrompt: () => Promise.reject(new Error('not used')),
-        observed: () => Promise.resolve({ kind: 'observed', observed: { tokens, peak: tokens, window, model } }),
+        observed: () => Promise.resolve({ kind: 'observed', observed: { tokens: countOf(tokens), peak: countOf(tokens), window: window === null ? null : countOf(window), model: model === null ? null : textOf(model) } }),
     };
 }
 const catalogue = (windows: Record<string, number>): ModelCatalogue => ({ windowOf: (model) => windows[model] ?? null });
@@ -65,7 +67,7 @@ test('lane contexts: runtime window first, the setting overrides, a change is re
 
 test('a lane keeps its context use through the database: stored with the view, read back whole', () => {
     const { views } = memoryStore();
-    const use: ContextUse = { tokens: 450_000, window: 1_000_000, source: 'observed' };
+    const use: ContextUse = { tokens: countOf(450_000), window: countOf(1_000_000), source: 'observed' };
     views.writeTab({ tab: 'w1:t1', column: null, at: 5, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: null, context: use }, { pane: 'w1:p2', agent: 'codex', status: 'idle', title: null, cwd: null }] });
     assert.deepEqual(views.readTab('w1:t1')?.lanes.map((each) => each.context), [use, null]);
 });

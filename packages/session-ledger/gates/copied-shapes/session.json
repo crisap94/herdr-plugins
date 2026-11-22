@@ -15,5 +15,5 @@
   { "export": "Observed", "origin": "packages/session-ledger/src/recap/domain/in-flight.ts" },
   { "export": "Flight", "origin": "packages/session-ledger/src/recap/domain/in-flight.ts" },
   { "export": "WindowSource", "origin": "packages/session-ledger/src/recap/domain/compaction.ts" },
-  { "export": "ContextUse", "origin": "packages/session-ledger/src/recap/domain/legacy.ts" }
+  { "export": "ContextUse", "origin": "packages/session-ledger/src/recap/domain/compaction.ts" }
 ]

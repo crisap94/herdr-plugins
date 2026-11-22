@@ -25,7 +25,7 @@ const recent: readonly Entry[] = [
 ];
 const material = (over: Partial<CompactionMaterial> = {}): CompactionMaterial => ({
     agent: { kind: 'claude', label: 'cart', repo: '/home/dev/shop', branch: 'feat/cart' }, note: null,
-    current: { ...NO_SECTIONS, goal: 'Ship the cart' }, history, lastBreakAt: null, recent, clock: { now: NOW, zone: 'UTC' }, ...over,
+    current: { ...NO_SECTIONS, goal: textOf('Ship the cart') }, history, lastBreakAt: null, recent, clock: { now: NOW, zone: 'UTC' }, ...over,
 });
 
 const FIXTURES: Readonly<Record<string, CompactionMaterial>> = {

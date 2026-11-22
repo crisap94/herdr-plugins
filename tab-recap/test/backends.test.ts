@@ -13,15 +13,16 @@ import { fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import { causeOf } from './fakes/cause.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const found = (...ids: string[]): HarnessesResult => ({ kind: 'available', ids });
 const get = (values: Record<string, string>) => (key: string): string | undefined => values[key];
 const down = unknown({ why: 'unreachable', detail: causeOf('no socket') });
 
 test('auto: the first of claude → codex → opencode that is available; a named one is taken as named', () => {
-    assert.equal(pick('auto', ['opencode', 'codex']), 'codex');
-    assert.equal(pick('auto', ['opencode']), 'opencode');
-    assert.equal(pick('auto', ['pi', 'custom']), null);
+    assert.equal(pick('auto', [textOf('opencode'), textOf('codex')]), 'codex');
+    assert.equal(pick('auto', [textOf('opencode')]), 'opencode');
+    assert.equal(pick('auto', [textOf('pi'), textOf('custom')]), null);
     assert.equal(pick('auto', []), null);
     assert.equal(pick('opencode', []), 'opencode');
 });

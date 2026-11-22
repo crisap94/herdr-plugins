@@ -107,7 +107,7 @@ export interface Config {
 }
 
 export function legacyReader(read: SettingReader): LegacyReader {
-    return (key) => (key.trim() === '' ? undefined : read(environmentName(key)));
+    return (key) => (key.trim() === '' ? undefined : read(environmentName(must(parseText(key)))));
 }
 
 const textOf = (raw: string | undefined): Text | undefined => {

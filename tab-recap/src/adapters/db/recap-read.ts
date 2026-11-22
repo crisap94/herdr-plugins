@@ -7,7 +7,7 @@ import { recapRunningOf } from '#src/ports/recap-records.ts';
 import { cursorOf as positionOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
-import { parseText, parseTextOrNull, type Text } from '#src/recap/domain/text.ts';
+import { parseText, parseTextOrNull, type Text, textOf } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import type { LaneCursor, TabRecap } from '#src/ports/recap-records.ts';
@@ -18,6 +18,7 @@ import { blob, flag, maybeText, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
 import { typeIdOf } from './typeid.ts';
 import type { LedgerRows } from './ledger-rows.ts';
+import { paneIdOf, type PaneId } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 interface LatestRun {
     readonly run: Uint8Array | null;
@@ -45,18 +46,18 @@ export class RecapReader {
             .orderBy(asc(runTaskLanes.taskId), asc(runTaskLanes.position)).all();
         const taskRows = this.orm.select({ task_id: runTasks.taskId, key: tasks.key, name: runTasks.name, legacy_markdown: runTasks.legacyMarkdown })
             .from(runTasks).innerJoin(tasks, eq(tasks.id, runTasks.taskId)).where(eq(runTasks.runId, run)).orderBy(asc(runTasks.position)).all();
-        const lanes = new Map<string, string[]>();
+        const lanes = new Map<string, PaneId[]>();
         for (const row of laneRows) {
             const task = typeIdOf('task', blob(row, 'task_id'));
-            lanes.set(task, [...(lanes.get(task) ?? []), text(row, 'pane')]);
+            lanes.set(task, [...(lanes.get(task) ?? []), paneIdOf(text(row, 'pane'))]);
         }
         return taskRows.map((row) => {
             const legacy = maybeText(row, 'legacy_markdown');
             const key = text(row, 'key');
-            const sections = legacy === null ? sectionsOfOpen(this.ledger.openOf({ tab, key })) : null;
+            const sections = legacy === null ? sectionsOfOpen(this.ledger.openOf({ tab, key: textOf(key) })) : null;
             return {
-                id: key, name: maybeText(row, 'name') ?? '', lanes: lanes.get(typeIdOf('task', blob(row, 'task_id'))) ?? [], sections,
-                markdown: sections === null ? (legacy ?? '') : renderRecap(sections, language === 'es' ? 'es' : 'en'),
+                id: textOf(key), name: textOf(maybeText(row, 'name') ?? ''), lanes: lanes.get(typeIdOf('task', blob(row, 'task_id'))) ?? [], sections,
+                markdown: textOf(sections === null ? (legacy ?? '') : renderRecap(sections, language === 'es' ? 'es' : 'en')),
             };
         });
     }

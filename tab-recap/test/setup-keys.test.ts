@@ -8,6 +8,7 @@ import { tabId } from '#src/recap/domain/ids.ts';
 import { memoryStore, seed } from '#test/db/support.ts';
 import { oneTask } from '#test/support.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const ESC = String.fromCodePoint(0x1b);
 const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
@@ -276,7 +277,7 @@ test('a saved language change asks a rewrite of the tab it was opened from and o
         store.views.writeTab({ tab, column: null, at: 1, lanes: [{ pane, agent: 'claude', status: 'idle', title: null, cwd: null }] });
     }
     for (const tab of ['w1:t1', 'w1:t2']) {
-        seed(store, { ...blankRecap(tabId(tab)), tasks: oneTask('## Goal\n- ship', { goal: 'ship', now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: instant(1) });
+        seed(store, { ...blankRecap(tabId(tab)), tasks: oneTask('## Goal\n- ship', { goal: textOf('ship'), now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: instant(1) });
     }
     assert.deepEqual(requestRewrites(tabId('w1:t9'), store), [tabId('w1:t9'), tabId('w1:t1'), tabId('w1:t2')], 'the opener first, then every tab with a recap; w1:t3 has none');
     assert.deepEqual(store.requests.takeRequests(), [tabId('w1:t9'), tabId('w1:t1'), tabId('w1:t2')]);

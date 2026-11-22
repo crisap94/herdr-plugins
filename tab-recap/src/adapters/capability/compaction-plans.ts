@@ -5,7 +5,7 @@ import { duration } from '#src/recap/domain/time.ts';
 import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import type { AgentKind } from '#src/recap/domain/ids.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import type { CompactionPlanner } from '#src/ports/compaction-plans.ts';
 import { supported } from '#src/ports/capability.ts';
 import type { Capability } from '#src/ports/capability.ts';
@@ -44,7 +44,7 @@ export const COMPACTION_PLANS = {
 
 export const compactionPlanner: CompactionPlanner = {
     forKind(kind: AgentKind, guidance: Text): CompactionPlanResult {
-        const registered = registeredKindOf(kind);
+        const registered = registeredKindOf(textOf(kind));
         if (registered === null) {
             return unsupported(capabilityWording('compaction-unavailable', must(parseText(kind))));
         }

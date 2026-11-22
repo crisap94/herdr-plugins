@@ -38,8 +38,8 @@ export function factOf(fact: Fact, webs: Webs): GuiFact {
         id: idOf(fact), section: fact.section, text: must(parseText(fact.text)), spans: spansOf(fact, webs),
         why: fact.why === NOT_RECORDED ? null : orElse(parseText(fact.why), null),
         ref: orElse(parseText(fact.ref), null), agent: orElse(parseText(fact.agent), null),
-        firstAt: instant(fact.firstAt), lastAt: instant(fact.lastAt), state: fact.state, closedWhy: fact.closedWhy,
-        closedAt: fact.closedAt === null ? null : instant(fact.closedAt),
+        firstAt: fact.firstAt, lastAt: fact.lastAt, state: fact.state, closedWhy: fact.closedWhy,
+        closedAt: fact.closedAt === null ? null : fact.closedAt,
     };
 }
 
@@ -78,5 +78,7 @@ export function timelineRowsOf(facts: readonly Fact[], breaks: readonly GuiBreak
 }
 
 export function storyOf(story: ExpandedStory | null, webs: Webs): GuiStory | null {
-    return story === null ? null : { text: must(parseText(story.text)), spans: spansOf(story, webs), at: instant(story.at) };
+    if (story === null) return null;
+    const text = must(parseText(story.text));
+    return { text, spans: spansOf({ text }, webs), at: instant(story.at) };
 }

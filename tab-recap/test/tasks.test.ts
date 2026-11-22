@@ -34,12 +34,13 @@ import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { cursorOf, sourcePathOf, grewOf } from '#src/ports/transcripts.ts';
+import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
-const sections = (goal: string, rest: Partial<typeof NO_SECTIONS> = {}): typeof NO_SECTIONS => ({ ...NO_SECTIONS, goal, ...rest });
-const taskOf = (id: string, name: string, lanes: readonly string[], goal = id): RecapTask => ({ id, name, lanes, sections: sections(goal), markdown: `## Goal\n${goal}` });
-const shape = (id: string, name: string, lanes: readonly string[]): TaskShape => ({ id, name, lanes });
+const sections = (goal: string, rest: Partial<typeof NO_SECTIONS> = {}): typeof NO_SECTIONS => ({ ...NO_SECTIONS, goal: textOf(goal), ...rest });
+const taskOf = (id: string, name: string, lanes: readonly string[], goal = id): RecapTask => ({ id: textOf(id), name: textOf(name), lanes: lanes.map((lane) => paneIdOf(lane)), sections: sections(goal), markdown: textOf(`## Goal\n${goal}`) });
+const shape = (id: string, name: string, lanes: readonly string[]): TaskShape => ({ id: textOf(id), name: textOf(name), lanes: lanes.map((lane) => paneIdOf(lane)) });
 
-const lanesIn = (place: string | null, ...panes: readonly string[]): PlacedLane[] => panes.map((pane) => ({ pane, place }));
+const lanesIn = (place: string | null, ...panes: readonly string[]): PlacedLane[] => panes.map((pane) => ({ pane: paneIdOf(pane), place: place === null ? null : textOf(place) }));
 const PAY = '/work/pay';
 const DOCS = '/work/docs';
 
@@ -79,7 +80,7 @@ test('grouping: when every lane of a tab\'s only task is gone, the next lanes co
 
 test('grouping: a key that has ever held a ledger is not given to another task, even when its task is long gone', () => {
     const before = [shape('t1', 'Payments', ['w1:p1'])];
-    assert.deepEqual(keptGrouping(before, [...lanesIn(PAY, 'w1:p1'), ...lanesIn(DOCS, 'w1:p2')], ['t1', 't2', 't3']).map((task) => task.id), ['t1', 't4']);
+    assert.deepEqual(keptGrouping(before, [...lanesIn(PAY, 'w1:p1'), ...lanesIn(DOCS, 'w1:p2')], [textOf('t1'), textOf('t2'), textOf('t3')]).map((task) => task.id), ['t1', 't4']);
 });
 
 test('grouping: a tab that had one unnamed task and gets a lane elsewhere names both tasks', () => {
@@ -183,7 +184,7 @@ test('two tasks: each under its own name, its lanes first, then its own recap; t
     const recap: TabRecap = {
         ...blankRecap(tabId('w1:t1')), at: instant(0), backend: textOf('claude/haiku'),
         tasks: [
-            { ...taskOf('t1', 'Payments v2', ['w1:p1', 'w1:p2'], 'ship payments'), sections: sections('ship payments', { needs: ['approve the deploy'] }) },
+            { ...taskOf('t1', 'Payments v2', ['w1:p1', 'w1:p2'], 'ship payments'), sections: sections('ship payments', { needs: [textOf('approve the deploy')] }) },
             { ...taskOf('t2', '', ['w1:p3'], 'write docs'), sections: sections('write docs') },
         ],
     };
@@ -208,10 +209,10 @@ const view = (tasks: readonly RecapTask[]): Parameters<typeof presentBar>[0] =>
     ({ tab: tab(LANES), recap: { ...blankRecap(tabId('w1:t1')), tasks }, notes: new Map(), warnings: [], now: 0, messages: en });
 
 test('the bar takes the most urgent "needs you" across tasks — else the first "now"', () => {
-    const quiet = { ...taskOf('t1', 'A', ['w1:p1']), sections: sections('a', { now: ['running CI'] }) };
-    const blocked = { ...taskOf('t2', 'B', ['w1:p2']), sections: sections('b', { needs: ['approve the deploy'], now: ['waiting'] }) };
+    const quiet = { ...taskOf('t1', 'A', ['w1:p1']), sections: sections('a', { now: [textOf('running CI')] }) };
+    const blocked = { ...taskOf('t2', 'B', ['w1:p2']), sections: sections('b', { needs: [textOf('approve the deploy')], now: [textOf('waiting')] }) };
     assert.match(strip(presentBar(view([quiet, blocked]), 60)), /needs you: approve the deploy/);
-    assert.match(strip(presentBar(view([quiet, { ...blocked, sections: sections('b', { now: ['later'] }) }]), 60)), /running CI/);
+    assert.match(strip(presentBar(view([quiet, { ...blocked, sections: sections('b', { now: [textOf('later')] }) }]), 60)), /running CI/);
     assert.match(strip(presentBar({ ...view([]), recap: { ...blankRecap(tabId('w1:t1')), tasks: oneTask('## Waiting on you\n- answer me') } }, 60)), /needs you: answer me/);
 });
 

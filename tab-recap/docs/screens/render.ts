@@ -21,6 +21,8 @@ import { expandedLines } from './expanded-fixture.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { textOf, parseTextOrNull } from '#src/recap/domain/text.ts';
+import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 export interface Page {
     /** file name without extension */
@@ -124,13 +126,13 @@ const FIXTURES: Readonly<Record<'en' | 'es', Fixture>> = {
         prompts: ['keep the old endpoint until Friday', 'add a test for expired cards'],
         backend: 'claude/haiku',
         sections: {
-            goal: 'Move checkout to the v2 payments API, no downtime.',
-            now: ['Wiring the v2 client behind a feature flag', 'Unit tests are green'],
-            needs: ['Should v1 keep accepting gift cards after the cut-over?'],
-            done: ['!938 merged: every v1 field mapped to v2', 'Added retries with backoff to the client'],
+            goal: textOf('Move checkout to the v2 payments API, no downtime.'),
+            now: [textOf('Wiring the v2 client behind a feature flag'), textOf('Unit tests are green')],
+            needs: [textOf('Should v1 keep accepting gift cards after the cut-over?')],
+            done: [textOf('!938 merged: every v1 field mapped to v2'), textOf('Added retries with backoff to the client')],
             decisions: [],
-            next: ['Test for expired cards', 'Canary at 5% of traffic'],
-            links: ['`src/payments/v2/client.ts`', '`feat/payments-v2`', '!940'], rules: ['Never push to main'],
+            next: [textOf('Test for expired cards'), textOf('Canary at 5% of traffic')],
+            links: [textOf('`src/payments/v2/client.ts`'), textOf('`feat/payments-v2`'), textOf('!940')], rules: [textOf('Never push to main')],
         },
     },
     es: {
@@ -139,13 +141,13 @@ const FIXTURES: Readonly<Record<'en' | 'es', Fixture>> = {
         prompts: ['mantén el endpoint viejo hasta el viernes', 'añade una prueba para tarjetas vencidas'],
         backend: 'claude/haiku',
         sections: {
-            goal: 'Pasar el checkout a la API de pagos v2, sin cortes.',
-            now: ['Conectando el cliente v2 tras un feature flag', 'Las pruebas unitarias pasan'],
-            needs: ['¿v1 debe seguir aceptando tarjetas de regalo tras el cambio?'],
-            done: ['!938 fusionado: cada campo de v1 asignado en v2', 'Reintentos con espera añadidos al cliente'],
+            goal: textOf('Pasar el checkout a la API de pagos v2, sin cortes.'),
+            now: [textOf('Conectando el cliente v2 tras un feature flag'), textOf('Las pruebas unitarias pasan')],
+            needs: [textOf('¿v1 debe seguir aceptando tarjetas de regalo tras el cambio?')],
+            done: [textOf('!938 fusionado: cada campo de v1 asignado en v2'), textOf('Reintentos con espera añadidos al cliente')],
             decisions: [],
-            next: ['Prueba de tarjetas vencidas', 'Canario al 5 % del tráfico'],
-            links: ['`src/payments/v2/client.ts`', '`feat/payments-v2`', '!940'], rules: ['Nunca hacer push a main'],
+            next: [textOf('Prueba de tarjetas vencidas'), textOf('Canario al 5 % del tráfico')],
+            links: [textOf('`src/payments/v2/client.ts`'), textOf('`feat/payments-v2`'), textOf('!940')], rules: [textOf('Nunca hacer push a main')],
         },
     },
 };
@@ -161,12 +163,12 @@ function columnView(fixture: Fixture): ColumnView {
     const tab: TabView = {
         tab: 'w1:t1', column: 'w1:p9', at: NOW, daemonVersion: VERSION,
         lanes: [
-            { pane: 'w1:p1', agent: 'claude', status: 'blocked', title: fixture.title, cwd: null, lastPrompt: null, web: WEB, context: { tokens: 520_000, window: 1_000_000, source: 'catalogue' } },
-            { pane: 'w1:p2', agent: 'codex', status: 'working', title: null, cwd: null, lastPrompt: null, web: WEB, context: { tokens: 61_000, window: 258_400, source: 'agent' } },
+            { pane: 'w1:p1', agent: 'claude', status: 'blocked', title: fixture.title, cwd: null, lastPrompt: null, web: WEB, context: { tokens: countOf(520_000), window: countOf(1_000_000), source: 'catalogue' } },
+            { pane: 'w1:p2', agent: 'codex', status: 'working', title: null, cwd: null, lastPrompt: null, web: WEB, context: { tokens: countOf(61_000), window: countOf(258_400), source: 'agent' } },
         ],
     };
     const recap: TabRecap = {
-        ...blankRecap(tabId('w1:t1')), at: instant(NOW - 120_000), backend: textOf(fixture.backend), tasks: [{ id: 't1', name: '', lanes: ['w1:p1', 'w1:p2'], sections: fixture.sections, markdown: renderRecap(fixture.sections, fixture.messages.locale) }],
+        ...blankRecap(tabId('w1:t1')), at: instant(NOW - 120_000), backend: textOf(fixture.backend), tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1'), paneIdOf('w1:p2')], sections: fixture.sections, markdown: renderRecap(fixture.sections, fixture.messages.locale) }],
         lanes: [lane('w1:p1', 'claude', fixture.prompts[0], fixture.title), lane('w1:p2', 'codex', fixture.prompts[1], null)],
     };
     return { tab, recap, notes: new Map(), warnings: [], now: NOW, messages: fixture.messages, version: VERSION, compactHint: 40 };

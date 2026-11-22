@@ -4,7 +4,7 @@ import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { ClosedLaneList, ClosedLaneRead, ClosedLaneRecord, ClosureAssociation, ClosureReader, ClosureRecorder, ClosureRuns, ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { LastRun } from '#src/ports/recap-records.ts';
 import { unreadableOf } from '#src/ports/unknowable.ts';
-import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
+import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import type { ClosedLane, ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
@@ -159,7 +159,7 @@ SELECT ${closed.tab}, ${closed.pane}, ${closed.closedAt}, ${closed.agent}, ${clo
                 .where(and(eq(closedLane.tabId, identity.tab), eq(closedLane.pane, identity.pane), eq(closedLane.closedAt, identity.closedAt))).get();
             return row === undefined ? { kind: 'absent' } : { kind: 'row', record: readOrThrow(parseClosedLaneRow(row, identity.tab)) };
         } catch (error) {
-            return unreadableOf(failureCauseOf(error));
+            return unreadableOf(failureCauseOf(parseThrown(error)));
         }
     }
 
@@ -188,7 +188,7 @@ SELECT ${closed.tab}, ${closed.pane}, ${closed.closedAt}, ${closed.agent}, ${clo
             return { kind: 'listed', records: off === 1 ? [] : this.orm.select(closedFields).from(closedLane).leftJoin(tasks, eq(tasks.id, closedLane.taskId))
                 .where(and(eq(closedLane.tabId, tab), gte(closedLane.closedAt, cutoff), gt(closedLane.closedAt, retiredSince(tab)))).orderBy(desc(closedLane.closedAt), asc(closedLane.pane)).all().map((row) => readOrThrow(parseClosedLaneRow(row, tab))) };
         } catch (error) {
-            return unreadableOf(failureCauseOf(error));
+            return unreadableOf(failureCauseOf(parseThrown(error)));
         }
     }
 

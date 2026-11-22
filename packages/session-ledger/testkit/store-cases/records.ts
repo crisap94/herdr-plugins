@@ -5,6 +5,9 @@ import type { StoreUnderTest } from '../memory-store.ts';
 import { advanceOf, brokenFact, cursor, factAt, failedOf, isUnknownValue, lastOf, recapOf, runOf, shapeOf, shapesOf, typeIdAt } from './record-fixtures.ts';
 import { instant } from '@stateforge-labs/session-ledger';
 import { text, usd, tabId } from '../values.ts';
+import { countOf } from '../../src/recap/domain/count.ts';
+import { paneIdOf, tabIdOf } from '../../src/recap/domain/lane-shape.ts';
+import { textOf } from '../../src/recap/domain/text.ts';
 
 export const REC_1: Case<null, StoreUnderTest> = {
     id: 'REC-1',
@@ -29,7 +32,7 @@ export const REC_2: Case<null, StoreUnderTest> = {
             language: text('de'),
             costUsd: usd(0.25),
             lanes: [cursor('p1'), cursor('p2')],
-            tasks: [shapeOf('a', ['p1']), shapeOf('b', ['p2'])],
+            tasks: [shapeOf('a', [paneIdOf('p1')]), shapeOf('b', [paneIdOf('p2')])],
         });
         store.records.recordRun(run);
         const recap = recapOf(store, 'tab-1');
@@ -99,28 +102,28 @@ export const REC_6: Case<null, StoreUnderTest> = {
     title: 'recordRun that throws half way leaves nothing of the run visible',
     level: 'full',
     async run(_world, store) {
-        store.records.recordRun(runOf({ at: instant(100), cause: 'focused', language: text('de'), changed: [factAt(typeIdAt(1), { text: 'kept' })] }));
+        store.records.recordRun(runOf({ at: instant(100), cause: 'focused', language: text('de'), changed: [factAt(typeIdAt(1), { text: textOf('kept') })] }));
         const recap = store.records.readRecap(scope('tab-1'));
         const last = store.records.lastRunOf(scope('tab-1'));
-        const factsA = store.facts.allOf({ tab: 'tab-1', key: 'a' });
-        const factsB = store.facts.allOf({ tab: 'tab-1', key: 'b' });
+        const factsA = store.facts.allOf({ tab: tabIdOf('tab-1'), key: textOf('a') });
+        const factsB = store.facts.allOf({ tab: tabIdOf('tab-1'), key: textOf('b') });
         const broken = runOf({
             at: instant(900),
             cause: 'requested',
             language: text('fr'),
             backend: text('codex'),
             lanes: [cursor('p7'), cursor('p8')],
-            tasks: [shapeOf('a', ['p7']), shapeOf('b', ['p8'])],
-            marks: [{ pane: 'p7', at: 900, cursor: 3 }],
-            changed: [factAt(typeIdAt(2), { text: 'first half' }), brokenFact()],
+            tasks: [shapeOf('a', [paneIdOf('p7')]), shapeOf('b', [paneIdOf('p8')])],
+            marks: [{ pane: paneIdOf('p7'), at: instant(900), cursor: countOf(3) }],
+            changed: [factAt(typeIdAt(2), { text: textOf('first half') }), brokenFact()],
         });
         assert.throws(() => {
             store.records.recordRun(broken);
         }, /a broken fact/);
         assert.deepEqual(store.records.readRecap(scope('tab-1')), recap);
         assert.deepEqual(store.records.lastRunOf(scope('tab-1')), last);
-        assert.deepEqual(store.facts.allOf({ tab: 'tab-1', key: 'a' }), factsA);
-        assert.deepEqual(store.facts.allOf({ tab: 'tab-1', key: 'b' }), factsB);
+        assert.deepEqual(store.facts.allOf({ tab: tabIdOf('tab-1'), key: textOf('a') }), factsA);
+        assert.deepEqual(store.facts.allOf({ tab: tabIdOf('tab-1'), key: textOf('b') }), factsB);
     },
 };
 
@@ -203,7 +206,7 @@ export const REC_13: Case<null, StoreUnderTest> = {
     title: 'recordRun with marks',
     level: 'full',
     async run(_world, store) {
-        store.records.recordRun(runOf({ at: instant(100), marks: [{ pane: 'p1', at: 90, cursor: 3 }] }));
+        store.records.recordRun(runOf({ at: instant(100), marks: [{ pane: paneIdOf('p1'), at: instant(90), cursor: countOf(3) }] }));
         const stored = store.marksOf(scope('tab-1'));
         assert.deepEqual(stored, [{ at: 90 }]);
         store.records.recordRun(runOf({ at: instant(200) }));

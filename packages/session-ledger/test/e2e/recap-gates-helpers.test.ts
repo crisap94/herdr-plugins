@@ -13,24 +13,27 @@ import { subjectOf } from '@stateforge-labs/session-ledger/unstable/recap/domain
 import { hasReference } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/link.ts';
 import { isSpecific } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/specific.ts';
 import { foldedOf, jaccard as setJaccard, tokensOf as wordTokensOf, wordsOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/words.ts';
+import { factIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
+import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const count = brand<number, 'Count'>;
 
 const fact: Fact = {
-    id: brand<string, 'FactId'>('f1'), task: { tab: 'tab-1', key: 't1' }, section: 'decisions', text: 'use sqlite', why: 'it is local', ref: null, agent: null, anchor: null,
-    firstAt: 1, lastAt: 1, state: 'open', closedWhy: null, closedAt: null, language: 'en',
+    id: brand<string, 'FactId'>('f1'), task: { tab: tabIdOf('tab-1'), key: textOf('t1') }, section: 'decisions', text: textOf('use sqlite'), why: textOf('it is local'), ref: null, agent: null, anchor: null,
+    firstAt: instant(1), lastAt: instant(1), state: 'open', closedWhy: null, closedAt: null, language: textOf('en'),
 };
 
 test('the ledger gate helpers name a shown fact, quote an op and count findings', () => {
     assert.equal(docIdOf(fact, new Map([[textOf('D1'), fact]])), 'D1');
     assert.equal(docIdOf(fact, new Map()), null);
-    const close = { op: 'close', id: 'D1', why: 'done' } as const;
+    const close = { op: 'close', id: factIdOf('D1'), why: 'done' } as const;
     assert.equal(quoted(close), 'close D1');
     const finding = { at: count(0), gate: 'G6', outcome: 'refuse', reason: textOf('unknown') } as const;
     assert.equal(correctionOf([close], [finding]), 'G6: close D1 — unknown');
     const stats = addStats(NO_STATS, { kept: [], refused: [finding], flagged: [] }, count(2));
     assert.deepEqual(stats, { refused: { [gateName('G6')]: count(1) }, flagged: {}, dropped: count(2) });
-    const item = itemOf({ op: 'update', id: 'D1', text: 'use postgres', why: null }, count(3), new Map([[textOf('D1'), fact]]));
+    const item = itemOf({ op: 'update', id: factIdOf('D1'), text: textOf('use postgres'), why: null }, count(3), new Map([[textOf('D1'), fact]]));
     assert.deepEqual(item, { task: '', section: 'decisions', position: 3, text: 'use postgres — it is local' });
 });
 
@@ -47,10 +50,10 @@ test('the item gate helpers read words, language, references and the subject', (
 });
 
 test('the word helpers fold, tokenise and compare, and a specific item names something', () => {
-    assert.deepEqual(wordsOf('Fix the CI, now!'), ['Fix', 'the', 'CI', 'now']);
-    assert.equal(foldedOf('a,  b'), 'a b');
-    assert.deepEqual([...wordTokensOf('Fix the CI')], ['fix', 'the']);
-    assert.equal(setJaccard(new Set(['a', 'b']), new Set(['b', 'c'])), 1 / 3);
+    assert.deepEqual(wordsOf(textOf('Fix the CI, now!')), ['Fix', 'the', 'CI', 'now']);
+    assert.equal(foldedOf(textOf('a,  b')), 'a b');
+    assert.deepEqual([...wordTokensOf(textOf('Fix the CI'))], ['fix', 'the']);
+    assert.equal(setJaccard(new Set([textOf('a'), textOf('b')]), new Set([textOf('b'), textOf('c')])), 1 / 3);
     assert.equal(setJaccard(new Set(), new Set()), 0);
     assert.equal(isSpecific(textOf('bump to v2')), true);
     assert.equal(isSpecific(textOf('make it better')), false);

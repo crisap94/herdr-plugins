@@ -17,6 +17,7 @@ import { answer, scripted as scriptedEnumerator } from '#test/fakes/enumerator.t
 import { writer } from '#test/fakes/golden-writer.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const FILE = join(import.meta.dirname, 'fixtures', 'replay-claude.jsonl');
 const LABEL = 'replay:t1';
@@ -49,7 +50,7 @@ function ledgerOf(store: Store): string {
         ].join('');
     });
     const recap = storeRead(store.records.readRecap(tabId(LABEL)));
-    const facts = (recap?.tasks ?? []).flatMap((task) => storeRead(store.ledger.allOf({ tab: LABEL, key: task.id })));
+    const facts = (recap?.tasks ?? []).flatMap((task) => storeRead(store.ledger.allOf({ tab: tabIdOf(LABEL), key: task.id })));
     return [...parts, section('recap', json(recap)), section('last run', json(storeRead(store.records.lastRunOf(tabId(LABEL))))), section('facts', json(facts))].join('');
 }
 

@@ -4,6 +4,7 @@ import type { AgentSession, SessionId } from '#src/recap/domain/ids.ts';
 import { sessionFromAgentSession } from '#src/recap/domain/session-identity.ts';
 import { supported } from '#src/ports/capability.ts';
 import type { Capability } from '#src/ports/capability.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const SESSION_OF = {
     claude: supported(sessionFromAgentSession),
@@ -12,7 +13,7 @@ const SESSION_OF = {
 } satisfies Readonly<Record<RegisteredKind, Capability<(kind: string, agentSession: AgentSession) => SessionId, never>>>;
 
 export function sessionOfForKind(kind: string, agentSession: AgentSession): SessionId | null {
-    const registered = registeredKindOf(kind);
+    const registered = registeredKindOf(textOf(kind));
     if (registered === null) return sessionFromAgentSession(kind, agentSession);
     const capability = SESSION_OF[registered];
     return capability.kind === 'supported' ? capability.value(kind, agentSession) : null;

@@ -7,11 +7,12 @@ import type { CloseOp, Operation } from '@stateforge-labs/session-ledger/unstabl
 import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import { textOf, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { factIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
 
-const SOURCE = textOf(foldedOf('Merged !256 after both pipelines went green.\nThe release is tagged: v1.9.0'));
+const SOURCE = foldedOf(textOf('Merged !256 after both pipelines went green.\nThe release is tagged: v1.9.0'));
 const context: GateContext = { now: instant(1), language: textOf('en'), agents: [], shown: new Map(), open: [], closedLately: [], source: SOURCE };
 const quote = (value: string): Text => brand<string, 'Text'>(value);
-const close = (why: CloseOp['why'], anchor?: string): Operation => ({ op: 'close', id: 'f3', why, ...(anchor === undefined ? {} : { anchor: quote(anchor) }) });
+const close = (why: CloseOp['why'], anchor?: string): Operation => ({ op: 'close', id: factIdOf('f3'), why, ...(anchor === undefined ? {} : { anchor: quote(anchor) }) });
 
 test('G13: a close as done with no anchor is refused once, and so is an empty anchor', () => {
     const noAnchor = closeEvidenceGate.check([close('done')], context);
@@ -36,8 +37,8 @@ test('G13: a close as superseded is not checked, with or without an anchor', () 
 });
 
 test('G13: adds and updates are not checked', () => {
-    const add: Operation = { op: 'add', section: 'done', text: 'Merged !256', why: null, ref: null, at: null, agent: null };
-    const update: Operation = { op: 'update', id: 'f3', text: 'Keep SQLite', why: null };
+    const add: Operation = { op: 'add', section: 'done', text: textOf('Merged !256'), why: null, ref: null, at: null, agent: null };
+    const update: Operation = { op: 'update', id: factIdOf('f3'), text: textOf('Keep SQLite'), why: null };
     assert.deepEqual(closeEvidenceGate.check([add, update], context), []);
 });
 

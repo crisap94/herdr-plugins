@@ -25,6 +25,7 @@ import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const THIS_FILE = 'test/engine-plain-session.test.ts';
 const HERDR_SIDE = ['src/adapters/herdr/', 'src/adapters/herdr-core/', 'src/transport/', 'src/daemon/', 'src/column/', 'src/setup/', 'src/compact/'];
@@ -87,7 +88,7 @@ test('the engine follows a plain Claude session with no herdr: runs per turn, fa
         await host.engine.compacted(host.scope, [host.session]);
         assert.equal(runsOf(host), 4, 'the compaction is read in one more run');
         const tasks = storeRead(scratch.store.records.readRecap(tabId(String(host.scope))))?.tasks ?? [];
-        const facts = tasks.flatMap((task) => storeRead(scratch.store.ledger.allOf({ tab: String(host.scope), key: task.id })));
+        const facts = tasks.flatMap((task) => storeRead(scratch.store.ledger.allOf({ tab: tabIdOf(String(host.scope)), key: task.id })));
         assert.deepEqual(facts.map((fact) => fact.text).toSorted(), ['Add a cart to the shop', 'Added cart totals in src/totals.ts', 'Opened !34 for feat/cart', 'Store carts in SQLite'].toSorted());
         const breaks = scratch.store.boundaries.breaksOf(String(host.scope));
         assert.deepEqual(breaks.map((each) => [each.kind, each.at, each.trigger]), [['compacted', Date.parse('2026-10-07T16:38:09.490Z'), 'manual']]);

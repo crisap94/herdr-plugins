@@ -11,24 +11,25 @@ import { brand } from '#src/recap/domain/brand.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { factOf } from './fakes/facts.ts';
+import { factIdOf } from '#src/recap/domain/fact.ts';
 
-const INPUT = textOf(foldedOf('Merged !256 after both pipelines went green.\n  The release is tagged:   v1.9.0 — "ship it"\nERROR: lint failed'));
-const decision = factOf('decisions', 'Keep SQLite', { why: 'one file to back up' });
+const INPUT = foldedOf(textOf('Merged !256 after both pipelines went green.\n  The release is tagged:   v1.9.0 — "ship it"\nERROR: lint failed'));
+const decision = factOf('decisions', 'Keep SQLite', { why: textOf('one file to back up') });
 const question = factOf('needs', 'Should guests keep their basket?');
 const context: GateContext = { now: instant(1), language: textOf('en'), agents: [], shown: new Map([[textOf('f3'), decision], [textOf('f4'), question]]), open: [decision, question], closedLately: [], source: INPUT };
-const add = (anchor: string | null | undefined): Operation => ({ op: 'add', section: 'done', text: 'Merged !256', why: null, ref: null, at: null, agent: null, ...(anchor === undefined ? {} : { anchor }) });
+const add = (anchor: string | null | undefined): Operation => ({ op: 'add', section: 'done', text: textOf('Merged !256'), why: null, ref: null, at: null, agent: null, ...(anchor === undefined ? {} : { anchor: anchor === null ? null : textOf(anchor) }) });
 const gates = [anchorGate, answeredGate];
-const update = (anchor?: string): Operation => ({ op: 'update', id: 'f3', text: 'Keep SQLite for 2.0', why: null, ...(anchor === undefined ? {} : { anchor }) });
+const update = (anchor?: string): Operation => ({ op: 'update', id: factIdOf('f3'), text: textOf('Keep SQLite for 2.0'), why: null, ...(anchor === undefined ? {} : { anchor: textOf(anchor) }) });
 
 test('an anchor is found after folding: whitespace and punctuation do not matter, the case does, and a quote is whole words in a row', () => {
-    assert.ok(quotedIn('Merged !256 after both pipelines', INPUT));
-    assert.ok(quotedIn('both   pipelines\nwent green', INPUT), 'newlines and runs of spaces');
-    assert.ok(quotedIn('The release is tagged: v1.9.0', INPUT), 'a colon and a dash in the source are not words');
-    assert.ok(quotedIn('"ship it"', INPUT));
-    assert.ok(!quotedIn('merged !256', INPUT), 'case is kept');
-    assert.ok(!quotedIn('Merge !256', INPUT), 'a prefix of a word is not the word');
-    assert.ok(quotedIn('pipelines went green', INPUT) && !quotedIn('Merged after green', INPUT), 'words in a row, not in order with gaps');
-    assert.ok(!quotedIn('   ', INPUT) && !quotedIn('...', INPUT), 'a quote of no words is nothing');
+    assert.ok(quotedIn(textOf('Merged !256 after both pipelines'), INPUT));
+    assert.ok(quotedIn(textOf('both   pipelines\nwent green'), INPUT), 'newlines and runs of spaces');
+    assert.ok(quotedIn(textOf('The release is tagged: v1.9.0'), INPUT), 'a colon and a dash in the source are not words');
+    assert.ok(quotedIn(textOf('"ship it"'), INPUT));
+    assert.ok(!quotedIn(textOf('merged !256'), INPUT), 'case is kept');
+    assert.ok(!quotedIn(textOf('Merge !256'), INPUT), 'a prefix of a word is not the word');
+    assert.ok(quotedIn(textOf('pipelines went green'), INPUT) && !quotedIn(textOf('Merged after green'), INPUT), 'words in a row, not in order with gaps');
+    assert.ok(!quotedIn(textOf('   '), INPUT) && !quotedIn(textOf('...'), INPUT), 'a quote of no words is nothing');
 });
 
 test('G11: an add without an anchor, or with one the input does not hold, is refused and the correction asks for a copied quote; a found one passes', () => {
@@ -42,18 +43,18 @@ test('G11: an add without an anchor, or with one the input does not hold, is ref
 test('G11: an update may carry an anchor and then it is checked; a close never has one', () => {
     assert.deepEqual(gatekeeper(gates, [update(), update('the release is tagged')], context).refused.map((finding) => finding.at), [1], 'case is kept: this one is not in the input');
     assert.equal(gatekeeper(gates, [update('The release is tagged')], context).refused.length, 0);
-    assert.equal(gatekeeper(gates, [{ op: 'close', id: 'f3', why: 'done' }], context).refused.length, 0);
+    assert.equal(gatekeeper(gates, [{ op: 'close', id: factIdOf('f3'), why: 'done' }], context).refused.length, 0);
 });
 
 test('G12: closing a decision as answered is refused and lists the reasons that fit; a question may be answered; an unknown id is G6\'s', () => {
-    const closed = gatekeeper(gates, [{ op: 'close', id: 'f3', why: 'answered' }], context);
+    const closed = gatekeeper(gates, [{ op: 'close', id: factIdOf('f3'), why: 'answered' }], context);
     assert.deepEqual(closed.refused.map((finding) => finding.gate), ['G12']);
     assert.match(closed.refused[0]?.reason ?? '', /f3 is a decisions fact, not a question: close it as done, wrong or superseded/);
-    assert.equal(gatekeeper(gates, [{ op: 'close', id: 'f4', why: 'answered' }], context).refused.length, 0);
-    assert.equal(gatekeeper(gates, [{ op: 'close', id: 'f3', why: 'superseded' }, { op: 'close', id: 'f9', why: 'answered' }], context).refused.length, 0);
+    assert.equal(gatekeeper(gates, [{ op: 'close', id: factIdOf('f4'), why: 'answered' }], context).refused.length, 0);
+    assert.equal(gatekeeper(gates, [{ op: 'close', id: factIdOf('f3'), why: 'superseded' }, { op: 'close', id: factIdOf('f9'), why: 'answered' }], context).refused.length, 0);
 });
 
 test('the report counts the facts that quote their input', () => {
-    assert.match(anchoredLine([factOf('done', 'a', { anchor: 'quoted' }), factOf('done', 'b'), factOf('next', 'c', { anchor: 'also quoted' })]), /^facts with an anchor found in the input: 2 of 3 \(67%\)$/);
+    assert.match(anchoredLine([factOf('done', 'a', { anchor: textOf('quoted') }), factOf('done', 'b'), factOf('next', 'c', { anchor: textOf('also quoted') })]), /^facts with an anchor found in the input: 2 of 3 \(67%\)$/);
     assert.match(anchoredLine([]), /0 of 0 \(n\/a\)/);
 });

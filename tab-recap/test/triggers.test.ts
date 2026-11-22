@@ -42,7 +42,7 @@ test('an error, a failure, a cross or a traceback anywhere in a turn is a trigge
     const long = `${'a '.repeat(200)}Error: boom ${'b '.repeat(200)}`;
     const [stub] = triggersOf([{ role: 'agent', text: textOf(long) }]);
     assert.ok(stub !== undefined && stub.anchor.length <= QUOTE_CHARS && stub.anchor.includes('Error: boom'), stub?.anchor);
-    assert.ok(quotedIn(stub.anchor, long));
+    assert.ok(quotedIn(stub.anchor, textOf(long)));
     assert.deepEqual(kindsOf([{ role: 'agent', text: textOf('all good, no failures') }]), []);
 });
 

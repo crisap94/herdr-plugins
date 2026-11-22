@@ -9,12 +9,15 @@ import { apply } from '#src/recap/domain/ops.ts';
 import type { Operation, RunRef } from '#src/recap/domain/ops.ts';
 import { tabId, type TabId } from '#src/recap/domain/ids.ts';
 import { parseTaskName, type TaskName } from '#src/recap/domain/task-name.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+
 import { blob, BadRow, isRow, maybeText, maybeWhole, text, whole } from './rows.ts';
 import { fact as factTable, task as taskTable } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { typeIdOf, idOf } from './typeid.ts';
 import { ids } from './uuid7.ts';
+import { textOf, parseTextOrNull } from '#src/recap/domain/text.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { sweepOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/ops.ts';
 
 const OPEN = 'open';
 const CLOSED = 'closed';
@@ -37,6 +40,7 @@ const FACT_COLUMNS = {
     first_at: factTable.firstAt, last_at: factTable.lastAt, state: factTable.state, closed_why: factTable.closedWhy, closed_at: factTable.closedAt, language: factTable.language,
 };
 
+
 export type LedgerFact = Fact;
 export type LedgerFactId = FactId;
 
@@ -53,9 +57,10 @@ export function parseLedgerFact(input: unknown, task: TaskId): LedgerFact {
     if (closedWhy !== null && !isClosedWhy(closedWhy)) {
         throw new BadRow('a fact closed for a reason the schema does not know');
     }
+    const closedRaw = maybeWhole(input, 'closed_at');
     return {
-        id, task, section, text: text(input, 'text'), why: maybeText(input, 'why'), ref: maybeText(input, 'ref'), agent: maybeText(input, 'agent'), anchor: maybeText(input, 'anchor'),
-        firstAt: whole(input, 'first_at'), lastAt: whole(input, 'last_at'), state, closedWhy, closedAt: maybeWhole(input, 'closed_at'), language: text(input, 'language'),
+        id, task, section, text: textOf(text(input, 'text')), why: parseTextOrNull(maybeText(input, 'why')), ref: parseTextOrNull(maybeText(input, 'ref')), agent: parseTextOrNull(maybeText(input, 'agent')), anchor: parseTextOrNull(maybeText(input, 'anchor')),
+        firstAt: instant(whole(input, 'first_at')), lastAt: instant(whole(input, 'last_at')), state, closedWhy, closedAt: closedRaw === null ? null : instant(closedRaw), language: textOf(text(input, 'language')),
     };
 }
 
@@ -135,7 +140,7 @@ export class LedgerRows {
 
     applyTo(run: Uint8Array, at: RunRef, ops: readonly Operation[], sweepNow: SweepNow = 'keep'): Applied {
         const before = this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, tabId(at.task.tab)), eq(taskTable.key, at.task.key), or(eq(factTable.state, OPEN), gte(factTable.closedAt, at.at - FOLD_WINDOW_MS)))).orderBy(asc(factTable.firstAt), asc(factTable.id)).all().map((row) => parseLedgerFact(row, at.task));
-        const folded = apply(before, ops, at, sweepNow === 'sweep');
+        const folded = apply(before, ops, at, sweepOf(sweepNow === 'sweep'));
         this.persist(run, at.task, before, folded.changed);
         return { changed: folded.changed, refused: folded.refused };
     }

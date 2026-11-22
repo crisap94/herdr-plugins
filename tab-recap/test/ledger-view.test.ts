@@ -10,6 +10,8 @@ import { agentOf, NO_REPOS } from '#test/support.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { agentKind, paneId } from '#src/recap/domain/ids.ts';
 import { cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
+import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const view = prunedWriterView(keepNewestOf(2), nextHoursOf(24));
 const wide = prunedWriterView(keepNewestOf(10), nextHoursOf(24));
@@ -18,11 +20,11 @@ const cursor = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: 
 const HOUR = 3_600_000;
 const NOW = 100 * HOUR;
 const facts = [
-    factOf('goal', 'goal', { lastAt: 1 }), factOf('now', 'now', { lastAt: 2 }), factOf('needs', 'needs', { lastAt: 3 }),
-    factOf('decisions', 'decision', { lastAt: 4 }), factOf('rules', 'rule', { lastAt: 5 }),
-    ...Array.from({ length: 4 }, (_, at) => factOf('done', `done-${at}`, { lastAt: 10 + at })),
-    ...Array.from({ length: 4 }, (_, at) => factOf('links', `link-${at}`, { lastAt: 20 + at })),
-    factOf('next', 'old next', { lastAt: NOW - 25 * HOUR }), factOf('next', 'recent next 1', { lastAt: NOW - 3 * HOUR }), factOf('next', 'recent next 2', { lastAt: NOW - 2 * HOUR }), factOf('next', 'recent next 3', { lastAt: NOW - HOUR }),
+    factOf('goal', 'goal', { lastAt: instant(1) }), factOf('now', 'now', { lastAt: instant(2) }), factOf('needs', 'needs', { lastAt: instant(3) }),
+    factOf('decisions', 'decision', { lastAt: instant(4) }), factOf('rules', 'rule', { lastAt: instant(5) }),
+    ...Array.from({ length: 4 }, (_, at) => factOf('done', `done-${at}`, { lastAt: instant(10 + at) })),
+    ...Array.from({ length: 4 }, (_, at) => factOf('links', `link-${at}`, { lastAt: instant(20 + at) })),
+    factOf('next', 'old next', { lastAt: instant(NOW - 25 * HOUR) }), factOf('next', 'recent next 1', { lastAt: instant(NOW - 3 * HOUR) }), factOf('next', 'recent next 2', { lastAt: instant(NOW - 2 * HOUR) }), factOf('next', 'recent next 3', { lastAt: instant(NOW - HOUR) }),
 ];
 
 test('the view keeps every needs, decision, goal and rule fact, and the newest K of done, links and next', () => {
@@ -46,10 +48,10 @@ test('numbering gives ids only to shown and closed facts', () => {
 });
 
 const nextFacts = [
-    factOf('next', 'older than the window', { lastAt: NOW - 25 * HOUR }),
-    factOf('next', 'on the boundary', { lastAt: NOW - 24 * HOUR }),
-    factOf('next', 'just inside', { lastAt: NOW - 24 * HOUR + 60_000 }),
-    factOf('next', 'recent', { lastAt: NOW - HOUR }),
+    factOf('next', 'older than the window', { lastAt: instant(NOW - 25 * HOUR) }),
+    factOf('next', 'on the boundary', { lastAt: instant(NOW - 24 * HOUR) }),
+    factOf('next', 'just inside', { lastAt: instant(NOW - 24 * HOUR + 60_000) }),
+    factOf('next', 'recent', { lastAt: instant(NOW - HOUR) }),
 ];
 
 test('the next window hides facts older than its hours, keeps a fact exactly at the boundary, and counts the hidden ones', () => {
@@ -60,7 +62,7 @@ test('the next window hides facts older than its hours, keeps a fact exactly at 
 
 test('the writer input applies the next window at the tab clock, so an old next fact is neither shown nor numbered', async () => {
     const built = await inputOf([{ lane, cursor, chunk: null, fresh: SEEN_BEFORE }], {
-        tab: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(NOW), tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }],
+        tab: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(NOW), tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')] }],
         facts: [{ key: brand<string, 'Text'>('t1'), open: nextFacts, closed: [] }], writerView: wide,
     });
     const ledger = built.input.ledgers.at(0);
