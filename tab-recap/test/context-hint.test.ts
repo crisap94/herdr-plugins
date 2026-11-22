@@ -16,6 +16,7 @@ import { agentKind } from '#src/recap/domain/ids.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
 
 const noGlow = (): null => null;
 const noLimits: CompactLimits = { limitOf: () => ({ window: null, percent: null }) };
@@ -51,18 +52,18 @@ const catalogue = (windows: Record<string, number>): ModelWindows => ({ windowOf
 
 test('lane contexts: runtime window first, the setting overrides, a change is reported once', async () => {
     const claude = new LaneContexts(registryWith({ claude: reader('claude', 'claude-opus-5-5', 450_000, null) }), agentWindows(catalogue({ 'claude-opus-5-5': 1_000_000 })), noLimits, () => null);
-    assert.equal(await claude.refresh(lane('claude')), true);
-    assert.deepEqual(claude.of('w1:p1'), { tokens: 450_000, window: 1_000_000, source: 'catalogue' });
-    assert.equal(await claude.refresh(lane('claude')), false, 'the same answer is no change');
+    assert.equal(await claude.refresh(lane('claude')), 'present');
+    assert.deepEqual(claude.of(paneId('w1:p1')), { tokens: 450_000, window: 1_000_000, source: 'catalogue' });
+    assert.equal(await claude.refresh(lane('claude')), 'absent', 'the same answer is no change');
     const codex = new LaneContexts(registryWith({ codex: reader('codex', 'gpt-6-luna', 116_000, 258_400) }), agentWindows(catalogue({})), noLimits, () => null);
     await codex.refresh(lane('codex'));
-    assert.equal(codex.of('w1:p1')?.source, 'agent');
+    assert.equal(codex.of(paneId('w1:p1'))?.source, 'agent');
     const set = new LaneContexts(registryWith({ claude: reader('claude', 'claude-opus-5-5', 450_000, null) }), agentWindows(catalogue({})), noLimits, () => 500_000);
     await set.refresh(lane('claude'));
-    assert.deepEqual(set.of('w1:p1'), { tokens: 450_000, window: 500_000, source: 'setting' });
+    assert.deepEqual(set.of(paneId('w1:p1')), { tokens: 450_000, window: 500_000, source: 'setting' });
     const unknownModel = new LaneContexts(registryWith({ opencode: reader('opencode', 'acme/new', 1000, null) }), agentWindows(catalogue({})), noLimits, () => null);
-    assert.equal(await unknownModel.refresh(lane('opencode')), false);
-    assert.equal(unknownModel.of('w1:p1'), null, 'a model nothing knows has no hint');
+    assert.equal(await unknownModel.refresh(lane('opencode')), 'absent');
+    assert.equal(unknownModel.of(paneId('w1:p1')), null, 'a model nothing knows has no hint');
 });
 
 test('a lane keeps its context use through the database: stored with the view, read back whole', () => {

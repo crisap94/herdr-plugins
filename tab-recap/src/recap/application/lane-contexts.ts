@@ -2,6 +2,8 @@ import { contextOf } from '#src/recap/domain/compaction.ts';
 import type { ContextUse, Observed } from '#src/recap/domain/compaction.ts';
 import type { CompactLimits } from '#src/ports/compact-limits.ts';
 import type { ContextWindowLookup } from '#src/ports/context-windows.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
+import type { PaneId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { parseCount, countOf } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
@@ -30,7 +32,7 @@ export class LaneContexts {
     private readonly windows: ContextWindowLookup;
     private readonly limits: CompactLimits;
     private readonly setting: () => number | null;
-    private readonly known = new Map<string, ContextUse | null>();
+    private readonly known = new Map<PaneId, ContextUse | null>();
 
     constructor(transcripts: TranscriptRegistry, windows: ContextWindowLookup, limits: CompactLimits, setting: () => number | null) {
         this.transcripts = transcripts;
@@ -44,7 +46,7 @@ export class LaneContexts {
         return value === null ? null : countOf(value);
     }
 
-    of(pane: string): ContextUse | null {
+    of(pane: PaneId): ContextUse | null {
         return this.known.get(pane) ?? null;
     }
 
@@ -80,17 +82,20 @@ export class LaneContexts {
         return cap < measured.value ? { tokens: use.tokens, window: cap, source: 'agent' } : use;
     }
 
-    async refresh(lane: Lane): Promise<boolean> {
+    async refresh(lane: Lane): Promise<Presence> {
         const use = await this.read(lane);
-        const pane = String(lane.pane);
+        const pane = lane.pane;
         if (use === undefined || keyOf(use) === keyOf(this.known.get(pane))) {
-            return false;
+            return 'absent';
         }
         this.known.delete(pane);
         this.known.set(pane, use);
         if (this.known.size > REMEMBERED) {
-            this.known.delete(this.known.keys().next().value ?? '');
+            const oldest = this.known.keys().next().value;
+            if (oldest !== undefined) {
+                this.known.delete(oldest);
+            }
         }
-        return true;
+        return 'present';
     }
 }

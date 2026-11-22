@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Store } from '#src/adapters/db/database.ts';
 import { reconciliationOf } from '#src/adapters/herdr/json.ts';
-import { Dispatch } from '#src/recap/application/dispatch.ts';
+import { LaneDispatch } from '#src/recap/application/dispatch.ts';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
@@ -34,6 +34,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import { cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 import { SIZING } from './fakes/layout-values.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
 
 const said: Record<string, string> = { old: 'migrate victoria', new: 'write the docs' };
 
@@ -82,9 +83,9 @@ function folded(observations: readonly Observation[]): { readonly board: Board; 
 
 async function dispatched(store: Store, intents: readonly Intent[]): Promise<readonly string[]> {
     const lines: string[] = [];
-    const dispatch = new Dispatch({
+    const dispatch = new LaneDispatch({
         columns: {} as Columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() },
-        prompts: { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) }, webs: { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) },
+        prompts: { of: (): null => null, refresh: (): Promise<Presence> => Promise.resolve('absent') }, webs: { of: (): null => null, refresh: (): Promise<Presence> => Promise.resolve('absent') },
         log: (line): void => { lines.push(String(line)); }, board: (): Board => emptyBoard(), sizing: (): Sizing => SIZING, feedback: (): void => undefined,
         ...silentClosures, closures: store.closedLanes, closedDays: (): ClosedLaneDays => closedDaysOf('14'), retirements: store.retention,
     });

@@ -52,7 +52,7 @@ import { wireCompaction } from './compaction.ts';
 import { createPreCompacts } from '#src/adapters/hooks/pre-compacts.ts';
 import { settingGetter, loadSettings, messagesOf, stateDirectory } from './config.ts';
 import { wireCurate } from './curate.ts';
-import type { Curate } from '#src/recap/application/curate.ts';
+import type { CurateTasks } from '#src/recap/application/curate.ts';
 import { InputRetention } from '#src/recap/application/input-retention.ts';
 import { forgetClosedTabs } from './retention.ts';
 import { bootObservations } from './restored-lanes.ts';
@@ -96,7 +96,7 @@ interface Wired {
     readonly store: Store;
     readonly compaction: Compaction;
     readonly retention: InputRetention;
-    readonly curate: Curate;
+    readonly curate: CurateTasks;
     readonly sweep: AutocompactSweep;
     readonly laneTokens: LaneTokenPublisher;
     readonly answers: CompactRequestQueue;

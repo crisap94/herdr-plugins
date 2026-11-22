@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Dispatch } from '#src/recap/application/dispatch.ts';
+import { LaneDispatch } from '#src/recap/application/dispatch.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { LaneTokenPublisher } from '#src/recap/application/lane-tokens.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
@@ -20,10 +20,11 @@ import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { SIZING } from './fakes/layout-values.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
 
 const noop = (): void => undefined;
-const noWebs = { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) };
-const noPrompts = { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) };
+const noWebs = { of: (): null => null, refresh: (): Promise<Presence> => Promise.resolve('absent') };
+const noPrompts = { of: (): null => null, refresh: (): Promise<Presence> => Promise.resolve('absent') };
 
 const closed: ClosedLane = { tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), since: instant(1), cwd: null, closedAt: instant(1000) };
 
@@ -45,8 +46,8 @@ function recorder(): { readonly records: ClosedLane[]; readonly port: ClosureRec
     return { records, port: { record: (value: ClosedLane): void => { records.push(value); } } };
 }
 
-function dispatchWith(options: { readonly events?: LaneEvents; readonly sharing?: boolean; readonly closures?: ClosureRecorder; readonly days: string; readonly log: (line: string) => void }): Dispatch {
-    return new Dispatch({
+function dispatchWith(options: { readonly events?: LaneEvents; readonly sharing?: boolean; readonly closures?: ClosureRecorder; readonly days: string; readonly log: (line: string) => void }): LaneDispatch {
+    return new LaneDispatch({
         columns: {} as Columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() },
         prompts: noPrompts, webs: noWebs, log: options.log, board: () => emptyBoard(), sizing: () => SIZING,
         feedback: noop, ...silentClosures, closedDays: () => closedLaneDaysOf(options.days),

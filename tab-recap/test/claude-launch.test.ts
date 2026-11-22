@@ -17,6 +17,7 @@ import type { ModelWindows } from '#src/ports/model-catalogue.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
 
 const SESSION = 'session-1';
 const PID = 4242;
@@ -97,7 +98,7 @@ async function measure(setup: Setup): Promise<ReturnType<LaneContexts['of']>> {
         () => null,
     );
     await contexts.refresh(laneOf(cwd));
-    return contexts.of('w1:p1');
+    return contexts.of(paneId('w1:p1'));
 }
 
 test('the session environment window beats the settings file window', async () => {

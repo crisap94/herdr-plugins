@@ -63,8 +63,6 @@ function skippedRow(found: Skip, zone: Text): ListingRow {
 
 const everyOf = (ms: Milliseconds): Text => must(parseText(ms % 60_000 === 0 ? `${ms / 60_000} min` : `${Math.round(ms / 1000)} s`));
 
-export { listing, parseListing } from './legacy.ts';
-
 export function styleLine(policy: AutocompactPolicy, tuning: AutocompactTuning, settings: Messages['autocompactSettings']): Text {
     const { verdict } = tuning;
     return must(parseText([

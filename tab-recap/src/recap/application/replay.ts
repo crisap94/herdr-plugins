@@ -27,9 +27,6 @@ import { tabRecaps, type TabRecaps } from '#src/engine/tab-recaps.ts';
 import type { EngineModels, EngineSettings } from '@stateforge-labs/session-ledger/unstable/recap/application/engine.ts';
 import type { AgentKind } from '#src/recap/domain/ids.ts';
 
-export type { ReplayDeps } from './legacy.ts';
-export { replay, windowsOf } from './legacy.ts';
-
 export function mergedWindows(entries: readonly Entry[], mergeTurns: PositiveCount): readonly (readonly Entry[])[] {
     const windows: Entry[][] = [];
     for (const entry of entries) {

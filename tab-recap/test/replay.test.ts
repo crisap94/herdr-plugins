@@ -18,7 +18,7 @@ import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import type { JudgePort, JudgeTask } from '#src/ports/judge.ts';
 import { judgedReport } from '#src/recap/application/replay-judge.ts';
-import { replay, windowsOf } from '#src/recap/application/replay.ts';
+import { replayFile, mergedWindows } from '#src/recap/application/replay.ts';
 import { FULL_WRITER_VIEW } from '#src/recap/domain/writer-view.ts';
 import { checksOf, ledgerText, reportOf } from '#src/recap/application/replay-report.ts';
 import { runIdOf, runsOf, scratchDir, storeRead } from '#test/db/support.ts';
@@ -26,6 +26,9 @@ import { NO_REPOS } from '#test/support.ts';
 import { factOf } from './fakes/facts.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { must } from '#src/protocol/result.ts';
+import { countOf, parsePositiveCount } from '#src/recap/domain/count.ts';
+import { parseSessionPath } from '#src/recap/domain/ids.ts';
 
 const FILE = join(import.meta.dirname, 'fixtures', 'replay-claude.jsonl');
 const add = (section: string, text: string, why?: string): Record<string, unknown> => ({ op: 'add', section, text, ...(why === undefined ? {} : { why }) });
@@ -50,16 +53,16 @@ const hash = (path: string): string => createHash('sha256').update(readFileSync(
 
 test('windows: one turn each — a prompt and everything up to the next prompt; a queued prompt belongs to the turn it was typed in', () => {
     const entries = [{ role: 'agent' as const, text: textOf('hello') }, { role: 'user' as const, text: textOf('a') }, { role: 'tool' as const, text: textOf('ls') }, { role: 'user' as const, text: textOf('q'), queued: true }, { role: 'user' as const, text: textOf('b') }, { role: 'agent' as const, text: textOf('ok') }];
-    assert.deepEqual(windowsOf(entries).map((window) => window.map((entry) => entry.text)), [['hello', 'a', 'ls', 'q'], ['b', 'ok']]);
-    assert.deepEqual(windowsOf([]), []);
+    assert.deepEqual(mergedWindows(entries, must(parsePositiveCount(1))).map((window) => window.map((entry) => entry.text)), [['hello', 'a', 'ls', 'q'], ['b', 'ok']]);
+    assert.deepEqual(mergedWindows([], must(parsePositiveCount(1))), []);
 });
 
 test('merging turns groups whole turns in order and drops nothing', () => {
     const entries = [{ role: 'user' as const, text: textOf('a') }, { role: 'agent' as const, text: textOf('x') }, { role: 'user' as const, text: textOf('b') }, { role: 'user' as const, text: textOf('c') }, { role: 'agent' as const, text: textOf('y') }, { role: 'user' as const, text: textOf('d') }, { role: 'user' as const, text: textOf('e') }];
-    assert.equal(windowsOf(entries).length, 5);
-    assert.deepEqual(windowsOf(entries, 1).map((window) => window.map((entry) => entry.text)), [['a', 'x'], ['b'], ['c', 'y'], ['d'], ['e']]);
-    assert.deepEqual(windowsOf(entries, 2).map((window) => window.map((entry) => entry.text)), [['a', 'x', 'b'], ['c', 'y', 'd'], ['e']]);
-    assert.deepEqual(windowsOf(entries, 2).flat(), entries);
+    assert.equal(mergedWindows(entries, must(parsePositiveCount(1))).length, 5);
+    assert.deepEqual(mergedWindows(entries, must(parsePositiveCount(1))).map((window) => window.map((entry) => entry.text)), [['a', 'x'], ['b'], ['c', 'y'], ['d'], ['e']]);
+    assert.deepEqual(mergedWindows(entries, must(parsePositiveCount(2))).map((window) => window.map((entry) => entry.text)), [['a', 'x', 'b'], ['c', 'y', 'd'], ['e']]);
+    assert.deepEqual(mergedWindows(entries, must(parsePositiveCount(2))).flat(), entries);
 });
 
 test('a 6-turn transcript: 6 extractor runs on the scratch ledger, each shown what the earlier ones added; the live database is not touched', async () => {
@@ -73,7 +76,7 @@ test('a 6-turn transcript: 6 extractor runs on the scratch ledger, each shown wh
         const { summarizer, shown } = scripted([[add('goal', 'Add a cart to the shop')], [add('decisions', 'Store carts in SQLite', 'no server needed')], [add('done', 'Added cart totals')], [add('done', 'Opened !34 for feat/cart')], [add('needs', 'Should guests keep their basket?')], [{ op: 'close', id: 'f5', why: 'answered' }, add('done', 'Guests keep their basket in a cookie')]]);
         const scratch = scratchStore();
         try {
-            const done = await replay({ reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, mint: mintFactId, repos: NO_REPOS, language: 'en', log: () => undefined, writerView: FULL_WRITER_VIEW }, FILE, 'replay:t1', statSync(FILE).size);
+            const done = await replayFile({ reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, mint: mintFactId, repos: NO_REPOS, language: textOf('en'), log: () => undefined, writerView: FULL_WRITER_VIEW }, must(parseSessionPath(FILE)), tabId('replay:t1'), countOf(statSync(FILE).size), must(parsePositiveCount(1)));
             assert.equal(done.windows, 6);
             assert.equal(shown.length, 6, 'six extractor runs');
             assert.deepEqual(shown.map((each) => each.split('|').filter((line) => line !== '').length), [0, 1, 2, 3, 4, 5], 'each run is shown the facts the earlier ones added');
@@ -145,7 +148,7 @@ test('the judge over a replay: every run of the replay is scored like a stored o
     const { summarizer } = scripted([[add('goal', 'Add a cart to the shop')], [add('done', 'Added cart totals in src/totals.ts')], [], [], [], []]);
     const scratch = scratchStore();
     try {
-        await replay({ reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, mint: mintFactId, repos: NO_REPOS, language: 'en', log: () => undefined, writerView: FULL_WRITER_VIEW }, FILE, 'replay:t1', statSync(FILE).size);
+        await replayFile({ reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, mint: mintFactId, repos: NO_REPOS, language: textOf('en'), log: () => undefined, writerView: FULL_WRITER_VIEW }, must(parseSessionPath(FILE)), tabId('replay:t1'), countOf(statSync(FILE).size), must(parsePositiveCount(1)));
         const imported = [{ n: 1, at: Date.parse('2026-10-07T09:20:00Z'), items: [{ key: 'state/t1/goal/0', section: 'goal', text: 'Shop with a cart', fact: 'state/t1/goal/0', born: false, anchor: null }, { key: 'state/t1/done/0', section: 'done', text: 'Cart totals added in src/totals.ts', fact: 'state/t1/done/0', born: false, anchor: null }] }];
         const lines = await judgedReport({ judge: lenient, store: scratch.store, rubric: 'rubric', label: 'replay:t1', imported, beside: 'w1:t9', style: styleFor(process.stdout), err: () => undefined });
         const text = lines.join('\n');

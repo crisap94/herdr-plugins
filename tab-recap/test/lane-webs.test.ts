@@ -14,6 +14,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
 
 const WEB = { base: must(parseText('https://gitlab.example/acme/shop')), forge: 'gitlab' } as const;
 const dir = (path: string): Directory => must(parseDirectory(path));
@@ -24,34 +25,34 @@ function repos(answers: Record<string, RepoResult>): LaneRepo {
     return { repoOf: (cwd) => Promise.resolve(answers[cwd] ?? { kind: 'no-repo' }) };
 }
 
-const seen = (paneId: string): { paneId: string; tabId: string; workspaceId: string; agent: string; status: string; cwd: string } => ({ paneId, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', cwd: '/w' });
+const seen = (pane: string): { paneId: string; tabId: string; workspaceId: string; agent: string; status: string; cwd: string } => ({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', cwd: '/w' });
 
 test('a lane in a repository with an origin gets its web base and branch; the change is reported once', async () => {
     const webs = new LaneWebs(repos({ '/w/shop': { kind: 'repo', root: dir('/w/shop'), branch: branch('feat/cart'), web: WEB } }));
-    assert.equal(webs.of('w1:p1'), null);
-    assert.equal(await webs.refresh(lane('w1:p1', '/w/shop')), true);
-    assert.deepEqual(webs.of('w1:p1'), { ...WEB, branch: 'feat/cart' });
-    assert.equal(await webs.refresh(lane('w1:p1', '/w/shop')), false, 'unchanged');
+    assert.equal(webs.of(paneId('w1:p1')), null);
+    assert.equal(await webs.refresh(lane('w1:p1', '/w/shop')), 'present');
+    assert.deepEqual(webs.of(paneId('w1:p1')), { ...WEB, branch: 'feat/cart' });
+    assert.equal(await webs.refresh(lane('w1:p1', '/w/shop')), 'absent', 'unchanged');
 });
 
 test('a lane with no repository, no origin or no cwd has web null and reports no change; an unknown answer keeps what was known', async () => {
     const webs = new LaneWebs(repos({ '/w/shop': { kind: 'repo', root: dir('/w/shop'), branch: null, web: WEB }, '/w/bare': { kind: 'repo', root: dir('/w/bare'), branch: branch('main'), web: null } }));
-    assert.equal(await webs.refresh(lane('w1:p1', '/w/bare')), false);
-    assert.equal(await webs.refresh(lane('w1:p2', null)), false);
-    assert.equal(await webs.refresh(lane('w1:p3', '/elsewhere')), false);
-    assert.equal(await webs.refresh(lane('w1:p4', '/w/shop')), true);
+    assert.equal(await webs.refresh(lane('w1:p1', '/w/bare')), 'absent');
+    assert.equal(await webs.refresh(lane('w1:p2', null)), 'absent');
+    assert.equal(await webs.refresh(lane('w1:p3', '/elsewhere')), 'absent');
+    assert.equal(await webs.refresh(lane('w1:p4', '/w/shop')), 'present');
     const broken = new LaneWebs({ repoOf: (): Promise<RepoResult> => Promise.resolve(unknown({ why: 'timeout', after: duration(1500) })) });
-    assert.equal(await broken.refresh(lane('w1:p4', '/w/shop')), false);
-    assert.equal(broken.of('w1:p4'), null);
-    assert.deepEqual(webs.of('w1:p4'), { ...WEB, branch: null });
+    assert.equal(await broken.refresh(lane('w1:p4', '/w/shop')), 'absent');
+    assert.equal(broken.of(paneId('w1:p4')), null);
+    assert.deepEqual(webs.of(paneId('w1:p4')), { ...WEB, branch: null });
 });
 
 test('a lane that leaves its repository loses its web context', async () => {
     const answers: Record<string, RepoResult> = { '/w/shop': { kind: 'repo', root: dir('/w/shop'), branch: branch('a'), web: WEB } };
     const webs = new LaneWebs(repos(answers));
     await webs.refresh(lane('w1:p1', '/w/shop'));
-    assert.equal(await webs.refresh(lane('w1:p1', '/tmp')), true);
-    assert.equal(webs.of('w1:p1'), null);
+    assert.equal(await webs.refresh(lane('w1:p1', '/tmp')), 'present');
+    assert.equal(webs.of(paneId('w1:p1')), null);
 });
 
 test('viewOf publishes each lane\'s web context, null when unknown', () => {
