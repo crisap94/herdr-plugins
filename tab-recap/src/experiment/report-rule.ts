@@ -3,8 +3,6 @@ import { must } from '#src/protocol/result.ts';
 import type { Probability } from '#src/recap/domain/probability.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 
-export { decide } from './legacy.ts';
-export type { ArmScore, Decision } from './legacy.ts';
 
 export const WITHIN_POINTS = 0.03;
 export const MAX_DRIFT = 0.15;

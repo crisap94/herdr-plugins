@@ -4,8 +4,6 @@ import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { jaccardOf, wordsIn, type Flag } from './stats.ts';
 
-export { outcomeOf, outcomesOf } from './legacy.ts';
-export type { BoundaryEvent, Event, Outcome } from './legacy.ts';
 
 export interface Boundary { readonly kind: 'boundary'; readonly pos: Count; readonly at: Instant | null; readonly trigger: Text | null; readonly pre: Count | null; readonly post: Count | null }
 

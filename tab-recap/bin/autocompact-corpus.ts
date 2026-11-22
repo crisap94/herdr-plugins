@@ -7,11 +7,12 @@ import { recentTranscripts, sha256Of, withBoundaries } from '#src/adapters/exper
 import { pointOf, shareAt } from '#src/adapters/experiment/point.ts';
 import type { Point } from '#src/adapters/experiment/point.ts';
 import { eventsOf } from '#src/adapters/experiment/events.ts';
-import { outcomesOf } from '#src/experiment/outcomes.ts';
-import type { Outcome } from '#src/experiment/outcomes.ts';
-import { stratify } from '#src/experiment/stratify.ts';
-import type { Candidate } from '#src/experiment/stratify.ts';
+import { boundaryOutcomes } from '#src/experiment/outcomes.ts';
+import type { BoundaryOutcome } from '#src/experiment/outcomes.ts';
+import { stratifyMoments } from '#src/experiment/stratify.ts';
+import type { Moment } from '#src/experiment/stratify.ts';
 import { must } from '#src/protocol/result.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 const asText = (value: string): Text => must(parseText(value));
@@ -42,13 +43,13 @@ const jsonl = (items: readonly object[]): string => items.map((item) => JSON.str
 const runBefore = (points: readonly Stored[], at: number | null): Stored | null =>
     at === null ? null : (points.filter((point) => point.at <= at && at - point.at <= TEN_MINUTES).toSorted((a, b) => b.at - a.at)[0] ?? null);
 
-function outcomeRows(outcomes: ReadonlyMap<string, readonly Outcome[]>, bySource: ReadonlyMap<string, readonly Stored[]>, make: (stored: Stored) => Point | null): { readonly rows: readonly object[]; readonly extra: readonly Point[] } {
+function outcomeRows(outcomes: ReadonlyMap<string, readonly BoundaryOutcome[]>, bySource: ReadonlyMap<string, readonly Stored[]>, make: (stored: Stored) => Point | null): { readonly rows: readonly object[]; readonly extra: readonly Point[] } {
     const extra = new Map<string, Point>();
     const rows = [...outcomes].flatMap(([source, list]) => list.map((outcome) => {
         const stored = runBefore(bySource.get(source) ?? [], outcome.at);
         const point = stored === null ? null : make(stored);
         if (point !== null && point.stratum === 'outcome') extra.set(point.id, point);
-        return { source, mtime: statSync(source).mtimeMs, ...outcome, point_id: point?.id ?? null };
+        return { source, mtime: statSync(source).mtimeMs, ...outcome, restated: outcome.restated === 'yes', followed: outcome.followed === 'yes', point_id: point?.id ?? null };
     }));
     return { rows, extra: [...extra.values()] };
 }
@@ -62,11 +63,11 @@ async function main(): Promise<void> {
     const bySource = new Map<string, Stored[]>();
     for (const point of frame) bySource.set(point.source, [...(bySource.get(point.source) ?? []), point]);
     const files = withBoundaries([...new Set<string>([...recentTranscripts(asText(join(homedir(), '.claude', 'projects')), 30), ...bySource.keys()])].map((file) => asText(file)));
-    const outcomes = new Map<string, readonly Outcome[]>();
-    for (const file of files) outcomes.set(file, outcomesOf(await eventsOf(asFsPath(file))));
+    const outcomes = new Map<string, readonly BoundaryOutcome[]>();
+    for (const file of files) outcomes.set(file, boundaryOutcomes(await eventsOf(asFsPath(file))));
     const before = new Set([...bySource].flatMap(([source, points]) => Array.from(lastBefore((outcomes.get(source) ?? []).map((o) => o.pos), points))));
-    const candidates: Candidate[] = frame.map((point) => ({ id: point.id, share: shareAt(point.source, point.cursor, catalogue)?.share ?? null, beforeBoundary: before.has(point.id) }));
-    const sampled = stratify(candidates);
+    const candidates: Moment[] = frame.map((point) => { const share = shareAt(point.source, point.cursor, catalogue)?.share; return { id: point.id, share: share === undefined ? null : must(parseCount(share)), beforeBoundary: before.has(point.id) ? 'yes' : 'no' }; });
+    const sampled = stratifyMoments(candidates);
     const strata = new Map(sampled.picked.map((pick) => [pick.id, pick.stratum]));
     const points = frame.flatMap((stored) => (strata.has(stored.id) ? [pointOf(store, catalogue, stored, asText(strata.get(stored.id) ?? ''))] : [])).filter((point) => point !== null);
     const made = outcomeRows(outcomes, bySource, (stored) => points.find((p) => p.id === stored.id) ?? pointOf(store, catalogue, stored, asText('outcome')));

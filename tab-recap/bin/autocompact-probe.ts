@@ -10,7 +10,9 @@ import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
 import { questionsFor } from '#src/recap/application/brief-coverage.ts';
 import type { CoverageFact } from '#src/recap/application/brief-coverage.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { pooled, retried } from '#src/experiment/pool.ts';
+import { pooledBy, retriedBy } from '#src/experiment/pool.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
+import { parseMilliseconds } from '#src/recap/domain/time.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 const asText = (value: string): Text => must(parseText(value));
 const asFsPath = (value: string): FsPath => must(parseFsPath(value));
@@ -39,7 +41,7 @@ const usable = (answer: DecidedResult): boolean => answer.kind === 'decided';
 
 async function ask(decider: Decider, job: Job, log: (line: string) => void): Promise<{ answer: DecidedResult; attempts: number }> {
     let attempts = 0;
-    const answer = await retried(() => { attempts += 1; return decider.ask(job.state, job.questions); }, usable, { attempts: 3, baseMs: 10_000, onRetry: (n, wait) => { log(`${job.key.slice(0, 12)}: attempt ${n} failed; waiting ${wait / 1000} s`); } });
+    const answer = await retriedBy(() => { attempts += 1; return decider.ask(job.state, job.questions); }, (result) => (usable(result) ? 'usable' : 'unusable'), { attempts: must(parseCount(3)), baseMs: must(parseMilliseconds(10_000)), onRetry: (n, wait) => { log(`${job.key.slice(0, 12)}: attempt ${n} failed; waiting ${wait / 1000} s`); } });
     return { answer, attempts };
 }
 
@@ -58,7 +60,7 @@ async function main(): Promise<void> {
     const runtime = createRuntime();
     const deciders = Array.from({ length: CONCURRENCY }, () => deciderOf(arm, runtime));
     let finished = 0;
-    await pooled(todo, CONCURRENCY, async (job, _index, lane) => {
+    await pooledBy(todo, must(parseCount(CONCURRENCY)), async (job, _index, lane) => {
         const { answer, attempts } = await ask(deciders[lane] as Decider, job, log);
         if (answer.kind === 'decided') appendJsonl(asFsPath(file), { key: job.key, kind: job.kind, answers: answer.answers, tokens: answer.tokens, costUsd: answer.costUsd, tookMs: answer.tookMs, model: answer.model, attempts });
         else appendJsonl(asFsPath(file), { key: job.key, kind: job.kind, unknown: saying(answer.why), attempts });

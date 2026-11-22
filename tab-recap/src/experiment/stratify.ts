@@ -4,8 +4,6 @@ import type { Text } from '#src/recap/domain/text.ts';
 import { drawsOf, shuffledBy } from './seeded.ts';
 import type { Flag } from './stats.ts';
 
-export { stratify } from './legacy.ts';
-export type { Candidate, PickedCandidate, Quota, Sampled, StratumCount } from './legacy.ts';
 
 export interface Moment {
     readonly id: Text;

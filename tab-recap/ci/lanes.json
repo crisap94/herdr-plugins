@@ -318,7 +318,9 @@
       "test/every-agent.test.ts",
       "test/expanded-breaks.test.ts",
       "test/expanded-model.test.ts",
+      "test/experiment-corpus.test.ts",
       "test/experiment-files.test.ts",
+      "test/experiment-report.test.ts",
       "test/experiment-typed-adapters.test.ts",
       "test/fact-index.test.ts",
       "test/fold-session.test.ts",
@@ -973,7 +975,6 @@
       "src/experiment/hindsight.ts",
       "src/experiment/kappa-report.ts",
       "src/experiment/label-prompt.ts",
-      "src/experiment/legacy.ts",
       "src/experiment/outcomes.ts",
       "src/experiment/pool.ts",
       "src/experiment/read-paths.ts",
@@ -986,8 +987,6 @@
       "src/experiment/stats.ts",
       "src/experiment/stratify.ts",
       "src/experiment/verbatim.ts",
-      "test/experiment-corpus.test.ts",
-      "test/experiment-report.test.ts",
       "test/experiment-stats.test.ts"
     ],
     "ENG": [

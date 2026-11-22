@@ -3,32 +3,36 @@ import { createInterface } from 'node:readline';
 import { must } from '#src/protocol/result.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { readsOf } from '#src/experiment/read-paths.ts';
-import type { Event } from '#src/experiment/outcomes.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
+import { isReadingTool, parseToolInput, toolReads } from '#src/experiment/read-paths.ts';
+import type { TranscriptEvent } from '#src/experiment/outcomes.ts';
 import { extractClaude } from '../transcripts/claude/rows.ts';
 import { arr, obj, parse, str } from '../transcripts/jsonl.ts';
 
-const number = (value: unknown): number | null => (typeof value === 'number' ? value : null);
+const number = (value: unknown): Count | null => (typeof value === 'number' ? must(parseCount(value)) : null);
 
-function toolEvents(line: Text): readonly Event[] {
+function toolEvents(line: Text): readonly TranscriptEvent[] {
     const row = parse(line);
     if (row === null || row['type'] !== 'assistant' || row['isSidechain'] === true) return [];
-    return arr(obj(row['message'])['content']).filter((block) => block['type'] === 'tool_use').map((block) => ({ kind: 'tool', reads: readsOf(str(block['name']) ?? '', obj(block['input'])) }));
+    return arr(obj(row['message'])['content']).filter((block) => block['type'] === 'tool_use').map((block) => {
+        const name = str(block['name']) ?? '';
+        return { kind: 'tool', reads: isReadingTool(name) ? toolReads(name, parseToolInput(obj(block['input']))) : [] };
+    });
 }
 
-function entryEvents(line: Text, pos: Count): readonly Event[] {
+function entryEvents(line: Text, pos: Count): readonly TranscriptEvent[] {
     const found = extractClaude([line]);
-    const prompts: Event[] = found.entries.filter((entry) => entry.role === 'user').map((entry) => ({ kind: 'prompt', text: entry.text }));
+    const prompts: TranscriptEvent[] = found.entries.filter((entry) => entry.role === 'user').map((entry) => ({ kind: 'prompt', text: entry.text }));
     const metadata = obj(obj(parse(line) ?? {})['compactMetadata']);
-    const marks: Event[] = (found.marks ?? []).filter((mark) => mark.kind === 'compacted').map((mark) => ({
-        kind: 'boundary', pos, at: mark.at, trigger: mark.trigger ?? str(metadata['trigger']), pre: number(metadata['preTokens']), post: number(metadata['postTokens']),
-    }));
+    const marks: TranscriptEvent[] = (found.marks ?? []).filter((mark) => mark.kind === 'compacted').map((mark) => {
+        const trigger = mark.trigger ?? str(metadata['trigger']);
+        return { kind: 'boundary', pos, at: mark.at, trigger: trigger === null ? null : textOf(trigger), pre: number(metadata['preTokens']), post: number(metadata['postTokens']) };
+    });
     return [...prompts, ...marks];
 }
 
-export async function eventsOf(path: FsPath): Promise<readonly Event[]> {
-    const events: Event[] = [];
+export async function eventsOf(path: FsPath): Promise<readonly TranscriptEvent[]> {
+    const events: TranscriptEvent[] = [];
     let pos = 0;
     for await (const line of createInterface({ input: createReadStream(path, { encoding: 'utf8' }), crlfDelay: Infinity })) {
         const text = must(parseText(line));

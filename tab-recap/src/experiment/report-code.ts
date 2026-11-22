@@ -8,8 +8,6 @@ import type { Hindsight } from './hindsight.ts';
 import { questionScore, type Labels, type ScoredReps } from './report-metrics.ts';
 import type { Label } from './stats.ts';
 
-export { verbatimAgainstCode } from './legacy.ts';
-export type { CodedPoint, VerbatimAgreement } from './legacy.ts';
 
 export interface CodedMoment { readonly id: Text; readonly state: AutocompactState; readonly hindsight: Hindsight }
 

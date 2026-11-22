@@ -9,19 +9,21 @@ import { Labeller } from '#src/adapters/experiment/labeller.ts';
 import type { Point } from '#src/adapters/experiment/point.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
 import { crossCheck } from '#src/experiment/cross-check.ts';
-import { kappaRows } from '#src/experiment/kappa-report.ts';
-import { labelInstructions, labelsOf } from '#src/experiment/label-prompt.ts';
-import { pooled } from '#src/experiment/pool.ts';
-import { agreement, kappa } from '#src/experiment/stats.ts';
+import { kappaScores } from '#src/experiment/kappa-report.ts';
+import { labelInstructions, labelsIn } from '#src/experiment/label-prompt.ts';
+import { pooledBy } from '#src/experiment/pool.ts';
+import { kappaOf } from '#src/experiment/stats.ts';
 import { labelBriefs } from './autocompact-briefs.ts';
 import { operatorLabels } from './autocompact-operator.ts';
 import { must } from '#src/protocol/result.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 const asText = (value: string): Text => must(parseText(value));
 const asFsPath = (value: string): FsPath => must(parseFsPath(value));
 
 const IDS = [...QUESTIONS.keys()];
+const NEEDS_VERBATIM = asText('needs_verbatim');
 const flag = (name: string): boolean => process.argv.includes(`--${name}`);
 const value = (name: string): string | null => {
     const at = process.argv.indexOf(`--${name}`);
@@ -35,8 +37,8 @@ async function labelPoints(dir: string, limit: number | null, runtime: HarnessRu
     const labeller = new Labeller(runtime, 6, log);
     const instructions = labelInstructions(QUESTIONS);
     let finished = 0;
-    await pooled(todo, 6, async (point) => {
-        const made = await labeller.ask(instructions, { state: point.state, hindsight: point.hindsight }, (reply) => labelsOf(reply, IDS), asText(point.id.slice(0, 8)));
+    await pooledBy(todo, must(parseCount(6)), async (point) => {
+        const made = await labeller.ask(instructions, { state: point.state, hindsight: point.hindsight }, (reply) => { const found = labelsIn(reply, IDS); return found === null ? null : Object.fromEntries(found); }, asText(point.id.slice(0, 8)));
         if (made.answer !== null) appendJsonl(asFsPath(file), { id: point.id, labels: made.answer, ms: made.ms, attempts: made.attempts, labeller: `codex/${labeller.settings.model}/${labeller.settings.effort}` });
         else log(`${point.id.slice(0, 8)}: no label (${made.why ?? '?'})`);
         finished += 1;
@@ -47,10 +49,10 @@ async function labelPoints(dir: string, limit: number | null, runtime: HarnessRu
 function tally(dir: string): void {
     const [points, labels] = [readPoints(asText(join(dir, 'corpus.jsonl'))), readLabelled(asText(join(dir, 'labels.jsonl')))];
     const byId = new Map<string, Point>(points.map((point) => [point.id, point]));
-    const rows = labels.flatMap((label) => { const point = byId.get(label.id); return point === undefined ? [] : [{ model: label.labels['needs_verbatim'] ?? 0, code: crossCheck(point) }]; });
+    const rows = labels.flatMap((label) => { const point = byId.get(label.id); return point === undefined ? [] : [{ model: label.labels.get(NEEDS_VERBATIM) ?? 0, code: crossCheck(point) }]; });
     const result = {
-        labelled: labels.length, points: points.length, positives: Object.fromEntries(IDS.map((id) => [id, labels.filter((l) => l.labels[id] === 1).length])),
-        crossCheck: { n: rows.length, agreement: agreement(rows.map((r) => r.model), rows.map((r) => r.code)), kappa: kappa(rows.map((r) => r.model), rows.map((r) => r.code)), labellerPositives: rows.filter((r) => r.model === 1).length, codePositives: rows.filter((r) => r.code === 1).length },
+        labelled: labels.length, points: points.length, positives: Object.fromEntries(IDS.map((id) => [id, labels.filter((l) => l.labels.get(id) === 1).length])),
+        crossCheck: { n: rows.length, agreement: rows.length === 0 ? Number.NaN : rows.filter((r) => r.model === r.code).length / rows.length, kappa: kappaOf(rows.map((r) => r.model), rows.map((r) => r.code)) ?? Number.NaN, labellerPositives: rows.filter((r) => r.model === 1).length, codePositives: rows.filter((r) => r.code === 1).length },
         codex: spawnSync(CODEX_BINARY, ['--version'], { encoding: 'utf8' }).stdout.trim(), labeller: 'gpt-6.1-sol high',
     };
     console.log(JSON.stringify(result, null, 2));
@@ -58,7 +60,7 @@ function tally(dir: string): void {
 
 function kappas(dir: string): void {
     const operator = readLabelled(asText(join(dir, 'operator-labels.jsonl')));
-    console.log(operator.length === 0 ? 'no operator labels yet' : JSON.stringify(kappaRows(operator, readLabelled(asText(join(dir, 'labels.jsonl'))), IDS), null, 2));
+    console.log(operator.length === 0 ? 'no operator labels yet' : JSON.stringify(kappaScores(operator, readLabelled(asText(join(dir, 'labels.jsonl'))), IDS).map((row) => ({ question: row.question, n: row.n, kappa: row.kappa ?? Number.NaN, usable: row.usable === 'usable' })), null, 2));
 }
 
 async function main(): Promise<void> {

@@ -4,8 +4,9 @@ import { readPoints } from '#src/adapters/experiment/data.ts';
 import { appendJsonl, doneKeys } from '#src/adapters/experiment/io.ts';
 import type { Point } from '#src/adapters/experiment/point.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
-import { seeded, shuffled } from '#src/experiment/seeded.ts';
+import { drawsOf, shuffledBy } from '#src/experiment/seeded.ts';
 import { must } from '#src/protocol/result.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 const asText = (value: string): Text => must(parseText(value));
@@ -28,7 +29,7 @@ function show(point: Point, n: number, total: number): void {
 export async function operatorLabels(dir: string, count: number): Promise<void> {
     const file = join(dir, 'operator-labels.jsonl');
     const done = doneKeys(asText(file), asText('id'));
-    const points = shuffled(readPoints(asText(join(dir, 'corpus.jsonl'))), seeded(7)).slice(0, count).filter((point) => !done.has(asText(point.id)));
+    const points = shuffledBy(readPoints(asText(join(dir, 'corpus.jsonl'))), drawsOf(must(parseCount(7)))).slice(0, count).filter((point) => !done.has(asText(point.id)));
     const lines = createInterface({ input: process.stdin })[Symbol.asyncIterator]();
     for (const [n, point] of points.entries()) {
         show(point, n + 1, points.length);

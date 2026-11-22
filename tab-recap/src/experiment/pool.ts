@@ -2,8 +2,6 @@ import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseMilliseconds, type Milliseconds } from '#src/recap/domain/time.ts';
 
-export { pooled, retried } from './legacy.ts';
-export type { Backoff } from './legacy.ts';
 
 export type Job<T, R> = (item: T, index: Count, lane: Count) => Promise<R>;
 
