@@ -1,9 +1,10 @@
 import { must } from '#src/protocol/result.ts';
+import { textOf as asText } from '#src/recap/domain/text.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import type { HandoffBody, HandoffContent, HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
 import { compareIds, HANDOFF_GROUP_IDS } from '#src/recap/domain/handoff-content.ts';
-import { sanitizeHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
-import { isForbidden } from '#src/recap/domain/handoff-vetting.ts';
+import { cleanHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
+import { vetHandoffText } from '#src/recap/domain/handoff-vetting.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
@@ -46,10 +47,10 @@ const oldestFirst = (a: HandoffEntry, b: HandoffEntry): Ordering => {
 
 const entryOf = (fact: Fact, reason: Text | null): HandoffEntry => ({
     id: fact.id,
-    text: sanitizeHandoffText(fact.text),
+    text: cleanHandoffText(asText(fact.text)),
     firstAt: fact.firstAt,
     lastAt: fact.lastAt,
-    reason: reason === null ? null : sanitizeHandoffText(reason),
+    reason: reason === null ? null : cleanHandoffText(asText(reason)),
 });
 
 const candidatesOf = (open: readonly Fact[], closed: readonly Fact[]): readonly Candidate[] => [
@@ -73,7 +74,7 @@ export function groupedFactsOf(facts: GroupedFacts): Grouped {
         return { kind: 'refused', reason: 'ledger-empty' };
     }
     const candidates = candidatesOf(facts.open, closed);
-    const kept = candidates.filter(({ entry }) => !isForbidden(entry.text) && (entry.reason === null || !isForbidden(entry.reason)));
+    const kept = candidates.filter(({ entry }) => !(vetHandoffText(entry.text).kind === 'err') && (entry.reason === null || !(vetHandoffText(entry.reason).kind === 'err')));
     const groups = HANDOFF_GROUP_IDS.map((id) => groupOf(id, kept));
     if (groups.every((group) => group.entries.length === 0)) {
         return { kind: 'refused', reason: 'content-empty' };

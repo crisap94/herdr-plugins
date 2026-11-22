@@ -1,4 +1,6 @@
 import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { countOf } from '#src/recap/domain/count.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { freshnessTextOf } from '#src/recap/render/freshness.ts';
@@ -7,13 +9,13 @@ import { laneStatus } from '#src/recap/domain/status.ts';
 
 const AT = Date.parse('2026-10-11T10:00:00Z');
 
-const FRESH: Freshness = { lastRun: { at: AT, cause: 'turn-ended' }, status: 'idle', newerPrompts: { kind: 'none' }, refresh: 'not-requested' };
+const FRESH: Freshness = { lastRun: { at: instant(AT), cause: 'turn-ended' }, status: 'idle', newerPrompts: { kind: 'none' }, refresh: 'not-requested' };
 
 test('the freshness block names the last run, its cause in words, the status, the newer prompts and the refresh', () => {
     assert.equal(freshnessTextOf(FRESH), ['last run: 2026-10-11 10:00Z, after a turn', 'lane status: idle', 'newer prompts: none', 'refresh not requested'].join('\n'));
 });
 
-const firstLineOf = (cause: Freshness['lastRun']['cause']): string => freshnessTextOf({ ...FRESH, lastRun: { at: AT, cause } }).split('\n')[0] ?? '';
+const firstLineOf = (cause: Freshness['lastRun']['cause']): string => freshnessTextOf({ ...FRESH, lastRun: { at: instant(AT), cause } }).split('\n')[0] ?? '';
 
 test('each cause is named in words', () => {
     assert.deepEqual([firstLineOf('focused'), firstLineOf('requested'), firstLineOf('imported')], [
@@ -25,7 +27,7 @@ test('each cause is named in words', () => {
 
 test('newer prompts are none, a lower bound, or unknown, and each refresh status has its own words', () => {
     assert.deepEqual([
-        freshnessTextOf({ ...FRESH, newerPrompts: { kind: 'at-least', count: 7 } }).split('\n')[2],
+        freshnessTextOf({ ...FRESH, newerPrompts: { kind: 'at-least', count: countOf(7) } }).split('\n')[2],
         freshnessTextOf({ ...FRESH, newerPrompts: { kind: 'unknown' } }).split('\n')[2],
     ], ['newer prompts: at least 7', 'newer prompts: unknown']);
     assert.deepEqual(['refreshed', 'failed', 'timed-out'].map((refresh) => freshnessTextOf({ ...FRESH, refresh: refresh as Freshness['refresh'] }).split('\n')[3]), [

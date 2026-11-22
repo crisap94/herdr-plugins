@@ -104,7 +104,7 @@ function onSession(board: Board, seen: SessionObservation): Step {
     if (lane === undefined || String(lane.session) === seen.session) {
         return step(board);
     }
-    return step({ ...board, lanes: put(board.lanes, seen.pane, { ...lane, session: sessionId(seen.session) }) });
+    return step({ ...board, lanes: put(board.lanes, seen.pane, { ...lane, session: sessionId(textOf(seen.session)) }) });
 }
 
 function onStatus(board: Board, seen: StatusObservation): Step {

@@ -1,62 +1,62 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { gateOf } from '#src/recap/domain/autocompact.ts';
-import type { GateInput } from '#src/recap/domain/autocompact.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { gateFrom, parseGatePercent } from '#src/recap/domain/autocompact.ts';
+import type { GateFacts } from '#src/recap/domain/autocompact.ts';
+import { duration, instant } from '#src/recap/domain/time.ts';
 import { verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 import { flightOf, flightReason, NOT_AWAITING, observedFrom, runningCount, unreadable } from '#src/recap/domain/in-flight.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 
-const running = (count: number): GateInput['flight'] => flightOf(observedFrom(runningCount(countOf(count)), [], flightReason(textOf(`${count} running`))), NOT_AWAITING);
-const unreadableFlight = (): GateInput['flight'] => flightOf(unreadable(flightReason(textOf('unreadable'))), NOT_AWAITING);
+const running = (count: number): GateFacts['flight'] => flightOf(observedFrom(runningCount(countOf(count)), [], flightReason(textOf(`${count} running`))), NOT_AWAITING);
+const unreadableFlight = (): GateFacts['flight'] => flightOf(unreadable(flightReason(textOf('unreadable'))), NOT_AWAITING);
 
 const NOW = 10_000_000;
-const lane = (over: Partial<GateInput> = {}): GateInput => ({ kind: 'claude', kinds: ['claude'], shadowKinds: [], busy: false, flight: null, share: 62, minimum: 40, ceiling: 80, now: NOW, lastBreakAt: null, lastDecisionAt: null, cooldownMs: 600_000, unchanged: false, ...over });
+const lane = (over: Partial<GateFacts> = {}): GateFacts => ({ kind: 'claude', kinds: ['claude'], shadowKinds: [], busy: 'free', flight: null, share: parseGatePercent(62), minimum: parseGatePercent(40), ceiling: parseGatePercent(80), now: instant(NOW), lastBreakAt: null, lastDecisionAt: null, cooldownMs: duration(600_000), unchanged: 'changed', ...over });
 
 test('gates: below the minimum (31 % with minimum 40) stops before any model', () => {
-    assert.deepEqual(gateOf(lane({ share: 31 })), { gate: 'below-minimum', recordOnly: 'may-act' });
+    assert.deepEqual(gateFrom(lane({ share: parseGatePercent(31) })), { gate: 'below-minimum', recordOnly: 'may-act' });
 });
 
 test('gates: a background job still running (or a reader that cannot tell) is in flight', () => {
-    assert.equal(gateOf(lane({ flight: running(1) })).gate, 'in-flight');
-    assert.equal(gateOf(lane({ flight: unreadableFlight() })).gate, 'in-flight');
+    assert.equal(gateFrom(lane({ flight: running(1) })).gate, 'in-flight');
+    assert.equal(gateFrom(lane({ flight: unreadableFlight() })).gate, 'in-flight');
 });
 
 test('gates: a compaction in progress or requested is busy, and beats everything after it', () => {
-    assert.equal(gateOf(lane({ busy: true, flight: running(2), share: 99 })).gate, 'busy');
+    assert.equal(gateFrom(lane({ busy: 'busy', flight: running(2), share: parseGatePercent(99) })).gate, 'busy');
 });
 
 test('gates: over the ceiling (81 %) with nothing in flight is the ceiling; at the minimum exactly, ask', () => {
-    assert.equal(gateOf(lane({ share: 81 })).gate, 'ceiling');
-    assert.equal(gateOf(lane({ share: 80 })).gate, 'ceiling');
-    assert.equal(gateOf(lane({ share: 40 })).gate, 'ask');
-    assert.equal(gateOf(lane()).gate, 'ask');
+    assert.equal(gateFrom(lane({ share: parseGatePercent(81) })).gate, 'ceiling');
+    assert.equal(gateFrom(lane({ share: parseGatePercent(80) })).gate, 'ceiling');
+    assert.equal(gateFrom(lane({ share: parseGatePercent(40) })).gate, 'ask');
+    assert.equal(gateFrom(lane()).gate, 'ask');
 });
 
 test('gates: within the cooldown since the last decision of any verdict (four minutes) or the last boundary; after it, ask', () => {
-    assert.equal(gateOf(lane({ lastDecisionAt: instant(NOW - 4 * 60_000) })).gate, 'cooldown');
-    assert.equal(gateOf(lane({ lastDecisionAt: instant(NOW - 4 * 60_000), share: 90 })).gate, 'cooldown', 'a compact decision starts the cooldown too');
-    assert.equal(gateOf(lane({ lastBreakAt: NOW - 4 * 60_000 })).gate, 'cooldown');
-    assert.equal(gateOf(lane({ lastBreakAt: NOW - 4 * 60_000, share: 90 })).gate, 'cooldown', 'the ceiling waits for the cooldown too');
-    assert.equal(gateOf(lane({ lastDecisionAt: instant(NOW - 600_000), lastBreakAt: NOW - 9 * 3_600_000 })).gate, 'ask');
+    assert.equal(gateFrom(lane({ lastDecisionAt: instant(NOW - 4 * 60_000) })).gate, 'cooldown');
+    assert.equal(gateFrom(lane({ lastDecisionAt: instant(NOW - 4 * 60_000), share: parseGatePercent(90) })).gate, 'cooldown', 'a compact decision starts the cooldown too');
+    assert.equal(gateFrom(lane({ lastBreakAt: instant(NOW - 4 * 60_000) })).gate, 'cooldown');
+    assert.equal(gateFrom(lane({ lastBreakAt: instant(NOW - 4 * 60_000), share: parseGatePercent(90) })).gate, 'cooldown', 'the ceiling waits for the cooldown too');
+    assert.equal(gateFrom(lane({ lastDecisionAt: instant(NOW - 600_000), lastBreakAt: instant(NOW - 9 * 3_600_000) })).gate, 'ask');
 });
 
 test('gates: an in-flight count not read yet (null) is passed over; the lane is asked, or below the minimum and no read is needed', () => {
-    assert.equal(gateOf(lane({ flight: null })).gate, 'ask');
-    assert.equal(gateOf(lane({ flight: null, share: 81 })).gate, 'ceiling');
-    assert.equal(gateOf(lane({ flight: null, share: 31 })).gate, 'below-minimum');
-    assert.equal(gateOf(lane({ flight: null, busy: true })).gate, 'busy');
-    assert.equal(gateOf(lane({ flight: null, lastDecisionAt: instant(NOW - 60_000) })).gate, 'cooldown');
+    assert.equal(gateFrom(lane({ flight: null })).gate, 'ask');
+    assert.equal(gateFrom(lane({ flight: null, share: parseGatePercent(81) })).gate, 'ceiling');
+    assert.equal(gateFrom(lane({ flight: null, share: parseGatePercent(31) })).gate, 'below-minimum');
+    assert.equal(gateFrom(lane({ flight: null, busy: 'busy' })).gate, 'busy');
+    assert.equal(gateFrom(lane({ flight: null, lastDecisionAt: instant(NOW - 60_000) })).gate, 'cooldown');
 });
 
 test('gates: a kind outside the list is still gated and asked, but record-only', () => {
-    assert.deepEqual(gateOf(lane({ kind: 'codex' })), { gate: 'ask', recordOnly: 'record-only' });
-    assert.deepEqual(gateOf(lane({ kind: 'codex', kinds: ['claude', 'codex'] })), { gate: 'ask', recordOnly: 'may-act' });
+    assert.deepEqual(gateFrom(lane({ kind: 'codex' })), { gate: 'ask', recordOnly: 'record-only' });
+    assert.deepEqual(gateFrom(lane({ kind: 'codex', kinds: ['claude', 'codex'] })), { gate: 'ask', recordOnly: 'may-act' });
 });
 
 test('gates: an enabled shadow kind stays record-only', () => {
-    assert.deepEqual(gateOf(lane({ kind: 'codex', kinds: ['claude', 'codex'], shadowKinds: ['codex'] })), { gate: 'ask', recordOnly: 'record-only' });
+    assert.deepEqual(gateFrom(lane({ kind: 'codex', kinds: ['claude', 'codex'], shadowKinds: ['codex'] })), { gate: 'ask', recordOnly: 'record-only' });
 });
 
 const answers = (over: Readonly<Record<string, number>> = {}): Record<string, number> => ({ closes_request: 0.95, announces_continuation: 0.05, asks_detailed_choice: 0.02, needs_verbatim: 0.10, changes_subject: 0.03, stuck: 0.01, ...over });

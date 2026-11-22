@@ -1,11 +1,11 @@
 import { parseUsd } from '#src/recap/domain/usd.ts';
+import { policyOf } from './fakes/settings-readers.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { policyOf } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactMode } from '#src/recap/domain/autocompact.ts';
 import type { DecidedResult } from '#src/ports/decider.ts';
 import type { DecisionMode } from '#src/ports/autocompact-records.ts';

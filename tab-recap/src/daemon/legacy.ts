@@ -16,7 +16,7 @@ import type { CheckAnchors, Judge } from '#src/ports/judge.ts';
 import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
 import type { CompactRequests } from '#src/recap/application/compact-requests.ts';
 import { ANY_KIND } from '#src/recap/domain/policy.ts';
-import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
+import { herdrEventsFrom } from '#src/recap/domain/herdr-events.ts';
 import { capabilityOf } from '#src/recap/domain/lane-tokens.ts';
 import { notesOf } from '#src/recap/domain/coordination.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
@@ -37,7 +37,7 @@ import type { HandoffExchangeWiring } from './handoff-exchange-wiring.ts';
 import type { Worktrees } from './worktrees.ts';
 import type { Locale } from '#src/i18n/index.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
-import type { DeciderJob, Job, JobAnswer } from '#src/recap/domain/job.ts';
+import type { DeciderSetting, JobAnswer, JobSetting } from '#src/recap/domain/job.ts';
 import type { AutocompactPolicy, BriefRetention, CoverageBy, JevSettings } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
@@ -65,7 +65,7 @@ export type LegacyReader = (key: string) => string | undefined;
 
 export interface Config {
     readonly backend: BackendChoice;
-    readonly models: Readonly<Record<BackendId, string>>;
+    readonly models: Readonly<Record<BackendId, Text>>;
     readonly customCommand: string;
     readonly effort: Effort;
     readonly pipeline: Pipeline;
@@ -80,17 +80,17 @@ export interface Config {
     readonly policy: Policy;
     readonly screenAgents: readonly string[];
     readonly compaction: CompactionSettings;
-    readonly brief: Job;
-    readonly judge: Job;
+    readonly brief: JobSetting;
+    readonly judge: JobSetting;
     readonly keepInputDays: number;
     readonly keepBrief: BriefRetention;
-    readonly curator: Job;
+    readonly curator: JobSetting;
     readonly curatorRepair: RepairMode;
     readonly autocompact: AutocompactPolicy;
     readonly tuning: AutocompactTuning;
-    readonly decider: DeciderJob;
+    readonly decider: DeciderSetting;
     readonly coverage: CoverageBy;
-    readonly coverageJob: DeciderJob;
+    readonly coverageJob: DeciderSetting;
     readonly jev: JevSettings;
     readonly keepDays: Count;
     readonly closedLaneDays: ClosedLaneDays;
@@ -232,7 +232,7 @@ export function herdrEventsOn(): boolean {
 }
 
 function switchOn(setting: string): boolean {
-    return setting === handoff.optIn ? loadConfig().handoffRequests === 'on' : herdrEventsOf(configGetter()(setting)) === 'on';
+    return setting === handoff.optIn ? loadConfig().handoffRequests === 'on' : herdrEventsFrom(textOf(configGetter()(setting))) === 'on';
 }
 
 export function capabilityNow(): string {

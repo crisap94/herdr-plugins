@@ -32,7 +32,7 @@ export function laneFrom(seen: SeenLane): Lane {
         workspace: workspaceId(seen.workspaceId),
         agent: agentKind(seen.agent),
         status: laneStatus(seen.status === undefined || seen.status === null ? seen.status : textOf(seen.status)),
-        session: session.kind === 'ok' && session.value.trim() !== '' ? sessionId(session.value) : null,
+        session: session.kind === 'ok' && session.value.trim() !== '' ? sessionId(textOf(session.value)) : null,
         cwd: cwd.kind === 'ok' ? cwd.value : null,
         title: title.kind === 'ok' && title.value.trim() !== '' ? title.value : null,
         since: null,

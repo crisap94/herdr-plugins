@@ -11,7 +11,7 @@ import type { TokenWrite } from '#src/protocol/tokens.ts';
 import type { EventKind } from '#src/recap/domain/event-token.ts';
 import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
-import { storedOutcomeOf } from '#src/recap/domain/handoff-outcome.ts';
+import { parseStoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
 import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
@@ -39,10 +39,11 @@ export function handoffStageOf(outcome: HandoffOutcome): Text {
     if (outcome.kind === 'delivered') {
         return STAGE.delivered;
     }
-    const stored = 'reason' in outcome ? storedOutcomeOf(outcome.kind, outcome.reason) : null;
-    if (stored === null || stored.kind === 'delivered') {
+    const parsed = 'reason' in outcome ? parseStoredHandoffOutcome(outcome.kind, outcome.reason) : null;
+    if (parsed === null || parsed.kind === 'err' || parsed.value.kind === 'delivered') {
         return STAGE.internal;
     }
+    const stored = parsed.value;
     return must(parseText(terminalStage({ kind: stored.kind, reason: stored.reason })));
 }
 

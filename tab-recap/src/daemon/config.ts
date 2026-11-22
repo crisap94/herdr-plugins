@@ -7,15 +7,16 @@ import type { LanguageSource, Locale, Messages } from '#src/i18n/index.ts';
 import { duration, parseDuration } from '#src/recap/domain/time.ts';
 import { DEFAULT_POLICY, screenKindsOf } from '#src/recap/domain/policy.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
-import { compactJobOf, coverageJobOf, curateJobOf, deciderJobOf, judgeJobOf, keepDaysOf } from '#src/recap/domain/job.ts';
-import { parseBriefRetention, parseCoverageBy, jevOf, policyOf } from '#src/recap/domain/autocompact.ts';
-import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
+import type { JobReader } from '#src/recap/domain/job.ts';
+import { compactSettingOf, coverageSettingOf, curateSettingOf, deciderSettingOf, judgeSettingOf, keepDaysCountOf } from '#src/recap/domain/job.ts';
+import { parseBriefRetention, parseCoverageBy, jevFrom, policyFrom as autocompactPolicyFrom } from '#src/recap/domain/autocompact.ts';
+import { tuningFrom } from '#src/recap/domain/autocompact-style.ts';
 import { HINT_DEFAULT, hintOf, targetOf, windowOf } from '#src/recap/domain/compaction.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 import { BACKEND_IDS, environmentName, harnessLabels, modelOf, type BackendChoice, type BackendId, type EnvironmentName } from '#src/recap/domain/backend.ts';
 import { closedLaneDaysOrDefault, parseClosedLaneDays, tabKeepCountOf } from '#src/recap/domain/retention.ts';
 import { effortOf } from '#src/recap/domain/effort.ts';
-import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
+import { herdrEventsFrom } from '#src/recap/domain/herdr-events.ts';
 import { parseHandoffRequests } from '#src/recap/domain/handoff-requests.ts';
 import { parseIdleHold } from '#src/recap/domain/idle-hold.ts';
 import { compactNoteOf } from '#src/recap/domain/compact-note.ts';
@@ -35,7 +36,6 @@ import { parseText, textOf as uncheckedText, type Text } from '#src/recap/domain
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
 import { parseAgentKind, type AgentKind } from '#src/recap/domain/ids.ts';
 import { numberIn } from '#src/recap/domain/legacy.ts';
-import { legacyReader } from './legacy.ts';
 import type { CompactionSettings, Glow, Models, SettingGet, SettingName, SettingReader, Settings } from './settings.ts';
 
 export type SettingsFile = ReadonlyMap<EnvironmentName, Text>;
@@ -200,12 +200,12 @@ const reconcileEveryFrom = (get: SettingGet): PositiveCount => positiveOr(parseP
 export function loadSettings(): Settings {
     const typed = readerOf(readFile());
     const get: SettingGet = (name) => typed(keyOf(name));
-    const legacy = legacyReader(typed);
+    const jobs: JobReader = (key) => typed(environmentName(uncheckedText(key)));
     const writerViewSettings = writerViewFrom(get);
     const screenAgents = screenAgentsFrom(get);
     const backend = backendFrom(get('TAB_RECAP_BACKEND'));
     const locale = localeFrom(get('TAB_RECAP_LOCALE'), given);
-    const herdrEvents = herdrEventsOf(get('TAB_RECAP_HERDR_EVENTS'));
+    const herdrEvents = herdrEventsFrom(get('TAB_RECAP_HERDR_EVENTS'));
     return {
         locale,
         recapLanguage: must(parseText(recapLanguageOf(get('TAB_RECAP_RECAP_LANG'), locale))),
@@ -222,17 +222,17 @@ export function loadSettings(): Settings {
         policy: policyFrom(get, screenAgents),
         screenAgents,
         compaction: compactionFrom(get),
-        brief: compactJobOf(legacy),
-        judge: judgeJobOf(legacy),
-        keepInputDays: countOr(parseCount(keepDaysOf(get('TAB_RECAP_KEEP_INPUT_DAYS'))), must(parseCount(keepDaysOf(undefined)))),
+        brief: compactSettingOf(jobs),
+        judge: judgeSettingOf(jobs),
+        keepInputDays: keepDaysCountOf(get('TAB_RECAP_KEEP_INPUT_DAYS')),
         keepBrief: parseBriefRetention(get('TAB_RECAP_KEEP_BRIEF_DAYS')),
-        curator: curateJobOf(legacy), curatorRepair: repairModeOr(parseRepairMode(get('TAB_RECAP_CURATOR_REPAIR'))),
-        autocompact: policyOf(legacy),
-        tuning: tuningOf(legacy),
-        decider: deciderJobOf(legacy),
+        curator: curateSettingOf(jobs), curatorRepair: repairModeOr(parseRepairMode(get('TAB_RECAP_CURATOR_REPAIR'))),
+        autocompact: autocompactPolicyFrom((key) => typed(environmentName(uncheckedText(key)))),
+        tuning: tuningFrom((key) => typed(environmentName(uncheckedText(key)))),
+        decider: deciderSettingOf(jobs),
         coverage: parseCoverageBy(get('TAB_RECAP_AUTOCOMPACT_COVERAGE_BY')),
-        coverageJob: coverageJobOf(legacy),
-        jev: jevOf(legacy),
+        coverageJob: coverageSettingOf(jobs, deciderSettingOf(jobs)),
+        jev: jevFrom((key) => typed(environmentName(uncheckedText(key)))),
         keepDays: tabKeepCountOf(get('TAB_RECAP_KEEP_DAYS')),
         closedLaneDays: closedLaneDaysOrDefault(parseClosedLaneDays(get('TAB_RECAP_CLOSED_LANE_DAYS'))),
         glow: GLOWS.find((choice) => choice === get('TAB_RECAP_GLOW')) ?? 'auto',

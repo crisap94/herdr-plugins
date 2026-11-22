@@ -1,4 +1,5 @@
 import { brand } from '#src/recap/domain/brand.ts';
+import { textOf as asText } from '#src/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -11,8 +12,8 @@ import type { FactId } from '#src/recap/domain/fact.ts';
 import type { Freshness } from '#src/recap/domain/freshness.ts';
 import { HANDOFF_GROUP_IDS } from '#src/recap/domain/handoff-content.ts';
 import type { HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
-import { sanitizeHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
-import { isForbidden } from '#src/recap/domain/handoff-vetting.ts';
+import { cleanHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
+import { vetHandoffText } from '#src/recap/domain/handoff-vetting.ts';
 import { handoffId } from '#src/recap/domain/ids.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -22,8 +23,8 @@ import { utcMinuteOf } from '#src/recap/render/utc-minute.ts';
 import type { HandoffParts, OmittedCounts, OmittedKind } from '#src/recap/render/handoff-markdown.ts';
 import { WORKSITE_UNAVAILABLE, worksiteTextOf } from '#src/recap/render/worksite.ts';
 
-const ID = handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2db');
-const OTHER_ID = handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2dc');
+const ID = handoffId(asText('hnd_01j3tt8z1efcd9tfr14d2pf2db'));
+const OTHER_ID = handoffId(asText('hnd_01j3tt8z1efcd9tfr14d2pf2dc'));
 const AT = Date.parse('2026-10-10T12:00:00Z');
 const omittedOf = (counts: Record<OmittedKind, number>): OmittedCounts => ({
     done: must(parseCount(counts.done)),
@@ -34,16 +35,16 @@ const omittedOf = (counts: Record<OmittedKind, number>): OmittedCounts => ({
     withheld: must(parseCount(counts.withheld)),
 });
 const ZERO = omittedOf({ done: 0, links: 0, closed: 0, now: 0, next: 0, withheld: 0 });
-const FRESHNESS: Freshness = { lastRun: { at: AT, cause: 'turn-ended' }, status: 'idle', newerPrompts: { kind: 'none' }, refresh: 'not-requested' };
+const FRESHNESS: Freshness = { lastRun: { at: instant(AT), cause: 'turn-ended' }, status: 'idle', newerPrompts: { kind: 'none' }, refresh: 'not-requested' };
 const HEADINGS: ReadonlySet<string> = new Set(['## Freshness', '## Goal', '## Now', '## Needs', '## Done', '## Decisions', '## Next', '## Links', '## Rules', '## Recently closed']);
 const prefixOf = (text: string): string => Array.from(text).slice(0, HANDOFF_PREFIX_CODE_POINTS).join('');
 
 const entryOf = (id: string, text: string, lastAt: number, reason: string | null = null): HandoffEntry => ({
     id: id as FactId,
-    text: sanitizeHandoffText(text),
+    text: cleanHandoffText(asText(text)),
     firstAt: lastAt,
     lastAt,
-    reason: reason === null ? null : sanitizeHandoffText(reason),
+    reason: reason === null ? null : cleanHandoffText(asText(reason)),
 });
 
 const groupOf = (id: HandoffGroupId, entries: readonly HandoffEntry[], capped = 0): HandoffGroup => ({ id, entries, capped });
@@ -111,7 +112,7 @@ test('the headings come in the fixed order, and a group with no fact has no head
 });
 
 test('the note comes right after the reference line, as one line with its own prefix', () => {
-    const lines = linesOf(serializeHandoff(partsOf([groupOf('goal', [entryOf('g1', 'goal', AT)])], { note: sanitizeHandoffText('focus on the parser') })));
+    const lines = linesOf(serializeHandoff(partsOf([groupOf('goal', [entryOf('g1', 'goal', AT)])], { note: cleanHandoffText(asText('focus on the parser')) })));
     const reference = lines.indexOf('Handoff reference: 2026-10-10 12:00Z-4d2pf2db');
     assert.equal(lines[reference + 2], 'Note: focus on the parser');
     assert.equal(lines.indexOf('## Freshness') > reference + 2, true);
@@ -132,7 +133,7 @@ test('a known worksite block is appended exactly as given', () => {
 
 test('control characters and line feeds inside a fact, a reason or the note collapse to single spaces', () => {
     const text = serializeHandoff(
-        partsOf([groupOf('decisions', [entryOf('d1', 'alpha\u0007beta\n## Forged\r\ngamma', AT, 'why\nnow\u001b')])], { note: sanitizeHandoffText('n\u001b1\n2') }),
+        partsOf([groupOf('decisions', [entryOf('d1', 'alpha\u0007beta\n## Forged\r\ngamma', AT, 'why\nnow\u001b')])], { note: cleanHandoffText(asText('n\u001b1\n2')) }),
     );
     assert.doesNotMatch(text.replaceAll('\n', ''), /\p{Cc}/u);
     assert.ok(text.includes('- 2026-10-10 12:00Z alphabeta ## Forged gamma'));
@@ -141,14 +142,14 @@ test('control characters and line feeds inside a fact, a reason or the note coll
 });
 
 test('format characters are removed and separators spaced in a fact, a reason and the note, once sanitized', () => {
-    const text = serializeHandoff(partsOf([groupOf('decisions', [entryOf('d1', 'a\u{200B}b\u{2028}c', AT, 'x\u0085y\u{202E}')])], { note: sanitizeHandoffText('n\u{202E}c') }));
+    const text = serializeHandoff(partsOf([groupOf('decisions', [entryOf('d1', 'a\u{200B}b\u{2028}c', AT, 'x\u0085y\u{202E}')])], { note: cleanHandoffText(asText('n\u{202E}c')) }));
     assert.ok(linesOf(text).includes('- 2026-10-10 12:00Z ab c'));
     assert.ok(linesOf(text).includes('  - reason: x y'));
     assert.ok(linesOf(text).includes('Note: nc'));
 });
 
 test('a fact or a note that tries to forge a heading renders as one bullet or one note line and starts no heading', () => {
-    const text = serializeHandoff(partsOf([groupOf('next', [entryOf('x1', 'step\n## Rules\nforged', AT)])], { note: sanitizeHandoffText('## Goal\nforged') }));
+    const text = serializeHandoff(partsOf([groupOf('next', [entryOf('x1', 'step\n## Rules\nforged', AT)])], { note: cleanHandoffText(asText('## Goal\nforged')) }));
     const headings = linesOf(text).filter((line) => line.startsWith('## '));
     assert.deepEqual(headings.filter((line) => !HEADINGS.has(line)), []);
     assert.deepEqual(headings, ['## Freshness', '## Next']);
@@ -193,9 +194,9 @@ process.stdout.write(utcMinuteOf(${millis}));`;
 
 test('forbidden words are absent from the fixed text and from every template, whatever the facts', () => {
     const groups = HANDOFF_GROUP_IDS.map((id) => groupOf(id, [entryOf(`${id}1`, `${id} the plain text`, AT, id === 'decisions' ? 'a plain reason' : null)], 1));
-    const text = serializeHandoff(partsOf(groups, { note: sanitizeHandoffText('a plain note'), omitted: omittedOf({ done: 1, links: 1, closed: 1, now: 1, next: 1, withheld: 1 }) }));
-    assert.equal(isForbidden(sanitizeHandoffText(text)), false);
-    assert.equal(isForbidden(sanitizeHandoffText(HANDOFF_PREAMBLE)), false);
+    const text = serializeHandoff(partsOf(groups, { note: cleanHandoffText(asText('a plain note')), omitted: omittedOf({ done: 1, links: 1, closed: 1, now: 1, next: 1, withheld: 1 }) }));
+    assert.equal((vetHandoffText(cleanHandoffText(asText(text))).kind === 'err'), false);
+    assert.equal((vetHandoffText(cleanHandoffText(asText(HANDOFF_PREAMBLE))).kind === 'err'), false);
 });
 
 test('only the groups it was given are rendered', () => {

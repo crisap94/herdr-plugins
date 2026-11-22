@@ -1,4 +1,5 @@
 import { parseUsd } from '#src/recap/domain/usd.ts';
+import { policyOf, tuningOf } from './fakes/settings-readers.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { must as mustParsed } from '#src/protocol/result.ts';
@@ -10,8 +11,8 @@ import { covered } from '#src/recap/application/brief-coverage.ts';
 import { styleLine } from '#src/recap/application/autocompact-listing.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
-import { parseBackoff, parseBriefRetention, parseCeilingPolicy, policyOf } from '#src/recap/domain/autocompact.ts';
-import { STYLE_NUMBERS, styleOf, tuningOf } from '#src/recap/domain/autocompact-style.ts';
+import { parseBackoff, parseBriefRetention, parseCeilingPolicy } from '#src/recap/domain/autocompact.ts';
+import { STYLE_NUMBERS, styleOf } from '#src/recap/domain/autocompact-style.ts';
 import { THRESHOLDS, verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 import type { Thresholds } from '#src/recap/domain/autocompact-verdict.ts';
 import type { Decider, DecidedResult } from '#src/ports/decider.ts';

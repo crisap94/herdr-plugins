@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { curateJobOf } from './fakes/settings-readers.ts';
 import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
@@ -7,10 +8,10 @@ import type { Setup } from '#src/recap/application/setup-keys.ts';
 import { curatorFor } from '#src/daemon/backends.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
-import type { Job } from '#src/recap/domain/job.ts';
+import type { JobSetting } from '#src/recap/domain/job.ts';
 import { HarnessCurator } from '#src/adapters/job/curator.ts';
 import type { Harness, HarnessCall, HarnessSettings, Ran, StructuredSupport } from '#src/ports/harness.ts';
-import { CURATE_DEFAULT, curateJobOf } from '#src/recap/domain/job.ts';
+import { CURATE_DEFAULT } from '#src/recap/domain/job.ts';
 import { setupView } from '#src/recap/render/setup.ts';
 import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import { parseText } from '#src/recap/domain/text.ts';
@@ -31,7 +32,7 @@ test('the curator job: as the recap writer, no model of its own and medium effor
     assert.equal(curateJobOf((key) => (key === 'TAB_RECAP_CURATE_BY' ? 'off' : undefined)).by, 'off');
 });
 
-const timed = (value: string): Job => curateJobOf((key) => (key === 'TAB_RECAP_CURATE_TIMEOUT_MS' ? value : undefined));
+const timed = (value: string): JobSetting => curateJobOf((key) => (key === 'TAB_RECAP_CURATE_TIMEOUT_MS' ? value : undefined));
 
 test('the curator time limit: TAB_RECAP_CURATE_TIMEOUT_MS sets a positive whole number of milliseconds; anything else leaves the key out', () => {
     assert.deepEqual(curateJobOf(() => undefined), CURATE_DEFAULT);
@@ -128,7 +129,7 @@ test('config: the curator job is read from TAB_RECAP_CURATE_BY / _MODEL / _EFFOR
     }
 });
 
-const answerOf = (value: string | undefined): Job => curateJobOf((key) => (key === 'TAB_RECAP_CURATE_ANSWER' ? value : undefined));
+const answerOf = (value: string | undefined): JobSetting => curateJobOf((key) => (key === 'TAB_RECAP_CURATE_ANSWER' ? value : undefined));
 
 test('the curator answer: TAB_RECAP_CURATE_ANSWER set to schema (trimmed, any case) asks for a schema answer; any other value, or none, keeps the text route', () => {
     assert.deepEqual(answerOf(' Schema '), { ...CURATE_DEFAULT, answer: 'schema' });

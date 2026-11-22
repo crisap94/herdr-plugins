@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { instant } from '#src/recap/domain/time.ts';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -7,7 +8,7 @@ import { must } from '#src/protocol/result.ts';
 import type { FactId } from '#src/recap/domain/fact.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import type { HandoffEntry } from '#src/recap/domain/handoff-content.ts';
-import { isForbidden } from '#src/recap/domain/handoff-vetting.ts';
+import { vetHandoffText } from '#src/recap/domain/handoff-vetting.ts';
 import type { HandoffFit } from '#src/recap/render/handoff-budget.ts';
 import { freshnessTextOf } from '#src/recap/render/freshness.ts';
 import type { HandoffParts } from '#src/recap/render/handoff-markdown.ts';
@@ -72,7 +73,7 @@ const rawFit = (note: string): HandoffFit => ({
     reference: { kind: 'dry-run' },
     // @ts-expect-error
     note,
-    freshnessText: freshnessTextOf({ lastRun: { at: 0, cause: 'imported' }, status: 'idle', newerPrompts: { kind: 'none' }, refresh: 'not-requested' }),
+    freshnessText: freshnessTextOf({ lastRun: { at: instant(0), cause: 'imported' }, status: 'idle', newerPrompts: { kind: 'none' }, refresh: 'not-requested' }),
     worksiteText: null,
     groups: [],
     withheld: 0,
@@ -80,7 +81,7 @@ const rawFit = (note: string): HandoffFit => ({
 
 const rawForbidden = (raw: string): boolean =>
     // @ts-expect-error
-    isForbidden(raw);
+    (vetHandoffText(raw).kind === 'err');
 
 test('raw text is not accepted where sanitized text or a renderer block is required', () => {
     assert.equal(rawEntry('plain', 'why').text, 'plain');

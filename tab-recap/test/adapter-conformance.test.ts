@@ -1,4 +1,5 @@
 import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
+import { policyOf, tuningOf } from './fakes/settings-readers.ts';
 import { candidateFor } from './autocompact-world.ts';
 import { test, after } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
@@ -42,8 +43,6 @@ import type { LocatedBy } from '#src/recap/domain/handoff-plan.ts';
 import { HANDOFF_OBSERVATIONS, HANDOFF_OBSERVE_MS } from '#src/recap/application/handoff-limits.ts';
 import type { Observed } from '#src/recap/domain/compaction.ts';
 import { tabId, agentKind } from '#src/recap/domain/ids.ts';
-import { policyOf } from '#src/recap/domain/autocompact.ts';
-import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';

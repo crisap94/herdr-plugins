@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { textOf as asText } from '#src/recap/domain/text.ts';
 import type { HandoffPipelineDeps } from '#src/recap/application/handoff-pipeline.ts';
 import type { HandoffLane, HandoffRenderInput, HandoffRenderResult } from '#src/recap/application/handoff-render.ts';
 import { agentKind, handoffId, paneId, tabId } from '#src/recap/domain/ids.ts';
@@ -15,8 +16,8 @@ import { brand } from '#src/recap/domain/brand.ts';
 import { instant } from '#src/recap/domain/time.ts';
 
 export const NOW = Date.parse('2026-10-11T10:00:00Z');
-export const ID = handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2db');
-export const OTHER_ID = handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2dc');
+export const ID = handoffId(asText('hnd_01j3tt8z1efcd9tfr14d2pf2db'));
+export const OTHER_ID = handoffId(asText('hnd_01j3tt8z1efcd9tfr14d2pf2dc'));
 export const SOURCE_FILE = 'session.jsonl';
 export const LAST_RUN: LastRun = { at: instant(NOW - 60_000), cause: 'turn-ended' };
 export const LANE: HandoffLane = { tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), status: 'idle', cwd: '/repo' };

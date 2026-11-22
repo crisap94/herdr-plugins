@@ -4,6 +4,7 @@ import { CAPABILITY_VALUE, OWNED_TOKENS, STATE_TOKENS, clearing, valuesOf, write
 import { NEEDS_TOKEN } from '#src/recap/domain/lane-token-names.ts';
 import type { LaneFacts, TokenValues } from '#src/recap/domain/lane-tokens.ts';
 import { backoffMs } from '#src/recap/domain/backoff.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { LaneEvents } from './lane-events.ts';
@@ -101,7 +102,7 @@ export class LaneTokenPublisher {
 
     private fail(pane: string, now: number, why: string): void {
         const count = (this.failing.get(pane)?.count ?? 0) + 1;
-        const wait = backoffMs(count);
+        const wait = backoffMs(countOf(count));
         this.failing.set(pane, { count, until: now + wait });
         if (count === 1) {
             this.deps.log(`lane tokens on ${pane}: not written (${why}); trying again with a back-off`);

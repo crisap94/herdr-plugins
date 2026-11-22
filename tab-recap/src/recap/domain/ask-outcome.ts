@@ -1,5 +1,5 @@
 import { EXCHANGES } from '#src/protocol/exchanges/index.ts';
-import { failureStage, isFailureStage } from '#src/protocol/exchange.ts';
+import { failureStage, isFailureStage, type FailureStage } from '#src/protocol/exchange.ts';
 
 const PLAIN_OUTCOMES = ['done', 'settled', 'off', 'interrupted'] as const;
 
@@ -32,4 +32,6 @@ export function parseAskOutcome(text: unknown): AskOutcome | null {
 
 export const outcomeOf = parseAskOutcome;
 
-export { outcomeText } from './legacy.ts';
+export type OutcomeText = FailureStage | PlainAskOutcome['kind'];
+
+export function outcomeText(outcome: AskOutcome): OutcomeText { return outcome.kind === 'failed' ? failureStage(outcome.reason) : outcome.kind; }

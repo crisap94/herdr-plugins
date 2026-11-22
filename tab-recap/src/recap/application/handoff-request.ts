@@ -3,7 +3,7 @@ import type { HandoffRequester } from '#src/ports/requests.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
-import { handoffOutcomeOf, type HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
+import { parseHandoffOutcome, type HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { parseTabId, type HandoffId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import { HANDOFF_POLL_MS, HANDOFF_WAIT_MS, HANDOFF_WAIT_REFRESH_MS } from './handoff-limits.ts';
 
@@ -48,7 +48,8 @@ const refused = (reason: Extract<HandoffOutcome, { readonly kind: 'refused' }>['
 const failed = (reason: Extract<HandoffOutcome, { readonly kind: 'failed' }>['reason']): HandoffOutcome => ({ kind: 'failed', reason });
 
 function outcomeOf(answer: HandoffAnswerRow): HandoffOutcome {
-    return handoffOutcomeOf(answer.kind, answer.reason) ?? failed('internal-error');
+    const parsed = parseHandoffOutcome(answer.kind, answer.reason);
+    return parsed.kind === 'ok' ? parsed.value : failed('internal-error');
 }
 
 async function awaitAnswer(handoffs: HandoffStore['handoffs'], id: HandoffId, pacing: Pacing, waitMs: number): Promise<HandoffAnswerRow | null> {

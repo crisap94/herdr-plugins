@@ -1,5 +1,6 @@
 import { ok, type Result } from '#src/protocol/result.ts';
 import type { TabId } from './timing-ids.ts';
+import type { Text } from './text.ts';
 import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import { parseNonEmptyText } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
@@ -78,4 +79,34 @@ export const uncheckedRatio = brand<number, 'Probability'>;
 export const uncheckedPaneId = brand<string, 'PaneId'>;
 
 export { parseAgentKind, parseCompactionId, parseDecisionId, parsePaneId, parseTabId } from './timing-ids.ts';
-export { agentKind, handoffId, paneId, sessionId, sessionIdFromAgentValue, sessionPath, sessionPathFromAgentValue, tabId, workspaceId } from './legacy.ts';
+export { agentKind, paneId, tabId, workspaceId } from './legacy.ts';
+
+export function sessionId(raw: Text): SessionId {
+    const parsed = parseSessionId(raw);
+    if (parsed.kind === 'err') {
+        throw new NotAnIdentifierError('a session id cannot be empty');
+    }
+    return parsed.value;
+}
+
+export function sessionIdFromAgentValue(raw: Text): SessionId {
+    if (isUncheckedSessionId(raw)) {
+        return raw;
+    }
+    throw new NotAnIdentifierError('a session id cannot be empty');
+}
+
+export function sessionPathFromAgentValue(raw: Text): SessionPath {
+    if (isUncheckedSessionPath(raw)) {
+        return raw;
+    }
+    throw new NotAnIdentifierError('a session path cannot be empty');
+}
+
+export function handoffId(raw: Text): HandoffId {
+    const parsed = parseHandoffId(raw);
+    if (parsed === null) {
+        throw new NotAnIdentifierError('a handoff id must be a TypeID: hnd_ and 26 base32 characters');
+    }
+    return parsed;
+}

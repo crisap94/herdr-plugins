@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { textOf as asText } from '#src/recap/domain/text.ts';
 import assert from 'node:assert/strict';
 import { buildHandoffContent } from '#src/recap/application/handoff-content.ts';
 import { HANDOFF_BUDGET_BYTES, HANDOFF_WORKSITE_BYTES } from '#src/recap/application/handoff-limits.ts';
@@ -13,7 +14,7 @@ import { HANDOFF_GROUP_IDS } from '#src/recap/domain/handoff-content.ts';
 import type { HandoffBody, HandoffContent, HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
 import { byteBudgetOf } from '#src/recap/domain/byte-budget.ts';
 import type { ByteBudget } from '#src/recap/domain/byte-budget.ts';
-import { sanitizeHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
+import { cleanHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import { handoffId } from '#src/recap/domain/ids.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -30,14 +31,14 @@ import { brand } from '#src/recap/domain/brand.ts';
 
 type ShownHandoff = Extract<FittedHandoff, { readonly kind: 'text' }>;
 
-const ID = handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2db');
+const ID = handoffId(asText('hnd_01j3tt8z1efcd9tfr14d2pf2db'));
 const AT = Date.parse('2026-10-10T12:00:00Z');
 const TASK: TaskId = { tab: tabIdOf('w1:t1'), key: brand<string, 'Text'>('t1') };
 const NEVER_CUT: ReadonlySet<HandoffGroupId> = new Set(['goal', 'needs', 'decisions', 'rules']);
 const NEWER_POOL: readonly HandoffGroupId[] = ['now', 'next'];
 const OLDER_POOL: readonly HandoffGroupId[] = ['done', 'links', 'closed'];
 const BIG = byteBudgetOf(10_000_000);
-const FRESHNESS: Freshness = { lastRun: { at: AT - 60_000, cause: 'turn-ended' }, status: 'idle', newerPrompts: { kind: 'none' }, refresh: 'not-requested' };
+const FRESHNESS: Freshness = { lastRun: { at: instant(AT - 60_000), cause: 'turn-ended' }, status: 'idle', newerPrompts: { kind: 'none' }, refresh: 'not-requested' };
 const WORKSITE: WorksiteSnapshot = { kind: 'unavailable' };
 const BLOCKS: RenderedBlocks = { reference: { kind: 'handoff', id: ID, at: instant(AT) }, freshnessText: freshnessTextOf(FRESHNESS), worksiteText: null };
 
@@ -45,10 +46,10 @@ const bytesOf = (text: string): number => new TextEncoder().encode(text).byteLen
 
 const entryOf = (id: string, text: string, lastAt: number, firstAt = lastAt, reason: string | null = null): HandoffEntry => ({
     id: id as FactId,
-    text: sanitizeHandoffText(text),
+    text: cleanHandoffText(asText(text)),
     firstAt,
     lastAt,
-    reason: reason === null ? null : sanitizeHandoffText(reason),
+    reason: reason === null ? null : cleanHandoffText(asText(reason)),
 });
 
 const groupOf = (id: HandoffGroupId, entries: readonly HandoffEntry[], capped = 0): HandoffGroup => ({ id, entries, capped });
@@ -129,7 +130,7 @@ const randomFit = (random: () => number): HandoffFit => {
         const capped = id === 'done' || id === 'links' || id === 'closed' ? below(3) : 0;
         return groupOf(id, entries, capped);
     });
-    return fitOf(groups, { note: random() < 0.5 ? sanitizeHandoffText('focus on the parser') : null, withheld: below(5) });
+    return fitOf(groups, { note: random() < 0.5 ? cleanHandoffText(asText('focus on the parser')) : null, withheld: below(5) });
 };
 
 const survivorsOf = (fit: HandoffFit, text: string, ids: readonly HandoffGroupId[]): readonly HandoffEntry[] =>
@@ -308,7 +309,7 @@ test('the handoff text is identical for identical inputs and changes only its re
     const content = contentOf([fact('g1', 'goal', 'the goal', AT - 1_000)], [], 'a note');
     const first = renderOf(content);
     assert.deepEqual(first, renderOf(content));
-    const other = handoffTextOf(bodyOf(content), { ...BLOCKS, reference: { kind: 'handoff', id: handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2dc'), at: instant(AT) } });
+    const other = handoffTextOf(bodyOf(content), { ...BLOCKS, reference: { kind: 'handoff', id: handoffId(asText('hnd_01j3tt8z1efcd9tfr14d2pf2dc')), at: instant(AT) } });
     const firstLines = shownOf(first).text.split('\n');
     const otherLines = shownOf(other).text.split('\n');
     assert.deepEqual(firstLines.flatMap((line, index) => (line === otherLines[index] ? [] : [index])), [2]);

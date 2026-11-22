@@ -13,9 +13,9 @@ const never = (): Promise<void> => new Promise<void>(() => undefined);
 test('a waited refresh is timed out whatever the tab says, and otherwise refreshed or failed by the stored error', () => {
     assert.deepEqual([
         refreshStatusOf('done', null),
-        refreshStatusOf('done', 'the summarizer failed'),
+        refreshStatusOf('done', textOf('the summarizer failed')),
         refreshStatusOf('timeout', null),
-        refreshStatusOf('timeout', 'the summarizer failed'),
+        refreshStatusOf('timeout', textOf('the summarizer failed')),
     ], ['refreshed', 'failed', 'timed-out', 'timed-out']);
 });
 
@@ -25,7 +25,7 @@ test('a refresh that finishes with no stored error is refreshed', async () => {
 
 test('a refresh that finishes with a stored error is failed', async () => {
     const store = memoryStore();
-    store.records.failRun({ tab: tabId('w1:t1'), at: instant(100), cause: 'requested', backend: null, language: textOf('en'), costUsd: usdOf(0), error: textOf('the summarizer failed'), lanes: [] });
+    store.records.failRun({ tab: tabId('w1:t1'), at: instant(100), cause: 'requested', backend: null, language: textOf('en'), costUsd: usdOf(0), error: textOf(textOf('the summarizer failed')), lanes: [] });
     assert.equal(await refreshedWithin(Promise.resolve(), store.records, 'w1:t1', 1_000), 'failed');
 });
 
@@ -37,7 +37,7 @@ test('a refresh that does not finish in time is timed out, whatever the tab stor
 
 test('a run that fails and then succeeds reads failed, then refreshed, on the tab store', async () => {
     const store = memoryStore();
-    store.records.failRun({ tab: tabId('w1:t1'), at: instant(100), cause: 'requested', backend: null, language: textOf('en'), costUsd: usdOf(0), error: textOf('the summarizer failed'), lanes: [] });
+    store.records.failRun({ tab: tabId('w1:t1'), at: instant(100), cause: 'requested', backend: null, language: textOf('en'), costUsd: usdOf(0), error: textOf(textOf('the summarizer failed')), lanes: [] });
     assert.equal(await refreshedWithin(Promise.resolve(), store.records, 'w1:t1', 1_000), 'failed');
     recordOps(store, { tab: tabId('w1:t1'), at: instant(200), cause: 'requested', backend: null, language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [], tasks: [], ops: [] });
     assert.equal(await refreshedWithin(Promise.resolve(), store.records, 'w1:t1', 1_000), 'refreshed');

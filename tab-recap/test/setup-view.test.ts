@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { textOf } from '#src/recap/domain/text.ts';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -146,7 +147,7 @@ test('the Models group: a heading, one row per job showing harness · model · e
     const spanish = setupView(base, es, 100).join('\n');
     assert.match(spanish, /Modelos — agente · modelo · esfuerzo/);
     assert.match(spanish, /Guion de compactar\s+como el redactor · el modelo del redactor · high/);
-    const set = { ...base, draft: { ...base.draft, compact: { by: 'claude' as const, model: 'sonnet', effort: 'medium' as const } } };
+    const set = { ...base, draft: { ...base.draft, compact: { by: 'claude' as const, model: textOf('sonnet'), effort: 'medium' as const } } };
     assert.match(setupView(set, en, 100).join('\n'), /Compact brief\s+claude · sonnet · medium/);
     const choosing = setupView(typed(withAvailable(base, ['codex']), ['j', '\r']), en, 100).join('\n');
     assert.match(choosing, /▸ as the recap writer — the same harness/);

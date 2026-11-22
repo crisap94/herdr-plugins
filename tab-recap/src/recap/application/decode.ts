@@ -1,4 +1,4 @@
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { textOf, parseText, type Text } from '#src/recap/domain/text.ts';
 import { paneId, sessionIdFromAgentValue, sessionPathFromAgentValue, tabId } from '#src/recap/domain/ids.ts';
 import type { AgentSession, PaneId, SessionId } from '#src/recap/domain/ids.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
@@ -87,9 +87,9 @@ function agentSessionOf(info: JsonObject): AgentSession | null {
         return null;
     }
     if (info['kind'] === 'id') {
-        return { kind: 'id', value: sessionIdFromAgentValue(value) };
+        return { kind: 'id', value: sessionIdFromAgentValue(textOf(value)) };
     }
-    return info['kind'] === 'path' ? { kind: 'path', value: sessionPathFromAgentValue(value) } : null;
+    return info['kind'] === 'path' ? { kind: 'path', value: sessionPathFromAgentValue(textOf(value)) } : null;
 }
 
 export function sessionOf(data: JsonObject, identity: SessionOf): SessionId | null {

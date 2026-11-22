@@ -49,8 +49,6 @@ const STUB_CARRIED: readonly Edge[] = [
     { from: 'src/recap/domain/autocompact-style.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
     { from: 'src/recap/domain/autocompact-style.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
     { from: 'src/recap/domain/autocompact.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
-    { from: 'src/recap/domain/autocompact.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
-    { from: 'src/recap/domain/autocompact.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
 ];
 
 const ALLOWED_PREFIXES: readonly string[] = ['src/compaction-timing/', 'src/protocol/', 'src/contract/', 'src/ports/', 'src/recap/domain/'];

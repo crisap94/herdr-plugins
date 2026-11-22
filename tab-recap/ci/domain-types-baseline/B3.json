@@ -138,7 +138,7 @@
   },
   "src/recap/application/setup-fields.ts": {
     "parameter": 13,
-    "return": 13,
+    "return": 9,
     "property": 1
   },
   "src/recap/application/setup-keys.ts": {
@@ -147,8 +147,6 @@
     "container": 1
   },
   "src/recap/application/setup-state.ts": {
-    "parameter": 4,
-    "return": 4,
     "container": 7,
     "property": 43,
     "assertion": 2

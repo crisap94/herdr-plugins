@@ -2,7 +2,7 @@ import { must } from '#src/protocol/result.ts';
 import type { Catalog } from '#src/i18n/messages.ts';
 import { DECIDER_BY_OPTIONS, EFFORT_CHOICES, fieldOf, FIELDS, HARNESS_CHOICES, JOB_BY_OPTIONS, JOB_FIELDS, LOCALE_CHOICES, MODE_CHOICES, modelTarget, ROWS, rowOf, STYLE_CHOICES, SWITCH_CHOICES, MISSED_CHOICES } from '#src/recap/application/setup-keys.ts';
 import type { FieldId, RowId, Setup } from '#src/recap/application/setup-keys.ts';
-import type { DeciderJob } from '#src/recap/domain/job.ts';
+import type { DeciderSetting } from '#src/recap/domain/job.ts';
 import { COMPACT_NOTE_CHOICES } from '#src/recap/domain/compact-note.ts';
 import { AUTO_ORDER, hasAvailabilityMark, JOB_HARNESSES, MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
@@ -63,7 +63,7 @@ function jobText(row: RowId, state: Setup, catalog: SetupCatalog): Text {
     const typing = focused === 1 && state.editing?.kind === 'text' ? state.editing.buffer : null;
     const { draft } = state;
     const target = modelTarget(draft, state.available);
-    const others: Readonly<Partial<Record<RowId, DeciderJob>>> = { judgeJob: draft.judge, curatorJob: draft.curate, autocompactJob: draft.decide };
+    const others: Readonly<Partial<Record<RowId, DeciderSetting>>> = { judgeJob: draft.judge, curatorJob: draft.curate, autocompactJob: draft.decide };
     const other = others[row] ?? draft.compact;
     const parts: readonly Text[] = row === 'recapJob'
         ? [must(parseText(draft.backend)), target === null ? catalog.setup.modelNoAgent : modelText(must(parseText(draft.models[target])), target, catalog), must(parseText(draft.effort))]

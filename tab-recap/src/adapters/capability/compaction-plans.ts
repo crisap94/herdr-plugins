@@ -1,5 +1,5 @@
 import { compactCommand } from '@stateforge-labs/harness-adapters';
-import { compactionLine, compactionPiece, confirmationReads, needsIdle, QUEUES, unsupported } from '#src/recap/domain/compaction-plan.ts';
+import { compactionLine, needsIdle, parseCompactionPiece, parseConfirmationReads, QUEUES, unsupported } from '#src/recap/domain/compaction-plan.ts';
 import type { CompactionPlanResult } from '#src/recap/domain/compaction-plan.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
@@ -19,7 +19,7 @@ type HarnessKind = Parameters<typeof compactCommand>[0];
 type PlanFor = (guidance: Text) => CompactionPlanResult;
 
 const claude = (guidance: Text): CompactionPlanResult => ({ kind: 'supported', plan: {
-    lines: [compactionLine(compactionPiece(`${compactCommand('claude')} `), compactionPiece(guidance))],
+    lines: [compactionLine(must(parseCompactionPiece(`${compactCommand('claude')} `)), must(parseCompactionPiece(guidance)))],
     enterDelay: duration(300),
     confirm: { kind: 'turn-end' },
     retryOnSelfFailure: true,
@@ -28,12 +28,12 @@ const claude = (guidance: Text): CompactionPlanResult => ({ kind: 'supported', p
 } });
 
 const polling = (harness: HarnessKind): PlanFor => (_guidance: Text): CompactionPlanResult => ({ kind: 'supported', plan: {
-    lines: [compactionLine(compactionPiece(compactCommand(harness)))],
+    lines: [compactionLine(must(parseCompactionPiece(compactCommand(harness))))],
     enterDelay: duration(300),
-    confirm: { kind: 'poll', reads: confirmationReads(20), every: duration(1000) },
+    confirm: { kind: 'poll', reads: must(parseConfirmationReads(20)), every: duration(1000) },
     retryOnSelfFailure: false,
     followUp: { kind: 'restore-message', acceptsStall: true },
-    whileWorking: needsIdle('queued input is not measured for this kind'),
+    whileWorking: needsIdle(textOf('queued input is not measured for this kind')),
 } });
 
 export const COMPACTION_PLANS = {

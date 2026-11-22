@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { messagesFor } from '#src/i18n/index.ts';
-import { HANDOFF_OUTCOME_ROWS, USAGE_EXIT, exitCodeOf, handoffOutcomeOf, isStorable, messageKeyOf, storedOutcomeOf } from '#src/recap/domain/handoff-outcome.ts';
+import { HANDOFF_OUTCOME_ROWS, USAGE_EXIT, exitCodeOf, isStorable, messageKeyOf } from '#src/recap/domain/handoff-outcome.ts';
+import { handoffOutcomeOf, storedOutcomeOf } from './fakes/handoff-outcome-readers.ts';
 import type { HandoffMessageKey, HandoffOutcome, HandoffOutcomeRow, StoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 
 const outcomeFor = (row: HandoffOutcomeRow): HandoffOutcome => handoffOutcomeOf(row.outcome, row.reason) ?? assert.fail(`no outcome for ${row.outcome}`);

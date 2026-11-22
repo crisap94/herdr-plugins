@@ -4,7 +4,8 @@ import type { Entry } from '#src/ports/transcripts.ts';
 import { autocompactState } from '#src/recap/application/autocompact-state.ts';
 import type { AutocompactState } from '#src/recap/application/autocompact-state.ts';
 import { contextOf, shareOf } from '#src/recap/domain/compaction.ts';
-import { COOLDOWN_DEFAULT_MS, CEILING_DEFAULT, KINDS_DEFAULT, gateOf } from '#src/recap/domain/autocompact.ts';
+import { COOLDOWN_DEFAULT_MS, CEILING_DEFAULT, KINDS_DEFAULT, gateFrom, parseGatePercent } from '#src/recap/domain/autocompact.ts';
+import { duration, instant } from '#src/recap/domain/time.ts';
 import type { Gate } from '#src/recap/domain/autocompact.ts';
 import { flightOf, flightReason, NOT_AWAITING, observedFrom, runningCount, unreadable } from '#src/recap/domain/in-flight.ts';
 import { hindsightOf } from '#src/experiment/hindsight.ts';
@@ -71,7 +72,7 @@ function gateAt(stored: StoredPoint, lines: readonly string[], lastBreakAt: numb
     const flight = claudeInFlight(lines);
     const inFlight = flight.kind === 'in-flight' ? flight.count : 'unknown';
     const observed = flight.kind === 'in-flight' ? observedFrom(runningCount(countOf(flight.count)), flight.background, flightReason(textOf('running'))) : unreadable(flightReason(textOf('unreadable')));
-    const gate = gateOf({ kind: 'claude', kinds: KINDS_DEFAULT, shadowKinds: [], busy: false, flight: flightOf(observed, NOT_AWAITING), share, minimum: EXPERIMENT_MINIMUM, ceiling: CEILING_DEFAULT, now: stored.at, lastBreakAt, lastDecisionAt: null, cooldownMs: COOLDOWN_DEFAULT_MS, unchanged: false }).gate;
+    const gate = gateFrom({ kind: 'claude', kinds: KINDS_DEFAULT, shadowKinds: [], busy: 'free', flight: flightOf(observed, NOT_AWAITING), share: parseGatePercent(share), minimum: parseGatePercent(EXPERIMENT_MINIMUM), ceiling: parseGatePercent(CEILING_DEFAULT), now: instant(stored.at), lastBreakAt: lastBreakAt === null ? null : instant(lastBreakAt), lastDecisionAt: null, cooldownMs: duration(COOLDOWN_DEFAULT_MS), unchanged: 'changed' }).gate;
     return { inFlight, gate };
 }
 

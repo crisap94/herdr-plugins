@@ -1,4 +1,5 @@
 import { parseCount } from '#src/recap/domain/count.ts';
+import { policyOf, tuningOf } from './fakes/settings-readers.ts';
 import { candidateFor } from './autocompact-world.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
@@ -19,8 +20,6 @@ import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
-import { policyOf } from '#src/recap/domain/autocompact.ts';
-import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { DecidedAnswersResult, DecidedResult, Decider, DeciderPort } from '#src/ports/decider.ts';
 import type { InFlightResult, Located, Transcripts } from '#src/ports/transcripts.ts';

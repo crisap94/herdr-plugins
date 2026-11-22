@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HANDOFF_OUTCOME_ROWS, storedOutcomeOf } from '#src/recap/domain/handoff-outcome.ts';
+import { HANDOFF_OUTCOME_ROWS } from '#src/recap/domain/handoff-outcome.ts';
+import { storedOutcomeOf } from './fakes/handoff-outcome-readers.ts';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { memoryStore } from './db/support.ts';
