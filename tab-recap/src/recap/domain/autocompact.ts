@@ -4,11 +4,10 @@ import { REGISTERED_KINDS, kindsWith, registeredKindOf } from '@stateforge-labs/
 import type { RegisteredKind } from '@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts';
 import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import { isSection, type Section } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
-import { holdsLane } from '@stateforge-labs/session-ledger/unstable/recap/domain/in-flight.ts';
-import type { Milliseconds } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { holdsLane, type Flight } from '@stateforge-labs/session-ledger/unstable/recap/domain/in-flight.ts';
+import type { Duration, Instant, Milliseconds } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import { agentKind, type AgentKind } from './ids.ts';
 import type { Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import type { AutocompactReader, GateInput, JevReader } from './legacy.ts';
 
 export type CeilingPolicy = 'overrides-check' | 'blocked-by-check';
 export type Backoff = { readonly kind: 'off' } | { readonly kind: 'window'; readonly ms: Milliseconds };
@@ -97,6 +96,12 @@ export function parseAutocompactPercent(raw: unknown, fallback: unknown): Autoco
     return brand<number, 'AutocompactPercent'>(text !== '' && Number.isInteger(percent) && percent >= MINIMUM_MIN && percent <= MINIMUM_MAX ? percent : Number(fallback));
 }
 
+export type GatePercent = AutocompactPercent;
+
+export function parseGatePercent(raw: unknown): GatePercent {
+    return brand<number, 'AutocompactPercent'>(Number(raw));
+}
+
 export type AutocompactCeiling = AutocompactPercent;
 
 export function parseAutocompactCeiling(raw: unknown, minimum: AutocompactPercent, style: AutocompactStyle = STYLE_DEFAULT): AutocompactCeiling {
@@ -131,7 +136,9 @@ export function parseShadowKinds(raw: unknown): ShadowKinds {
 
 export type AutocompactSetting = 'TAB_RECAP_AUTOCOMPACT' | 'TAB_RECAP_AUTOCOMPACT_AT' | 'TAB_RECAP_AUTOCOMPACT_CEILING' | 'TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS' | 'TAB_RECAP_AUTOCOMPACT_KINDS' | 'TAB_RECAP_AUTOCOMPACT_SHADOW_KINDS' | 'TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK' | 'TAB_RECAP_AUTOCOMPACT_COVERAGE_BACKOFF_MS' | 'TAB_RECAP_AUTOCOMPACT_MISSED_FACTS' | 'TAB_RECAP_AUTOCOMPACT_STYLE';
 
-export function policyOf(get: AutocompactReader): AutocompactPolicy {
+export type AutocompactSettings = (key: AutocompactSetting) => Text | undefined;
+
+export function policyFrom(get: AutocompactSettings): AutocompactPolicy {
     const style = parseAutocompactStyle(get('TAB_RECAP_AUTOCOMPACT_STYLE'));
     const minimum = parseAutocompactPercent(get('TAB_RECAP_AUTOCOMPACT_AT'), MINIMUM_DEFAULT);
     return {
@@ -180,7 +187,9 @@ export function parseJevModel(raw: unknown): JevModel {
     return brand<string, 'JevModel'>(model === '' ? JEV_MODEL_DEFAULT : model);
 }
 
-export function jevOf(get: JevReader): JevSettings {
+export type JevSettingReader = (key: JevSetting) => Text | undefined;
+
+export function jevFrom(get: JevSettingReader): JevSettings {
     return { url: parseJevUrl(get('TAB_RECAP_JEV_URL')), model: parseJevModel(get('TAB_RECAP_JEV_MODEL')) };
 }
 
@@ -195,26 +204,47 @@ export const SKIP_GATES = ['below-minimum', 'busy', 'in-flight', 'cooldown', 'un
 export type SkipGate = (typeof SKIP_GATES)[number];
 export type Gate = SkipGate | 'ceiling' | 'ask';
 
-function backoffGate(input: GateInput): Gate | null {
-    if (input.coverageBackoff && input.share < input.ceiling) return 'coverage-backoff';
+export type GateBusy = 'busy' | 'free';
+export type GateSameness = 'same' | 'changed';
+export type GateCoverage = 'backing-off' | 'open';
+
+export interface GateFacts {
+    readonly kind: LaneKind;
+    readonly kinds: AutocompactKinds;
+    readonly shadowKinds: readonly RegisteredKind[];
+    readonly busy: GateBusy;
+    readonly flight: Flight | null;
+    readonly share: GatePercent;
+    readonly minimum: GatePercent;
+    readonly ceiling: GatePercent;
+    readonly now: Instant;
+    readonly lastBreakAt: Instant | null;
+    readonly lastDecisionAt: Instant | null;
+    readonly cooldownMs: Duration;
+    readonly unchanged: GateSameness;
+    readonly coverageBackoff?: GateCoverage;
+}
+
+function backoffGate(input: GateFacts): Gate | null {
+    if (input.coverageBackoff === 'backing-off' && input.share < input.ceiling) return 'coverage-backoff';
     return null;
 }
 
 export type RecordOnly = 'record-only' | 'may-act';
 
-interface GateDecision {
+export interface GateDecision {
     readonly gate: Gate;
     readonly recordOnly: RecordOnly;
 }
 
-export function gateOf(input: GateInput): GateDecision {
+export function gateFrom(input: GateFacts): GateDecision {
     const recordOnly: RecordOnly = !input.kinds.includes(input.kind) || input.shadowKinds.some((kind) => kind === input.kind) ? 'record-only' : 'may-act';
     const since = Math.max(input.lastBreakAt ?? -Infinity, input.lastDecisionAt ?? -Infinity);
     const gate = ((): Gate => {
-        if (input.busy) return 'busy';
+        if (input.busy === 'busy') return 'busy';
         if (input.share < input.minimum) return 'below-minimum';
         if (input.now - since < input.cooldownMs) return 'cooldown';
-        if (input.unchanged) return 'unchanged';
+        if (input.unchanged === 'same') return 'unchanged';
         const backoff = backoffGate(input);
         if (backoff !== null) return backoff;
         if (input.flight !== null && holdsLane(input.flight, input.share >= input.ceiling)) return 'in-flight';
@@ -224,4 +254,5 @@ export function gateOf(input: GateInput): GateDecision {
 }
 
 export type { GateInput } from './legacy.ts';
+export { gateOf, jevOf, policyOf } from './legacy.ts';
 export { autocompactDefaultKinds } from './legacy.ts';

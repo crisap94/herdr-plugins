@@ -12,14 +12,14 @@ import type { RequestId } from '#src/protocol/primitives.ts';
 import { must, type Result } from '#src/protocol/result.ts';
 import { kindsWith, type RegisteredKind, type RegisteredKindTable } from '@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts';
 import type { Flight } from '@stateforge-labs/session-ledger/unstable/recap/domain/in-flight.ts';
-import { instant, type Duration, type Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { duration, instant, type Duration, type Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import type { ContextUse } from '@stateforge-labs/session-ledger/unstable/recap/domain/compaction.ts';
 import { parseCount, type Count } from './count.ts';
 import type { Origin } from './origin.ts';
 import { RUN_CAUSES, sessionFactsFrom, type AutocompactCounts, type RunCounts, type SessionFacts } from './session-facts.ts';
 import type { AskOutcome } from './ask-outcome.ts';
-import type { AutocompactKinds, AutocompactSetting, JevSetting, LaneKind } from './autocompact.ts';
-import type { AutocompactStyle } from './autocompact-style.ts';
+import { gateFrom, jevFrom, parseGatePercent, policyFrom, type AutocompactKinds, type AutocompactPolicy, type AutocompactSetting, type GateDecision, type JevSetting, type JevSettings, type LaneKind } from './autocompact.ts';
+import { tuningFrom, type AutocompactStyle } from './autocompact-style.ts';
 import type { Thresholds } from './autocompact-verdict.ts';
 import { BACKOFF_BASE_MS, BACKOFF_MAX_MS } from './backoff.ts';
 import type { Shape } from './board.ts';
@@ -62,6 +62,15 @@ export type AutocompactReader = (key: AutocompactSetting) => string | undefined;
 export type JevReader = (key: JevSetting) => string | undefined;
 
 export interface GateInput { readonly kind: LaneKind; readonly kinds: AutocompactKinds; readonly shadowKinds: readonly RegisteredKind[]; readonly busy: boolean; readonly flight: Flight | null; readonly share: number; readonly minimum: number; readonly ceiling: number; readonly now: number; readonly lastBreakAt: number | null; readonly lastDecisionAt: Instant | null; readonly cooldownMs: number; readonly unchanged: boolean; readonly coverageBackoff?: boolean; }
+
+export function gateOf(input: GateInput): GateDecision {
+    return gateFrom({
+        kind: input.kind, kinds: input.kinds, shadowKinds: input.shadowKinds, flight: input.flight, lastDecisionAt: input.lastDecisionAt,
+        busy: input.busy ? 'busy' : 'free', unchanged: input.unchanged ? 'same' : 'changed', ...(input.coverageBackoff ? { coverageBackoff: 'backing-off' } : {}),
+        share: parseGatePercent(input.share), minimum: parseGatePercent(input.minimum), ceiling: parseGatePercent(input.ceiling),
+        now: instant(input.now), lastBreakAt: input.lastBreakAt === null ? null : instant(input.lastBreakAt), cooldownMs: duration(input.cooldownMs),
+    });
+}
 
 export function backoffMs(failures: number): number { return failures <= 0 ? 0 : Math.min(BACKOFF_MAX_MS, BACKOFF_BASE_MS * 2 ** (failures - 1)); }
 
@@ -127,38 +136,9 @@ export function notesOf(tokens: Readonly<Record<string, string>>): readonly Note
     });
 }
 
-export interface Merge { readonly id: string; readonly into: string; }
+import { isObject, verdictOf, type Merge } from './twins/curation/legacy.ts';
 
 export interface Curation { readonly merges: readonly Merge[]; readonly story: string | null; readonly refused: readonly string[]; }
-
-function isObject(value: unknown): value is Readonly<Record<string, unknown>> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
-
-interface Merged { readonly ids: ReadonlySet<string>; readonly targets: ReadonlySet<string>; }
-
-function closeRefusal(op: Readonly<Record<string, unknown>>, open: ReadonlySet<string>, merged: Merged): string | null {
-    const [id, into] = [op['id'], op['into']];
-    if (op['why'] !== 'merged' || typeof into !== 'string') {
-        return `close ${String(id)} must say why "merged" and the fact it merges into`;
-    }
-    if (typeof id !== 'string' || !open.has(id) || merged.ids.has(id)) {
-        return `${String(id)} is not an open fact (or is already merged)`;
-    }
-    if (merged.targets.has(id)) {
-        return `${id} is where another fact was merged: it stays open`;
-    }
-    return id === into || !open.has(into) || merged.ids.has(into) ? `${id} cannot merge into ${into}` : null;
-}
-
-function refusal(op: unknown, open: ReadonlySet<string>, merged: Merged): string | null {
-    if (!isObject(op)) {
-        return 'not an operation';
-    }
-    return op['op'] === 'close' ? closeRefusal(op, open, merged) : `${String(op['op'])} is not allowed: the curator may only close`;
-}
-
-export function parseMerge(op: unknown): Merge | null { return isObject(op) && typeof op['id'] === 'string' && typeof op['into'] === 'string' ? { id: op['id'], into: op['into'] } : null; }
-
-function verdictOf(op: unknown, open: ReadonlySet<string>, merged: Merged): Merge | string { return refusal(op, open, merged) ?? parseMerge(op) ?? 'not an operation'; }
 
 export function curationOf(answer: string, open: ReadonlySet<string>): Curation {
     let parsed: unknown;
@@ -294,9 +274,17 @@ export const sanitizeHandoffText = (raw: string): HandoffText => cleanHandoffTex
 
 export const isForbidden = (text: HandoffText): boolean => vetHandoffText(text).kind === 'err';
 
+export const tuningOf = (get: TuningReader): AutocompactTuning => tuningFrom((key) => textValue(get(key)));
+
+export const policyOf = (get: AutocompactReader): AutocompactPolicy => policyFrom((key) => textValue(get(key)));
+
+export const jevOf = (get: JevReader): JevSettings => jevFrom((key) => textValue(get(key)));
+
 export const herdrEventsOf = (raw: string | undefined): HerdrEvents => herdrEventsFrom(textValue(raw));
 
 export * from './twins/values/legacy.ts';
+
+export { parseMerge, type Merge } from './twins/curation/legacy.ts';
 
 export const handoffOutcomeOf = (kind: string, reason: string | null): HandoffOutcome | null => okOrNull(parseHandoffOutcome(kind, reason));
 
