@@ -12,7 +12,6 @@ import { compactFooterText, compactViewText } from '#src/recap/render/compact.ts
 import { coloured } from '#src/recap/render/wrap.ts';
 import { BEL, FRAME_END, FRAME_HOME, LINE_END, RESET_SGR, SCREEN_OFF, SCREEN_ON, TITLE_OSC } from '#src/adapters/os/tui.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
-import { textOf } from '#src/recap/domain/text.ts';
 
 const style = styleFor(process.stdout);
 const RESET = style === coloured ? RESET_SGR : '';
