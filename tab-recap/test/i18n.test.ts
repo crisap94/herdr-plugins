@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { instructions, message } from '#src/adapters/job/prompts/recap-prompt.ts';
 import { languageName, messagesFor, recapLanguageOf } from '#src/i18n/index.ts';
 import { SECTIONS, sectionOf } from '#src/i18n/sections.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { localeOf } from '#src/daemon/config.ts';
 
 const base = { previousLanguage: 'en', input: requestOf().input };
@@ -13,13 +14,13 @@ test('sections: seven, always in this order, with both headings; a heading is re
     assert.deepEqual(SECTIONS.map((section) => section.en), ['Goal', 'Now', 'Needs you', 'Done', 'Decisions', 'Next', 'Links']);
     assert.deepEqual(SECTIONS.map((section) => section.es), ['Objetivo', 'Ahora', 'Te necesita', 'Hecho', 'Decisiones', 'Siguiente', 'Enlaces']);
     for (const section of SECTIONS) {
-        assert.equal(sectionOf(`## ${section.en}`), section.id);
-        assert.equal(sectionOf(`### ${section.es.toUpperCase()}`), section.id);
+        assert.equal(sectionOf(textOf(`## ${section.en}`)), section.id);
+        assert.equal(sectionOf(textOf(`### ${section.es.toUpperCase()}`)), section.id);
     }
     for (const [old, id] of [['Waiting on you', 'needs'], ['Esperando tu respuesta', 'needs'], ['Key refs', 'links'], ['Referencias clave', 'links'], ['Próximos pasos', 'next']] as const) {
-        assert.equal(sectionOf(`## ${old}`), id, old);
+        assert.equal(sectionOf(textOf(`## ${old}`)), id, old);
     }
-    assert.equal(sectionOf('## Something else'), null);
+    assert.equal(sectionOf(textOf('## Something else')), null);
 });
 
 test('instructions: the operations contract — add, update, close, the sections and what the column shows; the language only changes the values', () => {

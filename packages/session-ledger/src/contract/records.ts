@@ -1,4 +1,4 @@
-import type { Unknown } from './kernel.ts';
+import type { Count, GateName, Unknown } from './kernel.ts';
 import type { ScopeId, SessionKey } from './ids.ts';
 import type { RecapCause } from './session.ts';
 import type { Fact, HistoryFact, Refusal, TaskId } from './facts.ts';
@@ -60,9 +60,9 @@ export interface SessionMark {
 }
 
 export interface GateStats {
-    readonly refused: Readonly<Record<string, number>>;
-    readonly flagged: Readonly<Record<string, number>>;
-    readonly dropped: number;
+    readonly refused: Readonly<Record<GateName, Count>>;
+    readonly flagged: Readonly<Record<GateName, Count>>;
+    readonly dropped: Count;
 }
 
 export interface RunFacts {

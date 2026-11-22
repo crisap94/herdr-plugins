@@ -57,12 +57,12 @@ export function judge(gates: readonly Gate[], ops: readonly Operation[], ground:
     const folded = apply([...ground.shown.values()], resolved, { ...DRY, task: { tab: ground.tab, key: ground.key }, at: now, mint: () => brand<string, 'FactId'>(`dry-${(made += 1)}`) });
     const late: Finding[] = folded.refused.map((refusal) => {
         const source = gated.kept[resolved.indexOf(refusal.op)];
-        return { at: source === undefined ? -1 : ops.indexOf(source), gate: 'L', outcome: 'refuse', reason: `refused by the ledger: ${refusal.reason}` };
+        return { at: count(source === undefined ? -1 : ops.indexOf(source)), gate: 'L', outcome: 'refuse', reason: textOf(`refused by the ledger: ${refusal.reason}`) };
     });
     const dropped = new Set(late.map((finding) => finding.at));
     const kept = resolved.filter((_, at) => {
         const source = gated.kept[at];
-        return !dropped.has(source === undefined ? -1 : ops.indexOf(source));
+        return !dropped.has(count(source === undefined ? -1 : ops.indexOf(source)));
     });
     return { kept, refused: [...gated.refused, ...late], given: ops, gated };
 }
@@ -72,7 +72,7 @@ export const forTask = (tasked: readonly Tasked[], key: Text): readonly Operatio
 export function keptOf(judged: readonly Judged[], tasks: readonly TaskGround[]): readonly Tasked[] {
     return judged.flatMap((each, at) => {
         const out = new Set(each.refused.map((finding) => finding.at));
-        return each.given.flatMap((op, index) => (out.has(index) ? [] : [{ task: tasks[at]?.key ?? textOf(''), op }]));
+        return each.given.flatMap((op, index) => (out.has(count(index)) ? [] : [{ task: tasks[at]?.key ?? textOf(''), op }]));
     });
 }
 
@@ -89,8 +89,8 @@ export function retryFor(judged: readonly Judged[], world: RetryWorld, problems:
     const refused = judged.flatMap((each, task): RefusedOperation[] => {
         const reasons = new Map<Count, Reasoned[]>();
         for (const finding of each.refused) {
-            const at = count(finding.at);
-            reasons.set(at, [...(reasons.get(at) ?? []), { gate: textOf(finding.gate), reason: textOf(finding.reason) }]);
+            const at = finding.at;
+            reasons.set(at, [...(reasons.get(at) ?? []), { gate: textOf(finding.gate), reason: finding.reason }]);
         }
         return [...reasons].toSorted(earlier).flatMap(([at, why]) => {
             const operation = each.given[at];

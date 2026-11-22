@@ -1,12 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import { outcomesOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/index.ts';
 import type { GatedSection, Item } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/index.ts';
 
-const CONTEXT = { language: 'en', agents: ['a1', 'a2', 'claude', 'codex'], earlier: [] as readonly Item[] };
+const CONTEXT = { language: textOf('en'), agents: ['a1', 'a2', 'claude', 'codex'].map(textOf), earlier: [] as readonly Item[] };
 
 const verdictOf = (section: GatedSection, text: string, earlier: readonly Item[] = []): string[] =>
-    outcomesOf({ task: 't1', section, position: 0, text }, { ...CONTEXT, earlier }).map((outcome) => `${outcome.kind}:${outcome.gate}`);
+    outcomesOf({ task: textOf('t1'), section, position: brand<number, 'Count'>(0), text: textOf(text) }, { ...CONTEXT, earlier }).map((outcome) => `${outcome.kind}:${outcome.gate}`);
 
 const REFUSED: readonly (readonly [GatedSection, string, string])[] = [
     ['done', 'claude: Updated notes/plan.md with DONE status and removed both worktrees.', 'refuse:G1'],
@@ -70,7 +72,7 @@ test('flags never refuse: nothing concrete and a pronoun opener are counted and 
 });
 
 test('a duplicate of an earlier item of the task is refused, the first one is kept', () => {
-    const kept: Item = { task: 't1', section: 'next', position: 0, text: 'Start step 4 only after its own freeze and the gauge below 50%.' };
+    const kept: Item = { task: textOf('t1'), section: 'next', position: brand<number, 'Count'>(0), text: textOf('Start step 4 only after its own freeze and the gauge below 50%.') };
     assert.deepEqual(verdictOf('next', 'Wait for the gauge below 50% and start step 4 after its own freeze.', [kept]), ['refuse:G2']);
     assert.deepEqual(verdictOf('next', 'Rotate the signing key.', [kept]), ['flag:G8']);
 });

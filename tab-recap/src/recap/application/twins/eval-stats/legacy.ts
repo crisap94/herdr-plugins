@@ -1,3 +1,4 @@
+import { gateName } from '#src/recap/domain/gates/gatekeeper.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import type { Pair } from '#src/ports/verdicts.ts';
 import { must } from '#src/protocol/result.ts';
@@ -65,7 +66,7 @@ export function gateReportOf(counts: readonly GateCount[]): GateReport {
     const gates = [...new Set(counts.flatMap(({ stats }) => [...Object.keys(stats.refused), ...Object.keys(stats.flagged)]))].toSorted((a, b) => a.localeCompare(b, 'en', { numeric: true }));
     return {
         runs: counts.length,
-        rows: gates.map((gate) => ({ gate, refused: counts.reduce((sum, { stats }) => sum + (stats.refused[gate] ?? 0), 0), flagged: counts.reduce((sum, { stats }) => sum + (stats.flagged[gate] ?? 0), 0) })),
+        rows: gates.map((gate) => ({ gate, refused: counts.reduce((sum, { stats }) => sum + (stats.refused[gateName(gate)] ?? 0), 0), flagged: counts.reduce((sum, { stats }) => sum + (stats.flagged[gateName(gate)] ?? 0), 0) })),
         dropped: counts.reduce((sum, { stats }) => sum + stats.dropped, 0),
     };
 }

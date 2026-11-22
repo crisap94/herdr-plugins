@@ -828,27 +828,6 @@
   {
     "class": "contract",
     "file": "src/contract/records.ts",
-    "symbol": "GateStats",
-    "field": "dropped",
-    "reason": "EC 2.2, copied shape: dropped of GateStats keeps the plain type of GateStats in tab-recap/src/recap/domain/gates/item-gate.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "GateStats",
-    "field": "flagged",
-    "reason": "EC 2.2, copied shape: flagged of GateStats keeps the plain type of GateStats in tab-recap/src/recap/domain/gates/item-gate.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "GateStats",
-    "field": "refused",
-    "reason": "EC 2.2, copied shape: refused of GateStats keeps the plain type of GateStats in tab-recap/src/recap/domain/gates/item-gate.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
     "symbol": "LastRun",
     "field": "at",
     "reason": "EC 2.2, copied shape: at of LastRun keeps the plain type of LastRun in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"

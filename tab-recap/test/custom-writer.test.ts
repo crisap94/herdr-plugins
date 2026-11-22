@@ -6,6 +6,7 @@ import { CustomHarness } from '#src/adapters/harness/custom.ts';
 import { RecapWriter } from '#src/adapters/job/writer.ts';
 import { extract, OLD_CONTRACT } from '#src/recap/application/extract-job.ts';
 import type { Extracted, Ground } from '#src/recap/application/extract-job.ts';
+import { gateName } from '#src/recap/domain/gates/gatekeeper.ts';
 import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
 import { scratchDir } from '#test/db/support.ts';
 import { requestOf } from './support.ts';
@@ -41,7 +42,7 @@ test('a command may leave the anchor out: its add is kept without one (G11 does 
     const done = await through(`console.log(JSON.stringify({ ops: [{ op: 'add', section: 'done', text: 'no anchor here' }] }));`);
     assert.ok(done.kind === 'ops');
     assert.deepEqual(done.tasks[0]?.ops.map((op) => (op.op === 'add' ? [op.text, op.anchor ?? null] : [])), [['no anchor here', null]]);
-    assert.equal(done.stats.refused['G11'] ?? 0, 0);
+    assert.equal(done.stats.refused[gateName('G11')] ?? 0, 0);
 });
 
 test('a command that still prints the 1.x recap fails the run with the contract line, once, and stores nothing', async () => {

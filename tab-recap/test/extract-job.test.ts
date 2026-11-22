@@ -8,6 +8,7 @@ import type { Extracted, Ground } from '#src/recap/application/extract-job.ts';
 import { numbered, severalOf } from '#src/recap/application/ledger-input.ts';
 import { writerContext } from '#src/recap/application/writer-context.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
+import { gateName } from '#src/recap/domain/gates/gatekeeper.ts';
 import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
 import { factOf } from './fakes/facts.ts';
 import { requestOf } from './support.ts';
@@ -59,7 +60,7 @@ test('a duplicate of the ledger is sent back ONCE naming the fact to update; the
     assert.match(retryDoc(calls[1]), /<fact id="f1" section="done"[^>]*>Released tab-recap 1\.10\.0 through the pipeline<\/fact>/, 'the fact the refusal names is shown');
     assert.ok(!retryDoc(calls[1]).includes('<transcript') && calls[1]?.correction === undefined, 'a short document, not the transcript again');
     assert.deepEqual(kept(done), [[`update ${released.id}`]]);
-    assert.ok(done.kind === 'ops' && done.cost === 1 && done.stats.refused['G2'] === 1 && done.stats.dropped === 0);
+    assert.ok(done.kind === 'ops' && done.cost === 1 && done.stats.refused[gateName('G2')] === 1 && done.stats.dropped === 0);
 });
 
 test('refused twice: the operation is dropped, the rest is applied, and the stats say so', async () => {
@@ -69,7 +70,7 @@ test('refused twice: the operation is dropped, the rest is applied, and the stat
     assert.equal(calls.length, 2, 'one retry, not more');
     assert.deepEqual(kept(done), [['Tag the release']]);
     assert.ok(done.kind === 'ops');
-    assert.deepEqual([done.stats.refused['G2'], done.stats.refused['G6'], done.stats.dropped], [2, 2, 2]);
+    assert.deepEqual([done.stats.refused[gateName('G2')], done.stats.refused[gateName('G6')], done.stats.dropped], [2, 2, 2]);
 });
 
 test('a close without a why (G10) and a malformed operation are named in the correction', async () => {
@@ -134,7 +135,7 @@ test('two refused operations out of nine: the retry document holds those two wit
     assert.equal((document.match(/<refused/g) ?? []).length, 2);
     assert.ok(!document.includes('<transcript') && !document.includes('Wrote the ledger gates'), 'what passed is not sent again');
     assert.deepEqual(kept(done), [[...SEVEN, 'The report is written to docs/report.md.', 'Leave the db tab alone because it is another task.']]);
-    assert.ok(done.kind === 'ops' && done.stats.refused['G1'] === 1 && done.stats.refused['G3'] === 1 && done.stats.dropped === 0);
+    assert.ok(done.kind === 'ops' && done.stats.refused[gateName('G1')] === 1 && done.stats.refused[gateName('G3')] === 1 && done.stats.dropped === 0);
 });
 
 test('a replacement that is still refused is dropped; the seven that passed and a good replacement are applied', async () => {
@@ -143,7 +144,7 @@ test('a replacement that is still refused is dropped; the seven that passed and 
     const { done, calls } = await run([first, second]);
     assert.equal(calls.length, 2, 'never a third try');
     assert.deepEqual(kept(done), [[...SEVEN, 'The report is written to docs/report.md.']]);
-    assert.ok(done.kind === 'ops' && done.stats.dropped === 1 && done.stats.refused['G1'] === 2 && done.stats.refused['G3'] === 1);
+    assert.ok(done.kind === 'ops' && done.stats.dropped === 1 && done.stats.refused[gateName('G1')] === 2 && done.stats.refused[gateName('G3')] === 1);
 });
 
 test('an add without an anchor, and one whose anchor is not in the input, are sent back with G11 and the quote they gave', async () => {

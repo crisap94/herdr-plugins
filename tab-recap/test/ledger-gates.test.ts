@@ -7,20 +7,22 @@ import { correctionOf, gatekeeper } from '#src/recap/domain/gates/gatekeeper.ts'
 import type { GateContext } from '#src/recap/domain/gates/gate.ts';
 import { jaccard } from '#src/recap/domain/gates/jaccard.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { factOf } from './fakes/facts.ts';
 
 const NOW = 10 * 3_600_000;
 const f4 = factOf('done', 'Released tab-recap 1.10.0 through the pipeline');
 const f5 = factOf('next', 'Review the migration test');
 const shut = factOf('done', 'Fixed the flaky lint job on main', { state: 'closed', closedWhy: 'done', closedAt: NOW - 3 * 3_600_000 });
-const context: GateContext = { now: NOW, language: 'en', agents: [], shown: new Map([['f4', f4], ['f5', f5]]), open: [f4, f5], closedLately: [shut], source: 'the pipeline went green and the release was tagged' };
+const context: GateContext = { now: instant(NOW), language: textOf('en'), agents: [], shown: new Map([[textOf('f4'), f4], [textOf('f5'), f5]]), open: [f4, f5], closedLately: [shut], source: textOf('the pipeline went green and the release was tagged') };
 const add = (text: string, section: 'done' | 'next' = 'done'): Operation => ({ op: 'add', section, text, why: null, ref: null, at: null, agent: null, anchor: 'the pipeline went green' });
 const gates = [duplicateGate, unknownIdGate, closeWhyGate];
 
 test('jaccard counts words of three letters or more, lower-cased', () => {
-    assert.equal(jaccard('Ship the 2.0 engine', 'ship THE 2.0 engine'), 1);
-    assert.equal(jaccard('a b', 'c d'), 0);
-    assert.ok(jaccard('Released tab-recap 1.10.0 through CI', 'Released tab-recap 1.10.0 through the pipeline') > 0.5);
+    assert.equal(jaccard(textOf('Ship the 2.0 engine'), textOf('ship THE 2.0 engine')), 1);
+    assert.equal(jaccard(textOf('a b'), textOf('c d')), 0);
+    assert.ok(jaccard(textOf('Released tab-recap 1.10.0 through CI'), textOf('Released tab-recap 1.10.0 through the pipeline')) > 0.5);
 });
 
 test('G2 refuses an add that repeats an open fact and names the one to update', () => {
@@ -42,7 +44,7 @@ test('a hidden fact\'s text is refused when added again, and the correction quot
 test('G2 prefers a shown twin when both shown and hidden open twins exist', () => {
     const shown = factOf('done', 'Released tab-recap 1.10.0 through the pipeline');
     const hidden = factOf('done', 'Released tab-recap 1.10.0 through the pipeline');
-    const contextWithTwins: GateContext = { ...context, shown: new Map([['f8', shown]]), open: [hidden, shown] };
+    const contextWithTwins: GateContext = { ...context, shown: new Map([[textOf('f8'), shown]]), open: [hidden, shown] };
     const operation = add('Released tab-recap 1.10.0 through the pipeline today');
     const found = gatekeeper(gates, [operation], contextWithTwins);
     assert.match(found.refused[0]?.reason ?? '', /it repeats f8 .*update f8 instead/);

@@ -8,6 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { gzipSync } from 'node:zlib';
 import { InputRetention } from '#src/recap/application/input-retention.ts';
+import { gateName } from '#src/recap/domain/gates/gatekeeper.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Pair, Verdict } from '#src/ports/verdicts.ts';
@@ -15,7 +16,8 @@ import { cursor, memoryStore, recordOps, type RunInput } from './support.ts';
 import { oneTask, withFacts } from '#test/support.ts';
 
 const DAY = 86_400_000;
-const STATS: GateStats = { refused: { G1: 2 }, flagged: { G8: 1 }, dropped: 1 };
+const count = brand<number, 'Count'>;
+const STATS: GateStats = { refused: { [gateName('G1')]: count(2) }, flagged: { [gateName('G8')]: count(1) }, dropped: count(1) };
 const SECTIONS = { goal: 'Ship retries', now: ['Review !256.'], needs: [], done: ['Merged !250.', 'Tagged 1.9.0.'], decisions: [], next: [], links: ['!256'], rules: [] };
 
 const run = (at: number, extra: Partial<RunInput> = {}): RunInput => ({
@@ -69,7 +71,7 @@ test('gate counts since a time, newest first, only for runs that have them', () 
     const store = memoryStore();
     recordOps(store, run(1000));
     recordOps(store, run(2000, { gateStats: STATS }));
-    recordOps(store, run(3000, { gateStats: { refused: {}, flagged: {}, dropped: 0 } }));
+    recordOps(store, run(3000, { gateStats: { refused: {}, flagged: {}, dropped: count(0) } }));
     assert.deepEqual(store.inputs.gateCounts(null).map((entry) => entry.at), [3000, 2000]);
     assert.deepEqual(store.inputs.gateCounts(2500).map((entry) => entry.at), [3000]);
 });

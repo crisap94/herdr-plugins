@@ -1,6 +1,7 @@
 import { hintFor, sizeOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/compaction.ts';
 import { sectionOf } from '@stateforge-labs/session-ledger';
 import type { SectionId } from '@stateforge-labs/session-ledger/unstable/i18n/sections.ts';
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import { headlineOf, renderRecap } from '@stateforge-labs/session-ledger/unstable/recap/application/recap-shape.ts';
 import type { ColumnTask, RecapColumn, Row, RowState, TextColumnView } from './model.ts';
 import { assertAmount, assertCount, assertPercent } from './wording.ts';
@@ -193,7 +194,7 @@ export function firstItem(markdown: string, section: SectionId): string | null {
     let inside = false;
     for (const line of markdown.split('\n')) {
         if (line.startsWith('#')) {
-            inside = sectionOf(line) === section;
+            inside = sectionOf(textOf(line)) === section;
             continue;
         }
         const text = line.replace(PLAIN_BULLET, '').replaceAll('**', '').replaceAll('`', '').trim();

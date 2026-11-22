@@ -22,3 +22,5 @@ export function parseNonEmptyText(input: unknown): Result<NonEmptyText, ParseFai
     }
     return ok(brand<string, 'NonEmptyText'>(text.value));
 }
+
+export const textOf = brand<string, 'Text'>;

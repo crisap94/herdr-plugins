@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { sectionOf } from '@stateforge-labs/session-ledger/unstable/i18n/legacy.ts';
+import { sectionOf } from '@stateforge-labs/session-ledger/unstable/i18n/sections.ts';
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import { anchorSource } from '@stateforge-labs/session-ledger/unstable/recap/application/anchor-source.ts';
 import { ADVANCED, marksOf, NOT_ADVANCED } from '@stateforge-labs/session-ledger/unstable/recap/application/boundaries.ts';
 import { groundOf } from '@stateforge-labs/session-ledger/unstable/recap/application/extract-ground.ts';
@@ -97,10 +98,10 @@ test('the recap input numbers agents by index and keeps the newest note of each 
 });
 
 test('the section headings map to section ids in English and Spanish, and unknown headings map to null', () => {
-    assert.equal(sectionOf('## Waiting on you'), 'needs');
-    assert.equal(sectionOf('## Próximos pasos'), 'next');
-    assert.equal(sectionOf('## Goals'), 'goal');
-    assert.equal(sectionOf('## Random'), null);
+    assert.equal(sectionOf(textOf('## Waiting on you')), 'needs');
+    assert.equal(sectionOf(textOf('## Próximos pasos')), 'next');
+    assert.equal(sectionOf(textOf('## Goals')), 'goal');
+    assert.equal(sectionOf(textOf('## Random')), null);
 });
 
 test('the ground of a recap names each task and extracting over it returns an outcome', async () => {

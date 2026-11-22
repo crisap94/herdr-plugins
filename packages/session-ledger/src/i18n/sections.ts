@@ -1,3 +1,5 @@
+import type { Text } from '#src/recap/domain/text.ts';
+
 export interface Section {
     readonly id: SectionId;
     readonly en: string;
@@ -17,4 +19,16 @@ export const SECTIONS: readonly Section[] = [
     { id: 'links', en: 'Links', es: 'Enlaces', hint: 'files, branches, merge requests, commands, hosts worth keeping' },
 ];
 
-export { sectionOf } from './legacy.ts';
+const OLDER_HEADINGS: Readonly<Record<string, SectionId>> = {
+    'waiting on you': 'needs',
+    'esperando tu respuesta': 'needs',
+    'key refs': 'links',
+    'referencias clave': 'links',
+    'próximos pasos': 'next',
+};
+
+export function sectionOf(heading: Text): SectionId | null {
+    const text = heading.replace(/^#+\s*/, '').trim().toLowerCase();
+    const older = Object.entries(OLDER_HEADINGS).find(([name]) => text.startsWith(name));
+    return older?.[1] ?? SECTIONS.find((section) => text.startsWith(section.en.toLowerCase()) || text.startsWith(section.es.toLowerCase()))?.id ?? null;
+}
