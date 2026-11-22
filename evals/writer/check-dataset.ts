@@ -21,6 +21,8 @@ import { FRESH_ITEMS, FRESH_SEED, guardOf, overlapOf } from '../lib/fresh.ts';
 import { PROJECTS } from './dataset-vocabulary.ts';
 import { brand } from '../../packages/session-ledger/src/recap/domain/brand.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
+import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/lane-shape.ts';
+import { factIdOf } from '../lib/brands.ts';
 
 const textOf = brand<string, 'Text'>;
 
@@ -68,8 +70,8 @@ const fail = (id: string, what: string): void => { failures.push(`${id}: ${what}
 
 function factOf(fact: InputFact, tab: string, language: string): Fact {
     return {
-        id: fact.id as FactId, task: { tab, key: TASK }, section: fact.section, text: fact.text, why: fact.why, ref: fact.ref, agent: fact.agent, anchor: fact.anchor,
-        firstAt: fact.first, lastAt: fact.last, state: fact.state, closedWhy: fact.closed, closedAt: fact.state === 'closed' ? fact.last : null, language,
+        id: factIdOf(fact.id), task: { tab: tabIdOf(tab), key: textOf(TASK) }, section: fact.section, text: fact.text, why: fact.why, ref: fact.ref, agent: fact.agent, anchor: fact.anchor,
+        firstAt: fact.first, lastAt: fact.last, state: fact.state, closedWhy: fact.closed, closedAt: fact.state === 'closed' ? fact.last : null, language: textOf(language),
     };
 }
 
@@ -153,11 +155,11 @@ for (const row of rows) {
     if (row.plants.length === 0) fail(row.id, 'no plant');
     if (expected.quiet !== (expected.key_facts.length === 0)) fail(row.id, 'quiet does not match key_facts');
 
-    const open = (id: string, what: string): void => { if (byId.get(id)?.state !== 'open') fail(row.id, `${what} names ${id}, which is not an open fact of the ledger`); };
+    const open = (id: string, what: string): void => { if (byId.get(textOf(id))?.state !== 'open') fail(row.id, `${what} names ${id}, which is not an open fact of the ledger`); };
     const shown = (span: string, what: string): void => {
         spans += 1;
         if (!document.includes(span)) fail(row.id, `${what} span is not in the built document: ${span}`);
-        if (!quotedIn(span, source)) fail(row.id, `${what} span is not in the anchor source: ${span}`);
+        if (!quotedIn(textOf(span), source)) fail(row.id, `${what} span is not in the anchor source: ${span}`);
     };
     const labels = new Set(entries.flatMap((entry) => (entry.at === undefined ? [] : [localTime(entry.at, input.tab.now, input.tab.zone)])));
 
@@ -166,18 +168,18 @@ for (const row of rows) {
         if (fact.span.length > 120) fail(row.id, `${fact.k} span is longer than an anchor`);
         if (fact.why_span !== null) shown(fact.why_span, `${fact.k} why`);
         if ((fact.section === 'decisions') !== (fact.why !== null)) fail(row.id, `${fact.k}: only a decision has a why`);
-        if (!labels.has(fact.at)) fail(row.id, `${fact.k} at ${fact.at} is not the time of a turn`);
+        if (!labels.has(textOf(fact.at))) fail(row.id, `${fact.k} at ${fact.at} is not the time of a turn`);
         if (entries[fact.entry] === undefined) fail(row.id, `${fact.k} entry is out of range`);
         if (fact.via_update_of !== null) open(fact.via_update_of, fact.k);
         if (fact.text.split(/\s+/u).length > 16) fail(row.id, `${fact.k} reference text has more than 16 words`);
-        const twin = facts.find((other) => other.state === 'open' && other.id !== fact.via_update_of && jaccard(other.text, fact.text) >= 0.5);
+        const twin = facts.find((other) => other.state === 'open' && other.id !== fact.via_update_of && jaccard(other.text, textOf(fact.text)) >= 0.5);
         if (twin !== undefined) fail(row.id, `${fact.k} is close to ledger fact ${twin.id}`);
     }
     for (const known of expected.already_in_ledger) {
         open(known.id, 'already_in_ledger');
         shown(known.span, `already_in_ledger ${known.id}`);
         naive += 1;
-        const tried = gated(row.input, JSON.stringify({ ops: [{ op: 'add', section: byId.get(known.id)?.section, text: known.naive_add, why: byId.get(known.id)?.why ?? null, ref: null, at: null, agent: 'a1', anchor: known.span.slice(0, 120) }] }));
+        const tried = gated(row.input, JSON.stringify({ ops: [{ op: 'add', section: byId.get(textOf(known.id))?.section, text: known.naive_add, why: byId.get(textOf(known.id))?.why ?? null, ref: null, at: null, agent: 'a1', anchor: known.span.slice(0, 120) }] }));
         const refusedByG2 = tried.refused.some((line) => line.startsWith('G2'));
         if (refusedByG2 !== known.g2_refuses_naive_add) fail(row.id, `already_in_ledger ${known.id}: g2_refuses_naive_add is ${known.g2_refuses_naive_add} but the gate says ${refusedByG2} (${tried.refused.join(' | ')})`);
     }
@@ -244,7 +246,7 @@ for (const row of rows) {
                 // A trap G13 refuses carries an anchor that no input holds (a paraphrase, or a sentence the document hides);
                 // any other trap carries a span the document quotes.
                 if (trap.g13_refuses) {
-                    if (quotedIn(op.anchor, source)) fail(row.id, `trap ${trap.kind} anchor is quotable from the input, so G13 would keep it`);
+                    if (quotedIn(textOf(op.anchor), source)) fail(row.id, `trap ${trap.kind} anchor is quotable from the input, so G13 would keep it`);
                 } else {
                     shown(op.anchor, `trap ${trap.kind}`);
                 }

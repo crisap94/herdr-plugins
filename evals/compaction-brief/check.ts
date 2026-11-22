@@ -4,6 +4,8 @@ import { compactionInput, type CompactionMaterial } from '../../tab-recap/src/re
 import { factsOf } from '../../tab-recap/src/recap/application/brief-coverage.ts';
 import { FORBIDDEN, vetted } from '../../tab-recap/src/recap/application/compaction-brief.ts';
 import { settledBefore } from '../../packages/session-ledger/src/recap/domain/boundary.ts';
+import { instant, type Instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
+import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import { BRIEF_INSTRUCTIONS } from '../../tab-recap/src/adapters/job/prompts/brief-instructions.ts';
 import { inputWordsIn, isEnglish, isPlain, ownOf, tokensOf, unknownTokens } from './checks.ts';
 
@@ -48,6 +50,7 @@ interface Row {
 const BLOCKING: ReadonlySet<string> = new Set(['goal', 'needs', 'decisions', 'rules']);
 const SECTIONS: ReadonlySet<string> = new Set(['goal', 'now', 'needs', 'done', 'decisions', 'next', 'links', 'rules']);
 const PLANNED: Readonly<Record<string, number>> = { 'plain': 4, 'long-ledger': 4, 'reason-easy-to-drop': 6, 'settled-reads-open': 5, 'forbidden-name-in-input': 4, 'non-english-session': 3, 'invented-path-bait': 2 };
+const breakAtOf = (input: CompactionMaterial): Instant | null => (input.lastBreakAt === null ? null : instant(input.lastBreakAt));
 const REAL = /crisap|homelab|herdr|cadre|\/home\/|tab-recap|anthropic|openai/iu;
 
 const path = process.argv[2] ?? join(import.meta.dir, 'dataset.jsonl');
@@ -104,8 +107,8 @@ for (const row of rows) {
     points('must_keep', expected.must_keep, (fact, pointer) => fact.state === 'open' && BLOCKING.has(fact.section) && fact.section === pointer.section);
     points('reasons', expected.reasons, (fact, pointer) => fact.section === 'decisions' && fact.why === pointer.why && fact.why !== null && document.includes(fact.why));
     points('waiting_on_operator', expected.waiting_on_operator, (fact) => fact.state === 'open' && fact.section === 'needs');
-    points('settled', expected.settled, (fact) => settledBefore(fact.closedAt, input.lastBreakAt));
-    points('must_not_reopen', expected.must_not_reopen, (fact) => settledBefore(fact.closedAt, input.lastBreakAt));
+    points('settled', expected.settled, (fact) => settledBefore(fact.closedAt, breakAtOf(input)));
+    points('must_not_reopen', expected.must_not_reopen, (fact) => settledBefore(fact.closedAt, breakAtOf(input)));
     points('planted.reasons', expected.planted.reasons, (fact, pointer) => fact.state === 'open' && fact.why === pointer.why);
 
     const checked = factsOf(history);
@@ -114,7 +117,7 @@ for (const row of rows) {
     if (JSON.stringify(keepNow) !== JSON.stringify(expected.must_keep.map((pointer) => pointer.index))) fail(id, 'must_keep is not the blocking facts of the plugin window');
     const reasonsNow = expected.must_keep.filter((pointer) => pointer.section === 'decisions').map((pointer) => pointer.index);
     if (JSON.stringify(reasonsNow) !== JSON.stringify(expected.reasons.map((pointer) => pointer.index))) fail(id, 'reasons do not match the kept decisions');
-    const settledNow = history.flatMap((fact, index) => (settledBefore(fact.closedAt, input.lastBreakAt) ? [index] : []));
+    const settledNow = history.flatMap((fact, index) => (settledBefore(fact.closedAt, breakAtOf(input)) ? [index] : []));
     if (JSON.stringify(settledNow) !== JSON.stringify(expected.settled.map((pointer) => pointer.index))) fail(id, 'settled differs from the plugin rule');
     if (!expected.must_keep.some((pointer) => pointer.index === expected.goal.index)) fail(id, 'the goal is not in must_keep');
     if (expected.waiting_on_operator.some((pointer) => !expected.must_keep.some((kept) => kept.index === pointer.index))) fail(id, 'a waiting fact is not in must_keep');
@@ -126,7 +129,7 @@ for (const row of rows) {
     for (const planted of expected.planted.reasons) {
         if (!expected.reasons.some((reason) => reason.index === planted.index)) fail(id, 'planted reason is not in reasons');
         if (recentText.includes(planted.why ?? '') || recentText.includes(planted.text)) fail(id, 'planted reason is repeated in the turns');
-        if (input.current.decisions.includes(planted.text)) fail(id, 'planted decision is in the current picture');
+        if (input.current.decisions.includes(textOf(planted.text))) fail(id, 'planted decision is in the current picture');
     }
     if (row.plants.includes('reason-easy-to-drop') !== (expected.planted.reasons.length > 0)) fail(id, 'reason plant and tag disagree');
     if (row.plants.includes('settled-reads-open') !== (expected.must_not_reopen.length > 0)) fail(id, 'settled plant and tag disagree');

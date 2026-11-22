@@ -7,6 +7,10 @@ import type { Entry } from '../../packages/session-ledger/src/ports/transcripts.
 import { CASES_A } from './cases-a.ts';
 import { CASES_B } from './cases-b.ts';
 import type { Beat, Case, Planted, Section } from './cases-types.ts';
+import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
+import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
+import { agentKindOf, paneIdOf } from '../../packages/session-ledger/src/recap/domain/lane-shape.ts';
+import { directoryOf } from '../lib/brands.ts';
 
 const SECTIONS: readonly Section[] = ['goal', 'now', 'needs', 'done', 'decisions', 'next', 'links', 'rules'];
 const ITEM_CHECKS = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7'] as const;
@@ -113,8 +117,8 @@ function beatsOf(one: Case, dice: Dice): readonly Beat[] {
 function entriesOf(beats: readonly Beat[], now: number): readonly Entry[] {
     const start = now - (beats.length + 1) * STEP_MS;
     return beats.map((beat, index): Entry => (beat.role === 'tool'
-        ? { role: 'tool', text: beat.text, kind: 'shell', what: beat.what ?? '' }
-        : { role: beat.role, text: beat.text, at: start + index * STEP_MS }));
+        ? { role: 'tool', text: textOf(beat.text), kind: 'shell', what: textOf(beat.what ?? '') }
+        : { role: beat.role, text: textOf(beat.text), at: instant(start + index * STEP_MS) }));
 }
 
 const idOf = (dice: Dice): string => `fct_01${Array.from({ length: 24 }, () => ALPHABET[dice.int(0, 31)]).join('')}`;
@@ -123,22 +127,22 @@ const quoteOf = (text: string): string => text.slice(0, 120);
 
 function priorFacts(one: Case, now: number): readonly InputFact[] {
     return one.prior.map(([section, text], index): InputFact => ({
-        id: `f${index + 1}`, section, text, state: 'open', first: now - 3 * 3_600_000 + index * 60_000, last: now - 2 * 3_600_000 + index * 60_000,
-        why: section === 'decisions' ? text.slice(text.indexOf(': ') + 2) : null, ref: null, anchor: quoteOf(text), agent: null, closed: null,
+        id: textOf(`f${index + 1}`), section, text: textOf(text), state: 'open', first: instant(now - 3 * 3_600_000 + index * 60_000), last: instant(now - 2 * 3_600_000 + index * 60_000),
+        why: section === 'decisions' ? textOf(text.slice(text.indexOf(': ') + 2)) : null, ref: null, anchor: textOf(quoteOf(text)), agent: null, closed: null,
     }));
 }
 
 function requestOf(one: Case, beats: readonly Beat[], now: number): RecapRequest {
     return {
-        language: one.language,
-        previousLanguage: one.language,
+        language: textOf(one.language),
+        previousLanguage: textOf(one.language),
         input: {
-            tab: { id: `w${one.n}:t1`, now, zone: 'UTC' },
-            agents: [{ id: 'a1', kind: one.kind, label: one.label, pane: `w${one.n}-1`, source: 'transcript', cwd: one.repo, repo: one.repo, branch: one.branch, files: [] }],
+            tab: { id: textOf(`w${one.n}:t1`), now: instant(now), zone: textOf('UTC') },
+            agents: [{ id: textOf('a1'), kind: agentKindOf(one.kind), label: textOf(one.label), pane: paneIdOf(`w${one.n}-1`), source: 'transcript', cwd: directoryOf(one.repo), repo: directoryOf(one.repo), branch: textOf(one.branch), files: [] }],
             tasks: [],
             ledgers: [{ task: null, facts: priorFacts(one, now) }],
             notes: [],
-            transcripts: [{ agent: 'a1', entries: entriesOf(beats, now) }],
+            transcripts: [{ agent: textOf('a1'), entries: entriesOf(beats, now) }],
         },
     };
 }

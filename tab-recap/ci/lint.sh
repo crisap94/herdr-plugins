@@ -50,6 +50,9 @@ bash ../ci/release-bite.sh && echo "  ok    release notes, versions, MR labels, 
 echo "oxlint (type-aware: one program type-checks the tree with the tsconfig flags and runs the house rules):"
 bun --bun node_modules/.bin/oxlint --type-aware . && echo "  ok    oxlint" || fail "oxlint"
 
+echo "evals typecheck (evals/tsconfig.json: the eval harness type-checks clean):"
+bunx tsgo --noEmit -p ../evals/tsconfig.json && echo "  ok    evals typecheck" || fail "the evals harness does not type-check"
+
 echo "domain-type gates bite (the pending brand-cast rule and the oxlint unsafe-any probe):"
 bash ci/gate-rules.sh && echo "  ok    gate-rules" || fail "a domain-type gate does not bite"
 

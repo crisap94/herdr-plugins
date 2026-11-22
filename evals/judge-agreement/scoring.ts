@@ -3,6 +3,7 @@ import { parseScore } from '../../tab-recap/src/recap/application/judge-answer.t
 import { cohenKappa, wilson } from '../lib/stats.ts';
 import type { Answer, Graded, Interval, Mark } from '../lib/types.ts';
 import { carriersOf, CHECKS, pooled, sectionsOf, type CellMark, type JudgeItem } from './prompt.ts';
+import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 
 export const CODE_CRITERIA: readonly string[] = ['J1', 'J2', ...CHECKS.map((check) => `F_${check}`), ...CHECKS.map((check) => `P_${check}`)];
 
@@ -21,9 +22,9 @@ export function expectedCells(item: JudgeItem): Cell[] {
 }
 
 export function verdictsOf(item: JudgeItem, text: string): Map<string, boolean> | null {
-    const parsed = parseScore(unfenced(text), sectionsOf(item), carriersOf(item));
+    const parsed = parseScore(textOf(unfenced(text)), sectionsOf(item), carriersOf(item));
     if (parsed.kind !== 'ok') return null;
-    return new Map(parsed.value.verdicts.map((verdict) => [cellKey(verdict.item, verdict.check), verdict.pass]));
+    return new Map(parsed.value.verdicts.map((verdict) => [cellKey(verdict.item, verdict.check), verdict.pass === 'pass']));
 }
 
 export function grade(item: JudgeItem, text: string): Graded {

@@ -7,6 +7,7 @@ import { curationOf } from '../../tab-recap/src/recap/domain/curation.ts';
 import { CLOSED_WHY, SECTION_IDS } from '../../packages/session-ledger/src/recap/domain/fact.ts';
 import { checkedTokens, outsideOf } from './tokens.ts';
 import { guardOf, overlapOf } from '../lib/fresh.ts';
+import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 
 interface Expected {
     readonly merge_pairs: readonly { readonly ids: readonly [string, string]; readonly kind: 'verbatim' | 'reworded'; readonly keep: string | null }[];
@@ -67,12 +68,12 @@ for (const row of rows) {
             }
         }
     });
-    const get = (id: string) => facts.get(id);
+    const get = (id: string) => facts.get(textOf(id));
     const open = new Set([...facts].filter(([, fact]) => fact.state === 'open').map(([id]) => id));
     const planted = new Set<string>();
     for (const pair of row.expected.merge_pairs) {
         const [first, second] = [get(pair.ids[0]), get(pair.ids[1])];
-        if (first === undefined || second === undefined || !open.has(pair.ids[0]) || !open.has(pair.ids[1])) { bad(`merge pair ${pair.ids.join('+')} is not two open facts`); continue; }
+        if (first === undefined || second === undefined || !open.has(textOf(pair.ids[0])) || !open.has(textOf(pair.ids[1]))) { bad(`merge pair ${pair.ids.join('+')} is not two open facts`); continue; }
         planted.add([...pair.ids].sort().join('+'));
         if (first.section !== second.section) bad(`merge pair ${pair.ids.join('+')} crosses sections`);
         if (pair.kind === 'verbatim' && (first.text !== second.text || first.why !== second.why || pair.keep !== null)) bad(`verbatim pair ${pair.ids.join('+')} is not a copy`);
@@ -80,7 +81,7 @@ for (const row of rows) {
     }
     for (const pair of row.expected.no_merge) {
         const [first, second] = [get(pair[0]), get(pair[1])];
-        if (first === undefined || second === undefined || !open.has(pair[0]) || !open.has(pair[1]) || first.text === second.text) bad(`near pair ${pair.join('+')}`);
+        if (first === undefined || second === undefined || !open.has(textOf(pair[0])) || !open.has(textOf(pair[1])) || first.text === second.text) bad(`near pair ${pair.join('+')}`);
     }
     const texts = new Map<string, string>();
     for (const id of open) {
@@ -96,7 +97,7 @@ for (const row of rows) {
     for (const closed of row.expected.closed_ids) {
         const fact = get(closed.id);
         if (fact === undefined || fact.state !== 'closed' || fact.closedWhy !== closed.closed_why || !['wrong', 'superseded', 'answered'].includes(closed.closed_why)) bad(`closed id ${closed.id}`);
-        if (closed.current !== null && !open.has(closed.current)) bad(`current fact ${closed.current} of ${closed.id} is not open`);
+        if (closed.current !== null && !open.has(textOf(closed.current))) bad(`current fact ${closed.current} of ${closed.id} is not open`);
     }
     const allowed = { names: row.expected.names_and_numbers, times: row.expected.times, facts: facts.size };
     const ledgerText = row.input.facts.map((fact) => `${fact.text} ${fact.why ?? ''} ${fact.ref ?? ''}`).join(' ');

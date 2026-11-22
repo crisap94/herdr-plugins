@@ -7,6 +7,9 @@ import { reconciliationOf, type Reconciled } from '../../packages/session-ledger
 import type { Answer, Graded, Mark } from '../lib/types.ts';
 import { builtOf, groundOf, type ReconcileItem } from './prompt.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
+import { textOf as asText } from '../../packages/session-ledger/src/recap/domain/text.ts';
+import { factIdOf } from '../lib/brands.ts';
+import { countOf } from '../../packages/session-ledger/src/recap/domain/count.ts';
 
 export const CODE_CRITERIA: readonly string[] = ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8'];
 
@@ -38,24 +41,24 @@ export function entriesOf(text: string): readonly unknown[] | null {
     }
 }
 
-const operationOf = (one: Reconciled): Operation => (one.op === 'close' ? { op: 'close', id: one.id, why: one.why } : { op: 'update', id: one.id, text: one.text, why: one.why });
+const operationOf = (one: Reconciled): Operation => (one.op === 'close' ? { op: 'close', id: factIdOf(one.id), why: one.why } : { op: 'update', id: factIdOf(one.id), text: one.text, why: one.why });
 
 export function checkedOf(item: ReconcileItem, text: string): Checked | null {
     const entries = entriesOf(text);
     if (entries === null) return null;
     const built = builtOf(item);
     const answer = unfenced(text);
-    const checked = reconciliationOf(answer, built.facts, built.tail);
+    const checked = reconciliationOf(asText(answer), built.facts, asText(built.tail));
     const accepted: Fields[] = [];
     for (let size = 1; size <= entries.length && accepted.length < checked.ops.length; size += 1) {
-        const prefix = reconciliationOf(JSON.stringify({ ops: entries.slice(0, size) }), built.facts, built.tail);
+        const prefix = reconciliationOf(asText(JSON.stringify({ ops: entries.slice(0, size) })), built.facts, asText(built.tail));
         if (prefix.ops.length > accepted.length) accepted.push(entries[size - 1] as Fields);
     }
     const ops = checked.ops.map(operationOf);
     const gated = judge(LEDGER_GATES, ops, groundOf(item), instant(item.input.clock.now));
     const refusals = gated.refused.filter((finding) => finding.outcome === 'refuse');
     const out = new Set(refusals.map((finding) => finding.at));
-    const kept = checked.ops.flatMap((op, at) => (out.has(at) ? [] : [{ op, evidence: textOf(accepted[at]?.['evidence']), into: textOf(accepted[at]?.['into']) }]));
+    const kept = checked.ops.flatMap((op, at) => (out.has(countOf(at)) ? [] : [{ op, evidence: textOf(accepted[at]?.['evidence']), into: textOf(accepted[at]?.['into']) }]));
     return {
         kept,
         parserRefused: checked.refused,
@@ -77,7 +80,7 @@ export function fromSummary(item: ReconcileItem, kept: readonly Kept[]): readonl
     const spans = item.expected.summary_spans;
     if (spans.length === 0) return [];
     const real = spans.reduce((body, span) => body.replace(span, ''), builtOf(item).tail);
-    return kept.filter((one) => hasEvidence(one) && spans.some((span) => quotedIn(one.evidence, span)) && !quotedIn(one.evidence, real));
+    return kept.filter((one) => hasEvidence(one) && spans.some((span) => quotedIn(asText(one.evidence), asText(span))) && !quotedIn(asText(one.evidence), asText(real)));
 }
 
 const twinOf = (item: ReconcileItem, id: string): string | null => {
@@ -138,7 +141,7 @@ export function stubAnswer(item: ReconcileItem): string {
 }
 
 const line = (item: ReconcileItem, id: string): string => {
-    const fact = builtOf(item).facts.get(id);
+    const fact = builtOf(item).facts.get(asText(id));
     return fact === undefined ? `${id} [unknown]` : `${id} [${fact.section}] ${fact.text}`;
 };
 

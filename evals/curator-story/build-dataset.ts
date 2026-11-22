@@ -6,6 +6,9 @@ import type { ClosedWhy, Fact, FactId, Section } from '../../packages/session-le
 import { checkedTokens } from './tokens.ts';
 import { FRESH_ITEMS, FRESH_SEED, rngOf, sampleOf } from '../lib/fresh.ts';
 import { FRESH_PLANS, FRESH_PROJECTS, type Trap } from './fresh-plans.ts';
+import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
+import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
+import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/lane-shape.ts';
 
 const NOW = Date.parse('2026-11-10T16:30:00Z');
 const ZONE = 'UTC';
@@ -591,21 +594,21 @@ function build(plan: Plan, index: number): Built {
         taken.add(one.minute);
     }
     const all = [...written, ...fillerOf(plan, taken, rng)];
-    const task = { tab: `tab-${String(index + 1).padStart(2, '0')}`, key: `t${(index % 7) + 1}` };
+    const task = { tab: tabIdOf(`tab-${String(index + 1).padStart(2, '0')}`), key: textOf(`t${(index % 7) + 1}`) };
     const keyed = all.map((draft) => {
         const firstAt = start + draft.minute * MINUTE;
         const closedAt = draft.closed === undefined ? null : Math.min(NOW - MINUTE, Math.max(firstAt + MINUTE, start + minuteOf(draft.closed[1]) * MINUTE));
         const lastAt = Math.min(closedAt ?? NOW, firstAt + (1 + Math.floor(rng() * 12)) * MINUTE);
         const fact: Fact = {
-            id: factId(`${plan.id}/${draft.k}`), task, section: draft.s, text: draft.t, why: draft.why ?? null, ref: draft.ref ?? null, agent: plan.name, anchor: null,
-            firstAt, lastAt, state: draft.closed === undefined ? 'open' : 'closed', closedWhy: draft.closed?.[0] ?? null, closedAt, language: plan.language === 'es' && (fresh || plan.id.includes('plain')) ? 'es' : 'en',
+            id: factId(`${plan.id}/${draft.k}`), task, section: draft.s, text: textOf(draft.t), why: draft.why === undefined || draft.why === null ? null : textOf(draft.why), ref: draft.ref === undefined || draft.ref === null ? null : textOf(draft.ref), agent: textOf(plan.name), anchor: null,
+            firstAt: instant(firstAt), lastAt: instant(lastAt), state: draft.closed === undefined ? 'open' : 'closed', closedWhy: draft.closed?.[0] ?? null, closedAt: closedAt === null ? null : instant(closedAt), language: textOf(plan.language === 'es' && (fresh || plan.id.includes('plain')) ? 'es' : 'en'),
         };
         return { key: draft.k, fact };
     }).sort((a, b) => a.fact.firstAt - b.fact.firstAt || (a.fact.id < b.fact.id ? -1 : 1));
     const facts = keyed.map((one) => one.fact);
-    const clock = { now: NOW, zone: ZONE };
-    const material = { name: plan.name, language: plan.language, facts, clock };
-    const { document, facts: named } = curatorInput({ ...material, rubric: '' });
+    const clock = { now: instant(NOW), zone: textOf(ZONE) };
+    const material = { name: textOf(plan.name), language: textOf(plan.language), facts, clock };
+    const { document, facts: named } = curatorInput({ ...material, rubric: textOf('') });
     const idOf = (key: string): string => {
         const at = keyed.findIndex((one) => one.key === key);
         if (at === -1) {
@@ -618,7 +621,7 @@ function build(plan: Plan, index: number): Built {
         expect: trap.expect,
         ops: trap.ops.map((op) => ({ op: op.op, id: idOf(op.id), why: op.why, ...(op.into === undefined ? {} : { into: idOf(op.into) }) })),
     }));
-    const time = (ms: number): string => localTime(ms, NOW, ZONE);
+    const time = (ms: number): string => localTime(instant(ms), instant(NOW), textOf(ZONE));
     const allowed = new Set<string>();
     for (const source of [plan.name, ...facts.flatMap((fact) => [fact.text, fact.why ?? '', fact.ref ?? ''])]) {
         for (const token of checkedTokens(source)) {
