@@ -113,11 +113,6 @@
   "src/adapters/os/config/paths-xdg.ts": {
     "parameter": 1
   },
-  "src/adapters/os/glow.ts": {
-    "parameter": 6,
-    "return": 1,
-    "container": 2
-  },
   "src/adapters/os/pidfile.ts": {
     "parameter": 6,
     "return": 9,
