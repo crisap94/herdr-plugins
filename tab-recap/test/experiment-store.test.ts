@@ -4,6 +4,10 @@ import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ExperimentStore } from '#src/adapters/experiment/store.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+
+const txt = (value: string): Text => must(parseText(value));
 
 function inTempDir(body: (dir: string) => void): void {
     const dir = mkdtempSync(join(tmpdir(), 'recap-experiment-store-'));
@@ -18,10 +22,10 @@ test('the experiment store refuses the live store: the same path, or a link to i
     inTempDir((dir) => {
         const live = join(dir, 'tab-recap.db');
         writeFileSync(live, '');
-        assert.throws(() => new ExperimentStore(live, live), /refusing to open the plugin's live store/);
+        assert.throws(() => new ExperimentStore(txt(live), txt(live)), /refusing to open the plugin's live store/);
         const link = join(dir, 'copy-link.db');
         symlinkSync(live, link);
-        assert.throws(() => new ExperimentStore(link, live), /refusing to open the plugin's live store/);
+        assert.throws(() => new ExperimentStore(txt(link), txt(live)), /refusing to open the plugin's live store/);
     });
 });
 
@@ -30,7 +34,7 @@ test('the experiment store takes the live store from the state dir, as the CLI d
         const was = process.env['TAB_RECAP_STATE'];
         process.env['TAB_RECAP_STATE'] = dir;
         try {
-            assert.throws(() => new ExperimentStore(join(dir, 'tab-recap.db')), /refusing to open the plugin's live store/);
+            assert.throws(() => new ExperimentStore(txt(join(dir, 'tab-recap.db'))), /refusing to open the plugin's live store/);
         } finally {
             if (was === undefined) { delete process.env['TAB_RECAP_STATE']; } else { process.env['TAB_RECAP_STATE'] = was; }
         }
@@ -42,6 +46,6 @@ test('the experiment store opens any other path (a copy is not refused)', () => 
         const live = join(dir, 'tab-recap.db');
         const copy = join(dir, 'copy.db');
         writeFileSync(copy, '');
-        assert.throws(() => new ExperimentStore(copy, live), (error: unknown) => !(error instanceof Error && /live store/.test(error.message)));
+        assert.throws(() => new ExperimentStore(txt(copy), txt(live)), (error: unknown) => !(error instanceof Error && /live store/.test(error.message)));
     });
 });

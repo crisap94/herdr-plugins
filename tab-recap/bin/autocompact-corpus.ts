@@ -56,7 +56,7 @@ function outcomeRows(outcomes: ReadonlyMap<string, readonly Outcome[]>, bySource
 async function main(): Promise<void> {
     const [db, out] = [arg('db'), arg('out')];
     mkdirSync(out, { recursive: true });
-    const [store, catalogue] = [new ExperimentStore(db), new LocalCatalogue()];
+    const [store, catalogue] = [new ExperimentStore(asText(db)), new LocalCatalogue()];
     const all = store.frame();
     const frame = all.filter((point) => existsSync(point.source));
     const bySource = new Map<string, Stored[]>();
@@ -68,8 +68,8 @@ async function main(): Promise<void> {
     const candidates: Candidate[] = frame.map((point) => ({ id: point.id, share: shareAt(point.source, point.cursor, catalogue)?.share ?? null, beforeBoundary: before.has(point.id) }));
     const sampled = stratify(candidates);
     const strata = new Map(sampled.picked.map((pick) => [pick.id, pick.stratum]));
-    const points = frame.flatMap((stored) => (strata.has(stored.id) ? [pointOf(store, catalogue, stored, strata.get(stored.id) ?? '')] : [])).filter((point) => point !== null);
-    const made = outcomeRows(outcomes, bySource, (stored) => points.find((p) => p.id === stored.id) ?? pointOf(store, catalogue, stored, 'outcome'));
+    const points = frame.flatMap((stored) => (strata.has(stored.id) ? [pointOf(store, catalogue, stored, asText(strata.get(stored.id) ?? ''))] : [])).filter((point) => point !== null);
+    const made = outcomeRows(outcomes, bySource, (stored) => points.find((p) => p.id === stored.id) ?? pointOf(store, catalogue, stored, asText('outcome')));
     store.close();
     const manifest = writeAll(out, db, { points, ...made }, { frame: frame.length, skipped: all.length - frame.length, strata: sampled.counts });
     console.log(JSON.stringify(manifest, null, 2));

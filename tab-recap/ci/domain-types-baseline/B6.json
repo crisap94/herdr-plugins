@@ -22,16 +22,14 @@
     "parameter": 1
   },
   "src/adapters/experiment/point.ts": {
-    "parameter": 6,
-    "return": 2,
+    "parameter": 3,
     "container": 1,
-    "property": 10
+    "property": 9
   },
   "src/adapters/experiment/store.ts": {
-    "parameter": 8,
-    "return": 4,
-    "container": 5,
-    "property": 9,
+    "parameter": 3,
+    "return": 2,
+    "property": 2,
     "assertion": 1
   },
   "src/adapters/git/legacy.ts": {

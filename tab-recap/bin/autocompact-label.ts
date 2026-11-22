@@ -6,6 +6,7 @@ import { CODEX_BINARY } from '@stateforge-labs/harness-adapters/codex';
 import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
 import { Labeller } from '#src/adapters/experiment/labeller.ts';
+import type { Point } from '#src/adapters/experiment/point.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
 import { crossCheck } from '#src/experiment/cross-check.ts';
 import { kappaRows } from '#src/experiment/kappa-report.ts';
@@ -45,7 +46,7 @@ async function labelPoints(dir: string, limit: number | null, runtime: HarnessRu
 
 function tally(dir: string): void {
     const [points, labels] = [readPoints(asText(join(dir, 'corpus.jsonl'))), readLabelled(asText(join(dir, 'labels.jsonl')))];
-    const byId = new Map(points.map((point) => [point.id, point]));
+    const byId = new Map<string, Point>(points.map((point) => [point.id, point]));
     const rows = labels.flatMap((label) => { const point = byId.get(label.id); return point === undefined ? [] : [{ model: label.labels['needs_verbatim'] ?? 0, code: crossCheck(point) }]; });
     const result = {
         labelled: labels.length, points: points.length, positives: Object.fromEntries(IDS.map((id) => [id, labels.filter((l) => l.labels[id] === 1).length])),
