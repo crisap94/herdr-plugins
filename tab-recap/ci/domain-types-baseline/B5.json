@@ -1,7 +1,4 @@
 {
-  "src/adapters/db/import/legacy.ts": {
-    "legacy": 7
-  },
   "src/adapters/db/legacy.ts": {
     "legacy": 52
   },
@@ -12,19 +9,13 @@
     "legacy": 8
   },
   "src/adapters/db/run-write/legacy.ts": {
-    "legacy": 8
+    "legacy": 4
   },
   "src/adapters/db/session-source/legacy.ts": {
     "legacy": 6
   },
-  "src/adapters/db/tab-row/legacy.ts": {
-    "legacy": 2
-  },
   "src/adapters/db/tab-views/legacy.ts": {
     "legacy": 4
-  },
-  "src/adapters/db/transcripts/legacy.ts": {
-    "legacy": 8
   },
   "src/adapters/db/typeid/legacy.ts": {
     "legacy": 4

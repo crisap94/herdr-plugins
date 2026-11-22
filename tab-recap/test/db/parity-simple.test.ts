@@ -4,13 +4,13 @@ import type { Database } from 'bun:sqlite';
 import { ColumnVisibilityRepository } from '#src/adapters/db/column-visibility.ts';
 import { PaneAlertsRepository } from '#src/adapters/db/pane-alerts.ts';
 import { PaneNotesRepository } from '#src/adapters/db/pane-notes.ts';
-import { TabRow } from '#src/adapters/db/tab-row/legacy.ts';
+import { TabStore } from '#src/adapters/db/tab-row.ts';
 import type { HiddenState } from '#src/recap/domain/board.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { parseAlertSource } from '#src/recap/domain/pane-alert.ts';
 import type { PaneAlert } from '#src/recap/domain/pane-alert.ts';
 import { parseText } from '#src/recap/domain/text.ts';
-import { parseInstant } from '#src/recap/domain/time.ts';
+import { instant, parseInstant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import { expectSameEffect, expectSameRows, withParity } from './parity.ts';
 
@@ -77,7 +77,7 @@ describe('the tab row moves to Drizzle with the same effect', () => {
         expectSameEffect({
             seed: noSeed,
             raw: (db) => { db.prepare('INSERT INTO tab (id, first_seen, last_seen) VALUES (?, ?, ?) ON CONFLICT (id) DO UPDATE SET last_seen = MAX(last_seen, excluded.last_seen)').run('tab-1', 100, 100); },
-            builder: (db) => { new TabRow(db).ensure('tab-1', 100); },
+            builder: (db) => { new TabStore(db).ensure(tabId('tab-1'), instant(100)); },
             dump: TAB_DUMP,
         });
     });
@@ -91,9 +91,9 @@ describe('the tab row moves to Drizzle with the same effect', () => {
                 db.prepare(upsert).run('tab-1', 900, 900);
             },
             builder: (db) => {
-                const row = new TabRow(db);
-                row.ensure('tab-1', 300);
-                row.ensure('tab-1', 900);
+                const row = new TabStore(db);
+                row.ensure(tabId('tab-1'), instant(300));
+                row.ensure(tabId('tab-1'), instant(900));
             },
             dump: TAB_DUMP,
         });
@@ -247,7 +247,7 @@ describe('the same-effect harness itself', () => {
         assert.throws(() => expectSameEffect({
             seed: noSeed,
             raw: (db) => { db.prepare('INSERT INTO tab (id, first_seen, last_seen) VALUES (?, ?, ?)').run('tab-1', 1, 1); },
-            builder: (db) => { new TabRow(db).ensure('tab-1', 2); },
+            builder: (db) => { new TabStore(db).ensure(tabId('tab-1'), instant(2)); },
             dump: TAB_DUMP,
         }));
     });

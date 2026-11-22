@@ -6,16 +6,15 @@ import { paneId, tabId, type TabId } from '#src/recap/domain/ids.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { boundary, chapter, compaction, transcript } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
-import type { Moved, TranscriptRows } from './transcripts/legacy.ts';
+import type { TranscriptMove, TranscriptStore } from './transcripts.ts';
 import { ids } from './uuid7.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 
 export interface Found {
     readonly at: Instant;
     readonly marks: readonly LaneMark[];
-    readonly moved: readonly Moved[];
+    readonly moved: readonly TranscriptMove[];
 }
 
 interface Row extends Planned {
@@ -33,10 +32,10 @@ const byTime = (a: Row, b: Row): Ordering => {
 };
 
 export class BoundaryRows {
-    private readonly transcripts: TranscriptRows;
+    private readonly transcripts: TranscriptStore;
     private readonly orm: Orm;
 
-    constructor(db: Database, transcripts: TranscriptRows) {
+    constructor(db: Database, transcripts: TranscriptStore) {
         this.transcripts = transcripts;
         this.orm = ormOf(db);
     }
@@ -50,13 +49,13 @@ export class BoundaryRows {
                 .where(and(eq(compaction.tabId, tabId(tab)), eq(compaction.pane, paneId(pane)), ne(compaction.stage, 'skipped'))).all()
                 .map((row) => instant(row.startedAt));
             const planned = compactedFrom(found.marks.filter((mark) => mark.pane === pane), last === null ? null : instant(last), asked);
-            return planned.map((each) => Object.assign({}, each, { transcript: this.transcripts.ofPane(tab, pane, found.at), replaces: null }));
+            return planned.map((each) => Object.assign({}, each, { transcript: this.transcripts.ofPane(tab, paneId(pane), found.at), replaces: null }));
         });
     }
 
     private switched(found: Found): readonly Row[] {
         return found.moved.flatMap((moved) => (moved.replaces === null ? [] : [{
-            kind: 'switched' as const, pane: paneIdOf(moved.pane), at: found.at, trigger: null, cursor: countOf(moved.to),
+            kind: 'switched' as const, pane: moved.pane, at: found.at, trigger: null, cursor: countOf(moved.to),
             tokensBefore: null, tokensAfter: null, tookMs: null, transcript: moved.id, replaces: moved.replaces,
         }]));
     }

@@ -1,10 +1,15 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { fileKeyOf as keyOf } from '#src/adapters/db/import/legacy.ts';
+import { fileKey, LegacyStoreFiles } from '#src/adapters/db/import/legacy-files.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import { renderRecap } from '#src/recap/application/recap-shape.ts';
-import { agentKind, paneId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+
+export const keyOf = (tab: string): string => fileKey(tabId(tab));
+export const filesAt = (dir: string): LegacyStoreFiles => new LegacyStoreFiles(must(parseFsPath(dir)));
 
 export const sections = { goal: textOf('ship'), now: [textOf('a')], needs: [textOf('review')], done: [textOf('b'), textOf('c')], decisions: [textOf('sqlite')], next: [textOf('n')], links: [textOf('x.ts')], rules: [] };
 export const lane = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t/a.jsonl'), cursor: cursorOf(120), tail: null, title: textOf('T'), lastPrompt: textOf('p'), claudeRecap: null };
