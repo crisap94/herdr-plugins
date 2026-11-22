@@ -6,7 +6,7 @@ import type { LinkedDecision } from '#src/ports/autocompact-records.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { LANE_CLOSED } from '#src/recap/domain/lane-closed.ts';
 import type { ClosePoint } from '#src/recap/domain/lane-closed.ts';
-import { type CompactionId, type DecisionId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { type CompactionId, type DecisionId, type PaneId, type TabId, paneId } from '#src/recap/domain/ids.ts';
 import { parseCheckedFact, type CheckedFact, type MissedFacts } from '#src/recap/domain/autocompact.ts';
 import { MISSED_FACTS_DEFAULT } from '#src/recap/domain/autocompact.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
@@ -53,7 +53,7 @@ export class Briefing {
     private async briefOf(lane: Lane, tab: TabId, material: Material, correction?: Text): Promise<Drafted> {
         const { brief, records, ledger } = this.deps;
         const [pane, agent] = [String(lane.pane), String(lane.agent)];
-        const [recent, history]: [readonly Entry[], History] = [await this.deps.recent(lane), ledger.historyOf(tab, pane)];
+        const [recent, history]: [readonly Entry[], History] = [await this.deps.recent(lane), ledger.historyOf(tab, paneId(pane))];
         const own = must(parseText([...recent.map((entry) => entry.text), ...history.flatMap((item) => [item.text, item.why ?? ''])].join('\n')));
         if (brief.enabled() === 'absent') {
             return { text: null, why: null, own, history };

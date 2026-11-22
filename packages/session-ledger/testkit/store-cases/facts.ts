@@ -4,6 +4,8 @@ import { key, scope } from '../ids.ts';
 import type { Case } from '../run.ts';
 import type { StoreUnderTest } from '../memory-store.ts';
 import { cursor, factAt, isUnknownValue, runOf, shapeOf, typeIdAt } from './record-fixtures.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import { tabId } from '../values.ts';
 
 const TAB_1_A: TaskId = { tab: 'tab-1', key: 'a' };
 const TAB_1_B: TaskId = { tab: 'tab-1', key: 'b' };
@@ -28,7 +30,7 @@ const isThenable = (value: unknown): boolean => typeof value === 'object' && val
 
 const writeFacts = (store: StoreUnderTest, at: number, tab: string, facts: readonly Fact[]): void => {
     const keys = [...new Set(facts.map((fact) => fact.task.key))];
-    store.records.recordRun(runOf({ tab, at, lanes: keys.map((k) => cursor(k)), tasks: keys.map((k) => shapeOf(k, [k])), changed: facts }));
+    store.records.recordRun(runOf({ tab: tabId(tab), at: instant(at), lanes: keys.map((k) => cursor(k)), tasks: keys.map((k) => shapeOf(k, [k])), changed: facts }));
 };
 
 const openAt = (id: number, text: string, firstAt: number, lastAt: number, task: TaskId = TAB_1_A): Fact =>
@@ -68,7 +70,7 @@ export const FCT_2: Case<null, StoreUnderTest> = {
     level: 'full',
     async run(_world, store) {
         writeFacts(store, 400, 'tab-1', [closedAt(1, 'z', 100, 10), closedAt(2, 'y', 350, 10), closedAt(3, 'x', 250, 10)]);
-        assert.deepEqual(textsOf(knownFacts(store.facts.recentlyClosed(TAB_1_A, 200), 'recentlyClosed')), ['x', 'y']);
+        assert.deepEqual(textsOf(knownFacts(store.facts.recentlyClosed(TAB_1_A, instant(200)), 'recentlyClosed')), ['x', 'y']);
     },
 };
 
@@ -120,7 +122,7 @@ export const FCT_8: Case<null, StoreUnderTest> = {
         store.failReads?.('openOf', 1);
         assert.equal(isUnknownValue(store.facts.openOf(task)), true);
         store.failReads?.('recentlyClosed', 1);
-        assert.equal(isUnknownValue(store.facts.recentlyClosed(task, 0)), true);
+        assert.equal(isUnknownValue(store.facts.recentlyClosed(task, instant(0))), true);
         store.failReads?.('allOf', 1);
         assert.equal(isUnknownValue(store.facts.allOf(task)), true);
         store.failReads?.('keysOf', 1);
@@ -137,7 +139,7 @@ export const FCT_9: Case<null, StoreUnderTest> = {
         writeFacts(store, 50, 'tab-1', [openAt(1, 'present', 50, 50)]);
         const results: readonly unknown[] = [
             store.facts.openOf(TAB_1_A),
-            store.facts.recentlyClosed(TAB_1_A, 0),
+            store.facts.recentlyClosed(TAB_1_A, instant(0)),
             store.facts.allOf(TAB_1_A),
             store.facts.keysOf(scope('tab-1')),
             store.facts.historyOf(scope('tab-1'), key('a')),

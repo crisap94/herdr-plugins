@@ -7,11 +7,15 @@ import { LedgerRepository } from '#src/adapters/db/ledger.ts';
 import type { FactId, RunId } from '#src/recap/domain/fact.ts';
 import type { Operation, RunRef } from '#src/recap/domain/ops.ts';
 import { cursor, memoryStore, recordOps, type RunInput } from './support.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { usdOf } from '#src/recap/domain/usd.ts';
 
 const TASK = { tab: 'w1:t1', key: 't1' };
 const add = (text: string): Operation => ({ op: 'add', section: 'done', text, why: null, ref: null, at: null, agent: null });
 const run = (at: number, ops: readonly Operation[]): RunInput => ({
-    tab: 'w1:t1', at, cause: 'requested', backend: 'claude', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }], ops: [{ task: 't1', ops }],
+    tab: tabId('w1:t1'), at: instant(at), cause: 'requested', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }], ops: [{ task: 't1', ops }],
 });
 const ref = (db: ReturnType<typeof memoryStore>['db'], at: number): RunRef => {
     const row = db.prepare('SELECT id FROM run ORDER BY id DESC LIMIT 1').get() as { id: Uint8Array };

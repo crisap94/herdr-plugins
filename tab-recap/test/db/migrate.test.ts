@@ -14,6 +14,7 @@ import { rebuildTable } from '#src/adapters/db/rebuild.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import type { Migration } from '#src/adapters/db/schema/migration.ts';
 import { must, openFixture, scratchDir } from './support.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'schema-v1.sql');
 const FIXTURE_V2 = join(import.meta.dirname, 'fixtures', 'schema-v2.sql');
@@ -105,7 +106,7 @@ test('an upgraded fixture keeps its data readable through the repositories', () 
         const opened = openDatabase(join(dir, 'tab-recap.db'), MIGRATIONS);
         assert.equal(opened.kind, 'ready');
         const store = storeOver(opened.db);
-        const recap = must(storeRead(store.records.readRecap('w1:t1')));
+        const recap = must(storeRead(store.records.readRecap(tabId('w1:t1'))));
         assert.equal(recap.tasks.at(0)?.sections?.goal, 'keep the fixture readable');
         assert.deepEqual(recap.tasks.at(0)?.sections?.done, ['wrote the schema']);
         assert.equal(recap.costUsd, 1.5);

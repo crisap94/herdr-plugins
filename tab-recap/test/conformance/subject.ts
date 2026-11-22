@@ -12,6 +12,7 @@ import type { Fact, FactId } from '#src/recap/domain/fact.ts';
 import type { Operation, Refusal } from '#src/recap/domain/ops.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { memoryStore } from '#test/db/support.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
 
 const isLedgerFactId = (id: FactId): id is FactId & sl.FactId => id !== '';
 const isPluginFactId = (id: sl.FactId): id is sl.FactId & FactId => id !== '';
@@ -55,10 +56,10 @@ const pluginRefusal = (refusal: sl.Refusal): Refusal => ({ op: pluginOperation(r
 const pluginRecorded = (run: sl.RecordedRun): RecordedRun => ({ ...run, changed: run.changed.map(pluginFact), refused: run.refused.map(pluginRefusal) });
 
 const ledgerRecords = (records: GuardedRecapRecords): sl.Records => ({
-    readRecap: (scope) => ledgerRead(records.readRecap(scope)),
-    lastRunOf: (scope) => ledgerRead(records.lastRunOf(scope)),
+    readRecap: (scope) => ledgerRead(records.readRecap(tabId(scope))),
+    lastRunOf: (scope) => ledgerRead(records.lastRunOf(tabId(scope))),
     beginRun: (scope, backend, at) => {
-        records.beginRun(scope, backend, at);
+        records.beginRun(tabId(scope), backend, at);
     },
     recordRun: (run) => {
         records.recordRun(pluginRecorded(run));
@@ -77,8 +78,8 @@ const ledgerFacts = (ledger: GuardedLedger): sl.FactStore => ({
     openOf: (task) => ledgerFactsOf(ledger.openOf(task)),
     recentlyClosed: (task, sinceMs) => ledgerFactsOf(ledger.recentlyClosed(task, sinceMs)),
     allOf: (task) => ledgerFactsOf(ledger.allOf(task)),
-    keysOf: (scope) => ledgerRead(ledger.keysOf(scope)),
-    historyOf: (scope, key) => historyOf(ledger.historyOf(scope, key)),
+    keysOf: (scope) => ledgerRead(ledger.keysOf(tabId(scope))),
+    historyOf: (scope, key) => historyOf(ledger.historyOf(tabId(scope), paneId(key))),
 });
 
 export const pluginSubject: Subject<EngineWorld, sl.Engine> = {

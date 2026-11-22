@@ -4,6 +4,8 @@ import { Database } from 'bun:sqlite';
 import type { Statement } from 'bun:sqlite';
 import { stateDir } from '#src/daemon/config.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
+import { isClosedWhy, isSection } from '#src/recap/domain/fact.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { databasePath } from '../db/database.ts';
@@ -75,10 +77,14 @@ export class ExperimentStore {
     }
 
     factsAt(point: Pick<FramePoint, 'tab' | 'at' | 'blob'>): readonly HistoryFact[] {
-        return this.facts.all(point.tab, point.at, point.blob).map((row): HistoryFact => ({
-            section: parseWord(row['section']) ?? EMPTY, text: parseWord(row['text']) ?? EMPTY, why: parseWord(row['why']), state: row['state'] === 'open' ? 'open' : 'closed',
-            closedWhy: parseWord(row['closed_why']), closedAt: parseNumber(row['closed_at']), firstAt: parseNumber(row['first_at']) ?? 0, lastAt: parseNumber(row['last_at']) ?? 0,
-        }));
+        return this.facts.all(point.tab, point.at, point.blob).flatMap((row): readonly HistoryFact[] => {
+            const [section, closedWhy, closedAt] = [parseWord(row['section']) ?? EMPTY, parseWord(row['closed_why']), parseNumber(row['closed_at'])];
+            if (!isSection(section) || (closedWhy !== null && !isClosedWhy(closedWhy))) return [];
+            return [{
+                section, text: parseWord(row['text']) ?? EMPTY, why: parseWord(row['why']), state: row['state'] === 'open' ? 'open' : 'closed',
+                closedWhy, closedAt: closedAt === null ? null : instant(closedAt), firstAt: instant(parseNumber(row['first_at']) ?? 0), lastAt: instant(parseNumber(row['last_at']) ?? 0),
+            }];
+        });
     }
 
     lastBreakAt(tab: Text, at: number): number | null {

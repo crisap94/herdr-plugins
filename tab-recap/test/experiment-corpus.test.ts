@@ -81,7 +81,7 @@ import { sectionsOf } from '#src/experiment/coverage.ts';
 import { coverageLabelsOf, labelsOf } from '#src/experiment/label-prompt.ts';
 import { pooled, retried } from '#src/experiment/pool.ts';
 
-const fact = (section: string, text: string, state: 'open' | 'closed' = 'open', why: string | null = null): HistoryFact => ({ section, text, why, state, closedWhy: null, closedAt: null, firstAt: 1, lastAt: 2 });
+const fact = (section: Section, text: string, state: 'open' | 'closed' = 'open', why: string | null = null): HistoryFact => ({ section, text: textOf(text), why: why === null ? null : textOf(why), state, closedWhy: null, closedAt: null, firstAt: instant(1), lastAt: instant(2) });
 
 test('coverage: the recap sections the brief job is given, from the open facts', () => {
     const history = [fact('goal', 'g'), fact('done', 'd'), fact('now', 'n', 'closed'), fact('decisions', 'x', 'open', 'because'), fact('links', 'l'), fact('rules', 'r')];
@@ -116,6 +116,8 @@ test('pool: limit respected, order kept; retried: waits grow and the last answer
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import type { Labelled } from '#src/experiment/kappa-report.ts';
 import { kappaRows } from '#src/experiment/kappa-report.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import type { Section } from '#src/recap/domain/fact.ts';
 
 test('kappa rows: usable at 0.6 and enough points', () => {
     const ids = Array.from({ length: 12 }, (_, i) => `p${i}`);

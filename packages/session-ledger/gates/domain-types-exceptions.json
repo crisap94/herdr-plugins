@@ -499,90 +499,6 @@
   {
     "class": "contract",
     "file": "src/contract/records.ts",
-    "symbol": "Advance",
-    "field": "at",
-    "reason": "EC 2.2, copied shape: at of Advance keeps the plain type of Advance in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "Advance",
-    "field": "error",
-    "reason": "EC 2.2, copied shape: error of Advance keeps the plain type of Advance in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "Advance",
-    "field": "tab",
-    "reason": "EC 2.2, copied shape: tab of Advance keeps the plain type of Advance in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "FailedRun",
-    "field": "error",
-    "reason": "EC 2.2, copied shape: error of FailedRun keeps the plain type of FailedRun in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "LastRun",
-    "field": "at",
-    "reason": "EC 2.2, copied shape: at of LastRun keeps the plain type of LastRun in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "Recap",
-    "field": "at",
-    "reason": "EC 2.2, copied shape: at of Recap keeps the plain type of TabRecap in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "Recap",
-    "field": "backend",
-    "reason": "EC 2.2, copied shape: backend of Recap keeps the plain type of TabRecap in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "Recap",
-    "field": "costUsd",
-    "reason": "EC 2.2, copied shape: costUsd of Recap keeps the plain type of TabRecap in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "Recap",
-    "field": "error",
-    "reason": "EC 2.2, copied shape: error of Recap keeps the plain type of TabRecap in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "Recap",
-    "field": "language",
-    "reason": "EC 2.2, copied shape: language of Recap keeps the plain type of TabRecap in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "Recap",
-    "field": "running",
-    "reason": "EC 2.2, copied shape: running of Recap keeps the plain type of TabRecap in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "Recap",
-    "field": "tab",
-    "reason": "EC 2.2, copied shape: tab of Recap keeps the plain type of TabRecap in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
     "symbol": "RecapSections",
     "field": "decisions",
     "reason": "EC 2.2, copied shape: decisions of RecapSections keeps the plain type of RecapSections in tab-recap/src/recap/domain/shape.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
@@ -667,76 +583,6 @@
   {
     "class": "contract",
     "file": "src/contract/records.ts",
-    "symbol": "RecordedRun",
-    "field": "error",
-    "reason": "EC 2.2, copied shape: error of RecordedRun keeps the plain type of RecordedRun in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "RecordedRun",
-    "field": "input",
-    "reason": "EC 2.2, copied shape: input of RecordedRun keeps the plain type of RecordedRun in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "SessionCursor",
-    "field": "agent",
-    "reason": "EC 2.2, copied shape: agent of SessionCursor keeps the plain type of LaneCursor in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "SessionCursor",
-    "field": "claudeRecap",
-    "reason": "EC 2.2, copied shape: claudeRecap of SessionCursor keeps the plain type of LaneCursor in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "SessionCursor",
-    "field": "cursor",
-    "reason": "EC 2.2, copied shape: cursor of SessionCursor keeps the plain type of LaneCursor in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "SessionCursor",
-    "field": "lastPrompt",
-    "reason": "EC 2.2, copied shape: lastPrompt of SessionCursor keeps the plain type of LaneCursor in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "SessionCursor",
-    "field": "pane",
-    "reason": "EC 2.2, copied shape: pane of SessionCursor keeps the plain type of LaneCursor in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "SessionCursor",
-    "field": "tail",
-    "reason": "EC 2.2, copied shape: tail of SessionCursor keeps the plain type of LaneCursor in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "SessionCursor",
-    "field": "title",
-    "reason": "EC 2.2, copied shape: title of SessionCursor keeps the plain type of LaneCursor in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "SessionCursor",
-    "field": "transcript",
-    "reason": "EC 2.2, copied shape: transcript of SessionCursor keeps the plain type of LaneCursor in tab-recap/src/ports/recap-records.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
     "symbol": "SessionMark",
     "field": "at",
     "reason": "EC 2.2, copied shape: at of SessionMark keeps the plain type of LaneMark in tab-recap/src/recap/domain/boundary.ts, held equal by gates/copied-shapes/records.json; ENG-5 types it"
@@ -779,30 +625,9 @@
   {
     "class": "contract",
     "file": "src/contract/records.ts",
-    "symbol": "beginRun",
-    "field": "at",
-    "reason": "EC 2.4, approved as written: parameter at of beginRun in Records keeps the plain type of the contract text; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "beginRun",
-    "field": "backend",
-    "reason": "EC 2.4, approved as written: parameter backend of beginRun in Records keeps the plain type of the contract text; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
     "symbol": "keysOf",
     "field": "return",
     "reason": "EC 2.4, approved as written: the return of keysOf in FactStore keeps the plain type of the contract text; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/contract/records.ts",
-    "symbol": "recentlyClosed",
-    "field": "sinceMs",
-    "reason": "EC 2.4, approved as written: parameter sinceMs of recentlyClosed in FactStore keeps the plain type of the contract text; ENG-5 types it"
   },
   {
     "class": "contract",
@@ -859,41 +684,6 @@
     "function": "keyOf",
     "parameter": "pane",
     "reason": "EP 4.1, ENG-2: parameter pane of keyOf keeps the plain type of the legacy port it bridges to (moved verbatim from tab-recap/test/conformance/subject.ts); the SW rename window deletes the bridge"
-  },
-  {
-    "class": "callback",
-    "file": "src/facade/plugs.ts",
-    "function": "<anonymous>",
-    "parameter": "tab",
-    "reason": "EP 4.1, ENG-2: parameter tab of <anonymous> keeps the plain type of the legacy port it bridges to (moved verbatim from tab-recap/test/conformance/subject.ts); the SW rename window deletes the bridge"
-  },
-  {
-    "class": "callback",
-    "file": "src/facade/plugs.ts",
-    "function": "<anonymous>",
-    "parameter": "at",
-    "reason": "EP 4.1, ENG-2: parameter at of <anonymous> keeps the plain type of the legacy port it bridges to (moved verbatim from tab-recap/test/conformance/subject.ts); the SW rename window deletes the bridge"
-  },
-  {
-    "class": "callback",
-    "file": "src/facade/plugs.ts",
-    "function": "<anonymous>",
-    "parameter": "backend",
-    "reason": "EP 4.1, ENG-2: parameter backend of <anonymous> keeps the plain type of the legacy port it bridges to (moved verbatim from tab-recap/test/conformance/subject.ts); the SW rename window deletes the bridge"
-  },
-  {
-    "class": "callback",
-    "file": "src/facade/plugs.ts",
-    "function": "<anonymous>",
-    "parameter": "sinceMs",
-    "reason": "EP 4.1, ENG-2: parameter sinceMs of <anonymous> keeps the plain type of the legacy port it bridges to (moved verbatim from tab-recap/test/conformance/subject.ts); the SW rename window deletes the bridge"
-  },
-  {
-    "class": "callback",
-    "file": "src/facade/plugs.ts",
-    "function": "<anonymous>",
-    "parameter": "pane",
-    "reason": "EP 4.1, ENG-2: parameter pane of <anonymous> keeps the plain type of the legacy port it bridges to (moved verbatim from tab-recap/test/conformance/subject.ts); the SW rename window deletes the bridge"
   },
   {
     "class": "callback",

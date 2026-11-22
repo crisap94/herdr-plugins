@@ -258,7 +258,7 @@ export class Autocompact {
 
     private async asking(placed: Placement, tuning: CompactTuning): Promise<Judged> {
         const decider = this.deps.decider();
-        const state = autocompactState(await this.deps.recent(placed.candidate), this.deps.ledger.historyOf(String(placed.tab), String(placed.pane)));
+        const state = autocompactState(await this.deps.recent(placed.candidate), this.deps.ledger.historyOf(placed.tab, placed.pane));
         const answered = decider === null ? null : await decider.ask(must(parseText(JSON.stringify(state))), QUESTIONS);
         if (answered === null || isUnknown(answered)) {
             const why = answered === null ? 'no decider is set up' : saying(answered.why);

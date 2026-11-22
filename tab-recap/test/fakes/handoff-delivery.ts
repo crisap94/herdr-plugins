@@ -82,7 +82,7 @@ function transcriptsOf(world: World): Transcripts {
                 throw new Error('locate failed');
             }
             const key = world.locatedBy === 'session' ? lane.session : lane.cwd;
-            return world.located && key !== null ? { kind: 'located', source: sourcePathOf('transcript-1') } : unknown({ why: 'not-found', what: 'transcript' });
+            return world.located && key !== null ? { kind: 'located', source: sourcePathOf('transcript-1') } : unknown({ why: 'not-found', what: textOf('transcript') });
         },
         read: async (): Promise<ChunkResult> => unknown({ why: 'unreadable', detail: causeOf('not used by handoff') }),
         latestPrompt: async (): Promise<PromptResult> => {

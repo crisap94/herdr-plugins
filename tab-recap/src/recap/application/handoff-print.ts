@@ -129,7 +129,7 @@ export class PrintedHandoffs implements HandoffPrinter {
         if (live === null || source === undefined) {
             return null;
         }
-        const cursor = knownOr(store.records.readRecap(String(live.tab)), null)?.lanes.find((lane) => lane.pane === String(request.from)) ?? null;
+        const cursor = knownOr(store.records.readRecap(tabId(String(live.tab))), null)?.lanes.find((lane) => lane.pane === String(request.from)) ?? null;
         return { lane: laneOf(live.tab, source), cursor, facts, closed: undefined };
     }
 

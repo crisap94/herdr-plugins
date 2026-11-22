@@ -6,7 +6,7 @@ import { cleanScreen, screenEntries, steady } from '#src/recap/application/scree
 import type { ScreenChrome } from '#src/recap/application/screen-text.ts';
 import { parsePaneId, type AgentKind, agentKind } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { SCREEN_PREFIX } from '#src/ports/screens.ts';
 import type { Screens } from '#src/ports/screens.ts';
 import type { ChunkResult, InFlightCapability, Located, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
@@ -36,7 +36,7 @@ export class ScreenTranscripts implements Transcripts {
         const agent = lane.agent;
         return Promise.resolve(this.wants(agent)
             ? { kind: 'located', source: sourcePathOf(`${SCREEN_PREFIX}${lane.pane}`) }
-            : unknown({ why: 'not-found', what: `a transcript of ${agent} (add it to TAB_RECAP_SCREEN_AGENTS to read its screen)` }));
+            : unknown({ why: 'not-found', what: textOf(`a transcript of ${agent} (add it to TAB_RECAP_SCREEN_AGENTS to read its screen)`) }));
     }
 
     latestPrompt(): Promise<PromptResult> {

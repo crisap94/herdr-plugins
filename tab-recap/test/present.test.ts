@@ -8,6 +8,10 @@ import { oneTask } from '#test/support.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { tabId, agentKind, paneId } from '#src/recap/domain/ids.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
 
 const noGlow = (): null => null;
 
@@ -24,14 +28,14 @@ test('a tab with no agent says so', () => {
 
 test('two agents, one tab: a header per agent, then ONE recap for the tab', () => {
     const recap = {
-        ...blankRecap('w1:t1'),
+        ...blankRecap(tabId('w1:t1')),
         lanes: [
-            { pane: 'w1:p1', agent: 'claude', transcript: 'a', cursor: 1, tail: null, title: 'Victoria migration', lastPrompt: 'go', claudeRecap: null },
-            { pane: 'w1:p2', agent: 'codex', transcript: 'b', cursor: 1, tail: null, title: null, lastPrompt: 'run tests', claudeRecap: null },
+            { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('a'), cursor: cursorOf(1), tail: null, title: textOf('Victoria migration'), lastPrompt: textOf('go'), claudeRecap: null },
+            { pane: paneId('w1:p2'), agent: agentKind('codex'), transcript: sourcePathOf('b'), cursor: cursorOf(1), tail: null, title: null, lastPrompt: textOf('run tests'), claudeRecap: null },
         ],
         tasks: oneTask('## Goal\n- migrate'),
-        at: 0,
-        backend: 'claude/haiku',
+        at: instant(0),
+        backend: textOf('claude/haiku'),
     };
     const text = present({
         tab: { tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [
@@ -64,12 +68,12 @@ test('the bar: one row — each lane as a dot, then what needs you (or what is h
     const markdown = '## Goal\n- migrate\n\n## Now\n- running **CI** on !940\n\n## Waiting on you\n- approve the `prod` deploy\n';
     assert.equal(firstItem(markdown, 'now'), 'running CI on !940');
     const tab = { tab: 'w1:t1', column: null, at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'blocked', title: null, cwd: null }] };
-    const lines = presentBar({ tab, recap: { ...blankRecap('w1:t1'), tasks: oneTask(markdown) }, notes: new Map(), warnings: [], now: 0, messages: en }, 30);
+    const lines = presentBar({ tab, recap: { ...blankRecap(tabId('w1:t1')), tasks: oneTask(markdown) }, notes: new Map(), warnings: [], now: 0, messages: en }, 30);
     assert.equal(lines.length, 1, 'one row: the bar is small');
     assert.match(lines[0] ?? '', /📝/);
     assert.match(lines[0] ?? '', /needs you: approve/);
     assert.ok(lines.every((line) => visibleLength(line) <= 30));
-    const calm = presentBar({ tab, recap: { ...blankRecap('w1:t1'), tasks: oneTask('## Now\n- running CI') }, notes: new Map(), warnings: [], now: 0, messages: en }, 30);
+    const calm = presentBar({ tab, recap: { ...blankRecap(tabId('w1:t1')), tasks: oneTask('## Now\n- running CI') }, notes: new Map(), warnings: [], now: 0, messages: en }, 30);
     assert.match(calm[0] ?? '', /running CI/);
 });
 
@@ -86,7 +90,7 @@ const tabOf = (status: string, title: string | null): { tab: string; column: nul
     ({ tab: 'w1:t1', column: null, at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status, title, cwd: null }] });
 
 test('es: the column speaks Spanish — badge, recap meta, ago, notes, empty states', () => {
-    const recap = { ...blankRecap('w1:t1'), tasks: oneTask('## Objetivo\n- migrar'), at: 0, backend: 'claude/haiku', language: 'es' };
+    const recap = { ...blankRecap(tabId('w1:t1')), tasks: oneTask('## Objetivo\n- migrar'), at: instant(0), backend: textOf('claude/haiku'), language: textOf('es') };
     const text = present({
         tab: tabOf('blocked', 'Migración'), recap,
         notes: new Map([['w1:p1', [{ label: 'idle', at: 0, details: ['main'] }]]]), warnings: [], now: 180_000, messages: es,
@@ -105,7 +109,7 @@ test('es: the phone bar still shows needs-you first, then Now, from Spanish head
     const markdown = '## Objetivo\n- migrar\n\n## Ahora\n- ejecutando **CI** en !940\n\n## Esperando tu respuesta\n- aprueba el despliegue de `prod`\n';
     assert.equal(firstItem(markdown, 'now'), 'ejecutando CI en !940');
     assert.equal(firstItem(markdown, 'needs'), 'aprueba el despliegue de prod');
-    const recap = { ...blankRecap('w1:t1'), tasks: oneTask(markdown), language: 'es' };
+    const recap = { ...blankRecap(tabId('w1:t1')), tasks: oneTask(markdown), language: textOf('es') };
     const [line] = presentBar({ tab: tabOf('blocked', null), recap, notes: new Map(), warnings: [], now: 0, messages: es }, 60);
     assert.match(line ?? '', /te necesita: aprueba el despliegue/);
     const calm = presentBar({ tab: tabOf('working', null), recap: { ...recap, tasks: oneTask('## Ahora\n- ejecutando CI') }, notes: new Map(), warnings: [], now: 0, messages: es }, 60);
@@ -143,7 +147,7 @@ test('the Spanish catalog keeps every hint within a phone column', () => {
 });
 
 const withSections = (sections: Partial<RecapSections>, language = 'en'): ReturnType<typeof blankRecap> =>
-    ({ ...blankRecap('w1:t1'), language, tasks: oneTask('stale rendering that must not be shown', { ...NO_SECTIONS, ...sections }), at: 0 });
+    ({ ...blankRecap(tabId('w1:t1')), language: textOf(language), tasks: oneTask('stale rendering that must not be shown', { ...NO_SECTIONS, ...sections }), at: instant(0) });
 
 test('a recap with sections is drawn from them: all seven headings, in the interface language, — for the empty ones', () => {
     const recap = withSections({ goal: 'Ship the uploader', now: ['Running CI'] }, 'en');
@@ -180,7 +184,7 @@ test('the bar says all done when the recap is written and every fact is done, an
 });
 
 test('a recap stored before the fixed structure is still shown as it was written, headline included', () => {
-    const old = { ...blankRecap('w1:t1'), tasks: oneTask('## Goal\n- old\n\n## Waiting on you\n- answer me\n'), at: 0 };
+    const old = { ...blankRecap(tabId('w1:t1')), tasks: oneTask('## Goal\n- old\n\n## Waiting on you\n- answer me\n'), at: instant(0) };
     assert.equal(old.tasks[0]?.sections, null);
     assert.match(present({ tab: tabOf('idle', 'x'), recap: old, notes: new Map(), warnings: [], now: 0, messages: en }, 60, noGlow).join('\n'), /WAITING ON YOU/);
     assert.match(presentBar({ tab: tabOf('blocked', null), recap: old, notes: new Map(), warnings: [], now: 0, messages: en }, 60)[0] ?? '', /needs you: answer me/);
@@ -212,7 +216,7 @@ test('plainMarkdown collapses runs of blank lines, so an old recap without blank
 });
 
 test('a lane header shows the live prompt; the recap\'s last prompt only when there is none', () => {
-    const recap = { ...blankRecap('w1:t1'), lanes: [{ pane: 'w1:p1', agent: 'claude', transcript: 't', cursor: 1, tail: null, title: 'x', lastPrompt: 'what the last recap saw', claudeRecap: null }] };
+    const recap = { ...blankRecap(tabId('w1:t1')), lanes: [{ pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('t'), cursor: cursorOf(1), tail: null, title: textOf('x'), lastPrompt: textOf('what the last recap saw'), claudeRecap: null }] };
     const draw = (lastPrompt: string | null | undefined): string => {
         const lane = { pane: 'w1:p1', agent: 'claude', status: 'working', title: 'x', cwd: null, ...(lastPrompt === undefined ? {} : { lastPrompt }) };
         return present({ tab: { tab: 'w1:t1', column: null, at: 0, lanes: [lane] }, recap, notes: new Map(), warnings: [], now: 0, messages: en }, 60, noGlow).join('\n');

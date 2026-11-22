@@ -7,6 +7,10 @@ import { must } from '#src/protocol/result.ts';
 import { parseSocketPath } from '#src/adapters/herdr-core/sdk-core.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
 import { cursor, recordOps } from '#test/db/support.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { usdOf } from '#src/recap/domain/usd.ts';
 
 export const OTHER_TAB = 'w2:t9';
 export const OTHER_PANE = 'w2:p9';
@@ -49,7 +53,7 @@ export async function startWorld(): Promise<World> {
 }
 
 export function seedRun(world: World, at: number, ops: readonly Operation[]): void {
-    recordOps(world.wrapped, { tab: TAB, at, cause: 'requested', backend: 'claude', language: 'en', costUsd: 0, error: null, lanes: [cursor(PANE)], tasks: [{ id: 't1', name: 'Login', lanes: [PANE] }], ops: [{ task: 't1', ops }] });
+    recordOps(world.wrapped, { tab: tabId(TAB), at: instant(at), cause: 'requested', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor(PANE)], tasks: [{ id: 't1', name: 'Login', lanes: [PANE] }], ops: [{ task: 't1', ops }] });
     world.wrapped.views.writeTab({ tab: TAB, column: null, at, lanes: [{ pane: PANE, agent: 'claude', status: 'idle', title: 'login', cwd: '/repo' }] });
 }
 
@@ -63,6 +67,6 @@ export async function seqOf(world: World): Promise<number> {
 }
 
 export function seedOther(world: World, ops: readonly Operation[]): void {
-    recordOps(world.wrapped, { tab: OTHER_TAB, at: Date.now() - 30_000, cause: 'requested', backend: 'claude', language: 'en', costUsd: 0, error: null, lanes: [cursor(OTHER_PANE)], tasks: [{ id: 't9', name: 'Other', lanes: [OTHER_PANE] }], ops: [{ task: 't9', ops }] });
+    recordOps(world.wrapped, { tab: tabId(OTHER_TAB), at: instant(Date.now() - 30_000), cause: 'requested', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor(OTHER_PANE)], tasks: [{ id: 't9', name: 'Other', lanes: [OTHER_PANE] }], ops: [{ task: 't9', ops }] });
     world.wrapped.views.writeTab({ tab: OTHER_TAB, column: null, at: Date.now(), lanes: [{ pane: OTHER_PANE, agent: 'claude', status: 'idle', title: 'other', cwd: '/repo' }] });
 }

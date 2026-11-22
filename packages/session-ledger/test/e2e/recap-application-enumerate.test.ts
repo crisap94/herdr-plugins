@@ -20,7 +20,7 @@ const candidate = (text: string, flagged: boolean): InputCandidate => ({ section
 const silentEnumerator = (): Enumerators => ({
     backend: textOf('fake'),
     job: textOf('enumerate'),
-    write: async (): Promise<Enumerated> => ({ kind: 'unknown', why: { why: 'not-found', what: 'model' } }),
+    write: async (): Promise<Enumerated> => ({ kind: 'unknown', why: { why: 'not-found', what: textOf('model') } }),
 });
 
 const run = (enumerator: Enumerators): EnumerateRun => ({

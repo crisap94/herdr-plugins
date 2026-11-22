@@ -21,7 +21,7 @@ import type { Reconciliation } from '#src/recap/domain/fold.ts';
 import { parsePaneId, parseTabId, tabId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import type { Placed, Rect, Split } from '#src/recap/domain/layout.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { parseMilliseconds } from '#src/recap/domain/time.ts';
 import { PANE_WRITABLE, WORKSPACE_WRITABLE } from '#src/recap/domain/lane-tokens.ts';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
@@ -114,14 +114,14 @@ export class HerdrAgents implements Agents {
 
     async status(pane: string): Promise<AgentState> {
         const id = paneOf(pane);
-        return id === null ? unknown({ why: 'not-found', what: `agent ${pane}` }) : this.panes.status(id);
+        return id === null ? unknown({ why: 'not-found', what: textOf(`agent ${pane}`) }) : this.panes.status(id);
     }
 
     async prompt(pane: string, text: string, wait: PromptWait | undefined, behavior: PromptBehavior): Promise<Prompted> {
         const id = paneOf(pane);
         const body = parseText(text);
         if (id === null) {
-            return unknown({ why: 'not-found', what: `agent ${pane}` });
+            return unknown({ why: 'not-found', what: textOf(`agent ${pane}`) });
         }
         if (body.kind !== 'ok') {
             return unknown({ why: 'unreadable', detail: causeOf(must(parseText('prompt text is empty'))) });
@@ -135,14 +135,14 @@ export class HerdrAgents implements Agents {
 
     async typeLine(pane: string, line: CompactionLine, behavior: LineBehavior): Promise<Prompted> {
         const id = paneOf(pane);
-        return id === null ? unknown({ why: 'not-found', what: `agent ${pane}` }) : this.panes.typeLine(id, line, behavior);
+        return id === null ? unknown({ why: 'not-found', what: textOf(`agent ${pane}`) }) : this.panes.typeLine(id, line, behavior);
     }
 
     async askNote(tab: string, pane: string | null): Promise<Done> {
         const tabIdentity = tabOf(tab);
         const paneIdentity = pane === null ? null : paneOf(pane);
         if (tabIdentity === null || (pane !== null && paneIdentity === null)) {
-            return unknown({ why: 'not-found', what: `tab ${tab}` });
+            return unknown({ why: 'not-found', what: textOf(`tab ${tab}`) });
         }
         return this.panes.askNote(tabIdentity, paneIdentity);
     }
@@ -185,7 +185,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
     async layout(tab: TabId): Promise<LayoutResult> {
         try {
             const layout = list((await this.ports.rawSnapshot())['layouts']).find((candidate) => candidate['tab_id'] === String(tab));
-            return layout === undefined ? unknown({ why: 'not-found', what: `the layout of ${tab}` }) : layoutOf(layout);
+            return layout === undefined ? unknown({ why: 'not-found', what: textOf(`the layout of ${tab}`) }) : layoutOf(layout);
         } catch (error) {
             return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
         }

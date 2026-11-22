@@ -16,6 +16,7 @@ import { NO_REPOS } from '#test/support.ts';
 import { answer, scripted as scriptedEnumerator } from '#test/fakes/enumerator.ts';
 import { writer } from '#test/fakes/golden-writer.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 
 const FILE = join(import.meta.dirname, 'fixtures', 'replay-claude.jsonl');
 const LABEL = 'replay:t1';
@@ -47,9 +48,9 @@ function ledgerOf(store: Store): string {
             section(`run ${at + 1} state items`, json(store.inputs.itemsOf(id, 'state'))),
         ].join('');
     });
-    const recap = storeRead(store.records.readRecap(LABEL));
+    const recap = storeRead(store.records.readRecap(tabId(LABEL)));
     const facts = (recap?.tasks ?? []).flatMap((task) => storeRead(store.ledger.allOf({ tab: LABEL, key: task.id })));
-    return [...parts, section('recap', json(recap)), section('last run', json(storeRead(store.records.lastRunOf(LABEL)))), section('facts', json(facts))].join('');
+    return [...parts, section('recap', json(recap)), section('last run', json(storeRead(store.records.lastRunOf(tabId(LABEL))))), section('facts', json(facts))].join('');
 }
 
 async function golden(pipeline: Pipeline | undefined): Promise<string> {

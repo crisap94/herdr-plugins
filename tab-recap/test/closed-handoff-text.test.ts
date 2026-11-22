@@ -13,7 +13,7 @@ const CLOSED_AT = instant(Date.parse('2026-10-11T09:00:00Z'));
 const DEL = 127;
 const SPACE = 32;
 const isControl = (code: number): boolean => code < SPACE || code === DEL;
-const RUN = { at: Date.parse('2026-10-11T08:30:00Z'), cause: 'turn-ended' as const };
+const RUN = { at: instant(Date.parse('2026-10-11T08:30:00Z')), cause: 'turn-ended' as const };
 const VIEW: ClosedView = { closedAt: CLOSED_AT, agent: agentKind('claude'), cwd: directoryOf('/work/tree'), run: RUN };
 
 test('a closed freshness says closed at the close instant in place of the lane status, and its newer prompts are unknown', () => {

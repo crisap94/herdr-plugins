@@ -9,6 +9,7 @@ import { openState } from '#src/daemon/state.ts';
 import type { Notified, Notifier } from '#src/ports/notifier.ts';
 import { openFixture, scratchDir } from './support.ts';
 import { everyShape, put, sections } from './import/support.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 
 const recorder = (): { notifier: Notifier; told: string[]; lines: string[] } => {
     const told: string[] = [];
@@ -27,7 +28,7 @@ test('the daemon starts on a state directory of the old files: it imports once, 
         }
         assert.match(lines.join('\n'), /imported 6 recaps, 3 views, 3 requests; the files are in .*legacy-files-/);
         assert.deepEqual(told, []);
-        assert.equal(storeRead(store.records.readRecap('w1:t1'))?.tasks.at(0)?.sections?.goal, 'ship');
+        assert.equal(storeRead(store.records.readRecap(tabId('w1:t1')))?.tasks.at(0)?.sections?.goal, 'ship');
         store.close();
         assert.ok(!existsSync(join(dir, 'recaps')));
         const again = await openState(dir, notifier, (line) => { lines.push(line); });

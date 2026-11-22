@@ -1,29 +1,31 @@
-import type { Count, GateName, Unknown } from './kernel.ts';
+import type { AgentKind, Brand, Count, GateName, Instant, PaneId, TabId, Text, Unknown, Usd } from './kernel.ts';
 import type { ScopeId, SessionKey } from './ids.ts';
-import type { RecapCause } from './session.ts';
+import type { Cursor, RecapCause, SourcePath } from './session.ts';
 import type { Fact, HistoryFact, Refusal, TaskId } from './facts.ts';
 
+export type Running = Brand<boolean, 'Running'>;
+
 export interface SessionCursor {
-    readonly pane: string;
-    readonly agent: string;
-    readonly transcript: string;
-    readonly cursor: number;
-    readonly tail: string | null;
-    readonly title: string | null;
-    readonly lastPrompt: string | null;
-    readonly claudeRecap: string | null;
+    readonly pane: PaneId;
+    readonly agent: AgentKind;
+    readonly transcript: SourcePath;
+    readonly cursor: Cursor;
+    readonly tail: Text | null;
+    readonly title: Text | null;
+    readonly lastPrompt: Text | null;
+    readonly claudeRecap: Text | null;
 }
 
 export interface Recap {
-    readonly tab: string;
+    readonly tab: TabId;
     readonly lanes: readonly SessionCursor[];
     readonly tasks: readonly RecapTask[];
-    readonly at: number | null;
-    readonly running: boolean;
-    readonly backend: string | null;
-    readonly error: string | null;
-    readonly costUsd: number;
-    readonly language: string;
+    readonly at: Instant | null;
+    readonly running: Running;
+    readonly backend: Text | null;
+    readonly error: Text | null;
+    readonly costUsd: Usd;
+    readonly language: Text;
 }
 
 export interface RecapSections {
@@ -66,60 +68,60 @@ export interface GateStats {
 }
 
 export interface RunFacts {
-    readonly tab: string;
-    readonly at: number;
+    readonly tab: TabId;
+    readonly at: Instant;
     readonly cause: RecapCause | 'imported';
-    readonly backend: string | null;
-    readonly language: string;
-    readonly costUsd: number;
+    readonly backend: Text | null;
+    readonly language: Text;
+    readonly costUsd: Usd;
 }
 
 export interface RecordedRun extends RunFacts {
     readonly marks?: readonly SessionMark[];
-    readonly error: string | null;
+    readonly error: Text | null;
     readonly lanes: readonly SessionCursor[];
     readonly tasks: readonly TaskShape[];
     readonly changed: readonly Fact[];
     readonly refused: readonly Refusal[];
-    readonly input?: string;
+    readonly input?: Text;
     readonly gateStats?: GateStats;
 }
 
 export interface FailedRun extends RunFacts {
     readonly marks?: readonly SessionMark[];
-    readonly error: string;
+    readonly error: Text;
     readonly lanes: readonly SessionCursor[];
 }
 
 export interface Advance {
     readonly marks?: readonly SessionMark[];
-    readonly tab: string;
-    readonly at: number;
-    readonly error: string | null;
+    readonly tab: TabId;
+    readonly at: Instant;
+    readonly error: Text | null;
     readonly lanes: readonly SessionCursor[];
 }
 
 export interface LastRun {
-    readonly at: number;
+    readonly at: Instant;
     readonly cause: RecapCause | 'imported';
 }
 
 export interface Story {
-    readonly text: string;
-    readonly at: number;
+    readonly text: Text;
+    readonly at: Instant;
 }
 
 export interface Records {
     readRecap(scope: ScopeId): Recap | null | Unknown;
     lastRunOf(scope: ScopeId): LastRun | null | Unknown;
-    beginRun(scope: ScopeId, backend: string | null, at: number): void;
+    beginRun(scope: ScopeId, backend: Text | null, at: Instant): void;
     recordRun(run: RecordedRun): void;
     failRun(run: FailedRun): void;
     advance(move: Advance): void;
 }
 export interface FactStore {
     openOf(task: TaskId): readonly Fact[] | Unknown;
-    recentlyClosed(task: TaskId, sinceMs: number): readonly Fact[] | Unknown;
+    recentlyClosed(task: TaskId, sinceMs: Instant): readonly Fact[] | Unknown;
     allOf(task: TaskId): readonly Fact[] | Unknown;
     keysOf(scope: ScopeId): readonly string[] | Unknown;
     historyOf(scope: ScopeId, key: SessionKey): readonly HistoryFact[];

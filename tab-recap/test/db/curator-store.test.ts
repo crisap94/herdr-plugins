@@ -14,12 +14,15 @@ import { LedgerRepository } from '#src/adapters/db/ledger.ts';
 import type { Operation, AddOp } from '#src/recap/domain/ops.ts';
 import { StoriesRepository } from '#src/adapters/db/stories.ts';
 import { must as unwrap } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { newestChange, ExpandedModel } from '#src/recap/application/expanded-view.ts';
 import type { FileCount } from '#src/recap/application/edit-counts.ts';
 import { clockOf, timelineOf } from '#src/recap/render/timeline.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { cursor, memoryStore, must, openFixture, scratchDir, recordOps } from './support.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
+import { usdOf } from '#src/recap/domain/usd.ts';
 
 const timeOf = (clock: string): number => Date.parse(`2026-10-07T${clock}:00Z`);
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'schema-v1.sql');
@@ -75,17 +78,17 @@ const SHAPE = [{ id: 't1', name: '', lanes: ['w1:p1'] }];
 const adding = (text: string, section: AddOp['section'] = 'now'): AddOp => ({ op: 'add', section, text, why: section === 'decisions' ? 'a reason' : null, ref: null, at: null, agent: null });
 
 function writerRun(store: ReturnType<typeof memoryStore>, at: number, ops: readonly Operation[]): void {
-    recordOps(store, { tab: 'w1:t1', at, cause: 'turn-ended', backend: 'claude', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1', at)], tasks: SHAPE, ops: [{ task: 't1', ops }] });
+    recordOps(store, { tab: tabId('w1:t1'), at: instant(at), cause: 'turn-ended', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1', at)], tasks: SHAPE, ops: [{ task: 't1', ops }] });
 }
 
 test('a task has no story until the curator keeps one; the story keeps the run time it was begun at', () => {
     const store = memoryStore();
     writerRun(store, 10, [adding('a')]);
-    assert.equal(store.stories.read('w1:t1', 't1'), null);
-    const applied = store.stories.keep({ task: T1, at: 1234, language: 'en' }, { story: 'Work is on track.', merges: [] });
+    assert.equal(store.stories.read(tabId('w1:t1'), textOf('t1')), null);
+    const applied = store.stories.keep({ task: T1, at: instant(1234), language: textOf('en') }, { story: textOf('Work is on track.'), merges: [] });
     assert.deepEqual(applied.refused, []);
-    assert.deepEqual(store.stories.read('w1:t1', 't1'), { text: 'Work is on track.', at: 1234 });
-    assert.equal(store.stories.read('w1:t1', 't9'), null);
+    assert.deepEqual(store.stories.read(tabId('w1:t1'), textOf('t1')), { text: 'Work is on track.', at: 1234 });
+    assert.equal(store.stories.read(tabId('w1:t1'), textOf('t9')), null);
 });
 
 test('the story and the merges land together: a ledger that fails leaves no story', () => {
@@ -93,7 +96,7 @@ test('the story and the merges land together: a ledger that fails leaves no stor
     writerRun(store, 10, [adding('a')]);
     const failing = Object.assign(new LedgerRepository(store.db), { apply: (): never => { throw new Error('disk full'); } });
     const stories = new StoriesRepository(store.db, failing);
-    assert.throws(() => stories.keep({ task: T1, at: 9, language: 'en' }, { story: unwrap(parseText('never stored')), merges: [{ op: 'close', id: 'fct_x', why: 'merged' }] }), /disk full/);
+    assert.throws(() => stories.keep({ task: T1, at: instant(9), language: textOf('en') }, { story: unwrap(parseText('never stored')), merges: [{ op: 'close', id: 'fct_x', why: 'merged' }] }), /disk full/);
     assert.equal(stories.read('w1:t1', 't1'), null);
 });
 
@@ -102,19 +105,19 @@ test('merges go through the real ledger in the same call as the story; a story o
     writerRun(store, 10, [adding('Running the tests'), adding('Running tests again')]);
     const [first, second] = storeRead(store.ledger.allOf(T1));
     assert.ok(first && second);
-    const applied = store.stories.keep({ task: T1, at: 50, language: 'en' }, { story: 's', merges: [{ op: 'close', id: first.id, why: 'merged' }] });
+    const applied = store.stories.keep({ task: T1, at: instant(50), language: textOf('en') }, { story: textOf('s'), merges: [{ op: 'close', id: first.id, why: 'merged' }] });
     assert.equal(applied.changed.length, 1);
     const closed = storeRead(store.ledger.allOf(T1)).find((each) => each.id === first.id);
     assert.deepEqual([closed?.state, closed?.closedWhy, closed?.closedAt], ['closed', 'merged', 50]);
-    assert.equal(store.stories.read('w1:t1', 't1')?.at, 50);
-    store.stories.keep({ task: T1, at: 99, language: 'en' }, { story: null, merges: [{ op: 'close', id: second.id, why: 'merged' }] });
-    assert.deepEqual(store.stories.read('w1:t1', 't1'), { text: 's', at: 50 });
+    assert.equal(store.stories.read(tabId('w1:t1'), textOf('t1'))?.at, 50);
+    store.stories.keep({ task: T1, at: instant(99), language: textOf('en') }, { story: null, merges: [{ op: 'close', id: second.id, why: 'merged' }] });
+    assert.deepEqual(store.stories.read(tabId('w1:t1'), textOf('t1')), { text: 's', at: 50 });
     assert.equal(storeRead(store.ledger.openOf(T1)).length, 0);
 });
 
 test('a tab that has never run has nothing for a curator to attribute merges to', () => {
     const store = memoryStore();
-    assert.throws(() => store.stories.keep({ task: T1, at: 1, language: 'en' }, { story: 's', merges: [] }), /has no run/);
+    assert.throws(() => store.stories.keep({ task: T1, at: instant(1), language: textOf('en') }, { story: textOf('s'), merges: [] }), /has no run/);
 });
 
 test('the real ledger stores what the view reads: a done fact is drawn when it happened, a fact closed wrong at its close, merged as such', () => {
@@ -148,7 +151,7 @@ test('session source: first seen, runs by cause (imported apart), and the finish
     assert.equal(store.session.firstSeen('w1:t1'), null);
     assert.deepEqual(store.session.runsByCause('w1:t1'), {});
     const run = (cause: 'turn-ended' | 'focused' | 'requested' | 'imported', at: number): void => {
-        recordOps(store, { tab: 'w1:t1', at, cause, backend: 'claude', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1', at)], tasks: SHAPE, ops: [] });
+        recordOps(store, { tab: tabId('w1:t1'), at: instant(at), cause, backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1', at)], tasks: SHAPE, ops: [] });
     };
     run('turn-ended', 100); run('turn-ended', 200); run('focused', 300); run('imported', 50);
     assert.equal(store.session.firstSeen('w1:t1'), 100, 'the tab row keeps the time it was first touched');

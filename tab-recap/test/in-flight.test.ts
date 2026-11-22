@@ -12,6 +12,7 @@ import { causeOf } from './fakes/cause.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { agentKind } from '#src/recap/domain/ids.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const claude = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 'sess-1', cwd: '/repo' });
 const codex = laneFrom({ paneId: 'w1:p2', tabId: 'w1:t1', workspaceId: 'w1', agent: 'codex', cwd: '/repo' });
@@ -30,23 +31,23 @@ function fakeReader(agent: string, located: Located, flight: InFlightResult): Tr
 const adapterFor = (reader: Transcripts): InFlight => new TranscriptInFlight(registryWith({ [reader.agent]: reader }));
 
 test('a transcript that does not exist yet is not-started for a lane whose locating key is known', async () => {
-    const reader = fakeReader('claude', unknown({ why: 'not-found', what: 'the transcript of sess-1' }), { kind: 'in-flight', count: runningOf(9), background: [] });
+    const reader = fakeReader('claude', unknown({ why: 'not-found', what: textOf('the transcript of sess-1') }), { kind: 'in-flight', count: runningOf(9), background: [] });
     assert.deepEqual(await adapterFor(reader).read(claude), { kind: 'not-started', why: 'the transcript of sess-1 not found' });
 });
 
 test('a lane without its locating key cannot tell, so it is unknown and not not-started', async () => {
-    const reader = fakeReader('claude', unknown({ why: 'not-found', what: 'a session id for w1:p3' }), { kind: 'in-flight', count: runningOf(9), background: [] });
+    const reader = fakeReader('claude', unknown({ why: 'not-found', what: textOf('a session id for w1:p3') }), { kind: 'in-flight', count: runningOf(9), background: [] });
     assert.deepEqual(await adapterFor(reader).read(sessionless), { kind: 'unknown', why: 'a session id for w1:p3 not found' });
 });
 
 test('a claude lane locates by its session, not its working directory', async () => {
     const cwdOnly = laneFrom({ paneId: 'w1:p6', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', cwd: '/repo' });
-    const reader = fakeReader('claude', unknown({ why: 'not-found', what: 'a session id for w1:p6' }), { kind: 'in-flight', count: runningOf(9), background: [] });
+    const reader = fakeReader('claude', unknown({ why: 'not-found', what: textOf('a session id for w1:p6') }), { kind: 'in-flight', count: runningOf(9), background: [] });
     assert.equal((await adapterFor(reader).read(cwdOnly)).kind, 'unknown');
 });
 
 test('a codex lane locates by its working directory, and a missing rollout is not-started', async () => {
-    const reader = fakeReader('codex', unknown({ why: 'not-found', what: 'a codex rollout started in /repo' }), { kind: 'in-flight', count: runningOf(9), background: [] });
+    const reader = fakeReader('codex', unknown({ why: 'not-found', what: textOf('a codex rollout started in /repo') }), { kind: 'in-flight', count: runningOf(9), background: [] });
     assert.deepEqual(await adapterFor(reader).read(codex), { kind: 'not-started', why: 'a codex rollout started in /repo not found' });
 });
 

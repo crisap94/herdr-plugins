@@ -2,6 +2,10 @@ import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { factsOf, missingOf, questionsFor } from '../../../tab-recap/src/recap/application/brief-coverage.ts';
 import type { HistoryFact } from '../../../packages/session-ledger/src/ports/ledger.ts';
+import { isClosedWhy, isSection } from '../../../packages/session-ledger/src/recap/domain/fact.ts';
+import type { ClosedWhy, Section } from '../../../packages/session-ledger/src/recap/domain/fact.ts';
+import { textOf } from '../../../packages/session-ledger/src/recap/domain/text.ts';
+import { instant } from '../../../packages/session-ledger/src/recap/domain/time.ts';
 import { BANK, INTRO, SETTLED } from './bank.ts';
 import type { BankFact } from './bank.ts';
 
@@ -95,6 +99,16 @@ const PLANS: Plan[] = [
     { id: 'cc-24-foreign-fact-medium-kestrel', plants: ['foreign-fact', 'paraphrase', 'reason-kept'], size: 'medium', project: 'kestrel-sync', facts: 'all', base: 'paraphrase', foreign: ['l.n3', 'l.x1'], seed: 24, note: 'The brief keeps every fact of its own task; the ledger also holds two facts of another task, which the brief does not carry.' },
 ];
 
+const sectionOf = (raw: string): Section => {
+    if (isSection(raw)) return raw;
+    throw new Error(`not a section: ${raw}`);
+};
+
+const closedWhyOf = (raw: string | null): ClosedWhy | null => {
+    if (raw === null || isClosedWhy(raw)) return raw;
+    throw new Error(`not a close reason: ${raw}`);
+};
+
 const T0 = 1794520800000;
 
 function build(plan: Plan): unknown {
@@ -110,7 +124,7 @@ function build(plan: Plan): unknown {
     }
     const open = shuffled([...picks, ...foreign], plan.seed);
     const settled = plan.settled === true ? (SETTLED[plan.project] ?? []) : [];
-    type Row = Omit<HistoryFact, 'firstAt' | 'lastAt'>;
+    interface Row { readonly section: string; readonly text: string; readonly why: string | null; readonly state: 'open' | 'closed'; readonly closedWhy: string | null; readonly closedAt: number | null }
     const rows: Row[] = open.map((pick) => ({ section: pick.fact.section, text: pick.fact.text, why: pick.fact.why, state: 'open', closedWhy: null, closedAt: null }));
     settled.forEach(([section, text, closedWhy, why], at) => {
         const closed = closedWhy !== null;
@@ -120,7 +134,7 @@ function build(plan: Plan): unknown {
     const history: HistoryFact[] = rows.map((fact, at) => {
         const firstAt = T0 + plan.seed * 3600000 + at * 412000;
         const lastAt = firstAt + 95000 + (at % 7) * 61000;
-        return { ...fact, closedAt: fact.closedAt === null ? null : lastAt, firstAt, lastAt };
+        return { section: sectionOf(fact.section), text: textOf(fact.text), why: fact.why === null ? null : textOf(fact.why), state: fact.state, closedWhy: closedWhyOf(fact.closedWhy), closedAt: fact.closedAt === null ? null : instant(lastAt), firstAt: instant(firstAt), lastAt: instant(lastAt) };
     });
     const asked = factsOf(history);
     const pickOf = new Map(open.map((pick) => [pick.fact.text, pick]));

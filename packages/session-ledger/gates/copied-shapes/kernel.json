@@ -1,3 +1,5 @@
 [
-  { "export": "Text", "origin": "packages/session-ledger/src/recap/domain/text.ts" }
+  { "export": "Text", "origin": "packages/session-ledger/src/recap/domain/text.ts" },
+  { "export": "ExitCode", "origin": "packages/session-ledger/src/ports/unknowable.ts" },
+  { "export": "Unknowable", "origin": "packages/session-ledger/src/ports/unknowable.ts" }
 ]

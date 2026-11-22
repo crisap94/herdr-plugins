@@ -10,11 +10,15 @@ import type { RunId } from '#src/recap/domain/fact.ts';
 import type { Operation, RunRef } from '#src/recap/domain/ops.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { cursor, memoryStore, recordOps, type RunInput } from './support.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { usdOf } from '#src/recap/domain/usd.ts';
 
 const TASK = { tab: 'w1:t1', key: 't1' };
 const add = (section: 'done' | 'next' | 'decisions' | 'goal', text: string, why: string | null = null): Operation => ({ op: 'add', section, text, why, ref: null, at: null, agent: null });
 const run = (at: number, ops: readonly Operation[]): RunInput => ({
-    tab: 'w1:t1', at, cause: 'requested', backend: 'claude', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }], ops: [{ task: 't1', ops }],
+    tab: tabId('w1:t1'), at: instant(at), cause: 'requested', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }], ops: [{ task: 't1', ops }],
 });
 const ref = (db: ReturnType<typeof memoryStore>['db'], at: number): RunRef => {
     const row = db.prepare('SELECT id FROM run ORDER BY id DESC LIMIT 1').get() as { id: Uint8Array };
@@ -30,17 +34,17 @@ test('open facts come newest last seen first, the order of adding breaking a tie
     assert.ok(first !== undefined);
     recordOps(store, run(300, [{ op: 'close', id: first.id, why: 'done' }]));
     assert.deepEqual(storeRead(ledger.openOf(TASK)).map((fact) => fact.text), ['third', 'second']);
-    assert.deepEqual(storeRead(ledger.recentlyClosed(TASK, 250)).map((fact) => [fact.text, fact.closedWhy, fact.closedAt, fact.lastAt]), [['first', 'done', 300, 300]]);
-    assert.deepEqual(storeRead(ledger.recentlyClosed(TASK, 301)), []);
+    assert.deepEqual(storeRead(ledger.recentlyClosed(TASK, instant(250))).map((fact) => [fact.text, fact.closedWhy, fact.closedAt, fact.lastAt]), [['first', 'done', 300, 300]]);
+    assert.deepEqual(storeRead(ledger.recentlyClosed(TASK, instant(301))), []);
     assert.deepEqual(storeRead(ledger.allOf(TASK)).map((fact) => fact.text), ['first', 'second', 'third']);
 });
 
 test('keysOf: the tasks of the tab that have ever had facts, closed or not; another tab\'s are not', () => {
     const store = memoryStore(); const { ledger } = store;
     recordOps(store, { ...run(100, []), tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }, { id: 't2', name: '', lanes: [] }], ops: [{ task: 't2', ops: [add('done', 'x')] }, { task: 't1', ops: [add('done', 'y')] }] });
-    recordOps(store, { ...run(200, []), tab: 'w1:t2', ops: [{ task: 't1', ops: [add('done', 'z')] }] });
-    assert.deepEqual(storeRead(ledger.keysOf('w1:t1')), ['t1', 't2']);
-    assert.deepEqual(storeRead(ledger.keysOf('w1:t9')), []);
+    recordOps(store, { ...run(200, []), tab: tabId('w1:t2'), ops: [{ task: 't1', ops: [add('done', 'z')] }] });
+    assert.deepEqual(storeRead(ledger.keysOf(tabId('w1:t1'))), ['t1', 't2']);
+    assert.deepEqual(storeRead(ledger.keysOf(tabId('w1:t9'))), []);
 });
 
 test('apply through the port: the fold\'s result is stored, refusals come back, and the run that created and last touched a fact is kept', () => {
@@ -91,7 +95,7 @@ test('the schema refuses what the fold cannot: every CHECK of the table bites', 
 test('the views: fact_readable shows ids as text, open_facts only the open ones', () => {
     const store = memoryStore(); const { records, db } = store;
     recordOps(store, run(100, [add('done', 'a'), add('done', 'b')]));
-    const [one] = storeRead(records.readRecap('w1:t1'))?.tasks ?? [];
+    const [one] = storeRead(records.readRecap(tabId('w1:t1')))?.tasks ?? [];
     assert.ok(one !== undefined);
     const readable = db.prepare('SELECT id, task_id FROM fact_readable').get() as { id: string; task_id: string };
     assert.match(readable.id, /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/);
@@ -104,14 +108,14 @@ test('twenty open "done" facts are all stored, and the column shows the five las
         recordOps(store, run(at, [add('done', `finished ${at}`)]));
     }
     assert.equal((db.prepare("SELECT COUNT(*) AS n FROM fact WHERE state = 'open'").get() as { n: number }).n, 20);
-    assert.deepEqual(storeRead(records.readRecap('w1:t1'))?.tasks.at(0)?.sections?.done, ['finished 20', 'finished 19', 'finished 18', 'finished 17', 'finished 16']);
+    assert.deepEqual(storeRead(records.readRecap(tabId('w1:t1')))?.tasks.at(0)?.sections?.done, ['finished 20', 'finished 19', 'finished 18', 'finished 17', 'finished 16']);
 });
 
 test('a goal add closes the previous goal as superseded; the column shows the open goal only', () => {
     const store = memoryStore(); const { records, ledger } = store;
     recordOps(store, run(100, [add('goal', 'Ship 2.0')]));
     recordOps(store, run(200, [add('goal', 'Ship 2.0 this week')]));
-    assert.equal(storeRead(records.readRecap('w1:t1'))?.tasks.at(0)?.sections?.goal, 'Ship 2.0 this week');
+    assert.equal(storeRead(records.readRecap(tabId('w1:t1')))?.tasks.at(0)?.sections?.goal, 'Ship 2.0 this week');
     assert.deepEqual(storeRead(ledger.allOf(TASK)).map((fact) => [fact.text, fact.state, fact.closedWhy]), [['Ship 2.0', 'closed', 'superseded'], ['Ship 2.0 this week', 'open', null]]);
 });
 
@@ -123,14 +127,14 @@ test('history: every fact of the agent\'s tasks, open and closed, with why and d
     const decision = storeRead(ledger.openOf(TASK)).find((fact) => fact.section === 'decisions');
     assert.ok(decision !== undefined);
     recordOps(store, { ...run(200, [{ op: 'close', id: decision.id, why: 'superseded' }, add('decisions', 'Use SQLite and WAL', 'readers never block')]), lanes: [cursor('w1:p1'), cursor('w1:p2')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }, { id: 't2', name: '', lanes: ['w1:p2'] }] });
-    const items = ledger.historyOf('w1:t1', 'w1:p1');
+    const items = ledger.historyOf(tabId('w1:t1'), paneId('w1:p1'));
     assert.deepEqual(items.map((item) => [item.text, item.state, item.closedWhy, item.why]), [
         ['Use SQLite', 'closed', 'superseded', 'one file to back up'], ['Use SQLite and WAL', 'open', null, 'readers never block'], ['a', 'open', null, null],
     ].toSorted((x, y) => (items.findIndex((item) => item.text === x[0]) - items.findIndex((item) => item.text === y[0]))));
     assert.deepEqual(items.map((item) => [item.text, item.closedAt]).filter(([text]) => text === 'Use SQLite'), [['Use SQLite', 200]], 'a closed fact says when it closed; an open one has none');
     assert.ok(items.filter((item) => item.state === 'open').every((item) => item.closedAt === null));
     assert.ok(!items.some((item) => item.text === 'Other pane decision'));
-    assert.deepEqual(ledger.historyOf('w1:t1', 'w1:p9'), []);
+    assert.deepEqual(ledger.historyOf(tabId('w1:t1'), paneId('w1:p9')), []);
     assert.deepEqual(items.map((item) => item.lastAt), items.map((item) => item.lastAt).toSorted((a, b) => b - a), 'newest first');
 });
 
@@ -139,7 +143,7 @@ test('history: at most 300 facts; finished and referring facts are cut first, de
     for (let at = 1; at <= 60; at += 1) {
         recordOps(store, run(at, opsOfSections({ ...NO_SECTIONS, decisions: [`d${at}: because`], needs: [`q${at}`], done: [`x${at}a`, `x${at}b`], links: [`l${at}a`, `l${at}b`], next: [`n${at}`] })));
     }
-    const items = ledger.historyOf('w1:t1', 'w1:p1');
+    const items = ledger.historyOf(tabId('w1:t1'), paneId('w1:p1'));
     const count = (...names: string[]): number => items.filter((item) => names.includes(item.section)).length;
     assert.equal(items.length, 300);
     assert.deepEqual([count('decisions'), count('needs'), count('next'), count('done', 'links')], [60, 60, 60, 120], 'every decision and question survives; finished items took the whole cut');

@@ -14,7 +14,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import type { WorkspacesResult } from '#src/ports/workspace-tokens.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { HC_SHUT, HC_NO_COLUMN, HC_NO_NOTICE, HC_ODD_SCREEN } from '../desktop/constants.ts';
 import { HcCoreAgents } from './agents.ts';
 import type { HcSeenResult } from './agents.ts';
@@ -128,7 +128,7 @@ export class HcCoreFleet implements Fleet {
     }
 
     layout(tab: TabId): Promise<LayoutResult> {
-        return Promise.resolve(unknown({ why: 'not-found', what: `the layout of ${tab}` }));
+        return Promise.resolve(unknown({ why: 'not-found', what: textOf(`the layout of ${tab}`) }));
     }
 
     open(): Promise<OpenResult> {

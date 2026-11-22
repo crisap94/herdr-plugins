@@ -5,9 +5,9 @@ import type { CurationRun } from '#src/ports/stories.ts';
 import { curationOf } from '#src/recap/domain/curation.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import type { CloseOp } from '#src/recap/domain/ops.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf, parseTextOrNull } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import { parseTabId } from '#src/recap/domain/ids.ts';
+import { parseTabId, paneId } from '#src/recap/domain/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
@@ -70,7 +70,7 @@ export class CurateTasks {
 
     private async one(tab: TabId, task: RecapTask, how: CurateScope): Promise<Presence> {
         try {
-            const reconciled = await this.reconciling.task(tab, { id: must(parseText(task.id)), name: must(parseText(task.name)), lanes: task.lanes.map((member) => must(parseText(member))) }, how.lanes, how.why);
+            const reconciled = await this.reconciling.task(tab, { id: must(parseText(task.id)), name: must(parseText(task.name)), lanes: task.lanes.map((member) => paneId(member)) }, how.lanes, how.why);
             if (how.why === 'open') {
                 await this.curate(tab, task);
             }
@@ -96,7 +96,7 @@ export class CurateTasks {
             return;
         }
         const writer = deps.writer();
-        const storyAt = deps.stories.read(tab, task.id)?.at;
+        const storyAt = deps.stories.read(tab, textOf(task.id))?.at;
         if (writer === null || this.due(key, facts, storyAt === undefined ? null : instant(storyAt), now) === 'absent') {
             return;
         }
@@ -133,7 +133,7 @@ export class CurateTasks {
         const checked = curationOf(answerTextOf(answer), open);
         checked.refused.forEach((why) => { this.deps.log(must(parseText(`${where}: refused — ${why}`))); });
         const merges = checked.merges.map((merge): CloseOp => ({ op: 'close', id: named.get(merge.id)?.id ?? '', why: 'merged' }));
-        const applied = this.deps.stories.keep(run, { story: checked.story, merges });
+        const applied = this.deps.stories.keep(run, { story: parseTextOrNull(checked.story), merges });
         applied.refused.forEach((one) => { this.deps.log(must(parseText(`${where}: the ledger refused ${one.op.op} — ${one.reason}`))); });
         if (checked.story === null) {
             this.deps.log(must(parseText(`${where}: no paragraph in the answer; the old one stays`)));

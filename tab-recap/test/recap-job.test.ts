@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
-import { tabId, agentKind } from '#src/recap/domain/ids.ts';
+import { tabId, agentKind, paneId } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -20,6 +20,7 @@ import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
+import { exitCodeOf } from '#src/ports/unknowable.ts';
 
 const add = (section: string, text: string): Record<string, unknown> => ({ op: 'add', section, text, anchor: 'migrate victoria' });
 const answer = (...ops: readonly Record<string, unknown>[]): string => JSON.stringify({ ops });
@@ -62,7 +63,7 @@ test('one recap for the tab, written from every lane, advancing every cursor', a
     assert.ok(only !== undefined);
     assert.deepEqual(only.input.agents.map((agent) => [agent.id, agent.kind, agent.pane]), [['a1', 'claude', 'w1:p1'], ['a2', 'codex', 'w1:p2']], 'every lane is described, hints included');
     assert.deepEqual(only.input.transcripts.map((lane) => [lane.agent, lane.entries.map((entry) => entry.text)]), [['a1', ['migrate victoria']], ['a2', ['run the tests']]]);
-    const recap = storeRead(store.records.readRecap('w1:t1'));
+    const recap = storeRead(store.records.readRecap(tabId('w1:t1')));
     assert.ok(recap !== null);
     assert.deepEqual(firstTask(recap).sections, { goal: 'both', now: ['migrating'], needs: [], done: [], decisions: [], next: [], links: [], rules: [] });
     assert.match(firstTask(recap).markdown, /^## Goal\nboth\n\n## Now\n- migrating\n\n## Needs you\n—/);
@@ -86,11 +87,11 @@ async function rewriteWith(language: string, stored: string | undefined, cause: 
     };
     const store = memoryStore();
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
-    const base = blankRecap('w1:t1');
+    const base = blankRecap(tabId('w1:t1'));
     seed(store, {
-        ...base, tasks: oneTask('## Goal\n- migrate', { goal: 'migrate', now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: 1,
-        lanes: [{ pane: 'w1:p1', agent: 'claude', transcript: '/t/w1:p1', cursor: 100, tail: null, title: null, lastPrompt: null, claudeRecap: null }],
-        ...(stored === undefined ? {} : { language: stored }),
+        ...base, tasks: oneTask('## Goal\n- migrate', { goal: 'migrate', now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: instant(1),
+        lanes: [{ pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t/w1:p1'), cursor: cursorOf(100), tail: null, title: null, lastPrompt: null, claudeRecap: null }],
+        ...(stored === undefined ? {} : { language: textOf(stored) }),
     });
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS,
         transcripts: registryWith({ claude: quiet }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => summarizer,
@@ -98,7 +99,7 @@ async function rewriteWith(language: string, stored: string | undefined, cause: 
     });
     job.request(tabId('w1:t1'), [lane], cause);
     await new Promise((resolve) => { setTimeout(resolve, 20); });
-    return { calls, recap: storeRead(store.records.readRecap('w1:t1')) };
+    return { calls, recap: storeRead(store.records.readRecap(tabId('w1:t1'))) };
 }
 
 test('a language switch with nothing new REWRITES the recap — on a request and on a focus', async () => {
@@ -123,14 +124,14 @@ test('the same language with nothing new does NOT call the summarizer (no cost f
 test('a recap stored before languages existed counts as English; a failed rewrite keeps the old language so it is retried', async () => {
     const legacy = await rewriteWith('es', undefined, 'requested');
     assert.equal(legacy.calls[0]?.previousLanguage, 'en');
-    const failing: Summarizer = { backend: textOf('fake'), contract: 'strict', write: (): Promise<Written> => Promise.resolve({ kind: 'unknown', why: { why: 'failed', code: 1, detail: causeOf('x') } }) };
+    const failing: Summarizer = { backend: textOf('fake'), contract: 'strict', write: (): Promise<Written> => Promise.resolve({ kind: 'unknown', why: { why: 'failed', code: exitCodeOf(1), detail: causeOf('x') } }) };
     const store = memoryStore();
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
-    seed(store, { ...blankRecap('w1:t1'), tasks: oneTask('## Goal\n- m'), at: 1, language: 'en' });
+    seed(store, { ...blankRecap(tabId('w1:t1')), tasks: oneTask('## Goal\n- m'), at: instant(1), language: textOf('en') });
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ claude: quiet }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => failing, language: (): Text => brand<string, 'Text'>('es'), log: (): void => undefined });
     job.request(tabId('w1:t1'), [lane], 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 20); });
-    assert.equal(storeRead(store.records.readRecap('w1:t1'))?.language, 'en');
+    assert.equal(storeRead(store.records.readRecap(tabId('w1:t1')))?.language, 'en');
 });
 
 function scriptedWriter(answers: readonly string[]): { summarizer: Summarizer; calls: RecapRequest[] } {
@@ -149,14 +150,14 @@ function scriptedWriter(answers: readonly string[]): { summarizer: Summarizer; c
 async function recapWith(answers: readonly string[], stored: Partial<TabRecap> = {}): Promise<{ calls: RecapRequest[]; recap: TabRecap }> {
     const { summarizer, calls } = scriptedWriter(answers);
     const store = memoryStore();
-    seed(store, { ...blankRecap('w1:t1'), ...stored });
+    seed(store, { ...blankRecap(tabId('w1:t1')), ...stored });
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS,
         transcripts: registryWith({ claude: transcriptsOf('claude') }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(7) }, summarizer: (): Summarizer => summarizer,
         language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined,
     });
     job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 30); });
-    const recap = storeRead(store.records.readRecap('w1:t1'));
+    const recap = storeRead(store.records.readRecap(tabId('w1:t1')));
     assert.ok(recap !== null);
     return { calls, recap };
 }
@@ -173,7 +174,7 @@ test('an unusable answer is retried ONCE with what was wrong; the second answer 
 
 test('two unusable answers keep the previous recap, add an error line and do not advance the cursors', async () => {
     const previous = { goal: 'old goal', now: ['old'], needs: [], done: [], decisions: [], next: [], links: [], rules: [] };
-    const { calls, recap } = await recapWith(['nope', '{"foo": 1}'], { tasks: oneTask('## Goal\nold goal', previous), at: 1 });
+    const { calls, recap } = await recapWith(['nope', '{"foo": 1}'], { tasks: oneTask('## Goal\nold goal', previous), at: instant(1) });
     assert.equal(calls.length, 2, 'one retry, not more');
     assert.deepEqual(firstTask(recap).sections, previous);
     assert.match(firstTask(recap).markdown, /^## Goal\nold goal\n\n## Now\n- old/, 'the Markdown is drawn from the stored facts');
@@ -185,7 +186,7 @@ test('two unusable answers keep the previous recap, add an error line and do not
 
 test('the ledger goes to the writer: the open facts numbered f1…fn, oldest seen first; the answer\'s ids are mapped back to them', async () => {
     const sections = { goal: 'g', now: ['n'], needs: [], done: [], decisions: [], next: [], links: [], rules: [] };
-    const first = await recapWith([answer({ op: 'close', id: 'f2', why: 'done' }, add('done', 'finished n'))], { tasks: oneTask('rendered', sections, ['w1:p1']), at: 1 });
+    const first = await recapWith([answer({ op: 'close', id: 'f2', why: 'done' }, add('done', 'finished n'))], { tasks: oneTask('rendered', sections, ['w1:p1']), at: instant(1) });
     const facts = first.calls[0]?.input.ledgers.flatMap((ledger) => ledger.facts.map((fact) => [fact.id, fact.section, fact.text, fact.state]));
     assert.deepEqual(facts, [['f1', 'goal', 'g', 'open'], ['f2', 'now', 'n', 'open']]);
     const task = firstTask(first.recap);
@@ -211,7 +212,7 @@ test('the 1.x answer (a recap, not operations) is told so and may fix it; a cust
         .request(tabId('w1:t1'), [lane], 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 30); });
     assert.equal(calls.length, 1, 'no retry for a custom writer');
-    assert.match(storeRead(store.records.readRecap('w1:t1'))?.error ?? '', /custom writer must answer operations \(see README\)/);
+    assert.match(storeRead(store.records.readRecap(tabId('w1:t1')))?.error ?? '', /custom writer must answer operations \(see README\)/);
     assert.equal(storeRead(store.ledger.allOf({ tab: 'w1:t1', key: 't1' })).length, 0, 'nothing stored');
 });
 
@@ -236,7 +237,7 @@ test('refreshNow resolves only once the recap of the tab has been written', asyn
     const reader: Transcripts = { ...quiet, read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf('go') }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(5), tail: null }, grew: grewOf(true) }) };
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ [reader.agent]: reader }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => summarizer, language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined });
     await job.refreshNow(tabId('w1:t1'), [lane]);
-    assert.equal(firstTask(storeRead(store.records.readRecap('w1:t1')) ?? blankRecap('w1:t1')).sections?.goal, 'written late');
+    assert.equal(firstTask(storeRead(store.records.readRecap(tabId('w1:t1'))) ?? blankRecap(tabId('w1:t1'))).sections?.goal, 'written late');
 });
 
 test('a run logs how long it took and why it ran, written or failed', async () => {
@@ -264,8 +265,8 @@ test('the rewrite line stays while an open fact is still in the old language, an
     const store = memoryStore();
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
     seed(store, {
-        ...blankRecap('w1:t1'), tasks: oneTask('## Goal\n- migrate', { goal: 'migrate', now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: 1, language: 'en',
-        lanes: [{ pane: 'w1:p1', agent: 'claude', transcript: '/t/w1:p1', cursor: 100, tail: null, title: null, lastPrompt: null, claudeRecap: null }],
+        ...blankRecap(tabId('w1:t1')), tasks: oneTask('## Goal\n- migrate', { goal: 'migrate', now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: instant(1), language: textOf('en'),
+        lanes: [{ pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t/w1:p1'), cursor: cursorOf(100), tail: null, title: null, lastPrompt: null, claudeRecap: null }],
     });
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS,
         transcripts: registryWith({ claude: transcriptsOf('claude') }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => summarizer,
@@ -279,7 +280,7 @@ test('the rewrite line stays while an open fact is still in the old language, an
     await once();
     await once();
     assert.deepEqual(calls.map((request) => [request.language, request.previousLanguage]), [['es', 'en'], ['es', 'en'], ['es', 'es']], 'the switch run, then a run that left f1 in English, then a run after f1 was rewritten');
-    assert.equal(storeRead(store.records.readRecap('w1:t1'))?.language, 'es');
+    assert.equal(storeRead(store.records.readRecap(tabId('w1:t1')))?.language, 'es');
 });
 
 test('a recap already stamped in the wanted language but holding an open fact in the old one is rewritten on request, and a quiet focus does not call the writer', async () => {
@@ -292,8 +293,8 @@ test('a recap already stamped in the wanted language but holding an open fact in
     const store = memoryStore();
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
     seed(store, {
-        ...blankRecap('w1:t1'), tasks: oneTask('## Goal\n- migrate', { goal: 'migrate', now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: 1, language: 'en',
-        lanes: [{ pane: 'w1:p1', agent: 'claude', transcript: '/t/w1:p1', cursor: 100, tail: null, title: null, lastPrompt: null, claudeRecap: null }],
+        ...blankRecap(tabId('w1:t1')), tasks: oneTask('## Goal\n- migrate', { goal: 'migrate', now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: instant(1), language: textOf('en'),
+        lanes: [{ pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t/w1:p1'), cursor: cursorOf(100), tail: null, title: null, lastPrompt: null, claudeRecap: null }],
     });
     const jobWith = (transcripts: Transcripts): RecapJob => new RecapJob({
         writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS,
@@ -305,8 +306,8 @@ test('a recap already stamped in the wanted language but holding an open fact in
         await new Promise((resolve) => { setTimeout(resolve, 20); });
     };
     await once(jobWith(transcriptsOf('claude')), 'requested');
-    assert.equal(storeRead(store.records.readRecap('w1:t1'))?.language, 'es');
-    assert.deepEqual(storeRead(store.ledger.keysOf('w1:t1')).flatMap((key) => storeRead(store.ledger.openOf({ tab: 'w1:t1', key })).map((fact) => fact.language)), ['en']);
+    assert.equal(storeRead(store.records.readRecap(tabId('w1:t1')))?.language, 'es');
+    assert.deepEqual(storeRead(store.ledger.keysOf(tabId('w1:t1'))).flatMap((key) => storeRead(store.ledger.openOf({ tab: 'w1:t1', key })).map((fact) => fact.language)), ['en']);
     calls.length = 0;
     await once(jobWith(quiet), 'requested');
     await once(jobWith(quiet), 'focused');
@@ -323,8 +324,8 @@ test('the close-evidence setting reaches the writer request and the piped run; u
         };
         const store = memoryStore();
         seed(store, {
-            ...blankRecap('w1:t1'), tasks: oneTask('## Goal\n- migrate', { goal: 'migrate', now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: 1, language: 'en',
-            lanes: [{ pane: 'w1:p1', agent: 'claude', transcript: '/t/w1:p1', cursor: 100, tail: null, title: null, lastPrompt: null, claudeRecap: null }],
+            ...blankRecap(tabId('w1:t1')), tasks: oneTask('## Goal\n- migrate', { goal: 'migrate', now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: instant(1), language: textOf('en'),
+            lanes: [{ pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t/w1:p1'), cursor: cursorOf(100), tail: null, title: null, lastPrompt: null, claudeRecap: null }],
         });
         const deps = { writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS,
             transcripts: registryWith({ claude: transcriptsOf('claude') }),

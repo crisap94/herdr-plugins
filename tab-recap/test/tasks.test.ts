@@ -142,7 +142,7 @@ test('a tab with two lanes in two places: the request carries each lane\'s hints
     assert.deepEqual(request.input.agents.map((hint) => [hint.pane, hint.cwd, hint.repo, hint.branch, hint.files]), [
         ['w1:p1', '/work/pay', '/work/pay', 'feat/v2', ['w1:p1.ts']], ['w1:p2', '/work/docs', null, null, ['w1:p2.ts']],
     ]);
-    const recap = storeRead(store.records.readRecap('w1:t1'));
+    const recap = storeRead(store.records.readRecap(tabId('w1:t1')));
     assert.deepEqual(recap?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal]), [['t1', 'pay', ['w1:p1'], 'pay v2'], ['t2', 'docs', ['w1:p2'], 'docs']], 'no grouping yet: one task per place, named by its folder');
     assert.match(firstTask(recap).markdown, /^## Goal\npay v2\n\n## Now\n- wiring/);
     assert.deepEqual(request.input.tasks, [{ id: 't1', name: 'pay', lanes: ['w1:p1'] }, { id: 't2', name: 'docs', lanes: ['w1:p2'] }], 'and the grouping is told to the writer');
@@ -152,17 +152,17 @@ test('a tab with ONE lane is not told about tasks, but is still described: the a
     const { store, requests } = await run([JSON.stringify({ ops: [op('goal', 'solo')] })], ['w1:p1']);
     assert.deepEqual(requests[0]?.input.agents.map((agent) => [agent.cwd, agent.repo, agent.branch, agent.files]), [['/work/pay', '/work/pay', 'feat/v2', ['w1:p1.ts']]], 'the hints are there for a single agent too');
     assert.deepEqual(requests[0].input.tasks, []);
-    assert.deepEqual(storeRead(store.records.readRecap('w1:t1'))?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal]), [['t1', '', ['w1:p1'], 'solo']]);
+    assert.deepEqual(storeRead(store.records.readRecap(tabId('w1:t1')))?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal]), [['t1', '', ['w1:p1'], 'solo']]);
 });
 
 test('the second run: the grouping is kept and goes back to the writer; an add names its task; an update or close goes to the fact\'s own task', async () => {
     const store = memoryStore();
-    const seeded = { ...blankRecap('w1:t1'), at: 1, lanes: [], tasks: [taskOf('t1', 'Payments', ['w1:p1'], 'a'), taskOf('t2', 'Docs', ['w1:p2'], 'b')] };
+    const seeded = { ...blankRecap(tabId('w1:t1')), at: instant(1), lanes: [], tasks: [taskOf('t1', 'Payments', ['w1:p1'], 'a'), taskOf('t2', 'Docs', ['w1:p2'], 'b')] };
     seed(store, seeded);
     const { requests } = await run([JSON.stringify({ ops: [op('done', 'wrote the intro', 't2'), { op: 'close', id: 'f1', why: 'done' }] })], ['w1:p1', 'w1:p2'], store);
     assert.deepEqual(requests[0]?.input.tasks, [{ id: 't1', name: 'Payments', lanes: ['w1:p1'] }, { id: 't2', name: 'Docs', lanes: ['w1:p2'] }]);
     assert.deepEqual(requests[0].input.ledgers.map((ledger) => [ledger.task, ledger.facts.map((fact) => fact.id)]), [['t1', ['f1']], ['t2', ['f2']]]);
-    const recap = storeRead(store.records.readRecap('w1:t1'));
+    const recap = storeRead(store.records.readRecap(tabId('w1:t1')));
     assert.deepEqual(recap?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal, task.sections?.done]), [['t1', 'Payments', ['w1:p1'], '', []], ['t2', 'Docs', ['w1:p2'], 'b', ['wrote the intro']]]);
 });
 
@@ -181,7 +181,7 @@ test('groups: one task (or none) is ONE group of every lane; several tasks group
 
 test('two tasks: each under its own name, its lanes first, then its own recap; the tab\'s meta once', () => {
     const recap: TabRecap = {
-        ...blankRecap('w1:t1'), at: 0, backend: 'claude/haiku',
+        ...blankRecap(tabId('w1:t1')), at: instant(0), backend: textOf('claude/haiku'),
         tasks: [
             { ...taskOf('t1', 'Payments v2', ['w1:p1', 'w1:p2'], 'ship payments'), sections: sections('ship payments', { needs: ['approve the deploy'] }) },
             { ...taskOf('t2', '', ['w1:p3'], 'write docs'), sections: sections('write docs') },
@@ -198,25 +198,25 @@ test('two tasks: each under its own name, its lanes first, then its own recap; t
 });
 
 test('a lane that arrived after the last recap shows its header, without a recap, after the tasks', () => {
-    const recap: TabRecap = { ...blankRecap('w1:t1'), tasks: [taskOf('t1', 'A', ['w1:p1']), taskOf('t2', 'B', ['w1:p2'])] };
+    const recap: TabRecap = { ...blankRecap(tabId('w1:t1')), tasks: [taskOf('t1', 'A', ['w1:p1']), taskOf('t2', 'B', ['w1:p2'])] };
     const text = strip(present({ tab: tab(LANES), recap, notes: new Map(), warnings: [], now: 0, messages: en }, 50, () => null));
     assert.ok(text.indexOf('opencode w1:p3') > text.indexOf('▌ B'));
     assert.equal(text.split('GOAL').length, 3);
 });
 
 const view = (tasks: readonly RecapTask[]): Parameters<typeof presentBar>[0] =>
-    ({ tab: tab(LANES), recap: { ...blankRecap('w1:t1'), tasks }, notes: new Map(), warnings: [], now: 0, messages: en });
+    ({ tab: tab(LANES), recap: { ...blankRecap(tabId('w1:t1')), tasks }, notes: new Map(), warnings: [], now: 0, messages: en });
 
 test('the bar takes the most urgent "needs you" across tasks — else the first "now"', () => {
     const quiet = { ...taskOf('t1', 'A', ['w1:p1']), sections: sections('a', { now: ['running CI'] }) };
     const blocked = { ...taskOf('t2', 'B', ['w1:p2']), sections: sections('b', { needs: ['approve the deploy'], now: ['waiting'] }) };
     assert.match(strip(presentBar(view([quiet, blocked]), 60)), /needs you: approve the deploy/);
     assert.match(strip(presentBar(view([quiet, { ...blocked, sections: sections('b', { now: ['later'] }) }]), 60)), /running CI/);
-    assert.match(strip(presentBar({ ...view([]), recap: { ...blankRecap('w1:t1'), tasks: oneTask('## Waiting on you\n- answer me') } }, 60)), /needs you: answer me/);
+    assert.match(strip(presentBar({ ...view([]), recap: { ...blankRecap(tabId('w1:t1')), tasks: oneTask('## Waiting on you\n- answer me') } }, 60)), /needs you: answer me/);
 });
 
 test('a tab with one task is drawn exactly as before: no task heading, lanes then the one recap', () => {
-    const recap: TabRecap = { ...blankRecap('w1:t1'), at: 0, tasks: [{ ...taskOf('t1', '', ['w1:p1', 'w1:p2']), sections: sections('one thing') }] };
+    const recap: TabRecap = { ...blankRecap(tabId('w1:t1')), at: instant(0), tasks: [{ ...taskOf('t1', '', ['w1:p1', 'w1:p2']), sections: sections('one thing') }] };
     const text = strip(present({ tab: tab(LANES.slice(0, 2)), recap, notes: new Map(), warnings: [], now: 0, messages: en }, 50, () => null));
     assert.ok(!text.includes('▌'));
     assert.ok(text.indexOf('codex w1:p2') < text.indexOf('TAB RECAP') && text.indexOf('TAB RECAP') < text.indexOf('one thing'));

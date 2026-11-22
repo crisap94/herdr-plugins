@@ -31,8 +31,9 @@ import { lineBreakRefusal } from './fakes/typed-line.ts';
 import { oneTask } from './support.ts';
 import type { MissedFacts } from '#src/recap/domain/autocompact.ts';
 import { decidedOf, textOf } from './fakes/decider-fixtures.ts';
+import type { Section } from '#src/recap/domain/fact.ts';
 
-const fact = (section: string, text: string, why: string | null = null, state: 'open' | 'closed' = 'open'): HistoryFact => ({ section, text, why, state, closedWhy: null, closedAt: null, firstAt: 1, lastAt: 2 });
+const fact = (section: Section, text: string, why: string | null = null, state: 'open' | 'closed' = 'open'): HistoryFact => ({ section, text: textOf(text), why: why === null ? null : textOf(why), state, closedWhy: null, closedAt: null, firstAt: instant(1), lastAt: instant(2) });
 const HISTORY = [fact('goal', 'Ship the cart rewrite'), fact('decisions', 'Keep SQLite', 'one file'), fact('next', 'Tag the release'), fact('done', 'Merged !12'), fact('rules', 'Never push to main', null, 'closed')];
 
 function deciding(answers: Readonly<Record<string, number>>, fallback = 0.95): Decider & { asked: ReadonlyMap<Text, Noul>[] } {
@@ -82,7 +83,7 @@ function flow(checks: readonly Coverage[], withCoverage = true, template: { read
     const world: World = { harness: { agent: 'claude', typeLine: null }, logs: [], typed: [], prompts: [], briefs: [], toasts: [], store };
     let checked = 0;
     let clock = NOW;
-    const recap = { ...blankRecap('w1:t1'), tasks: oneTask('x', NO_SECTIONS, ['w1:p1']) };
+    const recap = { ...blankRecap(tabId('w1:t1')), tasks: oneTask('x', NO_SECTIONS, ['w1:p1']) };
     const deps: CompactionDeps = {
         compactionPlans,
         claims: new LaneClaims(),
@@ -160,12 +161,12 @@ test('the ceiling switch off keeps the failed check blocking', async () => {
 });
 
 test('the ceiling appendix follows the section order and remains within its character cap', async () => {
-    const history = [
-        { ...HISTORY[0]!, section: 'decisions', text: 'new decision', why: 'latest reason', lastAt: 9 },
-        { ...HISTORY[0]!, section: 'needs', text: 'need '.repeat(45), why: null },
-        { ...HISTORY[0]!, section: 'rules', text: 'rule '.repeat(45), why: null },
-        { ...HISTORY[0]!, section: 'goal', text: 'goal '.repeat(45), why: null },
-        { ...HISTORY[0]!, section: 'decisions', text: 'old decision', why: 'older reason', lastAt: 2 },
+    const history: readonly HistoryFact[] = [
+        { ...HISTORY[0]!, section: 'decisions', text: textOf('new decision'), why: textOf('latest reason'), lastAt: instant(9) },
+        { ...HISTORY[0]!, section: 'needs', text: textOf('need '.repeat(45)), why: null },
+        { ...HISTORY[0]!, section: 'rules', text: textOf('rule '.repeat(45)), why: null },
+        { ...HISTORY[0]!, section: 'goal', text: textOf('goal '.repeat(45)), why: null },
+        { ...HISTORY[0]!, section: 'decisions', text: textOf('old decision'), why: textOf('older reason'), lastAt: instant(2) },
     ];
     const missing = history.map((entry) => `${entry.section}: ${entry.text}`);
     const result: Coverage = { ok: false, missing, missingFacts: history.map((entry, index) => ({ index, fact: { section: entry.section, text: entry.text, why: entry.why }, parts: ['text'] })), answers: {}, unknown: null };
@@ -277,7 +278,7 @@ test('at the ceiling a rewrite that cannot be checked loses to the checked first
 
 test('the ceiling appendix is capped at 1 500 characters and says how many facts it left out', async () => {
     const texts = Array.from({ length: 12 }, (_, n) => `decision ${n} ${'x'.repeat(170)}`);
-    const history = texts.map((text, n) => ({ ...HISTORY[1]!, text, why: null, lastAt: n }));
+    const history = texts.map((text, n) => ({ ...HISTORY[1]!, text: textOf(text), why: null, lastAt: instant(n) }));
     const { world, compaction } = flow([manyMissing(texts), manyMissing(texts)], true, null, true, { history });
     decided(world, 'ceiling');
     await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });

@@ -5,16 +5,17 @@ import type { FreshnessInput } from '#src/recap/application/freshness-block.ts';
 import { TRANSCRIPT_READ_BUDGET_BYTES } from '#src/recap/application/transcript-read-budget.ts';
 import { registryWith } from './fakes/transcript-registry.ts';
 import type { LaneCursor, LastRun, RecapRecords } from '#src/ports/recap-records.ts';
-import { UNREAD, cursorOf, grewOf } from '#src/ports/transcripts.ts';
+import { UNREAD, cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import type { ChunkResult, Entry, Position, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { SCREEN_PREFIX } from '#src/ports/screens.ts';
 import { textOf } from '#src/recap/domain/text.ts';
-import { agentKind } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId } from '#src/recap/domain/ids.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 const TAB = 'w1:t1';
-const LAST: LastRun = { at: 1_000, cause: 'turn-ended' };
+const LAST: LastRun = { at: instant(1_000), cause: 'turn-ended' };
 const records = (last: LastRun | null): Pick<RecapRecords, 'lastRunOf'> => ({ lastRunOf: () => last });
 
 interface Asked {
@@ -27,7 +28,7 @@ function reader(entries: readonly Entry[] | null, asked: Asked[] = []): Transcri
     return {
         agent: agentKind('claude'),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-        locate: () => Promise.resolve(unknown({ why: 'not-found', what: 'x' })),
+        locate: () => Promise.resolve(unknown({ why: 'not-found', what: textOf('x') })),
         latestPrompt: () => Promise.resolve({ kind: 'prompt', text: null }),
         read: (source, was, budget): Promise<ChunkResult> => {
             asked.push({ source, was, budget });
@@ -45,7 +46,7 @@ const input = (overrides: Partial<FreshnessInput> = {}): FreshnessInput => ({
 });
 
 const cursorAt = (transcript: string, cursor: number, tail: string | null = null): LaneCursor => ({
-    pane: 'w1:p1', agent: 'claude', transcript, cursor, tail, title: null, lastPrompt: null, claudeRecap: null,
+    pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf(transcript), cursor: cursorOf(cursor), tail: tail === null ? null : textOf(tail), title: null, lastPrompt: null, claudeRecap: null,
 });
 
 test('a tab with no good run is the ledger-empty outcome, whatever the transcript holds', async () => {

@@ -9,14 +9,16 @@ import type { LaneCursor } from '#src/ports/recap-records.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import type { LastCommitResult, UncommittedResult } from '#src/ports/worksite-reader.ts';
 import type { WorksiteFacts, WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 import { MemoryWorksite } from './fakes/worksite-reader.ts';
+import { agentKind, paneId } from '#src/recap/domain/ids.ts';
+import { sourcePathOf, cursorOf } from '#src/ports/transcripts.ts';
 
 const DIR = '/work/project';
-const CURSOR: LaneCursor = { pane: 'w1:p1', agent: 'claude', transcript: 'session.jsonl', cursor: 10, tail: null, title: null, lastPrompt: null, claudeRecap: null };
+const CURSOR: LaneCursor = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('session.jsonl'), cursor: cursorOf(10), tail: null, title: null, lastPrompt: null, claudeRecap: null };
 const repoAt = (result: RepoResult): LaneRepo => ({ repoOf: () => Promise.resolve(result) });
 const repo: RepoResult = { kind: 'repo', root: must(parseDirectory('/work/project')), branch: must(parseText('feat/x')), web: null };
 const edits = (files: readonly FileCount[]): WorksiteDeps['edits'] & { readonly asked: (readonly LaneCursor[])[] } => {
@@ -124,7 +126,7 @@ test('unknown tokens leave the token list empty', async () => {
 
 test('a directory whose last commit is gone is unavailable even when its paths are readable', async () => {
     const reader = {
-        lastCommit: (): Promise<LastCommitResult> => Promise.resolve(unknown({ why: 'not-found', what: 'directory' })),
+        lastCommit: (): Promise<LastCommitResult> => Promise.resolve(unknown({ why: 'not-found', what: textOf('directory') })),
         uncommitted: (): Promise<UncommittedResult> => Promise.resolve({ kind: 'paths', count: 0, paths: [] }),
     };
     assert.deepEqual(await worksiteOf({ reader, repo: repoAt(repo), edits: edits([]) }, input()), { kind: 'unavailable' });

@@ -22,7 +22,7 @@ import type { LaneSettling } from '#src/ports/lane-settling.ts';
 import { memoryStore } from './db/support.ts';
 import { lineBreakRefusal } from './fakes/typed-line.ts';
 import { oneTask } from './support.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { CompactRequests } from '#src/recap/application/compact-requests.ts';
@@ -53,7 +53,7 @@ function fleet(statuses: Record<string, string>, blocked: readonly string[] = []
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
     const settling: LaneSettling = { settled: (pane) => { settledAfter.push(`${pane}: after ${events.join(',')}`); return Promise.resolve({ kind: 'settled', status: 'done' }); } };
     const agents: Agents = {
-        status: (pane): Promise<AgentState> => Promise.resolve(statuses[pane] === undefined ? unknown({ why: 'not-found', what: pane }) : { kind: 'agent', agent: 'x', status: statuses[pane] as 'idle' }),
+        status: (pane): Promise<AgentState> => Promise.resolve(statuses[pane] === undefined ? unknown({ why: 'not-found', what: textOf(pane) }) : { kind: 'agent', agent: 'x', status: statuses[pane] as 'idle' }),
         prompt: (pane, text, wait, behavior): Promise<Prompted> => {
             events.push(`prompt ${pane}`);
             typed.push({ pane, text, wait, promptBehavior: behavior });
@@ -98,13 +98,13 @@ function queuing(world: ReturnType<typeof fleet>, clock: Clock, slices: readonly
 function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPlans; readonly clock?: () => number; readonly marks?: () => Promise<readonly Mark[]>; readonly answerTo?: (id: string, pane: string, stage: string) => void }, setting = 'focused', focused: string | null = 'w1:p1', briefing: Briefing | null = null, reads: readonly (readonly Mark[])[] = [[]]): Compaction {
     let looked = 0;
     const store = world.store;
-    const recap = { ...blankRecap('w1:t1'), tasks: oneTask('x', { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['The recap column shows three lines'], rules: ['Never push to main'] }, ['w1:p1', 'w1:p2']) };
+    const recap = { ...blankRecap(tabId('w1:t1')), tasks: oneTask('x', { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['The recap column shows three lines'], rules: ['Never push to main'] }, ['w1:p1', 'w1:p2']) };
     const deps: CompactionDeps = {
         compactionPlans: world.plans ?? idleClaudePlans,
         agents: world.agents,
         notifier: { notify: (title, body) => { world.toasts.push(`${title} | ${body}`); return Promise.resolve({ kind: 'shown' }); } },
         records: { readRecap: () => recap },
-        ledger: { historyOf: () => [{ section: 'decisions', text: 'Keep SQLite', why: 'one file', state: 'open', closedWhy: null, closedAt: null, firstAt: 1, lastAt: 2 }, { section: 'decisions', text: 'Use JSON files', why: 'simple', state: 'closed', closedWhy: 'superseded', closedAt: 2, firstAt: 1, lastAt: 2 }] },
+        ledger: { historyOf: () => [{ section: 'decisions', text: textOf('Keep SQLite'), why: textOf('one file'), state: 'open', closedWhy: null, closedAt: null, firstAt: instant(1), lastAt: instant(2) }, { section: 'decisions', text: textOf('Use JSON files'), why: textOf('simple'), state: 'closed', closedWhy: 'superseded', closedAt: instant(2), firstAt: instant(1), lastAt: instant(2) }] },
         boundaries: { lastBreakAt: () => briefing?.lastBreak ?? null },
         compactions: store.compactions,
         settling: world.settling,
@@ -588,7 +588,7 @@ test('a request whose agent blocks at the typing is answered failed-skipped: the
 
 test('a request whose typing is refused for any other cause is answered failed-error', async () => {
     const world = fleet({ 'w1:p1': 'idle' });
-    const refusing = { ...world, agents: { ...world.agents, typeLine: (): Promise<Prompted> => Promise.resolve(unknown({ why: 'not-found', what: 'w1:p1' })) } };
+    const refusing = { ...world, agents: { ...world.agents, typeLine: (): Promise<Prompted> => Promise.resolve(unknown({ why: 'not-found', what: textOf('w1:p1') })) } };
     await flow(refusing, 'focused', 'w1:p1').run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r7' });
     assert.deepEqual(world.answered, ['r7 w1:p1 running', 'r7 w1:p1 failed-error']);
 });

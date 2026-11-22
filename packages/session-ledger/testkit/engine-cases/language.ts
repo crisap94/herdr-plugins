@@ -5,7 +5,8 @@ import { factOf } from '../facts.ts';
 import { followed, key, scope, session } from '../ids.ts';
 import type { Behaviour, EngineWorld, WrittenAnswer } from '../world.ts';
 import { countOf, NO_OPS, quietAt, recapOf, spoken } from './support.ts';
-import { failure } from '../values.ts';
+import { failure, running, usd, text, tabId } from '../values.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 
 const TAB = scope('one');
 const FAILED = failure(1, 'scripted writer failure');
@@ -17,15 +18,15 @@ const writesOf = (world: EngineWorld): readonly string[] => world.store.calls().
 
 const written = (world: EngineWorld, factLanguage: string): void => {
     const recap: Recap = {
-        tab: TAB,
+        tab: tabId('one'),
         lanes: [],
         tasks: [{ id: 't1', name: 'work', lanes: [key('a')], sections: null, markdown: 'editing src/app.ts v2' }],
-        at: 0,
-        running: false,
+        at: instant(0),
+        running: running(false),
         backend: null,
         error: null,
-        costUsd: 0,
-        language: 'en',
+        costUsd: usd(0),
+        language: text('en'),
     };
     world.store.seed(recap, [factOf('fct_1', { task: { tab: TAB, key: 't1' }, text: 'editing src/app.ts v2', language: factLanguage })]);
 };

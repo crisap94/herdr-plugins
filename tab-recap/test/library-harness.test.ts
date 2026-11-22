@@ -400,7 +400,7 @@ test('answer schema on a library harness without structured output stays dark: o
 });
 
 test('answer schema with a failed schema call: the writer returns that failure and makes no text retry', async () => {
-    const failure = unknown({ why: 'not-found', what: 'writer' });
+    const failure = unknown({ why: 'not-found', what: textOf('writer') });
     const recorded = recordingHarness('schema', null, failure);
     const written = await new RecapWriter(recorded.harness, { model: '', effort: 'default' }, 'schema').write(requestOf({ entries: ENTRIES }));
     assert.equal(written, failure);

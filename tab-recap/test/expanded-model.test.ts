@@ -11,6 +11,10 @@ import { cursor, memoryStore, must, seed, recordOps } from '#test/db/support.ts'
 import { fact } from '#test/fakes/fact-at.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { NOW } from '#test/fakes/expanded-fixture.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { usdOf } from '#src/recap/domain/usd.ts';
 
 const MIN = 60_000;
 const T1 = { tab: 'w1:t1', key: 't1' };
@@ -18,7 +22,7 @@ const view: TabView = { tab: 'w1:t1', column: null, at: NOW, lanes: [{ pane: 'w1
 
 function setup(ledger = new MemoryLedger().seed(fact('f1', 'now', 'Running the tests', NOW - 20 * MIN))): { model: ExpandedModel; ledger: MemoryLedger; store: ReturnType<typeof memoryStore>; asked: string[] } {
     const store = memoryStore();
-    seed(store, { ...blankRecap('w1:t1'), at: NOW - 3 * 60 * MIN, lanes: [cursor('w1:p1')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'], sections: null, markdown: '## Goal\n- x' }] });
+    seed(store, { ...blankRecap(tabId('w1:t1')), at: instant(NOW - 3 * 60 * MIN), lanes: [cursor('w1:p1')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'], sections: null, markdown: '## Goal\n- x' }] });
     const asked: string[] = [];
     const deps: ExpandedDeps = { records: store.records, ledger, stories: store.stories, session: store.session, boundaries: store.boundaries, requests: { requestCurate: (tab) => { asked.push(tab); } }, edits: () => [{ path: 'src/a.ts', count: 3 }] };
     return { model: new ExpandedModel(deps), ledger, store, asked };
@@ -27,7 +31,7 @@ function setup(ledger = new MemoryLedger().seed(fact('f1', 'now', 'Running the t
 test('the view is built from the store alone: the task\'s facts, the session facts from the store and the lanes, the lanes\' webs', () => {
     const { model, store } = setup();
     assert.equal(model.read('w1:t1', view, NOW).session.runs, null, 'the imported run is not a turn');
-    recordOps(store, { tab: 'w1:t1', at: NOW - MIN, cause: 'turn-ended', backend: 'claude', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }], ops: [] });
+    recordOps(store, { tab: tabId('w1:t1'), at: instant(NOW - MIN), cause: 'turn-ended', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }], ops: [] });
     const data = model.read('w1:t1', view, NOW);
     assert.deepEqual(data.tasks.map((task) => [task.name, task.facts.map((one) => one.text), task.story]), [['', ['Running the tests'], null]]);
     assert.deepEqual(data.session.agents, [{ label: 'claude · orchestrator', share: 50, window: 200_000 }]);
@@ -40,7 +44,7 @@ test('the view is built from the store alone: the task\'s facts, the session fac
 
 test('a stale story: the curator is asked once, the old paragraph stays with "updating…", and the new one shows when it is stored', () => {
     const { model, store, asked, ledger } = setup();
-    store.stories.keep({ task: T1, at: NOW - 60 * MIN, language: 'en' }, { story: 'The old paragraph.', merges: [] });
+    store.stories.keep({ task: T1, at: instant(NOW - 60 * MIN), language: textOf('en') }, { story: textOf('The old paragraph.'), merges: [] });
     ledger.seed(fact('f2', 'next', 'A fact since the paragraph', NOW - 10 * MIN));
     const first = model.read('w1:t1', view, NOW);
     assert.deepEqual(asked, ['w1:t1']);
@@ -50,7 +54,7 @@ test('a stale story: the curator is asked once, the old paragraph stays with "up
     model.read('w1:t1', view, NOW + 1000);
     model.read('w1:t1', view, NOW + 2000);
     assert.equal(asked.length, 1, 'once per change, however often it redraws');
-    store.stories.keep({ task: T1, at: NOW + 3000, language: 'en' }, { story: 'The new paragraph.', merges: [] });
+    store.stories.keep({ task: T1, at: instant(NOW + 3000), language: textOf('en') }, { story: textOf('The new paragraph.'), merges: [] });
     const later = model.read('w1:t1', view, NOW + 4000);
     assert.equal(must(later.tasks[0]).curating, false);
     assert.equal(must(later.tasks[0]).story?.text, 'The new paragraph.');
@@ -59,7 +63,7 @@ test('a stale story: the curator is asked once, the old paragraph stays with "up
 
 test('a story as new as the ledger asks for nothing; another change asks again; a request unanswered for ten minutes stops saying "updating…"', () => {
     const { model, store, asked, ledger } = setup();
-    store.stories.keep({ task: T1, at: NOW, language: 'en' }, { story: 'Fresh.', merges: [] });
+    store.stories.keep({ task: T1, at: instant(NOW), language: textOf('en') }, { story: textOf('Fresh.'), merges: [] });
     assert.equal(model.read('w1:t1', view, NOW).tasks[0]?.curating, false);
     assert.deepEqual(asked, []);
     ledger.seed(fact('f2', 'done', 'Shipped it', NOW + 5000));

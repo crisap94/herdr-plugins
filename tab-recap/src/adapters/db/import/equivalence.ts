@@ -2,7 +2,8 @@ import { isDeepStrictEqual } from 'node:util';
 import { must } from '#src/protocol/result.ts';
 import type { TabRecap } from '#src/ports/recap-records.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
+import { usdOf } from '#src/recap/domain/usd.ts';
 import { microsOf } from '../run-write/legacy.ts';
 
 export { holdsAnything, recapDifferences, viewDifferences } from './legacy.ts';
@@ -10,11 +11,11 @@ export { holdsAnything, recapDifferences, viewDifferences } from './legacy.ts';
 export type Presence = 'present' | 'absent';
 
 export function canonicalRecap(file: TabRecap): TabRecap {
-    const costUsd = typeof file.costUsd === 'number' ? file.costUsd : 0;
+    const costUsd = typeof file.costUsd === 'number' ? file.costUsd : usdOf(0);
     const at = typeof file.at === 'number' ? file.at : null;
     const error = typeof file.error === 'string' ? file.error : null;
     const hasRun = at !== null || error !== null || costUsd > 0;
-    return { ...file, at, error, costUsd, running: file.running, backend: typeof file.backend === 'string' ? file.backend : null, language: hasRun ? file.language : 'en' };
+    return { ...file, at, error, costUsd, running: file.running, backend: typeof file.backend === 'string' ? file.backend : null, language: hasRun ? file.language : textOf('en') };
 }
 
 export const holdingOf = (file: TabRecap): Presence =>
@@ -24,7 +25,7 @@ export function canonicalView(file: TabView): TabView {
     return { ...file, column: typeof file.column === 'string' ? file.column : null, daemonVersion: file.daemonVersion ?? null };
 }
 
-const inMillionths = (recap: TabRecap): TabRecap => ({ ...recap, costUsd: microsOf(recap.costUsd) });
+const inMillionths = (recap: TabRecap): TabRecap => ({ ...recap, costUsd: usdOf(microsOf(recap.costUsd)) });
 
 export function recapDifferenceLines(was: TabRecap, now: TabRecap | null): readonly Text[] {
     if (now === null) {

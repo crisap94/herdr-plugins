@@ -1,7 +1,7 @@
 import type { EnginePlugs, Stories } from '#src/contract/engine.ts';
 import type { Fact, TaskId } from '#src/contract/facts.ts';
 import type { ScopeId } from '#src/contract/ids.ts';
-import type { Count, Instant, Text } from '#src/contract/kernel.ts';
+import type { Count, Instant, TabId, Text } from '#src/contract/kernel.ts';
 import type { Curator } from '#src/contract/models.ts';
 import type { RecapTask } from '#src/contract/records.ts';
 import type { Curators } from '#src/ports/curators.ts';
@@ -20,6 +20,7 @@ const note = brand<string, 'Text'>;
 
 const count = brand<number, 'Count'>;
 const tabOf = brand<string, 'TabId'>;
+const paneOf = brand<string, 'PaneId'>;
 
 export interface CurateBridge {
     readonly ledger: CheckedLedger;
@@ -68,7 +69,7 @@ const plainLedger = (ledger: CheckedLedger, log: (line: Text) => void): Ledger =
         openOf: (task: TaskId) => { const found = ledger.openOf(task); return 'kind' in found ? [] : found; },
         recentlyClosed: (task: TaskId, sinceMs: Instant) => { const found = ledger.recentlyClosed(task, sinceMs); return 'kind' in found ? [] : found; },
         allOf: (task: TaskId) => skipped(ledger.allOf(task)),
-        keysOf: (scope: ScopeId): readonly Text[] => { const found = ledger.keysOf(scope); return 'kind' in found ? [] : found.map((key) => note(key)); },
+        keysOf: (tab: TabId): readonly Text[] => { const found = ledger.keysOf(tab); return 'kind' in found ? [] : found.map((key) => note(key)); },
     };
 };
 
@@ -93,7 +94,7 @@ export const reconcilingOver = (plugs: EnginePlugs, bridge: CurateBridge, storie
     };
     const reconciling = new Reconciling(deps);
     return {
-        task: async (round: Round, lanes: readonly LaneCursor[], why: CurateWhy): Promise<Reconciled> => ((await reconciling.task(tabOf(round.scope), { id: note(round.task.id), name: note(round.task.name), lanes: round.task.lanes.map(note) }, lanes, why)) ? 'reconciled' : 'unchanged'),
+        task: async (round: Round, lanes: readonly LaneCursor[], why: CurateWhy): Promise<Reconciled> => ((await reconciling.task(tabOf(round.scope), { id: note(round.task.id), name: note(round.task.name), lanes: round.task.lanes.map(paneOf) }, lanes, why)) ? 'reconciled' : 'unchanged'),
         due: (event: RunEvent): Owing => (reconciling.due(event) ? 'due' : 'waiting'),
         settle: (scope: ScopeId): void => { reconciling.settle(tabOf(scope)); },
     };

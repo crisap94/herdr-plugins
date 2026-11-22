@@ -14,7 +14,7 @@ import type { Fact, FactId, Section } from '#src/recap/domain/fact.ts';
 import type { Operation, Refusal } from '#src/recap/domain/ops.ts';
 import type { Lane, TabId } from '#src/recap/domain/lane-shape.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
-import { parseDuration, parseInstant, type Duration } from '#src/recap/domain/time.ts';
+import { parseDuration, parseInstant, type Duration, type Instant } from '#src/recap/domain/time.ts';
 import { parseFailureCause, type FailureCause } from '#src/recap/domain/failure-cause.ts';
 import { FULL_WRITER_VIEW, keepNewestOf, nextHoursOf, prunedWriterView, type HiddenCounts, type PositiveCount, type WriterView } from '#src/recap/domain/writer-view.ts';
 import type { Debounce } from '#src/recap/domain/debounce.ts';
@@ -97,15 +97,15 @@ const scopeOf = (tab: string): sl.ScopeId => must(parseScopeId(tab));
 const keyOf = (pane: string): sl.SessionKey => must(parseSessionKey(pane));
 
 const pluginRecords = (records: sl.Records): CheckedRecapRecords => ({
-    readRecap: (tab: string): TabRecap | null | Unknown => {
+    readRecap: (tab: TabId): TabRecap | null | Unknown => {
         const found = records.readRecap(scopeOf(tab));
         return isLedgerUnknown(found) ? pluginUnknown(found) : found;
     },
-    lastRunOf: (tab: string): LastRun | null | Unknown => {
+    lastRunOf: (tab: TabId): LastRun | null | Unknown => {
         const found = records.lastRunOf(scopeOf(tab));
         return isLedgerUnknown(found) ? pluginUnknown(found) : found;
     },
-    beginRun: (tab: string, backend: string | null, at: number): void => {
+    beginRun: (tab: TabId, backend: Text | null, at: Instant): void => {
         records.beginRun(scopeOf(tab), backend, at);
     },
     recordRun: (run: RecordedRun): void => {
@@ -168,7 +168,7 @@ const transcriptsOf = (reader: sl.SessionReader): Transcripts => ({
     locate: async (lane: Lane): Promise<Located> => {
         const session = followedOf(lane);
         if (session === null) {
-            return { kind: 'unknown', why: { why: 'not-found', what: `a followed session for ${lane.pane}` } };
+            return { kind: 'unknown', why: { why: 'not-found', what: textOf(`a followed session for ${lane.pane}`) } };
         }
         return pluginLocated(await reader.locate(session));
     },

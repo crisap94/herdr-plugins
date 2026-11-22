@@ -8,12 +8,13 @@ import { FULL_WRITER_VIEW } from '#src/recap/domain/writer-view.ts';
 import { NO_REPOS, requestOf } from '#test/support.ts';
 import { factOf } from './fakes/facts.ts';
 import { brand } from '#src/recap/domain/brand.ts';
-import { grewOf, cursorOf } from '#src/ports/transcripts.ts';
+import { grewOf, cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { agentKind, paneId } from '#src/recap/domain/ids.ts';
 
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' });
-const cursor = { pane: 'w1:p1', agent: 'claude', transcript: '/t', cursor: 5, tail: null, title: null, lastPrompt: null, claudeRecap: 'stored' };
+const cursor = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t'), cursor: cursorOf(5), tail: null, title: null, lastPrompt: null, claudeRecap: textOf('stored') };
 const chunk = (notes: Chunk['notes']): Chunk => ({ kind: 'chunk', entries: [], notes, title: null, lastPrompt: null, claudeRecap: null, position: { cursor: cursorOf(9), tail: null }, grew: grewOf(true) });
 const at = (clock: string): number => Date.parse(`2026-10-06T${clock}:00Z`);
 

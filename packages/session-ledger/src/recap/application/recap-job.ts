@@ -10,7 +10,7 @@ import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { CheckedLedger } from '#src/ports/ledger.ts';
 import { blankRecap, hasRecap, type CheckedRecapRecords, type LaneCursor, type RecordedRun, type TabRecap } from '#src/ports/recap-records.ts';
 import type { RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
-import { cursorOf, UNREAD } from '#src/ports/transcripts.ts';
+import { UNREAD, sourcePathOf } from '#src/ports/transcripts.ts';
 import { isUnknown, saying, type Unknown } from '#src/ports/unknowable.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import { DEFAULT_PIPELINE, type CloseEvidence, type Pipeline } from '#src/recap/domain/pipeline.ts';
@@ -153,16 +153,16 @@ export class RecapJob {
         const reader = this.deps.transcripts.readerFor(agent);
         if (reader === undefined) return this.deps.transcripts.unavailableReason(agent);
         const located = await reader.locate(lane);
-        return isUnknown(located) ? textOf(saying(located.why)) : { reader, source: located.source };
+        return isUnknown(located) ? saying(located.why) : { reader, source: located.source };
     }
 
     private async read(lane: Lane, prior: TabRecap, budget: Count): Promise<Reading> {
-        const blank: LaneCursor = { pane: String(lane.pane), agent: String(lane.agent), transcript: '', cursor: UNREAD.cursor, tail: UNREAD.tail, title: lane.title, lastPrompt: null, claudeRecap: null };
+        const blank: LaneCursor = { pane: lane.pane, agent: lane.agent, transcript: sourcePathOf(''), cursor: UNREAD.cursor, tail: UNREAD.tail, title: lane.title === null ? null : textOf(lane.title), lastPrompt: null, claudeRecap: null };
         const found = await this.locate(lane);
         if (typeof found === 'string') return { lane, cursor: blank, chunk: null, grew: grew(false), fresh: SEEN_BEFORE, error: found };
         const was = await this.carry.cursorFor({ session: lane.session, cursors: prior.lanes.filter((c) => c.pane === blank.pane), wanted: { ...blank, transcript: found.source }, reader: found.reader });
-        const chunk = await found.reader.read(found.source, { cursor: cursorOf(was.cursor), tail: was.tail === null ? null : textOf(was.tail) }, budget);
-        if (isUnknown(chunk)) return { lane, cursor: was, chunk: null, grew: grew(false), fresh: SEEN_BEFORE, error: textOf(saying(chunk.why)) };
+        const chunk = await found.reader.read(found.source, { cursor: was.cursor, tail: was.tail }, budget);
+        if (isUnknown(chunk)) return { lane, cursor: was, chunk: null, grew: grew(false), fresh: SEEN_BEFORE, error: saying(chunk.why) };
         const cursor: LaneCursor = { ...was, title: chunk.title ?? was.title, lastPrompt: chunk.lastPrompt ?? was.lastPrompt, claudeRecap: chunk.claudeRecap ?? was.claudeRecap };
         return { lane, cursor, chunk, grew: chunk.grew, fresh: was.cursor === UNREAD.cursor ? FRESH : SEEN_BEFORE, error: null };
     }
@@ -172,18 +172,17 @@ export class RecapJob {
         try {
             return await Promise.all(lanes.map((each) => this.read(each, prior, budget)));
         } catch (error) {
-            const facts = { tab: prior.tab, at: this.deps.clock.now(), cause, backend: this.deps.summarizer().backend, costUsd: 0 };
+            const facts = { tab: prior.tab, at: this.deps.clock.now(), cause, backend: this.deps.summarizer().backend, costUsd: usd(0) };
             this.deps.records.beginRun(facts.tab, facts.backend, facts.at);
-            this.deps.records.failRun({ ...facts, language: hasRecap(prior) ? prior.language : this.deps.language(), error: error instanceof Error ? error.message : String(error), lanes: prior.lanes });
+            this.deps.records.failRun({ ...facts, language: hasRecap(prior) ? prior.language : this.deps.language(), error: textOf(error instanceof Error ? error.message : String(error)), lanes: prior.lanes });
             throw error;
         }
     }
 
     private async recap(tab: TabId, lanes: readonly Lane[], cause: RecapCause, run: Run): Promise<void> {
-        const key = String(tab);
-        const prior = this.deps.records.readRecap(key) ?? blankRecap(key);
+        const prior = this.deps.records.readRecap(tab) ?? blankRecap(tab);
         if ('kind' in prior) return this.skipped(tab, prior);
-        const found = this.deps.ledger.keysOf(key);
+        const found = this.deps.ledger.keysOf(tab);
         if ('kind' in found) return this.skipped(tab, found);
         const keys = found.map(textOf);
         const want = this.deps.language();
@@ -233,14 +232,14 @@ export class RecapJob {
     private async preparedOrFail(prior: TabRecap, readings: readonly Reading[], plan: Plan): Promise<Prepared> {
         try { return await this.prepared(prior, readings, plan); } catch (error) {
             const at = this.deps.clock.now();
-            this.deps.records.failRun({ tab: prior.tab, at, cause: plan.cause, backend: this.deps.summarizer().backend, costUsd: 0, language: plan.was, error: error instanceof Error ? error.message : String(error), lanes: readings.map((r) => r.cursor), marks: marksOf(readings, at, NOT_ADVANCED) });
+            this.deps.records.failRun({ tab: prior.tab, at, cause: plan.cause, backend: this.deps.summarizer().backend, costUsd: usd(0), language: plan.was, error: textOf(error instanceof Error ? error.message : String(error)), lanes: readings.map((r) => r.cursor), marks: marksOf(readings, at, NOT_ADVANCED) });
             throw error;
         }
     }
 
     private async summarize(prior: TabRecap, readings: readonly Reading[], plan: Plan, run: Run): Promise<void> {
         const errors = readings.flatMap((r) => (r.error === null ? [] : [`${r.lane.pane}: ${r.error}`]));
-        const note = errors.length > 0 ? errors.join('; ') : null;
+        const note = errors.length > 0 ? textOf(errors.join('; ')) : null;
         const unmoved = readings.map((r) => r.cursor);
         const advanced = readings.map((r) => (r.chunk === null ? r.cursor : { ...r.cursor, ...r.chunk.position }));
         const parts = readings.filter((r) => r.chunk !== null && r.chunk.entries.length > 0);

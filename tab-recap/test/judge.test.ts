@@ -3,15 +3,17 @@ import assert from 'node:assert/strict';
 import { READBACK_QUESTIONS } from '#src/adapters/job/prompts/judge-instructions.ts';
 import { RUBRIC_TEXT } from '#src/adapters/job/prompts/rubric.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { judgeRun, judgeRuns } from '#src/recap/application/judge.ts';
 import type { JudgeDeps } from '#src/recap/application/judge.ts';
 import type { Judge, JudgeTask, Said } from '#src/ports/judge.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { StoredRun } from '#src/ports/run-inputs.ts';
-import { duration } from '#src/recap/domain/time.ts';
+import { duration, instant } from '#src/recap/domain/time.ts';
 import { cursor, memoryStore, recordOps } from '#test/db/support.ts';
 import { oneTask, withFacts } from '#test/support.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
+import { usdOf } from '#src/recap/domain/usd.ts';
 
 const SECTIONS = { goal: 'Ship retries for the upload client.', now: [], needs: [], done: ['Merged !256 after both pipelines went green.', 'Spent the morning on it.'], decisions: ['Keep three retries because the API limits bursts.'], next: [], links: ['!256'], rules: [] };
 const CHECKS = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7'];
@@ -47,8 +49,8 @@ function judgeOf(script: Script): { judge: Judge; asked: { task: JudgeTask; docu
 function setup(script: Script, input: string | null = '<recap_input version="1">what the writer saw</recap_input>'): { deps: JudgeDeps; run: StoredRun; store: ReturnType<typeof memoryStore>; asked: { task: JudgeTask; document: string }[] } {
     const store = memoryStore();
     recordOps(store, {
-        tab: 'w1:t1', at: 1000, cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], ...withFacts(oneTask('', SECTIONS)),
-        ...(input === null ? {} : { input }),
+        tab: tabId('w1:t1'), at: instant(1000), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], ...withFacts(oneTask('', SECTIONS)),
+        ...(input === null ? {} : { input: textOf(input) }),
     });
     const run = store.inputs.runs({ tab: null, since: null, limit: 5, withInput: false }).at(0);
     assert.ok(run !== undefined);

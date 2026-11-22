@@ -9,6 +9,8 @@ import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
 import { MUST_BE_LOW, ONE_MUST_BE_HIGH } from '#src/recap/domain/autocompact-verdict.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { textOf } from './fakes/decider-fixtures.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import type { Section } from '#src/recap/domain/fact.ts';
 
 const unwrap = (raw: string): Text => {
     const parsed = parseText(raw);
@@ -16,7 +18,7 @@ const unwrap = (raw: string): Text => {
     return parsed.value;
 };
 
-const fact =(section: string, text: string, over: Partial<HistoryFact> = {}): HistoryFact => ({ section, text, why: null, state: 'open', closedWhy: null, closedAt: null, firstAt: 1, lastAt: 2, ...over });
+const fact =(section: Section, text: string, over: Partial<HistoryFact> = {}): HistoryFact => ({ section, text: textOf(text), why: null, state: 'open', closedWhy: null, closedAt: null, firstAt: instant(1), lastAt: instant(2), ...over });
 const FIELDS = ['last_prompt', 'last_reply', 'recent_turns', 'goal', 'open_work'];
 const FIXTURES = join(import.meta.dirname, 'fixtures', 'autocompact');
 const OFFERS: Readonly<Record<string, true>> = { closes_request: true, announces_continuation: true };
@@ -47,7 +49,7 @@ test('the state: last prompt and reply, the last six turns (tools as kind: comma
         { role: 'user', text: textOf('first') }, { role: 'agent', text: textOf('a1') }, { role: 'user', text: textOf('second') },
         { role: 'tool', text: textOf('npm test'), kind: 'shell' }, { role: 'tool', text: textOf('x'.repeat(900)), kind: 'edit' }, { role: 'agent', text: textOf('done') }, { role: 'tool', text: textOf('ls') },
     ];
-    const state = autocompactState(entries, [fact('goal', 'new goal'), fact('goal', 'old goal'), fact('now', 'n1'), fact('decisions', 'd'), fact('next', 'x1', { state: 'closed', closedAt: 5 }), fact('needs', 'q1')]);
+    const state = autocompactState(entries, [fact('goal', 'new goal'), fact('goal', 'old goal'), fact('now', 'n1'), fact('decisions', 'd'), fact('next', 'x1', { state: 'closed', closedAt: instant(5) }), fact('needs', 'q1')]);
     assert.equal(state.last_prompt, 'second');
     assert.equal(state.last_reply, 'done');
     assert.equal(state.recent_turns.length, 6);

@@ -1,17 +1,101 @@
+import { brand, type Brand } from '#src/recap/domain/brand.ts';
+import type { LaneMark } from '#src/recap/domain/boundary.ts';
+import type { Fact } from '#src/recap/domain/fact.ts';
+import type { GateStats } from '#src/recap/domain/gates/index.ts';
+import type { TaskShape } from '#src/recap/domain/grouping.ts';
+import type { AgentKind, PaneId, TabId } from '#src/recap/domain/lane-shape.ts';
+import type { Refusal } from '#src/recap/domain/ops.ts';
 import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
+import type { RecapTask } from '#src/recap/domain/tasks.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
+import type { Usd } from '#src/recap/domain/usd.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
-import type { RecapRecords } from './legacy.ts';
+import type { Cursor, SourcePath } from './transcripts.ts';
 
-export { blankRecap, hasRecap } from './legacy.ts';
-export type { Advance, FailedRun, LaneCursor, LastRun, RecapRecords, RecordedRun, TabRecap } from './legacy.ts';
+export type Running = Brand<boolean, 'Running'>;
+
+export const recapRunningOf = brand<boolean, 'Running'>;
+
+export type Recapped = Brand<boolean, 'Recapped'>;
+
+export const recappedOf = brand<boolean, 'Recapped'>;
+
+export interface LaneCursor {
+    readonly pane: PaneId;
+    readonly agent: AgentKind;
+    readonly transcript: SourcePath;
+    readonly cursor: Cursor;
+    readonly tail: Text | null;
+    readonly title: Text | null;
+    readonly lastPrompt: Text | null;
+    readonly claudeRecap: Text | null;
+}
+
+export interface TabRecap {
+    readonly tab: TabId;
+    readonly lanes: readonly LaneCursor[];
+    readonly tasks: readonly RecapTask[];
+    readonly at: Instant | null;
+    readonly running: Running;
+    readonly backend: Text | null;
+    readonly error: Text | null;
+    readonly costUsd: Usd;
+    readonly language: Text;
+}
+
+export function blankRecap(tab: TabId): TabRecap {
+    return { tab, lanes: [], tasks: [], at: null, running: recapRunningOf(false), backend: null, error: null, costUsd: brand<number, 'Usd'>(0), language: brand<string, 'Text'>('en') };
+}
+
+export const hasRecap = (recap: TabRecap): Recapped => recappedOf(recap.tasks.some((task) => task.markdown !== ''));
 
 export interface RunFacts {
-    readonly tab: string;
-    readonly at: number;
+    readonly tab: TabId;
+    readonly at: Instant;
     readonly cause: RecapCause | 'imported';
-    readonly backend: string | null;
-    readonly language: string;
-    readonly costUsd: number;
+    readonly backend: Text | null;
+    readonly language: Text;
+    readonly costUsd: Usd;
+}
+
+export interface RecordedRun extends RunFacts {
+    readonly marks?: readonly LaneMark[];
+    readonly error: Text | null;
+    readonly lanes: readonly LaneCursor[];
+    readonly tasks: readonly TaskShape[];
+    readonly changed: readonly Fact[];
+    readonly refused: readonly Refusal[];
+    readonly input?: Text;
+    readonly gateStats?: GateStats;
+}
+
+export interface FailedRun extends RunFacts {
+    readonly marks?: readonly LaneMark[];
+    readonly error: Text;
+    readonly lanes: readonly LaneCursor[];
+}
+
+export interface Advance {
+    readonly marks?: readonly LaneMark[];
+    readonly tab: TabId;
+    readonly at: Instant;
+    readonly error: Text | null;
+    readonly lanes: readonly LaneCursor[];
+}
+
+export interface LastRun {
+    readonly at: Instant;
+    readonly cause: RecapCause | 'imported';
+}
+
+export interface RecapRecords {
+    readRecap(tab: TabId): TabRecap | null;
+    lastRunOf(tab: TabId): LastRun | null;
+    beginRun(tab: TabId, backend: Text | null, at: Instant): void;
+    recordRun(run: RecordedRun): void;
+    failRun(run: FailedRun): void;
+    advance(move: Advance): void;
 }
 
 export type CheckedRecapRecords = Omit<RecapRecords, 'readRecap' | 'lastRunOf'> & {

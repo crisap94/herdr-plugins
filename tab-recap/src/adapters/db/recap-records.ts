@@ -52,7 +52,7 @@ export class RecapRecordsRepository implements GuardedRecapRecords {
         return guardedRead((): LastRun | null => {
             const row = this.orm.select({ at: runs.at, cause: runs.cause }).from(runs).innerJoin(lastGoodRun, eq(lastGoodRun.runId, runs.id))
                 .where(eq(lastGoodRun.tabId, tabId(tab))).get() ?? null;
-            return row === null || !isLastCause(row.cause) ? null : { at: row.at, cause: row.cause };
+            return row === null || !isLastCause(row.cause) ? null : { at: instant(row.at), cause: row.cause };
         });
     }
 

@@ -10,14 +10,14 @@ import { refusalOfTokens } from './token-refusal.ts';
 import { OWNERS } from '#src/recap/domain/token-registry.ts';
 import { parseAgentKind, parseTabId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import type { Milliseconds } from '#src/recap/domain/time.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import { parseTokenName, parseTokenValue, type TokenName, type TokenValue } from '#src/protocol/primitives.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import { must } from '#src/protocol/result.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import { unknown, exitCodeOf } from '#src/ports/unknowable.ts';
 import type { ColumnLayoutResult, ClosedEvery, ColumnPanes, Done, OpenResult, ResizeDirection } from '#src/ports/columns.ts';
 import type { FleetFeed, FleetFrame, FleetSnapshotResult, FleetStreamResult, FleetTopic } from '#src/ports/fleet-source.ts';
 import type { HarnessDirectory, HarnessList } from '#src/ports/harnesses.ts';
@@ -111,7 +111,7 @@ export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, Harne
         try {
             const found = list((await this.rawSnapshot())['layouts']).find((candidate) => candidate['tab_id'] === String(tab));
             if (found === undefined) {
-                return unknown({ why: 'not-found', what: `the layout of ${tab}` });
+                return unknown({ why: 'not-found', what: textOf(`the layout of ${tab}`) });
             }
             const area = rectOf(found['area']);
             const width = parseCount(area.width);
@@ -251,7 +251,7 @@ export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, Harne
             }
             const why = `refused: ${verb} ${pane} — it hosts an agent`;
             process.stderr.write(`${new Date().toISOString()} ${why}\n`);
-            return unknown({ why: 'failed', code: 1, detail: causeOf(must(parseText(why))) });
+            return unknown({ why: 'failed', code: exitCodeOf(1), detail: causeOf(must(parseText(why))) });
         } catch (error) {
             return unknown({ why: 'unreachable', detail: causeOf(must(parseText(`refused: ${verb} ${pane} — could not check it hosts no agent (${error instanceof Error ? error.message : String(error)})`))) });
         }

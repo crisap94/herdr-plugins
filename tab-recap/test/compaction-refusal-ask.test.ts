@@ -19,9 +19,10 @@ import { causeOf } from './fakes/cause.ts';
 import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { memoryStore } from './db/support.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const NOW = Date.parse('2026-10-10T10:00:00Z');
 const LANE = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' });
@@ -53,7 +54,7 @@ function world(states: readonly AgentState[], answerOn: boolean, claims: LaneCla
         status: (): Promise<AgentState> => {
             const state = states[Math.min(reads, states.length - 1)] ?? states[0];
             reads += 1;
-            return Promise.resolve(state ?? unknown({ why: 'not-found', what: 'w1:p1' }));
+            return Promise.resolve(state ?? unknown({ why: 'not-found', what: textOf('w1:p1') }));
         },
         prompt: () => { typed.push('prompt'); return Promise.resolve({ kind: 'sent' }); },
         typeLine: () => { typed.push('typeLine'); return Promise.resolve({ kind: 'sent' }); },
@@ -64,7 +65,7 @@ function world(states: readonly AgentState[], answerOn: boolean, claims: LaneCla
         compactionPlans: idleClaudePlans,
         agents,
         notifier: { notify: (_title: string, body: string) => { toasts.push(body); return Promise.resolve({ kind: 'shown' }); } },
-        records: { readRecap: () => blankRecap('w1:t1') },
+        records: { readRecap: () => blankRecap(tabId('w1:t1')) },
         ledger: { historyOf: () => [] },
         boundaries: { lastBreakAt: () => null },
         compactions: store.compactions,

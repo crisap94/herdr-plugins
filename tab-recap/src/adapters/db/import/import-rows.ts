@@ -8,7 +8,7 @@ import type { FactId } from '#src/recap/domain/fact.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseFactId, parseRunId } from '#src/recap/domain/run-ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { ColumnVisibilityRepository } from '../column-visibility.ts';
 import { LedgerRows } from '../ledger-rows.ts';
 import { RequestsRepository } from '../requests.ts';
@@ -56,7 +56,7 @@ export class RowsWriter {
     }
 
     private tasks(run: Uint8Array, file: TabRecap, tasks: readonly RecapTask[]): void {
-        const facts = { tab: file.tab, at: file.at ?? 0, cause: 'imported', backend: file.backend, language: file.language, costUsd: file.costUsd } as const;
+        const facts = { tab: file.tab, at: file.at ?? instant(0), cause: 'imported', backend: file.backend, language: file.language, costUsd: file.costUsd } as const;
         this.runs.writeTasks(run, facts, tasks.map((task) => ({ id: task.id, name: task.name, lanes: task.lanes, ...(task.sections === null ? { legacy: task.markdown } : {}) })));
         for (const task of tasks) {
             const ref = { id: must(parseRunId(typeIdOf('run', run))), task: { tab: file.tab, key: task.id }, at: facts.at, language: file.language, mint };

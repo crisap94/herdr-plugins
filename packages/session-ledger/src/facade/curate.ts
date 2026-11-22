@@ -1,7 +1,7 @@
 import type { CurationRun, EnginePlugs, KeptStory, Stories, StoryChange } from '#src/contract/engine.ts';
 import type { Applied, CloseOp, Fact, TaskId } from '#src/contract/facts.ts';
 import type { ScopeId, SessionKey } from '#src/contract/ids.ts';
-import type { Instant, Text } from '#src/contract/kernel.ts';
+import type { Instant, TabId, Text } from '#src/contract/kernel.ts';
 import type { Curated, Curator } from '#src/contract/models.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
@@ -47,7 +47,7 @@ const note = brand<string, 'Text'>;
 const taskOn = (scope: ScopeId, key: SessionKey): TaskId => ({ tab: scope, key });
 
 const storiesOver = (stories: Stories): LedgerStories => ({
-    read: (scope: ScopeId, key: SessionKey): KeptStory | null => stories.read(taskOn(scope, key)),
+    read: (tab: TabId, task: Text): KeptStory | null => stories.read(taskOn(brand<string, 'ScopeId'>(tab), brand<string, 'SessionKey'>(task))),
     keep: (run: CurationRun, change: StoryChange): Applied => stories.keep(run, change),
 });
 

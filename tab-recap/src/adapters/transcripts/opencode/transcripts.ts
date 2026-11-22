@@ -48,10 +48,10 @@ export class OpencodeReader implements Transcripts {
     locate(lane: Lane): Promise<Located> {
         const cwd = lane.cwd;
         if (cwd === null) {
-            return Promise.resolve(unknown({ why: 'not-found', what: `a cwd for ${lane.pane}` }));
+            return Promise.resolve(unknown({ why: 'not-found', what: textOf(`a cwd for ${lane.pane}`) }));
         }
         if (!existsSync(this.database)) {
-            return Promise.resolve(unknown({ why: 'not-found', what: `opencode's database ${this.database}` }));
+            return Promise.resolve(unknown({ why: 'not-found', what: textOf(`opencode's database ${this.database}`) }));
         }
         return Promise.resolve(this.withStore((store) => this.newestSession(store, cwd)));
     }
@@ -107,7 +107,7 @@ export class OpencodeReader implements Transcripts {
 
     private newestSession(store: OpenCodeStore, cwd: Directory): Located {
         const session = store.rootSessionForDirectory(cwd);
-        return session === null ? unknown({ why: 'not-found', what: `an opencode session in ${cwd}` }) : { kind: 'located', source: sourcePathOf(`${this.database}${TranscriptPath.OpenCodeSeparator}${session}`) };
+        return session === null ? unknown({ why: 'not-found', what: textOf(`an opencode session in ${cwd}`) }) : { kind: 'located', source: sourcePathOf(`${this.database}${TranscriptPath.OpenCodeSeparator}${session}`) };
     }
 
     private chunkOf(store: OpenCodeStore, session: Text, was: Position, budget: Count): Chunk {

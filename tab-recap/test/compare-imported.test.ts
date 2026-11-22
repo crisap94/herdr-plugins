@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { compareImported, withoutLedgers } from '#src/recap/application/compare-imported.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseUsd } from '#src/recap/domain/usd.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseUsd, usdOf } from '#src/recap/domain/usd.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import type { ImportedChapter } from '#src/ports/imported-recaps.ts';
 import type { Judge, JudgeTask } from '#src/ports/judge.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
@@ -12,6 +12,8 @@ import { plain } from '#src/recap/render/wrap.ts';
 import { cursor, memoryStore, recordOps } from '#test/db/support.ts';
 import { oneTask } from '#test/support.ts';
 import { MIN, T0 } from './imported-fixture.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 
 const add = (section: 'goal' | 'done' | 'next', text: string): Operation => ({ op: 'add', section, text, why: null, ref: null, at: null, agent: null });
 
@@ -19,8 +21,8 @@ function replayStore(): ReturnType<typeof memoryStore> {
     const store = memoryStore();
     const run = (minutes: number, ops: readonly Operation[], turn: string): void => {
         recordOps(store, {
-            tab: 'replay:t1', at: T0 + minutes * MIN, cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], tasks: oneTask(''), ops: [{ task: 't1', ops }],
-            input: `<recap_input version="2"><tab id="x"/><ledger><fact id="f1" section="goal">LEDGER-ONLY</fact></ledger><transcript agent="a1"><turn role="user">${turn}</turn></transcript></recap_input>`,
+            tab: tabId('replay:t1'), at: instant(T0 + minutes * MIN), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], tasks: oneTask(''), ops: [{ task: 't1', ops }],
+            input: textOf(`<recap_input version="2"><tab id="x"/><ledger><fact id="f1" section="goal">LEDGER-ONLY</fact></ledger><transcript agent="a1"><turn role="user">${turn}</turn></transcript></recap_input>`),
         });
     };
     run(10, [add('goal', 'Add a cart to the shop'), add('done', 'Cart model written')], 'turn one');

@@ -1,7 +1,9 @@
 import { brand, type Brand } from './brand.ts';
 
 export type PaneId = Brand<string, 'PaneId'>;
+export const paneIdOf = brand<string, 'PaneId'>;
 export type TabId = Brand<string, 'TabId'>;
+export const tabIdOf = brand<string, 'TabId'>;
 export type WorkspaceId = Brand<string, 'WorkspaceId'>;
 export type SessionId = Brand<string, 'SessionId'>;
 export type AgentKind = Brand<string, 'AgentKind'>;

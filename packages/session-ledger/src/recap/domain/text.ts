@@ -24,3 +24,9 @@ export function parseNonEmptyText(input: unknown): Result<NonEmptyText, ParseFai
 }
 
 export const textOf = brand<string, 'Text'>;
+
+export type TextOrNull = Text | null;
+
+export function parseTextOrNull(input: unknown): TextOrNull {
+    return typeof input === 'string' ? textOf(input) : null;
+}

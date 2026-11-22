@@ -6,6 +6,7 @@ import type { WorksiteReader } from '#src/ports/worksite-reader.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { fact } from './fakes/fact-at.ts';
 import { ID, NOW, OTHER_ID, depsOf, inputOf, textOf } from './fakes/handoff-pipeline-world.ts';
+import { textOf as brandedText } from '#src/recap/domain/text.ts';
 
 const HEADINGS = ['Freshness', 'Goal', 'Now', 'Needs', 'Done', 'Decisions', 'Next', 'Links', 'Rules', 'Recently closed', 'Worksite'];
 
@@ -36,8 +37,8 @@ test('the same ledger under two handoff ids differs within the first 400 code po
 test('a lane with no recap run is refused ledger-empty before git is asked anything', async () => {
     const asked: string[] = [];
     const reader: WorksiteReader = {
-        lastCommit: async (directory) => { asked.push(directory); return unknown({ why: 'not-found', what: 'directory' }); },
-        uncommitted: async (directory) => { asked.push(directory); return unknown({ why: 'not-found', what: 'directory' }); },
+        lastCommit: async (directory) => { asked.push(directory); return unknown({ why: 'not-found', what: brandedText('directory') }); },
+        uncommitted: async (directory) => { asked.push(directory); return unknown({ why: 'not-found', what: brandedText('directory') }); },
     };
     const result = await renderHandoff(depsOf({ lastRun: null, reader }))(inputOf());
     assert.deepEqual(result, { kind: 'refused', reason: 'ledger-empty' });

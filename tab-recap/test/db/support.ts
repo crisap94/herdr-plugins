@@ -14,6 +14,9 @@ import { checkedLedger, isUnknownRead } from '#src/ports/guarded-reads.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import { foldedRun, throwingLedger } from '@stateforge-labs/session-ledger/unstable/recap/application/run-fold.ts';
 import type { TaskOps } from '@stateforge-labs/session-ledger/unstable/recap/domain/ops.ts';
+import { agentKind, paneId } from '#src/recap/domain/ids.ts';
+import { sourcePathOf, cursorOf } from '#src/ports/transcripts.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 export function openFixture(path: string = MEMORY): Database {
     const db = new Database(path);
@@ -51,7 +54,7 @@ export function recordOps(store: Pick<Store, 'records' | 'ledger'>, run: RunInpu
 }
 
 export function seed(store: Store, recap: TabRecap): void {
-    const at = recap.at ?? 1;
+    const at = recap.at ?? instant(1);
     const facts = { tab: recap.tab, at, cause: 'imported', backend: recap.backend, language: recap.language, costUsd: recap.costUsd } as const;
     if (recap.at !== null) {
         recordOps(store, { ...facts, error: recap.error, lanes: recap.lanes, tasks: recap.tasks, ops: recap.tasks.map((task) => ({ task: task.id, ops: task.sections === null ? [] : opsOfSections(task.sections) })) });
@@ -63,7 +66,7 @@ export function seed(store: Store, recap: TabRecap): void {
     }
 }
 
-export const cursor = (pane: string, position = 100): LaneCursor => ({ pane, agent: 'claude', transcript: `/t/${pane}`, cursor: position, tail: null, title: null, lastPrompt: null, claudeRecap: null });
+export const cursor = (pane: string, position = 100): LaneCursor => ({ pane: paneId(pane), agent: agentKind('claude'), transcript: sourcePathOf(`/t/${pane}`), cursor: cursorOf(position), tail: null, title: null, lastPrompt: null, claudeRecap: null });
 
 export const newId = (): Uint8Array => ids.next();
 

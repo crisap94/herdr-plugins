@@ -19,6 +19,7 @@ import type { ColumnView } from '#src/recap/render/present.ts';
 import { plain, visibleLength, wrap } from '#src/recap/render/wrap.ts';
 import { oneTask } from '#test/support.ts';
 import { makeRepo } from './fixtures/git-repo.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 
 const E = String.fromCodePoint(0x1b);
 const open = (url: string): string => `${E}]8;;${url}${E}\\`;
@@ -29,7 +30,7 @@ const noGlow = (): null => null;
 const lane = (pane: string, web: LaneWeb | null): TabLane => ({ pane, agent: 'claude', status: 'idle', title: pane, cwd: '/w', web });
 const viewOf = (sections: Partial<RecapSections>, lanes: readonly TabLane[], style?: ColumnView['style']): ColumnView => ({
     tab: { tab: 'w1:t1', column: null, at: 0, lanes },
-    recap: { ...blankRecap('w1:t1'), tasks: oneTask('', { ...NO_SECTIONS, ...sections }, lanes.map((each) => each.pane)), at: 0 },
+    recap: { ...blankRecap(tabId('w1:t1')), tasks: oneTask('', { ...NO_SECTIONS, ...sections }, lanes.map((each) => each.pane)), at: instant(0) },
     notes: new Map(), warnings: [], now: 0, messages: en, ...(style === undefined ? {} : { style }),
 });
 const web = { base: BASE, forge: 'gitlab', branch: 'feat/cart' } as const;

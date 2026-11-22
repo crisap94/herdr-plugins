@@ -7,7 +7,7 @@ import { parseDirectory } from '#src/recap/domain/directory.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import { parsePresence } from '#src/recap/domain/presence.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { TIMEOUT_MS } from './constants.ts';
 import { handleOf, notARepository, openRepo, unreadable, withinBudget } from './reach.ts';
@@ -28,7 +28,7 @@ export class GitWorksite implements WorksiteReaderPort {
             const commit = await lastCommitOf(handle);
             const hash = commit === null ? null : okOrNull(parseText(commit.hash));
             const subject = commit === null ? null : okOrNull(parseText(commit.subject));
-            return hash === null || subject === null ? unknown({ why: 'not-found', what: 'commit' }) : { kind: 'commit', hash, subject };
+            return hash === null || subject === null ? unknown({ why: 'not-found', what: textOf('commit') }) : { kind: 'commit', hash, subject };
         });
     }
 
@@ -46,7 +46,7 @@ export class GitWorksite implements WorksiteReaderPort {
     async within<T>(directory: Text, work: (handle: Handle) => Promise<T | Unknown>): Promise<T | Unknown> {
         const checked = parseDirectory(directory);
         if (checked.kind === 'err' || (await presenceOf(checked.value)) === 'absent') {
-            return unknown({ why: 'not-found', what: 'directory' });
+            return unknown({ why: 'not-found', what: textOf('directory') });
         }
         return withinBudget(TIMEOUT_MS, async (deadline) => {
             const lookup = await openRepo(checked.value, fsp);

@@ -2,6 +2,7 @@ import {
     unknown as unknownOf,
     type Fact,
     type FactStore,
+    type Instant,
     type LastRun,
     type Recap,
     type RecapTask,
@@ -12,10 +13,11 @@ import {
     type SessionKey,
     type SessionMark,
     type TaskId,
+    type Text,
     type Unknown,
 } from '@stateforge-labs/session-ledger';
 import { emptyRecap, historyOf, sameTask } from './facts.ts';
-import { failure } from './values.ts';
+import { failure, running, tabId } from './values.ts';
 
 export { factOf } from './facts.ts';
 
@@ -81,8 +83,8 @@ const keptOf = (stored: readonly Fact[], changed: readonly Fact[]): readonly Fac
     return [...stored.map((fact) => next.get(fact.id) ?? fact), ...changed.filter((fact) => !known.has(fact.id))];
 };
 
-const ensure = (state: State, scope: string, at: number | null): Recap => {
-    const current = state.recaps.get(scope) ?? { ...emptyRecap(scope), at };
+const ensure = (state: State, scope: string, at: Instant | null): Recap => {
+    const current = state.recaps.get(scope) ?? { ...emptyRecap(tabId(scope)), at };
     state.recaps.set(scope, current);
     return current;
 };
@@ -106,9 +108,9 @@ const keepMarks = (state: State, scope: string, marks: readonly SessionMark[] | 
 const recordsOf = (state: State): Records => ({
     readRecap: (scope: ScopeId) => read(state, 'readRecap', () => state.recaps.get(scope) ?? null),
     lastRunOf: (scope: ScopeId) => read(state, 'lastRunOf', () => state.lastRuns.get(scope) ?? null),
-    beginRun: (scope: ScopeId, backend: string | null, at: number) => {
+    beginRun: (scope: ScopeId, backend: Text | null, at: Instant) => {
         state.log.push('beginRun');
-        state.recaps.set(scope, { ...ensure(state, scope, at), running: true, backend });
+        state.recaps.set(scope, { ...ensure(state, scope, at), running: running(true), backend });
     },
     recordRun: (run: RecordedRun) => {
         state.log.push('recordRun');
@@ -121,7 +123,7 @@ const recordsOf = (state: State): Records => ({
             lanes: run.lanes,
             tasks: tasksOf(state.stored, run),
             at: run.at,
-            running: false,
+            running: running(false),
             backend: run.backend,
             error: run.error,
             costUsd: run.costUsd,
@@ -132,7 +134,7 @@ const recordsOf = (state: State): Records => ({
     },
     failRun: (run) => {
         state.log.push('failRun');
-        state.recaps.set(run.tab, { ...ensure(state, run.tab, run.at), lanes: run.lanes, running: false, backend: run.backend, error: run.error });
+        state.recaps.set(run.tab, { ...ensure(state, run.tab, run.at), lanes: run.lanes, running: running(false), backend: run.backend, error: run.error });
         keepMarks(state, run.tab, run.marks);
     },
     advance: (move) => {

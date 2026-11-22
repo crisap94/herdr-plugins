@@ -1,16 +1,18 @@
 import type { Advance, Fact, FailedRun, LastRun, Recap, RecordedRun, SessionCursor, TaskShape, Unknown } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { scope } from '../ids.ts';
 import { factOf } from '../facts.ts';
 import type { StoreUnderTest } from '../memory-store.ts';
+import { agentKind, cursorAt, paneId, sourcePath, tabId, text, usd } from '../values.ts';
 
 export const isUnknownValue = (value: unknown): value is Unknown =>
     typeof value === 'object' && value !== null && 'kind' in value && value.kind === 'unknown';
 
 export const cursor = (pane: string, transcript = `/transcripts/${pane}.jsonl`): SessionCursor => ({
-    pane,
-    agent: 'claude',
-    transcript,
-    cursor: 1,
+    pane: paneId(pane),
+    agent: agentKind('claude'),
+    transcript: sourcePath(transcript),
+    cursor: cursorAt(1),
     tail: null,
     title: null,
     lastPrompt: null,
@@ -20,12 +22,12 @@ export const cursor = (pane: string, transcript = `/transcripts/${pane}.jsonl`):
 export const shapeOf = (id: string, lanes: readonly string[]): TaskShape => ({ id, name: `Task ${id}`, lanes });
 
 export const runOf = (over: Partial<RecordedRun> = {}): RecordedRun => ({
-    tab: 'tab-1',
-    at: 100,
+    tab: tabId('tab-1'),
+    at: instant(100),
     cause: 'requested',
-    backend: 'claude',
-    language: 'en',
-    costUsd: 0.5,
+    backend: text('claude'),
+    language: text('en'),
+    costUsd: usd(0.5),
     error: null,
     lanes: [cursor('p1')],
     tasks: [shapeOf('a', ['p1'])],
@@ -35,21 +37,21 @@ export const runOf = (over: Partial<RecordedRun> = {}): RecordedRun => ({
 });
 
 export const failedOf = (over: Partial<FailedRun> = {}): FailedRun => ({
-    tab: 'tab-1',
-    at: 200,
+    tab: tabId('tab-1'),
+    at: instant(200),
     cause: 'requested',
-    backend: 'codex',
-    language: 'fr',
-    costUsd: 0.1,
-    error: 'the backend refused',
+    backend: text('codex'),
+    language: text('fr'),
+    costUsd: usd(0.1),
+    error: text('the backend refused'),
     lanes: [cursor('p2')],
     ...over,
 });
 
 export const advanceOf = (over: Partial<Advance> = {}): Advance => ({
-    tab: 'tab-1',
-    at: 300,
-    error: 'stale',
+    tab: tabId('tab-1'),
+    at: instant(300),
+    error: text('stale'),
     lanes: [cursor('p3')],
     ...over,
 });
