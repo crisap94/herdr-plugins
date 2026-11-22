@@ -27,7 +27,7 @@ test('opencode: its own /compact is confirmed on the second look, then restored;
     assert.ok(restore.text.startsWith('We just compacted this conversation.') && restore.text.includes('keep the schema'));
     assert.equal(restore.typed, undefined, 'the restore message is sent as a prompt');
     assert.deepEqual(command.lineBehavior, { enterDelay: duration(300) });
-    assert.deepEqual(restore.promptBehavior, { acceptsStall: true });
+    assert.deepEqual(restore.promptBehavior, { stall: 'accepts-stall' });
     assert.deepEqual(world.pauses, [300, 300, 300, 1000]);
     assert.equal(world.claims.has(paneId('w1:p4')), false, 'the pane is released');
     assert.match(world.toasts.at(-1) ?? '', /opencode compacted/);
@@ -45,7 +45,7 @@ test('every non-Claude kind takes the Codex path; target selection filters non-C
         assert.deepEqual(command.pieces, ['/compact'], `${kind}: the bare command, in one piece`);
         assert.deepEqual(command.lineBehavior, { enterDelay: duration(300) }, `${kind}: preserve the Enter delay`);
         assert.equal(restore.text.startsWith('We just compacted this conversation.'), true, `${kind}: the restore message follows the compaction`);
-        assert.deepEqual(restore.promptBehavior, { acceptsStall: true }, `${kind}: the restore prompt accepts a stall`);
+        assert.deepEqual(restore.promptBehavior, { stall: 'accepts-stall' }, `${kind}: the restore prompt accepts a stall`);
         assert.ok(world.pauses.some((ms) => ms === 1000), `${kind}: polled, not read once`);
 
         const failing = typingFleet({ 'w1:p9': 'idle' });

@@ -8,9 +8,8 @@ import { paneTokensOf, parseJsonList, parseJsonRect, parseJsonText, reconciliati
 import { parseJson, type JsonObject } from './json-object.ts';
 import { refusalOfTokens } from './token-refusal.ts';
 import { OWNERS } from '#src/recap/domain/token-registry.ts';
-import { parseAgentKind, parseTabId, uncheckedWorkspaceId, type PaneId, type TabId, type WorkspaceId } from '#src/recap/domain/ids.ts';
+import { parseAgentKind, parseTabId, uncheckedPaneId, uncheckedRatio, uncheckedWorkspaceId, type PaneId, type TabId, type WorkspaceId } from '#src/recap/domain/ids.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { uncheckedPaneId, uncheckedRatio } from '#src/recap/domain/ids.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import type { Milliseconds } from '#src/recap/domain/time.ts';
 import type { Shape } from '#src/recap/domain/board.ts';

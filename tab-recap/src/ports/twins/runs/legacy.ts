@@ -8,23 +8,7 @@ import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffPlanResult } from '#src/recap/domain/handoff-plan.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
-import type { LaneStatus } from '#src/recap/domain/status.ts';
-import type { Placed, Split } from '#src/recap/domain/layout.ts';
-import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 import type { RunItem } from '../../run-inputs.ts';
-
-export interface TabLayout {
-    readonly kind: 'layout';
-    readonly width: number;
-    readonly height: number;
-    readonly focused: string | null;
-    readonly panes: readonly Placed[];
-    readonly splits: readonly Split[];
-}
-
-export type LayoutResult = TabLayout | Unknown;
-
-export type ClosedAll = { readonly kind: 'closed'; readonly closed: number; readonly failed: number } | Unknown;
 
 export interface HandoffPlans {
     forKind(rawKind: string): HandoffPlanResult;

@@ -1,25 +1,23 @@
-import { setTimeout as sleep } from 'node:timers/promises';
 import type { DecodedFrame } from '@stateforge-labs/herdr-sdk';
-import type { ClosedAll, Columns, Done, LayoutResult, OpenResult, ResizeDirection } from '#src/ports/columns.ts';
+import type { ClosedEvery, Columns, Done, ColumnLayoutResult, OpenResult, ResizeDirection } from '#src/ports/columns.ts';
 import type { HarnessDirectory, HarnessList } from '#src/ports/harnesses.ts';
 import type { ModalHost, SetupOpened } from '#src/ports/modal.ts';
 import type { Notice, NotifierPort } from '#src/ports/notifier.ts';
 import type { ScreenOutcome, ScreenReader } from '#src/ports/screens.ts';
 import type { Frame, FleetSource, SnapshotResult, StreamResult, Topic } from '#src/ports/fleet-source.ts';
 import type { LaneTokenMap, LaneTokens } from '#src/ports/lane-tokens.ts';
-import { uncheckedTokenName, uncheckedTokenValue } from '#src/protocol/primitives.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import type { WorkspaceList, WorkspaceTokenMap, WorkspaceTokenReporter } from '#src/ports/workspace-tokens.ts';
 import { unknown, type Unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import type { Probability } from '#src/recap/domain/probability.ts';
 import { countOf, parseCount, type Count } from '#src/recap/domain/count.ts';
-import { uncheckedPaneId, uncheckedRatio } from '#src/recap/domain/ids.ts';
-import type { CompactionLine } from '#src/recap/domain/compaction-plan.ts';
+import { uncheckedPaneId, uncheckedRatio, uncheckedTokenName, uncheckedTokenValue } from '#src/recap/domain/ids.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
 import type { Reconciliation } from '#src/recap/domain/fold.ts';
-import { agentKind, parsePaneId, parseTabId, tabId, type PaneId, type TabId, type WorkspaceId } from '#src/recap/domain/ids.ts';
+import { agentKind, tabId, type PaneId, type TabId, type WorkspaceId } from '#src/recap/domain/ids.ts';
 import type { Placed, Split } from '#src/recap/domain/layout.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
@@ -27,7 +25,7 @@ import { parseMilliseconds, type Milliseconds } from '#src/recap/domain/time.ts'
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { paneTokenMapOf, seenFrom, sessionOf } from '#src/recap/application/decode.ts';
 import { agentPanesIn, columnsIn, deadColumnsIn } from './column-panes.ts';
-import { HerdrAgentPanes, herdrWire, type Pause, type PluginRef, type Wire } from './agents.ts';
+import { HerdrAgentPanes, herdrWire } from './agents.ts';
 import { usePlugin } from './client.ts';
 import { HerdrFleetPorts, PLUGIN_ID, pumpFrames } from './fleet.ts';
 import { subscribeTopics } from './subscriptions.ts';
@@ -51,7 +49,7 @@ export function paneTokensOf(snapshot: Json): ReadonlyMap<PaneId, TokenMap> {
     }));
 }
 
-export function layoutOf(layout: Json): LayoutResult {
+export function layoutOf(layout: Json): ColumnLayoutResult {
     const panes: Placed[] = parseJsonList(layout['panes']).map((pane) => ({ paneId: uncheckedPaneId(parseJsonText(pane['pane_id'])), rect: parseJsonRect(pane['rect']) }));
     const splits: Split[] = parseJsonList(layout['splits']).map((split) => ({
         direction: textOf(parseJsonText(split['direction'])),
@@ -60,7 +58,7 @@ export function layoutOf(layout: Json): LayoutResult {
     }));
     const area = parseJsonRect(layout['area']);
     const focused = parseJsonText(layout['focused_pane_id']);
-    return { kind: 'layout', width: area.width, height: area.height, focused: focused === '' ? null : focused, panes, splits };
+    return { kind: 'layout', width: area.width, height: area.height, focused: focused === '' ? null : uncheckedPaneId(focused), panes, splits };
 }
 
 const legacyFrameOf = (frame: DecodedFrame): Frame => ({ event: frame.event, data: 'data' in frame ? parseJson(frame.data) : {} });
@@ -108,7 +106,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, HarnessDirec
         }
     }
 
-    async layout(tab: TabId): Promise<LayoutResult> {
+    async layout(tab: TabId): Promise<ColumnLayoutResult> {
         try {
             const layout = parseJsonList((await this.ports.rawSnapshot())['layouts']).find((candidate) => candidate['tab_id'] === String(tab));
             return layout === undefined ? unknown({ why: 'not-found', what: textOf(`the layout of ${tab}`) }) : layoutOf(layout);
@@ -172,7 +170,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, HarnessDirec
         return this.ports.notify(title, body);
     }
 
-    async resize(pane: PaneId, direction: ResizeDirection, amount: number): Promise<Done> {
+    async resize(pane: PaneId, direction: ResizeDirection, amount: Probability): Promise<Done> {
         const count = parseCount(amount);
         return count.kind === 'ok'
             ? this.ports.resize(pane, direction, count.value)
@@ -183,7 +181,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, HarnessDirec
         return this.ports.close(pane);
     }
 
-    async closeEvery(): Promise<ClosedAll> {
+    async closeEvery(): Promise<ClosedEvery> {
         return this.ports.closeEvery();
     }
 }

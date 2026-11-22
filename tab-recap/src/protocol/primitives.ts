@@ -92,10 +92,6 @@ export function parseWord(raw: unknown, max: Limit, shape: RegExp): Result<Word,
     return text.kind === 'ok' ? ok(brand<string, 'Word'>(text.value)) : text;
 }
 
-export const uncheckedTokenName = brand<string, 'TokenName'>;
-
-export const uncheckedTokenValue = brand<string, 'TokenValue'>;
-
 export function parseTokenName(raw: unknown): Result<TokenName, Refusal> {
     const word = parseWord(raw, LIMITS.nameMax, WORD_SHAPE);
     return word.kind === 'ok' ? ok(brand<string, 'TokenName'>(word.value)) : refuse(word.error, 'TokenName');

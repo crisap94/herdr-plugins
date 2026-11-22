@@ -7,7 +7,8 @@ import type { Board } from '#src/recap/domain/board.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
-import type { Columns, LayoutResult } from '#src/ports/columns.ts';
+import { countOf } from '#src/recap/domain/count.ts';
+import type { Columns, ColumnLayoutResult } from '#src/ports/columns.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
 import { SIZING, placedOf, rectOf as rect, splitOf } from './fakes/layout-values.ts';
@@ -22,8 +23,8 @@ const sizing = (): Sizing => SIZING;
 function fakeColumns(): { columns: Columns; calls: string[] } {
     const calls: string[] = [];
     let opened = false;
-    const layout = (): LayoutResult => ({
-        kind: 'layout', width: 60, height: 40, focused: 'w1:p1',
+    const layout = (): ColumnLayoutResult => ({
+        kind: 'layout', width: countOf(60), height: countOf(40), focused: paneId('w1:p1'),
         panes: [
             placedOf('w1:p1', rect(0, 0, 60, 20)),
             placedOf('w1:p2', rect(0, 21, 60, opened ? 15 : 19)),
@@ -36,7 +37,7 @@ function fakeColumns(): { columns: Columns; calls: string[] } {
         open: (tab, target, shape) => { calls.push(`open ${tab} next to ${target} as ${shape}`); opened = true; return Promise.resolve({ kind: 'opened', pane: paneId('w1:p9') }); },
         resize: (pane, direction, amount) => { calls.push(`resize ${pane} ${direction} ${amount.toFixed(3)}`); return Promise.resolve({ kind: 'done' }); },
         close: (pane) => { calls.push(`close ${pane}`); return Promise.resolve({ kind: 'done' }); },
-        closeEvery: () => Promise.resolve({ kind: 'closed', closed: 0, failed: 0 }),
+        closeEvery: () => Promise.resolve({ kind: 'closed', closed: countOf(0), failed: countOf(0) }),
     };
     return { columns, calls };
 }

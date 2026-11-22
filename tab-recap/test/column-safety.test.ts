@@ -14,7 +14,7 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { observe } from '#src/recap/domain/fold.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId, uncheckedRatio } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -146,7 +146,7 @@ test('HerdrFleet refuses to close or resize a pane that hosts an agent — and s
         for (const target of ['w1:p1', 'w1:p3']) {
             const closed = await fleet.close(paneId(target));
             assert.ok(isUnknown(closed) && closed.why.why === 'failed', `close ${target} refused`);
-            assert.ok(isUnknown(await fleet.resize(paneId(target), 'left', 0.1)), `resize ${target} refused`);
+            assert.ok(isUnknown(await fleet.resize(paneId(target), 'left', uncheckedRatio(0.1))), `resize ${target} refused`);
         }
         assert.ok(!herdr.calls.some((method) => method === 'pane.close' || method === 'pane.resize'), `herdr was never asked: ${herdr.calls.join()}`);
         assert.deepEqual(await fleet.close(paneId('w1:p2')), { kind: 'done' });

@@ -43,17 +43,8 @@
     "parameter": 1,
     "container": 3
   },
-  "src/adapters/herdr/host-check/legacy.ts": {
-    "legacy": 8
-  },
   "src/adapters/herdr/legacy.ts": {
-    "legacy": 39
-  },
-  "src/adapters/herdr/session-registry/legacy.ts": {
-    "legacy": 1
-  },
-  "src/adapters/herdr/token-refusal/legacy.ts": {
-    "legacy": 2
+    "legacy": 7
   },
   "src/adapters/job/brief.ts": {
     "parameter": 2,

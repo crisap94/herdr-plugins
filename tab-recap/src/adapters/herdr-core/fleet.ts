@@ -3,7 +3,7 @@ import { parseCount } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import { uncheckedWorkspaceId, type PaneId, type SessionId, type TabId } from '#src/recap/domain/ids.ts';
 import { must } from '#src/protocol/result.ts';
-import type { ClosedAll, Done, LayoutResult, OpenResult } from '#src/ports/columns.ts';
+import type { ClosedEvery, Done, ColumnLayoutResult, OpenResult } from '#src/ports/columns.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
 import type { Frame, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
 import type { HarnessDirectory, HarnessList } from '#src/ports/harnesses.ts';
@@ -127,7 +127,7 @@ export class HcCoreFleet implements Fleet {
         return { kind: 'done' };
     }
 
-    layout(tab: TabId): Promise<LayoutResult> {
+    layout(tab: TabId): Promise<ColumnLayoutResult> {
         return Promise.resolve(unknown({ why: 'not-found', what: textOf(`the layout of ${tab}`) }));
     }
 
@@ -143,8 +143,8 @@ export class HcCoreFleet implements Fleet {
         return Promise.resolve({ kind: 'done' });
     }
 
-    closeEvery(): Promise<ClosedAll> {
-        return Promise.resolve({ kind: 'closed', closed: 0, failed: 0 });
+    closeEvery(): Promise<ClosedEvery> {
+        return Promise.resolve({ kind: 'closed', closed: ZERO, failed: ZERO });
     }
 
     available(): Promise<HarnessList> {
