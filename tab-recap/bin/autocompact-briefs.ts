@@ -15,6 +15,11 @@ import { factsOf } from '#src/recap/application/brief-coverage.ts';
 import { sectionsOf } from '#src/experiment/coverage.ts';
 import { pooled } from '#src/experiment/pool.ts';
 import { seeded, shuffled } from '#src/experiment/seeded.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+const asText = (value: string): Text => must(parseText(value));
+const asFsPath = (value: string): FsPath => must(parseFsPath(value));
 
 const BRIEFS = 30;
 const MIN_FACTS = 5;
@@ -31,8 +36,8 @@ const documentOf = (point: Point): string => compactionInput({
 
 export async function labelBriefs(dir: string, runtime: HarnessRuntime): Promise<void> {
     const [file, log] = [join(dir, 'briefs.jsonl'), (line: string): void => { console.error(`${new Date().toISOString()} ${line}`); }];
-    const done = doneKeys(file, 'id');
-    const todo = briefPoints(readPoints(join(dir, 'corpus.jsonl'))).filter((point) => !done.has(point.id));
+    const done = doneKeys(asText(file), asText('id'));
+    const todo = briefPoints(readPoints(asText(join(dir, 'corpus.jsonl')))).filter((point) => !done.has(asText(point.id)));
     const writers = Array.from({ length: 6 }, () => new HarnessBrief(new LibraryHarness(runtime, LIBRARY_IDS.codex, 15 * 60_000), LABELLER));
     const labeller = new Labeller(runtime, 6, log);
     await pooled(todo, 6, async (point, _index, lane) => {
@@ -41,9 +46,9 @@ export async function labelBriefs(dir: string, runtime: HarnessRuntime): Promise
         if (isUnknown(written)) { log(`${point.id.slice(0, 8)}: no brief (${saying(written.why)})`); return; }
         const facts = factsOf(point.history);
         const asked = facts.map((fact, n) => ({ n, ...fact }));
-        const made = await labeller.ask(coverageLabelInstructions(), { brief: written.text, facts: asked }, (reply) => coverageLabelsOf(reply, asked.map((fact) => ({ n: fact.n, reason: fact.section === 'decisions' && fact.why !== null }))), point.id.slice(0, 8));
+        const made = await labeller.ask(coverageLabelInstructions(), { brief: written.text, facts: asked }, (reply) => coverageLabelsOf(reply, asked.map((fact) => ({ n: fact.n, reason: fact.section === 'decisions' && fact.why !== null }))), asText(point.id.slice(0, 8)));
         if (made.answer === null) { log(`${point.id.slice(0, 8)}: no coverage labels (${made.why ?? '?'})`); return; }
-        appendJsonl(file, { id: point.id, brief: written.text, briefMs: Date.now() - began - made.ms, facts, labels: made.answer, labeller: `codex/${LABELLER.model}/${LABELLER.effort}`, instructionsBytes: BRIEF_INSTRUCTIONS.length });
+        appendJsonl(asFsPath(file), { id: point.id, brief: written.text, briefMs: Date.now() - began - made.ms, facts, labels: made.answer, labeller: `codex/${LABELLER.model}/${LABELLER.effort}`, instructionsBytes: BRIEF_INSTRUCTIONS.length });
         log(`brief ${point.id.slice(0, 8)}: ${facts.length} facts`);
     });
 }

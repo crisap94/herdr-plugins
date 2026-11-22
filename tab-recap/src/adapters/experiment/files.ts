@@ -3,10 +3,13 @@ import { closeSync, lstatSync, openSync, readdirSync, readFileSync, readSync, ty
 import { join } from 'node:path';
 
 import { BOUNDARY_LITERAL, DAY_MS, SCAN_CHUNK_BYTES, SUBAGENT_SEGMENT, TRANSCRIPT_SUFFIX } from '#src/adapters/experiment/file-constants.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 
-export function recentTranscripts(root: string, days: number, now = Date.now()): readonly string[] {
+export function recentTranscripts(root: Text, days: number, now = Date.now()): readonly FsPath[] {
     const floor = Math.floor((now - days * DAY_MS) / 1000) * 1000;
-    const found: string[] = [];
+    const found: FsPath[] = [];
     const stack = [{ path: root, directory: true }];
     for (let entry = stack.pop(); entry !== undefined; entry = stack.pop()) {
         if (entry.directory) {
@@ -17,7 +20,7 @@ export function recentTranscripts(root: string, days: number, now = Date.now()):
                 children = [];
             }
             for (const child of children.toReversed()) {
-                stack.push({ path: join(entry.path, child.name), directory: child.isDirectory() });
+                stack.push({ path: must(parseText(join(entry.path, child.name))), directory: child.isDirectory() });
             }
         } else if (entry.path.endsWith(TRANSCRIPT_SUFFIX) && !entry.path.includes(SUBAGENT_SEGMENT)) {
             let mtime = 0;
@@ -27,17 +30,17 @@ export function recentTranscripts(root: string, days: number, now = Date.now()):
                 mtime = 0;
             }
             if (mtime > floor) {
-                found.push(entry.path);
+                found.push(must(parseFsPath(entry.path)));
             }
         }
     }
     return found;
 }
 
-export function withBoundaries(files: readonly string[]): readonly string[] {
+export function withBoundaries(files: readonly Text[]): readonly Text[] {
     const needle = Buffer.from(BOUNDARY_LITERAL);
     const buffer = Buffer.allocUnsafe(SCAN_CHUNK_BYTES + needle.length - 1);
-    const hits: string[] = [];
+    const hits: Text[] = [];
     for (const file of files) {
         let fd = -1;
         try {
@@ -68,4 +71,4 @@ export function withBoundaries(files: readonly string[]): readonly string[] {
     return hits;
 }
 
-export const sha256Of = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex');
+export const sha256Of = (path: FsPath): Text => must(parseText(createHash('sha256').update(readFileSync(path)).digest('hex')));
