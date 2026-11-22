@@ -1,5 +1,5 @@
 {
-  "src/i18n/sections.ts": {
-    "parameter": 1
+  "src/i18n/legacy.ts": {
+    "legacy": 1
   }
 }

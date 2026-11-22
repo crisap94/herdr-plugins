@@ -1,19 +1,9 @@
 {
-  "src/recap/application/anchor-source.ts": {
-    "return": 1
+  "src/recap/application/ask-back/legacy.ts": {
+    "legacy": 7
   },
-  "src/recap/application/ask-back.ts": {
-    "parameter": 1,
-    "return": 3,
-    "property": 3
-  },
-  "src/recap/application/boundaries.ts": {
-    "parameter": 2
-  },
-  "src/recap/application/chunking.ts": {
-    "parameter": 2,
-    "return": 3,
-    "property": 5
+  "src/recap/application/chunking/legacy.ts": {
+    "legacy": 10
   },
   "src/recap/application/correction-input.ts": {
     "parameter": 6,
@@ -23,14 +13,14 @@
   "src/recap/application/curator-input.ts": {
     "parameter": 4,
     "return": 5,
-    "container": 2,
-    "property": 10
+    "property": 10,
+    "container": 2
   },
   "src/recap/application/enumerate-answer.ts": {
     "parameter": 8,
     "return": 6,
-    "container": 8,
     "property": 8,
+    "container": 8,
     "assertion": 1
   },
   "src/recap/application/enumerate-input.ts": {
@@ -42,37 +32,26 @@
     "parameter": 2,
     "property": 12
   },
-  "src/recap/application/extract-ground.ts": {
-    "parameter": 1,
-    "property": 3
-  },
   "src/recap/application/extract-job.ts": {
     "parameter": 8,
     "return": 1,
-    "container": 2,
-    "property": 7
-  },
-  "src/recap/application/extract-pipeline.ts": {
-    "parameter": 3
-  },
-  "src/recap/application/hidden-codec.ts": {
-    "parameter": 1,
-    "return": 2
-  },
-  "src/recap/application/lane-hints.ts": {
-    "container": 1
+    "property": 7,
+    "container": 2
   },
   "src/recap/application/ledger-input.ts": {
     "parameter": 4,
     "return": 2,
-    "container": 3,
-    "property": 1
+    "property": 1,
+    "container": 3
   },
   "src/recap/application/ledger-reconcile.ts": {
     "parameter": 9,
     "return": 6,
-    "container": 3,
-    "property": 15
+    "property": 15,
+    "container": 3
+  },
+  "src/recap/application/legacy.ts": {
+    "legacy": 21
   },
   "src/recap/application/local-time.ts": {
     "parameter": 6,
@@ -83,47 +62,31 @@
   "src/recap/application/ops-answer.ts": {
     "parameter": 7,
     "return": 11,
-    "container": 17,
     "property": 5,
+    "container": 17,
     "assertion": 2
   },
   "src/recap/application/ops-gating.ts": {
     "parameter": 3,
     "return": 3,
-    "container": 10,
     "property": 6,
+    "container": 10,
     "assertion": 4
-  },
-  "src/recap/application/recap-input.ts": {
-    "parameter": 2,
-    "return": 1,
-    "property": 3
   },
   "src/recap/application/recap-job.ts": {
     "parameter": 5,
     "return": 2,
-    "container": 3,
-    "property": 9
+    "property": 9,
+    "container": 3
   },
-  "src/recap/application/recap-shape.ts": {
-    "parameter": 4,
-    "return": 4,
-    "property": 1
+  "src/recap/application/recap-shape/legacy.ts": {
+    "legacy": 9
   },
-  "src/recap/application/reconcile.ts": {
-    "parameter": 1
+  "src/recap/application/triggers/legacy.ts": {
+    "legacy": 8
   },
-  "src/recap/application/triggers.ts": {
-    "parameter": 2,
-    "return": 1,
-    "property": 5
-  },
-  "src/recap/application/writer-candidates.ts": {
-    "return": 1
-  },
-  "src/recap/application/writer-clip.ts": {
-    "parameter": 4,
-    "property": 2
+  "src/recap/application/writer-clip/legacy.ts": {
+    "legacy": 6
   },
   "src/recap/application/writer-context.ts": {
     "parameter": 5,
@@ -132,8 +95,8 @@
   "src/recap/application/writer-transcript.ts": {
     "parameter": 4,
     "return": 4,
-    "container": 2,
-    "property": 6
+    "property": 6,
+    "container": 2
   },
   "src/recap/application/xml.ts": {
     "parameter": 8,

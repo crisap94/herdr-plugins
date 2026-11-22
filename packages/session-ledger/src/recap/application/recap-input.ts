@@ -1,39 +1,12 @@
-import type { Lane } from '#src/recap/domain/lane-shape.ts';
-import type { LaneRepo } from '#src/ports/lane-repo.ts';
-import type { RecapInput, InputAgent, InputNote } from '#src/ports/recap-input.ts';
+import type { RecapInput, InputAgent } from '#src/ports/recap-input.ts';
 import { isScreenSource } from '#src/ports/transcript-source.ts';
-import type { LaneCursor } from '#src/ports/recap-records.ts';
-import type { Chunk } from '#src/ports/transcripts.ts';
-import type { TaskShape } from '#src/recap/domain/grouping.ts';
-import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { numbered } from './ledger-input.ts';
-import type { Numbering, TaskFacts } from './ledger-input.ts';
+import type { Numbering } from './ledger-input.ts';
 import { hintOf } from './lane-hints.ts';
+import { idOf, notesOf } from './legacy.ts';
+import type { InputWorld, Observed } from './legacy.ts';
 
-export interface Observed {
-    readonly lane: Lane;
-    readonly cursor: LaneCursor;
-    readonly chunk: Chunk | null;
-    readonly fresh: boolean;
-}
-
-const idOf = (index: number): string => `a${index + 1}`;
-
-function notesOf(seen: Observed, agent: string): readonly InputNote[] {
-    const all = seen.chunk?.notes ?? [];
-    const found: readonly InputNote[] = all.filter((note, index) => !all.slice(index + 1).some((later) => later.kind === note.kind)).map((note) => ({ kind: note.kind, at: note.at, text: note.text, agent }));
-    const left = seen.cursor.claudeRecap;
-    return seen.fresh && left !== null && !found.some((note) => note.kind === 'away_summary') ? [{ kind: 'away_summary', at: null, text: left, agent }, ...found] : found;
-}
-
-export interface InputWorld {
-    readonly tab: string;
-    readonly repos: LaneRepo;
-    readonly now: number;
-    readonly tasks: readonly TaskShape[];
-    readonly facts: readonly TaskFacts[];
-    readonly writerView: WriterView;
-}
+export type { InputWorld, Observed } from './legacy.ts';
 
 export interface Built {
     readonly input: RecapInput;
