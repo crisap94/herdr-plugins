@@ -2,6 +2,8 @@ import type { Judge } from '#src/ports/judge.ts';
 import type { ImportedChapter } from '#src/ports/imported-recaps.ts';
 import type { RunInputs } from '#src/ports/run-inputs.ts';
 import type { Verdicts } from '#src/ports/verdicts.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { comparisonLines } from '#src/recap/render/compare.ts';
 import { reportLines } from '#src/recap/render/eval.ts';
 import type { Style } from '#src/recap/render/wrap.ts';
@@ -28,7 +30,7 @@ export interface JudgedReplay {
 
 export async function judgedReport(replayed: JudgedReplay): Promise<readonly string[]> {
     const runs = replayed.store.inputs.runs({ tab: replayed.label, since: null, limit: 100_000, withInput: true }).toReversed();
-    const deps: JudgeDeps = { judge: replayed.judge, inputs: replayed.store.inputs, verdicts: replayed.store.verdicts, rubric: replayed.rubric, now: Date.now };
+    const deps: JudgeDeps = { judge: replayed.judge, inputs: replayed.store.inputs, verdicts: replayed.store.verdicts, rubric: must(parseText(replayed.rubric)), now: Date.now };
     let done = 0;
     const results = await judgeRuns(deps, runs, () => { done += 1; replayed.err(`judged ${done}/${runs.length}`); });
     const lines = [`the judge over the replay (${runs.length} runs):`, ...reportLines(reportOf(replayed.judge.label, results), replayed.style, 0)];

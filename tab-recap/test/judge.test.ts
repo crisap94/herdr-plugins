@@ -2,6 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { READBACK_QUESTIONS } from '#src/adapters/job/prompts/judge-instructions.ts';
 import { RUBRIC_TEXT } from '#src/adapters/job/prompts/rubric.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { judgeRun, judgeRuns } from '#src/recap/application/judge.ts';
 import type { JudgeDeps } from '#src/recap/application/judge.ts';
 import type { Judge, JudgeTask, Said } from '#src/ports/judge.ts';
@@ -51,7 +53,7 @@ function setup(script: Script, input: string | null = '<recap_input version="1">
     const run = store.inputs.runs({ tab: null, since: null, limit: 5, withInput: false }).at(0);
     assert.ok(run !== undefined);
     const { judge, asked } = judgeOf(script);
-    return { deps: { judge, inputs: store.inputs, verdicts: store.verdicts, rubric: RUBRIC_TEXT, now: (): number => 5000 }, run, store, asked };
+    return { deps: { judge, inputs: store.inputs, verdicts: store.verdicts, rubric: must(parseText(RUBRIC_TEXT)), now: (): number => 5000 }, run, store, asked };
 }
 
 test('a sampled run: a verdict per item and check, key facts and coverage, filler, the read-back — all stored with the judge used', async () => {

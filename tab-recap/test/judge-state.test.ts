@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { RUBRIC_TEXT } from '#src/adapters/job/prompts/rubric.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { reportOf } from '#src/recap/application/eval-report.ts';
 import { judgeRun } from '#src/recap/application/judge.ts';
 import type { JudgeDeps } from '#src/recap/application/judge.ts';
@@ -60,7 +62,7 @@ test('judging the third run: coverage and no-filler over the state (an older fac
     const seen: { task: JudgeTask; document: string }[] = [];
     const script: Readonly<Record<string, string>> = { score: SCORE, readback: ANSWERS, grade: GRADES };
     const judge: Judge = { label: 'fake', ask: (task, document) => { seen.push({ task, document }); return Promise.resolve({ kind: 'said', text: script[task] ?? '', costUsd: 0 }); } };
-    const deps: JudgeDeps = { judge, inputs: store.inputs, verdicts: store.verdicts, rubric: RUBRIC_TEXT, now: (): number => 9000 };
+    const deps: JudgeDeps = { judge, inputs: store.inputs, verdicts: store.verdicts, rubric: must(parseText(RUBRIC_TEXT)), now: (): number => 9000 };
     const result = await judgeRun(deps, run);
     assert.ok(result.kind === 'judged');
     assert.deepEqual(result.coverage, { passed: 2, total: 3 }, 'a key fact an earlier run added is carried; one named by an added key, which is not in the state, is not');
@@ -86,7 +88,7 @@ test('judge vs anchor: a fact whose quote is in the input and that the judge cal
         keyfacts: ['!256 is merged'], coverage: [{ keyfact: 0, item: 'state/t1/done/0' }],
     });
     const judge: Judge = { label: 'fake', ask: (task) => Promise.resolve({ kind: 'said', text: ({ score, readback: ANSWERS, grade: GRADES, cover: '' })[task], costUsd: 0 }) };
-    const result = await judgeRun({ judge, inputs: store.inputs, verdicts: store.verdicts, rubric: RUBRIC_TEXT, now: (): number => 9000 }, run);
+    const result = await judgeRun({ judge, inputs: store.inputs, verdicts: store.verdicts, rubric: must(parseText(RUBRIC_TEXT)), now: (): number => 9000 }, run);
     const report = reportOf('fake', [result]);
     assert.deepEqual(report.judgeVsAnchor.map((each) => [each.key, each.check, each.text]), [['t1/done/0', 'I4', 'Merged !256.']]);
     assert.deepEqual(report.failures.map((each) => each.key), ['t1/done/0', 't1/done/1', 't1/done/1'], 'all three are failing items');
@@ -99,7 +101,7 @@ test('golden: the report of the third run shows the state numbers with the added
     assert.ok(run !== undefined);
     const script: Readonly<Record<string, string>> = { score: SCORE, readback: ANSWERS, grade: GRADES };
     const judge: Judge = { label: 'fake', ask: (task) => Promise.resolve({ kind: 'said', text: script[task] ?? '', costUsd: 0 }) };
-    const result = await judgeRun({ judge, inputs: store.inputs, verdicts: store.verdicts, rubric: RUBRIC_TEXT, now: (): number => 9000 }, run);
+    const result = await judgeRun({ judge, inputs: store.inputs, verdicts: store.verdicts, rubric: must(parseText(RUBRIC_TEXT)), now: (): number => 9000 }, run);
     const text = reportLines(reportOf('fake', [result]), plain, 0).join('\n').replace(/run_…[0-9a-z]{6}/g, 'run_…XXXXXX');
     assert.equal(`${text}\n`, readFileSync(new URL('fixtures/eval-report-state.txt', import.meta.url), 'utf8'));
 });

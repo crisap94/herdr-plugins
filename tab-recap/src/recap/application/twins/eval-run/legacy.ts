@@ -43,7 +43,7 @@ async function sample(options: EvalOptions, deps: EvalDeps): Promise<number> {
     }
     const runs = deps.inputs.runs(queryOf(options, deps, options.count, true));
     const missing = deps.inputs.runs(queryOf(options, deps, 1000, false)).filter((run) => !run.hasInput).length;
-    const judging: JudgeDeps = { judge, inputs: deps.inputs, verdicts: deps.verdicts, rubric: deps.rubric, now: deps.now };
+    const judging: JudgeDeps = { judge, inputs: deps.inputs, verdicts: deps.verdicts, rubric: must(parseText(deps.rubric)), now: deps.now };
     let done = 0;
     const results = await judgeRuns(judging, runs, () => { done += 1; deps.err(`judged ${done}/${runs.length}`); });
     const report = reportOf(judge.label, results);

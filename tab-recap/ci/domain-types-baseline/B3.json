@@ -45,39 +45,20 @@
     "parameter": 5,
     "return": 2,
     "container": 4,
-    "property": 9
+    "property": 6
   },
   "src/recap/application/input-retention.ts": {
     "parameter": 2,
     "return": 3,
     "property": 1
   },
-  "src/recap/application/judge-anchors.ts": {
-    "parameter": 3,
-    "return": 1,
-    "container": 2,
+  "src/recap/application/judge-answer.ts": {
     "property": 1
   },
-  "src/recap/application/judge-answer.ts": {
-    "parameter": 13,
-    "return": 2,
-    "container": 19,
-    "property": 9
-  },
-  "src/recap/application/judge-context.ts": {
-    "return": 7,
-    "container": 4,
-    "property": 4
-  },
-  "src/recap/application/judge-coverage.ts": {
-    "container": 3,
-    "property": 2
-  },
   "src/recap/application/judge.ts": {
-    "parameter": 3,
-    "return": 2,
-    "container": 1,
-    "property": 9
+    "parameter": 1,
+    "return": 1,
+    "property": 3
   },
   "src/recap/application/lane-claims.ts": {
     "parameter": 6,
