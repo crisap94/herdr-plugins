@@ -4,7 +4,7 @@ import { ClosedLanesRepository } from './closed-lanes.ts';
 import { LedgerRepository } from './ledger.ts';
 import type { ClosureReader, ClosureRuns } from '#src/ports/closed-lanes.ts';
 import { RecapRecordsRepository } from './recap-records.ts';
-import { TabViewsRepository } from './tab-views.ts';
+import { TabViewsRepository } from './tab-views/legacy.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';

@@ -1,11 +1,7 @@
 import type { Database } from 'bun:sqlite';
-import { gunzipSync, gzipSync } from 'node:zlib';
+import { gunzipSync } from 'node:zlib';
 import { and, desc, eq, gte, inArray, isNotNull, lt, sql } from 'drizzle-orm';
-import type { GateCount, RunInputs, RunItem, RunQuery, StoredRun } from '#src/ports/run-inputs.ts';
 import { must } from '#src/protocol/result.ts';
-import type { GateStats } from '#src/recap/domain/gates/index.ts';
-import { parseTabId } from '#src/recap/domain/ids.ts';
-import { parseRunId } from '#src/recap/domain/run-ids.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import type { RunId } from '#src/recap/domain/run-ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
@@ -85,62 +81,5 @@ export class RunInputStore implements RunInputReader {
         const removed = this.orm.delete(runInput).where(inArray(runInput.runId, this.orm.select({ id: runs.id }).from(runs).where(lt(runs.at, before))))
             .returning({ runId: runInput.runId }).all().length;
         return must(parseCount(removed));
-    }
-}
-
-export const statsText = (stats: GateStats | null): string | null => (stats === null ? null : JSON.stringify(stats));
-
-export class RunInputRows {
-    private readonly orm: Orm;
-
-    constructor(db: Database) {
-        this.orm = ormOf(db);
-    }
-
-    put(run: Uint8Array, document: string): void {
-        this.orm.insert(runInput).values({ runId: run, document: gzipSync(document), bytes: Buffer.byteLength(document) }).run();
-    }
-}
-
-const storedRunOf = (run: RunRecord): StoredRun => ({
-    id: run.id, tab: run.tab, at: run.at, language: run.language, backend: run.backend, hasInput: run.input === 'present', gateStats: run.gateStats,
-});
-
-const runItemOf = (entry: RunEntry): RunItem => ({
-    key: entry.key, section: entry.section, text: entry.text, fact: entry.fact, born: entry.birth === 'born', anchor: entry.anchor,
-});
-
-export class RunInputsRepository implements RunInputs {
-    private readonly store: RunInputStore;
-
-    constructor(db: Database) {
-        this.store = new RunInputStore(db);
-    }
-
-    runs(query: RunQuery): readonly StoredRun[] {
-        return guarded(() => this.store.runs({
-            tab: query.tab === null ? null : must(parseTabId(query.tab)),
-            since: query.since === null ? null : instant(query.since),
-            limit: must(parseCount(query.limit)),
-            input: query.withInput ? 'with-input' : 'any',
-        }).map(storedRunOf), []);
-    }
-
-    document(run: string): string | null {
-        const id = parseRunId(run);
-        return id.kind === 'ok' ? this.store.document(id.value) : null;
-    }
-
-    itemsOf(run: string, mode: ItemsMode): readonly RunItem[] {
-        const id = parseRunId(run);
-        return id.kind === 'ok' ? this.store.itemsOf(id.value, mode).map(runItemOf) : [];
-    }
-
-    gateCounts(since: number | null): readonly GateCount[] {
-        return this.store.gateCounts(since === null ? null : instant(since)).map((tally) => ({ at: tally.at, stats: tally.stats }));
-    }
-
-    prune(before: number): number {
-        return this.store.prune(instant(before));
     }
 }

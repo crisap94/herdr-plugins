@@ -5,10 +5,10 @@ import type { RestoredLane } from '#src/recap/domain/closures.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { parseAgentKind, parsePaneId, parseTabId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
-import { type Text, parseText } from '#src/recap/domain/text.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import { parseInstant } from '#src/recap/domain/time.ts';
 import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
-import { parseTabViewRecord, type LiveLanes, type LiveLanesRead, type TabViewRecord, type TabViewStore, type TabView, type TabViews } from '#src/ports/tab-views.ts';
+import { parseTabViewRecord, type LiveLanes, type LiveLanesRead, type TabViewRecord, type TabViewStore } from '#src/ports/tab-views.ts';
 import { unreadableOf } from '#src/ports/unknowable.ts';
 import { writeTx } from './connection.ts';
 import { BadRow, guarded, isRow, one, text } from './rows.ts';
@@ -138,32 +138,5 @@ export class TabViewRowStore implements TabViewStore, LiveLanes {
                 webBase, webForge, webBranch, contextTokens, contextWindow, contextSource, since: lane.since ?? null,
             }).run();
         });
-    }
-}
-
-export class TabViewsRepository implements TabViews, LiveLanes {
-    private readonly store: TabViewRowStore;
-
-    constructor(db: Database, daemonVersion: string | null = null) {
-        const version = daemonVersion === null ? null : parseText(daemonVersion);
-        this.store = new TabViewRowStore(db, version?.kind === 'ok' ? version.value : null);
-    }
-
-    tabOf(pane: string): string | null {
-        const id = parsePaneId(pane);
-        return id.kind === 'ok' ? this.store.tabOf(id.value) : null;
-    }
-
-    readTab(tab: string): TabView | null {
-        const id = parseTabId(tab);
-        return id.kind === 'ok' ? this.store.readTab(id.value) : null;
-    }
-
-    liveLanes(): LiveLanesRead {
-        return this.store.liveLanes();
-    }
-
-    writeTab(view: TabView): void {
-        this.store.writeTab(must(parseTabViewRecord(view)));
     }
 }

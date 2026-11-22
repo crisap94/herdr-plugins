@@ -1,7 +1,7 @@
 import { describe, test } from 'node:test';
 import type { Database } from 'bun:sqlite';
 import { RecapRecordsRepository } from '#src/adapters/db/recap-records.ts';
-import { RunRows } from '#src/adapters/db/run-write.ts';
+import { RunRows } from '#src/adapters/db/run-write/legacy.ts';
 import { TranscriptStore } from '#src/adapters/db/transcripts.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { RECAP_CAUSES } from '#src/recap/domain/intent.ts';

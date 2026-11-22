@@ -15,7 +15,7 @@ import { LedgerRows } from '../ledger-rows.ts';
 import { RequestsRepository } from '../requests.ts';
 import { RunRows } from '../run-write.ts';
 import { TabStore } from '../tab-row.ts';
-import { TabViewsRepository } from '../tab-views.ts';
+import { TabViewsRepository } from '../tab-views/legacy.ts';
 import { TranscriptStore } from '../transcripts.ts';
 import { typeIdOf } from '../typeid.ts';
 import { ids } from '../uuid7.ts';
