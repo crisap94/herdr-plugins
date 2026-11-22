@@ -2,12 +2,14 @@ import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { InputCandidate } from '#src/ports/recap-input.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { jaccard } from '#src/recap/domain/gates/jaccard.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { answeredBy } from './enumerate-answer.ts';
 import { enumerateInput } from './enumerate-input.ts';
 import type { EnumerateMaterial, Question } from './enumerate-input.ts';
 import { chunksOf, newestOf } from './chunking.ts';
-import type { TurnChunk } from './chunking.ts';
+import type { TurnChunk, TurnClock } from './chunking.ts';
 import { capStubs, triggersOf } from './triggers.ts';
 import type { Stub } from './triggers.ts';
 import { tidy } from './recap-shape.ts';
@@ -72,9 +74,11 @@ async function called(run: EnumerateRun, material: EnumerateMaterial): Promise<C
 
 export async function enumerate(run: EnumerateRun, agents: readonly AgentTurns[]): Promise<Enumeration> {
     const all: InputCandidate[] = [];
+    const { now, zone } = run.tab;
+    const clock: TurnClock = { now: instant(now), zone: brand<string, 'Text'>(zone) };
     let [cost, chunks, chars] = [0, 0, 0];
     for (const { agent, entries } of agents) {
-        const parts: readonly TurnChunk[] = chunksOf(entries, run.tab);
+        const parts: readonly TurnChunk[] = chunksOf(entries, clock);
         for (const [at, chunk] of parts.entries()) {
             const done = await called(run, { language: run.language, tab: run.tab, agent, chunk, position: { index: at + 1, of: parts.length }, stubs: capStubs(triggersOf(chunk.entries)), questions: [] });
             [cost, chunks, chars] = [cost + done.cost, chunks + 1, chars + chunk.markup.length];
@@ -87,13 +91,15 @@ export async function enumerate(run: EnumerateRun, agents: readonly AgentTurns[]
     return { candidates: deduplicated(all), cost, chunks, chars, failed: null };
 }
 
-export const ASK_BACK_CHARS = 24_000;
+export const ASK_BACK_CHARS = brand<number, 'Count'>(24_000);
 
 export async function enumerateAsked(run: EnumerateRun, agents: readonly AgentTurns[], questions: readonly Question[]): Promise<Enumeration> {
     const all: InputCandidate[] = [];
+    const { now, zone } = run.tab;
+    const clock: TurnClock = { now: instant(now), zone: brand<string, 'Text'>(zone) };
     let [cost, chars] = [0, 0];
     for (const { agent, entries } of agents) {
-        const chunk = newestOf(entries, run.tab, ASK_BACK_CHARS);
+        const chunk = newestOf(entries, clock, ASK_BACK_CHARS);
         if (chunk === null) {
             continue;
         }

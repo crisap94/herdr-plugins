@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { sectionOf } from '@stateforge-labs/session-ledger/unstable/i18n/legacy.ts';
-import { anchorSource, candidatesOf, clipHead, clipTurn, extractPiped, groundOf, idOf, marksOf, newest, notesOf, parseHidden, serializeHidden, touchedFiles } from '@stateforge-labs/session-ledger/unstable/recap/application/legacy.ts';
+import { anchorSource, candidatesOf, extractPiped, groundOf, idOf, marksOf, newest, notesOf, parseHidden, serializeHidden, touchedFiles } from '@stateforge-labs/session-ledger/unstable/recap/application/legacy.ts';
 import { numbered } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-input.ts';
 import { FULL_WRITER_VIEW, positiveCount } from '@stateforge-labs/session-ledger/unstable/recap/domain/writer-view.ts';
 import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
@@ -45,16 +45,6 @@ test('the newest entries fit the budget and always keep at least one entry', () 
     assert.deepEqual(newest({ ...lane, entries: [...lane.entries] }, 4).entries.map((entry) => entry.text), ['new']);
     assert.deepEqual(newest({ ...lane, entries: [...lane.entries] }, 1000).entries.length, 2);
     assert.equal(newest({ ...lane, entries: [...lane.entries] }, 0).entries.length, 1);
-});
-
-test('the clip helpers keep the head and tail of a long turn and the head of a long value', () => {
-    assert.deepEqual(clipTurn('agent', 'short'), { text: 'short', clipped: false });
-    const long = `${'a'.repeat(900)}${'b'.repeat(900)}`;
-    const clipped = clipTurn('agent', long);
-    assert.equal(clipped.clipped, true);
-    assert.ok(clipped.text.includes('[…]'));
-    assert.deepEqual(clipHead('abcdef', 3), { text: 'abc', clipped: true });
-    assert.deepEqual(clipHead('ab', 3), { text: 'ab', clipped: false });
 });
 
 test('the hidden counts serialize in section order and parse back', () => {

@@ -10,6 +10,7 @@ import type { Section } from '#src/recap/domain/fact.ts';
 import type { LaneMark } from '#src/recap/domain/boundary.ts';
 import { closeEvidenceGate } from '#src/recap/domain/gates/g13-close-evidence.ts';
 import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { foldedOf } from '#src/recap/domain/gates/words.ts';
 import type { Lane } from '#src/recap/domain/lane-shape.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
@@ -162,8 +163,6 @@ export interface InputWorld {
     readonly writerView: WriterView;
 }
 
-export { clipHead, clipTurn } from './writer-clip.ts';
-export type { Clipped } from './writer-clip.ts';
 
 export interface PipelineParts {
     readonly pipeline: Pipeline;
@@ -197,7 +196,7 @@ export async function extractPiped(summarizer: Summarizer, request: RecapRequest
         return costing(await extract(summarizer, request, ground), first.cost);
     }
     let [candidates, cost] = [first.candidates, first.cost];
-    const asked = STEPS[parts.pipeline].askBack ? askBackFor({ chunks: first.chunks, chars: first.chars, candidates, open: request.input.ledgers.flatMap((ledger) => ledger.facts), said: lanes.flatMap((lane) => lane.entries.map((entry) => entry.text)).join('\n') }) : [];
+    const asked = STEPS[parts.pipeline].askBack ? askBackFor({ chunks: brand<number, 'Count'>(first.chunks), chars: brand<number, 'Count'>(first.chars), candidates, open: request.input.ledgers.flatMap((ledger) => ledger.facts), said: brand<string, 'Text'>(lanes.flatMap((lane) => lane.entries.map((entry) => entry.text)).join('\n')) }) : [];
     if (asked.length > 0) {
         const more = await enumerateAsked(run, lanes, asked);
         cost += more.cost;

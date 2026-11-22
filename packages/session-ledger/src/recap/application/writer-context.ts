@@ -1,5 +1,6 @@
 import type { InputAgent, RecapInput } from '#src/ports/recap-input.ts';
 import type { RecapRequest } from '#src/ports/summarizer.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { correctionDocument } from './correction-input.ts';
 import { clipHead } from './writer-clip.ts';
 import { localTime, isoSecond } from './local-time.ts';
@@ -9,7 +10,7 @@ import { element, leaf } from './xml.ts';
 import { serializeHidden } from './hidden-codec.ts';
 
 export const TRANSCRIPT_BUDGET = 60_000;
-const NOTE_CHARS = { 'away_summary': 400, compaction: 2_000 } as const;
+const NOTE_CHARS = { 'away_summary': brand<number, 'Count'>(400), compaction: brand<number, 'Count'>(2_000) } as const;
 const LABEL_CHARS = 30;
 const NEST = '\n';
 
@@ -46,7 +47,7 @@ function ledgersOf(input: RecapInput): string {
 
 function notesOf(input: RecapRequest['input']): string {
     return input.notes.map((note) => {
-        const kept = clipHead(note.text, NOTE_CHARS[note.kind]);
+        const kept = clipHead(brand<string, 'Text'>(note.text), NOTE_CHARS[note.kind]);
         return `${NEST}${leaf('agent_note', { agent: note.agent, kind: note.kind, at: note.at === null ? null : localTime(note.at, input.tab.now, input.tab.zone), clipped: kept.clipped ? 'tail' : null }, kept.text)}`;
     }).join('');
 }
