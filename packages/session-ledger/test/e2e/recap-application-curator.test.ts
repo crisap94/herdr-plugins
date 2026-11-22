@@ -39,7 +39,7 @@ test('only the still-true rule of the rubric goes into a reconcile document, wit
     assert.equal(stillTrueOf(text(RUBRIC)), '- **I7** a fact stays true until the transcript says otherwise\n  more of I7');
     assert.equal(stillTrueOf(text('- **I1** only')), '');
     assert.ok(TAIL_CHARS > 0);
-    const built = reconcileInput({ name: text(''), language: text('en'), rubric: text(RUBRIC), open: [fact('a')], tail: [{ role: 'user', text: 'it still fails', at: NOW }], clock });
+    const built = reconcileInput({ name: text(''), language: text('en'), rubric: text(RUBRIC), open: [fact('a')], tail: [{ role: 'user', text: text('it still fails'), at: instant(NOW) }], clock });
     assert.match(built.document, /<curator_input version="1" mode="reconcile">/);
     assert.match(built.document, /<tail[^>]*>/);
     assert.ok(!built.document.includes('keep it short'));

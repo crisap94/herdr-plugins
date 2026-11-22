@@ -12,10 +12,12 @@ import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { opencodeObserved } from './context.ts';
 import { partsOf } from './parts.ts';
 import { opencodeInFlight } from './in-flight.ts';
+import { sourcePathOf, cursorOf, grewOf } from '#src/ports/transcripts.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
 
 export { OpencodeTranscripts } from './legacy.ts';
 
@@ -35,7 +37,7 @@ function newest(entries: readonly Entry[], budget: Count): readonly Entry[] {
 const sessionOf = (source: Text): Text => must(parseText(sessionIdOfTranscriptPath('opencode', source) ?? ''));
 
 export class OpencodeReader implements Transcripts {
-    readonly agent = 'opencode';
+    readonly agent = agentKind('opencode');
     readonly inFlight: SupportedInFlight = { kind: 'supported', split: { kind: 'foreground-only', why: 'opencode-parts' }, read: (source) => this.readInFlight(must(parseText(source))) };
     private readonly database: FsPath;
 
@@ -105,7 +107,7 @@ export class OpencodeReader implements Transcripts {
 
     private newestSession(store: OpenCodeStore, cwd: Directory): Located {
         const session = store.rootSessionForDirectory(cwd);
-        return session === null ? unknown({ why: 'not-found', what: `an opencode session in ${cwd}` }) : { kind: 'located', source: `${this.database}${TranscriptPath.OpenCodeSeparator}${session}` };
+        return session === null ? unknown({ why: 'not-found', what: `an opencode session in ${cwd}` }) : { kind: 'located', source: sourcePathOf(`${this.database}${TranscriptPath.OpenCodeSeparator}${session}`) };
     }
 
     private chunkOf(store: OpenCodeStore, session: Text, was: Position, budget: Count): Chunk {
@@ -113,9 +115,10 @@ export class OpencodeReader implements Transcripts {
         const read = messages.map((message) => partsOf(store, message));
         const entries = newest(read.flatMap((one) => one.entries), budget);
         const prompts = entries.filter((entry) => entry.role === 'user');
+        const title = store.sessionTitle(session);
         return {
-            kind: 'chunk', entries, title: store.sessionTitle(session), lastPrompt: prompts.at(-1)?.text ?? null, claudeRecap: null, notes: read.flatMap((one) => one.notes), marks: read.flatMap((one) => one.marks),
-            position: { cursor: Math.max(was.cursor, ...messages.map((message) => message.timeUpdated)), tail: null }, grew: messages.length > 0,
+            kind: 'chunk', entries, title: title === null ? null : textOf(title), lastPrompt: prompts.at(-1)?.text ?? null, claudeRecap: null, notes: read.flatMap((one) => one.notes), marks: read.flatMap((one) => one.marks),
+            position: { cursor: cursorOf(Math.max(was.cursor, ...messages.map((message) => message.timeUpdated))), tail: null }, grew: grewOf(messages.length > 0),
         };
     }
 }

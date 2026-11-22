@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import { UNREAD, type Chunk, type Engine, type Fact, type StoryChange, type TaskId } from '@stateforge-labs/session-ledger';
+import { instant, UNREAD, type Chunk, type Engine, type Fact, type StoryChange, type TaskId } from '@stateforge-labs/session-ledger';
 import type { Case } from '../run.ts';
 import { factOf } from '../facts.ts';
 import { key } from '../ids.ts';
+import { grew, text as textOf } from '../values.ts';
 import type { Behaviour, CuratedAnswer, CuratorCall, EngineWorld } from '../world.ts';
 import { NO_OPS, recapOf, spoken } from './support.ts';
 import { TAB, seedOpen } from './curate.ts';
@@ -49,7 +50,7 @@ const runOnce = async (world: EngineWorld, engine: Engine): Promise<void> => {
 
 const boundaryChunk = (): Behaviour<Chunk> => ({
     kind: 'answer',
-    value: { kind: 'chunk', entries: [{ role: 'user', text: 'the open work is finished' }], title: null, lastPrompt: null, claudeRecap: null, notes: [], marks: [{ kind: 'compacted', at: 5 }], position: UNREAD, grew: true },
+    value: { kind: 'chunk', entries: [{ role: 'user', text: textOf('the open work is finished') }], title: null, lastPrompt: null, claudeRecap: null, notes: [], marks: [{ kind: 'compacted', at: instant(5) }], position: UNREAD, grew: grew(true) },
 });
 
 export const CUR_RECONCILE_CASES: readonly Case<EngineWorld, Engine>[] = [

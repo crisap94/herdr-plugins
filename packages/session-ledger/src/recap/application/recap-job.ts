@@ -10,7 +10,7 @@ import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { CheckedLedger } from '#src/ports/ledger.ts';
 import { blankRecap, hasRecap, type CheckedRecapRecords, type LaneCursor, type RecordedRun, type TabRecap } from '#src/ports/recap-records.ts';
 import type { RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
-import { UNREAD } from '#src/ports/transcripts.ts';
+import { cursorOf, UNREAD } from '#src/ports/transcripts.ts';
 import { isUnknown, saying, type Unknown } from '#src/ports/unknowable.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import { DEFAULT_PIPELINE, type CloseEvidence, type Pipeline } from '#src/recap/domain/pipeline.ts';
@@ -149,11 +149,11 @@ export class RecapJob {
     }
 
     private async locate(lane: Lane): Promise<Located | Text> {
-        const agent = String(lane.agent);
+        const agent = lane.agent;
         const reader = this.deps.transcripts.readerFor(agent);
-        if (reader === undefined) return textOf(this.deps.transcripts.unavailableReason(agent));
+        if (reader === undefined) return this.deps.transcripts.unavailableReason(agent);
         const located = await reader.locate(lane);
-        return isUnknown(located) ? textOf(saying(located.why)) : { reader, source: textOf(located.source) };
+        return isUnknown(located) ? textOf(saying(located.why)) : { reader, source: located.source };
     }
 
     private async read(lane: Lane, prior: TabRecap, budget: Count): Promise<Reading> {
@@ -161,10 +161,10 @@ export class RecapJob {
         const found = await this.locate(lane);
         if (typeof found === 'string') return { lane, cursor: blank, chunk: null, grew: grew(false), fresh: SEEN_BEFORE, error: found };
         const was = await this.carry.cursorFor({ session: lane.session, cursors: prior.lanes.filter((c) => c.pane === blank.pane), wanted: { ...blank, transcript: found.source }, reader: found.reader });
-        const chunk = await found.reader.read(found.source, { cursor: was.cursor, tail: was.tail }, budget);
+        const chunk = await found.reader.read(found.source, { cursor: cursorOf(was.cursor), tail: was.tail === null ? null : textOf(was.tail) }, budget);
         if (isUnknown(chunk)) return { lane, cursor: was, chunk: null, grew: grew(false), fresh: SEEN_BEFORE, error: textOf(saying(chunk.why)) };
         const cursor: LaneCursor = { ...was, title: chunk.title ?? was.title, lastPrompt: chunk.lastPrompt ?? was.lastPrompt, claudeRecap: chunk.claudeRecap ?? was.claudeRecap };
-        return { lane, cursor, chunk, grew: grew(chunk.grew), fresh: was.cursor === UNREAD.cursor ? FRESH : SEEN_BEFORE, error: null };
+        return { lane, cursor, chunk, grew: chunk.grew, fresh: was.cursor === UNREAD.cursor ? FRESH : SEEN_BEFORE, error: null };
     }
 
     private async readAll(prior: TabRecap, lanes: readonly Lane[], cause: RecapCause): Promise<readonly Reading[]> {

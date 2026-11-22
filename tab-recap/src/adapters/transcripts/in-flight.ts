@@ -12,6 +12,7 @@ import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import { IN_FLIGHT_CAPABILITIES } from './registry.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 const TAIL_BYTES = 512 * 1024;
 
@@ -35,7 +36,7 @@ export class TranscriptInFlight implements InFlight {
     }
 
     async read(lane: Lane): Promise<InFlightReading> {
-        const agent = String(lane.agent);
+        const agent = lane.agent;
         const subject = must(parseText(agent));
         const registered = registeredKindOf(agent);
         if (registered !== null) {
@@ -48,7 +49,7 @@ export class TranscriptInFlight implements InFlight {
         const located = await reader.locate(lane);
         if (isUnknown(located)) return exact === undefined ? { kind: 'unknown', why: inFlightReason('unregistered-reader', subject) } : unlocated(lane, registered, located);
         if (reader.inFlight.kind === 'unsupported') return { kind: 'unknown', why: inFlightReason(reader.inFlight.why, subject) };
-        const found = await reader.inFlight.read(located.source, TAIL_BYTES);
+        const found = await reader.inFlight.read(located.source, countOf(TAIL_BYTES));
         return isUnknown(found) ? { kind: 'unknown', why: saying(found.why) } : { kind: 'count', count: found.count, background: found.background };
     }
 }

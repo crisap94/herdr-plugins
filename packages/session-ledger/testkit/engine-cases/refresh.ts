@@ -4,14 +4,14 @@ import type { Case } from '../run.ts';
 import { followed, key, scope, session } from '../ids.ts';
 import type { Behaviour, EngineWorld, WrittenAnswer } from '../world.ts';
 import { causeOf, countOf, NO_OPS, spoken } from './support.ts';
-import { failure } from '../values.ts';
+import { failure, grew } from '../values.ts';
 
 const TAB = scope('one');
 const OTHER = scope('two');
 
 const quietOf = (): Behaviour<Chunk> => ({
     kind: 'answer',
-    value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: UNREAD, grew: false },
+    value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: UNREAD, grew: grew(false) },
 });
 
 const FAILED = failure(1, 'scripted writer failure');

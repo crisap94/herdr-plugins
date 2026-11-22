@@ -4,9 +4,10 @@ import type { ChunkResult, Located, ObservedResult, Position, PromptResult, Supp
 import { must } from '#src/protocol/result.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import { OpencodeReader } from './transcripts.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
 
 export class OpencodeTranscripts implements Transcripts {
-    readonly agent = 'opencode';
+    readonly agent = agentKind('opencode');
     readonly inFlight: SupportedInFlight;
     private readonly reader: OpencodeReader;
 

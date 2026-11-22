@@ -12,6 +12,8 @@ import { must } from '#src/protocol/result.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
 import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
+import { sourcePathOf } from '#src/ports/transcripts.ts';
 
 const roots: string[] = [];
 const tempDir = (): string => {
@@ -30,9 +32,9 @@ const lane = (agent: string, cwd: string): ReturnType<typeof laneFrom> => laneFr
 
 function reader(agent: string, model: string | null, tokens: number, window: number | null): Transcripts {
     return {
-        agent,
+        agent: agentKind(agent),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-        locate: () => Promise.resolve({ kind: 'located', source: 's' }),
+        locate: () => Promise.resolve({ kind: 'located', source: sourcePathOf('s') }),
         read: () => Promise.reject(new Error('not used')),
         latestPrompt: () => Promise.reject(new Error('not used')),
         observed: () => Promise.resolve({ kind: 'observed', observed: { tokens, peak: tokens, window, model } }),

@@ -10,7 +10,7 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { observe } from '#src/recap/domain/fold.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId, agentKind } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane, SeenLane } from '#src/recap/domain/lane.ts';
@@ -31,17 +31,18 @@ import { NO_REPOS } from '#test/support.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
+import { cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
 
 const said: Record<string, string> = { old: 'migrate victoria', new: 'write the docs' };
 
 const transcripts: Transcripts = {
-    agent: 'claude',
+    agent: agentKind('claude'),
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-    locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: `/t/${String(lane.session)}` }),
+    locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${String(lane.session)}`) }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
     read: (source: string): Promise<ChunkResult> => {
         const text = said[source.slice(3)] ?? '';
-        return Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text }], title: null, lastPrompt: text, claudeRecap: null, notes: [], position: { cursor: 100, tail: null }, grew: true });
+        return Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf(text) }], title: null, lastPrompt: textOf(text), claudeRecap: null, notes: [], position: { cursor: cursorOf(100), tail: null }, grew: grewOf(true) });
     },
 };
 

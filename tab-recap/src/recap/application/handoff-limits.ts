@@ -1,5 +1,6 @@
 import { CLOSED_SHOWN_MS } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-input.ts';
 import { RECAP_WAIT_MS } from './recap-wait.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 export const HANDOFF_BUDGET_BYTES = 16_384;
 export const HANDOFF_DONE_SHOWN = 15;
@@ -8,7 +9,7 @@ export const HANDOFF_CLOSED_SHOWN = 15;
 export const HANDOFF_CLOSED_WINDOW_MS = CLOSED_SHOWN_MS;
 export const HANDOFF_OBSERVATIONS = 20;
 export const HANDOFF_OBSERVE_MS = 1_000;
-export const HANDOFF_PROMPT_TAIL_BYTES = 65_536;
+export const HANDOFF_PROMPT_TAIL_BYTES = countOf(65_536);
 export const HANDOFF_PREFIX_CODE_POINTS = 400;
 export const HANDOFF_SETTLE_MAX_MS = 60_000;
 export const HANDOFF_TAKE_BOUND_MS = 30_000;

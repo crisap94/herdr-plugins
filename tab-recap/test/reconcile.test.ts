@@ -12,7 +12,7 @@ import { agentOf, requestOf } from '#test/support.ts';
 import { dtdTest, validate } from '#test/xmllint.ts';
 
 const AT = Date.parse('2026-10-06T03:01:00Z');
-const entry = (text: string, row: number): Entry => ({ role: 'agent', text, at: AT + row * 1000 });
+const entry = (text: string, row: number): Entry => ({ role: 'agent', text: textOf(text), at: instant(AT + row * 1000) });
 const one = (over: Partial<InputCandidate> = {}): InputCandidate => ({ section: 'done', text: textOf('Added retry with backoff'), why: null, ref: textOf('src/upload.ts'), at: instant(AT), anchor: textOf('Added a retry'), agent: textOf('a1'), flagged: brand<boolean, 'Flagged'>(false), ...over });
 
 test('the transcript is clipped to its newest entries within CONTEXT_CHARS (the newest always kept); the ledger and the rest are untouched', () => {

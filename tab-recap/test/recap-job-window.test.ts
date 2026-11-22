@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId, agentKind } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -19,6 +19,7 @@ import type { ChunkResult, Entry, Located, PromptResult, Transcripts } from '#sr
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
+import { cursorOf, sourcePathOf, grewOf } from '#src/ports/transcripts.ts';
 
 const WINDOW_60S: Debounce = debounceOf('60000');
 
@@ -43,15 +44,15 @@ function harness(settings: Settings, causes: string[], answer?: () => Promise<Wr
     const reads: number[] = [];
     const sources: string[] = [];
     const reader: Transcripts = {
-        agent: 'claude',
+        agent: agentKind('claude'),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-        locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: `/t/${lane.pane}` }),
+        locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
         latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
         read: (source, from): Promise<ChunkResult> => {
             reads.push(from.cursor);
             sources.push(source);
-            const entries: Entry[] = settings.entries === false ? [] : [{ role: 'user', text: 'migrate victoria' }];
-            return Promise.resolve({ kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: reads.length, tail: null }, grew: settings.grew ?? true });
+            const entries: Entry[] = settings.entries === false ? [] : [{ role: 'user', text: textOf('migrate victoria') }];
+            return Promise.resolve({ kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(reads.length), tail: null }, grew: grewOf(settings.grew ?? true) });
         },
     };
     const store = memoryStore();

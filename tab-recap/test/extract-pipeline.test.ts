@@ -28,9 +28,9 @@ const ground: Ground = {
     grounds: [{ key: textOf('t1'), tab: textOf('w1:t1'), shown: numbering.shown.get(textOf('t1')) ?? new Map(), open: [open], closedLately: [], source: textOf(foldedOf('Add retries to the uploader Added a retry with backoff in src/upload.ts. git commit -m "uploader: retry"')), language: textOf('en'), agents: [] }],
 };
 const SMALL: readonly Entry[] = [
-    { role: 'user', text: 'Add retries to the uploader', at: START },
-    { role: 'agent', text: 'Added a retry with backoff in src/upload.ts.', at: START + 60_000 },
-    { role: 'tool', kind: 'shell', text: 'git commit -m "uploader: retry"', at: START + 120_000 },
+    { role: 'user', text: textOf('Add retries to the uploader'), at: instant(START) },
+    { role: 'agent', text: textOf('Added a retry with backoff in src/upload.ts.'), at: instant(START + 60_000) },
+    { role: 'tool', kind: 'shell', text: textOf('git commit -m "uploader: retry"'), at: instant(START + 120_000) },
 ];
 const request = (entries: readonly Entry[]): RecapRequest => requestOf({ entries, ledgers: [{ task: null, facts: numbering.ledgers[0]?.facts ?? [] }] });
 const OPS = JSON.stringify({ ops: [{ op: 'add', section: 'done', text: 'Added retry with backoff', anchor: 'Added a retry with backoff in src/upload.ts' }] });

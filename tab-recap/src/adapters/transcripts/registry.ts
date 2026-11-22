@@ -4,7 +4,8 @@ import { OpencodeTranscripts } from './opencode/transcripts.ts';
 import { ScreenTranscripts } from './screen.ts';
 import type { ScreenWants } from './screen.ts';
 import type { Screens } from '#src/ports/screens.ts';
-import { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
+import { TranscriptRegistry, type TranscriptReaders } from '#src/ports/transcript-registry.ts';
+import { agentKind, type AgentKind } from '#src/recap/domain/ids.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
 import { supported } from '#src/ports/capability.ts';
 import type { Capability } from '#src/ports/capability.ts';
@@ -13,7 +14,7 @@ import { capabilityWording } from '#src/ports/capability-reasons.ts';
 import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 
 export { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 export { readerKindOf, replayKindOf } from './legacy.ts';
@@ -33,11 +34,11 @@ export const IN_FLIGHT_CAPABILITIES = {
     opencode: supported('reader'),
 } satisfies Readonly<Record<RegisteredKind, Capability<'reader', InFlightWhy>>>;
 
-function readersOf(readers: ReaderSet): Readonly<Record<string, Transcripts>> {
-    return Object.fromEntries(Object.entries(readers).flatMap(([kind, capability]) => capability.kind === 'supported' ? [[kind, capability.value()]] : []));
+function readersOf(readers: ReaderSet): TranscriptReaders {
+    return new Map(Object.entries(readers).flatMap(([kind, capability]): [AgentKind, Transcripts][] => capability.kind === 'supported' ? [[agentKind(kind), capability.value()]] : []));
 }
 
-function unavailableReason(kind: string): string {
+function unavailableReason(kind: AgentKind): Text {
     const subject = must(parseText(kind));
     const registered = registeredKindOf(kind);
     if (registered === null) return capabilityWording('history-unavailable', subject);
@@ -57,5 +58,5 @@ export function replayTranscriptRegistry(): TranscriptRegistry {
     const claude = READERS.claude;
     const codex = READERS.codex;
     if (claude.kind !== 'supported' || codex.kind !== 'supported') throw new Error('Replay readers are unavailable');
-    return new TranscriptRegistry({ claude: claude.value(), codex: codex.value() }, null, unavailableReason);
+    return new TranscriptRegistry(new Map<AgentKind, Transcripts>([[agentKind('claude'), claude.value()], [agentKind('codex'), codex.value()]]), null, unavailableReason);
 }

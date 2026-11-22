@@ -20,8 +20,8 @@ const input: RecapInput = {
     agents: [],
     tasks: [],
     ledgers: [],
-    notes: [{ agent: textOf('claude'), kind: 'compaction', at: null, text: 'Build is green' }],
-    transcripts: [{ agent: textOf('claude'), entries: [{ role: 'user', text: 'Fix the CI' }] }],
+    notes: [{ agent: textOf('claude'), kind: 'compaction', at: null, text: textOf('Build is green') }],
+    transcripts: [{ agent: textOf('claude'), entries: [{ role: 'user', text: textOf('Fix the CI') }] }],
 };
 
 const request: RecapRequest = { input, language: textOf('en'), previousLanguage: textOf('en') };

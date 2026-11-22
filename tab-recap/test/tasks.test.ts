@@ -14,7 +14,7 @@ import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { touchedFiles } from '#src/recap/application/lane-hints.ts';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId, agentKind } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { keptGrouping } from '#src/recap/domain/grouping.ts';
@@ -33,6 +33,7 @@ import { agentOf, firstTask, oneTask, requestOf } from '#test/support.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
+import { cursorOf, sourcePathOf, grewOf } from '#src/ports/transcripts.ts';
 
 const sections = (goal: string, rest: Partial<typeof NO_SECTIONS> = {}): typeof NO_SECTIONS => ({ ...NO_SECTIONS, goal, ...rest });
 const taskOf = (id: string, name: string, lanes: readonly string[], goal = id): RecapTask => ({ id, name, lanes, sections: sections(goal), markdown: `## Goal\n${goal}` });
@@ -86,7 +87,7 @@ test('grouping: a tab that had one unnamed task and gets a lane elsewhere names 
 });
 
 test('the document lists the current tasks only when the tab has several lanes, and carries the hints and one ledger per task', () => {
-    const one = requestOf({ entries: [{ role: 'user', text: 'x' }] });
+    const one = requestOf({ entries: [{ role: 'user', text: textOf('x') }] });
     assert.ok(!message(one).includes('<current_tasks>') && !instructions(one).includes('<ledger task='), 'one agent: no grouping');
     const many = requestOf({
         agents: [agentOf('a1', { cwd: brand<string, 'Directory'>('/r/pay'), repo: brand<string, 'Directory'>('/r/pay'), branch: textOf('feat/v2'), files: [textOf('src/client.ts')] }), agentOf('a2', { kind: brand<string, 'AgentKind'>('codex'), cwd: brand<string, 'Directory'>('/tmp') })],
@@ -102,21 +103,21 @@ test('the document lists the current tasks only when the tab has several lanes, 
     assert.ok(!message({ ...many, input: { ...many.input, tasks: [] } }).includes('<current_tasks>'), 'no grouping yet: none shown');
 });
 
-const tool = (kind: 'edit' | 'read' | 'shell', text: string): Entry => ({ role: 'tool', kind, text });
+const tool = (kind: 'edit' | 'read' | 'shell', text: string): Entry => ({ role: 'tool', kind, text: textOf(text) });
 
 test('files touched are the distinct paths of the edit calls, the most recent last, at most five', () => {
-    assert.deepEqual(touchedFiles([tool('edit', 'a.ts'), tool('read', 'r.ts'), tool('edit', 'b.ts'), tool('edit', 'a.ts'), { role: 'agent', text: 'no.ts' }, tool('shell', 'npm test')]), ['b.ts', 'a.ts']);
+    assert.deepEqual(touchedFiles([tool('edit', 'a.ts'), tool('read', 'r.ts'), tool('edit', 'b.ts'), tool('edit', 'a.ts'), { role: 'agent', text: textOf('no.ts') }, tool('shell', 'npm test')]), ['b.ts', 'a.ts']);
     assert.equal(touchedFiles(Array.from({ length: 9 }, (_, i) => tool('edit', `f${i}.ts`))).length, 5);
 });
 
 const transcripts: Transcripts = {
-    agent: 'claude',
+    agent: agentKind('claude'),
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-    locate: (lane): Promise<Located> => Promise.resolve({ kind: 'located', source: `/t/${lane.pane}` }),
+    locate: (lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
     read: (source: string): Promise<ChunkResult> => Promise.resolve({
-        kind: 'chunk', entries: [{ role: 'tool', kind: 'edit', text: `${source.slice(3)}.ts` }, { role: 'agent', text: `work in ${source.slice(3)}` }],
-        title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 5, tail: null }, grew: true,
+        kind: 'chunk', entries: [{ role: 'tool', kind: 'edit', text: textOf(`${source.slice(3)}.ts`) }, { role: 'agent', text: textOf(`work in ${source.slice(3)}`) }],
+        title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(5), tail: null }, grew: grewOf(true),
     }),
 };
 

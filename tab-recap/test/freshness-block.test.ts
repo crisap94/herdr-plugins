@@ -5,11 +5,13 @@ import type { FreshnessInput } from '#src/recap/application/freshness-block.ts';
 import { TRANSCRIPT_READ_BUDGET_BYTES } from '#src/recap/application/transcript-read-budget.ts';
 import { registryWith } from './fakes/transcript-registry.ts';
 import type { LaneCursor, LastRun, RecapRecords } from '#src/ports/recap-records.ts';
-import { UNREAD } from '#src/ports/transcripts.ts';
+import { UNREAD, cursorOf, grewOf } from '#src/ports/transcripts.ts';
 import type { ChunkResult, Entry, Position, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { SCREEN_PREFIX } from '#src/ports/screens.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
 
 const TAB = 'w1:t1';
 const LAST: LastRun = { at: 1_000, cause: 'turn-ended' };
@@ -23,20 +25,20 @@ interface Asked {
 
 function reader(entries: readonly Entry[] | null, asked: Asked[] = []): Transcripts {
     return {
-        agent: 'claude',
+        agent: agentKind('claude'),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
         locate: () => Promise.resolve(unknown({ why: 'not-found', what: 'x' })),
         latestPrompt: () => Promise.resolve({ kind: 'prompt', text: null }),
         read: (source, was, budget): Promise<ChunkResult> => {
             asked.push({ source, was, budget });
-            return Promise.resolve(entries === null ? unknown({ why: 'unreadable', detail: causeOf(source) }) : { kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 99, tail: null }, grew: true });
+            return Promise.resolve(entries === null ? unknown({ why: 'unreadable', detail: causeOf(source) }) : { kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(99), tail: null }, grew: grewOf(true) });
         },
     };
 }
 
-const user = (text: string): Entry => ({ role: 'user', text });
-const agent = (text: string): Entry => ({ role: 'agent', text });
-const tool = (text: string): Entry => ({ role: 'tool', text, kind: 'edit' });
+const user = (text: string): Entry => ({ role: 'user', text: textOf(text) });
+const agent = (text: string): Entry => ({ role: 'agent', text: textOf(text) });
+const tool = (text: string): Entry => ({ role: 'tool', text: textOf(text), kind: 'edit' });
 
 const input = (overrides: Partial<FreshnessInput> = {}): FreshnessInput => ({
     tab: TAB, agent: 'claude', source: 'session-a.jsonl', cursor: null, status: 'idle', refresh: 'not-requested', ...overrides,
@@ -65,7 +67,7 @@ test('newer prompts: the user prompts after the cursor are counted as at least N
 });
 
 test('newer prompts: a queued prompt is a user prompt and counts as one', async () => {
-    const outcome = await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts: registryWith({ claude: reader([agent('a'), { role: 'user', text: 'later', queued: true }]) }) }, input({ cursor: cursorAt('session-a.jsonl', 40, 'tail') }));
+    const outcome = await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts: registryWith({ claude: reader([agent('a'), { role: 'user', text: textOf('later'), queued: true }]) }) }, input({ cursor: cursorAt('session-a.jsonl', 40, 'tail') }));
     assert.equal(outcome.kind, 'fresh');
     assert.deepEqual(outcome.freshness.newerPrompts, { kind: 'at-least', count: 1 });
 });

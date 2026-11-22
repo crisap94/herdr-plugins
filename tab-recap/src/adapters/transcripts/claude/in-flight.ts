@@ -4,7 +4,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { backgroundItem, backgroundLabel, backgroundTool } from '#src/recap/domain/in-flight.ts';
+import { backgroundItem, backgroundLabel, backgroundTool, NO_RUNNING, runningOf } from '#src/recap/domain/in-flight.ts';
 import type { BackgroundItem } from '#src/recap/domain/in-flight.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
@@ -32,5 +32,5 @@ export function claudeInFlightOf(lines: readonly Text[], truncated: Presence, sp
 export function answerOf(scan: TailScan | null, truncated: Presence, split: BackgroundSplit): InFlightResult {
     if (scan === null) return unknown({ why: 'unreadable', detail: causeOf(must(parseText('no line of the transcript tail parses'))) });
     if (truncated === 'present' && scan.unseen === 'present') return unknown({ why: 'unreadable', detail: causeOf(must(parseText('the tail ends work that started before it'))) });
-    return split.kind === 'separates' ? { kind: 'in-flight', count: 0, background: scan.items } : { kind: 'in-flight', count: scan.count, background: [] };
+    return split.kind === 'separates' ? { kind: 'in-flight', count: NO_RUNNING, background: scan.items } : { kind: 'in-flight', count: runningOf(scan.count), background: [] };
 }

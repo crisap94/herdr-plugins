@@ -6,7 +6,7 @@ import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { createEngine, type Engine, type EnginePlugs } from '#src/recap/application/engine.ts';
 import { RecapJob, type RecapJobDeps } from '#src/recap/application/recap-job.ts';
 import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId, agentKind } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -20,6 +20,7 @@ import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import type { KeepInput } from '#src/recap/application/recap-job.ts';
 import type { Text } from '#src/recap/domain/text.ts';
+import { cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
 
 const TAB = 'w1:t1';
 const lanes: readonly Lane[] = [
@@ -28,11 +29,11 @@ const lanes: readonly Lane[] = [
 ];
 
 const reader: Transcripts = {
-    agent: 'claude',
+    agent: agentKind('claude'),
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-    locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: `/t/${lane.pane}` }),
+    locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
-    read: (source: string): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: `go ${source}` }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 7, tail: null }, grew: true }),
+    read: (source: string): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf(`go ${source}`) }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(7), tail: null }, grew: grewOf(true) }),
 };
 
 interface World {

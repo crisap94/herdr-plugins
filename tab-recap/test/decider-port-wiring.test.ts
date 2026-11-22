@@ -12,6 +12,7 @@ import type { BackendId } from '#src/recap/domain/backend.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import { documentOf, noulOf, textOf } from './fakes/decider-fixtures.ts';
+import { duration } from '#src/recap/domain/time.ts';
 
 const WORK = must(parseDirectory('/work'));
 const QUESTIONS: ReadonlyMap<Text, Noul> = new Map([[textOf('q'), noulOf('is it so?', 'yes', 'no')]]);
@@ -62,7 +63,7 @@ async function answered(build: Build, setting: Config): Promise<{ readonly label
         const decider = build(loadConfig(), setting.available, runtime);
         if (decider === null) return { label: null, answer: null };
         const found = await decider.ask(documentOf({}), QUESTIONS);
-        const { tookMs: _ignored, ...rest } = found.kind === 'decided' ? { ...found, answers: Object.fromEntries(found.answers) } : { ...found, tookMs: 0 };
+        const { tookMs: _ignored, ...rest } = found.kind === 'decided' ? { ...found, answers: Object.fromEntries(found.answers) } : { ...found, tookMs: duration(0) };
         return { label: decider.label, answer: { ...rest, posted: posted.length, calls: runtime.calls.length } };
     } finally {
         globalThis.fetch = realFetch;

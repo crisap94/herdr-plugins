@@ -82,7 +82,7 @@ export class HandoffConfirmation {
 
     private async latestOf(lane: Lane): Promise<LatestOf> {
         const current = await this.sessionOf(lane);
-        const reader = this.deps.transcripts.readerFor(String(lane.agent));
+        const reader = this.deps.transcripts.readerFor(lane.agent);
         const located = reader === undefined ? null : await reader.locate(current);
         if (reader === undefined || located === null || located.kind !== 'located') {
             return { lane: current, latest: { kind: 'prompt', text: null } };

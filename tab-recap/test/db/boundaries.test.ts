@@ -6,6 +6,7 @@ import type { LaneMark } from '#src/recap/domain/boundary.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { cursor, memoryStore, must, recordOps, type RunInput } from './support.ts';
 import type { Store } from '#src/adapters/db/database.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 const T0 = Date.parse('2026-10-07T14:00:00Z');
 const MIN = 60_000;
@@ -106,7 +107,7 @@ test('a mark already recorded (the cursor did not move on) is not recorded twice
 test('two compactions in one read are two boundaries, oldest first, two new chapters', () => {
     const store = memoryStore();
     seedTab(store);
-    recordOps(store, run({ at: T0 + 10 * MIN, marks: [claude(T0 + 6 * MIN, { tokensBefore: 39_000, tokensAfter: 3000 }), claude(T0 + 2 * MIN)] }));
+    recordOps(store, run({ at: T0 + 10 * MIN, marks: [claude(T0 + 6 * MIN, { tokensBefore: 39_000, tokensAfter: countOf(3000) }), claude(T0 + 2 * MIN)] }));
     assert.deepEqual(rows(store.db, 'SELECT at, tokens_before FROM boundary_readable ORDER BY at'), [{ at: T0 + 2 * MIN, tokens_before: 800_000 }, { at: T0 + 6 * MIN, tokens_before: 39_000 }]);
     assert.deepEqual(rows(store.db, 'SELECT n FROM chapter ORDER BY n'), [{ n: 1 }, { n: 2 }, { n: 3 }]);
 });
@@ -142,7 +143,7 @@ test('the timeline reads: the breaks oldest first with the mark\'s tokens, else 
     compaction(store.db, T0 + MIN);
     store.db.exec('UPDATE compaction SET tokens_before = 39000, tokens_after = 3000, took_ms = 16000');
     recordOps(store, run({ at: T0 + 3 * MIN, marks: [{ pane: 'w1:p1', at: T0 + 2 * MIN, cursor: 200 }] }));
-    assert.deepEqual(store.boundaries.breaksOf('w1:t1'), [{ kind: 'compacted', at: T0 + 2 * MIN, trigger: 'plugin', tokensBefore: 39_000, tokensAfter: 3000, tookMs: 16_000 }]);
+    assert.deepEqual(store.boundaries.breaksOf('w1:t1'), [{ kind: 'compacted', at: T0 + 2 * MIN, trigger: 'plugin', tokensBefore: 39_000, tokensAfter: countOf(3000), tookMs: 16_000 }]);
     assert.equal(store.boundaries.lastBreakAt(tabId('w1:t1'), 'w1:p1'), T0 + 2 * MIN);
     assert.equal(store.boundaries.lastBreakAt(tabId('w1:t1'), 'w1:p2'), null);
     assert.deepEqual([memoryStore().boundaries.breaksOf('w9:t9'), memoryStore().boundaries.chapterCount('w9:t9')], [[], 0]);

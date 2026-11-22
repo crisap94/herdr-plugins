@@ -7,6 +7,7 @@ import * as root from '@stateforge-labs/session-ledger';
 import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import * as timing from '@stateforge-labs/session-ledger/compaction-timing';
 import { notFound } from '@stateforge-labs/session-ledger/testkit';
+import { sourcePathOf } from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
 
 const packageRoot = join(dirname(new URL(import.meta.url).pathname), '..', '..');
 const surfaceDir = join(packageRoot, 'test', 'e2e', 'surface');
@@ -72,8 +73,8 @@ test('the six values of the facade step keep the behaviour of main', () => {
     assert.deepEqual(root.FULL_WRITER_VIEW, { kind: 'full' });
     assert.deepEqual(root.SECTIONS.map((section) => section.id), ['goal', 'now', 'needs', 'done', 'decisions', 'next', 'links']);
     assert.equal(root.sectionOf(textOf('## Waiting on you')), 'needs');
-    assert.equal(root.isScreenSource('screen:1'), true);
-    assert.equal(root.isScreenSource('/a.jsonl'), false);
+    assert.equal(root.isScreenSource(sourcePathOf('screen:1')), true);
+    assert.equal(root.isScreenSource(sourcePathOf('/a.jsonl')), false);
     assert.equal(typeof root.saying({ why: 'not-found', what: 'transcript' }), 'string');
 });
 

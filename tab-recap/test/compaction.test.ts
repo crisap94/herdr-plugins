@@ -1,4 +1,4 @@
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
@@ -13,7 +13,7 @@ import { targetsOf } from '#src/recap/application/compaction-targets.ts';
 import { targetOf } from '#src/recap/domain/compaction.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
-import { duration } from '#src/recap/domain/time.ts';
+import { duration, instant } from '#src/recap/domain/time.ts';
 import type { Mark } from '#src/ports/transcripts.ts';
 import type { Agents, AgentState, LineBehavior, PromptBehavior, PromptWait, Prompted } from '#src/ports/agents.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
@@ -31,6 +31,7 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 const lane = (pane: string, agent: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent });
 const LANES = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'gemini')];
@@ -74,8 +75,8 @@ function fleet(statuses: Record<string, string>, blocked: readonly string[] = []
 interface Briefing { readonly documents: string[]; readonly answer: string | null; readonly lastBreak?: number; readonly covered?: boolean }
 
 const NOW = Date.parse('2026-10-07T10:00:00Z');
-const compacted: Mark = { kind: 'compacted', at: NOW + 5000 };
-const failed: Mark = { kind: 'compaction-failed', at: NOW + 5000 };
+const compacted: Mark = { kind: 'compacted', at: instant(NOW + 5000) };
+const failed: Mark = { kind: 'compaction-failed', at: instant(NOW + 5000) };
 
 interface Clock { t: number }
 interface Slice { readonly settled: boolean; readonly after?: number }
@@ -112,7 +113,7 @@ function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPla
             job: () => (briefing === null ? null : 'codex · gpt-6-luna · high'),
             write: (document) => { world.events.push('brief'); briefing?.documents.push(document); const answer = briefing?.answer ?? null; return Promise.resolve({ text: answer === null ? null : must(parseText(answer)), why: briefing?.answer === null ? must(parseText('the answer is empty')) : null }); },
         },
-        recent: () => Promise.resolve([{ role: 'user', text: 'run the tests' }]),
+        recent: () => Promise.resolve([{ role: 'user', text: textOf('run the tests') }]),
         now: () => world.clock?.() ?? NOW,
         marks: world.marks ?? (() => { const shown = reads[Math.min(looked, reads.length - 1)] ?? []; looked += 1; return Promise.resolve(shown); }),
         pause: () => Promise.resolve(),
@@ -297,7 +298,7 @@ test('no brief written (the job is on but nothing came): the template is used an
 
 test('claude: a compaction its records confirm is announced with the numbers they gave; the guidance is typed once', async () => {
     const world = fleet({ 'w1:p1': 'idle' });
-    await flow(world, 'focused', 'w1:p1', null, [[{ ...compacted, tokensBefore: 39532, tokensAfter: 3057, tookMs: 15588 }]]).run({ tab: 'w1:t1', pane: null, note: null });
+    await flow(world, 'focused', 'w1:p1', null, [[{ ...compacted, tokensBefore: countOf(39532), tokensAfter: countOf(3057), tookMs: duration(15588) }]]).run({ tab: 'w1:t1', pane: null, note: null });
     assert.equal(world.typed.length, 1);
     assert.deepEqual(world.typed[0]?.lineBehavior, { enterDelay: duration(300) });
     assert.equal(world.toasts.at(-1), 'Compact claude | claude compacted: 39.5k → 3.1k tokens in 16 s');
@@ -322,7 +323,7 @@ test('claude: failing twice is said, and not tried a third time', async () => {
 
 test('nothing in the records either way: not retried, and the operator is told it is not confirmed; marks from before the command do not count', async () => {
     const world = fleet({ 'w1:p1': 'idle' });
-    await flow(world, 'focused', 'w1:p1', null, [[{ kind: 'compaction-failed', at: NOW - 60_000 }, { kind: 'compacted', at: null }]]).run({ tab: 'w1:t1', pane: null, note: null });
+    await flow(world, 'focused', 'w1:p1', null, [[{ kind: 'compaction-failed', at: instant(NOW - 60_000) }, { kind: 'compacted', at: null }]]).run({ tab: 'w1:t1', pane: null, note: null });
     assert.equal(world.typed.length, 1);
     assert.match(world.toasts.at(-1) ?? '', /could not confirm the compaction/);
 });
@@ -351,7 +352,7 @@ test('the record: a claude compaction with a written brief walks briefing → co
     const seen: string[] = [];
     const briefing = { documents: [] as string[], answer: 'We kept SQLite.' };
     const looking: Agents = { ...world.agents, typeLine: (pane, line, behavior) => { seen.push(`typing: ${records(world)[0]?.stage}`); return world.agents.typeLine(pane, line, behavior); } };
-    const flowing = flow({ ...world, agents: looking }, 'focused', 'w1:p1', { ...briefing, get answer() { seen.push(`writing: ${records(world)[0]?.stage}`); return briefing.answer; } }, [[{ ...compacted, tokensBefore: 900, tokensAfter: 100, tookMs: 4000 }]]);
+    const flowing = flow({ ...world, agents: looking }, 'focused', 'w1:p1', { ...briefing, get answer() { seen.push(`writing: ${records(world)[0]?.stage}`); return briefing.answer; } }, [[{ ...compacted, tokensBefore: countOf(900), tokensAfter: countOf(100), tookMs: duration(4000) }]]);
     await flowing.run({ tab: 'w1:t1', pane: null, note: null });
     assert.deepEqual([...new Set(seen)], ['writing: briefing', 'typing: compacting']);
     assert.deepEqual(records(world).map((r) => [r.stage, r.agent, r.pane, r.brief, r.writer, r.templateWhy, r.tokensBefore, r.tokensAfter, r.tookMs, r.retried, r.finishedAt === NOW]), [['compacted', 'claude', 'w1:p1', 'written', 'codex · gpt-6-luna · high', null, 900, 100, 4000, false, true]]);
@@ -409,7 +410,7 @@ test('the record: an agent that turns busy while the brief is written is skipped
 
 test('the toasts are two: Writing what claude should keep… and the end with the numbers; a skip is one', async () => {
     const world = fleet({ 'w1:p1': 'idle' });
-    await flow(world, 'focused', 'w1:p1', { documents: [], answer: 'We kept SQLite.' }, [[{ ...compacted, tokensBefore: 39532, tokensAfter: 3057, tookMs: 15588 }]]).run({ tab: 'w1:t1', pane: null, note: null });
+    await flow(world, 'focused', 'w1:p1', { documents: [], answer: 'We kept SQLite.' }, [[{ ...compacted, tokensBefore: countOf(39532), tokensAfter: countOf(3057), tookMs: duration(15588) }]]).run({ tab: 'w1:t1', pane: null, note: null });
     assert.deepEqual(world.toasts, ['Compact claude | Writing what claude should keep…', 'Compact claude | claude compacted: 39.5k → 3.1k tokens in 16 s']);
     const busy = fleet({ 'w1:p1': 'working' });
     await flow(busy).run({ tab: 'w1:t1', pane: null, note: null });
@@ -658,7 +659,7 @@ test('The turn ends before the compaction: the record is queued while the turn r
     const world = fleet({ 'w1:p1': 'working' });
     const clock = { t: NOW };
     const seen: boolean[] = [];
-    const base = queuing(world, clock, [{ settled: true }, { settled: true, after: 40_000 }], (at) => (at >= NOW + 40_000 ? [{ kind: 'compacted', at: NOW + 40_000 }] : []));
+    const base = queuing(world, clock, [{ settled: true }, { settled: true, after: 40_000 }], (at) => (at >= NOW + 40_000 ? [{ kind: 'compacted', at: instant(NOW + 40_000) }] : []));
     const marks = (): Promise<readonly Mark[]> => { seen.push(records(world)[0]?.queued === true); return base.marks(); };
     await flow({ ...base, marks }).run({ tab: 'w1:t1', pane: null, note: null });
     assert.equal(world.typed.length, 1, 'typed once');
@@ -684,7 +685,7 @@ test('a failed mark after a queued compaction: the retry is typed once, and the 
     const queuedAtTyping: boolean[] = [];
     const base = queuing(world, clock, [], () => []);
     const agents: Agents = { ...world.agents, typeLine: (pane, line, behavior) => { queuedAtTyping.push(records(world)[0]?.queued === true); return world.agents.typeLine(pane, line, behavior); } };
-    const marks = (): Promise<readonly Mark[]> => Promise.resolve(world.typed.length >= 2 ? [{ kind: 'compacted', at: clock.t }] : [{ kind: 'compaction-failed', at: NOW + 5000 }]);
+    const marks = (): Promise<readonly Mark[]> => Promise.resolve(world.typed.length >= 2 ? [{ kind: 'compacted', at: instant(clock.t) }] : [{ kind: 'compaction-failed', at: instant(NOW + 5000) }]);
     await flow({ ...base, agents, marks }).run({ tab: 'w1:t1', pane: null, note: null });
     assert.equal(world.typed.length, 2, 'typed for the retry');
     assert.deepEqual(queuedAtTyping, [true, false]);

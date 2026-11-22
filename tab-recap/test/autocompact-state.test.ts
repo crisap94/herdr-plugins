@@ -44,8 +44,8 @@ test('every question has a yes and a no fixture holding exactly the state fields
 
 test('the state: last prompt and reply, the last six turns (tools as kind: command, clipped), the newest open goal, at most 12 open now/next/needs', () => {
     const entries: Entry[] = [
-        { role: 'user', text: 'first' }, { role: 'agent', text: 'a1' }, { role: 'user', text: 'second' },
-        { role: 'tool', text: 'npm test', kind: 'shell' }, { role: 'tool', text: 'x'.repeat(900), kind: 'edit' }, { role: 'agent', text: 'done' }, { role: 'tool', text: 'ls' },
+        { role: 'user', text: textOf('first') }, { role: 'agent', text: textOf('a1') }, { role: 'user', text: textOf('second') },
+        { role: 'tool', text: textOf('npm test'), kind: 'shell' }, { role: 'tool', text: textOf('x'.repeat(900)), kind: 'edit' }, { role: 'agent', text: textOf('done') }, { role: 'tool', text: textOf('ls') },
     ];
     const state = autocompactState(entries, [fact('goal', 'new goal'), fact('goal', 'old goal'), fact('now', 'n1'), fact('decisions', 'd'), fact('next', 'x1', { state: 'closed', closedAt: 5 }), fact('needs', 'q1')]);
     assert.equal(state.last_prompt, 'second');

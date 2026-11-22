@@ -6,6 +6,8 @@ import { queuedOutcomeOf, verdictOf } from '#src/recap/application/compaction-ou
 import type { QueuedDeps } from '#src/recap/application/compaction-outcome.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 const row = (fields: Record<string, unknown>): string => JSON.stringify({ timestamp: '2026-10-07T10:00:05Z', ...fields });
 const AT = Date.parse('2026-10-07T10:00:05Z');
@@ -19,22 +21,22 @@ test('claude: a compact_boundary row is a compaction; an `Error during compactio
         row({ type: 'assistant', message: { content: [{ type: 'text', text: 'Error during compaction would be a funny thing to say' }] } }),
         'not json',
     ]);
-    assert.deepEqual(marks, [{ kind: 'compacted', at: AT, tokensBefore: 100, trigger: 'manual' }, { kind: 'compaction-failed', at: AT }, { kind: 'compaction-failed', at: AT }]);
+    assert.deepEqual(marks, [{ kind: 'compacted', at: AT, tokensBefore: countOf(100), trigger: 'manual' }, { kind: 'compaction-failed', at: AT }, { kind: 'compaction-failed', at: AT }]);
 });
 
 test('codex: a `compacted` row is a compaction', () => {
-    const { marks } = extractCodex([row({ type: 'response_item', payload: { type: 'message', role: 'user', content: [{ text: 'hi' }] } }), row({ type: 'compacted', payload: { message: '' } })]);
+    const { marks } = extractCodex([row({ type: 'response_item', payload: { type: 'message', role: 'user', content: [{ text: textOf('hi') }] } }), row({ type: 'compacted', payload: { message: '' } })]);
     assert.deepEqual(marks, [{ kind: 'compacted', at: AT }]);
 });
 
 test('the verdict: the newest mark from the command on wins; none, older or undated is unconfirmed', () => {
     const since = instant(AT - 1000);
     assert.equal(verdictOf([], since), 'unconfirmed');
-    assert.equal(verdictOf([{ kind: 'compacted', at: since - 1 }], since), 'unconfirmed');
+    assert.equal(verdictOf([{ kind: 'compacted', at: instant(since - 1) }], since), 'unconfirmed');
     assert.equal(verdictOf([{ kind: 'compacted', at: null }], since), 'unconfirmed');
-    assert.equal(verdictOf([{ kind: 'compacted', at: AT }], since), 'compacted');
-    assert.equal(verdictOf([{ kind: 'compaction-failed', at: AT }], since), 'failed');
-    assert.equal(verdictOf([{ kind: 'compaction-failed', at: AT }, { kind: 'compacted', at: AT + 1 }], since), 'compacted', 'a retry that worked');
+    assert.equal(verdictOf([{ kind: 'compacted', at: instant(AT) }], since), 'compacted');
+    assert.equal(verdictOf([{ kind: 'compaction-failed', at: instant(AT) }], since), 'failed');
+    assert.equal(verdictOf([{ kind: 'compaction-failed', at: instant(AT) }, { kind: 'compacted', at: instant(AT + 1) }], since), 'compacted', 'a retry that worked');
 });
 
 test('a queued compaction: every settle with no mark keeps the wait, the first turn end calls back once, and the bound with no mark is unconfirmed', async () => {
@@ -70,7 +72,7 @@ const queuedWorld = (pushes: readonly Push[], markAt: number | null, unknownSett
                 return Promise.resolve({ kind: 'settled', status: heard.status });
             },
         },
-        marks: () => { markReads.n += 1; return Promise.resolve(markAt !== null && clock.t >= markAt ? [{ kind: 'compacted', at: markAt }] : []); },
+        marks: () => { markReads.n += 1; return Promise.resolve(markAt !== null && clock.t >= markAt ? [{ kind: 'compacted', at: instant(markAt) }] : []); },
         pause: (ms) => { clock.t += ms; return Promise.resolve(); },
         now: () => instant(clock.t),
     };

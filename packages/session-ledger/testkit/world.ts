@@ -19,7 +19,7 @@ import { storiesOf, writerOf, type WrittenAnswer } from './world-fakes.ts';
 import { gateOf, runnerOf, type Behaviour } from './behaviour.ts';
 import { curatorOf, type CuratedAnswer, type CuratorCall } from './scripted-curator.ts';
 import { clockOf, idsOf, sessionsOf, workplacesOf, type LocatedAnswer, type ManualClock, type Probes } from './world-ports.ts';
-import { byteCount, positiveCount, text } from './values.ts';
+import { byteCount, grew, positiveCount, text } from './values.ts';
 
 export type { CuratedAnswer, CuratorCall } from './scripted-curator.ts';
 export type { WrittenAnswer } from './world-fakes.ts';
@@ -76,7 +76,7 @@ const SETTLE_ROUNDS = 20;
 
 const DEFAULT_READ: Behaviour<Chunk> = {
     kind: 'answer',
-    value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: UNREAD, grew: true },
+    value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: UNREAD, grew: grew(true) },
 };
 
 interface Script {

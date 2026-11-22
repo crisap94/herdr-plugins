@@ -41,7 +41,7 @@ import { handoffPlans, SETTLE_SOURCE } from '#src/adapters/capability/handoff-pl
 import type { LocatedBy } from '#src/recap/domain/handoff-plan.ts';
 import { HANDOFF_OBSERVATIONS, HANDOFF_OBSERVE_MS } from '#src/recap/application/handoff-limits.ts';
 import type { Observed } from '#src/recap/domain/compaction.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId, agentKind } from '#src/recap/domain/ids.ts';
 import { policyOf } from '#src/recap/domain/autocompact.ts';
 import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
@@ -53,7 +53,7 @@ import type { DeciderPort } from '#src/ports/decider.ts';
 import type { Harness } from '#src/ports/harness.ts';
 import type { Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { ScreenResult, Screens } from '#src/ports/screens.ts';
-import { UNREAD } from '#src/ports/transcripts.ts';
+import { UNREAD, sourcePathOf } from '#src/ports/transcripts.ts';
 import type { Chunk, ChunkResult, Located, Mark, Transcripts } from '#src/ports/transcripts.ts';
 import { NO_REPOS } from '#test/support.ts';
 import { memoryStore, storeRead } from '#test/db/support.ts';
@@ -69,6 +69,8 @@ import { textOf } from './fakes/decider-fixtures.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
+import { countOf } from '#src/recap/domain/count.ts';
+import { runningOf } from '#src/recap/domain/in-flight.ts';
 
 const runtime = fakeRuntime({ scripts: {} });
 
@@ -105,7 +107,7 @@ function rows(): Row[] {
         kind: 'claude', reader: new ClaudeTranscripts(join(dir, 'claude')),
         empty: lane('claude', { session: 'empty' }), recorded: lane('claude', { session: 'recorded' }), unplaced: lane('claude'),
         observed: { tokens: 3057, peak: 39532, window: null, model: null },
-        marks: [{ kind: 'compacted', at: Date.parse('2026-10-07T16:38:09.490Z'), tokensBefore: 39532, tokensAfter: 3057, tookMs: 15588, trigger: 'manual' }],
+        marks: [{ kind: 'compacted', at: instant(Date.parse('2026-10-07T16:38:09.490Z')), tokensBefore: countOf(39532), tokensAfter: countOf(3057), tookMs: duration(15588), trigger: 'manual' }],
         inFlight: true,
         prompt: 'keep going',
         compactable: true,
@@ -115,20 +117,20 @@ function rows(): Row[] {
     const day = join(codexRoot, today());
     mkdirSync(day, { recursive: true });
     writeFileSync(join(day, 'rollout-empty.jsonl'), `${JSON.stringify({ type: 'session_meta', payload: { cwd: '/empty' } })}\n`);
-    const prompt = { type: 'response_item', timestamp: '2026-10-06T13:08:00.000Z', payload: { type: 'message', role: 'user', content: [{ text: 'keep going' }] } };
+    const prompt = { type: 'response_item', timestamp: '2026-10-06T13:08:00.000Z', payload: { type: 'message', role: 'user', content: [{ text: textOf('keep going') }] } };
     writeFileSync(join(day, 'rollout-recorded.jsonl'), [JSON.stringify({ type: 'session_meta', payload: { cwd: '/repo' } }), JSON.stringify(prompt), ...fixtureLines('codex-compacted.jsonl')].join('\n') + '\n');
     out.push({
         kind: 'codex', reader: new CodexTranscripts(codexRoot),
         empty: lane('codex', { cwd: '/empty' }), recorded: lane('codex', { cwd: '/repo' }), unplaced: lane('codex'),
         observed: { tokens: 4617, peak: 4617, window: 258_400, model: null },
-        marks: [{ kind: 'compacted', at: Date.parse('2026-10-06T13:09:05.181Z'), tokensBefore: 17133, tokensAfter: 4617 }],
+        marks: [{ kind: 'compacted', at: instant(Date.parse('2026-10-06T13:09:05.181Z')), tokensBefore: countOf(17133), tokensAfter: countOf(4617) }],
         inFlight: true,
         prompt: 'keep going',
         compactable: true,
     });
 
     const database = opencodeFixture(dir);
-    database.add({ id: 'm1', session: 'ses_new', role: 'user', updated: 100, parts: [{ type: 'text', text: 'keep going' }] });
+    database.add({ id: 'm1', session: 'ses_new', role: 'user', updated: 100, parts: [{ type: 'text', text: textOf('keep going') }] });
     const created = 1_790_000_009_000;
     database.add({ id: 'm2', session: 'ses_new', role: 'assistant', updated: 120, data: { 'summary': true, mode: 'compaction', providerID: 'acme', modelID: 'big-1', time: { created, completed: created + 7000 }, tokens: { input: 900, output: 80, cache: { read: 100, write: 20 } } }, parts: [{ type: 'text', text: '## Goal\nRename.' }] });
     database.close();
@@ -136,7 +138,7 @@ function rows(): Row[] {
         kind: 'opencode', reader: new OpencodeTranscripts(database.db),
         empty: lane('opencode', { cwd: '/elsewhere' }), recorded: lane('opencode', { cwd: '/repo' }), unplaced: lane('opencode'),
         observed: { tokens: 1020, peak: 1020, window: null, model: 'acme/big-1' },
-        marks: [{ kind: 'compacted', at: created, tokensBefore: 1020, tookMs: 7000 }],
+        marks: [{ kind: 'compacted', at: instant(created), tokensBefore: countOf(1020), tookMs: duration(7000) }],
         inFlight: true,
         prompt: 'keep going',
         compactable: true,
@@ -209,19 +211,19 @@ for (const row of ROWS) {
     test(`${row.kind}: a read from the start, then from its own position, finds nothing new the second time`, async () => {
         for (const each of [row.empty, row.recorded]) {
             const source = sourceOf(await row.reader.locate(each));
-            const first = await chunkOf(row.reader.read(source, UNREAD, BUDGET));
-            const second = await chunkOf(row.reader.read(source, first.position, BUDGET));
+            const first = await chunkOf(row.reader.read(sourcePathOf(source), UNREAD, countOf(BUDGET)));
+            const second = await chunkOf(row.reader.read(sourcePathOf(source), first.position, countOf(BUDGET)));
             assert.equal(second.grew, false);
         }
-        const empty = await chunkOf(row.reader.read(sourceOf(await row.reader.locate(row.empty)), UNREAD, BUDGET));
+        const empty = await chunkOf(row.reader.read(sourcePathOf(sourceOf(await row.reader.locate(row.empty))), UNREAD, countOf(BUDGET)));
         assert.equal(empty.entries.length, 0, 'an empty source yields no entries');
     });
 
     test(`${row.kind}: latestPrompt finds the newest user prompt of the recorded source, and reading it moves no position${row.kind === 'gemini' ? '; pins today: a screen cannot say what the operator typed' : ''}`, async () => {
         const source = sourceOf(await row.reader.locate(row.recorded));
-        const before = await chunkOf(row.reader.read(source, UNREAD, BUDGET));
-        assert.deepEqual(await row.reader.latestPrompt(source, BUDGET), { kind: 'prompt', text: row.prompt });
-        const later = await chunkOf(row.reader.read(source, UNREAD, BUDGET));
+        const before = await chunkOf(row.reader.read(sourcePathOf(source), UNREAD, countOf(BUDGET)));
+        assert.deepEqual(await row.reader.latestPrompt(sourcePathOf(source), countOf(BUDGET)), { kind: 'prompt', text: row.prompt });
+        const later = await chunkOf(row.reader.read(sourcePathOf(source), UNREAD, countOf(BUDGET)));
         assert.deepEqual([later.position, later.entries.length], [before.position, before.entries.length]);
     });
 
@@ -231,14 +233,14 @@ for (const row of ROWS) {
             return;
         }
         assert.equal(typeof row.reader.observed, 'function');
-        const empty = await row.reader.observed?.(sourceOf(await row.reader.locate(row.empty)), BUDGET);
+        const empty = await row.reader.observed?.(sourcePathOf(sourceOf(await row.reader.locate(row.empty))), countOf(BUDGET));
         assert.deepEqual(empty, { kind: 'observed', observed: null });
-        const recorded = await row.reader.observed?.(sourceOf(await row.reader.locate(row.recorded)), BUDGET);
+        const recorded = await row.reader.observed?.(sourcePathOf(sourceOf(await row.reader.locate(row.recorded))), countOf(BUDGET));
         assert.deepEqual(recorded, { kind: 'observed', observed: row.observed });
     });
 
     test(`${row.kind}: the compaction marks of the recorded source are the ones the existing tests expect; a screen reports none${row.kind === 'gemini' ? '; pins today: screen has no marks, so a compaction would be unconfirmed but is not reachable today' : ''}`, async () => {
-        const chunk = await chunkOf(row.reader.read(sourceOf(await row.reader.locate(row.recorded)), UNREAD, BUDGET));
+        const chunk = await chunkOf(row.reader.read(sourcePathOf(sourceOf(await row.reader.locate(row.recorded))), UNREAD, countOf(BUDGET)));
         if (row.marks === 'absent') {
             assert.equal(chunk.marks, undefined);
             return;
@@ -258,8 +260,8 @@ for (const row of ROWS) {
         if (capability.kind !== 'supported') throw new Error(`${row.kind} must support in-flight work`);
         const { split } = capability;
         if (split.kind === 'foreground-only') assert.ok(splitReason(split.why, must(parseText(row.kind))).includes(row.kind), `${row.kind} names its foreground-only split`);
-        const found = await capability.read(sourceOf(await row.reader.locate(row.recorded)), BUDGET);
-        assert.deepEqual(found, { kind: 'in-flight', count: 0, background: [] });
+        const found = await capability.read(sourcePathOf(sourceOf(await row.reader.locate(row.recorded))), countOf(BUDGET));
+        assert.deepEqual(found, { kind: 'in-flight', count: runningOf(0), background: [] });
     });
 
     test(`${row.kind}: ${row.compactable ? 'offered a compaction' : 'not offered a compaction'}`, () => {
@@ -278,24 +280,24 @@ test('registered kind flags match transcript and compaction lookup outcomes', ()
     const transcripts = modalTranscriptRegistry();
     const inFlight: Readonly<Record<string, { readonly kind: string }>> = IN_FLIGHT_CAPABILITIES;
     for (const [kind, flags] of Object.entries(REGISTERED_KINDS)) {
-        assert.equal(transcripts.exact(kind) !== undefined, flags.hasTranscript, `${kind} transcript capability`);
+        assert.equal(transcripts.exact(agentKind(kind)) !== undefined, flags.hasTranscript, `${kind} transcript capability`);
         assert.equal(compactionPlans.forKind(kind, '').kind === 'supported', flags.compactable, `${kind} compaction capability`);
         assert.equal(inFlight[kind]?.kind === 'supported', flags.hasTranscript, `${kind} in-flight capability`);
     }
 });
 
 test('gemini history and compaction lookups refuse with their established wording', () => {
-    assert.equal(modalTranscriptRegistry().exact('gemini'), undefined);
+    assert.equal(modalTranscriptRegistry().exact(agentKind('gemini')), undefined);
     assert.deepEqual(compactionPlans.forKind('gemini', ''), { kind: 'unsupported', why: 'no compaction plan is registered for gemini' });
 });
 
 test('unavailable reasons name the kind for the modal and the daemon registries alike', () => {
     const screens: Screens = { readScreen: (): Promise<ScreenResult> => Promise.resolve({ kind: 'screen', text: '', revision: 1, truncated: false }) };
     const daemon = daemonTranscriptRegistry(screens, () => true);
-    assert.equal(modalTranscriptRegistry().unavailableReason('gemini'), 'no reader for gemini');
-    assert.equal(modalTranscriptRegistry().unavailableReason('zed'), 'no reader for zed');
-    assert.equal(daemon.unavailableReason('gemini'), 'no reader for gemini');
-    assert.equal(daemon.unavailableReason('zed'), 'no reader for zed');
+    assert.equal(modalTranscriptRegistry().unavailableReason(agentKind('gemini')), 'no reader for gemini');
+    assert.equal(modalTranscriptRegistry().unavailableReason(agentKind('zed')), 'no reader for zed');
+    assert.equal(daemon.unavailableReason(agentKind('gemini')), 'no reader for gemini');
+    assert.equal(daemon.unavailableReason(agentKind('zed')), 'no reader for zed');
 });
 
 test('a registered kind with no reader in the registry names the missing transcript reader', async () => {
@@ -308,7 +310,7 @@ test('a registered transcript reader without in-flight support shows its declare
     assert.ok(base);
     const why: InFlightReason = 'unregistered-reader';
     const reader: Transcripts = {
-        agent: 'codex', inFlight: { kind: 'unsupported', why }, locate: (placed) => base.reader.locate(placed),
+        agent: agentKind('codex'), inFlight: { kind: 'unsupported', why }, locate: (placed) => base.reader.locate(placed),
         read: (source, was, budget) => base.reader.read(source, was, budget), latestPrompt: (source, budget) => base.reader.latestPrompt(source, budget),
     };
     assert.deepEqual(await skipOf(registryWith({ codex: reader }), base.recorded, 'codex'), { gate: 'in-flight', detail: 'no transcript reader for codex' });

@@ -3,6 +3,7 @@ import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { isCompaction, readRollout, tokenCounts } from '@stateforge-labs/harness-adapters/codex';
 import type { CodexRow } from '@stateforge-labs/harness-adapters/codex';
+import { instant } from '#src/recap/domain/time.ts';
 
 export { codexMarks } from './legacy.ts';
 
@@ -23,7 +24,7 @@ export function marksOf(rows: readonly CodexRow[]): readonly Mark[] {
             }
             last = counted;
         } else if (isCompaction(row)) {
-            marks.push({ mark: { kind: 'compacted', at: row.at, ...(last === undefined ? {} : { tokensBefore: last }) }, waiting: true });
+            marks.push({ mark: { kind: 'compacted', at: row.at === null ? null : instant(row.at), ...(last === undefined ? {} : { tokensBefore: last }) }, waiting: true });
         }
     }
     return marks.map((entry) => entry.mark);

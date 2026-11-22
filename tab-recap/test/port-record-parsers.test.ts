@@ -4,6 +4,7 @@ import { parseCompactionTokensRecord } from '#src/ports/session-source.ts';
 import { parseDisagreementRecord, parsePairRecord, parseVerdictRecord } from '#src/ports/verdicts.ts';
 import { parseGateTally, parseRunEntry, parseRunRecord } from '#src/ports/run-inputs.ts';
 import { parseLaneWebRecord, parseTabLaneRecord, parseTabViewRecord } from '#src/ports/tab-views.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 const web = { base: 'https://gitlab.example/repo', forge: 'gitlab', branch: 'main' };
 
@@ -61,7 +62,7 @@ test('a gate tally parses its instant and gate counts and refuses a negative cou
 });
 
 test('a compaction tokens record parses its counts and origin and refuses an unknown origin', () => {
-    const compaction = { tokensBefore: 900, tokensAfter: null, origin: 'auto' };
+    const compaction = { tokensBefore: countOf(900), tokensAfter: null, origin: 'auto' };
     assert.deepEqual(parseCompactionTokensRecord(compaction), { kind: 'ok', value: compaction });
     assert.equal(parseCompactionTokensRecord({ ...compaction, origin: 'robot' }).kind, 'err');
     assert.equal(parseCompactionTokensRecord(undefined).kind, 'err');

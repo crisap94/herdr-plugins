@@ -7,7 +7,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { isScreenSource } from '#src/ports/transcript-source.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
-import type { Chunk } from '#src/ports/transcripts.ts';
+import { sourcePathOf, type Chunk } from '#src/ports/transcripts.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { numbered, severalOf } from './ledger-input.ts';
@@ -35,7 +35,7 @@ function notesOf(seen: Observed, agent: Text): readonly InputNote[] {
     const all = seen.chunk?.notes ?? [];
     const found: readonly InputNote[] = all.filter((note, index) => !all.slice(index + 1).some((later) => later.kind === note.kind)).map((note) => ({ kind: note.kind, at: note.at, text: note.text, agent }));
     const left = seen.cursor.claudeRecap;
-    return seen.fresh && left !== null && !found.some((note) => note.kind === 'away_summary') ? [{ kind: 'away_summary', at: null, text: left, agent }, ...found] : found;
+    return seen.fresh && left !== null && !found.some((note) => note.kind === 'away_summary') ? [{ kind: 'away_summary', at: null, text: textOf(left), agent }, ...found] : found;
 }
 
 export interface InputWorld {
@@ -55,7 +55,7 @@ export interface Built {
 export async function inputOf(seen: readonly Observed[], world: InputWorld): Promise<Built> {
     const agents: InputAgent[] = await Promise.all(seen.map(async (one, index) => ({
         id: idOf(count(index)), kind: one.lane.agent, label: textOf(one.cursor.title ?? ''), pane: one.lane.pane,
-        source: isScreenSource(one.cursor.transcript) ? 'screen' as const : 'transcript' as const,
+        source: isScreenSource(sourcePathOf(one.cursor.transcript)) ? 'screen' as const : 'transcript' as const,
         ...(await hintOf(one.lane, one.chunk?.entries ?? [], world.repos)),
     })));
     const numbering = numbered(world.facts, agents, severalOf(world.facts.length > 1), world.writerView, world.now);

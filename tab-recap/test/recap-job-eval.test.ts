@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId, agentKind } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -16,13 +16,14 @@ import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import type { KeepInput } from '#src/recap/application/recap-job.ts';
 import type { Text } from '#src/recap/domain/text.ts';
+import { cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
 
 const transcripts: Transcripts = {
-    agent: 'claude',
+    agent: agentKind('claude'),
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-    locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: `/t/${lane.pane}` }),
+    locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
-    read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: 'migrate victoria' }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 100, tail: null }, grew: true }),
+    read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf('migrate victoria') }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(100), tail: null }, grew: grewOf(true) }),
 };
 
 async function recapWith(keepInput: (() => KeepInput) | undefined): Promise<ReturnType<ReturnType<typeof memoryStore>['inputs']['runs']>> {

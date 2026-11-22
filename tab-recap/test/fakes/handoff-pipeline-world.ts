@@ -9,6 +9,9 @@ import type { WorksiteReader } from '#src/ports/worksite-reader.ts';
 import { fact } from './fact-at.ts';
 import { MemoryWorksite } from './worksite-reader.ts';
 import { registryWith } from './transcript-registry.ts';
+import { cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
+import { runningOf } from '#src/recap/domain/in-flight.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 
 export const NOW = Date.parse('2026-10-11T10:00:00Z');
 export const ID = handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2db');
@@ -31,12 +34,12 @@ export const FACTS: readonly Fact[] = [
 ];
 
 export function claudeReader(prompts: number): Transcripts {
-    const entries: Entry[] = Array.from({ length: prompts }, (_, index): Entry => ({ role: 'user', text: `prompt ${index}` }));
+    const entries: Entry[] = Array.from({ length: prompts }, (_, index): Entry => ({ role: 'user', text: brand<string, 'Text'>(`prompt ${index}`) }));
     return {
-        agent: 'claude',
-        inFlight: { kind: 'supported', split: { kind: 'foreground-only', why: 'codex-cells' }, read: async () => ({ kind: 'in-flight', count: 0, background: [] }) },
-        locate: async () => ({ kind: 'located', source: SOURCE_FILE }),
-        read: async () => ({ kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 0, tail: null }, grew: false }),
+        agent: agentKind('claude'),
+        inFlight: { kind: 'supported', split: { kind: 'foreground-only', why: 'codex-cells' }, read: async () => ({ kind: 'in-flight', count: runningOf(0), background: [] }) },
+        locate: async () => ({ kind: 'located', source: sourcePathOf(SOURCE_FILE) }),
+        read: async () => ({ kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(0), tail: null }, grew: grewOf(false) }),
         latestPrompt: async () => ({ kind: 'prompt', text: null }),
     };
 }

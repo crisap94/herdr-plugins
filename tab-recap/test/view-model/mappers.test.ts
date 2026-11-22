@@ -8,6 +8,7 @@ import type { ColumnView } from '#src/recap/render/present.ts';
 import { sessionFactsOf } from '#src/recap/domain/session-facts.ts';
 import { columnTaskOf, columnViewOf, compactionRowOf, recapColumnOf, rowOf, webOf, wordingOf } from '#src/view-model/column.ts';
 import { sessionRecapOf } from '#src/view-model/expanded.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 const lane = (pane: string, status: string): TabLane => ({ pane, agent: 'claude', status, title: `title ${pane}`, cwd: '/repo', web: { base: 'https://gitlab.example/repo', forge: 'gitlab', branch: 'main' } });
 
@@ -27,7 +28,7 @@ const recap: TabRecap = {
 
 const record: CompactionRecord = {
     id: 'cmp_1', tab: 't1', pane: 'p1', agent: 'claude', stage: 'compacting', brief: 'written', writer: 'claude', templateWhy: null,
-    startedAt: 10, stageAt: 20, finishedAt: null, tokensBefore: 900, tokensAfter: null, tookMs: null, retried: false, queued: false, why: null, origin: 'auto',
+    startedAt: 10, stageAt: 20, finishedAt: null, tokensBefore: countOf(900), tokensAfter: null, tookMs: null, retried: false, queued: false, why: null, origin: 'auto',
 };
 
 test('rowOf: the lane fields, its state, and the harness recap from the cursor', () => {
@@ -63,7 +64,7 @@ test('columnTaskOf and recapColumnOf: task lanes become members, the run fields 
 });
 
 test('compactionRowOf: copies the fields the column reads', () => {
-    assert.deepEqual(compactionRowOf(record), { pane: 'p1', stage: 'compacting', brief: 'written', writer: 'claude', why: null, stageAt: 20, queued: false, tokensBefore: 900, tokensAfter: null, tookMs: null });
+    assert.deepEqual(compactionRowOf(record), { pane: 'p1', stage: 'compacting', brief: 'written', writer: 'claude', why: null, stageAt: 20, queued: false, tokensBefore: countOf(900), tokensAfter: null, tookMs: null });
 });
 
 test('wordingOf: hands back the same messages', () => {
@@ -97,6 +98,6 @@ test('columnViewOf: no tab gives no rows, no recap gives no column recap', () =>
 });
 
 test('sessionRecapOf: copies every session fact', () => {
-    const facts = sessionFactsOf({ firstSeen: 1000, now: 4000, runs: { focused: 2 }, compactions: [{ tokensBefore: 10, tokensAfter: 4, origin: 'auto' }], lanes: [], webs: [{ base: 'https://gitlab.example/g/repo', branch: 'dev' }], edits: [{ path: 'a.ts', count: 3 }] });
+    const facts = sessionFactsOf({ firstSeen: 1000, now: 4000, runs: { focused: 2 }, compactions: [{ tokensBefore: countOf(10), tokensAfter: countOf(4), origin: 'auto' }], lanes: [], webs: [{ base: 'https://gitlab.example/g/repo', branch: 'dev' }], edits: [{ path: 'a.ts', count: 3 }] });
     assert.deepEqual(sessionRecapOf(facts), facts);
 });

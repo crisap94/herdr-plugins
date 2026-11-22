@@ -6,6 +6,8 @@ import type { HistoryFact } from '#src/ports/ledger.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { dtdTest, validate } from '#test/xmllint.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 const at = (clock: string): number => Date.parse(`2026-10-07T${clock}:00Z`);
 const NOW = Date.parse('2026-10-07T10:00:00Z');
@@ -17,9 +19,9 @@ const history: readonly HistoryFact[] = [
     { section: 'decisions', text: 'Keep the basket in a cookie', why: 'no account needed', state: 'closed', closedWhy: 'superseded', closedAt: at('09:00'), firstAt: Date.parse('2026-10-05T12:00:00Z'), lastAt: at('09:00') },
 ];
 const recent: readonly Entry[] = [
-    { role: 'user', text: 'run the tests', at: at('09:50') },
-    { role: 'tool', kind: 'shell', text: 'npm test', what: 'Run the tests', at: at('09:51') },
-    { role: 'agent', text: 'Two tests fail.', at: at('09:52') },
+    { role: 'user', text: textOf('run the tests'), at: instant(at('09:50')) },
+    { role: 'tool', kind: 'shell', text: textOf('npm test'), what: textOf('Run the tests'), at: instant(at('09:51')) },
+    { role: 'agent', text: textOf('Two tests fail.'), at: instant(at('09:52')) },
 ];
 const material = (over: Partial<CompactionMaterial> = {}): CompactionMaterial => ({
     agent: { kind: 'claude', label: 'cart', repo: '/home/dev/shop', branch: 'feat/cart' }, note: null,
@@ -36,7 +38,7 @@ const FIXTURES: Readonly<Record<string, CompactionMaterial>> = {
         note: 'a <b>bold</b> & "quoted" ]]> note\u0001',
         history: [{ section: 'decisions', text: '<![CDATA[ x ]]> & <item section="goal">', why: 'a "why" <&>', state: 'closed', closedWhy: 'wrong', closedAt: at('09:00'), firstAt: at('08:00'), lastAt: at('09:00') }],
         agent: { kind: 'claude', label: 'a "label" <&>', repo: null, branch: null },
-        recent: [{ role: 'user', text: '</recent><compaction_input>' }],
+        recent: [{ role: 'user', text: textOf('</recent><compaction_input>') }],
     }),
 };
 

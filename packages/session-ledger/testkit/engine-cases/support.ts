@@ -1,7 +1,7 @@
 import { UNREAD, type Chunk, type Entry, type Recap, type ScopeId } from '@stateforge-labs/session-ledger';
 import type { Behaviour, WrittenAnswer } from '../world.ts';
 import type { EngineWorld } from '../world.ts';
-import { cursorAt } from '../values.ts';
+import { cursorAt, grew, text as textOf } from '../values.ts';
 
 export const panesOf = (world: EngineWorld, tab: ScopeId): readonly string[] => {
     const recap = world.store.records.readRecap(tab);
@@ -21,7 +21,7 @@ export const causeOf = (world: EngineWorld, tab: ScopeId): string | null => {
 
 export const spoken = (text: string): Behaviour<Chunk> => ({
     kind: 'answer',
-    value: { kind: 'chunk', entries: [{ role: 'user', text }], title: null, lastPrompt: text, claudeRecap: null, notes: [], position: UNREAD, grew: true },
+    value: { kind: 'chunk', entries: [{ role: 'user', text: textOf(text) }], title: null, lastPrompt: textOf(text), claudeRecap: null, notes: [], position: UNREAD, grew: grew(true) },
 });
 
 export const countOf = (world: EngineWorld, call: string): number => world.store.calls().filter((item) => item === call).length;
@@ -38,7 +38,7 @@ export const cursorsOf = (world: EngineWorld, tab: ScopeId): readonly { readonly
 
 export const chunkOf = (entries: readonly Entry[]): Behaviour<Chunk> => ({
     kind: 'answer',
-    value: { kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: UNREAD, grew: true },
+    value: { kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: UNREAD, grew: grew(true) },
 });
 
 export const writtenOps = (ops: readonly object[]): Behaviour<WrittenAnswer> => ({
@@ -63,10 +63,10 @@ export const recapOf = (world: EngineWorld, tab: ScopeId): Recap | null => {
 
 export const chunkAt = (cursor: number, over: Partial<Chunk> = {}): Behaviour<Chunk> => ({
     kind: 'answer',
-    value: { kind: 'chunk', entries: [{ role: 'user', text: 'hello' }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorAt(cursor), tail: null }, grew: true, ...over },
+    value: { kind: 'chunk', entries: [{ role: 'user', text: textOf('hello') }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorAt(cursor), tail: null }, grew: grew(true), ...over },
 });
 
 export const quietAt = (cursor: number): Behaviour<Chunk> => ({
     kind: 'answer',
-    value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorAt(cursor), tail: null }, grew: false },
+    value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorAt(cursor), tail: null }, grew: grew(false) },
 });

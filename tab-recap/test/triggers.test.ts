@@ -6,8 +6,10 @@ import type { Stub } from '#src/recap/application/triggers.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { QUOTE_CHARS, quotedIn } from '#src/recap/domain/quote.ts';
 import { longTurn } from '#test/fakes/long-turn.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
-const shell = (text: string): Entry => ({ role: 'tool', kind: 'shell', text, at: 1_000 });
+const shell = (text: string): Entry => ({ role: 'tool', kind: 'shell', text: textOf(text), at: instant(1_000) });
 const kindsOf = (entries: readonly Entry[]): readonly string[] => triggersOf(entries).map((stub) => stub.kind);
 
 test('a shell command that starts a commit, merge, push, tag, pull request, release or merge request is a trigger; others are not', () => {
@@ -17,7 +19,7 @@ test('a shell command that starts a commit, merge, push, tag, pull request, rele
     for (const command of ['git status', 'git log --oneline', 'npm test', 'echo git commit']) {
         assert.deepEqual(kindsOf([shell(command)]), [], command);
     }
-    assert.deepEqual(kindsOf([{ role: 'tool', kind: 'other', text: 'git commit', at: 1 }]), [], 'only a shell call');
+    assert.deepEqual(kindsOf([{ role: 'tool', kind: 'other', text: textOf('git commit'), at: instant(1) }]), [], 'only a shell call');
 });
 
 test('a commit in a chain is found by its own step, the anchor is that step, and a reference to a merge request is kept', () => {
@@ -28,37 +30,37 @@ test('a commit in a chain is found by its own step, the anchor is that step, and
 });
 
 test('an edit is a trigger by its path, once per path', () => {
-    const edits = [1, 2, 3].map((): Entry => ({ role: 'tool', kind: 'edit', text: 'src/a.ts', at: 1 }));
-    assert.deepEqual(triggersOf([...edits, { role: 'tool', kind: 'edit', text: 'src/b.ts', at: 2 }]).map((stub) => [stub.kind, stub.ref]), [['edit', 'src/a.ts'], ['edit', 'src/b.ts']]);
-    assert.deepEqual(kindsOf([{ role: 'tool', kind: 'read', text: 'src/a.ts' }]), []);
+    const edits = [1, 2, 3].map((): Entry => ({ role: 'tool', kind: 'edit', text: textOf('src/a.ts'), at: instant(1) }));
+    assert.deepEqual(triggersOf([...edits, { role: 'tool', kind: 'edit', text: textOf('src/b.ts'), at: instant(2) }]).map((stub) => [stub.kind, stub.ref]), [['edit', 'src/a.ts'], ['edit', 'src/b.ts']]);
+    assert.deepEqual(kindsOf([{ role: 'tool', kind: 'read', text: textOf('src/a.ts') }]), []);
 });
 
 test('an error, a failure, a cross or a traceback anywhere in a turn is a trigger; the anchor is the line, cut to the quote size', () => {
     for (const text of ['TypeError: x is not a function', 'FAIL test/a.test.ts', '✖ 3 tests failed', 'Traceback (most recent call last):']) {
-        assert.deepEqual(kindsOf([{ role: 'agent', text: `fine so far\n${text}\nmore`, at: 1 }]), ['error'], text);
+        assert.deepEqual(kindsOf([{ role: 'agent', text: textOf(`fine so far\n${text}\nmore`), at: instant(1) }]), ['error'], text);
     }
     const long = `${'a '.repeat(200)}Error: boom ${'b '.repeat(200)}`;
-    const [stub] = triggersOf([{ role: 'agent', text: long }]);
+    const [stub] = triggersOf([{ role: 'agent', text: textOf(long) }]);
     assert.ok(stub !== undefined && stub.anchor.length <= QUOTE_CHARS && stub.anchor.includes('Error: boom'), stub?.anchor);
     assert.ok(quotedIn(stub.anchor, long));
-    assert.deepEqual(kindsOf([{ role: 'agent', text: 'all good, no failures' }]), []);
+    assert.deepEqual(kindsOf([{ role: 'agent', text: textOf('all good, no failures') }]), []);
 });
 
 test('a turn that ends in a question mark, or a prompt that opens like one, is a trigger — in English and Spanish, from the operator or the agent', () => {
     const asks = [
-        { role: 'agent' as const, text: 'Done with the parser. Should I also remove the legacy API?' },
-        { role: 'user' as const, text: 'Which branch do we ship from' },
-        { role: 'user' as const, text: 'can we skip the migration' },
-        { role: 'user' as const, text: 'Do you think this is safe' },
-        { role: 'user' as const, text: '¿Podemos dejarlo para mañana' },
-        { role: 'user' as const, text: 'Deberíamos borrar la rama vieja' },
-        { role: 'user' as const, text: 'cuál es el plan?' },
+        { role: 'agent' as const, text: textOf('Done with the parser. Should I also remove the legacy API?') },
+        { role: 'user' as const, text: textOf('Which branch do we ship from') },
+        { role: 'user' as const, text: textOf('can we skip the migration') },
+        { role: 'user' as const, text: textOf('Do you think this is safe') },
+        { role: 'user' as const, text: textOf('¿Podemos dejarlo para mañana') },
+        { role: 'user' as const, text: textOf('Deberíamos borrar la rama vieja') },
+        { role: 'user' as const, text: textOf('cuál es el plan?') },
     ];
     for (const ask of asks) {
         assert.deepEqual(kindsOf([ask]), ['question'], ask.text);
     }
     assert.equal(triggersOf([asks[0] as Entry])[0]?.anchor, 'Should I also remove the legacy API?');
-    assert.deepEqual(kindsOf([{ role: 'user', text: 'Ship it.' }, { role: 'agent', text: 'Which is fine, shipping.' }]), [], 'an agent turn only counts when it ends in a question');
+    assert.deepEqual(kindsOf([{ role: 'user', text: textOf('Ship it.') }, { role: 'agent', text: textOf('Which is fine, shipping.') }]), [], 'an agent turn only counts when it ends in a question');
 });
 
 test('the recorded 300-row turn holds every kind: the commit and push, the merge request, the error, the questions and one edit per file', () => {

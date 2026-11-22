@@ -2,7 +2,7 @@ import { checkedLedger, checkedRecords, knownOr, type GuardedLedger, type Guarde
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { Summarizer } from '#src/ports/summarizer.ts';
-import { UNREAD } from '#src/ports/transcripts.ts';
+import { UNREAD, cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import type { ChunkResult, Entry, InFlightCapability, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { capabilityWording } from '#src/ports/capability-reasons.ts';
@@ -25,6 +25,7 @@ import { parseUsd } from '#src/recap/domain/usd.ts';
 import { pluginEngine } from '#src/engine/engine-adapter.ts';
 import { tabRecaps, type TabRecaps } from '#src/engine/tab-recaps.ts';
 import type { EngineModels, EngineSettings } from '@stateforge-labs/session-ledger/unstable/recap/application/engine.ts';
+import type { AgentKind } from '#src/recap/domain/ids.ts';
 
 export type { ReplayDeps } from './legacy.ts';
 export { replay, windowsOf } from './legacy.ts';
@@ -79,13 +80,13 @@ const noPrompt = (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', 
 
 const endOf = (window: readonly Entry[] | undefined, from: Instant): Instant => instant(Math.max(from + 1, window?.findLast((entry) => entry.at !== undefined)?.at ?? from + 1));
 
-const unavailable = (kind: string): Text => capabilityWording('history-unavailable', must(parseText(kind)));
+const unavailable = (kind: AgentKind): Text => capabilityWording('history-unavailable', must(parseText(kind)));
 
 function windowed(base: Transcripts, file: SessionPath, windows: readonly (readonly Entry[])[], at: Position): Transcripts {
     const read = (): Promise<ChunkResult> => Promise.resolve({
-        kind: 'chunk', entries: windows[at.turn] ?? [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: at.turn + 1, tail: null }, grew: true,
+        kind: 'chunk', entries: windows[at.turn] ?? [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(at.turn + 1), tail: null }, grew: grewOf(true),
     });
-    const locate = (): Promise<Located> => Promise.resolve({ kind: 'located', source: file });
+    const locate = (): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(file) });
     const inFlight: InFlightCapability = { kind: 'unsupported', why: 'windowed-reader' };
     return { agent: base.agent, locate, latestPrompt: noPrompt, read, inFlight };
 }
@@ -101,7 +102,7 @@ function settingsOf(deps: TypedReplayDeps): EngineSettings {
 
 function engineOf(deps: TypedReplayDeps, file: SessionPath, windows: readonly (readonly Entry[])[], at: Position): TabRecaps {
     return tabRecaps(pluginEngine({
-        source: { transcripts: new TranscriptRegistry({ [deps.reader.agent]: windowed(deps.reader, file, windows, at) }, null, unavailable) },
+        source: { transcripts: new TranscriptRegistry(new Map([[deps.reader.agent, windowed(deps.reader, file, windows, at)]]), null, unavailable) },
         store: { records: checkedRecords(deps.records), ledger: checkedLedger(deps.ledger) },
         models: modelsOf(deps),
         environment: { clock: { now: (): Instant => at.now }, repos: deps.repos, log: deps.log, mint: deps.mint },
@@ -110,7 +111,7 @@ function engineOf(deps: TypedReplayDeps, file: SessionPath, windows: readonly (r
 }
 
 async function entriesOf(reader: Transcripts, file: SessionPath, size: Count): Promise<readonly Entry[]> {
-    const result = await reader.read(file, UNREAD, size);
+    const result = await reader.read(sourcePathOf(file), UNREAD, size);
     if (isUnknown(result)) throw new Error(`cannot read ${file}: ${saying(result.why)}`);
     return result.entries;
 }

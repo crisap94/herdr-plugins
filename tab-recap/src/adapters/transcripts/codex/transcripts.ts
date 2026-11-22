@@ -3,7 +3,7 @@ import type { CodexRow } from '@stateforge-labs/harness-adapters/codex';
 import type { Chunk, Entry } from '#src/ports/transcripts.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { arr, obj, parse, str } from '../jsonl.ts';
 import type { Row } from '../jsonl.ts';
 import { toolEntry } from '../tool-calls.ts';
@@ -26,7 +26,7 @@ function messageEntry(payload: Row, at: Instant | undefined): Entry | null {
     if (text === '' || isInjectedContext(text)) {
         return null;
     }
-    return { role: role === 'user' ? 'user' : 'agent', text, ...(at === undefined ? {} : { at }) };
+    return { role: role === 'user' ? 'user' : 'agent', text: textOf(text), ...(at === undefined ? {} : { at }) };
 }
 
 function toolEntries(payload: Row, at: Instant | undefined): readonly Entry[] {

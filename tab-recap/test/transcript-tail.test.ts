@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { CustomHarness } from '#src/adapters/harness/custom.ts';
 import { HarnessEnumerator } from '#src/adapters/job/enumerator.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
-import { UNREAD } from '#src/ports/transcripts.ts';
+import { UNREAD, cursorOf, grewOf } from '#src/ports/transcripts.ts';
 import type { ChunkResult, Entry, Position, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
@@ -12,21 +12,23 @@ import { tailOf } from '#src/recap/application/transcript-tail.ts';
 import { SCREEN_READER_ID } from '#src/adapters/transcripts/screen.ts';
 import { cursor } from '#test/db/support.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 const reader = (agent: string, bySource: Readonly<Record<string, readonly Entry[]>>, asked: { source: string; was: Position }[] = []): Transcripts => ({
-    agent,
+    agent: agentKind(agent),
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
     locate: () => Promise.resolve(unknown({ why: 'not-found', what: 'x' })),
     latestPrompt: () => Promise.resolve({ kind: 'prompt', text: null }),
     read: (source, was): Promise<ChunkResult> => {
         asked.push({ source, was });
         const entries = bySource[source];
-        return Promise.resolve(entries === undefined ? unknown({ why: 'unreadable', detail: causeOf(source) }) : { kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 9, tail: null }, grew: true });
+        return Promise.resolve(entries === undefined ? unknown({ why: 'unreadable', detail: causeOf(source) }) : { kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(9), tail: null }, grew: grewOf(true) });
     },
 });
 const lane = (pane: string, agent: string, transcript: string): LaneCursor => ({ ...cursor(pane), agent, transcript });
-const entry = (text: string, at?: number): Entry => ({ role: 'agent', text, ...(at === undefined ? {} : { at }) });
+const entry = (text: string, at?: number): Entry => ({ role: 'agent', text: textOf(text), ...(at === undefined ? {} : { at: instant(at) }) });
 
 test('the lanes\' newest turns are read from the start of what each reader keeps (its own budget), merged by time; a lane with no source or an unreadable one adds nothing', async () => {
     const asked: { source: string; was: Position }[] = [];

@@ -14,6 +14,8 @@ import { CODEX_IN_FLIGHT_INITIAL_BYTES, CODEX_IN_FLIGHT_MAX_BYTES, codexInFlight
 import { codexMarksOf } from './marks.ts';
 import { codexCallsOf } from './tool-calls.ts';
 import { extractCodexOf } from './transcripts.ts';
+import { sourcePathOf, grewOf } from '#src/ports/transcripts.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
 
 const text = (line: string): Text => must(parseText(line));
 
@@ -42,7 +44,7 @@ function unreadable(error: unknown): Unknown {
 }
 
 export class CodexTranscripts implements Transcripts {
-    readonly agent = 'codex';
+    readonly agent = agentKind('codex');
     readonly inFlight: SupportedInFlight = { kind: 'supported', split: { kind: 'foreground-only', why: 'codex-cells' }, read: (source, budget) => this.readInFlight(source, budget) };
     private readonly root: string;
     private readonly readTail: typeof tailOf;
@@ -77,7 +79,7 @@ export class CodexTranscripts implements Transcripts {
             return unknown({ why: 'not-found', what: `a cwd for ${lane.pane}` });
         }
         const file = findRolloutByCwd(lane.cwd, { root: this.root });
-        return file === null ? unknown({ why: 'not-found', what: `a codex rollout started in ${lane.cwd}` }) : { kind: 'located', source: file.path };
+        return file === null ? unknown({ why: 'not-found', what: `a codex rollout started in ${lane.cwd}` }) : { kind: 'located', source: sourcePathOf(file.path) };
     }
 
     latestPrompt(source: string, budget: number): Promise<PromptResult> {
@@ -99,7 +101,7 @@ export class CodexTranscripts implements Transcripts {
     read(source: string, was: Position, budget: number): Promise<ChunkResult> {
         try {
             const { lines, position, grew, more } = readJsonl(source, was, budget);
-            return Promise.resolve({ kind: 'chunk', ...extractCodex(lines), position, grew, more: more === 'present' });
+            return Promise.resolve({ kind: 'chunk', ...extractCodex(lines), position, grew: grewOf(grew), more: more === 'present' });
         } catch (error) {
             return Promise.resolve(unreadable(error));
         }

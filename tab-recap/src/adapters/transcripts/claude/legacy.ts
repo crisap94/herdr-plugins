@@ -2,7 +2,7 @@ import { claudeProjectsRoot, locateClaudeTranscript } from '@stateforge-labs/har
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Observed } from '#src/recap/domain/compaction.ts';
 import type { Chunk } from '#src/ports/transcripts.ts';
-import { UNREAD, type BackgroundSplit, type ChunkResult, type InFlightResult, type Located, type ObservedResult, type Position, type PromptResult, type SupportedInFlight, type Transcripts } from '#src/ports/transcripts.ts';
+import { UNREAD, type BackgroundSplit, type ChunkResult, type InFlightResult, type Located, type ObservedResult, type Position, type PromptResult, type SupportedInFlight, type Transcripts, sourcePathOf } from '#src/ports/transcripts.ts';
 import { unknown, type Unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
@@ -14,6 +14,7 @@ import { claudeObservedOf } from './context.ts';
 import { CLAUDE_SPLIT, claudeInFlightOf } from './in-flight.ts';
 import { extractClaudeOf } from './rows.ts';
 import { CLAUDE_KIND, ClaudeReader } from './transcripts.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
 
 const text = (line: string): Text => must(parseText(line));
 
@@ -34,7 +35,7 @@ function unreadable(error: unknown): Unknown {
 }
 
 export class ClaudeTranscripts implements Transcripts {
-    readonly agent = CLAUDE_KIND;
+    readonly agent = agentKind(CLAUDE_KIND);
     private readonly root: string;
     private readonly reader = new ClaudeReader();
     readonly inFlight: SupportedInFlight = { kind: 'supported', split: CLAUDE_SPLIT, read: (source, budget) => this.readInFlight(source, budget) };
@@ -52,7 +53,7 @@ export class ClaudeTranscripts implements Transcripts {
             return unknown({ why: 'not-found', what: `a session id for ${lane.pane}` });
         }
         const found = locateClaudeTranscript(lane.session, this.root);
-        return found === null ? unknown({ why: 'not-found', what: `the transcript of ${lane.session}` }) : { kind: 'located', source: found.path };
+        return found === null ? unknown({ why: 'not-found', what: `the transcript of ${lane.session}` }) : { kind: 'located', source: sourcePathOf(found.path) };
     }
 
     latestPrompt(source: string, budget: number): Promise<PromptResult> {

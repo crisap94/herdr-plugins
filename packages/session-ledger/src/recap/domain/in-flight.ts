@@ -8,7 +8,9 @@ export type BackgroundTool = Brand<string, 'BackgroundTool'>;
 export type BackgroundLabel = Brand<string, 'BackgroundLabel'>;
 export type FlightDetail = Brand<string, 'FlightDetail'>;
 
-export const NO_RUNNING = brand<number, 'RunningCount'>(0);
+export const runningOf = brand<number, 'RunningCount'>;
+
+export const NO_RUNNING = runningOf(0);
 
 export interface BackgroundItem {
     readonly tool: BackgroundTool;

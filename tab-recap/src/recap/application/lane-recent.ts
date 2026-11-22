@@ -3,8 +3,9 @@ import { sessionId } from '#src/recap/domain/ids.ts';
 import { UNREAD, type Entry, type Mark } from '#src/ports/transcripts.ts';
 import { isUnknown, type Unknown } from '#src/ports/unknowable.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
-const TAIL_BYTES = 256 * 1024;
+const TAIL_BYTES = countOf(256 * 1024);
 
 export type CurrentSession = (pane: string) => Promise<string | null | Unknown>;
 
@@ -28,7 +29,7 @@ export class LaneRecent {
     }
 
     private async tail(lane: Lane): Promise<RecentTail> {
-        const agent = String(lane.agent);
+        const agent = lane.agent;
         const reader = this.transcripts.readerFor(agent);
         const current = await this.now(lane);
         const located = reader === undefined ? null : await reader.locate(current);

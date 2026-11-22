@@ -8,8 +8,8 @@ import type { Curators } from '#src/ports/curators.ts';
 import type { CheckedLedger, Ledger } from '#src/ports/ledger.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import type { Stories as LedgerStories } from '#src/ports/stories.ts';
-import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
-import { UNREAD, type Entry } from '#src/ports/transcripts.ts';
+import { agentKindOf, type TranscriptRegistry } from '#src/ports/transcript-registry.ts';
+import { sourcePathOf, UNREAD, type Entry } from '#src/ports/transcripts.ts';
 import { isUnknown, saying, type Unknown } from '#src/ports/unknowable.ts';
 import { RECONCILE_EVERY, Reconciling, type CurateWhy, type ReconcilingDeps, type RunEvent } from '#src/recap/application/ledger-reconcile.ts';
 import { brand } from '#src/recap/domain/brand.ts';
@@ -48,8 +48,8 @@ const byTime = (a: Entry, b: Entry): Count => count((a.at ?? 0) - (b.at ?? 0));
 
 const tailOf = (readers: TranscriptRegistry) => async (lanes: readonly LaneCursor[]): Promise<readonly Entry[]> => {
     const read = await Promise.all(lanes.filter((seat) => seat.transcript !== '').map(async (seat) => {
-        const reader = readers.readerFor(seat.agent);
-        const chunk = reader === undefined ? null : await reader.read(seat.transcript, UNREAD, TAIL_BYTES);
+        const reader = readers.readerFor(agentKindOf(seat.agent));
+        const chunk = reader === undefined ? null : await reader.read(sourcePathOf(seat.transcript), UNREAD, count(TAIL_BYTES));
         return chunk === null || isUnknown(chunk) ? [] : chunk.entries;
     }));
     return read.flat().toSorted(byTime);

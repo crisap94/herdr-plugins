@@ -52,7 +52,7 @@ function plainHost(records: string, store: Store): PlainHost {
     const clock = { now: 1 };
     const { summarizer } = writer();
     const engine = createEngine({
-        source: { transcripts: new TranscriptRegistry({ [reader.agent]: reader }, null, (kind): string => capabilityWording('history-unavailable', must(parseText(kind)))) },
+        source: { transcripts: new TranscriptRegistry(new Map([[reader.agent, reader]]), null, (kind) => capabilityWording('history-unavailable', must(parseText(kind)))) },
         store: { records: checkedRecords(store.records), ledger: checkedLedger(store.ledger) },
         models: { summarizer: () => summarizer },
         environment: { clock: { now: (): Instant => instant(clock.now) }, repos: NO_REPOS, mint: mintFactId, log: () => undefined },

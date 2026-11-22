@@ -1,4 +1,5 @@
 import type { Entry } from '#src/ports/transcripts.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 export interface ScreenChrome {
     readonly boxOnly: RegExp;
@@ -32,7 +33,7 @@ export function screenEntries(text: string, chrome: ScreenChrome): readonly Entr
     return cleanScreen(text, chrome).split(/\n{2,}/).flatMap((paragraph) => {
         const pieces: Entry[] = [];
         for (let from = 0; from < paragraph.length; from += PARAGRAPH_CHARS) {
-            pieces.push({ role: 'agent', text: paragraph.slice(from, from + PARAGRAPH_CHARS) });
+            pieces.push({ role: 'agent', text: textOf(paragraph.slice(from, from + PARAGRAPH_CHARS)) });
         }
         return pieces;
     });

@@ -12,6 +12,7 @@ import { touchedFiles } from '#src/recap/application/lane-hints.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { opencodeFixture } from '#test/opencode-fixture.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const rows = (list: readonly object[]): string[] => list.map((row) => JSON.stringify(row));
 const at = (iso: string): number => Date.parse(iso);
@@ -25,8 +26,8 @@ test('claude: a prompt typed while the agent was busy is a queued user entry, in
         { type: 'attachment', attachment: { type: 'prompt_snapshot', systemPrompt: ['x'] } },
     ]));
     assert.deepEqual(got.entries, [
-        { role: 'user', text: 'start the migration', at: at('2026-10-06T03:00:00Z') },
-        { role: 'user', text: 'also update the README', queued: true, at: at('2026-10-06T03:01:00Z') },
+        { role: 'user', text: textOf('start the migration'), at: at('2026-10-06T03:00:00Z') },
+        { role: 'user', text: textOf('also update the README'), queued: true, at: at('2026-10-06T03:01:00Z') },
     ]);
 });
 
@@ -113,7 +114,7 @@ test('opencode: parts carry their time, tools their kind, and the compaction ans
     const dir = mkdtempSync(join(tmpdir(), 'recap-context-'));
     try {
         const fixture = opencodeFixture(dir);
-        fixture.add({ id: 'm1', session: 'ses_new', role: 'user', updated: 100, data: { time: { created: 1_790_000_000_000 } }, parts: [{ type: 'text', text: 'rename the table', time: { start: 1_790_000_001_000 } }] });
+        fixture.add({ id: 'm1', session: 'ses_new', role: 'user', updated: 100, data: { time: { created: 1_790_000_000_000 } }, parts: [{ type: 'text', text: textOf('rename the table'), time: { start: 1_790_000_001_000 } }] });
         fixture.add({ id: 'm2', session: 'ses_new', role: 'assistant', updated: 110, data: { time: { created: 1_790_000_005_000 } }, parts: [
             { type: 'tool', tool: 'edit', state: { input: { filePath: 'db/schema.sql' } } },
             { type: 'tool', tool: 'bash', state: { input: { command: 'make migrate', description: 'Apply it' } } },

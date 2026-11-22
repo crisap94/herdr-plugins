@@ -3,14 +3,14 @@ import type { ContextUse, Observed } from '#src/recap/domain/compaction.ts';
 import type { CompactLimits } from '#src/ports/compact-limits.ts';
 import type { ContextWindows } from '#src/ports/context-windows.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { parseCount, countOf } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { ObservedResult } from '#src/ports/transcripts.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 
-const TAIL_BYTES = 256 * 1024;
+const TAIL_BYTES = countOf(256 * 1024);
 const REMEMBERED = 200;
 
 const keyOf = (use: ContextUse | null | undefined): string => (use === null || use === undefined ? '' : `${use.tokens} ${use.window} ${use.source}`);
@@ -44,7 +44,7 @@ export class LaneContexts {
     }
 
     private async observedIn(lane: Lane): Promise<ObservedOutcome> {
-        const agent = String(lane.agent);
+        const agent = lane.agent;
         const reader = this.transcripts.readerFor(agent);
         const located = reader === undefined ? null : await reader.locate(lane);
         return reader?.observed === undefined || located === null || isUnknown(located) ? null : reader.observed(located.source, TAIL_BYTES);

@@ -6,14 +6,19 @@ import { parseInstant } from '@stateforge-labs/session-ledger/unstable/recap/dom
 import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import { opencodeObserved } from './context.ts';
 import { namedCall, toolEntry } from '../tool-calls.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { countOf } from '#src/recap/domain/count.ts';
+import { instant, duration } from '#src/recap/domain/time.ts';
 
 type PartRole = 'user' | 'assistant';
+
+const createdOf = (message: OpenCodeMessage): Instant | null => (message.createdAt === null ? null : instant(message.createdAt));
 
 function partEntry(role: PartRole, part: OpenCodePart, at: Instant | undefined): Entry | null {
     const when = at === undefined ? {} : { at };
     const text = humanText(part);
     if (text !== null) {
-        return { role: role === 'user' ? 'user' : 'agent', text, ...when };
+        return { role: role === 'user' ? 'user' : 'agent', text: textOf(text), ...when };
     }
     return part.partType === 'tool' ? toolEntry(namedCall('opencode', part.tool ?? 'tool', part.input), at) : null;
 }
@@ -21,7 +26,7 @@ function partEntry(role: PartRole, part: OpenCodePart, at: Instant | undefined):
 function markOf(message: OpenCodeMessage): Mark {
     const [created, completed] = [message.createdAt, message.completedAt];
     const tokens = opencodeObserved({ ...message, role: 'assistant' })?.tokens;
-    return { kind: 'compacted', at: created, ...(tokens === undefined ? {} : { tokensBefore: tokens }), ...(created === null || completed === null || completed < created ? {} : { tookMs: completed - created }) };
+    return { kind: 'compacted', at: createdOf(message), ...(tokens === undefined ? {} : { tokensBefore: countOf(tokens) }), ...(created === null || completed === null || completed < created ? {} : { tookMs: duration(completed - created) }) };
 }
 
 export interface Parts { readonly entries: readonly Entry[]; readonly notes: readonly AgentNote[]; readonly marks: readonly Mark[] }
@@ -43,5 +48,5 @@ export function partsOf(store: Pick<OpenCodeStore, 'partsOf'>, message: StoredMe
         return { entries, notes: [], marks: [] };
     }
     const text = entries.filter((entry) => entry.role === 'agent').map((entry) => entry.text).join('\n').trim();
-    return { entries: [], notes: text === '' ? [] : [{ kind: 'compaction', at: info.createdAt, text }], marks: text === '' ? [] : [markOf(info)] };
+    return { entries: [], notes: text === '' ? [] : [{ kind: 'compaction', at: createdOf(info), text: textOf(text) }], marks: text === '' ? [] : [markOf(info)] };
 }

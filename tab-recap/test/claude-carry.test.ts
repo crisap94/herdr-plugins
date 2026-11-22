@@ -4,7 +4,7 @@ import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.ts';
-import { UNREAD, type Located, type Position } from '#src/ports/transcripts.ts';
+import { UNREAD, type Located, type Position, cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { sameStart } from '#src/adapters/transcripts/jsonl.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
@@ -12,8 +12,8 @@ import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 
 const row = (text: string): string => `${JSON.stringify({ type: 'user', message: { content: text } })}\n`;
 const START = row('first') + row('second');
-const AT: Position = { cursor: Buffer.byteLength(START), tail: null };
-const located = (source: string): Located => ({ kind: 'located', source });
+const AT: Position = { cursor: cursorOf(Buffer.byteLength(START)), tail: null };
+const located = (source: string): Located => ({ kind: 'located', source: sourcePathOf(source) });
 
 const carried = async (old: string | null, now: string, at: Position = AT): Promise<Position> => {
     const dir = mkdtempSync(join(tmpdir(), 'claude-carry-'));
@@ -43,7 +43,7 @@ test('a new transcript shorter than the old cursor starts at UNREAD', async () =
 test('a fork that shares the first 64 KiB and differs before the cursor starts at UNREAD', async () => {
     const head = row('x'.repeat(70 * 1024));
     const old = head + row('old turn');
-    const at: Position = { cursor: Buffer.byteLength(old), tail: null };
+    const at: Position = { cursor: cursorOf(Buffer.byteLength(old)), tail: null };
     assert.deepEqual(await carried(old, head + row('new turn') + row('more'), at), UNREAD);
     assert.deepEqual(await carried(old, old + row('more'), at), at);
 });
@@ -66,5 +66,5 @@ test('a carry check whose new transcript cannot be opened leaves no file open', 
 });
 
 test('a carry asked with a cursor that is not a count starts at UNREAD instead of throwing', async () => {
-    assert.deepEqual(await carried(START, START, { cursor: -1, tail: null }), UNREAD);
+    assert.deepEqual(await carried(START, START, { cursor: cursorOf(-1), tail: null }), UNREAD);
 });

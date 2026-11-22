@@ -26,6 +26,9 @@ import type { DecidedAnswersResult, DecidedResult, Decider, DeciderPort } from '
 import type { InFlightResult, Located, Transcripts } from '#src/ports/transcripts.ts';
 import { memoryStore } from './db/support.ts';
 import { decidedAnswersOf, decidedOf, textOf } from './fakes/decider-fixtures.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
+import { sourcePathOf } from '#src/ports/transcripts.ts';
+import { runningOf } from '#src/recap/domain/in-flight.ts';
 
 const env = (keys: Readonly<Record<string, string>>) => (key: string): string | undefined => keys[key];
 
@@ -39,11 +42,11 @@ function keeping(keeps: number): Decider {
 
 function inertTranscripts(): Transcripts {
     return {
-        agent: 'claude',
-        locate: (): Promise<Located> => Promise.resolve({ kind: 'located', source: 's' }),
+        agent: agentKind('claude'),
+        locate: (): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf('s') }),
         read: (): Promise<never> => Promise.reject(new Error('unused')),
         latestPrompt: (): Promise<never> => Promise.reject(new Error('unused')),
-        inFlight: { kind: 'supported', split: { kind: 'foreground-only', why: 'codex-cells' }, read: (): Promise<InFlightResult> => Promise.resolve({ kind: 'in-flight', count: 0, background: [] }) },
+        inFlight: { kind: 'supported', split: { kind: 'foreground-only', why: 'codex-cells' }, read: (): Promise<InFlightResult> => Promise.resolve({ kind: 'in-flight', count: runningOf(0), background: [] }) },
     };
 }
 
@@ -55,11 +58,11 @@ async function decisionUnder(keys: Readonly<Record<string, string>>, closes: num
         ask: (_state, questions): Promise<DecidedAnswersResult> => Promise.resolve(decidedAnswersOf(Object.fromEntries([...questions.keys()].map((id) => [id, id === 'closes_request' ? closes : 0.15])))),
     };
     const transcripts: Transcripts = {
-        agent: 'claude',
-        locate: () => Promise.resolve({ kind: 'located', source: 'transcript' }),
+        agent: agentKind('claude'),
+        locate: () => Promise.resolve({ kind: 'located', source: sourcePathOf('transcript') }),
         read: () => Promise.reject(new Error('not read here')),
         latestPrompt: () => Promise.reject(new Error('not read here')),
-        inFlight: { kind: 'supported', split: { kind: 'foreground-only', why: 'codex-cells' }, read: () => Promise.resolve({ kind: 'in-flight', count: 0, background: [] }) },
+        inFlight: { kind: 'supported', split: { kind: 'foreground-only', why: 'codex-cells' }, read: () => Promise.resolve({ kind: 'in-flight', count: runningOf(0), background: [] }) },
     };
     const service = wireAutocompact({
         config: () => configOf(keys),

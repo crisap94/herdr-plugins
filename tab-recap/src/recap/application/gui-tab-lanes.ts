@@ -18,6 +18,7 @@ import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { stageLine } from '#src/recap/render/compaction-stage.ts';
 import { plain } from '#src/recap/render/wrap.ts';
 import type { GuiReads } from './gui-tab-reads.ts';
+import { sourcePathOf } from '#src/ports/transcripts.ts';
 
 export interface LaneDraw {
     readonly reads: GuiReads;
@@ -83,7 +84,7 @@ const promptOf = (lane: TabLane, cursor: Cursor): GuiLane['lastPrompt'] => orEls
 
 const headingOf = (lane: TabLane, cursor: Cursor): Text => must(parseText(cursor?.title ?? lane.title ?? lane.pane));
 
-const fromScreenOf = (cursor: Cursor): Flag => (cursor !== undefined && isScreenSource(cursor.transcript) ? YES : NO);
+const fromScreenOf = (cursor: Cursor): Flag => (cursor !== undefined && isScreenSource(sourcePathOf(cursor.transcript)) ? YES : NO);
 
 const notesFor = (pane: PaneId, draw: LaneDraw): readonly GuiNote[] => draw.reads.notes(pane).map(noteOf);
 

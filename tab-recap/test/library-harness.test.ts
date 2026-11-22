@@ -48,7 +48,7 @@ function transformOf(made: FakeCall): (source: Record<string, string>) => Readon
     return env.transform;
 }
 
-const ENTRIES: readonly Entry[] = Array.from({ length: 400 }, (_, n) => ({ role: n % 2 === 0 ? 'user' : 'agent', text: `turn ${n} ${'word '.repeat(60)}` }));
+const ENTRIES: readonly Entry[] = Array.from({ length: 400 }, (_, n) => ({ role: n % 2 === 0 ? 'user' : 'agent', text: textOf(`turn ${n} ${'word '.repeat(60)}`) }));
 
 const failing = (failure: RunFailure, id: 'claude' | 'codex' | 'opencode' = 'codex'): PolicedRuntime => fakeRuntime({ scripts: { [id]: [failure] } });
 

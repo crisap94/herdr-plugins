@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { readJsonl } from '#src/adapters/transcripts/legacy.ts';
-import { UNREAD } from '#src/ports/transcripts.ts';
+import { UNREAD, cursorOf } from '#src/ports/transcripts.ts';
 
 const line = (n: number, size: number): string => `${JSON.stringify({ n, pad: 'x'.repeat(size - 1 - JSON.stringify({ n, pad: '' }).length) })}\n`;
 
@@ -34,7 +34,7 @@ test('a continuing read over the budget reads forward from the cursor and report
     const lines = Array.from({ length: 10 }, (_, n) => line(n, 100));
     const { dir, path } = fileOf(lines);
     try {
-        const first = readJsonl(path, { cursor: 100, tail: null }, 350);
+        const first = readJsonl(path, { cursor: cursorOf(100), tail: null }, 350);
         assert.deepEqual(numbersOf(first.lines), [1, 2, 3]);
         assert.equal(first.position.cursor, 400);
         assert.equal(first.more, 'present');
@@ -55,7 +55,7 @@ test('a continuing read whose next line is larger than the budget still advances
     const lines = [line(0, 50), line(1, 1000), line(2, 50)];
     const { dir, path } = fileOf(lines);
     try {
-        const read = readJsonl(path, { cursor: 50, tail: null }, 300);
+        const read = readJsonl(path, { cursor: cursorOf(50), tail: null }, 300);
         assert.deepEqual(numbersOf(read.lines), [1, 2]);
         assert.equal(read.position.cursor, 1100);
         assert.equal(read.more, 'absent');
@@ -68,7 +68,7 @@ test('a continuing read that leaves less than one budget unread still reports mo
     const lines = Array.from({ length: 5 }, (_, n) => line(n, 100));
     const { dir, path } = fileOf(lines);
     try {
-        const first = readJsonl(path, { cursor: 100, tail: null }, 250);
+        const first = readJsonl(path, { cursor: cursorOf(100), tail: null }, 250);
         assert.deepEqual(numbersOf(first.lines), [1, 2]);
         assert.equal(first.position.cursor, 300);
         assert.equal(first.more, 'present');

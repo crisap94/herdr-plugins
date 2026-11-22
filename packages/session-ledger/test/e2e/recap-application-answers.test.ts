@@ -12,7 +12,7 @@ const count = brand<number, 'Count'>;
 const tabOf = brand<string, 'TabId'>;
 const boundaryOf = brand<boolean, 'Boundary'>;
 
-const entries: readonly Entry[] = [{ role: 'user', text: 'please add the retry to the uploader before friday' }, { role: 'agent', text: 'done, retry added' }];
+const entries: readonly Entry[] = [{ role: 'user', text: textOf('please add the retry to the uploader before friday') }, { role: 'agent', text: textOf('done, retry added') }];
 const ground: AnswerGround = { agent: textOf('claude'), entries, stubs: [], clock: { now: instant(1_700_000_000_000), zone: textOf('UTC') } };
 
 test('an answer keeps a candidate whose anchor is quoted and counts the ones it loses', () => {

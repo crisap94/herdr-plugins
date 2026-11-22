@@ -239,7 +239,7 @@ const now = (): Instant => instant(Date.now());
 async function sourceOf(transcripts: TranscriptRegistry, board: () => Board, lane: HandoffLane): Promise<FsPath | null> {
     const full = board().lanes.get(lane.pane);
     if (full === undefined) { return null; }
-    const reader = transcripts.readerFor(String(lane.agent));
+    const reader = transcripts.readerFor(lane.agent);
     const session = await readPaneSession(String(lane.pane));
     if (reader === undefined || typeof session !== 'string') { return null; }
     const located = await reader.locate({ ...full, session: sessionId(session) });

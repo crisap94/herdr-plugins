@@ -4,11 +4,13 @@ import type { Entry } from '#src/ports/transcripts.ts';
 import { CHUNK_CHARS, chunksOf, newestOf } from '#src/recap/application/chunking.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { longTurn, START } from '#test/fakes/long-turn.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 const CLOCK = { now: brand<number, 'Instant'>(START + 3_600_000), zone: brand<string, 'Text'>('UTC') };
 const count = brand<number, 'Count'>;
-const user = (text: string, row: number): Entry => ({ role: 'user', text, at: START + row * 1000 });
-const agent = (text: string, row: number): Entry => ({ role: 'agent', text, at: START + row * 1000 });
+const user = (text: string, row: number): Entry => ({ role: 'user', text: textOf(text), at: instant(START + row * 1000) });
+const agent = (text: string, row: number): Entry => ({ role: 'agent', text: textOf(text), at: instant(START + row * 1000) });
 
 test('a small turn is one chunk holding every entry; no entries, no chunks', () => {
     const entries = [user('hello', 1), agent('hi', 2)];
@@ -44,7 +46,7 @@ test('a split falls between turns when it can: a chunk that starts a later promp
 test('inside one long turn the split falls between bursts of tool calls; reads are counted, never listed; a call is clipped', () => {
     const entries: Entry[] = [user('do it all', 0)];
     for (let call = 0; call < 60; call += 1) {
-        entries.push({ role: 'tool', kind: 'read', text: `src/r${call}.ts`, at: START + call }, { role: 'tool', kind: 'shell', text: `echo ${'x'.repeat(900)} ${call}`, at: START + call });
+        entries.push({ role: 'tool', kind: 'read', text: textOf(`src/r${call}.ts`), at: instant(START + call) }, { role: 'tool', kind: 'shell', text: textOf(`echo ${'x'.repeat(900)} ${call}`), at: instant(START + call) });
     }
     const chunks = chunksOf(entries, CLOCK, count(4_000));
     assert.ok(chunks.length > 5);

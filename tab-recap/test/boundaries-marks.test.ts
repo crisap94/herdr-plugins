@@ -5,24 +5,26 @@ import type { Read } from '#src/recap/application/boundaries.ts';
 import { compactedFrom, settledBefore, triggerOf } from '#src/recap/domain/boundary.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 import type { Chunk, Mark } from '#src/ports/transcripts.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant, duration } from '#src/recap/domain/time.ts';
+import { grewOf, cursorOf } from '#src/ports/transcripts.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 const AT = Date.parse('2026-10-07T16:38:09.490Z');
 const read = (marks: readonly Mark[], pane = 'w1:p1'): Read => ({
     lane: { pane: paneId(pane) },
-    chunk: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], marks, position: { cursor: 900, tail: null }, grew: true } satisfies Chunk,
+    chunk: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], marks, position: { cursor: cursorOf(900), tail: null }, grew: grewOf(true) } satisfies Chunk,
 });
 
-const CLAUDE: Mark = { kind: 'compacted', at: AT, tokensBefore: 39_532, tokensAfter: 3057, tookMs: 15_588, trigger: 'manual' };
-const CODEX: Mark = { kind: 'compacted', at: Date.parse('2026-10-06T13:09:05.181Z'), tokensBefore: 17_133, tokensAfter: 4617 };
-const OPENCODE: Mark = { kind: 'compacted', at: 1_790_000_009_000, tokensBefore: 1020, tookMs: 7000 };
+const CLAUDE: Mark = { kind: 'compacted', at: instant(AT), tokensBefore: countOf(39_532), tokensAfter: countOf(3057), tookMs: duration(15_588), trigger: 'manual' };
+const CODEX: Mark = { kind: 'compacted', at: instant(Date.parse('2026-10-06T13:09:05.181Z')), tokensBefore: countOf(17_133), tokensAfter: countOf(4617) };
+const OPENCODE: Mark = { kind: 'compacted', at: instant(1_790_000_009_000), tokensBefore: countOf(1020), tookMs: duration(7000) };
 
 test('each agent\'s own mark becomes one candidate with its time, tokens and the read\'s end cursor; a failed summarizer is none', () => {
-    const found = marksOf([read([CLAUDE, { kind: 'compaction-failed', at: AT }]), read([CODEX], 'w1:p2'), read([OPENCODE], 'w1:p3')], instant(5), ADVANCED);
+    const found = marksOf([read([CLAUDE, { kind: 'compaction-failed', at: instant(AT) }]), read([CODEX], 'w1:p2'), read([OPENCODE], 'w1:p3')], instant(5), ADVANCED);
     assert.deepEqual(found, [
-        { pane: 'w1:p1', at: AT, cursor: 900, tokensBefore: 39_532, tokensAfter: 3057, tookMs: 15_588, trigger: 'manual' },
-        { pane: 'w1:p2', at: CODEX.at, cursor: 900, tokensBefore: 17_133, tokensAfter: 4617 },
-        { pane: 'w1:p3', at: OPENCODE.at, cursor: 900, tokensBefore: 1020, tookMs: 7000 },
+        { pane: 'w1:p1', at: AT, cursor: 900, tokensBefore: 39_532, tokensAfter: countOf(3057), tookMs: 15_588, trigger: 'manual' },
+        { pane: 'w1:p2', at: CODEX.at, cursor: 900, tokensBefore: 17_133, tokensAfter: countOf(4617) },
+        { pane: 'w1:p3', at: OPENCODE.at, cursor: 900, tokensBefore: countOf(1020), tookMs: duration(7000) },
     ]);
 });
 

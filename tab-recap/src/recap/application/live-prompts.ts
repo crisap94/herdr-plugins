@@ -1,8 +1,9 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
-const TAIL_BYTES = 256 * 1024;
+const TAIL_BYTES = countOf(256 * 1024);
 const REMEMBERED = 200;
 
 export class LivePrompts {
@@ -18,7 +19,7 @@ export class LivePrompts {
     }
 
     async refresh(lane: Lane): Promise<boolean> {
-        const agent = String(lane.agent);
+        const agent = lane.agent;
         const reader = this.transcripts.readerFor(agent);
         if (reader === undefined) {
             return false;

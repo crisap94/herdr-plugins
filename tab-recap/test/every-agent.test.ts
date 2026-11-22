@@ -12,7 +12,7 @@ import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
 import { present } from '#src/recap/render/present.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId, agentKind } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
@@ -23,17 +23,18 @@ import type { ChunkResult, Located, Position, PromptResult, Transcripts } from '
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
+import { grewOf, cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
 
 function recording(agent: string, source: (pane: string) => string, tail: string | null = null): { reader: Transcripts; seen: Position[] } {
     const seen: Position[] = [];
     const reader: Transcripts = {
-        agent,
+        agent: agentKind(agent),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-        locate: (lane): Promise<Located> => Promise.resolve({ kind: 'located', source: source(String(lane.pane)) }),
+        locate: (lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(source(String(lane.pane))) }),
         latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
         read: (_source: string, was: Position): Promise<ChunkResult> => {
             seen.push(was);
-            return Promise.resolve({ kind: 'chunk', entries: [{ role: 'agent', text: 'hello from the screen' }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: was.cursor + 1, tail }, grew: true });
+            return Promise.resolve({ kind: 'chunk', entries: [{ role: 'agent', text: textOf('hello from the screen') }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(was.cursor + 1), tail: tail === null ? null : textOf(tail) }, grew: grewOf(true) });
         },
     };
     return { reader, seen };

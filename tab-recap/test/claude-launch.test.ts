@@ -11,9 +11,10 @@ import { ClaudeLaunchPosix } from '#src/adapters/capability/claude-launch-posix.
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
-import { parseSessionId } from '#src/recap/domain/ids.ts';
+import { parseSessionId, agentKind } from '#src/recap/domain/ids.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
 import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
+import { sourcePathOf } from '#src/ports/transcripts.ts';
 
 const SESSION = 'session-1';
 const PID = 4242;
@@ -64,9 +65,9 @@ const launchFixture = (home: string, proc: string, cwd: string, launch: Launch, 
 
 function reader(model: string, tokens: number): Transcripts {
     return {
-        agent: 'claude',
+        agent: agentKind('claude'),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-        locate: () => Promise.resolve({ kind: 'located', source: 's' }),
+        locate: () => Promise.resolve({ kind: 'located', source: sourcePathOf('s') }),
         read: () => Promise.reject(new Error('not used')),
         latestPrompt: () => Promise.reject(new Error('not used')),
         observed: () => Promise.resolve({ kind: 'observed', observed: { tokens, peak: tokens, window: null, model } }),

@@ -13,6 +13,9 @@ import { HandoffSender } from '#src/recap/application/handoff-sender.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane, SeenLane } from '#src/recap/domain/lane.ts';
 import { registryWith } from './transcript-registry.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
+import { sourcePathOf } from '#src/ports/transcripts.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 export interface Faults {
     readonly session?: boolean;
@@ -72,21 +75,21 @@ export function worldOf(over: Partial<World> = {}): World {
 
 function transcriptsOf(world: World): Transcripts {
     return {
-        agent: world.agent,
+        agent: agentKind(world.agent),
         locate: async (lane: Lane): Promise<Located> => {
             world.locates += 1;
             if (world.faults.locate) {
                 throw new Error('locate failed');
             }
             const key = world.locatedBy === 'session' ? lane.session : lane.cwd;
-            return world.located && key !== null ? { kind: 'located', source: 'transcript-1' } : unknown({ why: 'not-found', what: 'transcript' });
+            return world.located && key !== null ? { kind: 'located', source: sourcePathOf('transcript-1') } : unknown({ why: 'not-found', what: 'transcript' });
         },
         read: async (): Promise<ChunkResult> => unknown({ why: 'unreadable', detail: causeOf('not used by handoff') }),
         latestPrompt: async (): Promise<PromptResult> => {
             if (world.faults.latest) {
                 throw new Error('latest failed');
             }
-            return world.unreadable ? unknown({ why: 'unreadable', detail: causeOf('tail') }) : { kind: 'prompt', text: world.latest };
+            return world.unreadable ? unknown({ why: 'unreadable', detail: causeOf('tail') }) : { kind: 'prompt', text: world.latest === null ? null : textOf(world.latest) };
         },
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
     };
