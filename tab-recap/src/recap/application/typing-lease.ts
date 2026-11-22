@@ -7,8 +7,6 @@ import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { parseMilliseconds, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
 import { LEASE, LEASE_TTL_MS, leaseBlocked } from '#src/recap/domain/typing-lease.ts';
 
-export { TypingLease } from './legacy.ts';
-
 export const RETRY_MS = must(parseMilliseconds(1000));
 const LEASE_WAIT_MS = must(parseMilliseconds(LEASE_TTL_MS));
 

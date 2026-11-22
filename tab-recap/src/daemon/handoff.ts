@@ -24,7 +24,7 @@ import { askKeyOf, type HandoffMirror, type Route } from '#src/recap/application
 import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { DeliveryTracker } from '#src/recap/application/delivery-tracker.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
-import { TypingLease } from '#src/recap/application/typing-lease.ts';
+import { PaneTypingLease } from '#src/recap/application/typing-lease.ts';
 import { HANDOFF_ANSWER_TTL_MS, HANDOFF_FLOW_MAX_MS, HANDOFF_TAKE_MAX_AGE_MS } from '#src/recap/application/handoff-limits.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import type { Board } from '#src/recap/domain/board.ts';
@@ -37,7 +37,8 @@ import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { duration, instant, type Duration, type Instant } from '#src/recap/domain/time.ts';
 import { textOf, parseText, type Text } from '#src/recap/domain/text.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
-import { awaitingNow, logVia, pauseVia, refreshVia } from './legacy.ts';
+import { awaitingNow, logVia, pauseVia } from './legacy.ts';
+import { refreshVia } from './refresh-status.ts';
 import { withinBy } from './bounded.ts';
 
 export interface HandoffRunnerDeps {
@@ -267,7 +268,7 @@ export function wireHandoffs(parts: HandoffWiring): HandoffRunner {
         }),
         sender: new HandoffSender({
             agents: fleet.agents(),
-            typing: new TypingLease({ tokens: fleet, panes: fleet, now, pause, log }),
+            typing: new PaneTypingLease({ tokens: fleet, panes: fleet, now, pause, log }),
             confirmation: new HandoffConfirmation({ agents: fleet.agents(), transcripts, session: readPaneSession, pause, log }),
             log,
         }),

@@ -19,8 +19,6 @@ import type { Presence } from '#src/recap/domain/presence.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 
-export { CompactRequests, type CompactRequestDeps } from './legacy.ts';
-
 const PENDING_MAX = 200;
 const BAD_MAX = 500;
 

@@ -1,12 +1,13 @@
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import { loadSettings, messagesOf } from '#src/daemon/config.ts';
-import { AUTOCOMPACT_USAGE, LISTED, listing, parseListing, styleLine } from '#src/recap/application/autocompact-listing.ts';
+import { AUTOCOMPACT_USAGE, LISTED, listingOf, parseListingArgs, styleLine } from '#src/recap/application/autocompact-listing.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 export function autocompactCommand(argv: readonly string[]): number {
-    const parsed = parseListing(argv);
+    const parsed = parseListingArgs(argv.map(textOf));
     if (parsed.kind === 'usage') {
         console.error(`tab-recap: 2 — ${parsed.why}\n${AUTOCOMPACT_USAGE}`);
         return 2;
@@ -17,8 +18,9 @@ export function autocompactCommand(argv: readonly string[]): number {
         return 1;
     }
     try {
-        const now = Date.now();
-        const lines = listing(store.autocompact.newest(must(parseCount(LISTED))), { since: now - 86_400_000, costUsd: store.autocompact.costSince(instant(now - 86_400_000)) }, now, Intl.DateTimeFormat().resolvedOptions().timeZone, store.autocompact.skips());
+        const now = instant(Date.now());
+        const since = instant(now - 86_400_000);
+        const lines = listingOf(store.autocompact.newest(must(parseCount(LISTED))), { since, costUsd: store.autocompact.costSince(since) }, now, textOf(Intl.DateTimeFormat().resolvedOptions().timeZone), store.autocompact.skips());
         const config = loadSettings();
         console.log([styleLine(config.autocompact, config.tuning, messagesOf().autocompactSettings), '', ...lines].join('\n'));
         return 0;

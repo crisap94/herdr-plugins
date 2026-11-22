@@ -18,8 +18,6 @@ import type { Instant } from '#src/recap/domain/time.ts';
 import { ANSWER_TTL_MS } from '#src/recap/domain/compact-request.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 
-export { answerRestart, type RestartDeps } from './legacy.ts';
-
 export interface RestartWiring {
     readonly exchanges: readonly Exchange[];
     readonly ledger: AskLedger;

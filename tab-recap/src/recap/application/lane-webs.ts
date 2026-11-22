@@ -1,5 +1,7 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
+import type { PaneId } from '#src/recap/domain/ids.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
 
 const REMEMBERED = 200;
@@ -8,31 +10,34 @@ const keyOf = (web: LaneWeb | null | undefined): string => (web === null || web 
 
 export class LaneWebs {
     private readonly repos: LaneRepo;
-    private readonly known = new Map<string, LaneWeb | null>();
+    private readonly known = new Map<PaneId, LaneWeb | null>();
 
     constructor(repos: LaneRepo) {
         this.repos = repos;
     }
 
-    of(pane: string): LaneWeb | null {
+    of(pane: PaneId): LaneWeb | null {
         return this.known.get(pane) ?? null;
     }
 
-    async refresh(lane: Lane): Promise<boolean> {
+    async refresh(lane: Lane): Promise<Presence> {
         const found = lane.cwd === null ? null : await this.repos.repoOf(lane.cwd);
         if (found?.kind === 'unknown') {
-            return false;
+            return 'absent';
         }
         const web: LaneWeb | null = found?.kind === 'repo' && found.web !== null ? { ...found.web, branch: found.branch } : null;
-        const pane = String(lane.pane);
+        const pane = lane.pane;
         if (keyOf(this.known.get(pane)) === keyOf(web)) {
-            return false;
+            return 'absent';
         }
         this.known.delete(pane);
         this.known.set(pane, web);
         if (this.known.size > REMEMBERED) {
-            this.known.delete(this.known.keys().next().value ?? '');
+            const oldest = this.known.keys().next().value;
+            if (oldest !== undefined) {
+                this.known.delete(oldest);
+            }
         }
-        return true;
+        return 'present';
     }
 }

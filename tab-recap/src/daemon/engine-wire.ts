@@ -3,7 +3,7 @@ import { pluginEngine } from '#src/engine/engine-adapter.ts';
 import { tabRecaps, type TabRecaps } from '#src/engine/tab-recaps.ts';
 import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
 import { recapWritten, type EventStream } from '#src/recap/application/lane-events.ts';
-import type { Curate } from '#src/recap/application/curate.ts';
+import type { CurateTasks } from '#src/recap/application/curate.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import type { Clock } from '#src/ports/clock.ts';
@@ -44,7 +44,7 @@ export interface EngineParts {
     readonly transcripts: TranscriptRegistry;
     readonly clock: Clock;
     readonly repos: EngineRepos;
-    readonly curate: Curate;
+    readonly curate: CurateTasks;
     readonly events: EventStream;
     readonly board: () => Board;
     readonly ledger: (event: LedgerEvent) => void;
@@ -57,7 +57,7 @@ export interface WiredEngine {
     readonly viewers: Viewers;
 }
 
-async function runCurator(curate: Curate, event: RunEvent, say: EngineLog): Promise<void> {
+async function runCurator(curate: CurateTasks, event: RunEvent, say: EngineLog): Promise<void> {
     try {
         await curate.afterRun(event);
     } catch (error) {
@@ -65,7 +65,7 @@ async function runCurator(curate: Curate, event: RunEvent, say: EngineLog): Prom
     }
 }
 
-function ranRun(curate: Curate, events: EventStream, board: () => Board, event: RunEvent, say: EngineLog): void {
+function ranRun(curate: CurateTasks, events: EventStream, board: () => Board, event: RunEvent, say: EngineLog): void {
     void runCurator(curate, event, say);
     recapWritten(events, lanesOf(board(), tabId(event.tab)), event.cause);
 }

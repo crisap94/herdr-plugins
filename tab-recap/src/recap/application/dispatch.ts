@@ -29,9 +29,6 @@ import { countOf, parseCount } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 
-export { Dispatch } from './legacy.ts';
-export type { DispatchDeps, LaneContextSource, LaneWebSource, LivePromptSource } from './legacy.ts';
-
 export type Sharing = 'on' | 'off';
 
 export interface LaneDispatchDeps {

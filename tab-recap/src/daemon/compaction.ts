@@ -17,19 +17,21 @@ import type { PreCompacts } from '#src/adapters/hooks/pre-compacts.ts';
 import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
-import { lanesOf } from '#src/recap/domain/board.ts';
+import { lanesOf, listsPane } from '#src/recap/domain/board.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import type { AnswerStage, RequestId } from '#src/protocol/primitives.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
+import { parseWireText, type AnswerStage, type RequestId, type WireText } from '#src/protocol/primitives.ts';
+import { must } from '#src/protocol/result.ts';
 import type { CompactionRecords } from '#src/ports/compaction-records.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
 import type { Boundaries } from '#src/ports/boundaries.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
-import { ceilingOverrideNow, listsPaneIn, refreshVia } from './legacy.ts';
+import { refreshVia } from './refresh-status.ts';
 import { loadSettings, messagesOf } from './config.ts';
 
 interface CoverageCheck {
@@ -41,7 +43,7 @@ interface CompactionWebs {
 }
 
 interface CompactionAnswers {
-    answer(id: RequestId, pane: PaneId, stage: AnswerStage): void;
+    answer(id: RequestId, pane: PaneId, stage: WireText): void;
 }
 
 interface CompactionTyping {
@@ -85,7 +87,7 @@ export function wireCompaction(parts: CompactionParts): Compaction {
         agents: fleet.agents(), notifier: fleet, records: parts.records, boundaries: parts.boundaries, ledger: parts.ledger, compactions: parts.compactions, settling: parts.settling, webs: parts.webs, log: (line: Text) => { parts.log(line); },
         brief, recent: (lane) => parts.recent.of(lane), marks: (lane) => parts.recent.marks(lane), pause: sleep, now: () => instant(Date.now()),
         lanes: (tab: TabId) => lanesOf(informer.current, tab),
-        listsPane: listsPaneIn(informer),
+        listsPane: (pane: PaneId): Presence => (listsPane(informer.current, pane) ? 'present' : 'absent'),
         focused: async (tab: TabId): Promise<PaneId | null> => {
             const layout = await fleet.layout(tab);
             return isUnknown(layout) || layout.focused === null ? null : paneId(layout.focused);
@@ -94,9 +96,9 @@ export function wireCompaction(parts: CompactionParts): Compaction {
         coverage: () => coverageOf(parts.coverageDecider(), () => loadSettings().tuning),
         decisions: parts.decisions,
         checkedBriefs: parts.checkedBriefs,
-        ceilingOverride: ceilingOverrideNow,
+        ceilingOverride: (): Presence => (loadSettings().autocompact.ceilingPolicy === 'overrides-check' ? 'present' : 'absent'),
         missedFacts: () => loadSettings().autocompact.missedFacts,
-        answer: (id: RequestId, pane: PaneId, stage: AnswerStage) => { parts.answers.answer(id, pane, stage); },
+        answer: (id: RequestId, pane: PaneId, stage: AnswerStage) => { parts.answers.answer(id, pane, must(parseWireText(stage))); },
         asks: parts.asks,
         typing: parts.typing,
         events: parts.events,

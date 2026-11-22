@@ -5,11 +5,14 @@ import type { Acquired } from './typing-lease.ts';
 import type { HandoffConfirmation } from './handoff-confirmation.ts';
 import type { Ready } from './handoff-target.ts';
 import { withTypingLease } from './typing-scope.ts';
+import type { PaneId } from '#src/recap/domain/ids.ts';
+import { parseMilliseconds, type Milliseconds } from '#src/recap/domain/time.ts';
+import { must } from '#src/protocol/result.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
 export interface HandoffTyping {
-    acquire(pane: string, waitMs: number): Promise<Acquired>;
-    release(pane: string): Promise<void>;
+    acquire(pane: PaneId, waitMs: Milliseconds): Promise<Acquired>;
+    release(pane: PaneId): Promise<void>;
 }
 
 export interface HandoffSenderDeps {
@@ -18,6 +21,8 @@ export interface HandoffSenderDeps {
     readonly confirmation: HandoffConfirmation;
     readonly log: (line: string) => void;
 }
+
+const NO_WAIT = must(parseMilliseconds(0));
 
 const NO_STALL: PromptStance = { stall: 'refuses-stall' };
 
@@ -29,9 +34,9 @@ export class HandoffSender {
     }
 
     async send(target: Ready, text: string): Promise<HandoffOutcome> {
-        const pane = String(target.lane.pane);
+        const { pane } = target.lane;
         const { typing } = this.deps;
-        const leased = await withTypingLease({ acquire: () => typing.acquire(pane, 0), release: () => typing.release(pane) }, () => this.prompted(target, text));
+        const leased = await withTypingLease({ acquire: () => typing.acquire(pane, NO_WAIT), release: () => typing.release(pane) }, () => this.prompted(target, text));
         return leased.kind === 'busy' ? { kind: 'refused', reason: 'typing-lease-busy' } : leased.value;
     }
 

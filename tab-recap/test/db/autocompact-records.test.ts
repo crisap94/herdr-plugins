@@ -13,7 +13,8 @@ import { memoryStore, must } from './support.ts';
 import { idOf } from '#src/adapters/db/typeid.ts';
 import { decode } from '#src/adapters/db/checked-fact-codec.ts';
 import { parseLaneStatusAtDecision } from '#src/recap/domain/autocompact.ts';
-import { listing } from '#src/recap/application/autocompact-listing.ts';
+import { listingOf as listing } from '#src/recap/application/autocompact-listing.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const decision = (over: Partial<Decision> = {}): Decision => ({
     tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(1_000), mode: 'shadow', share: 61, tokens: mustParsed(parseCount(610_000)), window: mustParsed(parseCount(1_000_000)), gate: 'ask', verdict: 'compact',
@@ -198,7 +199,7 @@ test('the status a lane had at a decision round-trips; a decision that recorded 
 test('a decision that recorded no status lists as a dash', () => {
     const store = seeded();
     store.autocompact.record(decision({ at: instant(1_000), laneStatus: null }));
-    const line = listing(store.autocompact.newest(mustParsed(parseCount(1))), { since: 0, costUsd: 0 }, 1_001, 'UTC')[1] ?? '';
+    const line = listing(store.autocompact.newest(mustParsed(parseCount(1))), { since: instant(0), costUsd: mustParsed(parseUsd(0)) }, instant(1_001), textOf('UTC'))[1] ?? '';
     assert.match(line, /w1:p1\s+—\s+61 %/);
 });
 

@@ -21,6 +21,7 @@ import { oneTask } from '#test/support.ts';
 import { makeRepo } from './fixtures/git-repo.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
 
 const E = String.fromCodePoint(0x1b);
 const open = (url: string): string => `${E}]8;;${url}${E}\\`;
@@ -110,7 +111,7 @@ test('a remote with a token: nothing stored and nothing drawn holds the secret (
         const webs = new LaneWebs(new GitLaneRepo({ now: (): Instant => instant(0) }));
         await webs.refresh(laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd: shop.root }));
         const { views, db } = memoryStore();
-        const view: TabView = { tab: 'w1:t1', column: null, at: 1, lanes: [lane('w1:p1', webs.of('w1:p1'))] };
+        const view: TabView = { tab: 'w1:t1', column: null, at: 1, lanes: [lane('w1:p1', webs.of(paneId('w1:p1')))] };
         views.writeTab(view);
         const stored = JSON.stringify(db.prepare('SELECT * FROM lane').all());
         assert.ok(stored.includes(BASE) && !stored.includes('s3cr3t') && !stored.includes('oauth2'), stored);

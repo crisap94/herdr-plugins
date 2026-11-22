@@ -16,6 +16,7 @@ import { agentKind } from '#src/recap/domain/ids.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
 
 const roots: string[] = [];
 const tempDir = (): string => {
@@ -57,8 +58,8 @@ test('a user autoCompactWindow caps the 1M Claude window to the window the agent
     const cwd = tempDir();
     write(join(home, '.claude', 'settings.json'), JSON.stringify({ autoCompactWindow: 400_000 }));
     const contexts = claudeAt(home);
-    assert.equal(await contexts.refresh(lane('claude', cwd)), true);
-    assert.deepEqual(contexts.of('w1:p1'), { tokens: 240_000, window: 400_000, source: 'agent' });
+    assert.equal(await contexts.refresh(lane('claude', cwd)), 'present');
+    assert.deepEqual(contexts.of(paneId('w1:p1')), { tokens: 240_000, window: 400_000, source: 'agent' });
 });
 
 test('a per-model entry in modelSettings beats the top-level autoCompactWindow', async () => {
@@ -70,7 +71,7 @@ test('a per-model entry in modelSettings beats the top-level autoCompactWindow',
     }));
     const contexts = claudeAt(home);
     await contexts.refresh(lane('claude', cwd));
-    assert.equal(contexts.of('w1:p1')?.window, 450_000);
+    assert.equal(contexts.of(paneId('w1:p1'))?.window, 450_000);
 });
 
 test('the project settings.json beats the user settings file', async () => {
@@ -80,7 +81,7 @@ test('the project settings.json beats the user settings file', async () => {
     write(join(cwd, '.claude', 'settings.json'), JSON.stringify({ autoCompactWindow: 350_000 }));
     const contexts = claudeAt(home);
     await contexts.refresh(lane('claude', cwd));
-    assert.equal(contexts.of('w1:p1')?.window, 350_000);
+    assert.equal(contexts.of(paneId('w1:p1'))?.window, 350_000);
 });
 
 test('"auto", a value under 100000 and a malformed file are no value: the window stays the model window', async () => {
@@ -89,11 +90,11 @@ test('"auto", a value under 100000 and a malformed file are no value: the window
     write(join(home, '.claude', 'settings.json'), JSON.stringify({ autoCompactWindow: 'auto' }));
     const contexts = claudeAt(home);
     await contexts.refresh(lane('claude', cwd));
-    assert.deepEqual(contexts.of('w1:p1'), { tokens: 240_000, window: 1_000_000, source: 'catalogue' });
+    assert.deepEqual(contexts.of(paneId('w1:p1')), { tokens: 240_000, window: 1_000_000, source: 'catalogue' });
     write(join(home, '.claude', 'settings.json'), JSON.stringify({ autoCompactWindow: 50_000 }));
     write(join(cwd, '.claude', 'settings.json'), '{ not json');
     await contexts.refresh(lane('claude', cwd));
-    assert.equal(contexts.of('w1:p1')?.window, 1_000_000);
+    assert.equal(contexts.of(paneId('w1:p1'))?.window, 1_000_000);
 });
 
 test('the TAB_RECAP_CONTEXT_WINDOW setting still wins over the agent limit', async () => {
@@ -102,7 +103,7 @@ test('the TAB_RECAP_CONTEXT_WINDOW setting still wins over the agent limit', asy
     write(join(home, '.claude', 'settings.json'), JSON.stringify({ autoCompactWindow: 400_000 }));
     const contexts = claudeAt(home, 500_000);
     await contexts.refresh(lane('claude', cwd));
-    assert.deepEqual(contexts.of('w1:p1'), { tokens: 240_000, window: 500_000, source: 'setting' });
+    assert.deepEqual(contexts.of(paneId('w1:p1')), { tokens: 240_000, window: 500_000, source: 'setting' });
 });
 
 test('a Codex model_auto_compact_token_limit before the first section caps the window; one after a section does not', async () => {
@@ -117,11 +118,11 @@ test('a Codex model_auto_compact_token_limit before the first section caps the w
     write(join(home, '.codex', 'config.toml'), 'model = "gpt-6-luna"\nmodel_auto_compact_token_limit = 200000\n\n[profiles.big]\nmodel_auto_compact_token_limit = 900000\n');
     const contexts = codex();
     await contexts.refresh(lane('codex', cwd));
-    assert.deepEqual(contexts.of('w1:p1'), { tokens: 116_000, window: 200_000, source: 'agent' });
+    assert.deepEqual(contexts.of(paneId('w1:p1')), { tokens: 116_000, window: 200_000, source: 'agent' });
     write(join(home, '.codex', 'config.toml'), '[profiles.big]\nmodel_auto_compact_token_limit = 200000\n');
     const after = codex();
     await after.refresh(lane('codex', cwd));
-    assert.equal(after.of('w1:p1')?.window, 258_400);
+    assert.equal(after.of(paneId('w1:p1'))?.window, 258_400);
 });
 
 test('a settings file edited later is read again', async () => {
@@ -131,10 +132,10 @@ test('a settings file edited later is read again', async () => {
     write(file, JSON.stringify({ autoCompactWindow: 400_000 }));
     const contexts = claudeAt(home);
     await contexts.refresh(lane('claude', cwd));
-    assert.equal(contexts.of('w1:p1')?.window, 400_000);
+    assert.equal(contexts.of(paneId('w1:p1'))?.window, 400_000);
     write(file, JSON.stringify({ autoCompactWindow: 300_000 }));
     const later = new Date(Date.now() + 60_000);
     utimesSync(file, later, later);
-    assert.equal(await contexts.refresh(lane('claude', cwd)), true);
-    assert.equal(contexts.of('w1:p1')?.window, 300_000);
+    assert.equal(await contexts.refresh(lane('claude', cwd)), 'present');
+    assert.equal(contexts.of(paneId('w1:p1'))?.window, 300_000);
 });

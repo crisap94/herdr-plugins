@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Dispatch } from '#src/recap/application/dispatch.ts';
+import { LaneDispatch } from '#src/recap/application/dispatch.ts';
 import { silentClosures } from './fakes/silent-closures.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
@@ -12,11 +12,12 @@ import type { Columns, ColumnLayoutResult } from '#src/ports/columns.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
 import { SIZING, placedOf, rectOf as rect, splitOf } from './fakes/layout-values.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
 
 
 const noop = (): void => undefined;
-const noWebs = { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) };
-const noPrompts = { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) };
+const noWebs = { of: (): null => null, refresh: (): Promise<Presence> => Promise.resolve('absent') };
+const noPrompts = { of: (): null => null, refresh: (): Promise<Presence> => Promise.resolve('absent') };
 const noBoard = (): Board => emptyBoard();
 const sizing = (): Sizing => SIZING;
 
@@ -47,7 +48,7 @@ test('a bar is docked with a split below the tab\'s bottom pane — no swap, no 
     const fed: Observation[] = [];
     const views = {} as TabViews;
     const visibility = {} as ColumnVisibility;
-    const dispatch = new Dispatch({
+    const dispatch = new LaneDispatch({
         columns, views, visibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() }, prompts: noPrompts, webs: noWebs, log: noop, board: noBoard,
         sizing, feedback: (observation): void => { fed.push(observation); }, ...silentClosures,
     });
@@ -67,7 +68,7 @@ test('a bar is docked with a split below the tab\'s bottom pane — no swap, no 
 
 test('a side column still docks on the right edge', async () => {
     const { columns, calls } = fakeColumns();
-    const dispatch = new Dispatch({
+    const dispatch = new LaneDispatch({
         columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() }, prompts: noPrompts, webs: noWebs, log: noop, board: noBoard,
         sizing, feedback: noop, ...silentClosures,
     });

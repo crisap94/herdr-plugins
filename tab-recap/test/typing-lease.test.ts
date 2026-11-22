@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import { tokenEntries } from './fakes/token-entries.ts';
 import assert from 'node:assert/strict';
-import { TypingLease } from '#src/recap/application/typing-lease.ts';
+import { PaneTypingLease } from '#src/recap/application/typing-lease.ts';
 import { LEASE, LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
 import { saying, unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
@@ -9,6 +9,8 @@ import type { Done } from '#src/ports/columns.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import { FakePanes } from './fakes/herdr-panes.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { paneId, uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
 
 function herdrAt(clock: { at: number }): { herdr: FakePanes; tokens: LaneTokens; panes: PaneTokens } {
     const herdr = new FakePanes(() => clock.at);
@@ -21,9 +23,9 @@ function herdrAt(clock: { at: number }): { herdr: FakePanes; tokens: LaneTokens;
     return { herdr, tokens, panes };
 }
 
-const leaseAt = (clock: { at: number }): { herdr: FakePanes; lease: TypingLease } => {
+const leaseAt = (clock: { at: number }): { herdr: FakePanes; lease: PaneTypingLease } => {
     const { herdr, tokens, panes } = herdrAt(clock);
-    const lease = new TypingLease({ tokens, panes, now: (): number => clock.at, pause: async (ms: number): Promise<void> => { clock.at += ms; }, log: (): void => undefined });
+    const lease = new PaneTypingLease({ tokens, panes, now: (): Instant => instant(clock.at), pause: async (ms: number): Promise<void> => { clock.at += ms; }, log: (): void => undefined });
     return { herdr, lease };
 };
 
@@ -31,17 +33,17 @@ test('an earlier live lease of another tool: tab-recap clears its own and does n
     const clock = { at: 1000 };
     const { herdr, lease } = leaseAt(clock);
     herdr.report('w1:p1', 'coordinator', { 'typing-coordinator': '500' }, LEASE_TTL_MS);
-    assert.equal(await lease.acquire('w1:p1', 0), 'busy');
+    assert.equal(await lease.acquire(paneId('w1:p1'), uncheckedMilliseconds(0)), 'busy');
     assert.equal(herdr.read('w1:p1')[LEASE], undefined, 'our own lease is cleared when it is held back');
     herdr.report('w1:p1', 'coordinator', { 'typing-coordinator': null }, LEASE_TTL_MS);
-    assert.equal(await lease.acquire('w1:p1', 0), 'taken');
+    assert.equal(await lease.acquire(paneId('w1:p1'), uncheckedMilliseconds(0)), 'taken');
 });
 
 test('a later lease of another tool does not hold tab-recap back', async () => {
     const clock = { at: 1000 };
     const { herdr, lease } = leaseAt(clock);
     herdr.report('w1:p1', 'coordinator', { 'typing-coordinator': '5000' }, LEASE_TTL_MS);
-    assert.equal(await lease.acquire('w1:p1', 0), 'taken');
+    assert.equal(await lease.acquire(paneId('w1:p1'), uncheckedMilliseconds(0)), 'taken');
     assert.equal(herdr.read('w1:p1')[LEASE], '1000');
 });
 
@@ -49,7 +51,7 @@ test('a crashed writer\'s lease expires on its own: acquire waits for it, then t
     const clock = { at: 1000 };
     const { herdr, lease } = leaseAt(clock);
     herdr.report('w1:p1', 'coordinator', { 'typing-coordinator': '500' }, LEASE_TTL_MS);
-    assert.equal(await lease.acquire('w1:p1', 3 * LEASE_TTL_MS), 'taken', 'the stale lease ends after its time to live');
+    assert.equal(await lease.acquire(paneId('w1:p1'), uncheckedMilliseconds(3 * LEASE_TTL_MS)), 'taken', 'the stale lease ends after its time to live');
     assert.ok(clock.at >= 500 + LEASE_TTL_MS, 'it waited until the lease was gone');
 });
 
@@ -57,15 +59,15 @@ test('acquire gives up when the other lease does not go within the wait', async 
     const clock = { at: 1000 };
     const { herdr, lease } = leaseAt(clock);
     herdr.report('w1:p1', 'coordinator', { 'typing-coordinator': '500' }, 10 * LEASE_TTL_MS);
-    assert.equal(await lease.acquire('w1:p1', 5000), 'busy');
+    assert.equal(await lease.acquire(paneId('w1:p1'), uncheckedMilliseconds(5000)), 'busy');
 });
 
 test('after typing, tab-recap clears its lease', async () => {
     const clock = { at: 1000 };
     const { herdr, lease } = leaseAt(clock);
-    assert.equal(await lease.acquire('w1:p1', 0), 'taken');
+    assert.equal(await lease.acquire(paneId('w1:p1'), uncheckedMilliseconds(0)), 'taken');
     assert.equal(herdr.read('w1:p1')[LEASE], '1000');
-    await lease.release('w1:p1');
+    await lease.release(paneId('w1:p1'));
     assert.equal(herdr.read('w1:p1')[LEASE], undefined);
 });
 
@@ -74,9 +76,9 @@ test('herdr cannot take or read tokens: the lease is unavailable at once, typing
     const logged: string[] = [];
     const broken: LaneTokens = { report: async (): Promise<Done> => unknown({ why: 'unreachable', detail: causeOf('no pane.report_metadata') }) };
     const panes: PaneTokens = { read: async (): Promise<PaneTokensResult> => unknown({ why: 'unreachable', detail: causeOf('no pane.get') }) };
-    const lease = new TypingLease({ tokens: broken, panes, now: (): number => clock.at, pause: async (ms: number): Promise<void> => { clock.at += ms; }, log: (line: string): void => { logged.push(line); } });
-    assert.equal(await lease.acquire('w1:p1'), 'unavailable');
-    assert.equal(await lease.acquire('w1:p1'), 'unavailable');
+    const lease = new PaneTypingLease({ tokens: broken, panes, now: (): Instant => instant(clock.at), pause: async (ms: number): Promise<void> => { clock.at += ms; }, log: (line: string): void => { logged.push(line); } });
+    assert.equal(await lease.acquire(paneId('w1:p1')), 'unavailable');
+    assert.equal(await lease.acquire(paneId('w1:p1')), 'unavailable');
     assert.equal(logged.length, 1, 'once per outage');
 });
 

@@ -42,7 +42,7 @@ import { SLOT_TABLE } from './slot-table.ts';
 import { contextOf, parseRoot, parseSwitch, parseVersion, startSlots, taps, type Slots, type SlotKey, type StatusEvent, type Switch, type Version } from './slots.ts';
 import { Backends } from './backends.ts';
 import { boundedBy } from './bounded.ts';
-import { capabilityNow, failureLog, herdrEventsOn, listeningIn, logVia, paneTokensTo, wantsScreen } from './legacy.ts';
+import { capabilityNow, failureLog, herdrEventsOn, herdrEventsPresence, interruptedBy, listeningIn, logVia, paneTokensTo, wantsScreen } from './legacy.ts';
 import { SHUTDOWN_MS, shutDownWithin } from './shutdown.ts';
 import { openStateAt } from './state.ts';
 import type { Autocompact } from '#src/recap/application/autocompact.ts';
@@ -52,15 +52,15 @@ import { wireCompaction } from './compaction.ts';
 import { createPreCompacts } from '#src/adapters/hooks/pre-compacts.ts';
 import { settingGetter, loadSettings, messagesOf, stateDirectory } from './config.ts';
 import { wireCurate } from './curate.ts';
-import type { Curate } from '#src/recap/application/curate.ts';
+import type { CurateTasks } from '#src/recap/application/curate.ts';
 import { InputRetention } from '#src/recap/application/input-retention.ts';
 import { forgetClosedTabs } from './retention.ts';
 import { bootObservations } from './restored-lanes.ts';
-import { CompactRequests } from '#src/recap/application/compact-requests.ts';
-import { answerRestart } from '#src/recap/application/ask-restart.ts';
+import { CompactRequestQueue } from '#src/recap/application/compact-requests.ts';
+import { restartAnswers } from '#src/recap/application/ask-restart.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
 import { EventStream } from '#src/recap/application/lane-events.ts';
-import { TypingLease } from '#src/recap/application/typing-lease.ts';
+import { PaneTypingLease } from '#src/recap/application/typing-lease.ts';
 import { LaneTokenPublisher } from '#src/recap/application/lane-tokens.ts';
 import { factsOf } from '#src/recap/application/lane-facts.ts';
 import type { LaneFacts } from '#src/recap/domain/lane-tokens.ts';
@@ -96,10 +96,10 @@ interface Wired {
     readonly store: Store;
     readonly compaction: Compaction;
     readonly retention: InputRetention;
-    readonly curate: Curate;
+    readonly curate: CurateTasks;
     readonly sweep: AutocompactSweep;
     readonly laneTokens: LaneTokenPublisher;
-    readonly answers: CompactRequests;
+    readonly answers: CompactRequestQueue;
     readonly events: EventStream;
     readonly handoffs: HandoffRunner;
     readonly worktrees: Worktrees;
@@ -124,7 +124,7 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
     const board = (): Board => box.informer?.current ?? emptyBoard();
     const { engine, recaps, viewers } = wireEngine({ store, backends, transcripts, clock, repos, curate, events, board, ledger: ledgerTaps.emit, log });
     const worktrees = wireWorktrees(store, log);
-    const answers = new CompactRequests({ enabled: herdrEventsOn, board, requests: store.requests, asks: store.asks, tokens: fleet, now: nowInstant, log });
+    const answers = new CompactRequestQueue({ enabled: herdrEventsPresence, board, requests: store.requests, asks: store.asks, tokens: fleet, now: nowInstant, log });
     const exchange = handoffExchangeOf({ store, tokens: fleet, events, board, sharing: (): HerdrEvents => loadSettings().herdrEvents, requests: handoffRequestsOn, log });
     const hub = new SettleHub({ agents: fleet.agents(), listening: listeningIn(box), pause: sleep, now: nowInstant });
     const webs = new LaneWebs(repos);
@@ -156,7 +156,7 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
     const compaction = wireCompaction({
         fleet, records: store.records, boundaries: store.boundaries, ledger: store.ledger, compactions: store.compactions, settling: hub, webs, recaps, informer, log,
         briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact, checkedBriefs: store.autocompactBriefs, answers, asks: store.asks, events, claims, preCompacts,
-        typing: new TypingLease({ tokens: fleet, panes: fleet, now: nowInstant, pause: sleep, log }),
+        typing: new PaneTypingLease({ tokens: fleet, panes: fleet, now: nowInstant, pause: sleep, log }),
     });
     return { informer, fleet, backends, store, engine, recaps, transcripts, clock, viewers, autocompact, statuses: statusTaps.tap, ledger: ledgerTaps.tap, compaction, retention: new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: () => loadSettings().keepInputDays, briefRetention: (): BriefRetention => loadSettings().keepBrief, log }), curate, sweep: new AutocompactSweep({ candidates: () => candidatesOf(informer.current, log), autocompact: (): Autocompact | null => box.autocompact, log }), laneTokens, answers, events, worktrees, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror: exchange.mirror, pause: sleep, log: write }) };
 }
@@ -221,11 +221,11 @@ async function start(): Promise<ExitCode> {
         void boundedBy(events.daemon('daemon-stopping', codeVersion() ?? 'unknown'), duration(EVENT_STOP_MS)).then(() => shutDownWithin(fleet, informer, log, duration(SHUTDOWN_MS))).then(() => boundedBy(slots?.stop() ?? Promise.resolve(), duration(EVENT_STOP_MS))).then(() => boundedBy(recaps.flushAll(), duration(FLUSH_STOP_MS))).finally(() => { store.close(); pidfile.release(process.pid); process.exit(0); });
     };
     process.on('SIGTERM', stop).on('SIGINT', stop);
-    const restarted = answerRestart({
-        exchanges: REGISTRY.exchanges, ledger: store.asks, requests: store.requests, compactions: store.compactions, tokens: fleet,
-        enabled: herdrEventsOn, local: (ask): void => { log(`ask ${ask.id} from ${ask.requester}: interrupted, no local flow answers yet`); },
+    const restarted = restartAnswers({
+        exchanges: REGISTRY.exchanges, ledger: store.asks, requests: store.requests, compactions: interruptedBy(store.compactions), tokens: fleet,
+        enabled: herdrEventsPresence, local: (ask): void => { log(`ask ${ask.id} from ${ask.requester}: interrupted, no local flow answers yet`); },
         handoff: handoffRestartOf(handoffs), withdraw: (ask): void => { withdrawAsked(store.requests, ask); },
-        log, now: nowInstant, restartedWhy: messagesOf().compaction.stage.restarted,
+        log, now: nowInstant, restartedWhy: textOf(messagesOf().compaction.stage.restarted),
     });
     if (restarted > 0) { log(`${restarted} compaction(s) were in progress when the daemon stopped: not confirmed`); }
     bootObservations(store.visibility.readHidden(), store.views, log).forEach((observation) => { informer.push(observation); });

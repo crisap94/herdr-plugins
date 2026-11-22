@@ -2,7 +2,7 @@ import type { Store } from '#src/adapters/db/database.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
 import type { Autocompact } from '#src/recap/application/autocompact.ts';
 import { candidateOf } from './autocompact.ts';
-import { Dispatch } from '#src/recap/application/dispatch.ts';
+import { LaneDispatch } from '#src/recap/application/dispatch.ts';
 import type { Sharing } from '#src/recap/application/dispatch.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
@@ -34,8 +34,8 @@ export interface DispatchParts {
     readonly sharing: () => Sharing;
 }
 
-export function dispatchFor(box: Box, parts: DispatchParts, log: (line: Text) => void): Dispatch {
-    return new Dispatch({
+export function dispatchFor(box: Box, parts: DispatchParts, log: (line: Text) => void): LaneDispatch {
+    return new LaneDispatch({
         columns: parts.fleet, views: parts.store.views, visibility: parts.store.visibility, recaps: parts.recaps, log, prompts: new LivePrompts(parts.transcripts), webs: parts.webs, contexts: parts.contexts,
         closures: parts.store.closedLanes, retirements: parts.store.retention, closedDays: (): ClosedLaneDays => parts.store.closedDays, events: parts.events, sharing: parts.sharing,
         sizing: (): Sizing => loadSettings().sizing,

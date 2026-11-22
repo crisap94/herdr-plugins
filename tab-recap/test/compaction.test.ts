@@ -5,7 +5,7 @@ import { en } from '#src/i18n/en.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import { compactionPlanner } from '#src/adapters/capability/compaction-plans.ts';
 import { idleClaudePlans } from '#test/fakes/idle-claude-plans.ts';
-import type { CompactionDeps } from '#src/recap/application/compaction.ts';
+import type { CompactionPorts } from '#src/recap/application/compaction-deps.ts';
 import type { CompactionPlanner } from '#src/ports/compaction-plans.ts';
 import { QUEUES, unsupported } from '#src/recap/domain/compaction-plan.ts';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
@@ -22,16 +22,19 @@ import type { LaneSettling } from '#src/ports/lane-settling.ts';
 import { memoryStore } from './db/support.ts';
 import { lineBreakRefusal } from './fakes/typed-line.ts';
 import { oneTask } from './support.ts';
-import { paneId, tabId, agentKind } from '#src/recap/domain/ids.ts';
+import { paneId, tabId, agentKind, type PaneId } from '#src/recap/domain/ids.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
-import { CompactRequests } from '#src/recap/application/compact-requests.ts';
+import { CompactRequestQueue } from '#src/recap/application/compact-requests.ts';
+import { stageOf } from './fakes/wire-tokens.ts';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
-import { parseToolName } from '#src/protocol/primitives.ts';
+import { parseToolName, type AnswerStage, type RequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { countOf } from '#src/recap/domain/count.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
+import { type Instant } from '#src/recap/domain/time.ts';
 
 const lane = (pane: string, agent: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent });
 const LANES = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'gemini')];
@@ -95,11 +98,11 @@ function queuing(world: ReturnType<typeof fleet>, clock: Clock, slices: readonly
     return { ...world, plans: queuingPlans, clock: () => clock.t, settling: ticking(clock, slices), marks: () => Promise.resolve(marksAt(clock.t)) };
 }
 
-function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPlanner; readonly clock?: () => number; readonly marks?: () => Promise<readonly Mark[]>; readonly answerTo?: (id: string, pane: string, stage: string) => void }, setting = 'focused', focused: string | null = 'w1:p1', briefing: Briefing | null = null, reads: readonly (readonly Mark[])[] = [[]]): Compaction {
+function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPlanner; readonly clock?: () => number; readonly marks?: () => Promise<readonly Mark[]>; readonly answerTo?: (id: RequestId, pane: PaneId, stage: AnswerStage) => void }, setting = 'focused', focused: string | null = 'w1:p1', briefing: Briefing | null = null, reads: readonly (readonly Mark[])[] = [[]]): Compaction {
     let looked = 0;
     const store = world.store;
     const recap = { ...blankRecap(tabId('w1:t1')), tasks: oneTask('x', { ...NO_SECTIONS, goal: textOf('Ship the cart rewrite'), decisions: [textOf('The recap column shows three lines')], rules: [textOf('Never push to main')] }, ['w1:p1', 'w1:p2']) };
-    const deps: CompactionDeps = {
+    const deps: CompactionPorts = {
         compactionPlans: world.plans ?? idleClaudePlans,
         agents: world.agents,
         notifier: { notify: (title, body) => { world.toasts.push(`${title} | ${body}`); return Promise.resolve({ kind: 'shown' }); } },
@@ -110,17 +113,17 @@ function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPla
         settling: world.settling,
         brief: {
             enabled: () => (briefing === null ? 'absent' : 'present'),
-            job: () => (briefing === null ? null : 'codex · gpt-6-luna · high'),
+            job: () => (briefing === null ? null : textOf('codex · gpt-6-luna · high')),
             write: (document) => { world.events.push('brief'); briefing?.documents.push(document); const answer = briefing?.answer ?? null; return Promise.resolve({ text: answer === null ? null : must(parseText(answer)), why: briefing?.answer === null ? must(parseText('the answer is empty')) : null }); },
         },
         recent: () => Promise.resolve([{ role: 'user', text: textOf('run the tests') }]),
-        now: () => world.clock?.() ?? NOW,
+        now: () => instant(world.clock?.() ?? NOW),
         marks: world.marks ?? (() => { const shown = reads[Math.min(looked, reads.length - 1)] ?? []; looked += 1; return Promise.resolve(shown); }),
         pause: () => Promise.resolve(),
         webs: { of: () => null },
         lanes: () => LANES,
-        listsPane: () => true,
-        focused: () => Promise.resolve(focused),
+        listsPane: () => 'present',
+        focused: () => Promise.resolve(focused === null ? null : paneId(focused)),
         refresh: () => { world.events.push('refresh'); return world.refreshFails ? Promise.reject(new Error('refresh failed')) : Promise.resolve('refreshed'); },
         coverage: () => (briefing?.covered === true ? { check: () => Promise.resolve({ ok: true, missing: [], missingFacts: [], answers: {}, unknown: null }) } : null),
         decisions: null,
@@ -485,11 +488,11 @@ test('one compaction per lane: a request and an automatic one at the same instan
 test('a request that joins a running compaction is settled in the ask ledger when the compaction ends', async () => {
     const world = fleet({ 'w1:p1': 'idle' });
     const asks = new MemoryAskLedger();
-    const handler = new CompactRequests({
-        enabled: (): boolean => true, board: (): Board => emptyBoard(), requests: { requestCompact: (): void => undefined }, asks, tokens: new RecordingTokens(), now: (): number => NOW, log: (): void => undefined,
+    const handler = new CompactRequestQueue({
+        enabled: (): Presence => 'present', board: (): Board => emptyBoard(), requests: { requestCompact: (): void => undefined }, asks, tokens: new RecordingTokens(), now: (): Instant => instant(NOW), log: (): void => undefined,
     });
     asks.record({ exchange: COMPACT_EXCHANGE, requester: must(parseToolName('coordinator')), id: rid('r1'), pane: paneId('w1:p1'), at: NOW, ref: null });
-    const compaction = flow({ ...world, answerTo: (id, pane, stage): void => { handler.answer(id, pane, stage); } }, 'focused', 'w1:p1', { documents: [], answer: 'Keep the schema.', covered: true }, [[compacted]]);
+    const compaction = flow({ ...world, answerTo: (id, pane, stage): void => { handler.answer(id, pane, stageOf(stage)); } }, 'focused', 'w1:p1', { documents: [], answer: 'Keep the schema.', covered: true }, [[compacted]]);
     await Promise.all([
         compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto' }),
         compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r1' }),

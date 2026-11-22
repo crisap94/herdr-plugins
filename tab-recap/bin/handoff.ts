@@ -11,7 +11,7 @@ import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { codeVersion } from '#src/adapters/os/plugin-version.ts';
 import { loadSettings, messagesOf, stateDirectory } from '#src/daemon/config.ts';
 import type { HandoffPrinter } from '#src/ports/handoff-print.ts';
-import { requestNoteOf } from '#src/recap/application/compact-start.ts';
+import { noteFromRequest } from '#src/recap/application/compact-start.ts';
 import { EditTally } from '#src/recap/application/edit-tally.ts';
 import { PrintedHandoffs } from '#src/recap/application/handoff-print.ts';
 import { deliverHandoff, type DeliverDeps, type DeliverRequest } from '#src/recap/application/handoff-request.ts';
@@ -124,7 +124,7 @@ export function handoffArgumentsOf(values: HandoffValues, positionals: readonly 
     if (from === null) {
         return problem('--from needs a pane id');
     }
-    const note = values.note === undefined ? null : requestNoteOf(values.note);
+    const note = values.note === undefined ? null : noteFromRequest(textOf(values.note));
     return values.print === true ? printOf(values, from, note, selector) : deliverOf(values, from, note, selector);
 }
 

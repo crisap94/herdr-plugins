@@ -13,7 +13,7 @@ import { compactPreviewOf } from '#src/recap/application/compact-preview.ts';
 import { blankRecap, type TabRecap } from '#src/ports/recap-records.ts';
 import { NO_SECTIONS, type RecapSections } from '#src/recap/domain/shape.ts';
 import type { LaneWeb, TabLane, TabView } from '#src/ports/tab-views.ts';
-import { requestNoteOf } from '#src/recap/application/compact-start.ts';
+import { requestNoteOf } from './fakes/compact-note.ts';
 import { cursor } from '#test/db/support.ts';
 import { apiProblems } from '#test/gui-schema-support.ts';
 import { add, api, OTHER_PANE, PANE, seedOther, seedRun, startWorld, TAB, type World } from '#test/desktop-engine-world.ts';

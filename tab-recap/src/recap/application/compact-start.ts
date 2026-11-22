@@ -7,8 +7,6 @@ import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { collapsedText } from '#src/recap/domain/text-collapse.ts';
 import { NOTE_LIMIT } from './compaction-message.ts';
 
-export { opensPopup, requestNoteOf, startCompact } from './legacy.ts';
-
 export interface CompactStart {
     askNote(tab: TabId, pane: PaneId | null): Promise<Done>;
     queue(request: CompactRequest): Done;

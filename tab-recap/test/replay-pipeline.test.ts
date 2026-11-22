@@ -7,8 +7,8 @@ import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.
 import { scratchStore } from '#src/adapters/db/scratch.ts';
 import { parseEvalRequest } from '#src/recap/application/eval-options.ts';
 import { textOf } from '#src/recap/domain/text.ts';
-import { replay } from '#src/recap/application/replay.ts';
-import type { Replayed, ReplayDeps } from '#src/recap/application/replay.ts';
+import { replayFile } from '#src/recap/application/replay.ts';
+import type { Replayed, TypedReplayDeps } from '#src/recap/application/replay.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
@@ -16,6 +16,9 @@ import { FULL_WRITER_VIEW, keepNewestOf, nextHoursOf, prunedWriterView } from '#
 import { NO_REPOS } from '#test/support.ts';
 import { answer, scripted } from '#test/fakes/enumerator.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
+import { must } from '#src/protocol/result.ts';
+import { countOf, parsePositiveCount } from '#src/recap/domain/count.ts';
+import { parseSessionPath, tabId } from '#src/recap/domain/ids.ts';
 
 const FILE = join(import.meta.dirname, 'fixtures', 'replay-claude.jsonl');
 
@@ -49,8 +52,8 @@ async function run(pipeline: Pipeline | undefined, writerView: WriterView, merge
     const enumerating = scripted([candidateFor]);
     const scratch = scratchStore();
     try {
-        const deps: ReplayDeps = { reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, mint: mintFactId, repos: NO_REPOS, language: 'en', log: () => undefined, enumerator: () => enumerating.enumerator, ...(pipeline === undefined ? {} : { pipeline }), writerView };
-        const done = await replay(deps, FILE, 'replay:t1', statSync(FILE).size, mergeTurns);
+        const deps: TypedReplayDeps = { reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, mint: mintFactId, repos: NO_REPOS, language: textOf('en'), log: () => undefined, enumerator: () => enumerating.enumerator, ...(pipeline === undefined ? {} : { pipeline }), writerView };
+        const done = await replayFile(deps, must(parseSessionPath(FILE)), tabId('replay:t1'), countOf(statSync(FILE).size), must(parsePositiveCount(mergeTurns ?? 1)));
         return { done, seen, documents: enumerating.documents };
     } finally {
         scratch.dispose();

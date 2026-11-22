@@ -23,7 +23,6 @@ import type { CurateWhy, ReconcilingDeps, RunEvent } from '@stateforge-labs/sess
 import { factIdOf } from '#src/recap/domain/fact.ts';
 
 export type { CurateWhy, RunEvent };
-export { Curate } from './legacy.ts';
 
 export const CURATE_GAP_MS = 5 * 60_000;
 

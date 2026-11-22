@@ -6,9 +6,10 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
-import { CompactRequests } from '#src/recap/application/compact-requests.ts';
-import { answerRestart } from '#src/recap/application/ask-restart.ts';
-import type { RestartDeps } from '#src/recap/application/ask-restart.ts';
+import { CompactRequestQueue } from '#src/recap/application/compact-requests.ts';
+import { askOf, stageOf, wireOf } from './fakes/wire-tokens.ts';
+import { restartAnswers } from '#src/recap/application/ask-restart.ts';
+import type { RestartWiring } from '#src/recap/application/ask-restart.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
 import type { Ask } from '#src/ports/ask-ledger.ts';
 import { parseExchangeName, parseToolName } from '#src/protocol/primitives.ts';
@@ -17,6 +18,10 @@ import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import { handoffLike } from './fakes/protocol-exchanges.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
 
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
 const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) });
@@ -25,36 +30,36 @@ const flush = (): Promise<void> => new Promise<void>((resolve) => { setImmediate
 
 interface Daemon {
     readonly asked: CompactRequest[];
-    readonly handler: CompactRequests;
+    readonly handler: CompactRequestQueue;
 }
 
 function daemon(asks: MemoryAskLedger, tokens: RecordingTokens, on = true): Daemon {
     const asked: CompactRequest[] = [];
-    const handler = new CompactRequests({
-        enabled: (): boolean => on, board, requests: { requestCompact: (request: CompactRequest): void => { asked.push(request); } }, asks, tokens, now: (): number => 1000, log: (): void => undefined,
+    const handler = new CompactRequestQueue({
+        enabled: (): Presence => (on ? 'present' : 'absent'), board, requests: { requestCompact: (request: CompactRequest): void => { asked.push(request); } }, asks, tokens, now: (): Instant => instant(1000), log: (): void => undefined,
     });
     return { asked, handler };
 }
 
-function restartDeps(asks: MemoryAskLedger, tokens: RecordingTokens, localAsks: string[], on = true, handoffAsks: string[] = []): RestartDeps {
+function restartDeps(asks: MemoryAskLedger, tokens: RecordingTokens, localAsks: string[], on = true, handoffAsks: string[] = []): RestartWiring {
     return {
         exchanges: [...REGISTRY.exchanges, handoffLike],
         ledger: asks,
         requests: { takeAnswered: (): readonly { readonly pane: string; readonly answer: string }[] => [] },
-        compactions: { interrupted: (): number => 0 },
+        compactions: { interrupted: (): Count => must(parseCount(0)) },
         tokens,
-        enabled: (): boolean => on,
+        enabled: (): Presence => (on ? 'present' : 'absent'),
         local: (ask: Ask): void => { localAsks.push(ask.id); },
         handoff: (ask: Ask): void => { handoffAsks.push(ask.id); },
         withdraw: (): void => undefined,
         log: (): void => undefined,
-        now: (): number => 1000,
-        restartedWhy: 'restarted',
+        now: (): Instant => instant(1000),
+        restartedWhy: textOf('restarted'),
     };
 }
 
 function restart(asks: MemoryAskLedger, tokens: RecordingTokens, on = true, localAsks: string[] = [], handoffAsks: string[] = []): number {
-    return answerRestart(restartDeps(asks, tokens, localAsks, on, handoffAsks));
+    return restartAnswers(restartDeps(asks, tokens, localAsks, on, handoffAsks));
 }
 
 const lastOf = (tokens: RecordingTokens, pane: string): unknown => tokens.reports.findLast((report) => report.pane === pane)?.tokens;
@@ -63,7 +68,7 @@ test('a queued request is answered failed-interrupted by a restart, and nothing 
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
     const before = daemon(asks, tokens);
-    before.handler.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
+    before.handler.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
     await flush();
     assert.deepEqual(lastOf(tokens, 'w1:p1'), { 'tab-recap-compact': 'r7:queued' });
     restart(asks, tokens);
@@ -75,8 +80,8 @@ test('a running compaction is answered failed-interrupted by a restart, and its 
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
     const before = daemon(asks, tokens);
-    before.handler.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
-    before.handler.answer('r7', 'w1:p1', 'running');
+    before.handler.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
+    before.handler.answer(askOf('r7'), paneId('w1:p1'), stageOf('running'));
     await flush();
     restart(asks, tokens);
     await flush();
@@ -87,9 +92,9 @@ test('a request whose compaction finished is settled by its terminal answer, so 
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
     const before = daemon(asks, tokens);
-    before.handler.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
-    before.handler.answer('r7', 'w1:p1', 'running');
-    before.handler.answer('r7', 'w1:p1', 'done');
+    before.handler.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
+    before.handler.answer(askOf('r7'), paneId('w1:p1'), stageOf('running'));
+    before.handler.answer(askOf('r7'), paneId('w1:p1'), stageOf('done'));
     await flush();
     const written = tokens.reports.length;
     restart(asks, tokens);
@@ -101,8 +106,8 @@ test('joined requests are never left queued: every one of them is answered faile
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
     const before = daemon(asks, tokens);
-    before.handler.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
-    before.handler.onPaneTokens('w1:p1', { 'compact-req-reviewer': 'r8' });
+    before.handler.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
+    before.handler.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-reviewer': 'r8' }));
     await flush();
     restart(asks, tokens);
     await flush();
@@ -186,12 +191,12 @@ test('a restart interrupts each ask once: a second restart writes nothing', () =
 test('a taken id after a restart acts on nothing', async () => {
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
-    daemon(asks, tokens).handler.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
+    daemon(asks, tokens).handler.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
     await flush();
     const reported = tokens.reports.length;
     const after = daemon(asks, tokens);
     restart(asks, tokens);
-    after.handler.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
+    after.handler.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
     await flush();
     assert.deepEqual([after.asked, tokens.reports.length - reported], [[], 1], 'only the failed-interrupted answer is written');
 });
@@ -199,7 +204,7 @@ test('a taken id after a restart acts on nothing', async () => {
 test('a request taken while sharing is off is settled as off at once, so a later restart writes nothing for it', async () => {
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
-    daemon(asks, tokens, false).handler.onPaneTokens('w1:p1', { 'compact-req-coordinator': 'r7' });
+    daemon(asks, tokens, false).handler.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
     await flush();
     const localAsks: string[] = [];
     const count = restart(asks, tokens, true, localAsks);

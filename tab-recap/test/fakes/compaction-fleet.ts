@@ -3,7 +3,7 @@ import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { en } from '#src/i18n/en.ts';
 import { compactionPlanner } from '#src/adapters/capability/compaction-plans.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
-import type { CompactionDeps } from '#src/recap/application/compaction.ts';
+import type { CompactionPorts } from '#src/recap/application/compaction-deps.ts';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { targetOf } from '#src/recap/domain/compaction.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
@@ -18,7 +18,7 @@ import { memoryStore } from '#test/db/support.ts';
 import { lineBreakRefusal } from '#test/fakes/typed-line.ts';
 import { oneTask } from '#test/support.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { tabId, agentKind } from '#src/recap/domain/ids.ts';
+import { tabId, paneId, agentKind } from '#src/recap/domain/ids.ts';
 
 export const lane = (pane: string, agent: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent });
 export const CLAUDE_CODEX_GEMINI = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'gemini')];
@@ -72,7 +72,7 @@ export const NOW = Date.parse('2026-10-07T10:00:00Z');
 export const compacted: Mark = { kind: 'compacted', at: instant(NOW + 5000) };
 export const failed: Mark = { kind: 'compaction-failed', at: instant(NOW + 5000) };
 
-export function compactionDeps(world: Fleet, setting = 'focused', focused: string | null = 'w1:p1', reads: readonly (readonly Mark[])[] = [[]], lanes: readonly Lane[] = CLAUDE_CODEX_GEMINI): CompactionDeps {
+export function compactionDeps(world: Fleet, setting = 'focused', focused: string | null = 'w1:p1', reads: readonly (readonly Mark[])[] = [[]], lanes: readonly Lane[] = CLAUDE_CODEX_GEMINI): CompactionPorts {
     let looked = 0;
     const recap = { ...blankRecap(tabId('w1:t1')), tasks: oneTask('x', { ...NO_SECTIONS, goal: textOf('Ship the cart rewrite'), decisions: [textOf('The recap column shows three lines')], rules: [textOf('Never push to main')] }, ['w1:p1', 'w1:p2']) };
     return {
@@ -86,13 +86,13 @@ export function compactionDeps(world: Fleet, setting = 'focused', focused: strin
         settling: world.settling,
         brief: { enabled: () => 'absent', job: () => null, write: () => Promise.resolve({ text: null, why: must(parseText('the job is off')) }) },
         recent: () => Promise.resolve([{ role: 'user', text: textOf('run the tests') }]),
-        now: () => NOW,
+        now: () => instant(NOW),
         marks: () => { const shown = reads[Math.min(looked, reads.length - 1)] ?? []; looked += 1; return Promise.resolve(shown); },
         pause: (ms) => { world.pauses.push(ms); return Promise.resolve(); },
         webs: { of: () => null },
         lanes: () => lanes,
-        listsPane: () => true,
-        focused: () => Promise.resolve(focused),
+        listsPane: () => 'present',
+        focused: () => Promise.resolve(focused === null ? null : paneId(focused)),
         refresh: () => { world.events.push('refresh'); return world.refreshFails ? Promise.reject(new Error('refresh failed')) : Promise.resolve('refreshed'); },
         coverage: () => null,
         decisions: null,

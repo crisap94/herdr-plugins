@@ -2,7 +2,6 @@ import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { NOTE_LIMIT } from './compaction-message.ts';
 
-export { step } from './legacy.ts';
 
 export interface NoteState {
     readonly note: Text;

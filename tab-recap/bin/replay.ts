@@ -6,7 +6,8 @@ import { replayKindOfPath, replayTranscriptRegistry } from '#src/adapters/transc
 import { databaseFile } from '#src/adapters/db/database.ts';
 import { factsOfTabAt } from '#src/adapters/db/imported.ts';
 import { importedChaptersAt } from '#src/adapters/db/imported-chapters.ts';
-import { parseTabId } from '#src/recap/domain/ids.ts';
+import { parseSessionPath, parseTabId } from '#src/recap/domain/ids.ts';
+import { parseCount, parsePositiveCount } from '#src/recap/domain/count.ts';
 import { operatorAnchors } from '#src/adapters/db/operator-anchors.ts';
 import { scratchStore } from '#src/adapters/db/scratch.ts';
 import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
@@ -17,7 +18,7 @@ import { availableIn, enumeratorFor, judgeWith, summarizerFor } from '#src/daemo
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { loadSettings, stateDirectory } from '#src/daemon/config.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { JudgePort } from '#src/ports/judge.ts';
@@ -26,7 +27,7 @@ import type { Transcripts } from '#src/ports/transcripts.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import type { EvalRequest } from '#src/recap/application/eval-request.ts';
 import { judgedReport } from '#src/recap/application/replay-judge.ts';
-import { replay } from '#src/recap/application/replay.ts';
+import { replayFile } from '#src/recap/application/replay.ts';
 import type { Replayed } from '#src/recap/application/replay.ts';
 import { FULL_WRITER_VIEW } from '#src/recap/domain/writer-view.ts';
 import type { Scratch } from '#src/adapters/db/scratch.ts';
@@ -81,10 +82,10 @@ async function replayed(input: { readonly file: string; readonly reader: Transcr
     const { writer, enumerator, calls } = counted(config, available, scratch.dir, runtime);
     const pipeline = input.options.pipeline ?? config.pipeline;
     const view = viewOf(input.options, config);
-    const done = await replay({
-        reader: input.reader, records: scratch.store.records, ledger: scratch.store.ledger, mint: mintFactId, repos: new GitLaneRepo(new SystemClock()), language: config.recapLanguage, log: (line) => { console.error(line); },
+    const done = await replayFile({
+        reader: input.reader, records: scratch.store.records, ledger: scratch.store.ledger, mint: mintFactId, repos: new GitLaneRepo(new SystemClock()), language: must(parseText(config.recapLanguage)), log: (line) => { console.error(line); },
         summarizer: () => writer, pipeline, enumerator: () => enumerator, writerView: view,
-    }, input.file, input.options.tab ?? 'replay:t1', input.size, input.options.mergeTurns ?? 1);
+    }, must(parseSessionPath(input.file)), must(parseTabId(input.options.tab ?? 'replay:t1')), must(parseCount(input.size)), must(parsePositiveCount(input.options.mergeTurns ?? 1)));
     printMechanical(done, input.file, input.options.compareImported, ranLine(done, { view, pipeline, mergeTurns: input.options.mergeTurns ?? 1, writer: writer.backend, effort: config.effort, enumerator: enumerator?.job ?? null, judge: input.judge, calls }));
     console.log(`\n${anchoredLine(done.facts)}\n${gateLines(gateReportOf(scratch.store.inputs.gateCounts(null)), styleFor(process.stdout)).join('\n')}`);
 }

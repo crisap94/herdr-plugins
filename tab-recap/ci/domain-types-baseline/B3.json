@@ -9,7 +9,7 @@
     "property": 5
   },
   "src/recap/application/handoff-flow.ts": {
-    "parameter": 4,
+    "parameter": 3,
     "return": 1
   },
   "src/recap/application/handoff-pipeline.ts": {
@@ -28,7 +28,7 @@
     "property": 5
   },
   "src/recap/application/handoff-sender.ts": {
-    "parameter": 6
+    "parameter": 3
   },
   "src/recap/application/handoff-source.ts": {
     "return": 1,
@@ -65,9 +65,7 @@
     "property": 1
   },
   "src/recap/application/lane-contexts.ts": {
-    "parameter": 1,
-    "return": 3,
-    "container": 2
+    "return": 3
   },
   "src/recap/application/lane-events.ts": {
     "parameter": 20,
@@ -89,20 +87,10 @@
     "property": 4
   },
   "src/recap/application/lane-webs.ts": {
-    "parameter": 1,
-    "return": 1,
-    "container": 2
+    "return": 1
   },
   "src/recap/application/legacy.ts": {
-    "legacy": 73
-  },
-  "src/recap/application/live-prompts.ts": {
-    "parameter": 1,
-    "return": 1,
-    "container": 1
-  },
-  "src/recap/application/recap-wait.ts": {
-    "parameter": 1
+    "legacy": 22
   },
   "src/recap/application/replay-judge.ts": {
     "parameter": 1,
@@ -151,9 +139,6 @@
   },
   "src/recap/application/transcript-tail.ts": {
     "return": 1
-  },
-  "src/recap/application/twins/compaction-wiring/legacy.ts": {
-    "legacy": 13
   },
   "src/recap/application/twins/eval-report/legacy.ts": {
     "legacy": 28
