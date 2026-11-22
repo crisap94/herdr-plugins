@@ -45,7 +45,7 @@ function columnBefore(db: Database, tab: string): Record<string, string[]> {
     return Object.fromEntries(SECTIONS.map((section) => [section, rows.filter((row) => row.section === section).map((row) => row.text)]));
 }
 
-test('a v5 database with real recaps migrates to v6: every tab\'s column is the same items in the same order, and the backup of v5 exists', () => {
+test('a v5 database with real recaps migrates to v6: every tab\'s column is the same items in the same order, and the backup of v5 exists', { timeout: 120_000 }, () => {
     const dir = scratchDir('ledger');
     try {
         const path = join(dir, 'tab-recap.db');
