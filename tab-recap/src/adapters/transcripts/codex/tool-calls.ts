@@ -3,17 +3,15 @@ import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { toolBriefOf } from '../jsonl.ts';
 import type { Row } from '../jsonl.ts';
-import { shell, squashText } from '../tool-calls.ts';
+import { shellCall, squashText } from '../tool-calls.ts';
 import type { ToolCall } from '../tool-calls.ts';
-
-export { codexCalls } from './legacy.ts';
 
 const WEB_FALLBACK = 'web__run';
 
 function callsOf(use: CodexToolUse, name: Text, input: Row): readonly ToolCall[] {
     switch (use.tool) {
         case 'shell':
-            return [shell(use.command ?? '')];
+            return [shellCall(must(parseText(use.command ?? '')), null)];
         case 'apply_patch': {
             const files = use.files ?? [];
             return files.length > 0 ? files.map((file): ToolCall => ({ kind: 'edit', text: must(parseText(file)) })) : [{ kind: 'edit', text: must(parseText('')) }];

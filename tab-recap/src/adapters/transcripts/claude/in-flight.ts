@@ -8,9 +8,7 @@ import { backgroundItem, backgroundLabel, backgroundTool, NO_RUNNING, runningOf 
 import type { BackgroundItem } from '#src/recap/domain/in-flight.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
-import { parse } from '../jsonl.ts';
-
-export { claudeInFlight } from './legacy.ts';
+import { parseLine } from '../jsonl.ts';
 
 export const IN_FLIGHT_MAX_BYTES = 16 * 1024 * 1024;
 
@@ -19,7 +17,7 @@ export const CLAUDE_SPLIT: BackgroundSplit = { kind: 'separates' };
 export interface TailScan { readonly count: Count; readonly items: readonly BackgroundItem[]; readonly unseen: Presence }
 
 export function scanFlight(lines: readonly Text[]): TailScan | null {
-    if (lines.every((line) => parse(line) === null) && lines.some((line) => line.trim() !== '')) return null;
+    if (lines.every((line) => parseLine(line) === null) && lines.some((line) => line.trim() !== '')) return null;
     const scan = scanClaudeBackground(readClaudeRecords(lines).records);
     const items = scan.live.map((task) => backgroundItem(backgroundTool(textOf(task.tool)), task.description === null || task.description.trim() === '' ? null : backgroundLabel(textOf(task.description))));
     return { count: must(parseCount(items.length)), items, unseen: scan.unseenEnd ? 'present' : 'absent' };

@@ -70,6 +70,7 @@ import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { runningOf } from '#src/recap/domain/in-flight.ts';
+import { fsPathOf } from './fakes/transcript-lines.ts';
 
 const runtime = fakeRuntime({ scripts: {} });
 
@@ -103,7 +104,7 @@ function rows(): Row[] {
     writeFileSync(join(dir, 'claude', 'proj', 'empty.jsonl'), '');
     copyFileSync(join(FIXTURES, 'claude-compact-boundary.jsonl'), join(dir, 'claude', 'proj', 'recorded.jsonl'));
     out.push({
-        kind: 'claude', reader: new ClaudeTranscripts(join(dir, 'claude')),
+        kind: 'claude', reader: new ClaudeTranscripts(fsPathOf(join(dir, 'claude'))),
         empty: lane('claude', { session: 'empty' }), recorded: lane('claude', { session: 'recorded' }), unplaced: lane('claude'),
         observed: { tokens: countOf(3057), peak: countOf(39532), window: null, model: null },
         marks: [{ kind: 'compacted', at: instant(Date.parse('2026-10-07T16:38:09.490Z')), tokensBefore: countOf(39532), tokensAfter: countOf(3057), tookMs: duration(15588), trigger: 'manual' }],
@@ -119,7 +120,7 @@ function rows(): Row[] {
     const prompt = { type: 'response_item', timestamp: '2026-10-06T13:08:00.000Z', payload: { type: 'message', role: 'user', content: [{ text: textOf('keep going') }] } };
     writeFileSync(join(day, 'rollout-recorded.jsonl'), [JSON.stringify({ type: 'session_meta', payload: { cwd: '/repo' } }), JSON.stringify(prompt), ...fixtureLines('codex-compacted.jsonl')].join('\n') + '\n');
     out.push({
-        kind: 'codex', reader: new CodexTranscripts(codexRoot),
+        kind: 'codex', reader: new CodexTranscripts(fsPathOf(codexRoot)),
         empty: lane('codex', { cwd: '/empty' }), recorded: lane('codex', { cwd: '/repo' }), unplaced: lane('codex'),
         observed: { tokens: countOf(4617), peak: countOf(4617), window: countOf(258_400), model: null },
         marks: [{ kind: 'compacted', at: instant(Date.parse('2026-10-06T13:09:05.181Z')), tokensBefore: countOf(17133), tokensAfter: countOf(4617) }],
@@ -134,7 +135,7 @@ function rows(): Row[] {
     database.add({ id: 'm2', session: 'ses_new', role: 'assistant', updated: 120, data: { 'summary': true, mode: 'compaction', providerID: 'acme', modelID: 'big-1', time: { created, completed: created + 7000 }, tokens: { input: 900, output: 80, cache: { read: 100, write: 20 } } }, parts: [{ type: 'text', text: '## Goal\nRename.' }] });
     database.close();
     out.push({
-        kind: 'opencode', reader: new OpencodeTranscripts(database.db),
+        kind: 'opencode', reader: new OpencodeTranscripts(fsPathOf(database.db)),
         empty: lane('opencode', { cwd: '/elsewhere' }), recorded: lane('opencode', { cwd: '/repo' }), unplaced: lane('opencode'),
         observed: { tokens: countOf(1020), peak: countOf(1020), window: null, model: textOf('acme/big-1') },
         marks: [{ kind: 'compacted', at: instant(created), tokensBefore: countOf(1020), tookMs: duration(7000) }],

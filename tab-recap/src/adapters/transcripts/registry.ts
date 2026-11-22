@@ -13,11 +13,18 @@ import type { HistoryWhy, InFlightWhy } from '#src/ports/capability-reasons.ts';
 import { capabilityWording } from '#src/ports/capability-reasons.ts';
 import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
+import { harnessOfTranscriptPath } from '@stateforge-labs/harness-adapters';
+import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 
 export { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
-export { readerKindOf, replayKindOf } from './legacy.ts';
+
+const CODEX_HOME_MARKER = '/.codex/';
+
+export function replayKindOfPath(flag: Text | null, file: FsPath): RegisteredKind | null {
+    return registeredKindOf(textOf(flag ?? harnessOfTranscriptPath(file) ?? (file.includes(CODEX_HOME_MARKER) ? 'codex' : 'claude')));
+}
 
 type ReaderSet = Readonly<Record<RegisteredKind, Capability<() => Transcripts, HistoryWhy>>>;
 

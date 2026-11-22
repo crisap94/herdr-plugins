@@ -4,8 +4,6 @@ import { contextUsage, readRollout } from '@stateforge-labs/harness-adapters/cod
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
-export { codexObserved } from './legacy.ts';
-
 export function codexObservedOf(lines: readonly Text[]): Observed | null {
     const usage = contextUsage(readRollout(lines).rows);
     if (usage === null) {

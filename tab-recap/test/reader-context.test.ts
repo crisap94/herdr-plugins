@@ -3,16 +3,14 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { extractClaude } from '#src/adapters/transcripts/claude/transcripts.ts';
-import { extractCodex } from '#src/adapters/transcripts/codex/transcripts.ts';
 import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcripts.ts';
-import { codexCalls } from '#src/adapters/transcripts/codex/tool-calls.ts';
-import { isPlainRead, namedCall as callOf } from '#src/adapters/transcripts/tool-calls.ts';
 import { touchedFiles } from '#src/recap/application/lane-hints.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { opencodeFixture } from '#test/opencode-fixture.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { extractClaude, extractCodex, codexCalls, isPlainRead, namedCall as callOf, fsPathOf, sourcePathOf } from './fakes/transcript-lines.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 const rows = (list: readonly object[]): string[] => list.map((row) => JSON.stringify(row));
 const at = (iso: string): number => Date.parse(iso);
@@ -123,10 +121,10 @@ test('opencode: parts carry their time, tools their kind, and the compaction ans
         ] });
         fixture.add({ id: 'm3', session: 'ses_new', role: 'assistant', updated: 120, data: { 'summary': true, mode: 'compaction', time: { created: 1_790_000_009_000 } }, parts: [{ type: 'text', text: '## Goal\nRename the table.' }] });
         fixture.close();
-        const reader = new OpencodeTranscripts(fixture.db);
+        const reader = new OpencodeTranscripts(fsPathOf(fixture.db));
         const located = await reader.locate(laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'opencode', cwd: '/repo' }));
         assert.equal(located.kind, 'located');
-        const chunk = await reader.read((located as { source: string }).source, UNREAD, 1 << 20);
+        const chunk = await reader.read(sourcePathOf((located as { source: string }).source), UNREAD, countOf(1 << 20));
         assert.equal(chunk.kind, 'chunk');
         const got = chunk;
         assert.deepEqual(got.entries.map((entry) => [entry.role, entry.kind, entry.text, entry.at]), [

@@ -11,6 +11,7 @@ import { must } from '#src/protocol/result.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { runningOf } from '#src/recap/domain/in-flight.ts';
+import { fsPathOf } from './fakes/transcript-lines.ts';
 
 test('opencode: all its in-flight work is foreground, and the capability says so by name', () => {
     const { split } = new OpencodeTranscripts().inFlight;
@@ -95,7 +96,7 @@ test('opencode: a running-looking non-tool part is not counted', async () => {
 test('opencode: a database that cannot be opened is unknown', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'recap-opencode-missing-'));
     try {
-        const reader = new OpencodeTranscripts(join(dir, 'missing.db'));
+        const reader = new OpencodeTranscripts(fsPathOf(join(dir, 'missing.db')));
         const found = await reader.inFlight.read(sourcePathOf(`${dir}/missing.db#ses-1`), countOf(1));
         assert.equal(found.kind, 'unknown');
     } finally {
@@ -104,5 +105,5 @@ test('opencode: a database that cannot be opened is unknown', async () => {
 });
 
 function fixtureReader(database: string): OpencodeTranscripts {
-    return new OpencodeTranscripts(database);
+    return new OpencodeTranscripts(fsPathOf(database));
 }

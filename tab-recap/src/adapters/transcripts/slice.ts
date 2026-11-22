@@ -4,8 +4,6 @@ import type { Count } from '#src/recap/domain/count.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 
-export { linesAfter, linesBefore } from './legacy.ts';
-
 
 export function linesBeforeOf(path: FsPath, end: Count, budget: Count): readonly Text[] {
     const from = Math.max(0, end - budget);

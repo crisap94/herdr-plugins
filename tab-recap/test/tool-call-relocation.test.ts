@@ -1,8 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { codexCalls } from '#src/adapters/transcripts/codex/tool-calls.ts';
-import { namedCall } from '#src/adapters/transcripts/tool-calls.ts';
 import type { CallKind } from '#src/ports/transcripts.ts';
+import { codexCalls, namedCall } from './fakes/transcript-lines.ts';
 
 const claudeNative: readonly (readonly [string, CallKind])[] = [
     ['Bash', 'shell'], ['bash', 'shell'], ['Read', 'read'], ['Grep', 'read'], ['Glob', 'read'], ['LS', 'read'],

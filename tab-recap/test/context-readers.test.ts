@@ -4,10 +4,9 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { LocalCatalogue } from '#src/adapters/capability/catalogue.ts';
-import { claudeObserved } from '#src/adapters/transcripts/claude/context.ts';
-import { codexObserved } from '#src/adapters/transcripts/codex/context.ts';
 import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcripts.ts';
 import { opencodeFixture } from '#test/opencode-fixture.ts';
+import { claudeObserved, codexObserved, fsPathOf, sourcePathOf } from './fakes/transcript-lines.ts';
 
 const line = (row: object): string => JSON.stringify(row);
 
@@ -49,7 +48,7 @@ test('opencode: the compaction answer is the newest assistant message, so its to
         const fixture = opencodeFixture(dir);
         fixture.add({ id: 'm1', session: 'ses_c', role: 'assistant', updated: 1, parts: [], data: used(90_000) });
         fixture.add({ id: 'm2', session: 'ses_c', role: 'assistant', updated: 2, parts: [], data: used(8_000) });
-        assert.equal(((await new OpencodeTranscripts(fixture.db).observed(`${fixture.db}#ses_c`)) as { observed: { tokens: number } }).observed.tokens, 8_005);
+        assert.equal(((await new OpencodeTranscripts(fsPathOf(fixture.db)).observed(sourcePathOf(`${fixture.db}#ses_c`))) as { observed: { tokens: number } }).observed.tokens, 8_005);
         fixture.close();
     } finally {
         rmSync(dir, { recursive: true, force: true });
@@ -70,9 +69,9 @@ test('opencode: the newest assistant message with tokens, as provider/model', as
         fixture.add({ id: 'm1', session: 'ses_new', role: 'assistant', updated: 1, parts: [], data: { providerID: 'acme', modelID: 'big-1', tokens: { input: 10, output: 5, cache: { read: 1000, write: 20 } } } });
         fixture.add({ id: 'm2', session: 'ses_new', role: 'assistant', updated: 2, parts: [], data: { providerID: 'acme', modelID: 'big-1', tokens: { input: 0, output: 0, cache: { read: 0, write: 0 } } } });
         fixture.add({ id: 'm3', session: 'ses_new', role: 'user', updated: 3, parts: [] });
-        const reader = new OpencodeTranscripts(fixture.db);
-        assert.deepEqual(await reader.observed(`${fixture.db}#ses_new`), { kind: 'observed', observed: { tokens: 1030, peak: 1030, window: null, model: 'acme/big-1' } });
-        assert.deepEqual(await reader.observed(`${fixture.db}#ses_old`), { kind: 'observed', observed: null });
+        const reader = new OpencodeTranscripts(fsPathOf(fixture.db));
+        assert.deepEqual(await reader.observed(sourcePathOf(`${fixture.db}#ses_new`)), { kind: 'observed', observed: { tokens: 1030, peak: 1030, window: null, model: 'acme/big-1' } });
+        assert.deepEqual(await reader.observed(sourcePathOf(`${fixture.db}#ses_old`)), { kind: 'observed', observed: null });
         fixture.close();
     } finally {
         rmSync(dir, { recursive: true, force: true });

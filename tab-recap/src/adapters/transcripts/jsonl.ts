@@ -1,6 +1,6 @@
 import { closeSync, openSync, readSync, statSync } from 'node:fs';
 
-import type { Position } from '#src/ports/transcripts.ts';
+import type { BackgroundSplit, InFlightResult, Position, SourcePath } from '#src/ports/transcripts.ts';
 import { err, must, ok, type Result } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
@@ -8,8 +8,20 @@ import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { cursorOf } from '#src/ports/transcripts.ts';
+import { unknown, type Unknown } from '#src/ports/unknowable.ts';
+import { causeOf } from '#src/recap/domain/failure-cause.ts';
 
-export { arr, obj, parse, readJsonl, str, tailLines, tailOf, toolBrief } from './legacy.ts';
+export interface SupportedReading {
+    readonly kind: 'supported';
+    readonly split: BackgroundSplit;
+    readonly read: (source: SourcePath, budget: Count) => Promise<InFlightResult>;
+}
+
+export type Unreadable = Unknown;
+
+export function parseUnreadable(error: unknown): Unreadable {
+    return unknown({ why: 'unreadable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
+}
 
 export interface Row {
     readonly [key: string]: unknown;
@@ -93,6 +105,27 @@ export function parseFilledText(input: unknown): Result<FilledText, ParseFailure
         return err({ kind: 'empty' });
     }
     return ok(text.value);
+}
+
+export type RowOrEmpty = Row;
+
+export function parseRowOrEmpty(value: unknown): RowOrEmpty {
+    const row = parseRow(value);
+    return row.kind === 'ok' ? row.value : {};
+}
+
+export type RowsOrEmpty = Rows;
+
+export function parseRowsOrEmpty(value: unknown): RowsOrEmpty {
+    const rows = parseRows(value);
+    return rows.kind === 'ok' ? rows.value : [];
+}
+
+export type FilledTextOrNull = FilledText | null;
+
+export function parseFilledTextOrNull(value: unknown): FilledTextOrNull {
+    const text = parseFilledText(value);
+    return text.kind === 'ok' ? text.value : null;
 }
 
 const clip = (s: Text, n: Count): Text => (s.length > n ? must(parseText(`${s.slice(0, n - 1)}…`)) : s);

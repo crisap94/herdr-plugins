@@ -8,8 +8,6 @@ import type { Instant } from '#src/recap/domain/time.ts';
 import { parseFilledText, toolBriefOf } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
 
-export { isPlainRead, namedCall, shell, toolEntry } from './legacy.ts';
-
 export interface ToolCall {
     readonly kind: CallKind;
     readonly text: Text;

@@ -7,19 +7,18 @@ import type { Directory } from '#src/recap/domain/directory.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
-import type { Chunk, ChunkResult, Entry, InFlightResult, Located, ObservedResult, Position, PromptResult, SupportedInFlight, Transcripts } from '#src/ports/transcripts.ts';
+import type { Chunk, ChunkResult, Entry, InFlightResult, Located, ObservedResult, Position, PromptResult, SourcePath, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { opencodeObserved } from './context.ts';
+import type { SupportedReading } from '../jsonl.ts';
 import { partsOf } from './parts.ts';
 import { opencodeInFlight } from './in-flight.ts';
 import { sourcePathOf, cursorOf, grewOf } from '#src/ports/transcripts.ts';
 import { agentKind } from '#src/recap/domain/ids.ts';
-
-export { OpencodeTranscripts } from './legacy.ts';
 
 const MESSAGES = must(parseCount(400));
 const PROMPT_LOOKBACK = 30;
@@ -36,9 +35,9 @@ function newest(entries: readonly Entry[], budget: Count): readonly Entry[] {
 
 const sessionOf = (source: Text): Text => must(parseText(sessionIdOfTranscriptPath('opencode', source) ?? ''));
 
-export class OpencodeReader implements Transcripts {
+export class OpencodeTranscripts implements Transcripts {
     readonly agent = agentKind('opencode');
-    readonly inFlight: SupportedInFlight = { kind: 'supported', split: { kind: 'foreground-only', why: 'opencode-parts' }, read: (source) => this.readInFlight(must(parseText(source))) };
+    readonly inFlight: SupportedReading = { kind: 'supported', split: { kind: 'foreground-only', why: 'opencode-parts' }, read: (source) => this.readInFlight(textOf(source)) };
     private readonly database: FsPath;
 
     constructor(database: FsPath = must(parseFsPath(opencodeDatabasePath()))) {
@@ -56,16 +55,16 @@ export class OpencodeReader implements Transcripts {
         return Promise.resolve(this.withStore((store) => this.newestSession(store, cwd)));
     }
 
-    read(source: string, was: Position, budget: number): Promise<ChunkResult> {
-        return Promise.resolve(this.withStore((store) => this.chunkOf(store, sessionOf(must(parseText(source))), was, must(parseCount(budget)))));
+    read(source: SourcePath, was: Position, budget: Count): Promise<ChunkResult> {
+        return Promise.resolve(this.withStore((store) => this.chunkOf(store, sessionOf(textOf(source)), was, budget)));
     }
 
-    latestPrompt(source: string): Promise<PromptResult> {
-        return Promise.resolve(this.withStore((store) => this.promptOf(store, sessionOf(must(parseText(source))))));
+    latestPrompt(source: SourcePath): Promise<PromptResult> {
+        return Promise.resolve(this.withStore((store) => this.promptOf(store, sessionOf(textOf(source)))));
     }
 
-    observed(source: string): Promise<ObservedResult> {
-        return Promise.resolve(this.withStore((store) => this.observedIn(store, sessionOf(must(parseText(source))))));
+    observed(source: SourcePath): Promise<ObservedResult> {
+        return Promise.resolve(this.withStore((store) => this.observedIn(store, sessionOf(textOf(source)))));
     }
 
     private readInFlight(source: Text): Promise<InFlightResult> {

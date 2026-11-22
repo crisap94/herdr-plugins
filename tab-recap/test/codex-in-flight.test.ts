@@ -4,21 +4,21 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { CodexTranscripts } from '#src/adapters/transcripts/codex/transcripts.ts';
-import { codexInFlight } from '#src/adapters/transcripts/codex/in-flight.ts';
 import type { InFlightResult } from '#src/ports/transcripts.ts';
 import { splitReason } from '#src/ports/capability-reasons.ts';
-import { tailOf } from '#src/adapters/transcripts/jsonl.ts';
+import { tailSpan } from '#src/adapters/transcripts/jsonl.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { runningOf } from '#src/recap/domain/in-flight.ts';
+import { codexInFlight, fsPathOf } from './fakes/transcript-lines.ts';
 
 const fixture = (name: string): readonly string[] => readFileSync(join(import.meta.dirname, 'fixtures', 'codex-inflight', name), 'utf8').trim().split('\n');
 const result = (name: string): InFlightResult => codexInFlight(fixture(name), false);
 
 test('codex: all its in-flight work is foreground, and the capability says so by name', () => {
-    const { split } = new CodexTranscripts(tmpdir()).inFlight;
+    const { split } = new CodexTranscripts(fsPathOf(tmpdir())).inFlight;
     if (split.kind !== 'foreground-only') throw new Error('codex cannot tell its background work apart, so it must declare foreground-only');
     assert.equal(split.why, 'codex-cells');
     assert.equal(splitReason(split.why, must(parseText('codex'))), 'codex cannot tell background work that survives a compaction');
@@ -73,7 +73,7 @@ test('codex: a rollout between 2 and 16 MiB doubles its tail budget and counts a
         const middle = filler.repeat(Math.ceil(targetBytes / Buffer.byteLength(filler)));
         writeFileSync(path, `{"type":"event_msg","payload":{"type":"task_started","turn_id":"turn-1"}}\n${middle}{"type":"response_item","payload":{"type":"function_call","call_id":"call-1","name":"sleep","arguments":"x"}}\n`);
         const budgets: number[] = [];
-        const reader = new CodexTranscripts(dir, (source, bytes) => { budgets.push(bytes); return tailOf(source, bytes); });
+        const reader = new CodexTranscripts(fsPathOf(dir), (source, bytes) => { budgets.push(bytes); return tailSpan(source, bytes); });
         assert.deepEqual(await reader.inFlight.read(sourcePathOf(path), countOf(1)), { kind: 'in-flight', count: runningOf(1), background: [] });
         assert.deepEqual(budgets, [2 * 1024 * 1024, 4 * 1024 * 1024]);
     } finally {
@@ -88,7 +88,7 @@ test('codex: an open call in a rollout over 16 MiB is unknown at the reader boun
         const filler = '{"type":"event_msg","payload":{"type":"noise"}}\n';
         const middle = filler.repeat(Math.ceil((17 * 1024 * 1024) / Buffer.byteLength(filler)));
         writeFileSync(path, `{"type":"event_msg","payload":{"type":"task_started","turn_id":"turn-1"}}\n${middle}{"type":"response_item","payload":{"type":"function_call","call_id":"call-1","name":"sleep","arguments":"x"}}\n`);
-        const answer = await new CodexTranscripts(dir).inFlight.read(sourcePathOf(path), countOf(1));
+        const answer = await new CodexTranscripts(fsPathOf(dir)).inFlight.read(sourcePathOf(path), countOf(1));
         assert.equal(answer.kind, 'unknown');
     } finally {
         rmSync(dir, { recursive: true, force: true });

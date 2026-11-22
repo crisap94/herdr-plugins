@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readerKindOf, daemonTranscriptRegistry, modalTranscriptRegistry, replayTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
+import { daemonTranscriptRegistry, modalTranscriptRegistry, replayTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
 import { SCREEN_READER_ID } from '#src/adapters/transcripts/screen.ts';
 import type { Screens } from '#src/ports/screens.ts';
 import { agentKind } from '#src/recap/domain/ids.ts';
+import { readerKindOf } from './fakes/transcript-lines.ts';
 
 test('exact lookup returns the reader for each registered kind', () => {
     const registry = modalTranscriptRegistry();

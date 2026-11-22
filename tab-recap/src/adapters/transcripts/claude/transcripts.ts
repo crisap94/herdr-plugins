@@ -1,16 +1,18 @@
 import { statSync } from 'node:fs';
+import { claudeProjectsRoot, locateClaudeTranscript } from '@stateforge-labs/harness-adapters/claude';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
-import { type ChunkResult, type InFlightResult, type ObservedResult, type Position, type PromptResult, grewOf } from '#src/ports/transcripts.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
+import { UNREAD, type ChunkResult, type InFlightResult, type Located, type ObservedResult, type Position, type PromptResult, type SourcePath, type Transcripts, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
+import { isUnknown, unknown } from '#src/ports/unknowable.ts';
+import type { Lane } from '#src/recap/domain/lane.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import type { FsPath } from '#src/recap/domain/fs-path.ts';
-import { readJsonlFrom, tailSpan } from '../jsonl.ts';
+import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
+import { readJsonlFrom, sameStart, tailSpan, parseUnreadable, type SupportedReading } from '../jsonl.ts';
 import { claudeObservedOf } from './context.ts';
 import { CLAUDE_SPLIT, IN_FLIGHT_MAX_BYTES, answerOf, scanFlight } from './in-flight.ts';
 import { extractClaudeOf } from './rows.ts';
-
-export { ClaudeTranscripts, extractClaude } from './legacy.ts';
 
 export const CLAUDE_KIND = 'claude' satisfies RegisteredKind;
 
@@ -67,5 +69,67 @@ export class ClaudeReader {
             if (this.unknownAt.size <= KEPT_UNKNOWN_MAX) break;
             this.unknownAt.delete(oldest);
         }
+    }
+}
+
+export class ClaudeTranscripts implements Transcripts {
+    readonly agent = agentKind(CLAUDE_KIND);
+    private readonly root: FsPath;
+    private readonly reader = new ClaudeReader();
+    readonly inFlight: SupportedReading = { kind: 'supported', split: CLAUDE_SPLIT, read: (source, budget) => this.readInFlight(source, budget) };
+
+    constructor(root: FsPath = must(parseFsPath(claudeProjectsRoot()))) {
+        this.root = root;
+    }
+
+    locate(lane: Lane): Promise<Located> {
+        return Promise.resolve(this.find(lane));
+    }
+
+    private find(lane: Lane): Located {
+        if (lane.session === null) {
+            return unknown({ why: 'not-found', what: textOf(`a session id for ${lane.pane}`) });
+        }
+        const found = locateClaudeTranscript(lane.session, this.root);
+        return found === null ? unknown({ why: 'not-found', what: textOf(`the transcript of ${lane.session}`) }) : { kind: 'located', source: sourcePathOf(found.path) };
+    }
+
+    latestPrompt(source: SourcePath, budget: Count): Promise<PromptResult> {
+        try {
+            return Promise.resolve(this.reader.latestPrompt(must(parseFsPath(source)), budget));
+        } catch (error) {
+            return Promise.resolve(parseUnreadable(error));
+        }
+    }
+
+    observed(source: SourcePath, budget: Count): Promise<ObservedResult> {
+        try {
+            return Promise.resolve(this.reader.observed(must(parseFsPath(source)), budget));
+        } catch (error) {
+            return Promise.resolve(parseUnreadable(error));
+        }
+    }
+
+    private readInFlight(source: SourcePath, budget: Count): Promise<InFlightResult> {
+        try {
+            return Promise.resolve(this.reader.inFlight(must(parseFsPath(source)), budget));
+        } catch (error) {
+            return Promise.resolve(parseUnreadable(error));
+        }
+    }
+
+    read(source: SourcePath, was: Position, budget: Count): Promise<ChunkResult> {
+        try {
+            return Promise.resolve(this.reader.read(must(parseFsPath(source)), was, budget));
+        } catch (error) {
+            return Promise.resolve(parseUnreadable(error));
+        }
+    }
+
+    carry(from: Located, to: Located, at: Position): Promise<Position> {
+        if (from.kind !== 'located' || to.kind !== 'located') return Promise.resolve(UNREAD);
+        const [was, now, cursor] = [parseFsPath(from.source), parseFsPath(to.source), parseCount(at.cursor)];
+        if (was.kind !== 'ok' || now.kind !== 'ok' || cursor.kind !== 'ok') return Promise.resolve(UNREAD);
+        return Promise.resolve(sameStart(was.value, now.value, cursor.value) === 'present' ? at : UNREAD);
     }
 }
