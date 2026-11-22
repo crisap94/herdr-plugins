@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import { requestOf } from '#test/support.ts';
 import assert from 'node:assert/strict';
-import { instructions, message } from '#src/adapters/job/prompts/recap-prompt.ts';
+import { instructions, messageText } from '#src/adapters/job/prompts/recap-prompt.ts';
 import { languageNameOf, messagesFor, recapLanguageOfSetting } from '#src/i18n/index.ts';
 import { SECTIONS, sectionOf } from '#src/i18n/sections.ts';
 import { textOf } from '#src/recap/domain/text.ts';
@@ -57,10 +57,10 @@ test('instructions: a ledger in another language is updated to the new one', () 
 });
 
 test('a switch with nothing new still gives the model something to do; a retry says what was wrong', () => {
-    const switching = message(requestOf({ language: textOf('es') }));
+    const switching = messageText(requestOf({ language: textOf('es') }));
     assert.match(switching, /<ledger\/>/);
     assert.match(switching, /<transcript agent="a1"\/>/, 'nothing new: an empty transcript');
-    assert.match(message(requestOf({ correction: textOf('the answer is not valid JSON') })), /<correction>the answer is not valid JSON<\/correction>\n<\/recap_input>/);
+    assert.match(messageText(requestOf({ correction: textOf('the answer is not valid JSON') })), /<correction>the answer is not valid JSON<\/correction>\n<\/recap_input>/);
 });
 
 test('recap language: ui follows the locale; en/es by code or name; free text is sanitised', () => {

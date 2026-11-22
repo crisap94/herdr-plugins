@@ -1,4 +1,5 @@
 import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
+import { kindOf } from '#test/fakes/agent-kind.ts';
 import { policyOf, tuningOf } from './fakes/settings-readers.ts';
 import { candidateFor } from './autocompact-world.ts';
 import { test, after } from 'node:test';
@@ -11,7 +12,7 @@ import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.
 import { splitReason } from '#src/ports/capability-reasons.ts';
 import { CodexTranscripts } from '#src/adapters/transcripts/codex/transcripts.ts';
 import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcripts.ts';
-import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
+import { compactionPlanner } from '#src/adapters/capability/compaction-plans.ts';
 import { daemonTranscriptRegistry, IN_FLIGHT_CAPABILITIES, modalTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
 import { ScreenTranscripts } from '#src/adapters/transcripts/screen.ts';
 import { CustomHarness } from '#src/adapters/harness/custom.ts';
@@ -38,7 +39,7 @@ type Kind = BackendId | 'gemini';
 import { COMPACTABLE } from '#src/recap/domain/compaction.ts';
 import { REGISTERED_KINDS } from '#src/recap/domain/registered-kinds.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
-import { handoffPlans, SETTLE_SOURCE } from '#src/adapters/capability/handoff-plans.ts';
+import { handoffPlanner, SETTLE_SOURCE } from '#src/adapters/capability/handoff-plans.ts';
 import type { LocatedBy } from '#src/recap/domain/handoff-plan.ts';
 import { HANDOFF_OBSERVATIONS, HANDOFF_OBSERVE_MS } from '#src/recap/application/handoff-limits.ts';
 import type { Observed } from '#src/recap/domain/compaction.ts';
@@ -281,14 +282,14 @@ test('registered kind flags match transcript and compaction lookup outcomes', ()
     const inFlight: Readonly<Record<string, { readonly kind: string }>> = IN_FLIGHT_CAPABILITIES;
     for (const [kind, flags] of Object.entries(REGISTERED_KINDS)) {
         assert.equal(transcripts.exact(agentKind(kind)) !== undefined, flags.hasTranscript, `${kind} transcript capability`);
-        assert.equal(compactionPlans.forKind(kind, '').kind === 'supported', flags.compactable, `${kind} compaction capability`);
+        assert.equal(compactionPlanner.forKind(kindOf(kind), textOf('')).kind === 'supported', flags.compactable, `${kind} compaction capability`);
         assert.equal(inFlight[kind]?.kind === 'supported', flags.hasTranscript, `${kind} in-flight capability`);
     }
 });
 
 test('gemini history and compaction lookups refuse with their established wording', () => {
     assert.equal(modalTranscriptRegistry().exact(agentKind('gemini')), undefined);
-    assert.deepEqual(compactionPlans.forKind('gemini', ''), { kind: 'unsupported', why: 'no compaction plan is registered for gemini' });
+    assert.deepEqual(compactionPlanner.forKind(kindOf('gemini'), textOf('')), { kind: 'unsupported', why: 'no compaction plan is registered for gemini' });
 });
 
 test('unavailable reasons name the kind for the modal and the daemon registries alike', () => {
@@ -371,7 +372,7 @@ function handoffRows(kind: RegisteredKind, pin: HandoffPin): void {
     const working = { kind: 'agent', agent: agentKind(kind), status: 'working' } as const;
 
     test(`${kind} handoff: the plan is one prompt with either evidence, no retry, its settle time and its locating key`, () => {
-        assert.deepEqual(handoffPlans.forKind(kind), {
+        assert.deepEqual(handoffPlanner.forKind(kindOf(kind)), {
             kind: 'supported',
             plan: { delivery: 'prompt', evidence: 'either', retry: 'none', settle: { after: duration(pin.settleMs), evidence: { trials: pin.trials, source: SETTLE_SOURCE } }, locatedBy: pin.locatedBy },
         });

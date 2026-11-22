@@ -5,11 +5,11 @@ import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { present } from '#src/recap/render/present.ts';
 import { LaneContexts } from '#src/recap/application/lane-contexts.ts';
-import { contextWindows } from '#src/adapters/capability/context-window.ts';
+import { agentWindows } from '#src/adapters/capability/context-window.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
-import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
+import type { ModelWindows } from '#src/ports/model-catalogue.ts';
 import type { CompactLimits } from '#src/ports/compact-limits.ts';
 import { memoryStore } from './db/support.ts';
 import { agentKind } from '#src/recap/domain/ids.ts';
@@ -47,20 +47,20 @@ function reader(agent: string, model: string | null, tokens: number, window: num
         observed: () => Promise.resolve({ kind: 'observed', observed: { tokens: countOf(tokens), peak: countOf(tokens), window: window === null ? null : countOf(window), model: model === null ? null : textOf(model) } }),
     };
 }
-const catalogue = (windows: Record<string, number>): ModelCatalogue => ({ windowOf: (model) => windows[model] ?? null });
+const catalogue = (windows: Record<string, number>): ModelWindows => ({ windowOf: (model) => { const window = windows[model]; return window === undefined ? null : countOf(window); } });
 
 test('lane contexts: runtime window first, the setting overrides, a change is reported once', async () => {
-    const claude = new LaneContexts(registryWith({ claude: reader('claude', 'claude-opus-5-5', 450_000, null) }), contextWindows(catalogue({ 'claude-opus-5-5': 1_000_000 })), noLimits, () => null);
+    const claude = new LaneContexts(registryWith({ claude: reader('claude', 'claude-opus-5-5', 450_000, null) }), agentWindows(catalogue({ 'claude-opus-5-5': 1_000_000 })), noLimits, () => null);
     assert.equal(await claude.refresh(lane('claude')), true);
     assert.deepEqual(claude.of('w1:p1'), { tokens: 450_000, window: 1_000_000, source: 'catalogue' });
     assert.equal(await claude.refresh(lane('claude')), false, 'the same answer is no change');
-    const codex = new LaneContexts(registryWith({ codex: reader('codex', 'gpt-6-luna', 116_000, 258_400) }), contextWindows(catalogue({})), noLimits, () => null);
+    const codex = new LaneContexts(registryWith({ codex: reader('codex', 'gpt-6-luna', 116_000, 258_400) }), agentWindows(catalogue({})), noLimits, () => null);
     await codex.refresh(lane('codex'));
     assert.equal(codex.of('w1:p1')?.source, 'agent');
-    const set = new LaneContexts(registryWith({ claude: reader('claude', 'claude-opus-5-5', 450_000, null) }), contextWindows(catalogue({})), noLimits, () => 500_000);
+    const set = new LaneContexts(registryWith({ claude: reader('claude', 'claude-opus-5-5', 450_000, null) }), agentWindows(catalogue({})), noLimits, () => 500_000);
     await set.refresh(lane('claude'));
     assert.deepEqual(set.of('w1:p1'), { tokens: 450_000, window: 500_000, source: 'setting' });
-    const unknownModel = new LaneContexts(registryWith({ opencode: reader('opencode', 'acme/new', 1000, null) }), contextWindows(catalogue({})), noLimits, () => null);
+    const unknownModel = new LaneContexts(registryWith({ opencode: reader('opencode', 'acme/new', 1000, null) }), agentWindows(catalogue({})), noLimits, () => null);
     assert.equal(await unknownModel.refresh(lane('opencode')), false);
     assert.equal(unknownModel.of('w1:p1'), null, 'a model nothing knows has no hint');
 });

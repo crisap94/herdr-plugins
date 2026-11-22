@@ -2,14 +2,15 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { duration } from '#src/adapters/herdr-core/sdk-core.ts';
 import { HcCoreFleet } from '#src/adapters/herdr-core/fleet.ts';
-import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
+import { PathHarnessDirectory } from '#src/adapters/harness/on-path.ts';
+import { kindOf } from '#test/fakes/agent-kind.ts';
 import type { Frame, SnapshotResult } from '#src/ports/fleet-source.ts';
 import { FakeHcCore, later } from '@stateforge-labs/herdr-sdk/core/test-kit';
 
 type Row = Record<string, unknown>;
 
 const SETTLE = 250;
-const harnesses = new PathHarnesses(['claude']);
+const harnesses = new PathHarnessDirectory([kindOf('claude')]);
 const noSession = (): null => null;
 const labelsOf = (tab: string): Row => ({ 'herdr.tab': tab, 'herdr.space': 'sp1', where: 'S / 1' });
 const agent = (address: string, state: string, tab = 'tb1'): Row => ({

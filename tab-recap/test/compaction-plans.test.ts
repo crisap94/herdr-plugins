@@ -1,7 +1,8 @@
 import { test } from 'node:test';
+import { kindOf } from '#test/fakes/agent-kind.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import assert from 'node:assert/strict';
-import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
+import { compactionPlanner } from '#src/adapters/capability/compaction-plans.ts';
 import { needsIdle, NotAReasonError, QUEUES } from '#src/recap/domain/compaction-plan.ts';
 import type { CompactionPlan } from '#src/recap/domain/compaction-plan.ts';
 
@@ -15,7 +16,7 @@ const plain = (raw: CompactionPlan): unknown => ({
 });
 
 const registeredPlan = (kind: 'claude' | 'codex' | 'opencode', guidance: string): CompactionPlan => {
-    const result = compactionPlans.forKind(kind, guidance);
+    const result = compactionPlanner.forKind(kindOf(kind), textOf(guidance));
     assert.equal(result.kind, 'supported');
     return result.plan;
 };
@@ -33,7 +34,7 @@ test('registered kinds expose their current behavior as typed plans', () => {
 });
 
 test('plan lookup refuses an unregistered lane kind explicitly', () => {
-    assert.deepEqual(compactionPlans.forKind('zed', 'guidance'), { kind: 'unsupported', why: 'no compaction plan is registered for zed' });
+    assert.deepEqual(compactionPlanner.forKind(kindOf('zed'), textOf('guidance')), { kind: 'unsupported', why: 'no compaction plan is registered for zed' });
 });
 
 test('a kind that needs the lane idle must say why; one that queues says nothing', () => {

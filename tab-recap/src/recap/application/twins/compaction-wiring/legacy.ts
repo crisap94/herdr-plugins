@@ -17,7 +17,7 @@ import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Duration } from '#src/recap/domain/time.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import type { CompactionPlans } from '#src/ports/compaction-plans.ts';
+import type { CompactionPlanner } from '#src/ports/compaction-plans.ts';
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
 import type { AskLedger } from '#src/ports/ask-ledger.ts';
 import type { CompactionPorts, BriefPort, CoveragePort, LaneWebs, RestoreHandoff, TypingPort } from '../../compaction-deps.ts';
@@ -29,7 +29,7 @@ import { must } from '#src/protocol/result.ts';
 interface OldBriefPort extends Omit<BriefPort, 'job'> { job(): string | null }
 
 export interface CompactionDeps {
-    readonly compactionPlans: CompactionPlans;
+    readonly compactionPlans: CompactionPlanner;
     readonly agents: AgentPanes;
     readonly notifier: NotifierPort;
     readonly records: Pick<GuardedRecapRecords, 'readRecap'>;

@@ -1,8 +1,9 @@
 import { test } from 'node:test';
+import { kindOf } from '#test/fakes/agent-kind.ts';
 import assert from 'node:assert/strict';
 import { contextOf, hintFor, sizeOf, hintOf, hintSetting, targetOf, targetSetting, windowOf } from '#src/recap/domain/compaction.ts';
 import type { ContextUse, Observed } from '#src/recap/domain/compaction.ts';
-import { windowOfKind } from '#src/adapters/capability/context-window.ts';
+import { windowOfAgent } from '#src/adapters/capability/context-window.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
@@ -38,7 +39,7 @@ const use = (tokens: number): ContextUse => ({ tokens: countOf(tokens), window: 
 const seen: Observed = { tokens: countOf(90_000), peak: countOf(0), window: null, model: textOf('claude-opus-4-7') };
 const context = (observed: Observed, kind: string, setting: number | null, catalogued: number | null): ContextUse | null => contextOf(
     { observed, setting: setting === null ? null : countOf(setting) },
-    windowOfKind(kind, { windowOf: () => (catalogued === null ? null : countOf(catalogued)) }),
+    windowOfAgent(kindOf(kind), { windowOf: () => (catalogued === null ? null : countOf(catalogued)) }),
 );
 
 test('context window, runtime first: setting, agent, catalogue, family table — in that order', () => {

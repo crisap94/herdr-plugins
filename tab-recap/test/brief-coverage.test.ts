@@ -13,7 +13,7 @@ import { correctionOf, covered, factsOf, linesOf, missingOf, questionsFor } from
 import type { Coverage } from '#src/recap/application/brief-coverage.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import { appendedBrief } from '#src/recap/application/compaction-coverage.ts';
-import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
+import { compactionPlanner } from '#src/adapters/capability/compaction-plans.ts';
 import { HerdrAgentPanes } from '#src/adapters/herdr/agents.ts';
 import type { Wire } from '#src/adapters/herdr/agents.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
@@ -85,7 +85,7 @@ function flow(checks: readonly Coverage[], withCoverage = true, template: { read
     let clock = NOW;
     const recap = { ...blankRecap(tabId('w1:t1')), tasks: oneTask('x', NO_SECTIONS, ['w1:p1']) };
     const deps: CompactionDeps = {
-        compactionPlans,
+        compactionPlans: compactionPlanner,
         claims: new LaneClaims(),
         agents: { status: () => Promise.resolve({ kind: 'agent', agent: agentKind(world.harness.agent), status: 'idle' }), prompt: (_pane, text) => { world.prompts.push(text); return Promise.resolve({ kind: 'sent' }); }, typeLine: (pane, line, behavior) => { if (world.harness.typeLine !== null) return world.harness.typeLine(pane, line, behavior); const refused = lineBreakRefusal(line); if (refused !== null) return Promise.resolve(refused); world.typed.push(line.pieces.map(String).join('')); return Promise.resolve({ kind: 'sent' }); }, askNote: () => Promise.resolve({ kind: 'done' }) },
         notifier: { notify: (title, body) => { world.toasts.push(`${title} | ${body}`); return Promise.resolve({ kind: 'shown' }); } },

@@ -11,10 +11,7 @@ import { supported } from '#src/ports/capability.ts';
 import type { Capability } from '#src/ports/capability.ts';
 import type { ContextWindowWhy } from '#src/ports/capability-reasons.ts';
 
-import { countsFromLibrary } from './legacy.ts';
 import { countOf } from '#src/recap/domain/count.ts';
-
-export { contextWindows, claudeWindowOf, windowOfKind } from './legacy.ts';
 
 type Source = (observed: Observed, catalogue: ModelWindows) => WindowBasis | null;
 
@@ -36,7 +33,7 @@ const reportedWindow = (observed: Observed, catalogue: ModelWindows, sizes: read
     stated(observed, sizes) ?? catalogued(observed, catalogue, sizes);
 
 const claudeWindow = (observed: Observed, catalogue: ModelWindows): WindowBasis => {
-    const sizes = countsFromLibrary(ClaudeWindow.Sizes);
+    const sizes = ClaudeWindow.Sizes.map((size) => countOf(size));
     return reportedWindow(observed, catalogue, sizes) ?? { window: countOf(claudeContextWindow(observed.model ?? '').window), source: 'table', sizes };
 };
 

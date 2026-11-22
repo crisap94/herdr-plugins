@@ -9,10 +9,10 @@ import { parseTabId } from '#src/recap/domain/ids.ts';
 import { operatorAnchors } from '#src/adapters/db/operator-anchors.ts';
 import { scratchStore } from '#src/adapters/db/scratch.ts';
 import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
-import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
+import { AUTO_PATH_KINDS, PathHarnessDirectory } from '#src/adapters/harness/on-path.ts';
 import { SystemClock } from '#src/adapters/os/system-clock.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
-import { AUTO_ORDER, availableIn, enumeratorFor, judgeFor, summarizerFor, summarizerWork } from '#src/daemon/backends.ts';
+import { availableIn, enumeratorFor, judgeFor, summarizerFor, summarizerWork } from '#src/daemon/backends.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
@@ -95,7 +95,7 @@ function importedBeside(tab: string | null): ReturnType<typeof importedChaptersA
 
 async function run(file: string, reader: Transcripts, options: EvalRequest, size: number): Promise<number> {
     const config = loadConfig();
-    const found = await new PathHarnesses(AUTO_ORDER).available();
+    const found = await new PathHarnessDirectory(AUTO_PATH_KINDS).available();
     const available = isUnknown(found) ? [] : found.ids;
     const runtime = createRuntime();
     const scratch = scratchStore();

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { RUBRIC, rubricOf } from '#src/adapters/job/prompts/rubric.ts';
+import { RUBRIC, rubricText } from '#src/adapters/job/prompts/rubric.ts';
 import { instructions } from '#src/adapters/job/prompts/recap-prompt.ts';
 import { checkIds, examplesOf, RUBRIC_TEXT } from '#test/rubric.ts';
 import { requestOf } from '#test/support.ts';
@@ -28,7 +28,7 @@ test('the writer\'s instructions carry every check line of the rubric verbatim',
 
 test('a check edited in the file reaches the instructions with no other edit (the parts are cut from the file text)', () => {
     const edited = RUBRIC_TEXT.replace('the item states one fact, action or decision.', 'one fact only.');
-    assert.match(rubricOf(edited).items, /\*\*I1 atomic\*\* — one fact only\./);
-    assert.equal(rubricOf(edited).sections, RUBRIC.sections);
-    assert.match(rubricOf(RUBRIC_TEXT).whole, /read-back/);
+    assert.match(rubricText(textOf(edited)).items, /\*\*I1 atomic\*\* — one fact only\./);
+    assert.equal(rubricText(textOf(edited)).sections, RUBRIC.sections);
+    assert.match(rubricText(textOf(RUBRIC_TEXT)).whole, /read-back/);
 });

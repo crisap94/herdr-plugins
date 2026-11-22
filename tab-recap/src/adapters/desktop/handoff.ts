@@ -7,7 +7,7 @@ import { PrintedHandoffs } from '#src/recap/application/handoff-print.ts';
 import { databaseFile } from '../db/database.ts';
 import { openPrintStore } from '../db/print-store.ts';
 import { GitLaneRepo } from '../git/lane-repo.ts';
-import { GitWorksiteReader } from '../git/worksite.ts';
+import { GitWorksite } from '../git/worksite.ts';
 import { SystemClock } from '../os/system-clock.ts';
 import { modalTranscriptRegistry } from '../transcripts/registry.ts';
 
@@ -16,7 +16,7 @@ export function desktopPrinter(fleet: Pick<Fleet, 'read' | 'agents'>, flush: Flu
     return new PrintedHandoffs({
         openStore: () => openPrintStore(databaseFile(stateDirectory()), loadConfig().closedLaneDays),
         transcripts,
-        worksite: { reader: new GitWorksiteReader(), repo: new GitLaneRepo(new SystemClock()), edits: new EditTally(transcripts) },
+        worksite: { reader: new GitWorksite(), repo: new GitLaneRepo(new SystemClock()), edits: new EditTally(transcripts) },
         tokens: fleet,
         target: fleet.agents(),
         closedDays: loadConfig().closedLaneDays,

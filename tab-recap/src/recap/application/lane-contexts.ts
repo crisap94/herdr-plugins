@@ -1,7 +1,7 @@
 import { contextOf } from '#src/recap/domain/compaction.ts';
 import type { ContextUse, Observed } from '#src/recap/domain/compaction.ts';
 import type { CompactLimits } from '#src/ports/compact-limits.ts';
-import type { ContextWindows } from '#src/ports/context-windows.ts';
+import type { ContextWindowLookup } from '#src/ports/context-windows.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { parseCount, countOf } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
@@ -27,12 +27,12 @@ const capAt = (base: Count, percent: Count | null): Count => {
 
 export class LaneContexts {
     private readonly transcripts: TranscriptRegistry;
-    private readonly windows: ContextWindows;
+    private readonly windows: ContextWindowLookup;
     private readonly limits: CompactLimits;
     private readonly setting: () => number | null;
     private readonly known = new Map<string, ContextUse | null>();
 
-    constructor(transcripts: TranscriptRegistry, windows: ContextWindows, limits: CompactLimits, setting: () => number | null) {
+    constructor(transcripts: TranscriptRegistry, windows: ContextWindowLookup, limits: CompactLimits, setting: () => number | null) {
         this.transcripts = transcripts;
         this.windows = windows;
         this.limits = limits;
@@ -64,7 +64,7 @@ export class LaneContexts {
         if (observed === null) {
             return null;
         }
-        const use = contextOf({ observed, setting: this.settingCount() }, this.windows.windowOf(String(lane.agent)));
+        const use = contextOf({ observed, setting: this.settingCount() }, this.windows.windowOf(lane.agent));
         return use === null || use.source === 'setting' ? use : this.capped(use, lane, observed);
     }
 

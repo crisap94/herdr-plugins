@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { judgeInstructions } from '../../tab-recap/src/adapters/job/prompts/judge-instructions.ts';
+import { judgeInstructionsOf } from '../../tab-recap/src/adapters/job/prompts/judge-instructions.ts';
 import { RUBRIC_TEXT } from '../../tab-recap/src/adapters/job/prompts/rubric.ts';
 import { parseScore } from '../../tab-recap/src/recap/application/judge-answer.ts';
 import { scoringDocument } from '../../tab-recap/src/recap/application/judge-context.ts';
@@ -60,7 +60,7 @@ for (const line of lines) {
     };
     const document = writerContext(line.input.request);
     const scoring = scoringDocument({ rubric: RUBRIC_TEXT, input: document, items: line.input.items, state: line.input.state });
-    const instructions = judgeInstructions('score', new Map());
+    const instructions = judgeInstructionsOf('score', new Map());
     sizes.push(`${line.id} writer_input=${document.length} judge_input=${scoring.length} instructions=${instructions.length}`);
     if (!scoring.startsWith('<judge_input version="1">') || !scoring.includes('<writer_input>') || instructions.length === 0) {
         say('the scoring document or the instructions were not built');

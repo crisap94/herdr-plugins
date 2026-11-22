@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { LocalCatalogue } from '#src/adapters/capability/catalogue.ts';
+import { CatalogueWindows } from '#src/adapters/capability/catalogue.ts';
+import { pathOrNull } from '#test/fakes/agent-kind.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcripts.ts';
 import { opencodeFixture } from '#test/opencode-fixture.ts';
 import { claudeObserved, codexObserved, fsPathOf, sourcePathOf } from './fakes/transcript-lines.ts';
@@ -86,15 +88,15 @@ test('the local catalogue: provider/model, a bare id (anthropic first), [1m] str
             anthropic: { id: 'anthropic', models: { 'claude-opus-5-5': { limit: { context: 1_000_000, output: 64_000 } }, 'claude-haiku-4-5': { limit: { context: 200_000 } } } },
             acme: { id: 'acme', models: { 'big-1': { limit: { context: 128_000 } }, 'claude-haiku-4-5': { limit: { context: 99 } }, empty: {} } },
         }));
-        const catalogue = new LocalCatalogue(file);
-        assert.equal(catalogue.windowOf('acme/big-1'), 128_000);
-        assert.equal(catalogue.windowOf('claude-opus-5-5'), 1_000_000);
-        assert.equal(catalogue.windowOf('claude-opus-5-5[1m]'), 1_000_000);
-        assert.equal(catalogue.windowOf('claude-haiku-4-5'), 200_000, 'anthropic is asked first');
-        assert.equal(catalogue.windowOf('big-1'), 128_000, 'a bare id is looked for in every provider');
-        assert.equal(catalogue.windowOf('acme/empty'), null);
-        assert.equal(catalogue.windowOf('nobody/nothing'), null);
-        assert.equal(new LocalCatalogue(join(dir, 'missing.json')).windowOf('acme/big-1'), null);
+        const catalogue = new CatalogueWindows(pathOrNull(file));
+        assert.equal(catalogue.windowOf(textOf('acme/big-1')), 128_000);
+        assert.equal(catalogue.windowOf(textOf('claude-opus-5-5')), 1_000_000);
+        assert.equal(catalogue.windowOf(textOf('claude-opus-5-5[1m]')), 1_000_000);
+        assert.equal(catalogue.windowOf(textOf('claude-haiku-4-5')), 200_000, 'anthropic is asked first');
+        assert.equal(catalogue.windowOf(textOf('big-1')), 128_000, 'a bare id is looked for in every provider');
+        assert.equal(catalogue.windowOf(textOf('acme/empty')), null);
+        assert.equal(catalogue.windowOf(textOf('nobody/nothing')), null);
+        assert.equal(new CatalogueWindows(pathOrNull(join(dir, 'missing.json'))).windowOf(textOf('acme/big-1')), null);
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }

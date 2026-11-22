@@ -173,7 +173,7 @@ export class Sender {
     }
 
     async send(lane: Lane, text: Text, trail: Trail, placed: Placed): Promise<Unsupported | undefined> {
-        const resolved: CompactionPlanResult = this.deps.compactionPlans.forKind(String(lane.agent), text.brief ?? guidanceOf(text.material));
+        const resolved: CompactionPlanResult = this.deps.compactionPlans.forKind(lane.agent, text.brief ?? guidanceOf(text.material));
         if (resolved.kind === 'unsupported') {
             trail.end('failed', { why: resolved.why });
             return resolved;

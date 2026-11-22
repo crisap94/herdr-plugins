@@ -10,7 +10,7 @@ import { blankRecap } from '#src/ports/recap-records.ts';
 import type { RecapRecords, TabRecap } from '#src/ports/recap-records.ts';
 import type { HandoffRequestRow } from '#src/ports/requests.ts';
 import type { InFlight, InFlightReading } from '#src/ports/in-flight.ts';
-import { handoffPlans } from '#src/adapters/capability/handoff-plans.ts';
+import { handoffPlanner } from '#src/adapters/capability/handoff-plans.ts';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
@@ -127,7 +127,7 @@ export function harness(over: Partial<FlowWorld> = {}, sender: Pick<HandoffSende
         records: { readRecap: () => { if (world.recapThrows) { throw new Error('unreadable recap'); } return world.recap; } } satisfies Pick<RecapRecords, 'readRecap'>,
         ledger: new MemoryLedger().seed(...world.facts),
         closed: { closures: { resolve: () => ({ kind: 'absent' }) }, ledger: new MemoryLedger().seed(...world.facts), runs: { runAt: () => null }, closedDays: () => DEFAULT_CLOSED_LANE_DAYS },
-        target: { plans: handoffPlans, inFlight, awaiting: async () => { calls.push('awaiting'); return world.awaiting; } },
+        target: { plans: handoffPlanner, inFlight, awaiting: async () => { calls.push('awaiting'); return world.awaiting; } },
         claims,
         flush: (tab, why): Promise<void> => { flushes.push(`${String(tab)} ${why} at ${calls.length}`); return Promise.resolve(); },
         refresh: async (tab) => {

@@ -6,13 +6,8 @@ import type { BackgroundItem } from '#src/recap/domain/in-flight.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
-import type { HandoffPlanResult } from '#src/recap/domain/handoff-plan.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { RunItem } from '../../run-inputs.ts';
-
-export interface HandoffPlans {
-    forKind(rawKind: string): HandoffPlanResult;
-}
 
 export interface PrintRequest {
     readonly from: PaneId;
@@ -48,10 +43,6 @@ export type Settled = { readonly kind: 'settled'; readonly status: string } | { 
 
 export interface LaneSettling {
     settled(pane: string, since: Instant, timeoutMs: number): Promise<Settled>;
-}
-
-export interface ModelCatalogue {
-    windowOf(model: string): number | null;
 }
 
 export interface RunResult {

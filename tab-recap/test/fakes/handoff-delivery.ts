@@ -1,4 +1,5 @@
-import { handoffPlans } from '#src/adapters/capability/handoff-plans.ts';
+import { handoffPlanner } from '#src/adapters/capability/handoff-plans.ts';
+import { kindOf } from '#test/fakes/agent-kind.ts';
 import type { AgentLookup, AgentPanes, Prompted, PromptStance, PromptWaitFor } from '#src/ports/agents.ts';
 import type { Located, PromptResult, Transcripts, ChunkResult } from '#src/ports/transcripts.ts';
 import { unknown, type Unknown } from '#src/ports/unknowable.ts';
@@ -161,7 +162,7 @@ export function leaseSpy(result: Acquired): LeaseSpy {
     };
 }
 
-const registered = handoffPlans.forKind('claude');
+const registered = handoffPlanner.forKind(kindOf('claude'));
 if (registered.kind !== 'supported') {
     throw new Error('claude must declare a handoff plan for the fixtures');
 }

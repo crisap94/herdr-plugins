@@ -1,5 +1,4 @@
 import { join } from 'node:path';
-import { AUTO_ORDER } from '#src/recap/domain/backend.ts';
 import { parsePaneId, type SessionId, type TabId } from '#src/recap/domain/ids.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
@@ -22,12 +21,12 @@ import { startDesktopApi } from './api/start.ts';
 import { HcCoreFleet } from '../herdr-core/fleet.ts';
 import type { SocketPath } from '../herdr-core/sdk-core.ts';
 import { claudeSessions, defaultClaudeHome } from '../herdr-core/sessions.ts';
-import { PathHarnesses } from '../harness/on-path.ts';
+import { AUTO_PATH_KINDS, PathHarnessDirectory } from '../harness/on-path.ts';
 import { PublishingRecords } from './publishing-records.ts';
 import { PublishingViews } from './publishing-views.ts';
 
 function fleetFor(path?: SocketPath): HcCoreFleet {
-    const parts = { harnesses: new PathHarnesses(AUTO_ORDER), sessions: claudeSessions(defaultClaudeHome()), ...(path === undefined ? {} : { path }) };
+    const parts = { harnesses: new PathHarnessDirectory(AUTO_PATH_KINDS), sessions: claudeSessions(defaultClaudeHome()), ...(path === undefined ? {} : { path }) };
     return new HcCoreFleet(parts);
 }
 

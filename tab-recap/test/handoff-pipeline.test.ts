@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderHandoff } from '#src/recap/application/handoff-pipeline.ts';
 import { exitCodeOf, messageKeyOf } from '#src/recap/domain/handoff-outcome.ts';
-import type { WorksiteReader } from '#src/ports/worksite-reader.ts';
+import type { WorksiteReaderPort } from '#src/ports/worksite-reader.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { fact } from './fakes/fact-at.ts';
 import { ID, NOW, OTHER_ID, depsOf, inputOf, textOf } from './fakes/handoff-pipeline-world.ts';
@@ -36,7 +36,7 @@ test('the same ledger under two handoff ids differs within the first 400 code po
 
 test('a lane with no recap run is refused ledger-empty before git is asked anything', async () => {
     const asked: string[] = [];
-    const reader: WorksiteReader = {
+    const reader: WorksiteReaderPort = {
         lastCommit: async (directory) => { asked.push(directory); return unknown({ why: 'not-found', what: brandedText('directory') }); },
         uncommitted: async (directory) => { asked.push(directory); return unknown({ why: 'not-found', what: brandedText('directory') }); },
     };

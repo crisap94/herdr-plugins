@@ -1,10 +1,10 @@
 import { writeTx } from '#src/adapters/db/connection.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import { handoffBytesOf } from '#src/adapters/db/handoff-ids.ts';
-import { handoffPlans } from '#src/adapters/capability/handoff-plans.ts';
+import { handoffPlanner } from '#src/adapters/capability/handoff-plans.ts';
 import { readPaneSession } from '#src/adapters/herdr/fleet.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
-import { GitWorksiteReader } from '#src/adapters/git/worksite.ts';
+import { GitWorksite } from '#src/adapters/git/worksite.ts';
 import { TranscriptInFlight } from '#src/adapters/transcripts/in-flight.ts';
 import { LOCAL_REQUESTER, type Ask, type AskKey, type AskLedger } from '#src/ports/ask-ledger.ts';
 import type { HandoffAnswerStore } from '#src/ports/handoff-answers.ts';
@@ -255,14 +255,14 @@ export function wireHandoffs(parts: HandoffWiring): HandoffRunner {
     const flow = new HandoffFlow({
         lanes: (): readonly Lane[] => [...board().lanes.values()], records: store.records, ledger: store.ledger,
         closed: { closures: store.closedLanes, ledger: store.ledger, runs: store.closedLanes, closedDays: (): ClosedLaneDays => store.closedDays },
-        target: { plans: handoffPlans, inFlight: new TranscriptInFlight(transcripts), awaiting: awaitingNow },
+        target: { plans: handoffPlanner, inFlight: new TranscriptInFlight(transcripts), awaiting: awaitingNow },
         claims, refresh: refreshVia(recaps, store.records), flush: (tab, why): Promise<void> => recaps.flush(tab, why),
         render: renderHandoff({
             records: store.records,
             transcripts,
             log,
             locate: (lane: HandoffLane): Promise<FsPath | null> => sourceOf(transcripts, board, lane),
-            worksite: { reader: new GitWorksiteReader(), repo: repos, edits: new EditTally(transcripts) },
+            worksite: { reader: new GitWorksite(), repo: repos, edits: new EditTally(transcripts) },
             tokens: fleet,
         }),
         sender: new HandoffSender({

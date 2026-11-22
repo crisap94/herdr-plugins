@@ -5,13 +5,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { LaneContexts } from '#src/recap/application/lane-contexts.ts';
-import { contextWindows } from '#src/adapters/capability/context-window.ts';
+import { agentWindows } from '#src/adapters/capability/context-window.ts';
 import { CompactLimitFiles } from '#src/adapters/capability/compact-limits.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
-import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
+import type { ModelWindows } from '#src/ports/model-catalogue.ts';
 import { agentKind } from '#src/recap/domain/ids.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { countOf } from '#src/recap/domain/count.ts';
@@ -43,11 +43,11 @@ function reader(agent: string, model: string | null, tokens: number, window: num
     };
 }
 
-const catalogue = (windows: Record<string, number>): ModelCatalogue => ({ windowOf: (model) => windows[model] ?? null });
+const catalogue = (windows: Record<string, number>): ModelWindows => ({ windowOf: (model) => { const window = windows[model]; return window === undefined ? null : countOf(window); } });
 
 const claudeAt = (home: string, setting: number | null = null): LaneContexts => new LaneContexts(
     registryWith({ claude: reader('claude', 'claude-opus-5-5', 240_000, null) }),
-    contextWindows(catalogue({ 'claude-opus-5-5': 1_000_000 })),
+    agentWindows(catalogue({ 'claude-opus-5-5': 1_000_000 })),
     new CompactLimitFiles({ home: must(parseFsPath(home)), managed: [must(parseFsPath(join(home, 'managed-settings.json')))] }),
     () => setting,
 );
@@ -110,7 +110,7 @@ test('a Codex model_auto_compact_token_limit before the first section caps the w
     const cwd = tempDir();
     const codex = (): LaneContexts => new LaneContexts(
         registryWith({ codex: reader('codex', 'gpt-6-luna', 116_000, 258_400) }),
-        contextWindows(catalogue({})),
+        agentWindows(catalogue({})),
         new CompactLimitFiles({ home: must(parseFsPath(home)), managed: [must(parseFsPath(join(home, 'managed-settings.json')))] }),
         () => null,
     );

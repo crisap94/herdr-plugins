@@ -6,7 +6,7 @@ import { BRIEF_INSTRUCTIONS } from './prompts/brief-instructions.ts';
 import { leaf } from '#src/recap/application/xml.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import { parseText } from '#src/recap/domain/text.ts';
-import { unfenced } from './prompts/recap-prompt.ts';
+import { unfencedText } from './prompts/recap-prompt.ts';
 
 export class HarnessBrief implements CompactionBriefs {
     readonly backend: string;
@@ -28,6 +28,6 @@ export class HarnessBrief implements CompactionBriefs {
             return unknown({ why: 'unreadable', detail: causeOf(must(parseText(`the document is too long for ${this.harness.id}`))) });
         }
         const ran = await this.harness.run(call, this.settings);
-        return isUnknown(ran) ? ran : { kind: 'briefed', text: unfenced(ran.text) };
+        return isUnknown(ran) ? ran : { kind: 'briefed', text: unfencedText(must(parseText(ran.text))) };
     }
 }

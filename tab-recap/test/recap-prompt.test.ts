@@ -1,32 +1,33 @@
 import { textOf } from '#src/recap/domain/text.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ARGV_BYTES, argvPrompt, fitBytes, prompt } from '#src/adapters/job/prompts/recap-prompt.ts';
+import { ARGV_BYTES, argvText, fitText, promptText } from '#src/adapters/job/prompts/recap-prompt.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { requestOf } from '#test/support.ts';
 
 test('fitBytes keeps what fits, drops the OLDEST lines first, and counts bytes not characters', () => {
-    assert.equal(fitBytes('a\nb', 10), 'a\nb');
-    assert.equal(fitBytes('old\nmid\nnew', 7), 'mid\nnew');
+    assert.equal(fitText(textOf('a\nb'), countOf(10)), 'a\nb');
+    assert.equal(fitText(textOf('old\nmid\nnew'), countOf(7)), 'mid\nnew');
     const accented = Array.from({ length: 100 }, (_, i) => `línea ${i} ñandú`).join('\n');
-    const fitted = fitBytes(accented, 500);
+    const fitted = fitText(textOf(accented), countOf(500));
     assert.ok(Buffer.byteLength(fitted) <= 500);
     assert.ok(fitted.endsWith('línea 99 ñandú'), 'the newest line survives');
 });
 
 test('fitBytes: one overlong multibyte line loses its head, never a half character', () => {
-    const fitted = fitBytes('日本語'.repeat(100), 100);
+    const fitted = fitText(textOf('日本語'.repeat(100)), countOf(100));
     assert.ok(Buffer.byteLength(fitted) <= 100);
     assert.ok(!fitted.includes('�'));
-    assert.equal(fitBytes('x', 0), '');
+    assert.equal(fitText(textOf('x'), countOf(0)), '');
 });
 
 test('an argv prompt is bounded: whole oldest turns are dropped, the instructions and the ledger are not, and the markup stays whole', () => {
     const entries = Array.from({ length: 200 }, (_, i): Entry => ({ role: 'agent', text: textOf(`turn ${i}: ${'日'.repeat(1500)}`) }));
     const request = requestOf({ entries, ledgers: [{ task: null, facts: [{ id: textOf('f1'), section: 'goal', text: textOf('PREV-RECAP'), state: 'open', first: instant(1), last: instant(1), why: null, ref: null, anchor: null, agent: null, closed: null }] }] });
-    assert.ok(Buffer.byteLength(prompt(request)) > ARGV_BYTES, 'the full document would not fit');
-    const text = argvPrompt(request);
+    assert.ok(Buffer.byteLength(promptText(request)) > ARGV_BYTES, 'the full document would not fit');
+    const text = argvText(request);
     assert.ok(Buffer.byteLength(text) <= ARGV_BYTES);
     assert.ok(text.includes('PREV-RECAP') && text.includes('Operations on the ledger') && text.includes('turn 199:'));
     assert.ok(!text.includes('turn 0:'));

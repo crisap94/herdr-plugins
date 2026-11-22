@@ -1,4 +1,4 @@
-import { unfenced } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
+import { unfencedText } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
 import { curationOf, STORY_WORDS, storyOf } from '../../tab-recap/src/recap/domain/curation.ts';
 import type { Curation, Merge } from '../../tab-recap/src/recap/domain/curation.ts';
 import { languageOfLine } from '../../packages/session-ledger/src/recap/domain/gates/language.ts';
@@ -19,7 +19,7 @@ export interface Read {
 }
 
 export function readAnswer(item: StoryItem, text: string): Read | null {
-    const body = unfenced(text);
+    const body = unfencedText(textOf(text));
     const curation = curationOf(body, openIds(item));
     if (curation.refused.some((why) => NOT_PARSED.includes(why))) return null;
     const raw = (JSON.parse(body) as Readonly<Record<string, unknown>>)['story'];

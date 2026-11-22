@@ -6,7 +6,7 @@ import { agentKind, handoffId, paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import type { LaneCursor, LastRun } from '#src/ports/recap-records.ts';
 import type { Entry, Transcripts } from '#src/ports/transcripts.ts';
-import type { WorksiteReader } from '#src/ports/worksite-reader.ts';
+import type { WorksiteReaderPort } from '#src/ports/worksite-reader.ts';
 import { fact } from './fact-at.ts';
 import { MemoryWorksite } from './worksite-reader.ts';
 import { registryWith } from './transcript-registry.ts';
@@ -52,7 +52,7 @@ export function worksiteWith(): MemoryWorksite {
     return worksite;
 }
 
-export function depsOf(over: { readonly lastRun?: LastRun | null; readonly reader?: WorksiteReader } = {}): HandoffPipelineDeps {
+export function depsOf(over: { readonly lastRun?: LastRun | null; readonly reader?: WorksiteReaderPort } = {}): HandoffPipelineDeps {
     return {
         records: { lastRunOf: () => (over.lastRun === undefined ? LAST_RUN : over.lastRun) },
         transcripts: registryWith({ claude: claudeReader(2) }),

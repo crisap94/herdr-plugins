@@ -4,13 +4,11 @@ import type { OpenCodeCatalogue } from '@stateforge-labs/harness-adapters/openco
 import type { ModelWindows } from '#src/ports/model-catalogue.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
-import { countFromLibrary } from './legacy.ts';
+import { countOf, parseCount } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-
-export { LocalCatalogue } from './legacy.ts';
 
 const ANTHROPIC = 'anthropic';
 const SEPARATOR = '/';
@@ -19,6 +17,11 @@ export interface Candidate {
     readonly provider: Text;
     readonly model: Text;
 }
+
+const defaultPath = (): FsPath | null => {
+    const path = parseFsPath(opencodeModelsFile());
+    return path.kind === 'ok' ? path.value : null;
+};
 
 const candidate = (provider: Text, model: Text): Candidate => ({ provider, model });
 
@@ -33,14 +36,17 @@ export function candidatesOf(catalogue: OpenCodeCatalogue, model: Text): readonl
 }
 
 export class CatalogueWindows implements ModelWindows {
-    private readonly file: FsPath;
+    private readonly file: FsPath | null;
     private loaded: OpenCodeCatalogue | null | undefined = undefined;
 
-    constructor(file: FsPath = must(parseFsPath(opencodeModelsFile()))) {
+    constructor(file: FsPath | null = defaultPath()) {
         this.file = file;
     }
 
     opened(): OpenCodeCatalogue | null {
+        if (this.file === null) {
+            return null;
+        }
         if (this.loaded === undefined) {
             this.loaded = readOpencodeCatalogue(this.file);
         }
@@ -52,6 +58,8 @@ export class CatalogueWindows implements ModelWindows {
         if (catalogue === null) {
             return null;
         }
-        return candidatesOf(catalogue, model).map((one) => countFromLibrary(catalogue.contextWindow(one.provider, one.model))).find((found) => found !== null) ?? null;
+        const reported = candidatesOf(catalogue, model).flatMap((one) => catalogue.contextWindow(one.provider, one.model) ?? []);
+        const chosen = reported.find((window) => parseCount(window).kind === 'ok') ?? reported[0];
+        return chosen === undefined ? null : countOf(chosen);
     }
 }

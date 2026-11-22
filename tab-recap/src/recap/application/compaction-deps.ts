@@ -20,7 +20,7 @@ import type { PaneId, SessionId, TabId } from '#src/recap/domain/ids.ts';
 import type { Duration, Instant } from '#src/recap/domain/time.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import type { CompactionPlans } from '#src/ports/compaction-plans.ts';
+import type { CompactionPlanner } from '#src/ports/compaction-plans.ts';
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
 import type { AskLedger } from '#src/ports/ask-ledger.ts';
 import type { AnswerStage, RequestId } from '#src/protocol/primitives.ts';
@@ -36,7 +36,7 @@ export interface LaneWebs { of(pane: PaneId): LaneWeb | null }
 export interface RestoreHandoff { offer(session: SessionId, text: Text): void; take(session: SessionId): Text | null }
 
 export interface CompactionPorts {
-    readonly compactionPlans: CompactionPlans;
+    readonly compactionPlans: CompactionPlanner;
     readonly agents: AgentPanes;
     readonly notifier: NotifierPort;
     readonly records: Pick<GuardedRecapRecords, 'readRecap'>;

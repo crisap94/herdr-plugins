@@ -6,7 +6,8 @@ import { join } from 'node:path';
 import { duration } from '#src/adapters/herdr-core/sdk-core.ts';
 import { HcCoreFleet } from '#src/adapters/herdr-core/fleet.ts';
 import { CoreLink } from '#src/adapters/herdr-core/sdk-core.ts';
-import { PathHarnesses } from '#src/adapters/harness/on-path.ts';
+import { PathHarnessDirectory } from '#src/adapters/harness/on-path.ts';
+import { kindOf } from '#test/fakes/agent-kind.ts';
 import type { CoreEventsTiming } from '#src/adapters/herdr-core/sdk-core.ts';
 import type { CoreLinkTiming } from '#src/adapters/herdr-core/sdk-core.ts';
 import type { Frame } from '#src/ports/fleet-source.ts';
@@ -75,7 +76,7 @@ test('a core that accepts, says hello and drops every connection is retried slow
 
 test('a second subscribe leaves the first stream running; each stream seeds silently and closing one keeps the other', async () => {
     const core = await FakeHcCore.start();
-    const fleet = new HcCoreFleet({ harnesses: new PathHarnesses(['claude']), sessions: noSession, path: core.path, linkTiming: LINK, eventsTiming: EVENTS });
+    const fleet = new HcCoreFleet({ harnesses: new PathHarnessDirectory([kindOf('claude')]), sessions: noSession, path: core.path, linkTiming: LINK, eventsTiming: EVENTS });
     try {
         const first = await fleet.subscribe();
         assert.ok(first.kind === 'stream');

@@ -15,8 +15,6 @@ import type { Handle } from './reach.ts';
 import { lastCommitOf } from './reach-history.ts';
 import { changesOf } from './reach-status.ts';
 
-export { GitWorksiteReader } from './legacy.ts';
-
 const okOrNull = <T, E>(result: Result<T, E>): T | null => (result.kind === 'ok' ? result.value : null);
 
 const presenceOf = (directory: Directory): Promise<Presence> =>
@@ -26,9 +24,7 @@ export class GitWorksite implements WorksiteReaderPort {
     lastCommit(directory: Text): Promise<LastCommitOutcome> {
         return this.within(directory, async (handle: Handle): Promise<LastCommitOutcome> => {
             const commit = await lastCommitOf(handle);
-            const hash = commit === null ? null : okOrNull(parseText(commit.hash));
-            const subject = commit === null ? null : okOrNull(parseText(commit.subject));
-            return hash === null || subject === null ? unknown({ why: 'not-found', what: textOf('commit') }) : { kind: 'commit', hash, subject };
+            return commit === null ? unknown({ why: 'not-found', what: textOf('commit') }) : { kind: 'commit', ...commit };
         });
     }
 
