@@ -1,25 +1,56 @@
-import { must } from '#src/protocol/result.ts';
+import { readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { bindingsOf, bunMajor, boundKeys, herdrConfigPath, type Binding } from './host-check/legacy.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 
 export { MIN_BUN, bunAtLeast } from '#src/host/policy.mjs';
-export { bindingsOf, bunMajor, boundKeys, herdrConfigPath, type Binding } from './host-check/legacy.ts';
 
 export interface CommandBinding {
     readonly key: Text;
     readonly action: Text;
 }
 
-const commandBindingOf = ({ key, action }: Binding): CommandBinding => ({ key: must(parseText(key)), action: must(parseText(action)) });
+type Table = Readonly<Record<string, unknown>>;
+
+const isTable = (value: unknown): value is Table => typeof value === 'object' && value !== null && !Array.isArray(value);
 
 export const bunMajorOf = (version: Text): Count | null => {
-    const major = parseCount(bunMajor(version));
+    const found = /^v?(\d+)\.\d+\.\d+/.exec(version.trim());
+    if (found?.[1] === undefined) {
+        return null;
+    }
+    const major = parseCount(Number(found[1]));
     return major.kind === 'ok' ? major.value : null;
 };
 
-export const bindingsIn = (toml: Text): readonly CommandBinding[] => bindingsOf(toml).map(commandBindingOf);
+export const bindingsIn = (toml: Text): readonly CommandBinding[] => {
+    try {
+        const parsed: unknown = Bun.TOML.parse(toml);
+        const keys = isTable(parsed) ? parsed['keys'] : undefined;
+        const commands: unknown = isTable(keys) ? keys['command'] : undefined;
+        if (!Array.isArray(commands)) {
+            return [];
+        }
+        return commands.flatMap((entry) => {
+            const key = isTable(entry) ? entry['key'] : undefined;
+            const command = isTable(entry) ? entry['command'] : undefined;
+            return typeof key === 'string' && typeof command === 'string' && command.startsWith('tab-recap.')
+                ? [{ key: textOf(key), action: textOf(command) }]
+                : [];
+        });
+    } catch {
+        return [];
+    }
+};
 
-export const herdrConfigPathOf = (env: NodeJS.ProcessEnv = process.env, home?: Text): Text => must(parseText(herdrConfigPath(env, home)));
+export const herdrConfigPathOf = (env: NodeJS.ProcessEnv = process.env, home: Text = textOf(homedir())): Text =>
+    textOf(env['HERDR_CONFIG_PATH'] || join(home, '.config', 'herdr', 'config.toml'));
 
-export const boundKeysIn = (path?: Text): readonly CommandBinding[] => boundKeys(path).map(commandBindingOf);
+export const boundKeysIn = (path: Text = herdrConfigPathOf()): readonly CommandBinding[] => {
+    try {
+        return bindingsIn(textOf(readFileSync(path, 'utf8')));
+    } catch {
+        return [];
+    }
+};

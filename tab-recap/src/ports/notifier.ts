@@ -1,8 +1,6 @@
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
-export type { Notified, Notifier } from './twins/runs/legacy.ts';
-
 export interface Shown {
     readonly kind: 'shown';
 }

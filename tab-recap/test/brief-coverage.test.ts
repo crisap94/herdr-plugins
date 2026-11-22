@@ -14,14 +14,14 @@ import type { Coverage } from '#src/recap/application/brief-coverage.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import { appendedBrief } from '#src/recap/application/compaction-coverage.ts';
 import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
-import { HerdrAgents } from '#src/adapters/herdr/agents.ts';
+import { HerdrAgentPanes } from '#src/adapters/herdr/agents.ts';
 import type { Wire } from '#src/adapters/herdr/agents.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { targetOf } from '#src/recap/domain/compaction.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
-import type { Agents, Prompted } from '#src/ports/agents.ts';
+import type { AgentPanes, Prompted } from '#src/ports/agents.ts';
 import type { Decider, DecidedResult, Noul } from '#src/ports/decider.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
@@ -72,7 +72,7 @@ test('covered: the brief and the facts are the one state; ok when nothing blocks
 
 const NOW = Date.parse('2026-10-07T10:00:00Z');
 
-interface World { readonly harness: { agent: 'claude' | 'codex'; typeLine: Agents['typeLine'] | null }; readonly logs: string[]; readonly typed: string[]; readonly prompts: string[]; readonly briefs: (string | undefined)[]; readonly toasts: string[]; readonly store: ReturnType<typeof memoryStore> }
+interface World { readonly harness: { agent: 'claude' | 'codex'; typeLine: AgentPanes['typeLine'] | null }; readonly logs: string[]; readonly typed: string[]; readonly prompts: string[]; readonly briefs: (string | undefined)[]; readonly toasts: string[]; readonly store: ReturnType<typeof memoryStore> }
 
 type FlowOptions = { readonly history?: readonly HistoryFact[]; missedFacts?: MissedFacts };
 
@@ -87,7 +87,7 @@ function flow(checks: readonly Coverage[], withCoverage = true, template: { read
     const deps: CompactionDeps = {
         compactionPlans,
         claims: new LaneClaims(),
-        agents: { status: () => Promise.resolve({ kind: 'agent', agent: world.harness.agent, status: 'idle' }), prompt: (_pane, text) => { world.prompts.push(text); return Promise.resolve({ kind: 'sent' }); }, typeLine: (pane, line, behavior) => { if (world.harness.typeLine !== null) return world.harness.typeLine(pane, line, behavior); const refused = lineBreakRefusal(line); if (refused !== null) return Promise.resolve(refused); world.typed.push(line.pieces.map(String).join('')); return Promise.resolve({ kind: 'sent' }); }, askNote: () => Promise.resolve({ kind: 'done' }) },
+        agents: { status: () => Promise.resolve({ kind: 'agent', agent: agentKind(world.harness.agent), status: 'idle' }), prompt: (_pane, text) => { world.prompts.push(text); return Promise.resolve({ kind: 'sent' }); }, typeLine: (pane, line, behavior) => { if (world.harness.typeLine !== null) return world.harness.typeLine(pane, line, behavior); const refused = lineBreakRefusal(line); if (refused !== null) return Promise.resolve(refused); world.typed.push(line.pieces.map(String).join('')); return Promise.resolve({ kind: 'sent' }); }, askNote: () => Promise.resolve({ kind: 'done' }) },
         notifier: { notify: (title, body) => { world.toasts.push(`${title} | ${body}`); return Promise.resolve({ kind: 'shown' }); } },
         records: { readRecap: () => recap }, ledger: { historyOf: () => history }, boundaries: { lastBreakAt: () => null }, compactions: store.compactions,
         settling: { settled: () => Promise.resolve({ kind: 'settled', status: 'done' }) },
@@ -294,7 +294,7 @@ test('a ceiling lane whose brief still misses a fact sends its appended line thr
         calls.push({ method, params });
         return Promise.resolve({});
     };
-    const adapter = new HerdrAgents(wire, { id: 'tab-recap', stateDir: '/s' }, () => Promise.resolve());
+    const adapter = new HerdrAgentPanes(wire, { id: textOf('tab-recap'), stateDir: textOf('/s') }, () => Promise.resolve());
     const { world, compaction } = flow([MISSING]);
     world.harness.typeLine = (pane, line, behavior): Promise<Prompted> => adapter.typeLine(pane, line, behavior);
     decided(world, 'ceiling');

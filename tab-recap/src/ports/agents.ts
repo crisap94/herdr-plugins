@@ -6,9 +6,6 @@ import type { Duration, Milliseconds } from '#src/recap/domain/time.ts';
 import type { Done } from './columns.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
-export type { Agents } from './legacy.ts';
-export type { AgentState, PromptBehavior, PromptWait } from './twins/runs/legacy.ts';
-
 export type Prompted = { readonly kind: 'sent' } | { readonly kind: 'blocked' } | Unknown;
 
 export interface LineBehavior {

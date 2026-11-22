@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HerdrAgents } from '#src/adapters/herdr/agents.ts';
+import { HerdrAgentPanes } from '#src/adapters/herdr/agents.ts';
 import type { Wire } from '#src/adapters/herdr/agents.ts';
 import { emptyBoard, listsPane } from '#src/recap/domain/board.ts';
 import { observe } from '#src/recap/domain/fold.ts';
@@ -13,6 +13,7 @@ import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { CLOSE_POINTS } from '#src/recap/domain/lane-closed.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const reconciled = (panes: readonly string[]): Observation => ({
     kind: 'reconciled',
@@ -37,10 +38,10 @@ const goneWire: Wire = () => Promise.reject(Object.assign(new Error('agent.get: 
 const silentWire: Wire = () => Promise.reject(Object.assign(new Error('socket closed'), { code: 'socket_closed' }));
 
 test('herdr answering agent_not_found is a lane that is gone; any other failure stays unreachable', async () => {
-    const gone = await new HerdrAgents(goneWire, { id: 'tab-recap', stateDir: '/x' }).status('w1:p9');
+    const gone = await new HerdrAgentPanes(goneWire, { id: textOf('tab-recap'), stateDir: textOf('/x') }).status(paneId('w1:p9'));
     assert.ok(isUnknown(gone));
     assert.equal(gone.why.why, 'not-found');
-    const silent = await new HerdrAgents(silentWire, { id: 'tab-recap', stateDir: '/x' }).status('w1:p9');
+    const silent = await new HerdrAgentPanes(silentWire, { id: textOf('tab-recap'), stateDir: textOf('/x') }).status(paneId('w1:p9'));
     assert.ok(isUnknown(silent));
     assert.equal(silent.why.why, 'unreachable');
     assert.match(saying(silent.why), /socket closed/);

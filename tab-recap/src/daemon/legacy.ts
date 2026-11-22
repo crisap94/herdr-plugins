@@ -25,7 +25,7 @@ import type { Informer } from '#src/recap/application/informer.ts';
 import { duration, type Duration } from '#src/recap/domain/time.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
 import type { Count } from '#src/recap/domain/count.ts';
-import type { Notifier } from '#src/ports/notifier.ts';
+import type { NotifierPort } from '#src/ports/notifier.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import type { Columns } from '#src/ports/columns.ts';
 import { openStateAt } from './state.ts';
@@ -200,7 +200,7 @@ export function shutDown(columns: Pick<Columns, 'closeEvery'>, informer: Stoppab
     return shutDownWithin(columns, informer, log, duration(ms));
 }
 
-export function openState(root: string, notifier: Notifier, log: (line: string) => void): Promise<Store | null> {
+export function openState(root: string, notifier: NotifierPort, log: (line: string) => void): Promise<Store | null> {
     return openStateAt(must(parseDirectory(root)), notifier, log);
 }
 

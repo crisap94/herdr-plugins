@@ -1,18 +1,18 @@
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
-import type { PaneId, SessionId, TabId } from '#src/recap/domain/ids.ts';
+import { uncheckedWorkspaceId, type PaneId, type SessionId, type TabId } from '#src/recap/domain/ids.ts';
 import { must } from '#src/protocol/result.ts';
-import type { ClosedAll, Done, LayoutResult, OpenResult } from '#src/ports/columns.ts';
+import type { ClosedEvery, Done, ColumnLayoutResult, OpenResult } from '#src/ports/columns.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
 import type { Frame, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
-import type { Harnesses, HarnessesResult } from '#src/ports/harnesses.ts';
-import type { Notified } from '#src/ports/notifier.ts';
+import type { HarnessDirectory, HarnessList } from '#src/ports/harnesses.ts';
+import type { Notice } from '#src/ports/notifier.ts';
 import type { PaneTokensResult } from '#src/ports/pane-tokens.ts';
-import type { ScreenResult } from '#src/ports/screens.ts';
+import type { ScreenOutcome } from '#src/ports/screens.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
-import type { WorkspacesResult } from '#src/ports/workspace-tokens.ts';
+import type { WorkspaceList } from '#src/ports/workspace-tokens.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { HC_SHUT, HC_NO_COLUMN, HC_NO_NOTICE, HC_ODD_SCREEN } from '../desktop/constants.ts';
@@ -29,7 +29,7 @@ type Life = 'up' | 'shut';
 const ZERO = must(parseCount(0));
 
 export interface HcCoreFleetParts {
-    readonly harnesses: Harnesses;
+    readonly harnesses: HarnessDirectory;
     readonly sessions: SessionOfTerminal;
     readonly path?: SocketPath;
     readonly linkTiming?: CoreLinkTiming;
@@ -37,7 +37,7 @@ export interface HcCoreFleetParts {
 }
 
 export class HcCoreFleet implements Fleet {
-    private readonly harnesses: Harnesses;
+    private readonly harnesses: HarnessDirectory;
     private readonly sessions: SessionOfTerminal;
     private readonly path: SocketPath;
     private readonly eventsTiming: CoreEventsTiming | undefined;
@@ -127,7 +127,7 @@ export class HcCoreFleet implements Fleet {
         return { kind: 'done' };
     }
 
-    layout(tab: TabId): Promise<LayoutResult> {
+    layout(tab: TabId): Promise<ColumnLayoutResult> {
         return Promise.resolve(unknown({ why: 'not-found', what: textOf(`the layout of ${tab}`) }));
     }
 
@@ -143,15 +143,15 @@ export class HcCoreFleet implements Fleet {
         return Promise.resolve({ kind: 'done' });
     }
 
-    closeEvery(): Promise<ClosedAll> {
-        return Promise.resolve({ kind: 'closed', closed: 0, failed: 0 });
+    closeEvery(): Promise<ClosedEvery> {
+        return Promise.resolve({ kind: 'closed', closed: ZERO, failed: ZERO });
     }
 
-    available(): Promise<HarnessesResult> {
+    available(): Promise<HarnessList> {
         return this.harnesses.available();
     }
 
-    async readScreen(pane: PaneId, lines: Count): Promise<ScreenResult> {
+    async readScreen(pane: PaneId, lines: Count): Promise<ScreenOutcome> {
         const answer = await this.link.call(HC_READ_METHOD, must(parseHcParams({ terminal: pane, lines: ZERO })), HC_CALL_TIMEOUT);
         if (answer.kind === 'unknown') {
             return unknownOfCore(answer);
@@ -162,7 +162,7 @@ export class HcCoreFleet implements Fleet {
         }
         const trimmed = lastLines(screen.value.text, must(parseCoreCount(lines)));
         this.screens = must(parseCount(this.screens + 1));
-        return { kind: 'screen', text: trimmed.text, revision: this.screens, truncated: trimmed.truncated };
+        return { kind: 'screen', text: textOf(trimmed.text), revision: this.screens, truncated: trimmed.truncated ? 'present' : 'absent' };
     }
 
     report(): Promise<Done> {
@@ -177,11 +177,11 @@ export class HcCoreFleet implements Fleet {
         return Promise.resolve({ kind: 'done' });
     }
 
-    workspaces(): Promise<WorkspacesResult> {
-        return Promise.resolve({ kind: 'workspaces', ids: [...new Set(this.roster.lanes().map((lane) => lane.workspaceId))] });
+    workspaces(): Promise<WorkspaceList> {
+        return Promise.resolve({ kind: 'workspaces', ids: [...new Set(this.roster.lanes().map((lane) => uncheckedWorkspaceId(lane.workspaceId)))] });
     }
 
-    notify(): Promise<Notified> {
+    notify(): Promise<Notice> {
         return Promise.resolve(unknown({ why: 'unreachable', detail: causeOf(must(parseText(HC_NO_NOTICE))) }));
     }
 

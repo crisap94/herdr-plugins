@@ -7,14 +7,14 @@ import { join } from 'node:path';
 import { latestVersion } from '#src/adapters/db/migrate.ts';
 import { databaseFile } from '#src/adapters/db/database.ts';
 import { openState } from '#src/daemon/state.ts';
-import type { Notified, Notifier } from '#src/ports/notifier.ts';
+import type { Notice, NotifierPort } from '#src/ports/notifier.ts';
 import { openFixture, scratchDir } from './support.ts';
 import { everyShape, put, sections } from './import/support.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 
-const recorder = (): { notifier: Notifier; told: string[]; lines: string[] } => {
+const recorder = (): { notifier: NotifierPort; told: string[]; lines: string[] } => {
     const told: string[] = [];
-    return { told, lines: [], notifier: { notify: (_title, body): Promise<Notified> => { told.push(body); return Promise.resolve({ kind: 'shown' }); } } };
+    return { told, lines: [], notifier: { notify: (_title, body): Promise<Notice> => { told.push(body); return Promise.resolve({ kind: 'shown' }); } } };
 };
 
 test('the daemon starts on a state directory of the old files: it imports once, says so, and the files move aside', async () => {

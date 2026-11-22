@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { PrintedHandoffs } from '#src/recap/application/handoff-print.ts';
 import type { PrintStore } from '#src/recap/application/handoff-print.ts';
 import { renderHandoff } from '#src/recap/application/handoff-pipeline.ts';
-import type { AgentState } from '#src/ports/agents.ts';
+import type { AgentLookup } from '#src/ports/agents.ts';
 import type { PrintRequest, PrintResult } from '#src/ports/handoff-print.ts';
 import type { LastRun, TabRecap } from '#src/ports/recap-records.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
@@ -22,7 +22,7 @@ import { brand } from '#src/recap/domain/brand.ts';
 
 const FROM = paneId('w1:p1');
 const TO = paneId('w1:p2');
-const UNREACHABLE: AgentState = unknown({ why: 'unreachable', detail: causeOf('no herdr') });
+const UNREACHABLE: AgentLookup = unknown({ why: 'unreachable', detail: causeOf('no herdr') });
 const VIEW: TabView = { tab: 'w1:t1', column: null, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: '/repo' }], at: NOW };
 const CLOSED_AT = instant(NOW - 1000);
 const CLOSED_ROW: ClosedLaneRead = {
@@ -39,7 +39,7 @@ interface Spy {
 interface World {
     readonly tab?: string | null;
     readonly lastRun?: LastRun | null;
-    readonly target?: AgentState;
+    readonly target?: AgentLookup;
     readonly unreadable?: boolean;
     readonly closedUnreadable?: boolean;
 }
@@ -103,7 +103,7 @@ test('print renders the same body the daemon renders, under the dry-run referenc
 
 test('print with --to puts the target status on the information channel and still renders', async () => {
     const spy: Spy = { opened: 0, closed: 0 };
-    const printed = await printerWith(spy, { target: { kind: 'agent', agent: 'claude', status: 'working' } }).renderForPrint(request({ to: TO }));
+    const printed = await printerWith(spy, { target: { kind: 'agent', agent: agentKind('claude'), status: 'working' } }).renderForPrint(request({ to: TO }));
     assert.ok(printed.kind === 'text');
     assert.equal(printed.info, 'target w1:p2: working');
 });

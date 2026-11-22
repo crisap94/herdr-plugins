@@ -3,7 +3,7 @@ import { CodexTranscripts } from './codex/transcripts.ts';
 import { OpencodeTranscripts } from './opencode/transcripts.ts';
 import { ScreenTranscripts } from './screen.ts';
 import type { ScreenWants } from './screen.ts';
-import type { Screens } from '#src/ports/screens.ts';
+import type { ScreenReader } from '#src/ports/screens.ts';
 import { TranscriptRegistry, type TranscriptReaders } from '#src/ports/transcript-registry.ts';
 import { agentKind, type AgentKind } from '#src/recap/domain/ids.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
@@ -53,7 +53,7 @@ function unavailableReason(kind: AgentKind): Text {
     return capability.kind === 'unsupported' ? capabilityWording(capability.why, subject) : capabilityWording('history-unavailable', subject);
 }
 
-export function daemonTranscriptRegistry(screens: Screens, wants: ScreenWants): TranscriptRegistry {
+export function daemonTranscriptRegistry(screens: ScreenReader, wants: ScreenWants): TranscriptRegistry {
     return new TranscriptRegistry(readersOf(READERS), new ScreenTranscripts(screens, wants), unavailableReason);
 }
 

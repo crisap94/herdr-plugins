@@ -5,7 +5,6 @@ import type { Presence } from '#src/recap/domain/presence.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 
 export { SCREEN_PREFIX, isScreenSource } from '@stateforge-labs/session-ledger/unstable/ports/transcript-source.ts';
-export type { ScreenResult, Screens } from './twins/legacy.ts';
 
 export type ScreenOutcome =
     | { readonly kind: 'screen'; readonly text: Text; readonly revision: Count; readonly truncated: Presence }

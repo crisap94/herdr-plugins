@@ -145,7 +145,7 @@ export class Sender {
         trail.to('restoring');
         const pane = lane.pane;
         const since = this.now();
-        const sent = await this.typed(pane, () => this.deps.agents.prompt(pane, message, undefined, { acceptsStall: followUp.acceptsStall }));
+        const sent = await this.typed(pane, () => this.deps.agents.prompt(pane, message, undefined, { stall: followUp.acceptsStall ? 'accepts-stall' : 'refuses-stall' }));
         if (sent.kind === 'sent') {
             await this.deps.settling.settled(pane, since, RESTORING_MS);
             await this.deps.settling.settled(pane, since, RESTORE_SETTLE_MS);

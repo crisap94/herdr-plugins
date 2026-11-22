@@ -1,10 +1,11 @@
-import type { Agents, Prompted } from '#src/ports/agents.ts';
+import type { AgentPanes, PromptStance, Prompted } from '#src/ports/agents.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import type { Acquired } from './typing-lease.ts';
 import type { HandoffConfirmation } from './handoff-confirmation.ts';
 import type { Ready } from './handoff-target.ts';
 import { withTypingLease } from './typing-scope.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 export interface HandoffTyping {
     acquire(pane: string, waitMs: number): Promise<Acquired>;
@@ -12,13 +13,13 @@ export interface HandoffTyping {
 }
 
 export interface HandoffSenderDeps {
-    readonly agents: Pick<Agents, 'prompt'>;
+    readonly agents: Pick<AgentPanes, 'prompt'>;
     readonly typing: HandoffTyping;
     readonly confirmation: HandoffConfirmation;
     readonly log: (line: string) => void;
 }
 
-const NO_STALL = { acceptsStall: false };
+const NO_STALL: PromptStance = { stall: 'refuses-stall' };
 
 export class HandoffSender {
     private readonly deps: HandoffSenderDeps;
@@ -38,7 +39,7 @@ export class HandoffSender {
         const baseline = await this.deps.confirmation.baseline(target);
         let sent: Prompted;
         try {
-            sent = await this.deps.agents.prompt(String(target.lane.pane), text, undefined, NO_STALL);
+            sent = await this.deps.agents.prompt(target.lane.pane, textOf(text), undefined, NO_STALL);
         } catch (error) {
             this.deps.log(`handoff prompt ${target.lane.pane}: ${failureCauseOf(parseThrown(error))}`);
             return { kind: 'failed', reason: 'transport' };

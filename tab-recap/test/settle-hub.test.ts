@@ -10,6 +10,7 @@ import type { Mark } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
 
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' });
 
@@ -19,7 +20,7 @@ function hub(options: { listening: boolean; statuses?: string[]; clock?: { at: n
     const statuses = options.statuses ?? [];
     const clock = options.clock ?? { at: 1000 };
     const deps: SettleHubDeps = {
-        agents: { status: () => { polls.push('status'); const next = statuses.shift(); return Promise.resolve(next === undefined ? unknown({ why: 'not-found', what: textOf('pane') }) : { kind: 'agent', agent: 'claude', status: next as 'idle' }); } },
+        agents: { status: () => { polls.push('status'); const next = statuses.shift(); return Promise.resolve(next === undefined ? unknown({ why: 'not-found', what: textOf('pane') }) : { kind: 'agent', agent: agentKind('claude'), status: next as 'idle' }); } },
         listening: () => options.listening,
         pause: (ms) => { pauses.push(ms); return Promise.resolve(); },
         now: () => clock.at,

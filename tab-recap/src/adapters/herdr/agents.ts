@@ -13,8 +13,6 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 
-export { HerdrAgents } from './legacy.ts';
-
 export type WireMethod = 'agent.get' | 'agent.prompt' | 'pane.send_text' | 'pane.send_keys' | 'plugin.pane.open';
 export type Wire = (method: WireMethod, params: JsonObject, timeoutMs?: Milliseconds) => Promise<JsonObject>;
 

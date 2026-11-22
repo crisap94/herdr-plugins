@@ -16,7 +16,6 @@
     "container": 1
   },
   "src/recap/application/handoff-print.ts": {
-    "parameter": 1,
     "return": 1,
     "container": 1
   },

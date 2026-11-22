@@ -1,4 +1,3 @@
-import type { CompactionLine } from '#src/recap/domain/compaction-plan.ts';
 import type { AgentKind, CompactionId, DecisionId, PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Duration, Instant, Milliseconds } from '#src/recap/domain/time.ts';
 import type { ExchangeName, RequestId } from '#src/protocol/primitives.ts';
@@ -7,11 +6,9 @@ import type { CoverageOutcome, LaneStatusAtDecision, SkipGate } from '#src/recap
 import type { Usd } from '#src/recap/domain/usd.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
-import type { AgentState, ClosedAll, LayoutResult, NewHandoffRequest, PromptBehavior, PromptWait } from './twins/runs/legacy.ts';
+import type { NewHandoffRequest } from './twins/runs/legacy.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
-import type { Done, OpenResult, ResizeDirection } from './columns.ts';
-import type { WorkspacesResult } from './twins/legacy.ts';
-import type { LineBehavior, Prompted } from './agents.ts';
+import type { ClosedEvery, ColumnLayoutResult, Done, OpenResult, ResizeDirection } from './columns.ts';
 import type { AskIdentity, AskKey, Requester } from './ask-ledger.ts';
 import type { DecisionCounts, DecisionGate, DecisionMode, DecisionVerdict, LinkedDecision, PaneKey, PassedCoverage, UncheckedCoverage } from './autocompact-records.ts';
 import type { ActiveStage, BriefOrigin, EndStage, Stage } from './compaction-records.ts';
@@ -22,13 +19,6 @@ import type { Effort } from '#src/recap/domain/effort.ts';
 import type { Noul } from './decider.ts';
 import type { AnswerMode, CostBasis, ConfinementCell, StructuredSupport, ToolSupport } from './harness.ts';
 import type { JudgeTask } from './judge.ts';
-
-export interface Agents {
-    status(pane: string): Promise<AgentState>;
-    prompt(pane: string, text: string, wait: PromptWait | undefined, behavior: PromptBehavior): Promise<Prompted>;
-    typeLine(pane: PaneId, line: CompactionLine, behavior: LineBehavior): Promise<Prompted>;
-    askNote(tab: string, pane: string | null): Promise<Done>;
-}
 
 export interface Ask {
     readonly exchange: ExchangeName;
@@ -148,11 +138,11 @@ export interface AutocompactRecords {
 }
 
 export interface Columns {
-    layout(tab: TabId): Promise<LayoutResult>;
-    open(tab: TabId, target: string, shape: Shape): Promise<OpenResult>;
-    resize(pane: PaneId, direction: ResizeDirection, amount: number): Promise<Done>;
+    layout(tab: TabId): Promise<ColumnLayoutResult>;
+    open(tab: TabId, target: Text, shape: Shape): Promise<OpenResult>;
+    resize(pane: PaneId, direction: ResizeDirection, amount: Probability): Promise<Done>;
     close(pane: PaneId): Promise<Done>;
-    closeEvery(): Promise<ClosedAll>;
+    closeEvery(): Promise<ClosedEvery>;
 }
 
 export interface CompactionRecord {
@@ -269,7 +259,3 @@ export interface LaneTokens {
     report(pane: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done>;
 }
 
-export interface WorkspaceTokens {
-    reportWorkspace(workspace: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done>;
-    workspaces(): Promise<WorkspacesResult>;
-}

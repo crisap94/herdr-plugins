@@ -8,34 +8,7 @@ import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffPlanResult } from '#src/recap/domain/handoff-plan.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
-import type { LaneStatus } from '#src/recap/domain/status.ts';
-import type { Placed, Split } from '#src/recap/domain/layout.ts';
-import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 import type { RunItem } from '../../run-inputs.ts';
-
-export type AgentState = { readonly kind: 'agent'; readonly agent: string; readonly status: LaneStatus } | Unknown;
-
-export interface PromptWait {
-    readonly until: readonly string[];
-    readonly timeoutMs: number;
-}
-
-export interface PromptBehavior {
-    readonly acceptsStall: boolean;
-}
-
-export interface TabLayout {
-    readonly kind: 'layout';
-    readonly width: number;
-    readonly height: number;
-    readonly focused: string | null;
-    readonly panes: readonly Placed[];
-    readonly splits: readonly Split[];
-}
-
-export type LayoutResult = TabLayout | Unknown;
-
-export type ClosedAll = { readonly kind: 'closed'; readonly closed: number; readonly failed: number } | Unknown;
 
 export interface HandoffPlans {
     forKind(rawKind: string): HandoffPlanResult;
@@ -54,12 +27,6 @@ export type PrintResult =
 
 export interface HandoffPrinter {
     renderForPrint(request: PrintRequest): Promise<PrintResult>;
-}
-
-export type HarnessesResult = { readonly kind: 'available'; readonly ids: readonly string[] } | Unknown;
-
-export interface Harnesses {
-    available(): Promise<HarnessesResult>;
 }
 
 export interface ImportedChapter {
@@ -85,12 +52,6 @@ export interface LaneSettling {
 
 export interface ModelCatalogue {
     windowOf(model: string): number | null;
-}
-
-export type Notified = { readonly kind: 'shown' } | Unknown;
-
-export interface Notifier {
-    notify(title: string, body: string): Promise<Notified>;
 }
 
 export interface RunResult {

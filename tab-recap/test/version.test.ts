@@ -5,7 +5,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { codeVersion, parseVersion } from '#src/adapters/os/plugin-version.ts';
-import { bindingsOf, boundKeys, herdrConfigPath, bunAtLeast, bunMajor } from '#src/adapters/herdr/host-check.ts';
+import { bindingsIn, boundKeysIn, herdrConfigPathOf, bunAtLeast, bunMajorOf } from '#src/adapters/herdr/host-check.ts';
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
@@ -117,9 +117,9 @@ key = "ctrl+alt+r"
 `;
 
 test('the bun version parses to its major; anything else is null', () => {
-    assert.equal(bunMajor('1.4.4'), 1);
-    assert.equal(bunMajor('banana'), null);
-    assert.equal(bunMajor(''), null);
+    assert.equal(bunMajorOf(textOf('1.4.4')), 1);
+    assert.equal(bunMajorOf(textOf('banana')), null);
+    assert.equal(bunMajorOf(textOf('')), null);
 });
 
 test('the host check refuses Bun 1.4.3 and accepts 1.4.4 and newer', () => {
@@ -130,17 +130,17 @@ test('the host check refuses Bun 1.4.3 and accepts 1.4.4 and newer', () => {
 });
 
 test('bindings: only tab-recap.* actions of [[keys.command]] blocks count, in either field order', () => {
-    assert.deepEqual(bindingsOf(CONFIG), [{ key: 'prefix+r', action: 'tab-recap.column' }, { key: 'ctrl+alt+r', action: 'tab-recap.columns' }]);
-    assert.deepEqual(bindingsOf('[keys]\nprefix = "ctrl+b"\n'), []);
-    assert.deepEqual(bindingsOf('command = "tab-recap.column"\nkey = "x"\n'), [], 'outside a key block it binds nothing');
-    assert.deepEqual(bindingsOf('not = [toml'), [], 'invalid TOML binds nothing');
-    assert.deepEqual(bindingsOf('[[keys.command]]\ncommand = "tab-recap.column" # hide\nkey = "prefix+r"\n'), [{ key: 'prefix+r', action: 'tab-recap.column' }], 'field order and comments do not matter');
+    assert.deepEqual(bindingsIn(textOf(CONFIG)), [{ key: 'prefix+r', action: 'tab-recap.column' }, { key: 'ctrl+alt+r', action: 'tab-recap.columns' }]);
+    assert.deepEqual(bindingsIn(textOf('[keys]\nprefix = "ctrl+b"\n')), []);
+    assert.deepEqual(bindingsIn(textOf('command = "tab-recap.column"\nkey = "x"\n')), [], 'outside a key block it binds nothing');
+    assert.deepEqual(bindingsIn(textOf('not = [toml')), [], 'invalid TOML binds nothing');
+    assert.deepEqual(bindingsIn(textOf('[[keys.command]]\ncommand = "tab-recap.column" # hide\nkey = "prefix+r"\n')), [{ key: 'prefix+r', action: 'tab-recap.column' }], 'field order and comments do not matter');
 });
 
 test('the config is HERDR_CONFIG_PATH, else ~/.config/herdr/config.toml; a missing file binds nothing', () => {
-    assert.equal(herdrConfigPath({ HERDR_CONFIG_PATH: '/x/c.toml' }, '/home/a'), '/x/c.toml');
-    assert.equal(herdrConfigPath({}, '/Users/a'), '/Users/a/.config/herdr/config.toml');
-    assert.deepEqual(boundKeys('/nonexistent/config.toml'), []);
+    assert.equal(herdrConfigPathOf({ HERDR_CONFIG_PATH: '/x/c.toml' }, textOf('/home/a')), '/x/c.toml');
+    assert.equal(herdrConfigPathOf({}, textOf('/Users/a')), '/Users/a/.config/herdr/config.toml');
+    assert.deepEqual(boundKeysIn(textOf('/nonexistent/config.toml')), []);
 });
 
 test('status says which bun runs it and which keys are bound, or that none is', () => {

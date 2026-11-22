@@ -29,7 +29,7 @@ test('an available lease is taken without waiting, the plan runs once and the le
     assert.deepEqual(await senderOf(world, spy.port).send(readyClaude(), TEXT), DELIVERED);
     assert.deepEqual(spy.acquired, [[PANE, 0]]);
     assert.deepEqual(spy.released, [PANE]);
-    assert.deepEqual(world.sent, [{ pane: PANE, text: TEXT, wait: undefined, behavior: { acceptsStall: false } }]);
+    assert.deepEqual(world.sent, [{ pane: PANE, text: TEXT, wait: undefined, behavior: { stall: 'refuses-stall' } }]);
     assert.equal(world.pauses.length, 1, 'confirmation observes after the send, nothing else');
 });
 

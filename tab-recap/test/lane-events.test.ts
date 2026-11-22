@@ -7,7 +7,10 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import type { Done } from '#src/ports/columns.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
-import type { WorkspaceTokens, WorkspacesResult } from '#src/ports/workspace-tokens.ts';
+import type { WorkspaceList, WorkspaceTokenReporter } from '#src/ports/workspace-tokens.ts';
+import { parseTokenName } from '#src/protocol/primitives.ts';
+import { must } from '#src/protocol/result.ts';
+import { uncheckedWorkspaceId } from '#src/recap/domain/ids.ts';
 
 interface Sent { readonly target: string; readonly value: string | null }
 
@@ -28,13 +31,13 @@ function rigAt(startedAt: number, workspaces: readonly string[] = ['w1', 'w2']):
             return rig.failing ? unknown({ why: 'unreachable', detail: causeOf('fake') }) : { kind: 'done' };
         },
     };
-    const ws: WorkspaceTokens = {
+    const ws: WorkspaceTokenReporter = {
         reportWorkspace: async (workspace, values): Promise<Done> => {
             await new Promise<void>((resolve) => { setTimeout(resolve, 5); });
-            rig.spaces.push({ target: workspace, value: values[EVENT_TOKEN] ?? null });
+            rig.spaces.push({ target: workspace, value: values.get(must(parseTokenName(EVENT_TOKEN))) ?? null });
             return rig.failing ? unknown({ why: 'unreachable', detail: causeOf('fake') }) : { kind: 'done' };
         },
-        workspaces: async (): Promise<WorkspacesResult> => ({ kind: 'workspaces', ids: workspaces }),
+        workspaces: async (): Promise<WorkspaceList> => ({ kind: 'workspaces', ids: workspaces.map((id) => uncheckedWorkspaceId(id)) }),
     };
     rig.stream = new EventStream({ tokens, workspaces: ws, enabled: (): boolean => rig.on, startedAt, log: (line: string): void => { rig.logged.push(line); } });
     return rig;
@@ -153,9 +156,9 @@ test('a recap written at the end of a turn is told to each lane of its tab; an i
 
 test('a workspace that cannot be listed is logged, and nothing is written for it', async () => {
     const logged: string[] = [];
-    const ws: WorkspaceTokens = {
+    const ws: WorkspaceTokenReporter = {
         reportWorkspace: async (): Promise<Done> => ({ kind: 'done' }),
-        workspaces: async (): Promise<WorkspacesResult> => unknown({ why: 'unreachable', detail: causeOf('fake') }),
+        workspaces: async (): Promise<WorkspaceList> => unknown({ why: 'unreachable', detail: causeOf('fake') }),
     };
     const stream = new EventStream({ tokens: { report: async (): Promise<Done> => ({ kind: 'done' }) }, workspaces: ws, enabled: (): boolean => true, startedAt: 1, log: (line: string): void => { logged.push(line); } });
     await stream.daemon('daemon-started', '2.2.1');

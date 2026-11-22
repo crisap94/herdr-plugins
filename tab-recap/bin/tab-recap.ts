@@ -9,7 +9,7 @@ import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
-import { boundKeys, herdrConfigPath } from '#src/adapters/herdr/host-check.ts';
+import { boundKeysIn, herdrConfigPathOf } from '#src/adapters/herdr/host-check.ts';
 import { bunHost } from '#src/host/bun-host.mjs';
 import { supportOf } from '#src/host/policy.mjs';
 import { codeVersion } from '#src/adapters/os/plugin-version.ts';
@@ -28,6 +28,7 @@ import { parseArguments } from './arguments.ts';
 import { evalCommand } from './eval.ts';
 import { setValues } from './set-backend.ts';
 import { markStopping, stillStopping } from './stop-marker.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const OK = 0;
 const FAILED = 1;
@@ -118,7 +119,7 @@ function status(): number {
         t.statusVersion(codeVersion()),
         t.statusRuntime(host.execPath, host.bunVersion),
         ...(support.ok ? [] : [t.hostRefusal(support, host.execPath)]),
-        t.statusKeys(boundKeys(), herdrConfigPath()),
+        t.statusKeys(boundKeysIn(), herdrConfigPathOf()),
         t.statusDaemon(running, pidfile.disabled, pidfile.daemonVersion()),
         t.statusBackend(`${config.backend}${config.backend === 'auto' ? ` (${AUTO_ORDER.join(' → ')})` : modelSuffix(config.models[config.backend])}`),
         `${t.statusLanguage} ${config.recapLanguage} (${t.statusSources[recapLanguageSource()]})`,
@@ -132,7 +133,7 @@ function status(): number {
 async function configure(): Promise<number> {
     const tab = currentTab();
     await sleep(Number(process.env['TAB_RECAP_OPEN_DELAY_MS'] ?? 0) || 0);
-    const opened = await new HerdrFleet(stateDir()).setup(tab === null ? null : tabId(tab));
+    const opened = await new HerdrFleet(textOf(stateDir())).setup(tab === null ? null : tabId(tab));
     if (isUnknown(opened)) {
         console.error(`tab-recap: 1 — ${m().cli.modalFailed(saying(opened.why))}`);
         return FAILED;
@@ -183,7 +184,7 @@ async function show(): Promise<number> {
         console.error(`tab-recap: 3 — ${m().cli.tabUnknown}`);
         return NOT_COVERED;
     }
-    const shown = await new HerdrFleet(stateDir()).show(tabId(tab));
+    const shown = await new HerdrFleet(textOf(stateDir())).show(tabId(tab));
     if (isUnknown(shown)) {
         console.error(`tab-recap: 1 — ${m().cli.modalFailed(saying(shown.why))}`);
         return FAILED;

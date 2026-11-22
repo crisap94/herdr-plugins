@@ -19,7 +19,7 @@ import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import type { LaneWeb, TabView, TabViews } from '#src/ports/tab-views.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
@@ -203,7 +203,7 @@ export class LaneDispatch {
             this.failed(tab, must(parseText('the tab has no panes')));
             return;
         }
-        const opened = await this.deps.columns.open(tab, target.paneId, shape);
+        const opened = await this.deps.columns.open(tab, textOf(target.paneId), shape);
         if (isUnknown(opened)) {
             this.failed(tab, must(parseText(saying(opened.why))));
             return;

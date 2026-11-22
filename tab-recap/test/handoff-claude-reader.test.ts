@@ -7,10 +7,11 @@ import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.
 import { HandoffConfirmation } from '#src/recap/application/handoff-confirmation.ts';
 import { HANDOFF_OBSERVATIONS } from '#src/recap/application/handoff-limits.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
-import type { AgentState } from '#src/ports/agents.ts';
+import type { AgentLookup } from '#src/ports/agents.ts';
 import { registryWith } from './fakes/transcript-registry.ts';
 import { laneWith, planWith, readyOf } from './fakes/handoff-delivery.ts';
 import { fsPathOf } from './fakes/transcript-lines.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
 
 const TEXT = 'Handoff of the parser refactor.\n\nNext steps:\n  - finish the lexer\n  - run the suite';
 const EARLIER = 'Handoff of the lexer spike.\n\nNext steps:\n  - write the tests';
@@ -31,7 +32,7 @@ function scratchClaude(initial: string): { readonly root: string; readonly file:
 function confirmerOver(root: string, onPause: () => void): { readonly confirmer: HandoffConfirmation; readonly pauses: number[] } {
     const pauses: number[] = [];
     const confirmer = new HandoffConfirmation({
-        agents: { status: async (): Promise<AgentState> => ({ kind: 'agent', agent: 'claude', status: 'idle' }) },
+        agents: { status: async (): Promise<AgentLookup> => ({ kind: 'agent', agent: agentKind('claude'), status: 'idle' }) },
         transcripts: registryWith({ claude: new ClaudeTranscripts(fsPathOf(root)) }),
         session: async (): Promise<string> => 'sess-1',
         pause: async (ms: number): Promise<void> => {
