@@ -51,7 +51,7 @@ echo "oxlint (type-aware: one program type-checks the tree with the tsconfig fla
 bun --bun node_modules/.bin/oxlint --type-aware . && echo "  ok    oxlint" || fail "oxlint"
 
 echo "evals typecheck (evals/tsconfig.json: the eval harness type-checks clean):"
-{ [ -d ../evals/node_modules ] || (cd ../evals && bun install --frozen-lockfile >/dev/null); } && bunx tsgo --noEmit -p ../evals/tsconfig.json && echo "  ok    evals typecheck" || fail "the evals harness does not type-check"
+{ [ -d ../evals/node_modules ] || (cd ../evals && bun install --frozen-lockfile >/dev/null); } && ../node_modules/.bin/tsgo --noEmit -p ../evals/tsconfig.json && echo "  ok    evals typecheck" || fail "the evals harness does not type-check"
 
 echo "domain-type gates bite (the pending brand-cast rule and the oxlint unsafe-any probe):"
 bash ci/gate-rules.sh && echo "  ok    gate-rules" || fail "a domain-type gate does not bite"
