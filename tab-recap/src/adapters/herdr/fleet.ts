@@ -9,7 +9,8 @@ import { parseJson, type JsonObject } from './json-object.ts';
 import { refusalOfTokens } from './token-refusal.ts';
 import { OWNERS } from '#src/recap/domain/token-registry.ts';
 import { parseAgentKind, parseTabId, uncheckedPaneId, uncheckedRatio, uncheckedWorkspaceId, type PaneId, type TabId, type WorkspaceId } from '#src/recap/domain/ids.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import type { Probability } from '#src/recap/domain/probability.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import type { Milliseconds } from '#src/recap/domain/time.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
@@ -39,10 +40,7 @@ const WORKSPACE_WRITABLE: readonly TokenName[] = [must(parseTokenName(EVENT_TOKE
 const RESIZE = must(parseText('resize'));
 const CLOSE = must(parseText('close'));
 
-const parseOptionalTabId = (input: unknown): TabId | null => {
-    const found = parseTabId(input);
-    return found.kind === 'ok' ? found.value : null;
-};
+const parseOptionalTabId = (input: unknown): TabId | null => { const found = parseTabId(input); return found.kind === 'ok' ? found.value : null; };
 
 const tokenMapOf = (tokens: TokenMap): ReadonlyMap<TokenName, TokenValue> => new Map(Object.entries(tokens).flatMap(([name, value]) => {
     const key = parseTokenName(name);
@@ -225,7 +223,7 @@ export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, Harne
         return done.kind === 'done' ? { kind: 'shown' } : done;
     }
 
-    async resize(pane: PaneId, direction: ResizeDirection, amount: Count): Promise<Done> {
+    async resize(pane: PaneId, direction: ResizeDirection, amount: Probability): Promise<Done> {
         return this.guarded(RESIZE, pane, () => usePlugin((client) => client.call('pane.resize', { pane_id: String(pane), direction, amount })));
     }
 

@@ -2,6 +2,7 @@ import type { Shape } from '#src/recap/domain/board.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import type { Placed, Split } from '#src/recap/domain/layout.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { Probability } from '#src/recap/domain/probability.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
@@ -35,7 +36,7 @@ export type ClosedEvery = ClosedTally | Unknown;
 export interface ColumnPanes {
     layout(tab: TabId): Promise<ColumnLayoutResult>;
     open(tab: TabId, target: Text, shape: Shape): Promise<OpenResult>;
-    resize(pane: PaneId, direction: ResizeDirection, amount: Count): Promise<Done>;
+    resize(pane: PaneId, direction: ResizeDirection, amount: Probability): Promise<Done>;
     close(pane: PaneId): Promise<Done>;
     closeEvery(): Promise<ClosedEvery>;
 }
