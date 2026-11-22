@@ -1,3 +1,4 @@
+import { countOf } from '#src/recap/domain/count.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
@@ -6,9 +7,9 @@ import { es } from '#src/i18n/es.ts';
 import { EMPTY_NOTE, noteOf, step } from '#src/recap/application/compact-keys.ts';
 import type { NoteState } from '#src/recap/application/compact-keys.ts';
 import { NOTE_LIMIT } from '#src/recap/application/compaction-message.ts';
-import { compactFooter, compactView } from '#src/recap/render/compact.ts';
+import { compactFooterText, compactViewText } from '#src/recap/render/compact.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { plain, visibleLength } from '#src/recap/render/wrap.ts';
 
 const ESC = String.fromCodePoint(0x1b);
@@ -39,11 +40,11 @@ test('a note: printable keys, Backspace, Ctrl-U, pasted text on one line, trimme
 });
 
 test('the popup names the agent and shows the note with a cursor, in both languages; the footer fits', () => {
-    assert.deepEqual(compactView({ note: noteOf(must(parseText('keep x'))) ?? EMPTY_NOTE.note }, en, 'claude', 40, plain), ['Compact claude', '', 'Anything it must keep? (optional)', 'keep x█']);
-    assert.match(compactView(EMPTY_NOTE, es, 'codex', 40, plain).join('\n'), /Compactar codex[\s\S]*¿Algo que deba conservar\?/);
+    assert.deepEqual(compactViewText({ note: noteOf(must(parseText('keep x'))) ?? EMPTY_NOTE.note }, en, textOf('claude'), countOf(40), plain), ['Compact claude', '', 'Anything it must keep? (optional)', 'keep x█']);
+    assert.match(compactViewText(EMPTY_NOTE, es, textOf('codex'), countOf(40), plain).join('\n'), /Compactar codex[\s\S]*¿Algo que deba conservar\?/);
     for (const m of [en, es]) {
-        assert.ok(visibleLength(compactFooter(m, 40, plain)) <= 40);
-        assert.ok(compactFooter(m, 12, plain) !== '', 'a narrow popup still has a hint');
+        assert.ok(visibleLength(compactFooterText(m, countOf(40), plain)) <= 40);
+        assert.ok(compactFooterText(m, countOf(12), plain) !== '', 'a narrow popup still has a hint');
     }
 });
 

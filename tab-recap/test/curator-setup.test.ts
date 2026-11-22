@@ -1,3 +1,5 @@
+import { catalogFor } from '#src/i18n/index.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 import { test } from 'node:test';
 import { curateJobOf } from './fakes/settings-readers.ts';
 import assert from 'node:assert/strict';
@@ -12,7 +14,7 @@ import type { JobSetting } from '#src/recap/domain/job.ts';
 import { HarnessCurator } from '#src/adapters/job/curator.ts';
 import type { Harness, HarnessCall, HarnessSettings, Ran, StructuredSupport } from '#src/ports/harness.ts';
 import { CURATE_DEFAULT } from '#src/recap/domain/job.ts';
-import { setupView } from '#src/recap/render/setup.ts';
+import { setupLines } from '#src/recap/render/setup.ts';
 import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 
@@ -95,17 +97,17 @@ test('a curator part an environment variable sets is read-only and says which', 
 });
 
 test('the Models group draws the curator in both languages, explains itself while focused, and names its own off', () => {
-    const english = setupView(start(), en, 100).join('\n');
+    const english = setupLines(start(), catalogFor(en.locale), countOf(100)).join('\n');
     assert.match(english, /Curator\s+as the recap writer · the recap writer's model · medium/u);
-    const spanish = setupView(start(), es, 100).join('\n');
+    const spanish = setupLines(start(), catalogFor(es.locale), countOf(100)).join('\n');
     assert.match(spanish, /Curador\s+como el redactor · el modelo del redactor · medium/u);
-    const focused = setupView(typed(start(), down(11)), en, 100).join('\n');
+    const focused = setupLines(typed(start(), down(11)), catalogFor(en.locale), countOf(100)).join('\n');
     assert.match(focused, /merges duplicate facts and writes the "session so far"/u);
-    const choosing = setupView(typed(start(), [...down(11), '\r']), en, 100).join('\n');
+    const choosing = setupLines(typed(start(), [...down(11), '\r']), catalogFor(en.locale), countOf(100)).join('\n');
     assert.match(choosing, /▸ as the recap writer — the same harness/u);
     assert.match(choosing, /off — no paragraph, no merges/u);
     assert.ok(!choosing.includes('off — compact with the template'));
-    assert.match(setupView(typed(start(), [...down(11), '\r']), es, 100).join('\n'), /apagado — sin párrafo ni fusiones/u);
+    assert.match(setupLines(typed(start(), [...down(11), '\r']), catalogFor(es.locale), countOf(100)).join('\n'), /apagado — sin párrafo ni fusiones/u);
 });
 
 test('config: the curator job is read from TAB_RECAP_CURATE_BY / _MODEL / _EFFORT, defaulting to the recap writer at medium effort', async () => {

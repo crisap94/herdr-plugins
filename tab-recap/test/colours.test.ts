@@ -1,3 +1,5 @@
+import { catalogFor } from '#src/i18n/index.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { WriteStream } from 'node:tty';
@@ -6,7 +8,7 @@ import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { en } from '#src/i18n/en.ts';
 import { present, presentBar } from '#src/recap/render/present.ts';
 import { coloured, plain } from '#src/recap/render/wrap.ts';
-import { setupView } from '#src/recap/render/setup.ts';
+import { setupLines } from '#src/recap/render/setup.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { draftFrom, initial, withAvailable } from '#src/recap/application/setup-keys.ts';
 import { oneTask } from '#test/support.ts';
@@ -50,7 +52,7 @@ const models = { claude: '', codex: '', opencode: '', custom: '' };
 const setup = initial(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined }), { locale: 'TAB_RECAP_LOCALE' });
 
 test('colours: the setup screen takes the plain table too', () => {
-    const lines = setupView(withAvailable(setup, ['claude']), en, 60, plain);
+    const lines = setupLines(withAvailable(setup, ['claude']), catalogFor(en.locale), countOf(60), plain);
     assert.ok(lines.every((line) => !line.includes(ESC)));
 });
 

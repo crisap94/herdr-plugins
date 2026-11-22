@@ -6,7 +6,7 @@
     "parameter": 4
   },
   "src/i18n/legacy.ts": {
-    "legacy": 20
+    "legacy": 13
   },
   "src/i18n/messages.ts": {
     "parameter": 4
@@ -22,6 +22,6 @@
     "container": 2
   },
   "src/recap/render/legacy.ts": {
-    "legacy": 15
+    "legacy": 4
   }
 }

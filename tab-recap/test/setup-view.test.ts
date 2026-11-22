@@ -1,3 +1,5 @@
+import { catalogFor } from '#src/i18n/index.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { textOf } from '#src/recap/domain/text.ts';
@@ -10,7 +12,7 @@ import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { draftFrom, initial, step, tested, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Setup } from '#src/recap/application/setup-keys.ts';
-import { setupFooter, setupView } from '#src/recap/render/setup.ts';
+import { setupFooterLine, setupLines } from '#src/recap/render/setup.ts';
 import { plain, visibleLength } from '#src/recap/render/wrap.ts';
 
 const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
@@ -37,10 +39,10 @@ const states: readonly [string, Setup][] = [
 ];
 
 function assertFits(messages: typeof en, width: number, name: string, state: Setup): void {
-    for (const line of setupView(state, messages, width)) {
+    for (const line of setupLines(state, catalogFor(messages.locale), countOf(width))) {
         assert.ok(visibleLength(line) <= width, `${messages.locale} ${width} ${name}: "${line}"`);
     }
-    assert.ok(visibleLength(setupFooter(state, messages, width)) <= width);
+    assert.ok(visibleLength(setupFooterLine(state, catalogFor(messages.locale), countOf(width))) <= width);
 }
 
 test('the settings modal fits 40, 60 and 100 columns in both languages, in every state', () => {
@@ -52,7 +54,7 @@ test('the settings modal fits 40, 60 and 100 columns in both languages, in every
 });
 
 test('the harness list marks the current one ✓, the available ones ● and the missing ones ○', () => {
-    const text = setupView(withAvailable(base, ['claude', 'opencode']), en, 80).join('\n');
+    const text = setupLines(withAvailable(base, ['claude', 'opencode']), catalogFor(en.locale), countOf(80)).join('\n');
     assert.match(text, /✓ codex/);
     assert.match(text, /● claude/);
     assert.match(text, /● opencode/);
@@ -61,27 +63,27 @@ test('the harness list marks the current one ✓, the available ones ● and the
 
 test('a locked row names its variable; the recap writer row shows harness · model · effort; both languages say so', () => {
     for (const [messages, expected] of [[en, 'read-only: TAB_RECAP_LOCALE'], [es, 'solo lectura: TAB_RECAP_LOCALE']] as const) {
-        const text = setupView(withAvailable(base, ['codex']), messages, 80).join('\n');
+        const text = setupLines(withAvailable(base, ['codex']), catalogFor(messages.locale), countOf(80)).join('\n');
         assert.ok(text.includes(expected));
         assert.match(text, new RegExp(`${messages.setup.rows.recapJob}\\s+\\[codex\\] · gpt-6-luna · medium`));
     }
 });
 
 test('the telemetry setting shows its choices and environment lock', () => {
-    const choices = setupView({ ...base, row: 18, editing: { kind: 'choice', at: 1 } }, en, 100).join('\n');
+    const choices = setupLines({ ...base, row: 18, editing: { kind: 'choice', at: 1 } }, catalogFor(en.locale), countOf(100)).join('\n');
     assert.ok(choices.includes('Job telemetry tags'));
     assert.ok(choices.includes('on — add the tab_recap.job resource attribute'));
     assert.ok(choices.includes('off — do not add a job attribute'));
     const locked = { ...base, row: 18, locks: { telemetryTags: 'TAB_RECAP_TELEMETRY_TAGS' } };
-    assert.ok(setupView(locked, en, 100).join('\n').includes('read-only: TAB_RECAP_TELEMETRY_TAGS'));
+    assert.ok(setupLines(locked, catalogFor(en.locale), countOf(100)).join('\n').includes('read-only: TAB_RECAP_TELEMETRY_TAGS'));
 });
 
 test('Spanish: rows, legend, hints and test results are Spanish', () => {
-    const text = setupView(tested(withAvailable(base, ['claude']), { kind: 'ok', seconds: 3.24, costUsd: 0.0008 }), es, 80).join('\n');
+    const text = setupLines(tested(withAvailable(base, ['claude']), { kind: 'ok', seconds: 3.24, costUsd: 0.0008 }), catalogFor(es.locale), countOf(80)).join('\n');
     for (const expected of ['ajustes', 'Redactor del resumen', 'Idioma del resumen', 'disponible', 'no está en el PATH', '✓ funciona — 3.2 s · $0.0008']) {
         assert.ok(text.includes(expected), expected);
     }
-    assert.match(setupFooter(base, es, 80), /guardar/);
+    assert.match(setupFooterLine(base, catalogFor(es.locale), countOf(80)), /guardar/);
 });
 
 test('config-file: a save changes only its keys and keeps every comment and other line', () => {
@@ -100,7 +102,7 @@ test('config-file: a save changes only its keys and keeps every comment and othe
     }
 });
 
-const rowText = (state: Setup, messages: typeof en): string => setupView(state, messages, 80).find((line) => line.includes(messages.setup.rows.recapLanguage)) ?? '';
+const rowText = (state: Setup, messages: typeof en): string => setupLines(state, catalogFor(messages.locale), countOf(80)).find((line) => line.includes(messages.setup.rows.recapLanguage)) ?? '';
 const withLanguage = (recapLanguage: string): Setup => ({ ...base, draft: { ...base.draft, recapLanguage } });
 
 test('the recap language row says what the stored value means, in the interface language', () => {
@@ -115,67 +117,67 @@ test('the recap language row says what the stored value means, in the interface 
 });
 
 test('the git note row is drawn with its value and, while choosing, both choices', () => {
-    const onRow = setupView(base, en, 80).join('\n');
+    const onRow = setupLines(base, catalogFor(en.locale), countOf(80)).join('\n');
     assert.match(onRow, /Git note\s+on — branch/);
-    const choosing = setupView(step(step({ ...base, row: 5 }, '\r').state, 'j').state, es, 80).join('\n');
+    const choosing = setupLines(step(step({ ...base, row: 5 }, '\r').state, 'j').state, catalogFor(es.locale), countOf(80)).join('\n');
     assert.match(choosing, /Nota de git/);
     assert.match(choosing, /▸ no/);
 });
 
 test('the compaction rows are drawn in both languages: 40% by default, the window empty means detected', () => {
-    const english = setupView(base, en, 90).join('\n');
+    const english = setupLines(base, catalogFor(en.locale), countOf(90)).join('\n');
     assert.match(english, /Compact\s+focused/);
     assert.match(english, /Compact hint\s+40%/);
     assert.match(english, /Context window/);
-    const spanish = setupView({ ...base, row: 8 }, es, 90).join('\n');
+    const spanish = setupLines({ ...base, row: 8 }, catalogFor(es.locale), countOf(90)).join('\n');
     assert.match(spanish, /Aviso de compactar\s+40%/);
     assert.match(spanish, /Ventana de contexto/);
     assert.match(spanish, /muestra «compactar\?»/, 'the focused row explains itself');
     assert.match(spanish, /Ventana de contexto\s+se detecta/);
     assert.match(english, /Context window\s+found at runtime/);
-    assert.match(setupView({ ...base, draft: { ...base.draft, compactHint: 'off' } }, en, 90).join('\n'), /Compact hint\s+off/);
+    assert.match(setupLines({ ...base, draft: { ...base.draft, compactHint: 'off' } }, catalogFor(en.locale), countOf(90)).join('\n'), /Compact hint\s+off/);
 });
 
 test('the Models group: a heading, one row per job showing harness · model · effort, the focused part bracketed, in both languages', () => {
-    const english = setupView(withAvailable(base, ['codex']), en, 100).join('\n');
+    const english = setupLines(withAvailable(base, ['codex']), catalogFor(en.locale), countOf(100)).join('\n');
     assert.match(english, /Models — harness · model · effort/);
     assert.match(english, /Recap writer\s+\[codex\] · gpt-6-luna · medium/);
     assert.match(english, /Compact brief\s+as the recap writer · the recap writer's model · high/);
-    const second = setupView(typed(withAvailable(base, ['codex']), ['j', 'l']), en, 100).join('\n');
+    const second = setupLines(typed(withAvailable(base, ['codex']), ['j', 'l']), catalogFor(en.locale), countOf(100)).join('\n');
     assert.match(second, /Compact brief\s+as the recap writer · \[the recap writer's model\] · high/);
     assert.match(second, /writes what the agent keeps when it is compacted/, 'the focused job explains itself');
-    const spanish = setupView(base, es, 100).join('\n');
+    const spanish = setupLines(base, catalogFor(es.locale), countOf(100)).join('\n');
     assert.match(spanish, /Modelos — agente · modelo · esfuerzo/);
     assert.match(spanish, /Guion de compactar\s+como el redactor · el modelo del redactor · high/);
     const set = { ...base, draft: { ...base.draft, compact: { by: 'claude' as const, model: textOf('sonnet'), effort: 'medium' as const } } };
-    assert.match(setupView(set, en, 100).join('\n'), /Compact brief\s+claude · sonnet · medium/);
-    const choosing = setupView(typed(withAvailable(base, ['codex']), ['j', '\r']), en, 100).join('\n');
+    assert.match(setupLines(set, catalogFor(en.locale), countOf(100)).join('\n'), /Compact brief\s+claude · sonnet · medium/);
+    const choosing = setupLines(typed(withAvailable(base, ['codex']), ['j', '\r']), catalogFor(en.locale), countOf(100)).join('\n');
     assert.match(choosing, /▸ as the recap writer — the same harness/);
     assert.match(choosing, /off — compact with the template/);
-    const typing = setupView(typed(withAvailable(base, ['codex']), ['j', 'l', '\r', 'x']), en, 100).join('\n');
+    const typing = setupLines(typed(withAvailable(base, ['codex']), ['j', 'l', '\r', 'x']), catalogFor(en.locale), countOf(100)).join('\n');
     assert.match(typing, /\[x█\]/);
 });
 
 test('the judge row closes the Models group: harness · model · effort in both languages, its hint while focused, the off choice says what off means', () => {
     const at = typed(withAvailable(base, ['claude']), Array.from({ length: 10 }, () => 'j'));
     for (const [messages, label, hint, off] of [[en, 'Recap judge', 'scores stored recaps', 'off — no judge'], [es, 'Juez del resumen', 'puntúa los resúmenes', 'off — sin juez']] as const) {
-        const view = setupView(at, messages, 100, plain).join('\n');
+        const view = setupLines(at, catalogFor(messages.locale), countOf(100), plain).join('\n');
         assert.match(view, new RegExp(`▸ ${label} +\\[${messages.setup.jobBy['recap']}\\] · ${messages.setup.compactModelSame} · medium`));
         assert.ok(view.includes(hint));
-        assert.ok(setupView(typed(at, ['\r']), messages, 100, plain).join('\n').includes(off));
+        assert.ok(setupLines(typed(at, ['\r']), catalogFor(messages.locale), countOf(100), plain).join('\n').includes(off));
     }
-    assert.doesNotMatch(setupView(withAvailable(base, ['claude']), en, 100, plain).join('\n'), /scores stored recaps/, 'the hint shows only while the row is focused');
+    assert.doesNotMatch(setupLines(withAvailable(base, ['claude']), catalogFor(en.locale), countOf(100), plain).join('\n'), /scores stored recaps/, 'the hint shows only while the row is focused');
 });
 
 test('the autocompact rows show their value, the focused one its hint, and the decider offers jev without a key', () => {
     const rows = typed(withAvailable(base, ['claude']), Array.from({ length: 12 }, () => 'j'));
-    const text = setupView(rows, en, 120).join('\n');
+    const text = setupLines(rows, catalogFor(en.locale), countOf(120)).join('\n');
     assert.match(text, /Autocompact\s+shadow — decides and records, never compacts/);
     assert.match(text, /Autocompact from\s+10%/);
     assert.match(text, /Autocompact decider\s+as the recap writer · the recap writer's model · low/);
     assert.match(text, /compacts an idle agent by itself/);
-    const choosing = setupView(typed(withAvailable(base, ['claude']), [...Array.from({ length: 16 }, () => 'j'), '\r']), en, 140).join('\n');
+    const choosing = setupLines(typed(withAvailable(base, ['claude']), [...Array.from({ length: 16 }, () => 'j'), '\r']), catalogFor(en.locale), countOf(140)).join('\n');
     assert.match(choosing, /jev — the TypeSafe API; the key is read from the environment or ~\/\.config\/typesafe-api-key, never shown here/);
     assert.doesNotMatch(choosing, /Bearer|sk-|SENTINEL/u);
-    assert.match(setupView(rows, es, 120).join('\n'), /Autocompactar\s+shadow — decide y registra, nunca compacta/);
+    assert.match(setupLines(rows, catalogFor(es.locale), countOf(120)).join('\n'), /Autocompactar\s+shadow — decide y registra, nunca compacta/);
 });

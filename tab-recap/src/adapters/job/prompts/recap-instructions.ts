@@ -1,4 +1,5 @@
-import { languageName } from '#src/i18n/index.ts';
+import { languageNameOf } from '#src/i18n/index.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { SECTIONS } from '#src/i18n/sections.ts';
 import type { SectionId } from '#src/i18n/sections.ts';
 import { CAPS, MAX_WORDS } from '#src/recap/domain/shape.ts';
@@ -10,9 +11,9 @@ import { RUBRIC } from './rubric.ts';
 function languageLines(language: string, previous: string): string[] {
     const own = language === 'es'
         ? 'Write every text and why in Spanish (neutral Latin American, informal "tú"). Keep the JSON keys and the words add, update, close in English.'
-        : `Write every text and why in ${languageName(language)}. Keep the JSON keys and the words add, update, close in English.`;
+        : `Write every text and why in ${languageNameOf(textOf(language))}. Keep the JSON keys and the words add, update, close in English.`;
     const carried = previous === language ? [] : [
-        `The facts in <ledger> are in ${languageName(previous)}: update every open fact that is still relevant, rewritten in ${languageName(language)}.`,
+        `The facts in <ledger> are in ${languageNameOf(textOf(previous))}: update every open fact that is still relevant, rewritten in ${languageNameOf(textOf(language))}.`,
     ];
     return [own, ...carried, ''];
 }

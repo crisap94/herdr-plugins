@@ -1,10 +1,12 @@
+import { catalogFor } from '#src/i18n/index.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { changes, draftFrom, initial, locksOf, step, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Draft, Locks, Setup } from '#src/recap/application/setup-keys.ts';
-import { setupView } from '#src/recap/render/setup.ts';
+import { setupLines } from '#src/recap/render/setup.ts';
 import type { AutocompactStyle } from '#src/recap/domain/autocompact-style.ts';
 
 const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
@@ -39,12 +41,12 @@ test('the file\'s value: gentle and eager are read as they are; anything else is
 
 test('the row shows its value and its three choices in English and Spanish, with its hint while focused', () => {
     const focused = typed(withAvailable(initial(draft, {}), ['claude']), down(14));
-    const text = setupView(focused, en, 140).join('\n');
+    const text = setupLines(focused, catalogFor(en.locale), countOf(140)).join('\n');
     assert.match(text, /Autocompact style\s+balanced — today's numbers/);
     assert.match(text, /how eagerly it acts/);
-    const choosing = setupView(typed(focused, ['\r']), en, 140).join('\n');
+    const choosing = setupLines(typed(focused, ['\r']), catalogFor(en.locale), countOf(140)).join('\n');
     assert.match(choosing, /eager — acts sooner; asks an idle lane again every 30 min/);
-    const spanish = setupView(typed(focused, ['\r']), es, 140).join('\n');
+    const spanish = setupLines(typed(focused, ['\r']), catalogFor(es.locale), countOf(140)).join('\n');
     assert.match(spanish, /eager — actúa antes; vuelve a mirar un agente libre cada 30 min/);
-    assert.match(setupView(typed(withAvailable(initial(draft, {}), ['claude']), down(14)), es, 140).join('\n'), /Estilo autocomp\.\s+balanced — los números de siempre/);
+    assert.match(setupLines(typed(withAvailable(initial(draft, {}), ['claude']), down(14)), catalogFor(es.locale), countOf(140)).join('\n'), /Estilo autocomp\.\s+balanced — los números de siempre/);
 });
