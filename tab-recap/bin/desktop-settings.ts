@@ -36,15 +36,17 @@ function assignmentsOf(words: readonly string[]): ReadonlyMap<string, string> | 
     return pairs.length === 0 || pairs.some((pair) => pair === null) ? null : new Map(pairs.flatMap((pair) => (pair === null ? [] : [pair])));
 }
 
-function persist(values: ReadonlyMap<string, string>): void {
+function persist(values: ReadonlyMap<string, string>): Readonly<Record<string, unknown>> {
     setValues(join(configDir(), 'config.env'), values, parseEnv);
-    if (LANGUAGE_KEYS.some((key) => values.has(key))) {
-        const store = openCliStore();
-        if (store.kind !== 'ready') {
-            throw new Error(notReadyLine(store, messagesOf()));
-        }
-        requestRewrites(null, store);
+    if (!LANGUAGE_KEYS.some((key) => values.has(key))) {
+        return {};
     }
+    const store = openCliStore();
+    if (store.kind !== 'ready') {
+        return { rewrites: notReadyLine(store, messagesOf()) };
+    }
+    requestRewrites(null, store);
+    return {};
 }
 
 export function settingsCommand(words: readonly string[]): number {
@@ -60,9 +62,7 @@ export function settingsCommand(words: readonly string[]): number {
     }
     const applied = apply(loaded.draft, loaded.locks, assignments);
     const values = changes({ ...initial(loaded.draft, loaded.locks), draft: applied.draft });
-    if (values.size > 0) {
-        persist(values);
-    }
-    report(load(), { saved: [...values.keys()], rejected: applied.rejected });
+    const pending = values.size > 0 ? persist(values) : {};
+    report(load(), { saved: [...values.keys()], rejected: applied.rejected, ...pending });
     return applied.rejected.length === 0 ? OK : FAILED;
 }
