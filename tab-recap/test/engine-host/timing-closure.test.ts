@@ -66,11 +66,10 @@ const KNOWN: readonly Edge[] = [
     { from: 'src/recap/application/autocompact.ts', to: 'src/recap/domain/ids.ts', kind: 'import' },
     { from: 'src/recap/application/autocompact.ts', to: 'src/recap/domain/lane.ts', kind: 'import' },
     { from: 'src/recap/application/autocompact.ts', to: 'src/recap/domain/status.ts', kind: 'import' },
-    { from: 'src/recap/domain/autocompact-style.ts', to: 'src/recap/domain/legacy.ts', kind: 'import' },
     { from: 'src/recap/domain/autocompact-style.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
     { from: 'src/recap/domain/autocompact-style.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
     { from: 'src/recap/domain/autocompact.ts', to: 'src/recap/domain/ids.ts', kind: 'import' },
-    { from: 'src/recap/domain/autocompact.ts', to: 'src/recap/domain/legacy.ts', kind: 'import' },
+    { from: 'src/recap/domain/autocompact.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
     { from: 'src/recap/domain/autocompact.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
     { from: 'src/recap/domain/autocompact.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
 ];
@@ -81,6 +80,7 @@ const STUB_CARRIED: readonly Edge[] = [
     { from: 'src/ports/decider.ts', to: 'src/ports/legacy.ts', kind: 're-export' },
     { from: 'src/recap/domain/autocompact-style.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
     { from: 'src/recap/domain/autocompact-style.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
+    { from: 'src/recap/domain/autocompact.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
     { from: 'src/recap/domain/autocompact.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
     { from: 'src/recap/domain/autocompact.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
 ];
