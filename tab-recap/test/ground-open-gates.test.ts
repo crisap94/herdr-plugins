@@ -8,6 +8,7 @@ import { factOf } from '#test/fakes/facts.ts';
 import { keepNewestOf, nextHoursOf, prunedWriterView } from '#src/recap/domain/writer-view.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
 import { NO_REPOS } from '#test/support.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 
 const NOW = Date.parse('2026-10-06T03:05:00Z');
 
@@ -17,9 +18,9 @@ test('groundOf and judge refuse an add that repeats an open fact hidden by prune
     const ledger = new MemoryLedger().seed(hidden, shown);
     const task = { id: 't1', name: '', lanes: [] };
     const view = prunedWriterView(keepNewestOf(1), nextHoursOf(24));
-    const built = await inputOf([], { tab: 'w1:t1', repos: NO_REPOS, now: NOW, tasks: [task], facts: [{ key: 't1', open: [hidden, shown], closed: [] }], writerView: view });
+    const built = await inputOf([], { tab: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(NOW), tasks: [task], facts: [{ key: 't1', open: [hidden, shown], closed: [] }], writerView: view });
     assert.deepEqual(built.input.ledgers[0]?.facts.map((fact) => fact.text), ['Keep the release checklist current']);
-    const ground = groundOf({ tab: 'w1:t1', tasks: [task], built, entries: [], ledger, now: NOW, language: 'en' });
+    const ground = groundOf({ tab: brand<string, 'Text'>('w1:t1'), tasks: [task], built, entries: [], ledger, now: brand<number, 'Instant'>(NOW), language: brand<string, 'Text'>('en') });
     const operation: Operation = { op: 'add', section: 'done', text: hidden.text, why: null, ref: null, at: null, agent: null, anchor: null };
     const taskGround = ground.grounds[0];
     assert.ok(taskGround);

@@ -5,6 +5,7 @@ import { QUOTE_CHARS, quotedIn } from '#src/recap/domain/quote.ts';
 import { stubId } from './enumerate-input.ts';
 import type { Stub } from './triggers.ts';
 import { localTime } from './local-time.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { objectIn, tidy } from './recap-shape.ts';
 
 const WHY_WORDS = 24;
@@ -26,7 +27,7 @@ export interface Answered {
 type Fields = Readonly<Record<string, unknown>>;
 const isFields = (value: unknown): value is Fields => typeof value === 'object' && value !== null && !Array.isArray(value);
 const maybe = (value: unknown, words: number): string | null => {
-    const one = typeof value === 'string' ? tidy(value, words) : '';
+    const one = typeof value === 'string' ? tidy(brand<string, 'Text'>(value), brand<number, 'Count'>(words)) : '';
     return one === '' ? null : one;
 };
 
@@ -73,7 +74,7 @@ const listOf = (value: unknown): readonly unknown[] => (Array.isArray(value) ? (
 export function answeredBy(text: string, ground: AnswerGround): Answered | null {
     let parsed: unknown;
     try {
-        parsed = objectIn(text);
+        parsed = objectIn(brand<string, 'Text'>(text));
     } catch {
         return null;
     }

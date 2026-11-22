@@ -1,4 +1,5 @@
 import type { Entry } from '#src/ports/transcripts.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { clipTurn } from './writer-clip.ts';
 import { localTime } from './local-time.ts';
 import { element, leaf } from './xml.ts';
@@ -35,7 +36,7 @@ function burst(tools: readonly Entry[]): Item | null {
 
 function turn(entry: Entry, clock: Clock): Item {
     const role = entry.role === 'user' ? 'user' : 'agent';
-    const kept = clipTurn(role, entry.text);
+    const kept = clipTurn(role, brand<string, 'Text'>(entry.text));
     const attrs = { role, at: entry.at === undefined ? null : localTime(entry.at, clock.now, clock.zone), queued: entry.queued === true ? 'yes' : null, clipped: kept.clipped ? 'middle' : null };
     return { markup: leaf('turn', attrs, kept.text), turn: true, at: entry.at };
 }

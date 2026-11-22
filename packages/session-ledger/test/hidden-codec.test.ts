@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseHidden, serializeHidden } from '@stateforge-labs/session-ledger/unstable/recap/application/hidden-codec.ts';
+import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import { positiveCount } from '@stateforge-labs/session-ledger/unstable/recap/domain/writer-view.ts';
 
 test('hidden section counts round-trip through their serializer', () => {
@@ -10,6 +11,6 @@ test('hidden section counts round-trip through their serializer', () => {
 
 test('the hidden codec rejects zero, duplicate, and unknown section counts', () => {
     for (const document of ['<hidden section="done" count="0"/>', '<hidden section="done" count="1"/><hidden section="done" count="2"/>', '<hidden section="mood" count="1"/>']) {
-        assert.throws(() => parseHidden(document));
+        assert.throws(() => parseHidden(brand<string, 'Text'>(document)));
     }
 });

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { capStubs, MAX_STUBS, triggersOf } from '#src/recap/application/triggers.ts';
 import type { Stub } from '#src/recap/application/triggers.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { QUOTE_CHARS, quotedIn } from '#src/recap/domain/quote.ts';
 import { longTurn } from '#test/fakes/long-turn.ts';
 
@@ -75,5 +76,5 @@ test('a chunk keeps at most MAX_STUBS: commits first, then errors, questions and
     assert.equal(kept.length, MAX_STUBS);
     assert.deepEqual(kept.filter((stub) => stub.kind !== 'edit').length, stubs.filter((stub) => stub.kind !== 'edit').length, 'the heavier kinds all stay');
     assert.deepEqual(kept, stubs.filter((stub) => kept.includes(stub)));
-    assert.equal(capStubs(stubs, 1)[0]?.kind, 'commit');
+    assert.equal(capStubs(stubs, brand<number, 'Count'>(1))[0]?.kind, 'commit');
 });

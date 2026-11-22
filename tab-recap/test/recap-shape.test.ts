@@ -2,35 +2,39 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { answerTextOf, headlineOf, objectIn, renderRecap, tidy } from '#src/recap/application/recap-shape.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { parseText } from '#src/recap/domain/text.ts';
+
+const asText = brand<string, 'Text'>;
+const asCount = brand<number, 'Count'>;
 import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
 
 test('tidy: a line is at most 16 words, clipped with an ellipsis; bullets, bold and runs of spaces are tidied; a limit can be given', () => {
     const long = Array.from({ length: 30 }, (_, i) => `w${i}`).join(' ');
-    assert.equal(tidy(long), `${Array.from({ length: 16 }, (_, i) => `w${i}`).join(' ')}…`);
-    assert.equal(tidy('- **running**   CI\non !940'), 'running CI on !940');
-    assert.equal(tidy('exactly sixteen words here one two three four five six seven eight nine ten'), 'exactly sixteen words here one two three four five six seven eight nine ten');
-    assert.equal(tidy(long, 24).split(' ').length, 24);
+    assert.equal(tidy(asText(long)), `${Array.from({ length: 16 }, (_, i) => `w${i}`).join(' ')}…`);
+    assert.equal(tidy(asText('- **running**   CI\non !940')), 'running CI on !940');
+    assert.equal(tidy(asText('exactly sixteen words here one two three four five six seven eight nine ten')), 'exactly sixteen words here one two three four five six seven eight nine ten');
+    assert.equal(tidy(asText(long), asCount(24)).split(' ').length, 24);
 });
 
 test('tidy: placeholders and empties are nothing', () => {
     for (const none of ['', '—', 'none', 'N/A', 'nada', '-']) {
-        assert.equal(tidy(none), '', none);
+        assert.equal(tidy(asText(none)), '', none);
     }
 });
 
 test('objectIn: the answer may be fenced or wrapped in a sentence — the JSON is found inside; none found is undefined; broken JSON throws', () => {
-    assert.deepEqual(objectIn('```json\n{"ops":[]}\n```'), { ops: [] });
-    assert.deepEqual(objectIn('Here you go: {"ops":[{"op":"close","id":"f1","why":"done"}]} Hope it helps!'), { ops: [{ op: 'close', id: 'f1', why: 'done' }] });
-    assert.equal(objectIn('I could not do that'), undefined);
-    assert.throws(() => objectIn('{"ops": [}'));
+    assert.deepEqual(objectIn(asText('```json\n{"ops":[]}\n```')), { ops: [] });
+    assert.deepEqual(objectIn(asText('Here you go: {"ops":[{"op":"close","id":"f1","why":"done"}]} Hope it helps!')), { ops: [{ op: 'close', id: 'f1', why: 'done' }] });
+    assert.equal(objectIn(asText('I could not do that')), undefined);
+    assert.throws(() => objectIn(asText('{"ops": [}')));
 });
 
 test('objectIn: the first complete object is read when text after it holds a brace or a second object', () => {
-    assert.deepEqual(objectIn('{"ops":[]}\nNote: I left {f2} alone.'), { ops: [] });
-    assert.deepEqual(objectIn('Here: {"ops":[{"op":"close","id":"f1","why":"done"}]}\n{"ops":[{"op":"close","id":"f9","why":"x"}]}'), { ops: [{ op: 'close', id: 'f1', why: 'done' }] });
-    assert.deepEqual(objectIn('{"a":1} }'), { a: 1 });
-    assert.deepEqual(objectIn('{"a":1} {"b":'), { a: 1 });
+    assert.deepEqual(objectIn(asText('{"ops":[]}\nNote: I left {f2} alone.')), { ops: [] });
+    assert.deepEqual(objectIn(asText('Here: {"ops":[{"op":"close","id":"f1","why":"done"}]}\n{"ops":[{"op":"close","id":"f9","why":"x"}]}')), { ops: [{ op: 'close', id: 'f1', why: 'done' }] });
+    assert.deepEqual(objectIn(asText('{"a":1} }')), { a: 1 });
+    assert.deepEqual(objectIn(asText('{"a":1} {"b":')), { a: 1 });
 });
 
 test('answerTextOf: a whole JSON answer is kept; a JSON object wrapped in text is read as its first object; anything else is kept as it is', () => {
@@ -54,9 +58,9 @@ test('answerTextOf: a whole JSON answer is kept; a JSON object wrapped in text i
 });
 
 test('objectIn: braces inside JSON strings and escaped quotes do not end the object', () => {
-    assert.deepEqual(objectIn('{"why":"closes } and { braces","n":{"m":1}} then }'), { why: 'closes } and { braces', n: { m: 1 } });
-    assert.deepEqual(objectIn('{"why":"say \\"}\\" now"} trailing }'), { why: 'say "}" now' });
-    assert.deepEqual(objectIn('{"path":"C:\\\\dir\\\\"} }'), { path: 'C:\\dir\\' });
+    assert.deepEqual(objectIn(asText('{"why":"closes } and { braces","n":{"m":1}} then }')), { why: 'closes } and { braces', n: { m: 1 } });
+    assert.deepEqual(objectIn(asText('{"why":"say \\"}\\" now"} trailing }')), { why: 'say "}" now' });
+    assert.deepEqual(objectIn(asText('{"path":"C:\\\\dir\\\\"} }')), { path: 'C:\\dir\\' });
 });
 
 const objectInBefore = (text: string): unknown => {
@@ -78,14 +82,14 @@ test('objectIn: every text read today reads to the same value', () => {
         '} only {',
         '{ never closed',
     ]) {
-        assert.deepEqual(objectIn(text), objectInBefore(text), text);
+        assert.deepEqual(objectIn(asText(text)), objectInBefore(text), text);
     }
 });
 
 test('objectIn: a broken first object with no readable slice still throws', () => {
-    assert.throws(() => objectIn('{"ops": [} and more }'));
-    assert.throws(() => objectIn("{'a': 1}"));
-    assert.equal(objectIn('} {'), undefined);
+    assert.throws(() => objectIn(asText('{"ops": [} and more }')));
+    assert.throws(() => objectIn(asText("{'a': 1}")));
+    assert.equal(objectIn(asText('} {')), undefined);
 });
 
 test('renderer: golden output in English with empty sections as —', () => {
@@ -111,7 +115,7 @@ test('headline: what needs the operator first, else what is happening now, else 
     assert.equal(headlineOf(NO_SECTIONS), null);
 });
 
-const opsOf = (text: string): number => (objectIn(text) as { ops: unknown[] }).ops.length;
+const opsOf = (text: string): number => (objectIn(asText(text)) as unknown as { ops: unknown[] }).ops.length;
 
 test('the operations contract survives every harness\'s way of handing the answer back', async () => {
     const { unfenced } = await import('#src/adapters/job/prompts/recap-prompt.ts');

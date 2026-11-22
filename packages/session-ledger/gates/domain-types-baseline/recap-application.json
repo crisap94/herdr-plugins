@@ -1,10 +1,4 @@
 {
-  "src/recap/application/ask-back/legacy.ts": {
-    "legacy": 7
-  },
-  "src/recap/application/chunking/legacy.ts": {
-    "legacy": 10
-  },
   "src/recap/application/correction-input.ts": {
     "parameter": 6,
     "return": 8,
@@ -50,9 +44,6 @@
     "property": 15,
     "container": 3
   },
-  "src/recap/application/legacy.ts": {
-    "legacy": 21
-  },
   "src/recap/application/local-time.ts": {
     "parameter": 6,
     "return": 2,
@@ -74,19 +65,10 @@
     "assertion": 4
   },
   "src/recap/application/recap-job.ts": {
-    "parameter": 5,
+    "parameter": 4,
     "return": 2,
-    "property": 9,
+    "property": 8,
     "container": 3
-  },
-  "src/recap/application/recap-shape/legacy.ts": {
-    "legacy": 9
-  },
-  "src/recap/application/triggers/legacy.ts": {
-    "legacy": 8
-  },
-  "src/recap/application/writer-clip/legacy.ts": {
-    "legacy": 6
   },
   "src/recap/application/writer-context.ts": {
     "parameter": 5,
