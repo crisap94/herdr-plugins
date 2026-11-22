@@ -844,7 +844,6 @@
       "src/adapters/os/atomic-file.ts",
       "src/adapters/os/config/file.ts",
       "src/adapters/os/config/paths-xdg.ts",
-      "src/adapters/os/glow.ts",
       "src/adapters/os/pidfile.ts",
       "src/adapters/os/plugin-version.ts",
       "src/adapters/os/process/attributes.ts",

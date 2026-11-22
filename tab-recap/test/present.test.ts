@@ -51,15 +51,6 @@ test('two agents, one tab: a header per agent, then ONE recap for the tab', () =
     assert.ok(text.split('\n').every((line) => visibleLength(line) <= 40));
 });
 
-test("glow's padding is dropped, its colours kept", async () => {
-    const { trimPadding } = await import('#src/adapters/os/glow.ts');
-    const esc = String.fromCodePoint(0x1b);
-    assert.equal(trimPadding(`${esc}[1mGoal${esc}[0m     ${esc}[0m`), `${esc}[1mGoal${esc}[0m${esc}[0m`);
-    assert.equal(trimPadding('plain   '), 'plain');
-    assert.equal(trimPadding(`${esc}[1m   ${esc}[0m`), `${esc}[1m${esc}[0m`);
-    assert.equal(trimPadding(`${esc}]8;;https://example.org${esc}\\link${esc}]8;;${esc}\\   `), `${esc}]8;;https://example.org${esc}\\link${esc}]8;;${esc}\\`);
-});
-
 test('a modal tells you how to close it; a column never does', async () => {
     const { footer } = await import('#src/recap/render/present.ts');
     assert.match(footer(40, 'modal', en), /q close/);
