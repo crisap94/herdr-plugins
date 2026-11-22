@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { compactJobOf, placementOf } from './fakes/settings-readers.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { BRIEF_INSTRUCTIONS } from '#src/adapters/job/prompts/brief-instructions.ts';
@@ -9,7 +10,7 @@ import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
-import { compactJobOf, COMPACT_DEFAULT, placementOf } from '#src/recap/domain/job.ts';
+import { COMPACT_DEFAULT } from '#src/recap/domain/job.ts';
 
 const t = (raw: string): Text => {
     const parsed = parseText(raw);

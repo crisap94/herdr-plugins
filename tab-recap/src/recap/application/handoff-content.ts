@@ -1,8 +1,9 @@
 import type { Freshness } from '#src/recap/domain/freshness.ts';
+import { textOf as asText } from '#src/recap/domain/text.ts';
 import type { HandoffContent } from '#src/recap/domain/handoff-content.ts';
-import { sanitizeHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
+import { cleanHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import type { HandoffText } from '#src/recap/domain/handoff-sanitize.ts';
-import { isForbidden } from '#src/recap/domain/handoff-vetting.ts';
+import { vetHandoffText } from '#src/recap/domain/handoff-vetting.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
@@ -22,9 +23,9 @@ const noteOf = (raw: Text | null): HandoffText | null => {
     if (raw === null) {
         return null;
     }
-    const sanitized = sanitizeHandoffText(raw);
-    const note = sanitizeHandoffText(Array.from(sanitized).slice(0, NOTE_LIMIT).join(''));
-    return note === '' || isForbidden(note) ? null : note;
+    const sanitized = cleanHandoffText(asText(raw));
+    const note = cleanHandoffText(asText(Array.from(sanitized).slice(0, NOTE_LIMIT).join('')));
+    return note === '' || (vetHandoffText(note).kind === 'err') ? null : note;
 };
 
 export function buildHandoffContent(input: HandoffInput): HandoffContent {

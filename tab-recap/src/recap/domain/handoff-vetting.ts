@@ -6,8 +6,6 @@ export interface Forbidden {
     readonly kind: 'forbidden';
 }
 
-export { isForbidden } from './legacy.ts';
-
 export function vetHandoffText(text: HandoffText): Result<HandoffText, Forbidden> {
     return FORBIDDEN.test(text) || text.search(FORBIDDEN_PHRASE_PATTERN) !== -1 ? err({ kind: 'forbidden' }) : ok(text);
 }

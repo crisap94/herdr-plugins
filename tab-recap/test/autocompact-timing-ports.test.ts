@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { policyOf, tuningOf } from './fakes/settings-readers.ts';
 import { test } from 'node:test';
 import { wireAutocompact } from '#src/daemon/autocompact.ts';
 import type { Config } from '#src/daemon/config.ts';
@@ -8,8 +9,6 @@ import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
-import { policyOf } from '#src/recap/domain/autocompact.ts';
-import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { DeciderPort } from '#src/ports/decider.ts';
 import { registryWith } from '#test/fakes/transcript-registry.ts';

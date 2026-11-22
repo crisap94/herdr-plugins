@@ -119,7 +119,6 @@ export function parseStoredHandoffOutcome(kind: unknown, reason: unknown): Resul
     return parsed.kind === 'ok' && isStorable(parsed.value) ? ok(parsed.value) : err({ kind: 'out-of-range' });
 }
 
-export { handoffOutcomeOf, storedOutcomeOf } from './legacy.ts';
 
 const INTERNAL_FAILURE: StoredHandoffOutcome = { kind: 'failed', reason: 'internal-error' };
 

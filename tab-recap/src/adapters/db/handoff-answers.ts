@@ -2,7 +2,7 @@ import type { Database } from 'bun:sqlite';
 import { eq, lt } from 'drizzle-orm';
 import type { HandoffAnswerRecord, HandoffAnswerStore } from '#src/ports/handoff-answers.ts';
 import { must } from '#src/protocol/result.ts';
-import { storedOutcomeOf, type StoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
+import { parseStoredHandoffOutcome, type StoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
@@ -43,8 +43,9 @@ export class HandoffAnswerRepository implements HandoffAnswerStore {
         const key = handoffBytesOf(id);
         return guarded((): HandoffAnswerRecord | null => {
             const row = key === null ? null : this.orm.select({ at: handoffAnswer.at, outcome: handoffAnswer.outcome, reason: handoffAnswer.reason }).from(handoffAnswer).where(eq(handoffAnswer.id, key)).get() ?? null;
-            const stored = row === null ? null : storedOutcomeOf(row.outcome, row.reason);
-            if (row === null || stored === null) return null;
+            const parsed = row === null ? null : parseStoredHandoffOutcome(row.outcome, row.reason);
+            if (row === null || parsed === null || parsed.kind === 'err') return null;
+            const stored: StoredHandoffOutcome = parsed.value;
             return { kind: stored.kind, reason: 'reason' in stored ? must(parseText(stored.reason)) : null, id, at: instant(row.at) };
         }, null);
     }

@@ -1,4 +1,5 @@
 import { parseCount, countOf } from '#src/recap/domain/count.ts';
+import { policyOf } from './fakes/settings-readers.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { instant, duration } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
@@ -9,9 +10,10 @@ import { ACTIVE } from '#src/recap/application/autocompact-gates.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { parseLaneStatusAtDecision, policyOf } from '#src/recap/domain/autocompact.ts';
+import { parseLaneStatusAtDecision } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
 import { tuningFrom } from '#src/recap/domain/autocompact-style.ts';
+
 import type { CompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import type { DecidedAnswersResult, DeciderPort, DecidedResult } from '#src/ports/decider.ts';
 import { parseTokenAmount } from '#src/recap/domain/token-amount.ts';

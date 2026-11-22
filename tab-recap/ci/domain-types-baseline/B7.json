@@ -1,6 +1,6 @@
 {
   "src/daemon/legacy.ts": {
-    "legacy": 64
+    "legacy": 63
   },
   "src/extensions/legacy.ts": {
     "legacy": 2

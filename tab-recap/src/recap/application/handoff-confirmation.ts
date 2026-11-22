@@ -78,7 +78,7 @@ export class HandoffConfirmation {
 
     private async sessionOf(lane: Lane): Promise<Lane> {
         const current = await this.deps.session(String(lane.pane));
-        return typeof current === 'string' && current.trim() !== '' ? { ...lane, session: sessionId(current) } : lane;
+        return typeof current === 'string' && current.trim() !== '' ? { ...lane, session: sessionId(textOf(current)) } : lane;
     }
 
     private async latestOf(lane: Lane): Promise<LatestOf> {

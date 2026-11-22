@@ -1,6 +1,7 @@
 import { test } from 'node:test';
+import { judgeJobOf, keepDaysOf, placementOf } from './fakes/settings-readers.ts';
 import assert from 'node:assert/strict';
-import { JUDGE_DEFAULT, judgeJobOf, KEEP_INPUT_DAYS, keepDaysOf, placementOf } from '#src/recap/domain/job.ts';
+import { JUDGE_DEFAULT, KEEP_INPUT_DAYS } from '#src/recap/domain/job.ts';
 import { loadConfig } from '#src/daemon/config.ts';
 
 const config = (values: Readonly<Record<string, string>>) => (key: string): string | undefined => values[key];

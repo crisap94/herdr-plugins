@@ -1,50 +1,29 @@
-import { parseOrigin } from './origin.ts';
-import type { ParsedValue } from '#src/protocol/codec.ts';
-import { BACKEND_IDS, harnessLabels, type BackendChoice, type BackendId } from '@stateforge-labs/session-ledger/unstable/recap/domain/backend.ts';
 import { parseText, textOf, type Text } from './text.ts';
-import type { Milliseconds } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import { placementFor, judgeSettingOf, compactSettingOf, coverageSettingOf, curateSettingOf, deciderSettingOf, keepDaysCountOf } from './job.ts';
-import type { DeciderBy, JobAnswer, JobBy, JobPlacement, JobReader } from './job.ts';
-import type { Effort } from './effort.ts';
-import { COMPACT_FAILURES, COMPACT_STAGES, type CompactFailure } from '#src/protocol/exchanges/compact.ts';
-import { failureStage, isFailureStage } from '#src/protocol/exchange.ts';
-import type { RequestId } from '#src/protocol/primitives.ts';
 import { must, type Result } from '#src/protocol/result.ts';
-import { kindsWith, type RegisteredKind, type RegisteredKindTable } from '@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts';
-import type { Flight } from '@stateforge-labs/session-ledger/unstable/recap/domain/in-flight.ts';
-import { duration, instant, type Duration, type Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { ContextUse } from '@stateforge-labs/session-ledger/unstable/recap/domain/compaction.ts';
+import type { RegisteredKind } from './registered-kinds.ts';
+import type { Flight } from './in-flight.ts';
+import { instant, type Duration, type Instant } from './time.ts';
+import type { ContextUse } from './compaction.ts';
 import { parseCount, type Count } from './count.ts';
 import type { Origin } from './origin.ts';
 import { RUN_CAUSES, sessionFactsFrom, type AutocompactCounts, type RunCounts, type SessionFacts } from './session-facts.ts';
-import type { AskOutcome } from './ask-outcome.ts';
-import { gateFrom, jevFrom, parseGatePercent, policyFrom, type AutocompactKinds, type AutocompactPolicy, type AutocompactSetting, type GateDecision, type JevSetting, type JevSettings, type LaneKind } from './autocompact.ts';
-import { tuningFrom, type AutocompactStyle } from './autocompact-style.ts';
+import type { AutocompactKinds, LaneKind } from './autocompact.ts';
+import type { AutocompactStyle } from './autocompact-style.ts';
 import type { Thresholds } from './autocompact-verdict.ts';
-import { BACKOFF_BASE_MS, BACKOFF_MAX_MS } from './backoff.ts';
 import type { Shape } from './board.ts';
 import { parseByteBudget, type ByteBudget } from './byte-budget.ts';
 import type { RestoredLane } from './closures.ts';
-import { VALUE_MAX as NOTE_MAX } from './compact-request.ts';
-import { NotAReasonError, parseCompactionPiece, parseConfirmationReads, parseNeedsIdleReason, type CompactionLine, type CompactionPiece, type CompactionPlanResult, type Confirmation, type ConfirmationReads, type WhileWorking } from './compaction-plan.ts';
+import type { CompactionLine, CompactionPlanResult, Confirmation, WhileWorking } from './compaction-plan.ts';
 import { NOTE } from './coordination.ts';
 import { STORY_TOO_LONG, STORY_WORDS, storyOf } from './curation.ts';
-import { VALUE_MAX as EVENT_MAX, type EventKind } from './event-token.ts';
-import type { FactId } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
-import type { Freshness, LastRunCause, RefreshStatus, WaitResult } from './freshness.ts';
+import type { FactId } from './fact.ts';
+import type { Freshness } from './freshness.ts';
 import type { HandoffGroupId } from './handoff-content.ts';
-import { cleanHandoffText, type HandoffText } from './handoff-sanitize.ts';
-import { vetHandoffText } from './handoff-vetting.ts';
-import { herdrEventsFrom, type HerdrEvents } from './herdr-events.ts';
-import { parseHandoffOutcome, parseStoredHandoffOutcome, type HandoffOutcome, type StoredHandoffOutcome } from './handoff-outcome.ts';
+import type { HandoffText } from './handoff-sanitize.ts';
 import type { WorksiteSnapshot } from './worksite.ts';
-import { NotAnIdentifierError, isUncheckedSessionId, isUncheckedSessionPath, parseAgentKind, parseHandoffId, parsePaneId, parseSessionId, parseSessionPath, parseTabId, parseWorkspaceId, type HandoffId, type PaneId, type SessionId, type SessionPath, type AgentKind, type TabId, type WorkspaceId } from './ids.ts';
+import { NotAnIdentifierError, parseAgentKind, parsePaneId, parseTabId, parseWorkspaceId, type PaneId, type AgentKind, type TabId, type WorkspaceId } from './ids.ts';
 import type { Lane, SeenLane } from './lane.ts';
 import { collapsedText } from './text-collapse.ts';
-
-export function outcomeText(outcome: AskOutcome): string { return outcome.kind === 'failed' ? failureStage(outcome.reason) : outcome.kind; }
-
-export type TuningReader = (key: string) => string | undefined;
 
 export interface AutocompactTuning { readonly style: AutocompactStyle; readonly verdict: Thresholds; readonly coverageAtLeast: number; readonly recheckIdleMs: number | null; }
 
@@ -55,24 +34,7 @@ export function numberIn(raw: string | undefined, min: number, max: number, whol
     return usable && value >= min && value <= max ? value : null;
 }
 
-export function autocompactDefaultKinds<T extends RegisteredKindTable>(table: T): readonly (keyof T)[] { return kindsWith(table, 'autocompactDefault'); }
-
-export type AutocompactReader = (key: AutocompactSetting) => string | undefined;
-
-export type JevReader = (key: JevSetting) => string | undefined;
-
 export interface GateInput { readonly kind: LaneKind; readonly kinds: AutocompactKinds; readonly shadowKinds: readonly RegisteredKind[]; readonly busy: boolean; readonly flight: Flight | null; readonly share: number; readonly minimum: number; readonly ceiling: number; readonly now: number; readonly lastBreakAt: number | null; readonly lastDecisionAt: Instant | null; readonly cooldownMs: number; readonly unchanged: boolean; readonly coverageBackoff?: boolean; }
-
-export function gateOf(input: GateInput): GateDecision {
-    return gateFrom({
-        kind: input.kind, kinds: input.kinds, shadowKinds: input.shadowKinds, flight: input.flight, lastDecisionAt: input.lastDecisionAt,
-        busy: input.busy ? 'busy' : 'free', unchanged: input.unchanged ? 'same' : 'changed', ...(input.coverageBackoff ? { coverageBackoff: 'backing-off' } : {}),
-        share: parseGatePercent(input.share), minimum: parseGatePercent(input.minimum), ceiling: parseGatePercent(input.ceiling),
-        now: instant(input.now), lastBreakAt: input.lastBreakAt === null ? null : instant(input.lastBreakAt), cooldownMs: duration(input.cooldownMs),
-    });
-}
-
-export function backoffMs(failures: number): number { return failures <= 0 ? 0 : Math.min(BACKOFF_MAX_MS, BACKOFF_BASE_MS * 2 ** (failures - 1)); }
 
 export interface Placement { readonly pane: PaneId; readonly shape: Shape; readonly since?: number; }
 
@@ -92,32 +54,6 @@ export function byteBudgetOf(bytes: number): ByteBudget {
 
 export function fits(budget: ByteBudget, bytes: number): boolean { return bytes <= budget; }
 
-function fitNote(id: RequestId, note: string): string | null { return note.trim() === '' ? null : note.slice(0, NOTE_MAX - id.length - 1); }
-
-export function noteOf(value: ParsedValue): string | null {
-    const note = value['note'];
-    return typeof note === 'string' ? fitNote(value.id, note) : null;
-}
-
-export function finalAnswerOf(stage: string, reason: CompactFailure | null): string { return stage === 'compacted' ? COMPACT_STAGES.done : failureStage(reason ?? (stage === 'skipped' ? COMPACT_FAILURES.skipped : COMPACT_FAILURES.error)); }
-
-export function isTerminalStage(stage: string): boolean { return stage === COMPACT_STAGES.done || isFailureStage(stage); }
-
-export type Unsupported = { readonly kind: 'unsupported'; readonly why: string };
-
-export function unsupported(why: string): Unsupported { return { kind: 'unsupported', why }; }
-
-export function compactionPiece(text: string): CompactionPiece { return must(parseCompactionPiece(text)); }
-
-export function confirmationReads(reads: number): ConfirmationReads { return must(parseConfirmationReads(reads)); }
-
-export function needsIdle(reason: string): WhileWorking {
-    if (reason.trim() === '') {
-        throw new NotAReasonError('a kind that needs the lane idle must say why');
-    }
-    return { kind: 'needs-idle', reason: must(parseNeedsIdleReason(reason)) };
-}
-
 export type FollowUp = { readonly kind: 'restore-message'; readonly acceptsStall: boolean } | { readonly kind: 'none' };
 
 export interface CompactionPlan { readonly lines: readonly CompactionLine[]; readonly enterDelay: Duration; readonly confirm: Confirmation; readonly retryOnSelfFailure: boolean; readonly followUp: FollowUp; readonly whileWorking: WhileWorking; }
@@ -126,12 +62,10 @@ export type CompactionPlanFactory = (guidance: string) => CompactionPlanResult;
 
 export interface NoteToken { readonly label: string; readonly value: string; }
 
-export function plainText(raw: string): string { return collapsedText(textOf(raw), 'space'); }
-
 export function notesOf(tokens: Readonly<Record<string, string>>): readonly NoteToken[] {
     return Object.keys(tokens).toSorted().flatMap((name): NoteToken[] => {
         const found = NOTE.exec(name);
-        const value = plainText(tokens[name] ?? '');
+        const value = collapsedText(textOf(tokens[name] ?? ''), 'space');
         return found === null || value === '' ? [] : [{ label: found[1] ?? 'note', value }];
     });
 }
@@ -169,13 +103,6 @@ export function curationOf(answer: string, open: ReadonlySet<string>): Curation 
     return { merges, story: storyOf(said), refused };
 }
 
-export function seqOf(startedAt: number, n: number): string { return (Math.floor(startedAt) + n).toString(36); }
-
-export function eventValue(seq: string, kind: EventKind, detail?: string | null): string {
-    const tail = detail === undefined || detail === null || detail === '' ? '' : `:${detail}`;
-    return `${seq}:${kind}${tail}`.slice(0, EVENT_MAX);
-}
-
 export interface SeenColumn { readonly tabId: string; readonly paneId: string; readonly shape: Shape; }
 
 export interface DeadColumn { readonly tab: TabId; readonly pane: PaneId }
@@ -202,35 +129,7 @@ export function tabId(raw: string): TabId { return orThrow(okOrNull(parseTabId(r
 
 export function workspaceId(raw: string): WorkspaceId { return orThrow(okOrNull(parseWorkspaceId(raw)), 'a workspace id cannot be empty'); }
 
-export function sessionId(raw: string): SessionId { return orThrow(okOrNull(parseSessionId(raw)), 'a session id cannot be empty'); }
-
-export function sessionIdFromAgentValue(raw: string): SessionId { return orThrow(isUncheckedSessionId(raw) ? raw : null, 'a session id cannot be empty'); }
-
-export function sessionPath(raw: string): SessionPath { return orThrow(okOrNull(parseSessionPath(raw)), 'a session path cannot be empty'); }
-
-export function sessionPathFromAgentValue(raw: string): SessionPath { return orThrow(isUncheckedSessionPath(raw) ? raw : null, 'a session path cannot be empty'); }
-
-export function handoffId(raw: string): HandoffId { return orThrow(parseHandoffId(raw), 'a handoff id must be a TypeID: hnd_ and 26 base32 characters'); }
-
 export function agentKind(raw: string): AgentKind { return orThrow(okOrNull(parseAgentKind(raw)), 'an agent kind cannot be empty'); }
-
-export interface LastRun { readonly at: number; readonly cause: LastRunCause; }
-
-export type NewerPrompts = { readonly kind: 'none' } | { readonly kind: 'at-least'; readonly count: number } | { readonly kind: 'unknown' };
-
-export function refreshStatusOf(waited: WaitResult, error: string | null): RefreshStatus {
-    if (waited === 'timeout') {
-        return 'timed-out';
-    }
-    return error === null ? 'refreshed' : 'failed';
-}
-
-export function newerPromptsOf(count: number | null): NewerPrompts {
-    if (count === null) {
-        return { kind: 'unknown' };
-    }
-    return count > 0 ? { kind: 'at-least', count } : { kind: 'none' };
-}
 
 export interface SettleEvidence { readonly trials: number; readonly source: string; }
 
@@ -240,55 +139,9 @@ export interface HandoffGroup { readonly id: HandoffGroupId; readonly entries: r
 
 export interface HandoffBody { readonly kind: 'content'; readonly note: HandoffText | null; readonly freshness: Freshness; readonly worksite: WorksiteSnapshot; readonly groups: readonly HandoffGroup[]; readonly withheld: number; }
 
-export interface Job { readonly by: JobBy; readonly model: string; readonly effort: Effort; readonly timeoutMs?: Milliseconds; readonly answer?: JobAnswer; }
-
-export interface DeciderJob { readonly by: DeciderBy; readonly model: string; readonly effort: Effort; }
-
-export interface RecapChoices { readonly backend: BackendChoice; readonly models: Readonly<Record<BackendId, string>>; }
-
-const textValue = (raw: string | undefined): Text | undefined => (raw === undefined ? undefined : must(parseText(raw)));
-
-const readerOf = (get: TuningReader): JobReader => (key) => textValue(get(key));
-
-export const judgeJobOf = (get: TuningReader): Job => judgeSettingOf(readerOf(get));
-
-export const compactJobOf = (get: TuningReader): Job => compactSettingOf(readerOf(get));
-
-export const curateJobOf = (get: TuningReader): Job => curateSettingOf(readerOf(get));
-
-export const deciderJobOf = (get: TuningReader): DeciderJob => deciderSettingOf(readerOf(get));
-
-export const coverageJobOf = (get: TuningReader): DeciderJob => coverageSettingOf(readerOf(get), deciderSettingOf(readerOf(get)));
-
-export function keepDaysOf(raw: string | undefined): number { return keepDaysCountOf(textValue(raw)); }
-
-export function placementOf(job: Job, recap: RecapChoices, available: readonly string[]): JobPlacement | null {
-    return placementFor(
-        { ...job, model: must(parseText(job.model)) },
-        { backend: recap.backend, models: harnessLabels((id) => must(parseText(recap.models[id]))) },
-        available.filter((id): id is BackendId => BACKEND_IDS.some((known) => known === id)),
-    );
-}
-
-export const sanitizeHandoffText = (raw: string): HandoffText => cleanHandoffText(must(parseText(raw)));
-
-export const isForbidden = (text: HandoffText): boolean => vetHandoffText(text).kind === 'err';
-
-export const tuningOf = (get: TuningReader): AutocompactTuning => tuningFrom((key) => textValue(get(key)));
-
-export const policyOf = (get: AutocompactReader): AutocompactPolicy => policyFrom((key) => textValue(get(key)));
-
-export const jevOf = (get: JevReader): JevSettings => jevFrom((key) => textValue(get(key)));
-
-export const herdrEventsOf = (raw: string | undefined): HerdrEvents => herdrEventsFrom(textValue(raw));
-
 export * from './twins/values/legacy.ts';
 
 export { parseMerge, type Merge } from './twins/curation/legacy.ts';
-
-export const handoffOutcomeOf = (kind: string, reason: string | null): HandoffOutcome | null => okOrNull(parseHandoffOutcome(kind, reason));
-
-export const storedOutcomeOf = (kind: string, reason: string | null): StoredHandoffOutcome | null => okOrNull(parseStoredHandoffOutcome(kind, reason));
 
 interface SessionCompactionInput { readonly tokensBefore: number | null; readonly tokensAfter: number | null; readonly origin: Origin; }
 interface SessionLaneInput { readonly agent: string; readonly label: string | null; readonly context: ContextUse | null; }
@@ -322,4 +175,3 @@ export function sessionFactsOf(input: SessionInputs): SessionFacts {
     });
 }
 
-export const originOf = (raw: string | null | undefined): Origin => parseOrigin(raw);

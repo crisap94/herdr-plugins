@@ -1,8 +1,9 @@
 import { must } from '#src/protocol/result.ts';
+import { textOf as asText } from '#src/recap/domain/text.ts';
 import { fits, type ByteBudget } from '#src/recap/domain/byte-budget.ts';
 import { brand, type Brand } from '#src/recap/domain/brand.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { sanitizeHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
+import { cleanHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import type { WorksiteFacts, WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 
@@ -21,24 +22,24 @@ const bytesOf = (text: WorksiteBlock): Count => must(parseCount(encoder.encode(t
 const fitting = (budget: ByteBudget, text: WorksiteBlock): Fit => (fits(budget, bytesOf(text)) ? 'fits' : 'over');
 
 function linesOf(facts: WorksiteFacts): WorksiteBlock {
-    const lines = ['## Worksite', `- directory: ${sanitizeHandoffText(facts.directory)}`];
+    const lines = ['## Worksite', `- directory: ${cleanHandoffText(asText(facts.directory))}`];
     if (facts.repository !== null) {
-        const branch = facts.repository.branch === null ? '' : ` (branch ${sanitizeHandoffText(facts.repository.branch)})`;
-        lines.push(`- repository: ${sanitizeHandoffText(facts.repository.root)}${branch}`);
+        const branch = facts.repository.branch === null ? '' : ` (branch ${cleanHandoffText(asText(facts.repository.branch))})`;
+        lines.push(`- repository: ${cleanHandoffText(asText(facts.repository.root))}${branch}`);
     }
     if (facts.lastCommit !== null) {
-        lines.push(`- last commit: ${sanitizeHandoffText(facts.lastCommit.hash)} ${sanitizeHandoffText(facts.lastCommit.subject)}`);
+        lines.push(`- last commit: ${cleanHandoffText(asText(facts.lastCommit.hash))} ${cleanHandoffText(asText(facts.lastCommit.subject))}`);
     }
     if (facts.uncommitted !== null) {
         lines.push(`- ${facts.uncommitted.count} uncommitted paths`);
-        lines.push(...facts.uncommitted.paths.map((path) => `  - ${sanitizeHandoffText(path)}`));
+        lines.push(...facts.uncommitted.paths.map((path) => `  - ${cleanHandoffText(asText(path))}`));
     }
     if (facts.edited.length > 0) {
         lines.push('- most edited files:');
-        lines.push(...facts.edited.map((file) => `  - ${sanitizeHandoffText(file.path)} (${file.edits} edits)`));
+        lines.push(...facts.edited.map((file) => `  - ${cleanHandoffText(asText(file.path))} (${file.edits} edits)`));
     }
     if (facts.tokens.length > 0) {
-        lines.push(`- tokens: ${facts.tokens.map(sanitizeHandoffText).join(', ')}`);
+        lines.push(`- tokens: ${facts.tokens.map((token) => cleanHandoffText(asText(token))).join(', ')}`);
     }
     return parseWorksiteBlock(must(parseText(lines.join('\n'))));
 }

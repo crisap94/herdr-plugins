@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { herdrEventsOf } from '#src/recap/domain/herdr-events.ts';
+import { herdrEventsFrom } from '#src/recap/domain/herdr-events.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { changes, draftFrom, initial, locksOf } from '#src/recap/application/setup-keys.ts';
 import type { Draft } from '#src/recap/application/setup-keys.ts';
 
@@ -8,10 +9,10 @@ const models = { claude: '', codex: '', opencode: '', custom: '' };
 const draft: Draft = draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined });
 
 test('off unless set to on: a fresh install shares nothing on herdr', () => {
-    assert.equal(herdrEventsOf(undefined), 'off');
-    assert.equal(herdrEventsOf(''), 'off');
-    assert.equal(herdrEventsOf('maybe'), 'off');
-    assert.equal(herdrEventsOf(' ON '), 'on');
+    assert.equal(herdrEventsFrom(undefined), 'off');
+    assert.equal(herdrEventsFrom(textOf('')), 'off');
+    assert.equal(herdrEventsFrom(textOf('maybe')), 'off');
+    assert.equal(herdrEventsFrom(textOf(' ON ')), 'on');
     assert.equal(draft.herdrEvents, 'off');
     assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, herdrEvents: 'on' }).herdrEvents, 'on');
 });

@@ -1,6 +1,6 @@
 import type { Board } from '#src/recap/domain/board.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
-import { ANSWER_TTL_MS, COMPACT_EXCHANGE, isTerminalStage, NOT_ACTED, noteOf } from '#src/recap/domain/compact-request.ts';
+import { ANSWER_TTL_MS, COMPACT_EXCHANGE, NOT_ACTED, noteOf } from '#src/recap/domain/compact-request.ts';
 import { outcomeOf } from '#src/recap/domain/ask-outcome.ts';
 import { COMPACT_TOKEN } from '#src/recap/domain/lane-tokens.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
@@ -9,7 +9,7 @@ import type { Requests } from '#src/ports/requests.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
-import { failureStage } from '#src/protocol/exchange.ts';
+import { failureStage, isFailureStage } from '#src/protocol/exchange.ts';
 import { compact, COMPACT_FAILURES, COMPACT_STAGES } from '#src/protocol/exchanges/compact.ts';
 import { parseWireText, type RequestId, type ToolName, type WireText } from '#src/protocol/primitives.ts';
 import { answerWrite, takeRequests } from '#src/protocol/responder.ts';
@@ -63,7 +63,7 @@ export class CompactRequestQueue {
         for (const taken of taking.taken) {
             if (taken.exchange.name === COMPACT_EXCHANGE) {
                 const note = noteOf(taken.value);
-                this.consider({ pane, requester: taken.tool, id: taken.id, note: note === null ? null : must(parseText(note)) });
+                this.consider({ pane, requester: taken.tool, id: taken.id, note });
             }
         }
     }
@@ -128,7 +128,7 @@ export class CompactRequestQueue {
     }
 
     private finish(id: RequestId, pane: PaneId, stage: WireText): void {
-        const outcome = isTerminalStage(stage) ? outcomeOf(stage) : null;
+        const outcome = stage === COMPACT_STAGES.done || isFailureStage(stage) ? outcomeOf(stage) : null;
         if (outcome !== null && pane !== '') {
             this.deps.asks.settle({ exchange: COMPACT_EXCHANGE, id, pane }, outcome);
         }
