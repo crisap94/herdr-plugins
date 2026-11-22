@@ -2,7 +2,7 @@ import { findRoot, Errors } from 'isomorphic-git';
 import type { FsClient } from 'isomorphic-git';
 import { resolve } from 'node:path';
 import { err, must, ok, type Result } from '#src/protocol/result.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import { unknown, exitCodeOf } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import type { WorktreeLookup } from '#src/ports/worktree-status.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
@@ -28,7 +28,7 @@ export function unreadable(failure: ParseFailure): Unknown {
 }
 
 export function notARepository(): Unknown {
-    return unknown({ why: 'failed', code: NOT_A_REPOSITORY, detail: causeOf(must(parseText(NOT_A_REPOSITORY_DETAIL))) });
+    return unknown({ why: 'failed', code: exitCodeOf(NOT_A_REPOSITORY), detail: causeOf(must(parseText(NOT_A_REPOSITORY_DETAIL))) });
 }
 
 export async function withinBudget<T>(budget: Duration, work: (deadline: Instant) => Promise<T>): Promise<T | Unknown> {

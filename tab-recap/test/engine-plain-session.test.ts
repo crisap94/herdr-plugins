@@ -86,7 +86,7 @@ test('the engine follows a plain Claude session with no herdr: runs per turn, fa
         grow(host, [...TURNS.slice(6, 8), ...COMPACTION]);
         await host.engine.compacted(host.scope, [host.session]);
         assert.equal(runsOf(host), 4, 'the compaction is read in one more run');
-        const tasks = storeRead(scratch.store.records.readRecap(String(host.scope)))?.tasks ?? [];
+        const tasks = storeRead(scratch.store.records.readRecap(tabId(String(host.scope))))?.tasks ?? [];
         const facts = tasks.flatMap((task) => storeRead(scratch.store.ledger.allOf({ tab: String(host.scope), key: task.id })));
         assert.deepEqual(facts.map((fact) => fact.text).toSorted(), ['Add a cart to the shop', 'Added cart totals in src/totals.ts', 'Opened !34 for feat/cart', 'Store carts in SQLite'].toSorted());
         const breaks = scratch.store.boundaries.breaksOf(String(host.scope));

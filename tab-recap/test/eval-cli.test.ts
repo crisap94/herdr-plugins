@@ -8,6 +8,10 @@ import { stateStore } from '#src/adapters/db/database.ts';
 import { cursor, recordOps } from '#test/db/support.ts';
 import { oneTask, withFacts } from '#test/support.ts';
 import { BUN_CACHE_OFF } from './support/bun-env.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { usdOf } from '#src/recap/domain/usd.ts';
 
 const entry = join(import.meta.dirname, '..', 'bin', 'tab-recap.ts');
 
@@ -30,7 +34,7 @@ function seeded(): ReturnType<typeof run> {
     const state = join(root, 'state');
     const store = stateStore(state);
     assert.ok(store.kind === 'ready');
-    recordOps(store, { tab: 'w1:t1', at: Date.now(), cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], ...withFacts(oneTask('', { goal: 'Ship retries', now: [], needs: [], done: ['Merged !256.'], decisions: [], next: [], links: [], rules: [] })), input: '<recap_input version="1"/>' });
+    recordOps(store, { tab: tabId('w1:t1'), at: instant(Date.now()), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], ...withFacts(oneTask('', { goal: 'Ship retries', now: [], needs: [], done: ['Merged !256.'], decisions: [], next: [], links: [], rules: [] })), input: textOf('<recap_input version="1"/>') });
     store.close();
     return { status: null, stdout: '', stderr: '', state, done: () => { rmSync(root, { recursive: true, force: true }); } };
 }

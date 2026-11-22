@@ -4,10 +4,10 @@ import type { GuardedLedger } from '#src/ports/guarded-reads.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
-import { parsePaneId, parseTabId, tabId } from '#src/recap/domain/ids.ts';
+import { parsePaneId, parseTabId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import type { Operation, RunRef } from '#src/recap/domain/ops.ts';
-import type { TaskName } from '#src/recap/domain/task-name.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 import { writeTx } from './connection.ts';
 import { LedgerHistory } from './ledger-history.ts';
 import { LedgerRows } from './ledger-rows.ts';
@@ -29,19 +29,19 @@ export class LedgerRepository implements GuardedLedger {
         return guardedRead(() => this.rows.openOf(task));
     }
 
-    recentlyClosed(task: TaskId, sinceMs: number): readonly Fact[] | Unknown {
-        return guardedRead(() => this.rows.recentlyClosed(task, instant(sinceMs)));
+    recentlyClosed(task: TaskId, sinceMs: Instant): readonly Fact[] | Unknown {
+        return guardedRead(() => this.rows.recentlyClosed(task, sinceMs));
     }
 
     allOf(task: TaskId): readonly Fact[] | Unknown {
         return guardedRead(() => this.rows.allOf(task));
     }
 
-    keysOf(tab: string): readonly TaskName[] | Unknown {
-        return guardedRead(() => this.rows.keysOf(tabId(tab)));
+    keysOf(tab: TabId): readonly Text[] | Unknown {
+        return guardedRead(() => this.rows.keysOf(tab).map(textOf));
     }
 
-    historyOf(tab: string, pane: string): readonly HistoryFact[] {
+    historyOf(tab: TabId, pane: PaneId): readonly HistoryFact[] {
         return guarded(() => this.history.read(must(parseTabId(tab)), must(parsePaneId(pane))), []);
     }
 

@@ -10,7 +10,7 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { observe } from '#src/recap/domain/fold.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
-import { tabId, agentKind } from '#src/recap/domain/ids.ts';
+import { tabId, agentKind, paneId } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane, SeenLane } from '#src/recap/domain/lane.ts';
@@ -108,9 +108,9 @@ test('tab reuse: a tab id herdr hands to a new tab after its workspace closed st
     assert.equal(requests.length, 1);
     assert.deepEqual(requests[0]?.input.ledgers.flatMap((ledger) => ledger.facts), [], 'the writer is handed no fact of the old tab');
     assert.ok(!JSON.stringify(requests[0]).includes('old payments work'), 'no old fact text reaches the writer');
-    assert.deepEqual(storeRead(store.records.readRecap(tab))?.tasks.map((task) => [task.id, task.sections?.goal]), [['t2', 'new docs work']], 'the new tab is a task of its own');
+    assert.deepEqual(storeRead(store.records.readRecap(tabId(tab)))?.tasks.map((task) => [task.id, task.sections?.goal]), [['t2', 'new docs work']], 'the new tab is a task of its own');
     assert.deepEqual(texts(store, tab, 't1'), ['open:old payments work', 'open:migrating victoria'], 'the old facts are kept, nothing is deleted');
-    assert.deepEqual(store.ledger.historyOf(tab, 'w2G:p1').map((fact) => fact.text), ['new docs work'], 'a compaction brief of the new tab reads only its own facts');
+    assert.deepEqual(store.ledger.historyOf(tabId(tab), paneId('w2G:p1')).map((fact) => fact.text), ['new docs work'], 'a compaction brief of the new tab reads only its own facts');
     const closures = store.closedLanes.listOf(tabId(tab), instant(4000));
     assert.deepEqual(closures.kind === 'listed' ? closures.records : closures, [], 'the old tab\'s closed lane is not shown in the new tab');
 });
@@ -124,7 +124,7 @@ test('tab reuse: an agent restarted in a tab that is still open keeps its ledger
     assert.deepEqual(await dispatched(store, last), []);
     const requests = await recapOnce(store, laneFrom(seenLane('w1:p1', tab, 'new')), 3000, NEW_FACTS);
     assert.deepEqual(requests[0]?.input.ledgers.flatMap((ledger) => ledger.facts.map((fact) => fact.text)), ['old payments work', 'migrating victoria'], 'the writer continues the old ledger');
-    assert.deepEqual(storeRead(store.records.readRecap(tab))?.tasks.map((task) => task.id), ['t1']);
+    assert.deepEqual(storeRead(store.records.readRecap(tabId(tab)))?.tasks.map((task) => task.id), ['t1']);
 });
 
 test('tab reuse: a retirement is written once, and a tab with nothing written is left alone', async () => {

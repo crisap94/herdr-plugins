@@ -8,6 +8,7 @@ import { es } from '#src/i18n/es.ts';
 import type { Messages } from '#src/i18n/messages.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import type { TabRecap } from '#src/ports/recap-records.ts';
+import { cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
 import { draftFrom, initial, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Setup } from '#src/recap/application/setup-keys.ts';
@@ -17,6 +18,9 @@ import { present, presentBar } from '#src/recap/render/present.ts';
 import type { ColumnView } from '#src/recap/render/present.ts';
 import { setupView } from '#src/recap/render/setup.ts';
 import { expandedLines } from './expanded-fixture.ts';
+import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { textOf, parseTextOrNull } from '#src/recap/domain/text.ts';
 
 export interface Page {
     /** file name without extension */
@@ -151,7 +155,7 @@ const WEB = { base: 'https://git.example/team/shop', forge: 'gitlab', branch: 'f
 const VERSION = '1.8.1';
 
 const lane = (pane: string, agent: string, prompt: string, title: string | null): TabRecap['lanes'][number] =>
-    ({ pane, agent, transcript: `${agent}.jsonl`, cursor: 1, tail: null, title, lastPrompt: prompt, claudeRecap: null });
+    ({ pane: paneId(pane), agent: agentKind(agent), transcript: sourcePathOf(`${agent}.jsonl`), cursor: cursorOf(1), tail: null, title: parseTextOrNull(title), lastPrompt: textOf(prompt), claudeRecap: null });
 
 function columnView(fixture: Fixture): ColumnView {
     const tab: TabView = {
@@ -162,7 +166,7 @@ function columnView(fixture: Fixture): ColumnView {
         ],
     };
     const recap: TabRecap = {
-        ...blankRecap('w1:t1'), at: NOW - 120_000, backend: fixture.backend, tasks: [{ id: 't1', name: '', lanes: ['w1:p1', 'w1:p2'], sections: fixture.sections, markdown: renderRecap(fixture.sections, fixture.messages.locale) }],
+        ...blankRecap(tabId('w1:t1')), at: instant(NOW - 120_000), backend: textOf(fixture.backend), tasks: [{ id: 't1', name: '', lanes: ['w1:p1', 'w1:p2'], sections: fixture.sections, markdown: renderRecap(fixture.sections, fixture.messages.locale) }],
         lanes: [lane('w1:p1', 'claude', fixture.prompts[0], fixture.title), lane('w1:p2', 'codex', fixture.prompts[1], null)],
     };
     return { tab, recap, notes: new Map(), warnings: [], now: NOW, messages: fixture.messages, version: VERSION, compactHint: 40 };

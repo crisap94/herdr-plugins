@@ -41,7 +41,7 @@ const HOST_SIDE: ReadonlySet<string> = new Set(['src/ports/tab-views.ts', 'src/p
 
 const factsOf = (open: readonly Fact[], closed: readonly Fact[] = [], lastRunAt: number | null = AT): RestoreFacts => ({
     at: instant(AT + MINUTE),
-    lastRun: lastRunAt === null ? null : { at: lastRunAt, cause: 'turn-ended' },
+    lastRun: lastRunAt === null ? null : { at: instant(lastRunAt), cause: 'turn-ended' },
     open,
     closed,
 });

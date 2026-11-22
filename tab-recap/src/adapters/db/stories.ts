@@ -5,13 +5,14 @@ import type { CurationRun, Stories, Story } from '#src/ports/stories.ts';
 import type { FactId, RunId } from '#src/recap/domain/fact.ts';
 import type { CloseOp, UpdateOp } from '#src/recap/domain/ops.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 import { writeTx } from './connection.ts';
 import { chapter, run as runs, task as tasks } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { guarded } from './rows.ts';
 import { LedgerRepository } from './ledger.ts';
 import { typeIdOf } from './typeid.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 type CuratedRunId = RunId;
 
@@ -36,7 +37,7 @@ export class StoriesRepository implements Stories {
                 .where(and(eq(tasks.tabId, tabId(tab)), eq(tasks.key, task))).get();
             const text = row?.text ?? null;
             const at = row?.at ?? null;
-            return text === null || at === null ? null : { text, at };
+            return text === null || at === null ? null : { text: textOf(text), at: instant(at) };
         }, null);
     }
 

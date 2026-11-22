@@ -16,15 +16,16 @@ import { messagesFor } from '#src/i18n/index.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { footer, present, presentBar } from '#src/recap/render/present.ts';
 import type { ColumnView, Markdown } from '#src/recap/render/present.ts';
 import { coloured, plain } from '#src/recap/render/wrap.ts';
 import type { Style } from '#src/recap/render/wrap.ts';
 import type { Role } from '#src/wire/view/protocol.ts';
-import type { TabRecap } from '#src/ports/recap-records.ts';
+import { recapRunningOf, type TabRecap } from '#src/ports/recap-records.ts';
 import { cursor, memoryStore, storeRead } from '#test/db/support.ts';
+import { usdOf } from '#src/recap/domain/usd.ts';
 
 const NOW = 1_800_000_000_000;
 const TAB = 'w1:t1';
@@ -39,15 +40,15 @@ const cases = (['column', 'modal', 'bar'] as const).flatMap((role) => [
 const settle = (): Promise<void> => new Promise((resolve) => { setImmediate(resolve); });
 
 const recapOf = (): TabRecap => ({
-    tab: TAB,
+    tab: tabId(TAB),
     lanes: [cursor('w1:p1')],
     tasks: [{ id: 't1', name: 'Build', lanes: ['w1:p1'], sections: null, markdown: '## Done\n\n- shipped the frame source' }],
-    at: NOW - 60_000,
-    running: false,
-    backend: 'claude',
+    at: instant(NOW - 60_000),
+    running: recapRunningOf(false),
+    backend: textOf('claude'),
     error: null,
-    costUsd: 0,
-    language: 'en',
+    costUsd: usdOf(0),
+    language: textOf('en'),
 });
 
 const fixture = (spawn: GlowSpawn): { store: Store; config: Config; glow: GlowCache; parts: FrameParts; source: ReturnType<typeof frameSource> } => {
@@ -78,7 +79,7 @@ const viewOf = (store: Store, config: Config, style: Style): ColumnView => {
     const extensions = [storedNotes({ statuses: store.worktrees, notes: store.paneNotes, alerts: store.paneAlerts, gitNote: worktreeSwitch })];
     return {
         tab: stored,
-        recap: storeRead(store.records.readRecap(TAB)),
+        recap: storeRead(store.records.readRecap(tabId(TAB))),
         notes: notesOf(extensions, stored?.lanes, config.locale),
         warnings: warningsOf(extensions, config.locale),
         now: NOW,

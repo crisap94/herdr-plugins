@@ -94,7 +94,7 @@ test('edit calls are counted through each lane\'s own reader; screens, unreadabl
         claude: reader('claude', [{ role: 'tool', kind: 'edit', text: textOf('src/a.ts') }, { role: 'tool', kind: 'edit', text: textOf('src/a.ts') }, { role: 'tool', kind: 'shell', text: textOf('npm test') }, { role: 'agent', text: textOf('src/a.ts') }]),
         codex: reader('codex', 'unreadable'),
     }, reader(SCREEN_READER_ID, [{ role: 'tool', kind: 'edit', text: textOf('src/b.ts') }])));
-    const lanes = [cursor('w1:p1'), { ...cursor('w1:p2'), agent: 'codex' }, { ...cursor('w1:p3'), agent: 'gemini' }, { ...cursor('w1:p4'), transcript: 'screen:w1:p4' }, { ...cursor('w1:p5'), transcript: '' }];
+    const lanes = [cursor('w1:p1'), { ...cursor('w1:p2'), agent: agentKind('codex') }, { ...cursor('w1:p3'), agent: agentKind('gemini') }, { ...cursor('w1:p4'), transcript: sourcePathOf('screen:w1:p4') }, { ...cursor('w1:p5'), transcript: sourcePathOf('') }];
     assert.deepEqual(await counts.of(lanes), [{ path: 'src/a.ts', count: 2 }, { path: 'src/b.ts', count: 1 }]);
     assert.deepEqual(await new EditCounts(registryWith({})).of(lanes), []);
 });

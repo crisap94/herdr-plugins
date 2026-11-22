@@ -41,7 +41,7 @@ export interface ReconcileClock {
 export interface CurateTarget {
     readonly id: Text;
     readonly name: Text;
-    readonly lanes: readonly Text[];
+    readonly lanes: readonly PaneId[];
 }
 
 export interface ReconcileParts {

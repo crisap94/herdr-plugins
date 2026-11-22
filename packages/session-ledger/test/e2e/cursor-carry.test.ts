@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createEngine, parseSessionId, type SessionId } from '@stateforge-labs/session-ledger';
-import { createEngineWorld, cursorAt, followed, key, scope, session } from '@stateforge-labs/session-ledger/testkit';
+import { createEngineWorld, cursorAt, followed, key, scope, session, agentKind, text } from '@stateforge-labs/session-ledger/testkit';
 import { CursorCarry } from '@stateforge-labs/session-ledger/unstable/recap/application/cursor-carry.ts';
 import type { LaneCursor } from '@stateforge-labs/session-ledger/unstable/ports/recap-records.ts';
 import { agentKindOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 import { grewOf, UNREAD, type Located, type Position, type Transcripts } from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
+import { paneId, sourcePath } from '@stateforge-labs/session-ledger/testkit';
 
 const sessionOf = (id: string): SessionId => {
     const read = parseSessionId(id);
@@ -13,13 +14,13 @@ const sessionOf = (id: string): SessionId => {
     return read.value;
 };
 
-const cursorOf = (transcript: string, cursor = 0, agent = 'claude'): LaneCursor => ({ pane: 'p1', agent, transcript, cursor, tail: null, title: null, lastPrompt: null, claudeRecap: null });
+const cursorOf = (transcript: string, cursor = 0, agent = 'claude'): LaneCursor => ({ pane: paneId('p1'), agent: agentKind(agent), transcript: sourcePath(transcript), cursor: cursorAt(cursor), tail: null, title: null, lastPrompt: null, claudeRecap: null });
 
 const readerOf = (asked: string[], same: boolean): Transcripts => ({
     agent: agentKindOf('claude'),
     inFlight: { kind: 'unsupported', why: 'in-flight-unavailable' },
-    locate: () => Promise.resolve({ kind: 'unknown', why: { why: 'not-found', what: 'unused' } }),
-    read: () => Promise.resolve({ kind: 'unknown', why: { why: 'not-found', what: 'unused' } }),
+    locate: () => Promise.resolve({ kind: 'unknown', why: { why: 'not-found', what: text('unused') } }),
+    read: () => Promise.resolve({ kind: 'unknown', why: { why: 'not-found', what: text('unused') } }),
     latestPrompt: () => Promise.resolve({ kind: 'prompt', text: null }),
     carry: (from: Located, to: Located, at: Position) => {
         asked.push(`${from.kind === 'located' ? from.source : '?'}>${to.kind === 'located' ? to.source : '?'}`);

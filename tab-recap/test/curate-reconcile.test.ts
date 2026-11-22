@@ -6,7 +6,7 @@ import { HarnessCurator } from '#src/adapters/job/curator.ts';
 import type { Curated, CuratorMode, Curators } from '#src/ports/curators.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import { unknown, exitCodeOf } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { Curate, CURATE_GAP_MS } from '#src/recap/application/curate.ts';
 import { reconcileInput } from '#src/recap/application/curator-input.ts';
@@ -24,6 +24,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 
 const [textOf, countOf, tabOf, boundaryOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Count'>, brand<string, 'TabId'>, brand<boolean, 'Boundary'>, brand<number, 'Instant'>];
 
@@ -55,9 +56,9 @@ function setup(answers: readonly Curated[], over: { every?: number; tail?: reado
     const ledger = new MemoryLedger().seed(...facts);
     const stories = new MemoryStories(ledger);
     const store = memoryStore();
-    seed(store, { ...blankRecap('w1:t1'), at: 5, lanes: [cursor('w1:p1')], tasks: oneTask('## Goal\n- x') });
+    seed(store, { ...blankRecap(tabId('w1:t1')), at: instant(5), lanes: [cursor('w1:p1')], tasks: oneTask('## Goal\n- x') });
     const [logs, calls, clock, queue]: [string[], Rig['calls'], { now: number }, Curated[]] = [[], [], { now: NOW }, [...answers]];
-    const writer: Curators = { backend: must(parseText('fake/test')), write: (document, mode): Promise<Curated> => { calls.push({ document, mode }); return Promise.resolve(queue.shift() ?? unknown({ why: 'failed', code: 1, detail: causeOf('no more answers') })); } };
+    const writer: Curators = { backend: must(parseText('fake/test')), write: (document, mode): Promise<Curated> => { calls.push({ document, mode }); return Promise.resolve(queue.shift() ?? unknown({ why: 'failed', code: exitCodeOf(1), detail: causeOf('no more answers') })); } };
     const mode = over.repair;
     const curate = new Curate({
         records: store.records, ledger, stories, writer: (): Curators => writer, clock: (): Instant => instantOf(clock.now), zone: (): Text => textOf('UTC'), language: (): Text => textOf('en'), rubric: textOf(RUBRIC.items),

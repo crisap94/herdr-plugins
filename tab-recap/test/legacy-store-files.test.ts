@@ -1,8 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseLegacyHidden, parseLegacyRecapFile, parseLegacyVisibility, parseLegacyViewFile } from '#src/ports/legacy-store-files.ts';
+import { agentKind, paneId } from '#src/recap/domain/ids.ts';
+import { cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
-const cursor = { pane: 'w1:p1', agent: 'claude', transcript: '/t/a.jsonl', cursor: 42, tail: 'tail', title: 'build', lastPrompt: 'fix it', claudeRecap: null };
+const cursor = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t/a.jsonl'), cursor: cursorOf(42), tail: textOf('tail'), title: textOf('build'), lastPrompt: textOf('fix it'), claudeRecap: null };
 
 const task = { id: 'k9', name: 'Ship', lanes: ['w1:p1'], sections: { goal: 'ship', now: ['a'], needs: [], done: ['b'], decisions: [], next: [], links: ['https://x.example'] }, markdown: '## Ship' };
 

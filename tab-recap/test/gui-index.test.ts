@@ -24,7 +24,7 @@ const text = (raw: string): Text => must(parseText(raw));
 const count = (raw: number): Count => must(parseCount(raw));
 const named = (raw: string): NonEmptyText => must(parseNonEmptyText(raw));
 
-const base = guiTabOf(blankRecap('w1:t1'), null, instant(1000));
+const base = guiTabOf(blankRecap(tabId('w1:t1')), null, instant(1000));
 
 const laneOf = (pane: string, status: string, over: Partial<GuiLane> = {}): GuiLane => ({
     pane: paneId(pane), agent: agentKind('claude'), status: must(parseNonEmptyText(status)), title: null, cwd: null, lastPrompt: null, branch: null, contextPercent: null, since: null,
@@ -145,7 +145,7 @@ const viewsOf = (views: Readonly<Record<string, TabView>>): TabViews => ({ readT
 const viewOf = (tab: string): TabView => ({ tab, column: null, at: 5, lanes: [{ pane: `${tab}p1`, agent: 'claude', status: 'blocked', title: 'login', cwd: '/work', since: instant(40) }, { pane: `${tab}p2`, agent: 'codex', status: 'idle', title: null, cwd: null }] });
 
 function publisherOn(dir: Directory, at: number): GuiPublisher {
-    const recaps = { a: { ...blankRecap('a'), at: 1 }, b: { ...blankRecap('b'), at: 1 } };
+    const recaps = { a: { ...blankRecap(tabId('a')), at: instant(1) }, b: { ...blankRecap(tabId('b')), at: instant(1) } };
     return new GuiPublisher({ dir, records: recordsOf(recaps), views: viewsOf({ a: viewOf('a'), b: viewOf('b') }), now: (): Instant => instant(at), log: (): void => undefined });
 }
 
@@ -165,7 +165,7 @@ test('publishing B keeps every new field of A, the index stays newest first, and
 });
 
 test('the document gains only compactHint, and still matches the v2 schema', () => {
-    const document = guiTabOf(blankRecap('w1:t1'), null, instant(9), { ...BLANK_READS, compactHint: count(40) });
+    const document = guiTabOf(blankRecap(tabId('w1:t1')), null, instant(9), { ...BLANK_READS, compactHint: count(40) });
     const wire: Record<string, unknown> = JSON.parse(JSON.stringify(document));
     assert.equal(wire['compactHint'], 40);
     assert.equal(wire['version'], 2);

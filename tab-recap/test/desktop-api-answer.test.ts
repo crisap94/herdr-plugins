@@ -6,6 +6,9 @@ import { join } from 'node:path';
 import { apiProblems, v2Problems } from '#test/gui-schema-support.ts';
 import { ExpandedModel } from '#src/recap/application/expanded-view.ts';
 import { add, api, OTHER_TAB, seedOther, seedRun, seqOf, startWorld, TAB, TASK, type World } from '#test/desktop-engine-world.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 interface Doc {
     readonly tasks: readonly { readonly regions: { readonly needs: readonly string[] }; readonly facts: readonly { readonly id: string; readonly section: string; readonly state: string; readonly closedWhy: string | null }[] }[];
@@ -110,7 +113,7 @@ test('the close is pure: the only row that changes is the fact itself, and no st
         assert.equal((await api(world, 'POST', answerPath(need))).status, 200);
         assert.deepEqual(others.map((table) => dump(world, table)), before);
         assert.deepEqual(storeRead(world.store.ledger.allOf(TASK)).filter((fact) => fact.id !== need), untouched);
-        assert.deepEqual(world.store.stories.read(TAB, 't1'), { text: 'the story so far', at: 1_000 });
+        assert.deepEqual(world.store.stories.read(tabId(TAB), textOf('t1')), { text: 'the story so far', at: 1_000 });
     } finally { world.close(); }
 });
 
@@ -129,7 +132,7 @@ test('the terminal screen and the expanded view read the same ledger: the need i
     const { world, need } = await seeded();
     try {
         assert.equal((await api(world, 'POST', answerPath(need))).status, 200);
-        const recap = storeRead(world.store.records.readRecap(TAB));
+        const recap = storeRead(world.store.records.readRecap(tabId(TAB)));
         assert.deepEqual(recap?.tasks[0]?.sections?.needs, ['Who approves the release?']);
         const expanded = new ExpandedModel({ records: world.store.records, ledger: world.store.ledger, stories: world.store.stories, session: world.store.session, boundaries: world.store.boundaries, requests: { requestCurate: (): void => undefined }, edits: (): [] => [] });
         const task = expanded.read(TAB, world.store.views.readTab(TAB), Date.now()).tasks[0];
@@ -144,7 +147,7 @@ test('a curator holding an older picture cannot undo the hand close: its update 
         const closed = storeRead(world.store.ledger.allOf(TASK)).find((fact) => fact.id === need);
         const id = closed?.id;
         assert.ok(id !== undefined);
-        const run = { task: TASK, at: Date.now(), language: 'en' };
+        const run = { task: TASK, at: instant(Date.now()), language: textOf('en') };
         const applied = world.store.stories.keep(run, { story: null, merges: [{ op: 'close', id, why: 'answered' }], reconciled: [{ op: 'update', id, text: 'Which database do we use now?', why: null, anchor: null }] });
         assert.deepEqual(applied.refused.map((turned) => turned.reason), ['closed', 'closed']);
         assert.deepEqual(storeRead(world.store.ledger.allOf(TASK)).find((fact) => fact.id === need), closed);

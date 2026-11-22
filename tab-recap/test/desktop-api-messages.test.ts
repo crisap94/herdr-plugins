@@ -83,7 +83,7 @@ test('a note of 280 characters is taken and 281 is refused; an unknown pane, an 
 
 test('the compact message drops the least important lines to fit 3000 characters, as the engine does', () => {
     const sections = { ...NO_SECTIONS, goal: 'g'.repeat(500), decisions: Array.from({ length: 40 }, (_, n) => `Decision ${n}: ${'because '.repeat(30)}`) };
-    const records = { readRecap: (): TabRecap => ({ ...blankRecap(TAB), lanes: [cursor(PANE)], tasks: [{ id: 't1', name: '', lanes: [PANE], sections, markdown: '' }] }) };
+    const records = { readRecap: (): TabRecap => ({ ...blankRecap(tabId(TAB)), lanes: [cursor(PANE)], tasks: [{ id: 't1', name: '', lanes: [PANE], sections, markdown: '' }] }) };
     const made = compactPreviewOf({ records, views: { readTab: (): null => null } }, tabId(TAB), paneId(PANE), must(parseText('n'.repeat(280))));
     assert.ok(made.kind === 'guidance');
     assert.ok(made.text.length <= 3000);
@@ -134,7 +134,7 @@ const lane = (pane: string, web: LaneWeb | null): TabLane => ({ pane, agent: 'cl
 const SHAPES: readonly Shape[] = [
     {
         name: 'two tasks, the lane in the second, a web, a note with newlines and unicode',
-        recap: { ...blankRecap(TAB), lanes: [cursor(PANE), cursor('w1:p2')], tasks: [
+        recap: { ...blankRecap(tabId(TAB)), lanes: [cursor(PANE), cursor('w1:p2')], tasks: [
             { id: 'a', name: 'A', lanes: ['w1:p2'], sections: sectionsOf('Other goal'), markdown: '' },
             { id: 'b', name: 'B', lanes: [PANE], sections: sectionsOf('Ship it', { needs: ['Which db?'], links: ['PR #12', 'src/app.ts:4'], decisions: ['Use postgres: simpler ops'], now: ['Wiring'], next: ['Docs'], rules: ['Never touch main'] }), markdown: '' },
         ] },
@@ -143,7 +143,7 @@ const SHAPES: readonly Shape[] = [
     },
     {
         name: 'a closed lane: in the recap and no longer in the view; a task without sections',
-        recap: { ...blankRecap(TAB), lanes: [cursor(PANE)], tasks: [{ id: 'a', name: 'A', lanes: [PANE], sections: null, markdown: '' }] },
+        recap: { ...blankRecap(tabId(TAB)), lanes: [cursor(PANE)], tasks: [{ id: 'a', name: 'A', lanes: [PANE], sections: null, markdown: '' }] },
         view: { tab: TAB, column: null, at: 1, lanes: [] },
         note: '',
     },
@@ -168,7 +168,7 @@ for (const shape of SHAPES) {
 }
 
 test('over the limit the preview is exactly what compaction sends: nothing is cut, and no character is split in half', () => {
-    const records = { readRecap: (): TabRecap => ({ ...blankRecap(TAB), lanes: [cursor(PANE)], tasks: [{ id: 't1', name: '', lanes: [PANE], sections: sectionsOf('\u{1F600}'.repeat(2000)), markdown: '' }] }) };
+    const records = { readRecap: (): TabRecap => ({ ...blankRecap(tabId(TAB)), lanes: [cursor(PANE)], tasks: [{ id: 't1', name: '', lanes: [PANE], sections: sectionsOf('\u{1F600}'.repeat(2000)), markdown: '' }] }) };
     const made = compactPreviewOf({ records, views: { readTab: (): null => null } }, tabId(TAB), paneId(PANE), must(parseText('')));
     assert.ok(made.kind === 'guidance');
     assert.equal(made.text, guidanceOf({ sections: sectionsOf('\u{1F600}'.repeat(2000)), web: null, note: null }));

@@ -8,6 +8,11 @@ import { LegacyFiles } from '#src/adapters/db/import/legacy-files.ts';
 import { canonicalRecap, holdsAnything, recapDifferences, viewDifferences } from '#src/adapters/db/import/equivalence.ts';
 import { memoryStore, scratchDir } from '../support.ts';
 import { everyShape, put, sections } from './support.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
+import { recapRunningOf, type TabRecap } from '#src/ports/recap-records.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { usdOf } from '#src/recap/domain/usd.ts';
 
 const options = { now: (): number => Date.UTC(2026, 9, 5, 12, 0, 0) };
 const count = (store: ReturnType<typeof memoryStore>, table: string): number => (store.db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n;
@@ -41,11 +46,11 @@ test('what the import makes of a few shapes: markdown-only tasks keep their Mark
         const store = memoryStore();
         loadAndCompare(store, new LegacyFiles(dir), 1);
         assert.equal((store.db.prepare("SELECT legacy_markdown FROM run_task rt JOIN task t ON t.id = rt.task_id WHERE t.tab_id = 'w1:t2'").get() as { legacy_markdown: string }).legacy_markdown, '## Goal\n- from the old days');
-        assert.deepEqual(storeRead(store.records.readRecap('w1:t5'))?.tasks, []);
-        assert.deepEqual([storeRead(store.records.readRecap('w1:t5'))?.error, storeRead(store.records.readRecap('w1:t5'))?.costUsd, storeRead(store.records.readRecap('w1:t5'))?.at], ['the writer failed', 0.5, null]);
-        assert.equal(storeRead(store.records.readRecap('w1:t6'))?.running, true);
+        assert.deepEqual(storeRead(store.records.readRecap(tabId('w1:t5')))?.tasks, []);
+        assert.deepEqual([storeRead(store.records.readRecap(tabId('w1:t5')))?.error, storeRead(store.records.readRecap(tabId('w1:t5')))?.costUsd, storeRead(store.records.readRecap(tabId('w1:t5')))?.at], ['the writer failed', 0.5, null]);
+        assert.equal(storeRead(store.records.readRecap(tabId('w1:t6')))?.running, true);
         assert.equal((store.db.prepare("SELECT DISTINCT cause FROM run").all() as { cause: string }[]).map((row) => row.cause).join(), 'imported');
-        assert.equal(storeRead(store.records.readRecap('w1:t4'))?.tasks.at(1)?.markdown.startsWith('## Objetivo'), true);
+        assert.equal(storeRead(store.records.readRecap(tabId('w1:t4')))?.tasks.at(1)?.markdown.startsWith('## Objetivo'), true);
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }
@@ -115,9 +120,9 @@ test('a state directory with no files is marked imported and nothing is made; th
         const store = memoryStore();
         assert.equal(importFiles(store, new LegacyFiles(dir), options).kind, 'nothing');
         assert.equal(importFiles(store, new LegacyFiles(dir), options).kind, 'already');
-        const recap = { tab: 't', lanes: [], tasks: [], at: 5, running: false, backend: null, error: null, costUsd: 1, language: 'en' };
-        assert.deepEqual(recapDifferences(recap, { ...recap, at: 6, costUsd: 2 }), ['recap t: at differs', 'recap t: costUsd differs']);
-        assert.deepEqual(recapDifferences(recap, { ...recap, costUsd: 1.0000001 }), [], 'money is compared in millionths');
+        const recap: TabRecap = { tab: tabId('t'), lanes: [], tasks: [], at: instant(5), running: recapRunningOf(false), backend: null, error: null, costUsd: usdOf(1), language: textOf('en') };
+        assert.deepEqual(recapDifferences(recap, { ...recap, at: instant(6), costUsd: usdOf(2) }), ['recap t: at differs', 'recap t: costUsd differs']);
+        assert.deepEqual(recapDifferences(recap, { ...recap, costUsd: usdOf(1.0000001) }), [], 'money is compared in millionths');
         assert.deepEqual(recapDifferences(recap, null), ['recap t: reads back as nothing']);
     } finally {
         rmSync(dir, { recursive: true, force: true });

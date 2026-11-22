@@ -5,6 +5,8 @@ import { rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { openStore } from '#src/adapters/db/database.ts';
 import { cursor, memoryStore, scratchDir } from './support.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 
 test('refresh requests are taken once; one tab asked twice is one request', () => {
     const { requests } = memoryStore();
@@ -37,10 +39,10 @@ test('a column asks while the daemon writes: two connections to one file lose no
         }
         const taken: string[] = [];
         for (let at = 0; at < 50; at += 1) {
-            daemon.records.advance({ tab: 'w1:t1', at, error: null, lanes: [cursor('w1:p1', at)] });
+            daemon.records.advance({ tab: tabId('w1:t1'), at: instant(at), error: null, lanes: [cursor('w1:p1', at)] });
             column.requests.request(`w1:t${at}`);
             taken.push(...daemon.requests.takeRequests().map(String));
-            assert.equal(storeRead(column.records.readRecap('w1:t1'))?.tab, 'w1:t1', 'the column reads while the daemon writes');
+            assert.equal(storeRead(column.records.readRecap(tabId('w1:t1')))?.tab, 'w1:t1', 'the column reads while the daemon writes');
         }
         assert.equal(taken.length, 50);
         assert.equal((daemon.db.prepare('PRAGMA journal_mode').get() as { journal_mode: string }).journal_mode, 'wal');

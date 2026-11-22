@@ -10,6 +10,7 @@ import { resolveClosedLane } from './closed-lane-source.ts';
 import type { ClosedSourceDeps } from './closed-lane-source.ts';
 import type { ClosedView } from './closed-view.ts';
 import { saying, type Unknown } from '#src/ports/unknowable.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 export interface SourceRequest {
     readonly tab: TabId;
@@ -107,7 +108,7 @@ const liveResolver: SourceResolver<'live'> = (source, deps): SourceResolution =>
         if (isUnknownRead(open)) {
             return unknownOf(open);
         }
-        const closed = deps.ledger.recentlyClosed(task, deps.now - HANDOFF_CLOSED_WINDOW_MS);
+        const closed = deps.ledger.recentlyClosed(task, instant(deps.now - HANDOFF_CLOSED_WINDOW_MS));
         if (isUnknownRead(closed)) {
             return unknownOf(closed);
         }

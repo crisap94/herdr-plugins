@@ -21,7 +21,7 @@ import { MAKERS } from './harness-makers.ts';
 import { BACKEND_IDS, enumeratesJob, installableHarnessSentence, pick, type BackendId } from '#src/recap/domain/backend.ts';
 import { placementOf } from '#src/recap/domain/job.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 import type { Config } from './config.ts';
 import { jobTagFor } from './harness-makers.ts';
@@ -54,7 +54,7 @@ class Nothing implements Summarizer {
     readonly backend = must(parseText('none'));
     readonly contract = 'strict';
     write(): Promise<Written> {
-        return Promise.resolve(unknown({ why: 'not-found', what: NONE }));
+        return Promise.resolve(unknown({ why: 'not-found', what: textOf(NONE) }));
     }
 }
 

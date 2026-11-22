@@ -1,6 +1,6 @@
 import type { Unknown } from '#src/ports/unknowable.ts';
 import type { GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
-import type { BackendId } from '#src/recap/domain/backend.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { Advance, FailedRun, LastRun, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
@@ -23,7 +23,7 @@ export class PublishingRecords implements GuardedRecapRecords {
         return this.inner.lastRunOf(tab);
     }
 
-    beginRun(tab: TabId, backend: BackendId | null, at: Instant): void {
+    beginRun(tab: TabId, backend: Text | null, at: Instant): void {
         this.inner.beginRun(tab, backend, at);
         this.published(tab);
     }

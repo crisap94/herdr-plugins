@@ -56,34 +56,6 @@
   },
   {
     "class": "callback",
-    "file": "src/adapters/db/ledger.ts",
-    "function": "recentlyClosed",
-    "parameter": "sinceMs",
-    "reason": "callback: signature of Ledger.recentlyClosed in src/ports/ledger.ts (lane ENG, frozen); typed when ENG moves to packages/session-ledger (roadmap E2b)"
-  },
-  {
-    "class": "callback",
-    "file": "src/adapters/db/ledger.ts",
-    "function": "keysOf",
-    "parameter": "tab",
-    "reason": "callback: signature of Ledger.keysOf in src/ports/ledger.ts (lane ENG, frozen); typed when ENG moves to packages/session-ledger (roadmap E2b)"
-  },
-  {
-    "class": "callback",
-    "file": "src/adapters/db/ledger.ts",
-    "function": "historyOf",
-    "parameter": "pane",
-    "reason": "callback: signature of Ledger.historyOf in src/ports/ledger.ts (lane ENG, frozen); typed when ENG moves to packages/session-ledger (roadmap E2b)"
-  },
-  {
-    "class": "callback",
-    "file": "src/adapters/db/ledger.ts",
-    "function": "historyOf",
-    "parameter": "tab",
-    "reason": "callback: signature of Ledger.historyOf in src/ports/ledger.ts (lane ENG, frozen); typed when ENG moves to packages/session-ledger (roadmap E2b)"
-  },
-  {
-    "class": "callback",
     "file": "src/adapters/db/recap-records.ts",
     "function": "readRecap",
     "parameter": "tab",

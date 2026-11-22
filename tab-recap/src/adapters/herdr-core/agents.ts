@@ -6,7 +6,7 @@ import type { Unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import type { HcTerminal } from './sdk-core.ts';
 import { HC_NO_TYPING } from '../desktop/constants.ts';
 
@@ -32,7 +32,7 @@ export class HcCoreAgents implements Agents {
             return found;
         }
         const terminal = found.terminal;
-        return terminal === null ? unknown({ why: 'not-found', what: `agent ${pane}` }) : { kind: 'agent', agent: terminal.app, status: laneStatus(terminal.status) };
+        return terminal === null ? unknown({ why: 'not-found', what: textOf(`agent ${pane}`) }) : { kind: 'agent', agent: terminal.app, status: laneStatus(terminal.status) };
     }
 
     prompt(): Promise<Prompted> {

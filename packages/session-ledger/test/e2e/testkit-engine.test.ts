@@ -25,6 +25,7 @@ import {
     type FakeEngine,
     type Subject,
 } from '@stateforge-labs/session-ledger/testkit';
+import { tabId, usd } from '@stateforge-labs/session-ledger/testkit';
 
 const request = (): RecapRequest => ({
     input: { tab: { id: textOf('tab-1'), now: instant(0), zone: textOf('UTC') }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] },
@@ -138,10 +139,10 @@ test('openOf and recentlyClosed read the seeded facts of one task', () => {
         ['f1', 'f3'],
     );
     assert.deepEqual(
-        listed(world.plugs.store.facts.recentlyClosed(taskA, 0)).map((fact) => fact.id),
+        listed(world.plugs.store.facts.recentlyClosed(taskA, instant(0))).map((fact) => fact.id),
         ['f2'],
     );
-    assert.deepEqual(listed(world.plugs.store.facts.recentlyClosed(taskA, 5)), []);
+    assert.deepEqual(listed(world.plugs.store.facts.recentlyClosed(taskA, instant(5))), []);
 });
 
 test('the memory store records each call name in order', () => {
@@ -164,7 +165,7 @@ test('the world hands out a manual clock, counter ids, and captures the log and 
     assert.deepEqual(world.events(), [event]);
 });
 
-const recordedOf = (changed: readonly Fact[]): RecordedRun => ({ tab: 'tab-1', at: 9, cause: 'requested', backend: null, language: 'en', costUsd: 0, error: null, lanes: [], tasks: [], changed, refused: [] });
+const recordedOf = (changed: readonly Fact[]): RecordedRun => ({ tab: tabId('tab-1'), at: instant(9), cause: 'requested', backend: null, language: text('en'), costUsd: usd(0), error: null, lanes: [], tasks: [], changed, refused: [] });
 
 test('recordRun keeps the changed facts it is given, and allOf returns them', () => {
     const store = createMemoryStore();

@@ -13,6 +13,7 @@ import { parseDuration, parseTokens } from '@stateforge-labs/recap-view';
 import { maybe } from '#src/view-model/column.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { duration } from '#src/recap/domain/time.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 
 const base: CompactionRecord = { id: 'cmp_x', tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'compacting', brief: 'written', writer: 'codex · gpt-6-luna · high', templateWhy: null, startedAt: 0, stageAt: 0, finishedAt: null, tokensBefore: null, tokensAfter: null, tookMs: null, retried: false, queued: false, why: null, origin: 'operator' };
 const done = { finishedAt: 1, tokensBefore: countOf(39532), tokensAfter: countOf(3057), tookMs: duration(15588) };
@@ -32,12 +33,12 @@ const STAGES: readonly (readonly [string, Partial<CompactionRecord>, number])[] 
 
 const column = (m: Messages, record: CompactionRecord, now: number): string[] => {
     const tab = { tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'Victoria', cwd: null, context: { tokens: 600_000, window: 1_000_000, source: 'catalogue' as const } }] };
-    return present({ tab, recap: blankRecap('w1:t1'), notes: new Map(), warnings: [], now, messages: m, compactHint: 40, compactions: [record], style: plain }, 44, () => null).slice(1, 4).filter((line) => line !== '');
+    return present({ tab, recap: blankRecap(tabId('w1:t1')), notes: new Map(), warnings: [], now, messages: m, compactHint: 40, compactions: [record], style: plain }, 44, () => null).slice(1, 4).filter((line) => line !== '');
 };
 
 const bar = (m: Messages, record: CompactionRecord, now: number): string[] => {
     const tab = { tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: null }] };
-    return presentBar({ tab, recap: blankRecap('w1:t1'), notes: new Map(), warnings: [], now, messages: m, compactions: [record], style: plain }, 46);
+    return presentBar({ tab, recap: blankRecap(tabId('w1:t1')), notes: new Map(), warnings: [], now, messages: m, compactions: [record], style: plain }, 46);
 };
 
 const WHY = { en: 'working', es: 'trabajando' } as const;
@@ -94,7 +95,7 @@ for (const [locale, m] of [['en', en], ['es', es]] as const) {
 
 test('the stage replaces the hint while it is shown and the hint is back after; the bar goes back to the usual headline', () => {
     const tab = { tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'Victoria', cwd: null, context: { tokens: 600_000, window: 1_000_000, source: 'catalogue' as const } }] };
-    const view = { tab, recap: blankRecap('w1:t1'), notes: new Map(), warnings: [], now: 0, messages: en, compactHint: 40, style: plain };
+    const view = { tab, recap: blankRecap(tabId('w1:t1')), notes: new Map(), warnings: [], now: 0, messages: en, compactHint: 40, style: plain };
     assert.match(present(view, 44, () => null).join('\n'), /compact\? 60% of 1M/);
     const shown = present({ ...view, compactions: [base] }, 44, () => null).join('\n');
     assert.ok(shown.includes('◐ compacting… 0:00') && !shown.includes('compact?'), 'they never stand together');
@@ -106,7 +107,7 @@ test('on the bar, the newest compaction of the tab speaks, prefixed with its age
     const tab = { tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: null }, { pane: 'w1:p2', agent: 'codex', status: 'idle', title: null, cwd: null }] };
     const older = { ...base, startedAt: 1, stage: 'compacted' as const, finishedAt: 5 };
     const newer = { ...base, pane: 'w1:p2', agent: 'codex', startedAt: 9, stageAt: 9000 };
-    const lines = presentBar({ tab, recap: blankRecap('w1:t1'), notes: new Map(), warnings: [], now: 12_000, messages: en, compactions: [older, newer], style: plain }, 60);
+    const lines = presentBar({ tab, recap: blankRecap(tabId('w1:t1')), notes: new Map(), warnings: [], now: 12_000, messages: en, compactions: [older, newer], style: plain }, 60);
     assert.match(lines.join(''), /◐ compacting codex… 0:03/);
 });
 

@@ -1,5 +1,5 @@
-import { instant, type Fact, type FactId, type HistoryFact, type Recap, type RunId, type TaskId } from '@stateforge-labs/session-ledger';
-import { text as textOf } from './values.ts';
+import { instant, type Fact, type FactId, type HistoryFact, type Recap, type RunId, type TabId, type TaskId } from '@stateforge-labs/session-ledger';
+import { running, text as textOf, usd } from './values.ts';
 
 const isFactId = (text: string): text is FactId => typeof text === 'string';
 
@@ -50,6 +50,6 @@ export const historyOf = ({ section, text, why, state, closedWhy, closedAt, firs
     lastAt: instant(lastAt),
 });
 
-export const emptyRecap = (tab: string): Recap => ({
-    tab, lanes: [], tasks: [], at: null, running: false, backend: null, error: null, costUsd: 0, language: '',
+export const emptyRecap = (tab: TabId): Recap => ({
+    tab, lanes: [], tasks: [], at: null, running: running(false), backend: null, error: null, costUsd: usd(0), language: textOf(''),
 });

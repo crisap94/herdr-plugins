@@ -9,6 +9,10 @@ import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import { plain } from '#src/recap/render/wrap.ts';
 import { cursor, memoryStore, recordOps } from '#test/db/support.ts';
 import { oneTask, withFacts } from '#test/support.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { usdOf } from '#src/recap/domain/usd.ts';
 
 export const DAY = 86_400_000;
 export const NOW = 100 * DAY;
@@ -51,8 +55,8 @@ export function scripted(answers: Readonly<Partial<Record<JudgeTask, string>>>):
 export function seed(store: Rig['store'], count: number, over: { readonly input?: boolean; readonly gate?: boolean; readonly tab?: string; readonly first?: number } = {}): void {
     for (let n = 0; n < count; n += 1) {
         recordOps(store, {
-            tab: over.tab ?? 'w1:t1', at: NOW - (over.first ?? 1) * DAY + n * 1000, cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')],
-            ...withFacts(oneTask('', { ...SECTIONS, goal: `Ship retries ${n}` })), ...(over.input === false ? {} : { input: `<recap_input version="1">run ${n}</recap_input>` }),
+            tab: tabId(over.tab ?? 'w1:t1'), at: instant(NOW - (over.first ?? 1) * DAY + n * 1000), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')],
+            ...withFacts(oneTask('', { ...SECTIONS, goal: `Ship retries ${n}` })), ...(over.input === false ? {} : { input: textOf(`<recap_input version="1">run ${n}</recap_input>`) }),
             ...(over.gate === true ? { gateStats: GATE_STATS } : {}),
         });
     }

@@ -2,9 +2,12 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileKeyOf as keyOf } from '#src/adapters/db/import/legacy.ts';
 import { renderRecap } from '#src/recap/application/recap-shape.ts';
+import { agentKind, paneId } from '#src/recap/domain/ids.ts';
+import { cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 export const sections = { goal: 'ship', now: ['a'], needs: ['review'], done: ['b', 'c'], decisions: ['sqlite'], next: ['n'], links: ['x.ts'], rules: [] };
-export const lane = { pane: 'w1:p1', agent: 'claude', transcript: '/t/a.jsonl', cursor: 120, tail: null, title: 'T', lastPrompt: 'p', claudeRecap: null };
+export const lane = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t/a.jsonl'), cursor: cursorOf(120), tail: null, title: textOf('T'), lastPrompt: textOf('p'), claudeRecap: null };
 const base = { running: false, backend: 'claude', error: null, costUsd: 0.12, language: 'en' };
 
 export function put(root: string, kind: string, name: string, body: unknown): void {

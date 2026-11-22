@@ -1,16 +1,17 @@
 [
-  { "export": "SessionCursor", "origin": "packages/session-ledger/src/ports/legacy.ts", "originName": "LaneCursor" },
-  { "export": "Recap", "origin": "packages/session-ledger/src/ports/legacy.ts", "originName": "TabRecap" },
+  { "export": "SessionCursor", "origin": "packages/session-ledger/src/ports/recap-records.ts", "originName": "LaneCursor" },
+  { "export": "Recap", "origin": "packages/session-ledger/src/ports/recap-records.ts", "originName": "TabRecap" },
   { "export": "RecapSections", "origin": "packages/session-ledger/src/recap/domain/legacy.ts" },
   { "export": "RecapTask", "origin": "packages/session-ledger/src/recap/domain/legacy.ts" },
   { "export": "TaskShape", "origin": "packages/session-ledger/src/recap/domain/grouping.ts" },
   { "export": "OwnTrigger", "origin": "packages/session-ledger/src/recap/domain/boundary.ts" },
   { "export": "SessionMark", "origin": "packages/session-ledger/src/recap/domain/legacy.ts", "originName": "LaneMark" },
   { "export": "GateStats", "origin": "packages/session-ledger/src/recap/domain/gates/item-gate.ts" },
+  { "export": "Running", "origin": "packages/session-ledger/src/ports/recap-records.ts" },
   { "export": "RunFacts", "origin": "packages/session-ledger/src/ports/recap-records.ts" },
-  { "export": "RecordedRun", "origin": "packages/session-ledger/src/ports/legacy.ts" },
-  { "export": "FailedRun", "origin": "packages/session-ledger/src/ports/legacy.ts" },
-  { "export": "Advance", "origin": "packages/session-ledger/src/ports/legacy.ts" },
-  { "export": "LastRun", "origin": "packages/session-ledger/src/ports/legacy.ts" },
-  { "export": "Story", "origin": "packages/session-ledger/src/ports/legacy.ts" }
+  { "export": "RecordedRun", "origin": "packages/session-ledger/src/ports/recap-records.ts" },
+  { "export": "FailedRun", "origin": "packages/session-ledger/src/ports/recap-records.ts" },
+  { "export": "Advance", "origin": "packages/session-ledger/src/ports/recap-records.ts" },
+  { "export": "LastRun", "origin": "packages/session-ledger/src/ports/recap-records.ts" },
+  { "export": "Story", "origin": "packages/session-ledger/src/ports/stories.ts" }
 ]

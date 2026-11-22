@@ -3,7 +3,7 @@ import type { TaskShape } from '#src/recap/domain/grouping.ts';
 import { foldSwept, type RunRef, type TaskOps } from '#src/recap/domain/ops.ts';
 import type { Applied, CheckedLedger, Ledger } from '#src/ports/ledger.ts';
 import { saying, type Unknown } from '#src/ports/unknowable.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
 import type { RunAccomplishment } from './ledger-reconcile.ts';
 
 const FOLD_WINDOW_MS = 24 * 3_600_000;
@@ -46,7 +46,7 @@ export function foldedRun(ledger: Pick<Ledger, 'openOf' | 'recentlyClosed'>, ask
     const refused: Applied['refused'][number][] = [];
     for (const one of asked) {
         const task: TaskId = { ...run.owner, key: one.task };
-        const before = inOrder([...ledger.openOf(task), ...ledger.recentlyClosed(task, run.at - FOLD_WINDOW_MS)]);
+        const before = inOrder([...ledger.openOf(task), ...ledger.recentlyClosed(task, instant(run.at - FOLD_WINDOW_MS))]);
         const folded = foldSwept(before, one.ops, { task, at: run.at, language: run.language, mint: run.mint });
         changed.push(...folded.changed);
         refused.push(...folded.refused);

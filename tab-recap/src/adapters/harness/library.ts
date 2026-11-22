@@ -2,7 +2,7 @@ import { CapabilityName, Engine, isUsable, TOOLS_OFF } from '@stateforge-labs/ha
 import type { Capabilities, ConfinementCell as LibraryConfinementCell, Effort as LibraryEffort, HarnessId, JsonObject, Runtime, RunFailure, RunOutput } from '@stateforge-labs/harness-adapters/runtime';
 import { ANSWER_SCHEMAS } from '#src/adapters/job/prompts/answer-schemas.ts';
 import type { ConfinementCell, HarnessAsk, HarnessChoice, HarnessPort, HarnessRun, RanText, StructuredSupport, ToolSupport } from '#src/ports/harness.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import { unknown, exitCodeOf } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
@@ -44,7 +44,7 @@ function failedOf(failure: RunFailure): HarnessRun {
         return unknown({ why: 'timeout', after: duration(failure.timeoutMs) });
     }
     const code = failure.kind === LIBRARY_HARNESS.exitKind && failure.code !== null ? failure.code : LIBRARY_HARNESS.failedCode;
-    return unknown({ why: 'failed', code, detail: causeOf(must(parseText(`${failure.kind}: ${failure.message}`.slice(0, LIBRARY_HARNESS.detailLimit)))) });
+    return unknown({ why: 'failed', code: exitCodeOf(code), detail: causeOf(must(parseText(`${failure.kind}: ${failure.message}`.slice(0, LIBRARY_HARNESS.detailLimit)))) });
 }
 
 function ranOf(output: RunOutput): RanText {
@@ -82,10 +82,10 @@ export class LibraryHarnessPort implements HarnessPort {
 
     private refusalOf(call: HarnessAsk): HarnessRun | null {
         if (this.runtime.policyNotice(this.library, LIBRARY_HARNESS.loginStore) !== null && this.claudeAck === 'unacknowledged') {
-            return unknown({ why: 'failed', code: LIBRARY_HARNESS.failedCode, detail: causeOf(must(parseText(LIBRARY_HARNESS.ackMessage))) });
+            return unknown({ why: 'failed', code: exitCodeOf(LIBRARY_HARNESS.failedCode), detail: causeOf(must(parseText(LIBRARY_HARNESS.ackMessage))) });
         }
         if (call.answer?.kind === 'schema' && this.structured !== 'schema') {
-            return unknown({ why: 'failed', code: LIBRARY_HARNESS.failedCode, detail: causeOf(must(parseText('structured output is not available in this harness library'))) });
+            return unknown({ why: 'failed', code: exitCodeOf(LIBRARY_HARNESS.failedCode), detail: causeOf(must(parseText('structured output is not available in this harness library'))) });
         }
         return null;
     }

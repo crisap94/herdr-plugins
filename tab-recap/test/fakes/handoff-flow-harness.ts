@@ -60,7 +60,7 @@ export interface FlowWorld {
 
 export const task = (id: string, lanes: readonly string[]): RecapTask => ({ id, name: id, lanes, sections: null, markdown: '' });
 
-export const recapOf = (...tasks: readonly RecapTask[]): TabRecap => ({ ...blankRecap('w1:t1'), tasks });
+export const recapOf = (...tasks: readonly RecapTask[]): TabRecap => ({ ...blankRecap(tabId('w1:t1')), tasks });
 
 export const SOURCE_LISTED = (): TabRecap => recapOf(task('t1', ['w1:p1']));
 

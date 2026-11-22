@@ -9,7 +9,7 @@ import { isOpen, type Fact } from '#src/recap/domain/fact.ts';
 import type { GuiBreak, GuiFact, GuiRegions, GuiStory, GuiTimelineRow } from '#src/recap/domain/gui-tab-parts.ts';
 import { parseNonEmptyText, parseText, type Text } from '#src/recap/domain/text.ts';
 import { duration, instant, type Duration, type Instant } from '#src/recap/domain/time.ts';
-import type { Story } from '#src/ports/stories.ts';
+import type { ExpandedStory } from '@stateforge-labs/recap-view';
 import { spansOf } from './gui-tab-spans.ts';
 
 type Webs = readonly (Web | null | undefined)[];
@@ -77,6 +77,6 @@ export function timelineRowsOf(facts: readonly Fact[], breaks: readonly GuiBreak
     });
 }
 
-export function storyOf(story: Story | null, webs: Webs): GuiStory | null {
+export function storyOf(story: ExpandedStory | null, webs: Webs): GuiStory | null {
     return story === null ? null : { text: must(parseText(story.text)), spans: spansOf(story, webs), at: instant(story.at) };
 }

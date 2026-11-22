@@ -7,6 +7,9 @@ import { openDatabase } from '#src/adapters/db/open.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import { normalise } from './parity.ts';
+import { agentKind, paneId } from '#src/recap/domain/ids.ts';
+import { sourcePathOf, cursorOf } from '#src/ports/transcripts.ts';
+import { parseTextOrNull } from '#src/recap/domain/text.ts';
 
 const UPSERT_SQL = `INSERT INTO transcript (id, tab_id, pane, agent, source, attached, position, cursor, tail, title, last_prompt, claude_note, first_seen)
           VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)
@@ -28,7 +31,7 @@ const seedBoth = (db: Database): void => {
     seedRow(2, 'p1', 's0', 0, 300)(db);
 };
 
-const lane = (pane: string, transcript: string, cursor: number, text: string | null = null): LaneCursor => ({ pane, agent: 'claude', transcript, cursor, tail: text, title: text, lastPrompt: text, claudeRecap: text });
+const lane = (pane: string, transcript: string, cursor: number, text: string | null = null): LaneCursor => ({ pane: paneId(pane), agent: agentKind('claude'), transcript: sourcePathOf(transcript), cursor: cursorOf(cursor), tail: parseTextOrNull(text), title: parseTextOrNull(text), lastPrompt: parseTextOrNull(text), claudeRecap: parseTextOrNull(text) });
 
 const memory = (seed: (db: Database) => void): Database => {
     const opened = openDatabase(MEMORY);

@@ -54,7 +54,7 @@ export class HerdrAgentPanes implements AgentPanes {
         } catch (error) {
             const code = error instanceof Object && 'code' in error ? error.code : undefined;
             return code === 'agent_not_found'
-                ? unknown({ why: 'not-found', what: `agent ${pane}` })
+                ? unknown({ why: 'not-found', what: must(parseText(`agent ${pane}`)) })
                 : unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : 'herdr call failed'))) });
         }
     }

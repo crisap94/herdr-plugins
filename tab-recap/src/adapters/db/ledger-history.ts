@@ -1,6 +1,9 @@
 import type { Database } from 'bun:sqlite';
 import { sql } from 'drizzle-orm';
 import type { HistoryFact } from '#src/ports/ledger.ts';
+import { isClosedWhy, isSection } from '#src/recap/domain/fact.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { retiredFloor } from './retention.ts';
@@ -35,9 +38,16 @@ export class LedgerHistory {
           WHERE f.tab_id = ${tab} AND f.task_id IN
             (SELECT l.task_id FROM run_task_lane l JOIN transcript t ON t.id = l.transcript_id JOIN run r ON r.id = l.run_id JOIN chapter c ON c.id = r.chapter_id
               WHERE t.tab_id = ${tab} AND t.pane = ${pane} AND c.n >= ${retiredFloor(tab)})
-          ORDER BY ${sql.raw(KEEP_RANK)}, f.last_at DESC, f.id LIMIT ${sql.raw(String(HISTORY_LIMIT))}`).map((row): HistoryFact => ({
-            section: text(row, 'section'), text: text(row, 'text'), why: maybeText(row, 'why'), state: text(row, 'state') === 'open' ? 'open' : 'closed',
-            closedWhy: maybeText(row, 'closed_why'), closedAt: maybeWhole(row, 'closed_at'), firstAt: whole(row, 'first_at'), lastAt: whole(row, 'last_at'),
-        })).toSorted(newestFirst);
+          ORDER BY ${sql.raw(KEEP_RANK)}, f.last_at DESC, f.id LIMIT ${sql.raw(String(HISTORY_LIMIT))}`).flatMap((row): readonly HistoryFact[] => {
+            const [section, closedWhy] = [text(row, 'section'), maybeText(row, 'closed_why')];
+            if (!isSection(section) || (closedWhy !== null && !isClosedWhy(closedWhy))) {
+                return [];
+            }
+            const [closedAt, why] = [maybeWhole(row, 'closed_at'), maybeText(row, 'why')];
+            return [{
+                section, text: textOf(text(row, 'text')), why: why === null ? null : textOf(why), state: text(row, 'state') === 'open' ? 'open' : 'closed',
+                closedWhy, closedAt: closedAt === null ? null : instant(closedAt), firstAt: instant(whole(row, 'first_at')), lastAt: instant(whole(row, 'last_at')),
+            }];
+        }).toSorted(newestFirst);
     }
 }

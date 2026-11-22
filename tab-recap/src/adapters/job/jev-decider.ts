@@ -1,10 +1,10 @@
 import { type DeciderPort, type DecidedAnswersResult, type Noul } from '#src/ports/decider.ts';
-import { isUnknown, unknown, type Unknown } from '#src/ports/unknowable.ts';
+import { isUnknown, unknown, type Unknown, exitCodeOf } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import type { JevModel, JevUrl } from '#src/recap/domain/autocompact.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { duration, instant, type Instant } from '#src/recap/domain/time.ts';
 import { parseUsd } from '#src/recap/domain/usd.ts';
 import { parseJevReply, type JevReply } from './jev-reply.ts';
@@ -45,7 +45,7 @@ export class JevPortDecider implements DeciderPort {
 
     async ask(state: Text, questions: ReadonlyMap<Text, Noul>): Promise<DecidedAnswersResult> {
         const key = this.options.key();
-        if (key === null) return unknown({ why: 'not-found', what: NO_KEY });
+        if (key === null) return unknown({ why: 'not-found', what: textOf(NO_KEY) });
         const now = this.options.now ?? ((): Instant => instant(Date.now()));
         const began = now();
         const wire = Object.fromEntries([...questions].map(([id, noul]) => [id, { type: 'noul', ...noul }]));
@@ -64,7 +64,7 @@ export class JevPortDecider implements DeciderPort {
                 ? unknown({ why: 'timeout', after: duration(JEV_TIMEOUT_MS) })
                 : unknown({ why: 'unreachable', detail: causeOf(must(parseText(`the decider did not answer (${error instanceof Error ? error.name : 'error'})`))) });
         }
-        if (!response.ok) return unknown({ why: 'failed', code: response.status, detail: causeOf(failure(must(parseCount(response.status)))) });
+        if (!response.ok) return unknown({ why: 'failed', code: exitCodeOf(response.status), detail: causeOf(failure(must(parseCount(response.status)))) });
         try {
             return parseJevReply(await response.json(), call.ids);
         } catch {

@@ -11,7 +11,7 @@ import { guiTabOf } from '#src/recap/application/gui-tab-build.ts';
 import { TOO_LARGE_ERROR } from '#src/recap/domain/gui-fit.ts';
 import { GUI_TAB_LIMIT, encodeGuiTab, guiFileName, worstStatus, type GuiLaneV1, type GuiTab } from '#src/recap/domain/gui-tab.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
-import { parseNonEmptyText, parseText } from '#src/recap/domain/text.ts';
+import { parseNonEmptyText, parseText, textOf } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { blankRecap, type RecapRecords, type TabRecap } from '#src/ports/recap-records.ts';
 import type { TabView, TabViews } from '#src/ports/tab-views.ts';
@@ -20,7 +20,7 @@ import { v2Problems } from '#test/gui-schema-support.ts';
 const wire = (document: GuiTab): unknown => JSON.parse(JSON.stringify(document));
 
 const recapOf = (tab: string, overrides: Partial<TabRecap> = {}): TabRecap => ({
-    ...blankRecap(tab), at: 1000, backend: 'custom', ...overrides,
+    ...blankRecap(tabId(tab)), at: instant(1000), backend: textOf('custom'), ...overrides,
     tasks: [{ id: 't1', name: 'Login page', lanes: ['p1'], markdown: '# Login', sections: { goal: 'Ship the login page', now: ['wiring the form'], needs: [], done: ['route added'], decisions: [], next: ['tests'], links: [], rules: ['secret rule'] } }],
 });
 
@@ -51,7 +51,7 @@ test('a tab document matches the v2 schema and keeps the rules section', () => {
 });
 
 test('a tab without a view still has a document', () => {
-    const document = guiTabOf(blankRecap('tb2'), null, instant(9));
+    const document = guiTabOf(blankRecap(tabId('tb2')), null, instant(9));
     assert.deepEqual(v2Problems(wire(document)), []);
     assert.equal(document.name, 'tb2');
     assert.equal(document.status, 'idle');

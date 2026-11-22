@@ -1,20 +1,23 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { capabilityWording, inFlightReason, splitReason } from '@stateforge-labs/session-ledger/unstable/ports/capability-reasons.ts';
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import { blankRecap, hasRecap } from '@stateforge-labs/session-ledger/unstable/ports/recap-records.ts';
+import { textOf, parseTextOrNull } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { usdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/usd.ts';
+import { blankRecap, hasRecap, recappedOf, recapRunningOf } from '@stateforge-labs/session-ledger/unstable/ports/recap-records.ts';
 import { TranscriptRegistry } from '@stateforge-labs/session-ledger/unstable/ports/transcript-registry.ts';
 import { isScreenSource, SCREEN_PREFIX } from '@stateforge-labs/session-ledger/unstable/ports/transcript-source.ts';
 import { countOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/count.ts';
 import { NO_RUNNING, runningOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/in-flight.ts';
 import { sourcePathOf, type Transcripts } from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
-import { agentKindOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
-import { isUnknown, saying, unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
+import { agentKindOf, paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { causeOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/failure-cause.ts';
+import { exitCodeOf, isUnknown, saying, unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
+import { text, tabId, paneId, running } from '@stateforge-labs/session-ledger/testkit';
 
 const readerOf = (agent: string): Transcripts => ({
     agent: agentKindOf(agent),
     locate: async () => ({ kind: 'located', source: sourcePathOf(agent) }),
-    read: async () => unknown({ why: 'not-found', what: agent }),
+    read: async () => unknown({ why: 'not-found', what: text(agent) }),
     latestPrompt: async () => ({ kind: 'prompt', text: null }),
     inFlight: { kind: 'unsupported', why: 'screen' },
 });
@@ -26,9 +29,17 @@ test('the capability reasons word each missing capability for its agent', () => 
 });
 
 test('a blank recap holds no recap until a task has markdown', () => {
-    const blank = blankRecap('tab-1');
+    const blank = blankRecap(tabId('tab-1'));
     assert.deepEqual(blank, { tab: 'tab-1', lanes: [], tasks: [], at: null, running: false, backend: null, error: null, costUsd: 0, language: 'en' });
-    assert.equal(hasRecap(blank), false);
+    assert.equal(hasRecap(blank), recappedOf(false));
+    assert.equal(blank.running, recapRunningOf(false));
+    assert.equal(blank.running, running(false));
+    assert.equal(blank.tab, tabIdOf('tab-1'));
+});
+
+test('a pane id and a tab id keep the text they are made of', () => {
+    assert.equal(paneIdOf('w1:p1'), paneId('w1:p1'));
+    assert.equal(tabIdOf('w1:t1'), tabId('w1:t1'));
 });
 
 test('the transcript registry picks the exact reader, then the fallback, and words what is missing', () => {
@@ -48,10 +59,11 @@ test('a screen source carries the screen prefix', () => {
 });
 
 test('an unknown result is told apart and said in words', () => {
-    const missing = unknown({ why: 'not-found', what: 'the transcript' });
+    const missing = unknown({ why: 'not-found', what: text('the transcript') });
     assert.equal(isUnknown(missing), true);
     assert.equal(isUnknown({ kind: 'chunk' }), false);
     assert.equal(saying(missing.why), 'the transcript not found');
+    assert.equal(saying({ why: 'failed', code: exitCodeOf(2), detail: causeOf(textOf('boom')) }), 'exited 2: boom');
 });
 
 test('an in-flight capability answers with a running count read from a source within a budget', async () => {
@@ -62,4 +74,11 @@ test('an in-flight capability answers with a running count read from a source wi
     
     const answer = reader.inFlight.kind === 'supported' ? await reader.inFlight.read(sourcePathOf('/a.jsonl'), countOf(10)) : null;
     assert.deepEqual(answer, { kind: 'in-flight', count: 2, background: [] });
+});
+
+test('parseTextOrNull keeps null and text, and takes any stored value to text or nothing; usdOf brands an amount unchanged', () => {
+    assert.equal(parseTextOrNull(null), null);
+    assert.equal(parseTextOrNull('a'), textOf('a'));
+    assert.equal(parseTextOrNull(undefined), null);
+    assert.equal(usdOf(0.25), 0.25);
 });

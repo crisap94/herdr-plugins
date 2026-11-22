@@ -20,6 +20,7 @@ import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { NOW } from '#test/fakes/expanded-fixture.ts';
 import { v2Problems } from '#test/gui-schema-support.ts';
 import { parseCurating, parseTaskName } from '@stateforge-labs/recap-view';
+import { tabId } from '#src/recap/domain/ids.ts';
 
 const MIN = 60_000;
 
@@ -31,7 +32,7 @@ const view: TabView = {
 
 function fixture(): { document: GuiTab; expanded: ReturnType<ExpandedModel['read']> } {
     const store = memoryStore();
-    seed(store, { ...blankRecap('w1:t1'), at: NOW - 3 * 60 * MIN, lanes: [cursor('w1:p1')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'], sections: null, markdown: '## Goal\n- x' }] });
+    seed(store, { ...blankRecap(tabId('w1:t1')), at: instant(NOW - 3 * 60 * MIN), lanes: [cursor('w1:p1')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'], sections: null, markdown: '## Goal\n- x' }] });
     const ledger = new MemoryLedger()
         .seed(fact('d1', 'decisions', 'Use sqlite', NOW - 30 * MIN))
         .seed(fact('n1', 'needs', 'Need the API key', NOW - 25 * MIN))
@@ -39,7 +40,7 @@ function fixture(): { document: GuiTab; expanded: ReturnType<ExpandedModel['read
         .seed(fact('x1', 'done', 'Shipped the schema', NOW - 10 * MIN));
     const deps: ExpandedDeps = { records: store.records, ledger, stories: store.stories, session: store.session, boundaries: store.boundaries, requests: { requestCurate: (): void => undefined }, edits: () => [] };
     const expanded = new ExpandedModel(deps).read('w1:t1', view, NOW);
-    const recap = present(storeRead(store.records.readRecap('w1:t1')));
+    const recap = present(storeRead(store.records.readRecap(tabId('w1:t1'))));
     const document = guiTabOf(recap, view, instant(NOW), { ...BLANK_READS, expanded, zone: must(parseText('UTC')) });
     return { document, expanded };
 }
@@ -113,7 +114,7 @@ test('a cached expanded read is matched to its task by name, never by position',
     const { document, expanded } = fixture();
     const kept = present(expanded.tasks[0]);
     const stale = { ...expanded, tasks: [{ name: parseTaskName('A'), facts: [], story: null, curating: parseCurating(false) }, { ...kept, name: parseTaskName('B') }] };
-    const recap = { ...blankRecap('w1:t1'), at: NOW, tasks: [{ id: 't2', name: 'B', lanes: ['w1:p1'], sections: null, markdown: '' }] };
+    const recap = { ...blankRecap(tabId('w1:t1')), at: instant(NOW), tasks: [{ id: 't2', name: 'B', lanes: ['w1:p1'], sections: null, markdown: '' }] };
     const built = guiTabOf(recap, view, instant(NOW), { ...BLANK_READS, expanded: stale, zone: must(parseText('UTC')) });
     assert.deepEqual(present(built.tasks[0]).facts.map((one) => one.text), present(document.tasks[0]).facts.map((one) => one.text));
 });

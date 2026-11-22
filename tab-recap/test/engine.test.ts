@@ -6,7 +6,7 @@ import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { createEngine, type Engine, type EnginePlugs } from '#src/recap/application/engine.ts';
 import { RecapJob, type RecapJobDeps } from '#src/recap/application/recap-job.ts';
 import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
-import { tabId, agentKind } from '#src/recap/domain/ids.ts';
+import { tabId, agentKind, paneId } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -71,7 +71,7 @@ function world(): World {
 const settled = (): Promise<void> => new Promise((resolve) => { setTimeout(resolve, 30); });
 
 function outcome(at: World): unknown {
-    const recap = storeRead(at.store.records.readRecap(TAB));
+    const recap = storeRead(at.store.records.readRecap(tabId(TAB)));
     return {
         asked: at.asked.map((request) => request.input),
         ran: at.ran,
@@ -79,7 +79,7 @@ function outcome(at: World): unknown {
         sections: recap?.tasks.map((task) => task.sections),
         costUsd: recap?.costUsd,
         language: recap?.language,
-        history: lanes.map((lane) => at.store.ledger.historyOf(TAB, String(lane.pane))),
+        history: lanes.map((lane) => at.store.ledger.historyOf(tabId(TAB), paneId(String(lane.pane)))),
     };
 }
 
@@ -114,7 +114,7 @@ test('sessionStarted has no effect in this slice: no run, no record', async () =
     await settled();
     assert.deepEqual(at.asked, []);
     assert.deepEqual(at.ran, []);
-    assert.equal(storeRead(at.store.records.readRecap(TAB)), null);
+    assert.equal(storeRead(at.store.records.readRecap(tabId(TAB))), null);
 });
 
 test('history returns the ledger\'s facts of the scope and the session, not text', async () => {
@@ -124,6 +124,6 @@ test('history returns the ledger\'s facts of the scope and the session, not text
     const [first] = lanes;
     assert.ok(first !== undefined);
     const history = engine.history(tabId(TAB), first);
-    assert.deepEqual(history, at.store.ledger.historyOf(TAB, String(first.pane)));
+    assert.deepEqual(history, at.store.ledger.historyOf(tabId(TAB), paneId(String(first.pane))));
     assert.deepEqual(history.map((fact) => [fact.section, fact.text, fact.state]), [['goal', 'ship it', 'open']]);
 });

@@ -2,28 +2,33 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { messagesFor } from '#src/i18n/index.ts';
 import type { CompactionRecord } from '#src/ports/compaction-records.ts';
-import type { LaneCursor, TabRecap } from '#src/ports/recap-records.ts';
+import { recapRunningOf, type LaneCursor, type TabRecap } from '#src/ports/recap-records.ts';
 import type { TabLane } from '#src/ports/tab-views.ts';
 import type { ColumnView } from '#src/recap/render/present.ts';
 import { sessionFactsOf } from '#src/recap/domain/session-facts.ts';
 import { columnTaskOf, columnViewOf, compactionRowOf, recapColumnOf, rowOf, webOf, wordingOf } from '#src/view-model/column.ts';
 import { sessionRecapOf } from '#src/view-model/expanded.ts';
 import { countOf } from '#src/recap/domain/count.ts';
+import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { sourcePathOf, cursorOf } from '#src/ports/transcripts.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { usdOf } from '#src/recap/domain/usd.ts';
 
 const lane = (pane: string, status: string): TabLane => ({ pane, agent: 'claude', status, title: `title ${pane}`, cwd: '/repo', web: { base: 'https://gitlab.example/repo', forge: 'gitlab', branch: 'main' } });
 
-const cursor = (pane: string, transcript: string): LaneCursor => ({ pane, agent: 'claude', transcript, cursor: 4, tail: null, title: null, lastPrompt: 'ship it', claudeRecap: 'harness words' });
+const cursor = (pane: string, transcript: string): LaneCursor => ({ pane: paneId(pane), agent: agentKind('claude'), transcript: sourcePathOf(transcript), cursor: cursorOf(4), tail: null, title: null, lastPrompt: textOf('ship it'), claudeRecap: textOf('harness words') });
 
 const recap: TabRecap = {
-    tab: 't1',
+    tab: tabId('t1'),
     lanes: [cursor('p1', '/logs/p1.jsonl'), cursor('p2', 'screen:p2')],
     tasks: [{ id: 'k1', name: 'build', lanes: ['p1', 'p2'], sections: null, markdown: '# build' }],
-    at: 100,
-    running: true,
-    backend: 'claude',
+    at: instant(100),
+    running: recapRunningOf(true),
+    backend: textOf('claude'),
     error: null,
-    costUsd: 0.5,
-    language: 'en',
+    costUsd: usdOf(0.5),
+    language: textOf('en'),
 };
 
 const record: CompactionRecord = {

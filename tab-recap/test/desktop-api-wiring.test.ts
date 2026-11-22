@@ -16,6 +16,7 @@ import { tabId } from '#src/recap/domain/ids.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { blankRecap, type RecapRecords, type TabRecap } from '#src/ports/recap-records.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const DEAD_SOCKET = must(parseSocketPath(join(mkdtempSync(join(tmpdir(), 'tr-core-')), 'none.sock')));
 
@@ -74,7 +75,7 @@ test('the publisher feeds the bus after each file write and leaves api.json alon
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'api.json'), '{"keep":true}');
     const bus = new DesktopBus((): Instant => instant(1));
-    const records = { readRecap: (tab: string): TabRecap => ({ ...blankRecap(tab), at: 1000, backend: 'custom' }) } as unknown as RecapRecords;
+    const records = { readRecap: (tab: string): TabRecap => ({ ...blankRecap(tabId(tab)), at: instant(1000), backend: textOf('custom') }) } as unknown as RecapRecords;
     const views: TabViews = { readTab: (): null => null, writeTab: (): void => undefined, tabOf: (): null => null };
     const publisher = new GuiPublisher({ dir, records, views, now: (): Instant => instant(5), log: (): void => undefined, bus });
     publisher.publish(tabId('t1'));

@@ -6,7 +6,7 @@ import type { Engine, FollowedSession, HistoryFact as LedgerHistoryFact, LedgerE
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { createEngine, type Engine as LegacyEngine, type EnginePlugs } from '#src/recap/application/engine.ts';
 import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
-import { tabId, agentKind } from '#src/recap/domain/ids.ts';
+import { tabId, agentKind, paneId } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
@@ -93,14 +93,14 @@ function adapterDriver(at: World): TabRecaps {
 }
 
 function outcome(at: World, history: readonly Lane[]): unknown {
-    const recap = storeRead(at.store.records.readRecap(TAB));
+    const recap = storeRead(at.store.records.readRecap(tabId(TAB)));
     return {
         asked: at.asked.map((request) => request.input),
         lanes: recap?.lanes,
         sections: recap?.tasks.map((task) => task.sections),
         costUsd: recap?.costUsd,
         language: recap?.language,
-        history: history.map((lane) => at.store.ledger.historyOf(TAB, String(lane.pane))),
+        history: history.map((lane) => at.store.ledger.historyOf(tabId(TAB), paneId(String(lane.pane)))),
     };
 }
 

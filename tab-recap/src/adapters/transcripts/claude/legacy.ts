@@ -8,7 +8,7 @@ import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { sameStart } from '../jsonl.ts';
 import { claudeObservedOf } from './context.ts';
 import { CLAUDE_SPLIT, claudeInFlightOf } from './in-flight.ts';
@@ -50,10 +50,10 @@ export class ClaudeTranscripts implements Transcripts {
 
     private find(lane: Lane): Located {
         if (lane.session === null) {
-            return unknown({ why: 'not-found', what: `a session id for ${lane.pane}` });
+            return unknown({ why: 'not-found', what: textOf(`a session id for ${lane.pane}`) });
         }
         const found = locateClaudeTranscript(lane.session, this.root);
-        return found === null ? unknown({ why: 'not-found', what: `the transcript of ${lane.session}` }) : { kind: 'located', source: sourcePathOf(found.path) };
+        return found === null ? unknown({ why: 'not-found', what: textOf(`the transcript of ${lane.session}`) }) : { kind: 'located', source: sourcePathOf(found.path) };
     }
 
     latestPrompt(source: string, budget: number): Promise<PromptResult> {

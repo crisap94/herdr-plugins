@@ -5,7 +5,7 @@ import type { Fact, Section, TaskId } from '#src/recap/domain/fact.ts';
 import { SECTION_IDS } from '#src/recap/domain/fact.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { positiveCount } from '#src/recap/domain/writer-view.ts';
 import type { HiddenCounts, PositiveCount, WriterView } from '#src/recap/domain/writer-view.ts';
 
@@ -28,7 +28,7 @@ export interface TaskFacts {
 }
 
 export function taskFactsOf(ledger: Pick<Ledger, 'openOf' | 'recentlyClosed'>, task: TaskId, at: Instant): TaskFacts {
-    return { key: textOf(task.key), open: ledger.openOf(task), closed: ledger.recentlyClosed(task, at - CLOSED_SHOWN_MS) };
+    return { key: textOf(task.key), open: ledger.openOf(task), closed: ledger.recentlyClosed(task, instant(at - CLOSED_SHOWN_MS)) };
 }
 
 export interface Numbering {

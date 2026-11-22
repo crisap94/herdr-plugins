@@ -1,5 +1,5 @@
 import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Compaction } from '#src/recap/application/compaction.ts';
@@ -99,7 +99,7 @@ test('the lane closed while the decider answered: it is not on the board when th
 });
 
 test('herdr answers agent_not_found at the status check before typing while the board still lists the pane: skipped lane closed, nothing typed', async () => {
-    const run = hostile({ statuses: [IDLE, unknown({ why: 'not-found', what: 'agent w1:p1' })] });
+    const run = hostile({ statuses: [IDLE, unknown({ why: 'not-found', what: textOf('agent w1:p1') })] });
     await run.compaction.run(AUTO);
     assert.equal(run.calls.writer, 1);
     assert.deepEqual(run.world.typed, []);
@@ -109,7 +109,7 @@ test('herdr answers agent_not_found at the status check before typing while the 
 });
 
 test('herdr answers agent_not_found at the very first status check: skipped lane closed, no writer, no toast at all', async () => {
-    const run = hostile({ statuses: [unknown({ why: 'not-found', what: 'agent w1:p1' })] });
+    const run = hostile({ statuses: [unknown({ why: 'not-found', what: textOf('agent w1:p1') })] });
     await run.compaction.run(AUTO);
     assert.deepEqual(run.calls, { writer: 0, coverage: 0, rewrites: 0 });
     assert.deepEqual(stages(run.world), [['skipped', 'lane closed']]);
@@ -162,7 +162,7 @@ test('a lane closed end publishes no compact-failed event, whichever step saw th
     const mid = hostile({ closesIn: 'writer' });
     await mid.compaction.run(AUTO);
     assert.deepEqual(failedEvents(mid.world), []);
-    const first = hostile({ statuses: [unknown({ why: 'not-found', what: 'agent w1:p1' })] });
+    const first = hostile({ statuses: [unknown({ why: 'not-found', what: textOf('agent w1:p1') })] });
     await first.compaction.run(AUTO);
     assert.deepEqual(failedEvents(first.world), []);
 });

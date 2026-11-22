@@ -5,7 +5,7 @@ import { HarnessCurator } from '#src/adapters/job/curator.ts';
 import { CustomHarness } from '#src/adapters/harness/custom.ts';
 import type { Curated, Curators } from '#src/ports/curators.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import { unknown, exitCodeOf } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { Curate, CURATE_GAP_MS } from '#src/recap/application/curate.ts';
 import { inputOf } from '#src/recap/application/recap-input.ts';
@@ -25,6 +25,8 @@ import { keepNewestOf, nextHoursOf, prunedWriterView } from '#src/recap/domain/w
 import { NO_REPOS, oneTask, requestOf } from '#test/support.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { must } from '#src/protocol/result.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 
 const [textOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Instant'>];
 
@@ -34,9 +36,9 @@ function setup(answers: readonly (Curated)[], over: { readonly ledger?: MemoryLe
     const ledger = over.ledger ?? new MemoryLedger().seed(...facts);
     const stories = new MemoryStories(ledger);
     const store = memoryStore();
-    seed(store, { ...blankRecap('w1:t1'), at: 5, lanes: [cursor('w1:p1')], tasks: oneTask('## Goal\n- x') });
+    seed(store, { ...blankRecap(tabId('w1:t1')), at: instant(5), lanes: [cursor('w1:p1')], tasks: oneTask('## Goal\n- x') });
     const [logs, calls, clock, queue] = [[] as string[], [] as string[], { now: NOW }, [...answers]];
-    const writer: Curators = { backend: must(parseText('fake/test')), write: (document) => { calls.push(document); return Promise.resolve(queue.shift() ?? unknown({ why: 'failed', code: 1, detail: causeOf('no more answers') })); } };
+    const writer: Curators = { backend: must(parseText('fake/test')), write: (document) => { calls.push(document); return Promise.resolve(queue.shift() ?? unknown({ why: 'failed', code: exitCodeOf(1), detail: causeOf('no more answers') })); } };
     const mode = over.repair;
     const deps: CurateDeps = { records: store.records, ledger, stories, writer: () => writer, clock: () => instantOf(clock.now), zone: () => textOf('UTC'), language: () => textOf('en'), rubric: textOf(RUBRIC.items), ...(mode === undefined ? {} : { repair: (): RepairMode => mode }), log: (line) => { logs.push(line); } };
     const curate = new Curate(deps);
@@ -217,7 +219,7 @@ function words(count: number): string {
 const TOO_LONG_121 = 'curator w1:t1 t1: refused — the paragraph is too long: 121 words, at most 120';
 
 function oldStory(stories: MemoryStories): void {
-    stories.keep({ task: T1, at: NOW - 100 * 60_000, language: 'en' }, { story: 'Old.', merges: [] });
+    stories.keep({ task: T1, at: instant(NOW - 100 * 60_000), language: textOf('en') }, { story: 'Old.', merges: [] });
 }
 
 test('a paragraph of 121 words is refused, logged with its count, and the merge still applies with no repair', async () => {

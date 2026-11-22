@@ -7,6 +7,7 @@ import type { Operation } from '@stateforge-labs/session-ledger/unstable/recap/d
 import type { CheckedLedger } from '@stateforge-labs/session-ledger/unstable/ports/ledger.ts';
 import { unknown, type Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { text } from '@stateforge-labs/session-ledger/testkit';
 
 const HOUR = 3_600_000;
 const AT = 100 * HOUR;
@@ -50,7 +51,7 @@ test('a fact closed 25 hours before the run is outside the fold, one closed 23 h
 
 test('throwingLedger turns an unknown read into an error that says why', () => {
     const checked: CheckedLedger = {
-        openOf: () => ({ kind: 'unknown', why: { why: 'not-found', what: 'the ledger' } }),
+        openOf: () => ({ kind: 'unknown', why: { why: 'not-found', what: text('the ledger') } }),
         recentlyClosed: () => [],
         allOf: () => [],
         keysOf: () => [],
@@ -67,6 +68,6 @@ test('accomplishedOf reports the done facts that are new after the run, and an u
     const unreported = (failure: Unknown): void => { logged.push(failure.why.why); };
     assert.deepEqual(accomplishedOf([{ task, facts: [old] }], [{ task, facts: [old, fresh] }], instant(AT), unreported).map((item) => item.fact.id), ['fct_new']);
     assert.deepEqual(logged, []);
-    assert.deepEqual(accomplishedOf([{ task, facts: [old] }], [{ task, facts: unknown({ why: 'not-found', what: 'the ledger' }) }], instant(AT), unreported), []);
+    assert.deepEqual(accomplishedOf([{ task, facts: [old] }], [{ task, facts: unknown({ why: 'not-found', what: text('the ledger') }) }], instant(AT), unreported), []);
     assert.deepEqual(logged, ['not-found']);
 });

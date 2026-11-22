@@ -18,6 +18,7 @@ import { memoryStore } from '#test/db/support.ts';
 import { lineBreakRefusal } from '#test/fakes/typed-line.ts';
 import { oneTask } from '#test/support.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 
 export const lane = (pane: string, agent: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent });
 export const CLAUDE_CODEX_GEMINI = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'gemini')];
@@ -48,7 +49,7 @@ export function typingFleet(statuses: Record<string, string>, blocked: readonly 
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
     const settling: LaneSettling = { settled: (pane) => { settledAfter.push(`${pane}: after ${events.join(',')}`); return Promise.resolve({ kind: 'settled', status: 'done' }); } };
     const agents: Agents = {
-        status: (pane): Promise<AgentState> => Promise.resolve(statuses[pane] === undefined ? unknown({ why: 'not-found', what: pane }) : { kind: 'agent', agent: 'x', status: statuses[pane] as 'idle' }),
+        status: (pane): Promise<AgentState> => Promise.resolve(statuses[pane] === undefined ? unknown({ why: 'not-found', what: textOf(pane) }) : { kind: 'agent', agent: 'x', status: statuses[pane] as 'idle' }),
         prompt: (pane, text, wait, behavior): Promise<Prompted> => {
             events.push(`prompt ${pane}`);
             typed.push({ pane, text, wait, promptBehavior: behavior });
@@ -73,7 +74,7 @@ export const failed: Mark = { kind: 'compaction-failed', at: instant(NOW + 5000)
 
 export function compactionDeps(world: Fleet, setting = 'focused', focused: string | null = 'w1:p1', reads: readonly (readonly Mark[])[] = [[]], lanes: readonly Lane[] = CLAUDE_CODEX_GEMINI): CompactionDeps {
     let looked = 0;
-    const recap = { ...blankRecap('w1:t1'), tasks: oneTask('x', { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['The recap column shows three lines'], rules: ['Never push to main'] }, ['w1:p1', 'w1:p2']) };
+    const recap = { ...blankRecap(tabId('w1:t1')), tasks: oneTask('x', { ...NO_SECTIONS, goal: 'Ship the cart rewrite', decisions: ['The recap column shows three lines'], rules: ['Never push to main'] }, ['w1:p1', 'w1:p2']) };
     return {
         compactionPlans,
         agents: world.agents,

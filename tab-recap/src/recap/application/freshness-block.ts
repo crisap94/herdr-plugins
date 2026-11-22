@@ -8,7 +8,7 @@ import { newerPromptsOf, type Freshness, type RefreshStatus } from '#src/recap/d
 import type { LaneStatus } from '#src/recap/domain/status.ts';
 import type { ClosedView } from './closed-view.ts';
 import { TRANSCRIPT_READ_BUDGET_BYTES } from './transcript-read-budget.ts';
-import { agentKind } from '#src/recap/domain/ids.ts';
+import { agentKind, tabId } from '#src/recap/domain/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
 export interface FreshnessInput {
@@ -51,7 +51,7 @@ export function closedFreshnessOf(view: ClosedView): FreshnessOutcome {
 }
 
 export async function freshnessOf(deps: FreshnessDeps, input: FreshnessInput): Promise<FreshnessOutcome> {
-    const lastRun = deps.records.lastRunOf(input.tab);
+    const lastRun = deps.records.lastRunOf(tabId(input.tab));
     if (lastRun === null) {
         return { kind: 'ledger-empty' };
     }

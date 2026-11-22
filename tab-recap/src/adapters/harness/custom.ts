@@ -1,11 +1,11 @@
 import { mkdirSync } from 'node:fs';
 import { basename } from 'node:path';
 import type { HarnessAsk, HarnessPort, HarnessRun } from '#src/ports/harness.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import { unknown, exitCodeOf } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { duration, type Milliseconds } from '#src/recap/domain/time.ts';
 import { parseUsd } from '#src/recap/domain/usd.ts';
 import { run, scrubbedEnv } from '../os/process/control.ts';
@@ -58,7 +58,7 @@ export class CustomHarnessPort implements HarnessPort {
     async run(call: HarnessAsk): Promise<HarnessRun> {
         const [program, ...args] = this.argv;
         if (program === undefined) {
-            return unknown({ why: 'not-found', what: 'TAB_RECAP_CUSTOM_CMD (it is empty)' });
+            return unknown({ why: 'not-found', what: textOf('TAB_RECAP_CUSTOM_CMD (it is empty)') });
         }
         mkdirSync(this.workDir, { recursive: true });
         const input = `${call.input}\n\n${call.instructions}`;
@@ -67,7 +67,7 @@ export class CustomHarnessPort implements HarnessPort {
             return unknown({ why: 'timeout', after: duration(this.timeoutMs) });
         }
         if (ran.code !== 0 || ran.stdout.trim() === '') {
-            return unknown({ why: 'failed', code: ran.code, detail: causeOf(must(parseText((ran.stderr || ran.stdout).trim().slice(0, 300)))) });
+            return unknown({ why: 'failed', code: exitCodeOf(ran.code), detail: causeOf(must(parseText((ran.stderr || ran.stdout).trim().slice(0, 300)))) });
         }
         return { kind: 'ran', text: must(parseText(ran.stdout)), costUsd: FREE };
     }

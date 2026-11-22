@@ -347,7 +347,7 @@ test('gemini refuses: not compactable, `no reader for gemini` in the recap, and 
         language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined,
     });
     await job.refreshNow(tabId('w1:t1'), [gemini]);
-    assert.match(storeRead(store.records.readRecap('w1:t1'))?.error ?? '', /w1:p5: no reader for gemini/);
+    assert.match(storeRead(store.records.readRecap(tabId('w1:t1')))?.error ?? '', /w1:p5: no reader for gemini/);
 
     assert.deepEqual(await skipOf(registryWith({}), gemini, 'gemini'), { gate: 'in-flight', detail: 'no transcript reader for gemini' });
 });

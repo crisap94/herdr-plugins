@@ -2,10 +2,15 @@ import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { HiddenState } from '#src/recap/domain/board.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
-import type { LaneCursor, TabRecap } from '#src/ports/recap-records.ts';
+import { parseTextOrNull, textOf } from '#src/recap/domain/text.ts';
+import { recapRunningOf, type LaneCursor, type TabRecap } from '#src/ports/recap-records.ts';
+import { cursorOf as positionOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import type { VisibilityRequest } from '#src/ports/requests.ts';
 import type { TabLane, TabView } from '#src/ports/tab-views.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
+import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { usdOf } from '#src/recap/domain/usd.ts';
 
 type Row = Record<string, unknown>;
 
@@ -56,14 +61,14 @@ const cursorOf = (input: Row): Result<LaneCursor, ParseFailure> => {
     if (typeof input.transcript !== 'string') return err({ kind: 'not-a-string' });
     if (typeof input.cursor !== 'number') return err({ kind: 'not-a-number' });
     return ok({
-        pane: input.pane,
-        agent: input.agent,
-        transcript: input.transcript,
-        cursor: input.cursor,
-        tail: typeof input.tail === 'string' ? input.tail : null,
-        title: typeof input.title === 'string' ? input.title : null,
-        lastPrompt: typeof input.lastPrompt === 'string' ? input.lastPrompt : null,
-        claudeRecap: typeof input.claudeRecap === 'string' ? input.claudeRecap : null,
+        pane: paneId(input.pane),
+        agent: agentKind(input.agent),
+        transcript: sourcePathOf(input.transcript),
+        cursor: positionOf(input.cursor),
+        tail: parseTextOrNull(input.tail),
+        title: parseTextOrNull(input.title),
+        lastPrompt: parseTextOrNull(input.lastPrompt),
+        claudeRecap: parseTextOrNull(input.claudeRecap),
     });
 };
 
@@ -111,11 +116,11 @@ const viewLanesOf = (input: Row): Result<TabLane[], ParseFailure> => {
 type RecapMeta = Pick<TabRecap, 'at' | 'running' | 'backend' | 'error' | 'language'>;
 
 const recapMetaOf = (input: Row): RecapMeta => ({
-    at: typeof input.at === 'number' ? input.at : null,
-    running: input.running === true,
-    backend: typeof input.backend === 'string' ? input.backend : null,
-    error: typeof input.error === 'string' ? input.error : null,
-    language: typeof input.language === 'string' && input.language !== '' ? input.language : 'en',
+    at: typeof input.at === 'number' ? instant(input.at) : null,
+    running: recapRunningOf(input.running === true),
+    backend: parseTextOrNull(input.backend),
+    error: parseTextOrNull(input.error),
+    language: typeof input.language === 'string' && input.language !== '' ? textOf(input.language) : textOf('en'),
 });
 
 export function parseLegacyRecapFile(input: unknown): Result<TabRecap, ParseFailure> {
@@ -124,7 +129,7 @@ export function parseLegacyRecapFile(input: unknown): Result<TabRecap, ParseFail
     const lanes = cursorsOf(input);
     if (lanes.kind === 'err') return lanes;
     const costUsd = typeof input.costUsd === 'number' ? input.costUsd : 0;
-    return ok({ tab: input.tab, lanes: lanes.value, tasks: tasksOf(input), costUsd, ...recapMetaOf(input) });
+    return ok({ tab: tabId(input.tab), lanes: lanes.value, tasks: tasksOf(input), costUsd: usdOf(costUsd), ...recapMetaOf(input) });
 }
 
 export function parseLegacyViewFile(input: unknown): Result<TabView, ParseFailure> {

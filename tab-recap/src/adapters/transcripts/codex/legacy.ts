@@ -4,7 +4,7 @@ import type { Chunk, ChunkResult, InFlightResult, Located, Mark, ObservedResult,
 import { unknown, type Unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { codexRolloutRoot, findRolloutByCwd, parseCodexToolCall } from '@stateforge-labs/harness-adapters/codex';
 import { readJsonl, tailLines, tailOf } from '../jsonl.ts';
 import type { Row } from '../jsonl.ts';
@@ -76,10 +76,10 @@ export class CodexTranscripts implements Transcripts {
 
     private find(lane: Lane): Located {
         if (lane.cwd === null) {
-            return unknown({ why: 'not-found', what: `a cwd for ${lane.pane}` });
+            return unknown({ why: 'not-found', what: textOf(`a cwd for ${lane.pane}`) });
         }
         const file = findRolloutByCwd(lane.cwd, { root: this.root });
-        return file === null ? unknown({ why: 'not-found', what: `a codex rollout started in ${lane.cwd}` }) : { kind: 'located', source: sourcePathOf(file.path) };
+        return file === null ? unknown({ why: 'not-found', what: textOf(`a codex rollout started in ${lane.cwd}`) }) : { kind: 'located', source: sourcePathOf(file.path) };
     }
 
     latestPrompt(source: string, budget: number): Promise<PromptResult> {

@@ -2,9 +2,12 @@ import type { Database } from 'bun:sqlite';
 import { and, asc, desc, eq, exists, gte, isNotNull, or, sql } from 'drizzle-orm';
 import { renderRecap } from '#src/recap/application/recap-shape.ts';
 import { sectionsOfOpen } from '#src/recap/domain/ledger-view.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, type TabId } from '#src/recap/domain/ids.ts';
+import { recapRunningOf } from '#src/ports/recap-records.ts';
+import { cursorOf as positionOf, sourcePathOf } from '#src/ports/transcripts.ts';
+import { usdOf } from '#src/recap/domain/usd.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, parseTextOrNull, type Text } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import type { LaneCursor, TabRecap } from '#src/ports/recap-records.ts';
@@ -23,8 +26,8 @@ interface LatestRun {
 }
 
 const cursorOf = (row: Row): LaneCursor => ({
-    pane: text(row, 'pane'), agent: text(row, 'agent'), transcript: text(row, 'source'), cursor: whole(row, 'cursor'),
-    tail: maybeText(row, 'tail'), title: maybeText(row, 'title'), lastPrompt: maybeText(row, 'last_prompt'), claudeRecap: maybeText(row, 'claude_note'),
+    pane: paneId(text(row, 'pane')), agent: agentKind(text(row, 'agent')), transcript: sourcePathOf(text(row, 'source')), cursor: positionOf(whole(row, 'cursor')),
+    tail: parseTextOrNull(maybeText(row, 'tail')), title: parseTextOrNull(maybeText(row, 'title')), lastPrompt: parseTextOrNull(maybeText(row, 'last_prompt')), claudeRecap: parseTextOrNull(maybeText(row, 'claude_note')),
 });
 
 export class RecapReader {
@@ -88,8 +91,8 @@ export class RecapReader {
         const cost = orm.select({ micro: sql<number>`coalesce(sum(${runs.costMicroUsd}), 0)` }).from(runs)
             .innerJoin(chapters, eq(chapters.id, runs.chapterId)).where(eq(chapters.tabId, id)).get();
         return {
-            tab: id, lanes: lanes.map(cursorOf), tasks: facts.run === null ? [] : this.tasksOf(id, facts.run, facts.language), at: facts.at, running: flag(row, 'running'),
-            backend: maybeText(row, 'backend'), error: maybeText(row, 'error'), costUsd: whole(cost ?? {}, 'micro') / 1e6, language: facts.language,
+            tab: id, lanes: lanes.map(cursorOf), tasks: facts.run === null ? [] : this.tasksOf(id, facts.run, facts.language), at: facts.at, running: recapRunningOf(flag(row, 'running')),
+            backend: parseTextOrNull(maybeText(row, 'backend')), error: parseTextOrNull(maybeText(row, 'error')), costUsd: usdOf(whole(cost ?? {}, 'micro') / 1e6), language: facts.language,
         };
     }
 }

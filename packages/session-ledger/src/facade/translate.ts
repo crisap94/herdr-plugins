@@ -2,9 +2,8 @@ import { parseScopeId, parseSessionKey, parseHarnessKind, parseSessionId as pars
 import type { FollowedSession, RecapCause } from '#src/contract/session.ts';
 import type { RecapWritten } from '#src/contract/events.ts';
 import type { HistoryFact } from '#src/contract/facts.ts';
-import { instant } from '#src/contract/kernel.ts';
-import type { HistoryFact as LegacyHistoryFact } from '#src/ports/ledger.ts';
-import { isClosedWhy, isSection } from '#src/recap/domain/fact.ts';
+import type { Instant } from '#src/contract/kernel.ts';
+import { isClosedWhy, isSection, type ClosedWhy, type Section } from '#src/recap/domain/fact.ts';
 import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
@@ -85,7 +84,18 @@ export const followedOf = (lane: Lane): FollowedSession | null => {
     };
 };
 
-export const historyOf = (facts: readonly LegacyHistoryFact[]): readonly HistoryFact[] =>
+export interface StoredHistoryFact {
+    readonly section: Section | Text;
+    readonly text: Text;
+    readonly why: Text | null;
+    readonly state: 'open' | 'closed';
+    readonly closedWhy: ClosedWhy | Text | null;
+    readonly closedAt: Instant | null;
+    readonly firstAt: Instant;
+    readonly lastAt: Instant;
+}
+
+export const historyOf = (facts: readonly StoredHistoryFact[]): readonly HistoryFact[] =>
     facts.flatMap((fact) => {
         const { section, closedWhy } = fact;
         if (!isSection(section)) {
@@ -93,13 +103,13 @@ export const historyOf = (facts: readonly LegacyHistoryFact[]): readonly History
         }
         return [{
             section,
-            text: brand<string, 'Text'>(fact.text),
-            why: fact.why === null ? null : brand<string, 'Text'>(fact.why),
+            text: fact.text,
+            why: fact.why,
             state: fact.state,
             closedWhy: closedWhy !== null && isClosedWhy(closedWhy) ? closedWhy : null,
-            closedAt: fact.closedAt === null ? null : instant(fact.closedAt),
-            firstAt: instant(fact.firstAt),
-            lastAt: instant(fact.lastAt),
+            closedAt: fact.closedAt,
+            firstAt: fact.firstAt,
+            lastAt: fact.lastAt,
         }];
     });
 

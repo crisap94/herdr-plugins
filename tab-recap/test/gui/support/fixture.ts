@@ -5,7 +5,7 @@ import { BLANK_READS } from '#src/recap/application/gui-tab-reads.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { guiFileName, type GuiTab } from '#src/recap/domain/gui-tab.ts';
-import { parseTabId } from '#src/recap/domain/ids.ts';
+import { parseTabId, tabId } from '#src/recap/domain/ids.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -70,12 +70,12 @@ const viewOf = (spec: TabSpec): TabView => ({
 export function build(spec: TabSpec): Built {
     const store = memoryStore();
     const view = viewOf(spec);
-    seed(store, { ...blankRecap(spec.tab), at: NOW - 3 * 60 * MIN, lanes: spec.lanes.map((lane) => cursor(lane.pane)), tasks: [{ id: 't1', name: '', lanes: spec.lanes.map((lane) => lane.pane), sections: { ...NO_SECTIONS, goal: 'Ship it' }, markdown: '## Goal\n- Ship it' }] });
+    seed(store, { ...blankRecap(tabId(spec.tab)), at: instant(NOW - 3 * 60 * MIN), lanes: spec.lanes.map((lane) => cursor(lane.pane)), tasks: [{ id: 't1', name: '', lanes: spec.lanes.map((lane) => lane.pane), sections: { ...NO_SECTIONS, goal: 'Ship it' }, markdown: '## Goal\n- Ship it' }] });
     const ledger = new MemoryLedger();
     spec.facts.forEach((one) => ledger.seed(fact(one.id, one.section, one.text, NOW - one.minutesAgo * MIN, { task: { tab: spec.tab, key: 't1' }, why: one.why ?? null })));
     const deps: ExpandedDeps = { records: store.records, ledger, stories: store.stories, session: store.session, boundaries: store.boundaries, requests: { requestCurate: (): void => undefined }, edits: () => [] };
     const expanded = new ExpandedModel(deps).read(spec.tab, view, NOW);
-    const recap = present(storeRead(store.records.readRecap(spec.tab)));
+    const recap = present(storeRead(store.records.readRecap(tabId(spec.tab))));
     const hint = spec.hint === undefined ? null : must(parseCount(spec.hint));
     const typed = guiTabOf(recap, view, instant(NOW), { ...BLANK_READS, expanded, compactHint: hint, zone: must(parseText(ZONE)) });
     const label = spec.name === undefined ? {} : { name: spec.name };

@@ -13,5 +13,6 @@
   { "export": "Reason", "origin": "packages/session-ledger/src/recap/domain/ops.ts" },
   { "export": "Refusal", "origin": "packages/session-ledger/src/recap/domain/ops.ts" },
   { "export": "RunRef", "origin": "packages/session-ledger/src/recap/domain/legacy.ts" },
-  { "export": "Applied", "origin": "packages/session-ledger/src/ports/ledger.ts" }
+  { "export": "Applied", "origin": "packages/session-ledger/src/ports/ledger.ts" },
+  { "export": "HistoryFact", "origin": "packages/session-ledger/src/ports/ledger.ts" }
 ]

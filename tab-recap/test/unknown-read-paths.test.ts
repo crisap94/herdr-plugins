@@ -22,6 +22,8 @@ import { oneTask, withFacts } from './support.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { usdOf } from '#src/recap/domain/usd.ts';
 
 const [textOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Instant'>];
 
@@ -40,7 +42,7 @@ interface Probe {
 
 function seeded(): ReturnType<typeof memoryStore> {
     const store = memoryStore();
-    recordOps(store, { tab: TAB, at: 5, cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')], ...withFacts(oneTask('', SECTIONS)), input: '<recap_input version="1"/>' });
+    recordOps(store, { tab: TAB, at: instant(5), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], ...withFacts(oneTask('', SECTIONS)), input: textOf('<recap_input version="1"/>') });
     return store;
 }
 

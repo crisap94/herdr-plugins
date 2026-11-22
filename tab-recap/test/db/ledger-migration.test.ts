@@ -12,6 +12,7 @@ import { openDatabase } from '#src/adapters/db/open.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { scratchDir } from './support.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 
 type Stored = readonly { readonly key: string; readonly runs: readonly { readonly at: number; readonly language: string; readonly good: boolean; readonly items: readonly (readonly [string, number, string])[] }[] }[];
 const FIXTURE = JSON.parse(readFileSync(join(import.meta.dirname, 'fixtures', 'live-items.json'), 'utf8')) as Stored;
@@ -58,7 +59,7 @@ test('a v5 database with real recaps migrates to v6: every tab\'s column is the 
         FIXTURE.forEach((_, index) => {
             const tab = `w1:t${index + 1}`;
             const before = columnBefore(opened.db, tab);
-            const after = storeRead(store.records.readRecap(tab))?.tasks.at(0)?.sections;
+            const after = storeRead(store.records.readRecap(tabId(tab)))?.tasks.at(0)?.sections;
             assert.ok(after !== undefined && after !== null, tab);
             assert.deepEqual({ goal: [after.goal].filter((line) => line !== ''), now: after.now, needs: after.needs, done: after.done, decisions: after.decisions, next: after.next, links: after.links, rules: after.rules }, before, tab);
         });

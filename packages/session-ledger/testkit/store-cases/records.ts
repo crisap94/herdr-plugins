@@ -3,6 +3,8 @@ import { scope } from '../ids.ts';
 import type { Case } from '../run.ts';
 import type { StoreUnderTest } from '../memory-store.ts';
 import { advanceOf, brokenFact, cursor, factAt, failedOf, isUnknownValue, lastOf, recapOf, runOf, shapeOf, shapesOf, typeIdAt } from './record-fixtures.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import { text, usd, tabId } from '../values.ts';
 
 export const REC_1: Case<null, StoreUnderTest> = {
     id: 'REC-1',
@@ -21,11 +23,11 @@ export const REC_2: Case<null, StoreUnderTest> = {
     level: 'full',
     async run(_world, store) {
         const run = runOf({
-            at: 500,
+            at: instant(500),
             cause: 'focused',
-            backend: 'codex',
-            language: 'de',
-            costUsd: 0.25,
+            backend: text('codex'),
+            language: text('de'),
+            costUsd: usd(0.25),
             lanes: [cursor('p1'), cursor('p2')],
             tasks: [shapeOf('a', ['p1']), shapeOf('b', ['p2'])],
         });
@@ -47,7 +49,7 @@ export const REC_3: Case<null, StoreUnderTest> = {
     title: 'beginRun',
     level: 'full',
     async run(_world, store) {
-        store.records.beginRun(scope('tab-1'), 'codex', 400);
+        store.records.beginRun(scope('tab-1'), text('codex'), instant(400));
         const recap = recapOf(store, 'tab-1');
         assert.equal(recap.running, true);
         assert.equal(recap.backend, 'codex');
@@ -60,8 +62,8 @@ export const REC_4: Case<null, StoreUnderTest> = {
     title: 'failRun',
     level: 'full',
     async run(_world, store) {
-        store.records.recordRun(runOf({ language: 'de' }));
-        store.records.beginRun(scope('tab-1'), 'codex', 150);
+        store.records.recordRun(runOf({ language: text('de') }));
+        store.records.beginRun(scope('tab-1'), text('codex'), instant(150));
         const failed = failedOf({ lanes: [cursor('p9')] });
         store.records.failRun(failed);
         const recap = recapOf(store, 'tab-1');
@@ -78,7 +80,7 @@ export const REC_5: Case<null, StoreUnderTest> = {
     title: 'advance',
     level: 'full',
     async run(_world, store) {
-        const run = runOf({ language: 'de' });
+        const run = runOf({ language: text('de') });
         store.records.recordRun(run);
         const move = advanceOf({ lanes: [cursor('p3')] });
         store.records.advance(move);
@@ -97,16 +99,16 @@ export const REC_6: Case<null, StoreUnderTest> = {
     title: 'recordRun that throws half way leaves nothing of the run visible',
     level: 'full',
     async run(_world, store) {
-        store.records.recordRun(runOf({ at: 100, cause: 'focused', language: 'de', changed: [factAt(typeIdAt(1), { text: 'kept' })] }));
+        store.records.recordRun(runOf({ at: instant(100), cause: 'focused', language: text('de'), changed: [factAt(typeIdAt(1), { text: 'kept' })] }));
         const recap = store.records.readRecap(scope('tab-1'));
         const last = store.records.lastRunOf(scope('tab-1'));
         const factsA = store.facts.allOf({ tab: 'tab-1', key: 'a' });
         const factsB = store.facts.allOf({ tab: 'tab-1', key: 'b' });
         const broken = runOf({
-            at: 900,
+            at: instant(900),
             cause: 'requested',
-            language: 'fr',
-            backend: 'codex',
+            language: text('fr'),
+            backend: text('codex'),
             lanes: [cursor('p7'), cursor('p8')],
             tasks: [shapeOf('a', ['p7']), shapeOf('b', ['p8'])],
             marks: [{ pane: 'p7', at: 900, cursor: 3 }],
@@ -128,8 +130,8 @@ export const REC_7: Case<null, StoreUnderTest> = {
     title: 'lastRunOf after a written run, then a failed run',
     level: 'full',
     async run(_world, store) {
-        store.records.recordRun(runOf({ at: 100, cause: 'focused' }));
-        store.records.failRun(failedOf({ at: 200, cause: 'turn-ended' }));
+        store.records.recordRun(runOf({ at: instant(100), cause: 'focused' }));
+        store.records.failRun(failedOf({ at: instant(200), cause: 'turn-ended' }));
         assert.deepEqual(lastOf(store, 'tab-1'), { at: 100, cause: 'focused' });
     },
 };
@@ -176,10 +178,10 @@ export const REC_11: Case<null, StoreUnderTest> = {
     level: 'full',
     async run(_world, store) {
         const before = store.records.readRecap(scope('tab-2'));
-        store.records.recordRun(runOf({ tab: 'tab-1' }));
-        store.records.beginRun(scope('tab-1'), 'codex', 150);
-        store.records.failRun(failedOf({ tab: 'tab-1' }));
-        store.records.advance(advanceOf({ tab: 'tab-1' }));
+        store.records.recordRun(runOf({ tab: tabId('tab-1') }));
+        store.records.beginRun(scope('tab-1'), text('codex'), instant(150));
+        store.records.failRun(failedOf({ tab: tabId('tab-1') }));
+        store.records.advance(advanceOf({ tab: tabId('tab-1') }));
         assert.deepEqual(store.records.readRecap(scope('tab-2')), before);
     },
 };
@@ -201,10 +203,10 @@ export const REC_13: Case<null, StoreUnderTest> = {
     title: 'recordRun with marks',
     level: 'full',
     async run(_world, store) {
-        store.records.recordRun(runOf({ at: 100, marks: [{ pane: 'p1', at: 90, cursor: 3 }] }));
+        store.records.recordRun(runOf({ at: instant(100), marks: [{ pane: 'p1', at: 90, cursor: 3 }] }));
         const stored = store.marksOf(scope('tab-1'));
         assert.deepEqual(stored, [{ at: 90 }]);
-        store.records.recordRun(runOf({ at: 200 }));
+        store.records.recordRun(runOf({ at: instant(200) }));
         assert.deepEqual(store.marksOf(scope('tab-1')), stored);
     },
 };

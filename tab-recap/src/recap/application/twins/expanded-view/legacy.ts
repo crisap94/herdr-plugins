@@ -12,9 +12,11 @@ import type { ExpandedTask, ExpandedView } from '#src/recap/render/expanded.ts';
 import type { FileCount } from '../../edit-counts.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseTabId } from '#src/recap/domain/ids.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { parseCurating, parseInstant, parseProse, parseTaskName } from '@stateforge-labs/recap-view';
 import { viewBreakOf, webOf } from '#src/view-model/column.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 export const CURATING_MS = 10 * 60_000;
 const LABEL_CHARS = 20;
@@ -58,7 +60,7 @@ export class ExpandedModel {
 
     private taskOf(tab: string, task: TaskRef, now: number): FoundTask {
         const facts = knownOr(this.deps.ledger.allOf({ tab, key: task.id }), []);
-        const story = this.deps.stories.read(tab, task.id);
+        const story = this.deps.stories.read(tabIdOf(tab), textOf(task.id));
         const change = newestChange(facts);
         const stale = change !== null && (story === null || story.at < change);
         const key = `${tab}\u0000${task.id}`;
@@ -73,7 +75,7 @@ export class ExpandedModel {
     }
 
     read(tab: string, view: TabView | null, now: number): ExpandedData {
-        const recap = knownOr(this.deps.records.readRecap(tab), null);
+        const recap = knownOr(this.deps.records.readRecap(tabIdOf(tab)), null);
         const found = (recap?.tasks ?? []).map((task) => this.taskOf(tab, task, now));
         if (found.some((one) => one.asks)) {
             this.deps.requests.requestCurate(tab);

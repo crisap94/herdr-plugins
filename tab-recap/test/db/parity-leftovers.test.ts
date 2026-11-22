@@ -15,6 +15,8 @@ import { instant } from '#src/recap/domain/time.ts';
 import { closedDaysOf } from '../fakes/closed-days.ts';
 import { directoryOf } from '../fakes/closed-values.ts';
 import { expectSameEffect, expectSameRows, normalise, withParity } from './parity.ts';
+import { isClosedWhy, isSection, type ClosedWhy, type Section } from '#src/recap/domain/fact.ts';
+import { textOf as textBrand } from '#src/recap/domain/text.ts';
 
 const keyOf = (n: number): Uint8Array => Uint8Array.from({ length: 16 }, () => n);
 const L = (n: number): string => `X'${Buffer.from(keyOf(n)).toString('hex')}'`;
@@ -25,7 +27,7 @@ const textOf = (value: unknown): string => {
     }
     return value;
 };
-const textOrNull = (value: unknown): string | null => (value === null ? null : textOf(value));
+const parseTextOrNull = (value: unknown): string | null => (value === null ? null : textOf(value));
 const packedOf = (row: unknown): Uint8Array => {
     if (typeof row === 'object' && row !== null && 'document' in row && row.document instanceof Uint8Array) {
         return row.document;
@@ -120,21 +122,32 @@ const OLD_RUNS = `SELECT r.id, c.tab_id, r.at, r.language, r.backend, r.gate_sta
 
 const OLD_GATES = 'SELECT at, gate_stats FROM run WHERE gate_stats IS NOT NULL AND at >= ? ORDER BY id DESC';
 
+const sectionOf = (raw: unknown): Section => {
+    if (isSection(raw)) return raw;
+    throw new Error(`not a section: ${String(raw)}`);
+};
+
+const closedWhyOf = (raw: unknown): ClosedWhy | null => {
+    if (raw === null) return null;
+    if (isClosedWhy(raw)) return raw;
+    throw new Error(`not a close reason: ${JSON.stringify(raw)}`);
+};
+
 const historyOf = (row: Record<string, unknown>): HistoryFact => ({
-    section: textOf(row.section), text: textOf(row.text), why: textOrNull(row.why),
-    state: row.state === 'open' ? 'open' : 'closed', closedWhy: textOrNull(row.closed_why),
-    closedAt: row.closed_at === null ? null : Number(row.closed_at), firstAt: Number(row.first_at), lastAt: Number(row.last_at),
+    section: sectionOf(row.section), text: textBrand(textOf(row.text)), why: row.why === null ? null : textBrand(textOf(row.why)),
+    state: row.state === 'open' ? 'open' : 'closed', closedWhy: closedWhyOf(row.closed_why),
+    closedAt: row.closed_at === null ? null : instant(Number(row.closed_at)), firstAt: instant(Number(row.first_at)), lastAt: instant(Number(row.last_at)),
 });
 
 const storedOf = (row: Record<string, unknown>): unknown => ({
     id: typeIdOf('run', idBytes(row.id)), tab: textOf(row.tab_id), at: Number(row.at), language: textOf(row.language),
-    backend: textOrNull(row.backend), hasInput: Number(row.has_input) === 1,
+    backend: parseTextOrNull(row.backend), hasInput: Number(row.has_input) === 1,
     gateStats: row.gate_stats === null ? null : JSON.parse(textOf(row.gate_stats)),
 });
 
 const itemOf = (prefix: string) => (row: Record<string, unknown>): unknown => ({
     key: `${prefix}${textOf(row.task)}/${textOf(row.section)}/${Number(row.position)}`, section: textOf(row.section), text: textOf(row.text),
-    fact: typeIdOf('fact', idBytes(row.fact)), born: Number(row.born) === 1, anchor: textOrNull(row.anchor),
+    fact: typeIdOf('fact', idBytes(row.fact)), born: Number(row.born) === 1, anchor: parseTextOrNull(row.anchor),
 });
 
 const dumpClosed = (db: Database): unknown => db.prepare('SELECT * FROM closed_lane ORDER BY tab_id, pane, closed_at').all();

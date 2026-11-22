@@ -6,6 +6,7 @@ import type { Curated, Curators } from '@stateforge-labs/session-ledger/unstable
 import type { Entry } from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
 import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { agentKind, cursorAt, paneId, sourcePath } from '@stateforge-labs/session-ledger/testkit';
 
 const textOf = brand<string, 'Text'>;
 const count = brand<number, 'Count'>;
@@ -59,7 +60,7 @@ test('a reconcile is due every N turns or at once after a boundary, and settles 
 });
 
 test('a task with no tail reader or no writer is not reconciled', async () => {
-    const lanes = [{ pane: 'w1:p1', agent: 'claude', transcript: 't', cursor: 0, tail: null, title: null, lastPrompt: null, claudeRecap: null }];
+    const lanes = [{ pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePath('t'), cursor: cursorAt(0), tail: null, title: null, lastPrompt: null, claudeRecap: null }];
     const target = { id: textOf('t1'), name: textOf('goal'), lanes: [] };
     const reconciling = new Reconciling(depsOf({}, []));
     assert.equal(await reconciling.task(tabOf('w1:t1'), target, lanes, 'open'), false);

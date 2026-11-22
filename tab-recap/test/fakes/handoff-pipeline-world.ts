@@ -12,14 +12,15 @@ import { registryWith } from './transcript-registry.ts';
 import { cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { runningOf } from '#src/recap/domain/in-flight.ts';
 import { brand } from '#src/recap/domain/brand.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 export const NOW = Date.parse('2026-10-11T10:00:00Z');
 export const ID = handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2db');
 export const OTHER_ID = handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2dc');
 export const SOURCE_FILE = 'session.jsonl';
-export const LAST_RUN: LastRun = { at: NOW - 60_000, cause: 'turn-ended' };
+export const LAST_RUN: LastRun = { at: instant(NOW - 60_000), cause: 'turn-ended' };
 export const LANE: HandoffLane = { tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), status: 'idle', cwd: '/repo' };
-export const CURSOR: LaneCursor = { pane: 'w1:p1', agent: 'claude', transcript: SOURCE_FILE, cursor: 0, tail: null, title: null, lastPrompt: null, claudeRecap: null };
+export const CURSOR: LaneCursor = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf(SOURCE_FILE), cursor: cursorOf(0), tail: null, title: null, lastPrompt: null, claudeRecap: null };
 
 export const FACTS: readonly Fact[] = [
     fact('g1', 'goal', 'Ship the parser', NOW - 5_000),

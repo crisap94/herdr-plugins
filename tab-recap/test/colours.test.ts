@@ -10,6 +10,8 @@ import { setupView } from '#src/recap/render/setup.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { draftFrom, initial, withAvailable } from '#src/recap/application/setup-keys.ts';
 import { oneTask } from '#test/support.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 
 const ESC = String.fromCodePoint(0x1b);
 
@@ -27,7 +29,7 @@ const noGlow = (): null => null;
 const lane = { cwd: '/work', pane: 'w1:t1:p1', agent: 'claude', status: 'working', title: 'work', lastPrompt: 'do 📝 things ✅' } as const;
 const view = (style?: typeof plain): Parameters<typeof present>[0] => ({
     tab: { tab: 'w1:t1', column: null, at: 0, lanes: [lane] },
-    recap: { ...blankRecap('w1:t1'), at: 0, tasks: oneTask('## Now\n- 📝📝📝📝📝📝📝📝📝📝 ✅✅✅✅✅✅✅✅✅✅ done') },
+    recap: { ...blankRecap(tabId('w1:t1')), at: instant(0), tasks: oneTask('## Now\n- 📝📝📝📝📝📝📝📝📝📝 ✅✅✅✅✅✅✅✅✅✅ done') },
     notes: new Map(),
     warnings: [],
     now: 60_000,

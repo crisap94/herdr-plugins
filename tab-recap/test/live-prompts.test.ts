@@ -33,7 +33,7 @@ function reader(agent: string, prompts: Record<string, PromptResult>): { transcr
     const transcripts: Transcripts = {
         agent: agentKind(agent),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-        locate: (found: Lane): Promise<Located> => Promise.resolve(found.pane === 'w9:p9' ? unknown({ why: 'not-found', what: 'it' }) : { kind: 'located', source: sourcePathOf(`/t/${found.pane}`) }),
+        locate: (found: Lane): Promise<Located> => Promise.resolve(found.pane === 'w9:p9' ? unknown({ why: 'not-found', what: textOf('it') }) : { kind: 'located', source: sourcePathOf(`/t/${found.pane}`) }),
         read: () => Promise.reject(new Error('the live prompt never reads a chunk')),
         latestPrompt: (source, budget) => { asked.push({ source, budget }); return Promise.resolve(prompts[source] ?? { kind: 'prompt', text: null }); },
     };

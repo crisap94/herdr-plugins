@@ -26,7 +26,7 @@ const board = [
 
 const task = (key: string, lanes: readonly string[]): RecapTask => ({ id: key, name: key, lanes, sections: null, markdown: '' });
 
-const recapWith = (...tasks: readonly RecapTask[]): TabRecap => ({ ...blankRecap('w1:t1'), tasks });
+const recapWith = (...tasks: readonly RecapTask[]): TabRecap => ({ ...blankRecap(tabId('w1:t1')), tasks });
 
 const readingOf = (recap: TabRecap | null): Pick<RecapRecords, 'readRecap'> => ({ readRecap: () => recap });
 

@@ -1,10 +1,10 @@
 import type { FlushWhy } from '#src/contract/engine.ts';
-import type { Lane, PaneId, TabId } from '#src/recap/domain/lane-shape.ts';
+import { tabIdOf, type Lane, type PaneId, type TabId } from '#src/recap/domain/lane-shape.ts';
 import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import type { LastRun } from '#src/ports/recap-records.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { CLOSED_SHOWN_MS } from './ledger-input.ts';
 import { RecapJob, type RecapJobDeps } from './recap-job.ts';
 import { saying } from '#src/ports/unknowable.ts';
@@ -48,7 +48,7 @@ export interface Engine {
 const heldBy = (session: FollowedSession): PaneId => session.pane;
 
 function restoreFactsOf(store: EngineStore, environment: EngineEnvironment, at: Instant, scope: ScopeId, session: FollowedSession): RestoreFacts {
-    const id = String(scope);
+    const id = tabIdOf(String(scope));
     const recap = store.records.readRecap(id);
     if (recap !== null && 'kind' in recap) {
         environment.log(`restore ${id}: skipped, ${saying(recap.why)}`);
@@ -58,7 +58,7 @@ function restoreFactsOf(store: EngineStore, environment: EngineEnvironment, at: 
     const facts = tasks.map((task) => {
         const owned = { tab: id, key: task.id };
         const open = store.ledger.openOf(owned);
-        const closed = store.ledger.recentlyClosed(owned, at - CLOSED_SHOWN_MS);
+        const closed = store.ledger.recentlyClosed(owned, instant(at - CLOSED_SHOWN_MS));
         return { open: 'kind' in open ? [] : open, closed: 'kind' in closed ? [] : closed };
     });
     const last = store.records.lastRunOf(id);
@@ -77,7 +77,7 @@ export function createEngine(plugs: EnginePlugs): Engine {
         refresh: (scope, sessions): Promise<void> => job.refreshNow(scope, sessions),
         sessionStarted: (): void => undefined,
         compacted: (scope, sessions): Promise<void> => job.refreshNow(scope, sessions),
-        history: (scope, session): readonly HistoryFact[] => store.ledger.historyOf(String(scope), String(heldBy(session))),
+        history: (scope, session): readonly HistoryFact[] => store.ledger.historyOf(tabIdOf(String(scope)), heldBy(session)),
         restore: (scope, session): RestoreFacts => restoreFactsOf(store, environment, environment.clock.now(), scope, session),
         idle: (scope): Promise<void> => job.idle(scope),
         flush: (scope, why): Promise<void> => job.flush(scope, why),
