@@ -16,7 +16,7 @@ import type { Sizing } from '#src/recap/domain/layout.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
-import { loadConfig } from './config.ts';
+import { loadSettings } from './config.ts';
 
 export interface Box {
     informer: Informer | null;
@@ -38,7 +38,7 @@ export function dispatchFor(box: Box, parts: DispatchParts, log: (line: Text) =>
     return new Dispatch({
         columns: parts.fleet, views: parts.store.views, visibility: parts.store.visibility, recaps: parts.recaps, log, prompts: new LivePrompts(parts.transcripts), webs: parts.webs, contexts: parts.contexts,
         closures: parts.store.closedLanes, retirements: parts.store.retention, closedDays: (): ClosedLaneDays => parts.store.closedDays, events: parts.events, sharing: parts.sharing,
-        sizing: (): Sizing => loadConfig().sizing,
+        sizing: (): Sizing => loadSettings().sizing,
         board: (): Board => {
             if (box.informer === null) {
                 throw new Error('dispatch before the informer exists');

@@ -3,7 +3,8 @@ import { countOf } from '#src/recap/domain/count.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { parseInstant } from '#src/recap/domain/time.ts';
-import { parseAgentKind, parsePaneId } from '#src/recap/domain/ids.ts';
+import { parseAgentKind, parsePaneId, uncheckedAgentKind } from '#src/recap/domain/ids.ts';
+import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { setValues } from '#src/adapters/os/config/file.ts';
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
@@ -11,8 +12,8 @@ import { AUTO_PATH_KINDS, PathHarnessDirectory } from '#src/adapters/harness/on-
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { BEL, FRAME_END, FRAME_HOME, LINE_END, RESET_SGR, SCREEN_OFF, SCREEN_ON, TITLE_OSC } from '#src/adapters/os/tui.ts';
 import type { RecapRequest } from '#src/ports/summarizer.ts';
-import { availableIn, intersect, summarizerFor, summarizerWork } from '#src/daemon/backends.ts';
-import { configDir, configGetter, loadConfig, localeOf, parseEnv, stateDir } from '#src/daemon/config.ts';
+import { availableIn, intersect, summarizerFor } from '#src/daemon/backends.ts';
+import { configDirectory, environmentReader, localeFrom, loadSettings, settingGetter, parseEnv, stateDirectory } from '#src/daemon/config.ts';
 import { requestRewrites } from '#src/recap/application/setup-changes.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { messagesFor } from '#src/i18n/index.ts';
@@ -41,9 +42,9 @@ const TINY: RecapRequest = {
 };
 
 const tab = process.env['TAB_RECAP_TAB'] ?? '';
-const fleet = new HerdrFleet(textOf(stateDir()));
-const get = configGetter();
-const config = loadConfig();
+const fleet = new HerdrFleet(textOf(stateDirectory()));
+const get = settingGetter();
+const config = loadSettings();
 
 let state: Setup = initial(
     draftFrom(config, { locale: get('TAB_RECAP_LOCALE'), recapLanguage: get('TAB_RECAP_RECAP_LANG'), screenAgents: get('TAB_RECAP_SCREEN_AGENTS'), gitNote: get('TAB_RECAP_GIT_NOTE'), telemetryTags: get('TAB_RECAP_TELEMETRY_TAGS'), effort: get('TAB_RECAP_EFFORT'), compactTarget: get('TAB_RECAP_COMPACT_TARGET'), compactHint: get('TAB_RECAP_COMPACT_HINT'), contextWindow: get('TAB_RECAP_CONTEXT_WINDOW'), compactBy: get('TAB_RECAP_COMPACT_BY'), compactModel: get('TAB_RECAP_COMPACT_MODEL'), compactEffort: get('TAB_RECAP_COMPACT_EFFORT'), judgeBy: get('TAB_RECAP_JUDGE_BY'), judgeModel: get('TAB_RECAP_JUDGE_MODEL'), judgeEffort: get('TAB_RECAP_JUDGE_EFFORT'), curateBy: get('TAB_RECAP_CURATE_BY'), curateModel: get('TAB_RECAP_CURATE_MODEL'), curateEffort: get('TAB_RECAP_CURATE_EFFORT'), autocompact: get('TAB_RECAP_AUTOCOMPACT'), autocompactAt: get('TAB_RECAP_AUTOCOMPACT_AT'), autocompactStyle: get('TAB_RECAP_AUTOCOMPACT_STYLE'), autocompactMissed: get('TAB_RECAP_AUTOCOMPACT_MISSED_FACTS'), decideBy: get('TAB_RECAP_AUTOCOMPACT_BY'), decideModel: get('TAB_RECAP_AUTOCOMPACT_MODEL'), decideEffort: get('TAB_RECAP_AUTOCOMPACT_EFFORT'), herdrEvents: get('TAB_RECAP_HERDR_EVENTS'), compactNote: get('TAB_RECAP_COMPACT_NOTE') }),
@@ -51,7 +52,7 @@ let state: Setup = initial(
 );
 let scroll = 0;
 
-const messages = (): ReturnType<typeof messagesFor> => messagesFor(localeOf(state.draft.locale, process.env));
+const messages = (): ReturnType<typeof messagesFor> => messagesFor(localeFrom(textOf(state.draft.locale), environmentReader));
 
 function size(): [number, number] {
     try {
@@ -85,7 +86,7 @@ async function available(): Promise<void> {
 }
 
 async function runTest(draft: Draft, ids: readonly string[]): Promise<void> {
-    const summarizer = summarizerFor({ ...loadConfig(), backend: draft.backend, models: harnessLabels((id) => textOf(draft.models[id])), effort: draft.effort }, availableIn(ids), summarizerWork(stateDir()), createRuntime());
+    const summarizer = summarizerFor({ ...loadSettings(), backend: draft.backend, models: harnessLabels((id) => textOf(draft.models[id])), effort: draft.effort }, availableIn(ids.map(uncheckedAgentKind)), must(parseDirectory(join(stateDirectory(), 'summarizer'))), createRuntime());
     const began = Date.now();
     try {
         const written = await summarizer.write(TINY);
@@ -100,7 +101,7 @@ async function runTest(draft: Draft, ids: readonly string[]): Promise<void> {
 
 function save(values: ReadonlyMap<string, string>, languageChanged: boolean): void {
     try {
-        setValues(join(configDir(), 'config.env'), values, parseEnv);
+        setValues(join(configDirectory(), 'config.env'), values, parseEnv);
         if (languageChanged) {
             const store = openCliStore();
             if (store.kind !== 'ready') {

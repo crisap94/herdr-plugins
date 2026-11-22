@@ -9,15 +9,15 @@ import { textOf } from '#src/recap/domain/text.ts';
 import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
 import type { Milliseconds } from '#src/recap/domain/time.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
-import type { Config } from './config.ts';
+import type { Settings } from './config.ts';
 import { JOB_TAG_BY_CALL } from '#src/recap/domain/job-tag.ts';
 import type { JobCall, JobTag } from '#src/recap/domain/job-tag.ts';
 
-export const jobTagFor = (config: Pick<Config, 'telemetryTags'>, call: JobCall): JobTag | undefined => config.telemetryTags === 'on' ? JOB_TAG_BY_CALL[call] : undefined;
+export const jobTagFor = (config: Pick<Settings, 'telemetryTags'>, call: JobCall): JobTag | undefined => config.telemetryTags === 'on' ? JOB_TAG_BY_CALL[call] : undefined;
 
-export type Make = (config: Config, work: Directory, runtime: HarnessRuntime, jobTag?: JobTag, log?: LogLine) => BackendHarness;
+export type Make = (config: Settings, work: Directory, runtime: HarnessRuntime, jobTag?: JobTag, log?: LogLine) => BackendHarness;
 
-const timeoutOf = (config: Config): Milliseconds => uncheckedMilliseconds(config.timeoutMs);
+const timeoutOf = (config: Settings): Milliseconds => uncheckedMilliseconds(config.timeoutMs);
 
 export const MAKERS: Readonly<Record<BackendId, Make>> = {
     claude: (config, _work, runtime, jobTag, log) => noticing(new LibraryHarnessPort(runtime, LIBRARY_IDS.claude, timeoutOf(config), jobTag, config.claudePolicyAck === 'on' ? 'acknowledged' : 'unacknowledged'), log),

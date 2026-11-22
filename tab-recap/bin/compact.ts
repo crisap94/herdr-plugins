@@ -1,7 +1,7 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
-import { loadConfig, messagesOf, stateDir } from '#src/daemon/config.ts';
+import { loadSettings, messagesOf, stateDirectory } from '#src/daemon/config.ts';
 import { opensPopup, requestNoteOf, startCompact } from '#src/recap/application/compact-start.ts';
 import type { Done } from '#src/ports/columns.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
@@ -26,13 +26,13 @@ function queueCompaction(request: CompactRequest): Done {
 }
 
 export async function compactCommand(tab: string, pane: string | null, note: string | undefined): Promise<number> {
-    const setting = loadConfig().compactNote;
+    const setting = loadSettings().compactNote;
     const text = note === undefined ? undefined : requestNoteOf(note);
     const m = messagesOf();
     const started = await startCompact(tab, pane, text, setting, {
         askNote: async (asked, shown) => {
             await sleep(Number(process.env['TAB_RECAP_COMPACT_DELAY_MS'] ?? 0) || 0);
-            return new HerdrFleet(textOf(stateDir())).agents().askNote(asked, shown);
+            return new HerdrFleet(textOf(stateDirectory())).agents().askNote(asked, shown);
         },
         queue: queueCompaction,
     });

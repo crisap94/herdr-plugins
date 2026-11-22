@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { notesOf } from '#src/extensions/load.ts';
+import { notesByPaneOf } from '#src/extensions/load.ts';
 import { en } from '#src/i18n/en.ts';
 import { viewOf } from '#src/recap/application/dispatch.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import { observe } from '#src/recap/domain/fold.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { paneId as paneOf, tabId } from '#src/recap/domain/ids.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -52,9 +52,9 @@ test('notes() may take the lanes and the locale, or nothing: both shapes type-ch
         notes: (lanes, locale): NotesResult => { received.push(lanes, locale); return { kind: 'notes', byPane: new Map() }; },
     };
     const bare: Extension = { id: 'bare', notes: (): NotesResult => ({ kind: 'notes', byPane: new Map([['p', [{ label: 'x', at: null, details: [] }]]]) }) };
-    const merged = notesOf([wanting, bare], [lane], 'es');
+    const merged = notesByPaneOf([wanting, bare], [lane], 'es');
     assert.deepEqual(received, [[lane], 'es']);
-    assert.equal(merged.get('p')?.length, 1);
-    notesOf([wanting, bare]);
+    assert.equal(merged.get(paneOf('p'))?.length, 1);
+    notesByPaneOf([wanting, bare]);
     assert.deepEqual(received.slice(2), [undefined, undefined]);
 });

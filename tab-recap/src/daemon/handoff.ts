@@ -34,11 +34,11 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import { parseHandoffId, sessionId, type HandoffId } from '#src/recap/domain/ids.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
-import { instant, type Duration, type Instant } from '#src/recap/domain/time.ts';
+import { duration, instant, type Duration, type Instant } from '#src/recap/domain/time.ts';
 import { textOf, parseText, type Text } from '#src/recap/domain/text.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { awaitingNow, logVia, pauseVia, refreshVia } from './legacy.ts';
-import { within } from './bounded.ts';
+import { withinBy } from './bounded.ts';
 
 export interface HandoffRunnerDeps {
     readonly flow: Pick<HandoffFlow, 'execute'>;
@@ -135,7 +135,7 @@ export class HandoffRunner {
 
     private async flowOf(row: HandoffRequestRow): Promise<HandoffRun> {
         const mark = new DeliveryTracker();
-        const run = await within<HandoffRun | null>(this.executed(row, mark), HANDOFF_FLOW_MAX_MS, null);
+        const run = await withinBy<HandoffRun | null>(this.executed(row, mark), duration(HANDOFF_FLOW_MAX_MS), null);
         if (run !== null) { return run; }
         const abandoned = mark.abandon();
         if (abandoned === 'claimed') {

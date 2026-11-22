@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { coverageDeciderFor, coverageDeciderPortFor, deciderFor, deciderPortFor } from '#src/daemon/deciders.ts';
-import { loadConfig } from '#src/daemon/config.ts';
+import { loadSettings } from '#src/daemon/config.ts';
 import type { Decider, DeciderPort, Noul } from '#src/ports/decider.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
@@ -36,7 +36,7 @@ const CONFIGS: readonly Config[] = [
     { name: 'coverage jev', env: { TAB_RECAP_AUTOCOMPACT_BY: 'recap', TAB_RECAP_AUTOCOMPACT_COVERAGE_BY: 'jev', TAB_RECAP_JEV_KEY: 'sk-wiring' }, available: ['claude'] },
 ];
 
-type Build = (config: ReturnType<typeof loadConfig>, available: readonly BackendId[], runtime: ReturnType<typeof fakeRuntime>) => Decider | DeciderPort | null;
+type Build = (config: ReturnType<typeof loadSettings>, available: readonly BackendId[], runtime: ReturnType<typeof fakeRuntime>) => Decider | DeciderPort | null;
 
 const LEGACY: Readonly<Record<'decider' | 'coverage', Build>> = {
     decider: (config, available, runtime) => deciderFor(config, available, WORK, runtime),
@@ -60,7 +60,7 @@ async function answered(build: Build, setting: Config): Promise<{ readonly label
     Object.assign(process.env, { HERDR_PLUGIN_CONFIG_DIR: dir, HOME: home, TAB_RECAP_BACKEND: 'auto', TAB_RECAP_CLAUDE_POLICY_ACK: 'on', ...setting.env });
     try {
         const runtime = fakeRuntime({ scripts: { claude: [fakeOutput({ text: '{"q":0.8}' }), fakeOutput({ text: '{"q":0.8}' })] } });
-        const decider = build(loadConfig(), setting.available, runtime);
+        const decider = build(loadSettings(), setting.available, runtime);
         if (decider === null) return { label: null, answer: null };
         const found = await decider.ask(documentOf({}), QUESTIONS);
         const { tookMs: _ignored, ...rest } = found.kind === 'decided' ? { ...found, answers: Object.fromEntries(found.answers) } : { ...found, tookMs: duration(0) };

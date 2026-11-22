@@ -1,3 +1,4 @@
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -11,7 +12,7 @@ const ROOT = join(import.meta.dirname, '..');
 const BUILT_IN = 'show|compact|handoff|configure|start|startup|ensure|stop|toggle|status|column|columns|refresh|backend|eval|autocompact';
 
 const defaults = (on: readonly string[]) => async (slot: string): Promise<boolean> => on.includes(slot);
-const keys = (values: Readonly<Record<string, string>>) => (key: string): string | undefined => values[key];
+const keys = (values: Readonly<Record<string, string>>) => (key: string): Text | undefined => (values[key] === undefined ? undefined : textOf(values[key]));
 
 function cli(args: readonly string[], settings: Readonly<Record<string, string>>): { status: number | null; out: string; err: string } {
     const home = mkdtempSync(join(tmpdir(), 'tab-recap-command-table-'));

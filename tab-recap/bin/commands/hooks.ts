@@ -1,6 +1,6 @@
 import { harnessSettings, installHooks, retireSharedShim, systemInstallIo, uninstallHooks, type InstallResult } from '#src/adapters/hooks/install.ts';
 import type { HarnessSettings } from '#src/adapters/hooks/settings.ts';
-import { configGetter, stateDir } from '#src/daemon/config.ts';
+import { settingGetter, stateDirectory } from '#src/daemon/config.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import { YES } from '#src/recap/domain/gui-tab-parts.ts';
@@ -16,12 +16,12 @@ const NOT_COVERED = 3;
 const HARNESS_FLAG = '--harness';
 
 const ACTIONS: Readonly<Record<string, (settings: HarnessSettings) => InstallResult>> = {
-    install: (settings) => installHooks(must(parseFsPath(stateDir())), settings, systemInstallIo),
-    uninstall: (settings) => uninstallHooks(must(parseFsPath(stateDir())), settings),
+    install: (settings) => installHooks(must(parseFsPath(stateDirectory())), settings, systemInstallIo),
+    uninstall: (settings) => uninstallHooks(must(parseFsPath(stateDirectory())), settings),
 };
 
 async function switchedOn(): Promise<boolean> {
-    const value = configGetter()(SWITCH);
+    const value = settingGetter()(SWITCH);
     if (value === 'on' || value === 'off') return value === 'on';
     try {
         const loaded: unknown = await import(SLOT_FILE.href);
@@ -61,6 +61,6 @@ export async function run(args: readonly string[]): Promise<number> {
     const chosen = chosenSettings(rest);
     if (word === undefined || action === undefined || chosen === null) return usage();
     const codes = chosen.map((settings) => report(word, settings, action(settings)));
-    retireSharedShim(must(parseFsPath(stateDir())), harnessSettings(null) ?? []);
+    retireSharedShim(must(parseFsPath(stateDirectory())), harnessSettings(null) ?? []);
     return codes.includes(REFUSED) ? REFUSED : OK;
 }

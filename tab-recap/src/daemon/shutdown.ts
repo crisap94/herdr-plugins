@@ -10,8 +10,6 @@ export interface StoppableInformer {
     stop(): void;
 }
 
-export { shutDown } from './legacy.ts';
-
 export async function shutDownWithin(columns: Pick<Columns, 'closeEvery'>, informer: StoppableInformer, log: (line: Line) => void, limit: Duration = duration(SHUTDOWN_MS)): Promise<void> {
     log(parseLine('stopping: closing every column'));
     informer.stop();

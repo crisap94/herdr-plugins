@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import { judgeJobOf, keepDaysOf, placementOf } from './fakes/settings-readers.ts';
 import assert from 'node:assert/strict';
 import { JUDGE_DEFAULT, KEEP_INPUT_DAYS } from '#src/recap/domain/job.ts';
-import { loadConfig } from '#src/daemon/config.ts';
+import { loadSettings } from '#src/daemon/config.ts';
 
 const config = (values: Readonly<Record<string, string>>) => (key: string): string | undefined => values[key];
 const models = { claude: 'sonnet', codex: 'gpt-6-luna', opencode: '', custom: '' };
@@ -43,7 +43,7 @@ test('the loaded configuration carries both', () => {
     process.env['TAB_RECAP_JUDGE_BY'] = 'opencode';
     process.env['TAB_RECAP_KEEP_INPUT_DAYS'] = '3';
     try {
-        assert.deepEqual([loadConfig().judge.by, loadConfig().keepInputDays], ['opencode', 3]);
+        assert.deepEqual([loadSettings().judge.by, loadSettings().keepInputDays], ['opencode', 3]);
     } finally {
         for (const [key, value] of [['TAB_RECAP_JUDGE_BY', was[0]], ['TAB_RECAP_KEEP_INPUT_DAYS', was[1]]] as const) {
             if (value === undefined) {

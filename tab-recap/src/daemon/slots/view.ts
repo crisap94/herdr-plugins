@@ -72,7 +72,7 @@ const intentsFor = async (context: ViewContext): Promise<IntentSink> => {
         observe: context.observe,
         show: (tab: TabId): Promise<Done> => new herdr.HerdrFleet(text.textOf(context.root)).show(tab),
         compact: await compactFor(context),
-        compactNote: () => config.loadConfig().compactNote,
+        compactNote: () => config.loadSettings().compactNote,
         launch: await launcherFor(context),
         log: context.log,
     });
@@ -87,12 +87,12 @@ export const slot = {
         const slots = await import('../slots.ts');
         const paths = await import('#src/wire/paths.ts');
         const cache = await glowFor();
-        const source = frames.frameSource({ store: context.store, glow: cache, clock: context.clock, version: () => context.version, config: config.loadConfig });
+        const source = frames.frameSource({ store: context.store, glow: cache, clock: context.clock, version: () => context.version, config: config.loadSettings });
         const started = await server.startViewServer({
             socketPath: server.parseSocketPath(paths.viewSocketPath(context.root)),
             frames: source,
             intents: await intentsFor(context),
-            texts: () => texts.viewTexts(config.loadConfig().locale),
+            texts: () => texts.viewTexts(config.loadSettings().locale),
             version: context.version ?? slots.parseVersion('unknown'),
             log: context.log,
         });

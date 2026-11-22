@@ -1,3 +1,5 @@
+import { must } from '#src/protocol/result.ts';
+import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
@@ -10,7 +12,7 @@ import { openDatabase } from '#src/adapters/db/open.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import { messagesOf } from '#src/daemon/config.ts';
-import { openState } from '#src/daemon/state.ts';
+import { openStateAt } from '#src/daemon/state.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 
 const KEYS = ['HERDR_PLUGIN_CONFIG_DIR', 'TAB_RECAP_STATE', 'TAB_RECAP_LOCALE'] as const;
@@ -18,7 +20,7 @@ const LATEST = latestVersion();
 const notifier = { notify: (): Promise<{ kind: 'shown' }> => Promise.resolve({ kind: 'shown' }) };
 
 async function daemonStore(state: string): Promise<Store> {
-    const store = await openState(state, notifier, () => undefined);
+    const store = await openStateAt(must(parseDirectory(state)), notifier, () => undefined);
     if (store === null) {
         assert.fail('the daemon opens the store as owner');
     }

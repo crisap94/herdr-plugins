@@ -9,10 +9,8 @@ import type { Directory } from '#src/recap/domain/directory.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { loadConfig, messagesOf } from './config.ts';
+import { loadSettings, messagesOf } from './config.ts';
 import { parseLine, type Line } from './slots.ts';
-
-export { openState } from './legacy.ts';
 
 async function refuse(notifier: NotifierPort, log: (line: Line) => void, why: Line): Promise<null> {
     log(why);
@@ -23,7 +21,7 @@ async function refuse(notifier: NotifierPort, log: (line: Line) => void, why: Li
 export async function openStateAt(root: Directory, notifier: NotifierPort, log: (line: Line) => void): Promise<Store | null> {
     const version = codeVersion();
     const say = parseLineSink.bind(undefined, log);
-    const store = openStoreAt(databaseFile(root), { daemonVersion: version === null ? null : textOf(version), log: say, closedDays: loadConfig().closedLaneDays });
+    const store = openStoreAt(databaseFile(root), { daemonVersion: version === null ? null : textOf(version), log: say, closedDays: loadSettings().closedLaneDays });
     if (store.kind === 'newer-db') {
         store.db.close();
         return refuse(notifier, log, parseLine(`tab-recap: ${messagesOf().database.newer(store.backup)}`));

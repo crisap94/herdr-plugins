@@ -7,7 +7,7 @@ import type { Decider, DeciderPort } from '#src/ports/decider.ts';
 import { placementFor } from '#src/recap/domain/job.ts';
 import type { JobSetting } from '#src/recap/domain/job.ts';
 import { settingReader } from './config.ts';
-import type { Config } from './config.ts';
+import type { Settings } from './config.ts';
 import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
 import { jobTagFor, MAKERS } from './harness-makers.ts';
 import type { JobCall, JobTag } from '#src/recap/domain/job-tag.ts';
@@ -20,7 +20,7 @@ import type { FsPath } from '#src/recap/domain/fs-path.ts';
 
 type HarnessFor = (harness: BackendId, tag: JobTag | undefined) => BackendHarness;
 
-function harnessDeciderFor(config: Config, job: JobSetting, available: readonly BackendId[], harnessFor: HarnessFor, call: JobCall): DeciderPort | null {
+function harnessDeciderFor(config: Settings, job: JobSetting, available: readonly BackendId[], harnessFor: HarnessFor, call: JobCall): DeciderPort | null {
     const placed = placementFor(job, { backend: config.backend, models: config.models }, available);
     return placed === null ? null : new HarnessPortDecider(harnessFor(placed.harness, jobTagFor(config, call)), { model: placed.model, effort: placed.effort });
 }
@@ -36,9 +36,9 @@ const homeOf = (): Text => must(parseText(process.env['HOME'] ?? homedir()));
 
 const foundKey = (): Text | null => jevKey(settingReader(), readKeyFile, homeOf());
 
-const jevDecider = (config: Config): DeciderPort => new JevPortDecider({ url: config.jev.url, model: config.jev.model, key: foundKey });
+const jevDecider = (config: Settings): DeciderPort => new JevPortDecider({ url: config.jev.url, model: config.jev.model, key: foundKey });
 
-function decider(config: Config, available: readonly BackendId[], work: Directory, runtime: HarnessRuntime, log: LogLine | undefined): DeciderPort | null {
+function decider(config: Settings, available: readonly BackendId[], work: Directory, runtime: HarnessRuntime, log: LogLine | undefined): DeciderPort | null {
     const { by } = config.decider;
     if (by === 'jev') {
         return jevDecider(config);
@@ -46,7 +46,7 @@ function decider(config: Config, available: readonly BackendId[], work: Director
     return harnessDeciderFor(config, { ...config.decider, by }, available, (id, tag) => MAKERS[id](config, work, runtime, tag, log), 'decider');
 }
 
-function coverageDecider(config: Config, available: readonly BackendId[], work: Directory, runtime: HarnessRuntime, log: LogLine | undefined): DeciderPort | null {
+function coverageDecider(config: Settings, available: readonly BackendId[], work: Directory, runtime: HarnessRuntime, log: LogLine | undefined): DeciderPort | null {
     const { by } = config.coverageJob;
     const jevKeyFound = config.coverage === 'auto' && foundKey() !== null;
     if (config.coverage === 'jev' || jevKeyFound) {
@@ -58,18 +58,18 @@ function coverageDecider(config: Config, available: readonly BackendId[], work: 
     return harnessDeciderFor(config, { ...config.coverageJob, by }, available, (id, tag) => MAKERS[id](config, work, runtime, tag, log), 'coverageCheck');
 }
 
-export function deciderFor(config: Config, available: readonly BackendId[], work: Directory, runtime: HarnessRuntime, log?: LogLine): Decider | null {
+export function deciderFor(config: Settings, available: readonly BackendId[], work: Directory, runtime: HarnessRuntime, log?: LogLine): Decider | null {
     return decider(config, available, work, runtime, log);
 }
 
-export function coverageDeciderFor(config: Config, available: readonly BackendId[], work: Directory, runtime: HarnessRuntime, log?: LogLine): Decider | null {
+export function coverageDeciderFor(config: Settings, available: readonly BackendId[], work: Directory, runtime: HarnessRuntime, log?: LogLine): Decider | null {
     return coverageDecider(config, available, work, runtime, log);
 }
 
-export function deciderPortFor(config: Config, available: readonly BackendId[], work: Directory, runtime: HarnessRuntime, log?: LogLine): DeciderPort | null {
+export function deciderPortFor(config: Settings, available: readonly BackendId[], work: Directory, runtime: HarnessRuntime, log?: LogLine): DeciderPort | null {
     return decider(config, available, work, runtime, log);
 }
 
-export function coverageDeciderPortFor(config: Config, available: readonly BackendId[], work: Directory, runtime: HarnessRuntime, log?: LogLine): DeciderPort | null {
+export function coverageDeciderPortFor(config: Settings, available: readonly BackendId[], work: Directory, runtime: HarnessRuntime, log?: LogLine): DeciderPort | null {
     return coverageDecider(config, available, work, runtime, log);
 }

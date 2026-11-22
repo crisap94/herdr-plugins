@@ -1,7 +1,8 @@
+import { textOf } from '#src/recap/domain/text.ts';
 import { join } from 'node:path';
 import { setValues } from '#src/adapters/os/config/file.ts';
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
-import { configDir, configGetter, loadConfig, localeOf, messagesOf, parseEnv } from '#src/daemon/config.ts';
+import { configDirectory, environmentReader, localeFrom, loadSettings, messagesOf, settingGetter, parseEnv } from '#src/daemon/config.ts';
 import { apply, rawSettingsFrom, settingIds, settingsOf } from './desktop-settings-model.ts';
 import { requestRewrites } from '#src/recap/application/setup-changes.ts';
 import { changes, draftFrom, initial, locksOf } from '#src/recap/application/setup-keys.ts';
@@ -19,12 +20,12 @@ interface Loaded {
 }
 
 function load(): Loaded {
-    const config = loadConfig();
-    return { draft: draftFrom(config, rawSettingsFrom(configGetter())), locks: locksOf(process.env) };
+    const config = loadSettings();
+    return { draft: draftFrom(config, rawSettingsFrom(settingGetter())), locks: locksOf(process.env) };
 }
 
 function report(loaded: Loaded, extra: Readonly<Record<string, unknown>>): void {
-    const effective = localeOf(loaded.draft.locale, process.env);
+    const effective = localeFrom(textOf(loaded.draft.locale), environmentReader);
     console.log(JSON.stringify({ locale: { setting: loaded.draft.locale, effective }, settings: settingsOf(loaded.draft, loaded.locks), ...extra }));
 }
 
@@ -37,7 +38,7 @@ function assignmentsOf(words: readonly string[]): ReadonlyMap<string, string> | 
 }
 
 function persist(values: ReadonlyMap<string, string>): Readonly<Record<string, unknown>> {
-    setValues(join(configDir(), 'config.env'), values, parseEnv);
+    setValues(join(configDirectory(), 'config.env'), values, parseEnv);
     if (!LANGUAGE_KEYS.some((key) => values.has(key))) {
         return {};
     }

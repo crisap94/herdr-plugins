@@ -42,9 +42,8 @@ export type SettingsFile = ReadonlyMap<EnvironmentName, Text>;
 
 export { BACKEND_IDS } from '#src/recap/domain/backend.ts';
 export type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
-export { backendOf, configDir, configGetter, loadConfig, localeOf, modelsOf, parseEnv, stateDir } from './legacy.ts';
-export type { Config } from './legacy.ts';
-export type { CompactionSettings, Glow, Models, SettingReader, Settings } from './settings.ts';
+export { parseEnv } from './legacy.ts';
+export type { CompactionSettings, Glow, Models, SettingGet, SettingReader, Settings } from './settings.ts';
 
 const defaults = xdgPaths(homedir());
 
@@ -64,7 +63,7 @@ const positiveOr = (parsed: Result<PositiveCount, ParseFailure>, fallback: Posit
 
 const countOr = (parsed: Result<Count, ParseFailure>, fallback: Count): Count => (parsed.kind === 'ok' ? parsed.value : fallback);
 
-const given: SettingReader = (key) => {
+export const environmentReader: SettingReader = (key) => {
     const value = process.env[key];
     return value === undefined || value === '' ? undefined : textOf(parseText(value));
 };
@@ -72,11 +71,11 @@ const given: SettingReader = (key) => {
 const directoryOr = (parsed: Result<Directory, ParseFailure>, fallback: Directory): Directory => (parsed.kind === 'ok' ? parsed.value : fallback);
 
 export function configDirectory(): Directory {
-    return directoryOr(parseDirectory(given(keyOf('HERDR_PLUGIN_CONFIG_DIR'))), must(parseDirectory(defaults.configDir)));
+    return directoryOr(parseDirectory(environmentReader(keyOf('HERDR_PLUGIN_CONFIG_DIR'))), must(parseDirectory(defaults.configDir)));
 }
 
 export function stateDirectory(): Directory {
-    return directoryOr(parseDirectory(given(keyOf('TAB_RECAP_STATE')) ?? given(keyOf('HERDR_PLUGIN_STATE_DIR'))), must(parseDirectory(defaults.stateDir)));
+    return directoryOr(parseDirectory(environmentReader(keyOf('TAB_RECAP_STATE')) ?? environmentReader(keyOf('HERDR_PLUGIN_STATE_DIR'))), must(parseDirectory(defaults.stateDir)));
 }
 
 export function parseSettingsFile(input: unknown): Result<SettingsFile, ParseFailure> {
@@ -142,19 +141,24 @@ function readFile(): SettingsFile {
     }
 }
 
-const readerOf = (file: SettingsFile): SettingReader => (key) => (key === LOCALE || key === RECAP_LANG ? file.get(key) ?? given(key) : given(key) ?? file.get(key));
+const readerOf = (file: SettingsFile): SettingReader => (key) => (key === LOCALE || key === RECAP_LANG ? file.get(key) ?? environmentReader(key) : environmentReader(key) ?? file.get(key));
 
 export function settingReader(): SettingReader {
     return (key) => readerOf(readFile())(key);
 }
 
+export function settingGetter(): SettingGet {
+    const read = settingReader();
+    return (name) => read(keyOf(name));
+}
+
 export function recapLanguageSource(): LanguageSource {
     const file = readFile();
-    const setting = file.get(RECAP_LANG) ?? given(RECAP_LANG);
+    const setting = file.get(RECAP_LANG) ?? environmentReader(RECAP_LANG);
     if (languageSettingOf(setting === undefined ? undefined : uncheckedText(setting)) !== 'ui') {
         return file.has(RECAP_LANG) ? 'settings' : 'environment';
     }
-    const locale = file.get(LOCALE) ?? given(LOCALE);
+    const locale = file.get(LOCALE) ?? environmentReader(LOCALE);
     if (locale === 'en' || locale === 'es') {
         return file.has(LOCALE) ? 'settings' : 'environment';
     }
@@ -205,7 +209,7 @@ export function loadSettings(): Settings {
     const writerViewSettings = writerViewFrom(get);
     const screenAgents = screenAgentsFrom(get);
     const backend = backendFrom(get('TAB_RECAP_BACKEND'));
-    const locale = localeFrom(get('TAB_RECAP_LOCALE'), given);
+    const locale = localeFrom(get('TAB_RECAP_LOCALE'), environmentReader);
     const herdrEvents = herdrEventsFrom(get('TAB_RECAP_HERDR_EVENTS'));
     const recapLanguageSetting = get('TAB_RECAP_RECAP_LANG');
     return {

@@ -30,7 +30,7 @@ import type { LaneWeb } from '#src/ports/tab-views.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { ceilingOverrideNow, listsPaneIn, refreshVia } from './legacy.ts';
-import { loadConfig, messagesOf } from './config.ts';
+import { loadSettings, messagesOf } from './config.ts';
 
 interface CoverageCheck {
     check(brief: Text, facts: readonly CoverageFact[]): Promise<Coverage>;
@@ -91,18 +91,18 @@ export function wireCompaction(parts: CompactionParts): Compaction {
             return isUnknown(layout) || layout.focused === null ? null : paneId(layout.focused);
         },
         refresh: refreshVia(recaps, parts.records),
-        coverage: () => coverageOf(parts.coverageDecider(), () => loadConfig().tuning),
+        coverage: () => coverageOf(parts.coverageDecider(), () => loadSettings().tuning),
         decisions: parts.decisions,
         checkedBriefs: parts.checkedBriefs,
         ceilingOverride: ceilingOverrideNow,
-        missedFacts: () => loadConfig().autocompact.missedFacts,
+        missedFacts: () => loadSettings().autocompact.missedFacts,
         answer: (id: RequestId, pane: PaneId, stage: AnswerStage) => { parts.answers.answer(id, pane, stage); },
         asks: parts.asks,
         typing: parts.typing,
         events: parts.events,
         claims: parts.claims,
         restores: parts.preCompacts,
-        target: () => loadConfig().compaction.target,
+        target: () => loadSettings().compaction.target,
         messages: messagesOf,
     });
 }

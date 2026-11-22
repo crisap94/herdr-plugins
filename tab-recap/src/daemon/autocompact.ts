@@ -26,12 +26,12 @@ import { refreshVia } from './legacy.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { awaitingOf } from '#src/recap/domain/coordination.ts';
 import { readPaneTokens } from '#src/adapters/herdr/fleet.ts';
-import { loadConfig, type Config } from './config.ts';
+import { loadSettings, type Settings } from './config.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { TranscriptInFlight } from '#src/adapters/transcripts/in-flight.ts';
 import { flightOf } from '#src/recap/application/in-flight.ts';
 
-const compactTuningOf = (tuning: Config['tuning']): CompactTuning => ({
+const compactTuningOf = (tuning: Settings['tuning']): CompactTuning => ({
     style: tuning.style,
     verdict: tuning.verdict,
     coverageAtLeast: parseThreshold(tuning.coverageAtLeast),
@@ -46,7 +46,7 @@ export async function awaitingPane(pane: PaneId): Promise<Waiting> {
 }
 
 interface AutocompactParts {
-    readonly config?: () => Config;
+    readonly config?: () => Settings;
     readonly awaiting?: (pane: PaneId) => Promise<Waiting>;
     readonly store: Store;
     readonly transcripts: TranscriptRegistry;
@@ -122,7 +122,7 @@ const inFlightOf = (flight: TranscriptInFlight, candidate: Candidate): Promise<O
 export function wireAutocompact(parts: AutocompactParts): Autocompact {
     const { store } = parts;
     const flight = new TranscriptInFlight(parts.transcripts);
-    const read = parts.config ?? loadConfig;
+    const read = parts.config ?? loadSettings;
     return new Autocompact({
         policy: () => read().autocompact, tuning: (): CompactTuning => compactTuningOf(read().tuning), idleHold: () => read().holdIdle, decider: parts.decider, contexts: parts.contexts, inFlight: (candidate) => inFlightOf(flight, candidate), awaiting: parts.awaiting ?? awaitingPane, emit: (event) => { emitTo(parts.events, event); }, recent: (candidate) => { const lane = lanesBehind.get(candidate); return lane === undefined ? Promise.resolve([]) : parts.recent.of(lane); }, statusOf: (candidate) => parseLaneStatusAtDecision(lanesBehind.get(candidate)?.status), startedAt: instant(Date.now() - process.uptime() * 1000),
         ledger: store.ledger, sessions: signalsOf(store), activity: activityOf(parts), decisions: store.decisions, request: (ask) => { store.requests.requestCompact({ tab: tabId(ask.scope), pane: paneId(ask.key), note: ask.note, origin: 'auto' }); },

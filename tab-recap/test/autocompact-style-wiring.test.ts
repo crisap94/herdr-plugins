@@ -12,8 +12,8 @@ import { join } from 'node:path';
 import { wireAutocompact } from '#src/daemon/autocompact.ts';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { coverageOf } from '#src/daemon/compaction.ts';
-import type { Config } from '#src/daemon/config.ts';
-import { loadConfig } from '#src/daemon/config.ts';
+import type { Settings } from '#src/daemon/config.ts';
+import { loadSettings } from '#src/daemon/config.ts';
 import type { CoverageFact } from '#src/recap/application/brief-coverage.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
@@ -31,8 +31,8 @@ import { runningOf } from '#src/recap/domain/in-flight.ts';
 
 const env = (keys: Readonly<Record<string, string>>) => (key: string): string | undefined => keys[key];
 
-function configOf(keys: Readonly<Record<string, string>>): Config {
-    return { autocompact: { ...policyOf(env(keys)), mode: 'on' }, tuning: tuningOf(env(keys)) } as unknown as Config;
+function configOf(keys: Readonly<Record<string, string>>): Settings {
+    return { autocompact: { ...policyOf(env(keys)), mode: 'on' }, tuning: tuningOf(env(keys)) } as unknown as Settings;
 }
 
 function keeping(keeps: number): Decider {
@@ -117,13 +117,13 @@ test('coverageOf: the pass mark is read from the tuning in force; a missing deci
     assert.equal(coverageOf(null, () => balanced), null);
 });
 
-test('loadConfig reads the style from the environment: eager gives its pass mark and its tuning, and the policy\'s ceiling', () => {
+test('loadSettings reads the style from the environment: eager gives its pass mark and its tuning, and the policy\'s ceiling', () => {
     const dir = mkdtempSync(join(tmpdir(), 'tab-recap-style-'));
     const saved = { style: process.env['TAB_RECAP_AUTOCOMPACT_STYLE'], dir: process.env['HERDR_PLUGIN_CONFIG_DIR'] };
     try {
         process.env['TAB_RECAP_AUTOCOMPACT_STYLE'] = 'eager';
         process.env['HERDR_PLUGIN_CONFIG_DIR'] = dir;
-        const config = loadConfig();
+        const config = loadSettings();
         assert.deepEqual([config.tuning.style, config.tuning.coverageAtLeast, config.tuning.recheckIdleMs, config.autocompact.ceiling], ['eager', 0.60, 1_800_000, 65]);
     } finally {
         if (saved.style === undefined) delete process.env['TAB_RECAP_AUTOCOMPACT_STYLE']; else process.env['TAB_RECAP_AUTOCOMPACT_STYLE'] = saved.style;

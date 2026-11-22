@@ -12,7 +12,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { BAR_TITLE, COLUMN_TITLE } from '#src/adapters/herdr/column-panes.ts';
 import { xdgPaths } from '#src/adapters/os/config/paths-xdg.ts';
 import { codeVersion } from '#src/adapters/os/plugin-version.ts';
-import { stateDir } from '#src/daemon/config.ts';
+import { stateDirectory } from '#src/daemon/config.ts';
 import { relayEnvOf, titleOf } from '#src/pane/relay-env.ts';
 import type { RelayEnv, RelayIo } from '#src/pane/relay-env.ts';
 import { runRelay } from '#src/pane/relay.ts';
@@ -494,7 +494,7 @@ test('the relay player bites: a state or an effect the relay does not reach is a
     });
 });
 
-test('relayEnvOf reads the role, tab, pane and roll marker from the environment and the state directory in the order of stateDir()', () => {
+test('relayEnvOf reads the role, tab, pane and roll marker from the environment and the state directory in the order of stateDirectory()', () => {
     const root = urlOf(ROOT);
     const home = urlOf(homedir());
     const version = relayEnvOf({}, root).hello.version;
@@ -508,7 +508,7 @@ test('relayEnvOf reads the role, tab, pane and roll marker from the environment 
         for (const [state, herdr] of [['/a', '/b'], ['', '/b'], ['', '']]) {
             process.env['TAB_RECAP_STATE'] = state;
             process.env['HERDR_PLUGIN_STATE_DIR'] = herdr;
-            assert.equal(viewSocketPath(fileURLToPath(relayEnvOf(process.env, root).stateDir)), viewSocketPath(stateDir()), `${state} ${herdr}`);
+            assert.equal(viewSocketPath(fileURLToPath(relayEnvOf(process.env, root).stateDir)), viewSocketPath(stateDirectory()), `${state} ${herdr}`);
         }
     } finally {
         process.env['TAB_RECAP_STATE'] = saved.state ?? '';

@@ -9,7 +9,7 @@ import { SystemClock } from '#src/adapters/os/system-clock.ts';
 import { modalTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { codeVersion } from '#src/adapters/os/plugin-version.ts';
-import { loadConfig, messagesOf, stateDir, stateDirectory } from '#src/daemon/config.ts';
+import { loadSettings, messagesOf, stateDirectory } from '#src/daemon/config.ts';
 import type { HandoffPrinter } from '#src/ports/handoff-print.ts';
 import { requestNoteOf } from '#src/recap/application/compact-start.ts';
 import { EditTally } from '#src/recap/application/edit-tally.ts';
@@ -129,7 +129,7 @@ export function handoffArgumentsOf(values: HandoffValues, positionals: readonly 
 }
 
 function deliverDeps(): DeliverDeps {
-    const pidfile = new Pidfile(stateDir());
+    const pidfile = new Pidfile(stateDirectory());
     return {
         pacing: { now: Date.now, sleep },
         daemon: () => ({ pid: pidfile.alive(), version: pidfile.daemonVersion() }),
@@ -146,14 +146,14 @@ function deliverDeps(): DeliverDeps {
 
 function printerOf(): HandoffPrinter {
     const transcripts = modalTranscriptRegistry();
-    const fleet = new HerdrFleet(textOf(stateDir()));
+    const fleet = new HerdrFleet(textOf(stateDirectory()));
     return new PrintedHandoffs({
-        openStore: () => openPrintStore(databaseFile(stateDirectory()), loadConfig().closedLaneDays),
+        openStore: () => openPrintStore(databaseFile(stateDirectory()), loadSettings().closedLaneDays),
         transcripts,
         worksite: { reader: new GitWorksite(), repo: new GitLaneRepo(new SystemClock()), edits: new EditTally(transcripts) },
         tokens: fleet,
         target: { status: (pane) => fleet.agents().status(pane) },
-        closedDays: loadConfig().closedLaneDays,
+        closedDays: loadSettings().closedLaneDays,
         now: () => Date.now(),
         flush: () => Promise.resolve(),
         log: (line) => { console.error(`tab-recap: ${line}`); },
@@ -162,7 +162,7 @@ function printerOf(): HandoffPrinter {
 
 function listerOf(): (tab: TabId) => ClosedListing {
     return (tab) => {
-        const store = openPrintStore(databaseFile(stateDirectory()), loadConfig().closedLaneDays);
+        const store = openPrintStore(databaseFile(stateDirectory()), loadSettings().closedLaneDays);
         try {
             return listClosedLanes(store.closures, tab, instant(Date.now()));
         } finally {

@@ -1,3 +1,5 @@
+import { must } from '#src/protocol/result.ts';
+import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { storeRead } from '#test/db/support.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import { test } from 'node:test';
@@ -6,7 +8,7 @@ import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { latestVersion } from '#src/adapters/db/migrate.ts';
 import { databaseFile } from '#src/adapters/db/database.ts';
-import { openState } from '#src/daemon/state.ts';
+import { openStateAt } from '#src/daemon/state.ts';
 import type { Notice, NotifierPort } from '#src/ports/notifier.ts';
 import { openFixture, scratchDir } from './support.ts';
 import { everyShape, put, sections } from './import/support.ts';
@@ -23,7 +25,7 @@ test('the daemon starts on a state directory of the old files: it imports once, 
         everyShape(dir);
         const { notifier, told } = recorder();
         const lines: string[] = [];
-        const store = await openState(dir, notifier, (line) => { lines.push(line); });
+        const store = await openStateAt(must(parseDirectory(dir)), notifier, (line) => { lines.push(line); });
         if (store === null) {
             assert.fail('the daemon starts');
         }
@@ -32,7 +34,7 @@ test('the daemon starts on a state directory of the old files: it imports once, 
         assert.equal(storeRead(store.records.readRecap(tabId('w1:t1')))?.tasks.at(0)?.sections?.goal, 'ship');
         store.close();
         assert.ok(!existsSync(join(dir, 'recaps')));
-        const again = await openState(dir, notifier, (line) => { lines.push(line); });
+        const again = await openStateAt(must(parseDirectory(dir)), notifier, (line) => { lines.push(line); });
         assert.notEqual(again, null, 'a second start does not import again, and starts');
         again?.close();
     } finally {
@@ -47,7 +49,7 @@ test('a failed import: logged, shown on screen, the daemon does not run, the fil
         put(dir, 'recaps', 'w1_t1.json', { tab: 'w1:t1', lanes: [], at: 1, running: false, backend: null, error: null, costUsd: 0, tasks: [{ id: 't1', name: '', lanes: [], sections: { ...sections, now: ['1', '2', '3', '4'] }, markdown: 'x' }] });
         const { notifier, told } = recorder();
         const lines: string[] = [];
-        assert.equal(await openState(dir, notifier, (line) => { lines.push(line); }), null);
+        assert.equal(await openStateAt(must(parseDirectory(dir)), notifier, (line) => { lines.push(line); }), null);
         assert.match(lines.join('\n'), /could not move the state files into the database .*recap w1:t1.*untouched/);
         assert.equal(told.length, 1);
         assert.ok(existsSync(join(dir, 'recaps')));
@@ -66,7 +68,7 @@ test('a database newer than this plugin: the daemon says which backup to restore
         db.close();
         const { notifier, told } = recorder();
         const lines: string[] = [];
-        assert.equal(await openState(dir, notifier, (line) => { lines.push(line); }), null);
+        assert.equal(await openStateAt(must(parseDirectory(dir)), notifier, (line) => { lines.push(line); }), null);
         assert.match(told.join(), /database is newer than this plugin — restore a backup or upgrade/);
         assert.match(lines.join(), /newer than this plugin/);
     } finally {

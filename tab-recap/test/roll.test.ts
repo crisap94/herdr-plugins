@@ -1,7 +1,8 @@
+import { duration } from '#src/recap/domain/time.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { shouldRoll } from '#src/adapters/os/plugin-version.ts';
-import { shutDown } from '#src/daemon/shutdown.ts';
+import { shutDownWithin } from '#src/daemon/shutdown.ts';
 import type { ClosedEvery } from '#src/ports/columns.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
@@ -28,14 +29,14 @@ test('shutDown: stops folding FIRST, then waits for the whole batch and says how
     const lines: string[] = [];
     const { columns, order } = fakeColumns(async () => { await pause(60); return { kind: 'closed', closed: countOf(27), failed: countOf(0) }; });
     const informer = { stop: (): void => { order.push('informer stopped'); } };
-    await shutDown(columns, informer, (line) => { lines.push(line); });
+    await shutDownWithin(columns, informer, (line) => { lines.push(line); });
     assert.deepEqual(order, ['informer stopped', 'closing', 'closed'], 'it did not return before the batch finished');
     assert.deepEqual(lines, ['stopping: closing every column', 'stopping: closed 27 columns']);
 });
 
 const run = async (closeEvery: () => Promise<ClosedEvery>, ms?: number): Promise<string> => {
     const lines: string[] = [];
-    await shutDown(fakeColumns(closeEvery).columns, { stop: (): void => undefined }, (line) => { lines.push(line); }, ms);
+    await shutDownWithin(fakeColumns(closeEvery).columns, { stop: (): void => undefined }, (line) => { lines.push(line); }, ms === undefined ? undefined : duration(ms));
     return lines.at(-1) ?? '';
 };
 

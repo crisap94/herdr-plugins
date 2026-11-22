@@ -1,7 +1,5 @@
 import type { Duration } from '#src/recap/domain/time.ts';
 
-export { bounded, within } from './legacy.ts';
-
 export type Bounded = 'done' | 'timeout';
 
 export async function boundedBy(task: Promise<void>, limit: Duration): Promise<Bounded> {
