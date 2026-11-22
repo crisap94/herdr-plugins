@@ -73,7 +73,6 @@ export function settingsView(c) {
   const { t, settings } = c;
   const groups = settings.body ? layoutOf(settings.body.settings) : [];
   return v_flex().id("settings").flex_1().min_h(0).overflow_y_scrollbar().px(SIZE.gutter).py(SIZE.cardPadV).gap(SIZE.gapMd)
-    .child(div().text_size(SIZE.text).text_color(t.muted).child(TEXT.settingsLead))
     .children(notice(c))
     .children(groups.map((g) => card(t, TEXT.settingGroups[g.key], g.items.map((s, i) => row(c, s, i === g.items.length - 1)))));
 }
