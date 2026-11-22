@@ -9,8 +9,10 @@ import type { Text } from '#src/recap/domain/text.ts';
 import assert from 'node:assert/strict';
 import { paneId, tabId, agentKind } from '#src/recap/domain/ids.ts';
 import { en } from '#src/i18n/en.ts';
-import { correctionOf, covered, factsOf, linesOf, missingOf, questionsFor } from '#src/recap/application/brief-coverage.ts';
-import type { Coverage } from '#src/recap/application/brief-coverage.ts';
+import { KEPT_AT_LEAST, checkCoverage, checkedFactsOf, correctionFor, questionsOf, unmetLinesOf, unmetOf } from '#src/recap/application/brief-coverage.ts';
+import type { CheckedCoverage } from '#src/recap/application/brief-coverage.ts';
+import { checkedOf } from './fakes/coverage-fixtures.ts';
+import type { PlainCoverage as Coverage } from './fakes/coverage-fixtures.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import { appendedBrief } from '#src/recap/application/compaction-coverage.ts';
 import { compactionPlanner } from '#src/adapters/capability/compaction-plans.ts';
@@ -42,32 +44,34 @@ function deciding(answers: Readonly<Record<string, number>>, fallback = 0.95): D
 }
 
 test('the facts: the open goal, now, needs, decisions, next and rules, in the ledger\'s order, at most 40', () => {
-    assert.deepEqual(factsOf(HISTORY).map((each) => each.section), ['goal', 'decisions', 'next']);
-    assert.equal(factsOf(Array.from({ length: 60 }, (_, i) => fact('next', `t${i}`))).length, 40);
+    assert.deepEqual(checkedFactsOf(HISTORY).map((each) => each.section), ['goal', 'decisions', 'next']);
+    assert.equal(checkedFactsOf(Array.from({ length: 60 }, (_, i) => fact('next', `t${i}`))).length, 40);
 });
 
 test('the questions: keeps_<i> per fact, reason_<i> per decision with a reason; each names its fact\'s fields in backticks', () => {
-    const questions = questionsFor(factsOf(HISTORY));
+    const questions = questionsOf(checkedFactsOf(HISTORY));
     assert.deepEqual([...questions.keys()], ['keeps_0', 'keeps_1', 'reason_1', 'keeps_2']);
     assert.match(JSON.stringify(questions.get(textOf('keeps_1'))?.instructions), /`brief`.*`facts\[1\]\.text`/);
     assert.match(JSON.stringify(questions.get(textOf('reason_1'))?.instructions), /`facts\[1\]\.why`/);
 });
 
+const tally = (answers: Readonly<Record<string, number>>): CheckedCoverage['answers'] => checkedOf({ ok: true, missing: [], missingFacts: [], answers, unknown: null }).answers;
+
 test('missing: a goal, needs, decisions or rules fact (or a decision\'s reason) below 0.70; now and next never block', () => {
-    const facts = factsOf(HISTORY);
-    assert.deepEqual(linesOf(missingOf({ keeps_0: 0.69, keeps_1: 0.7, reason_1: 0.7, keeps_2: 0.1 }, facts)), ['goal: Ship the cart rewrite']);
-    assert.deepEqual(linesOf(missingOf({ keeps_0: 1, keeps_1: 0.95, reason_1: 0.2, keeps_2: 0.4 }, facts)), ['the reason for the decision: Keep SQLite (one file)']);
-    assert.deepEqual(linesOf(missingOf({ keeps_0: 1, keeps_1: 1, reason_1: 1, keeps_2: 0.4 }, facts)), []);
+    const facts = checkedFactsOf(HISTORY);
+    assert.deepEqual(unmetLinesOf(unmetOf(tally({ keeps_0: 0.69, keeps_1: 0.7, reason_1: 0.7, keeps_2: 0.1 }), facts, KEPT_AT_LEAST)), ['goal: Ship the cart rewrite']);
+    assert.deepEqual(unmetLinesOf(unmetOf(tally({ keeps_0: 1, keeps_1: 0.95, reason_1: 0.2, keeps_2: 0.4 }), facts, KEPT_AT_LEAST)), ['the reason for the decision: Keep SQLite (one file)']);
+    assert.deepEqual(unmetLinesOf(unmetOf(tally({ keeps_0: 1, keeps_1: 1, reason_1: 1, keeps_2: 0.4 }), facts, KEPT_AT_LEAST)), []);
 });
 
 test('covered: the brief and the facts are the one state; ok when nothing blocks; a decider that cannot answer is not ok and says why', async () => {
     const decider = deciding({ keeps_2: 0.4 });
-    assert.deepEqual(await covered('the brief', factsOf(HISTORY), decider), { ok: true, missing: [], missingFacts: [], answers: { keeps_0: 0.95, keeps_1: 0.95, reason_1: 0.95, keeps_2: 0.4 }, unknown: null, costUsd: 0 });
+    assert.deepEqual(await checkCoverage(textOf('the brief'), checkedFactsOf(HISTORY), decider, KEPT_AT_LEAST), checkedOf({ ok: true, missing: [], missingFacts: [], answers: { keeps_0: 0.95, keeps_1: 0.95, reason_1: 0.95, keeps_2: 0.4 }, unknown: null, costUsd: 0 }));
     const broken: Decider = { label: textOf('x'), ask: () => Promise.resolve(unknown({ why: 'timeout', after: 10_000 as never })) };
-    const result = await covered('b', factsOf(HISTORY), broken);
-    assert.deepEqual([result.ok, result.missing, result.unknown], [false, [], 'timed out after 10000 ms']);
-    assert.deepEqual(await covered('b', [], broken), { ok: true, missing: [], missingFacts: [], answers: {}, unknown: null });
-    assert.match(correctionOf(['goal: Ship it']), /did not keep these.*\n- goal: Ship it$/s);
+    const result = await checkCoverage(textOf('b'), checkedFactsOf(HISTORY), broken, KEPT_AT_LEAST);
+    assert.deepEqual([result.complete, result.missing, result.unknown], ['absent', [], 'timed out after 10000 ms']);
+    assert.deepEqual(await checkCoverage(textOf('b'), [], broken, KEPT_AT_LEAST), checkedOf({ ok: true, missing: [], missingFacts: [], answers: {}, unknown: null }));
+    assert.match(correctionFor([textOf('goal: Ship it')]), /did not keep these.*\n- goal: Ship it$/s);
 });
 
 const NOW = Date.parse('2026-10-07T10:00:00Z');
@@ -92,7 +96,7 @@ function flow(checks: readonly Coverage[], withCoverage = true, template: { read
         records: { readRecap: () => recap }, ledger: { historyOf: () => history }, boundaries: { lastBreakAt: () => null }, compactions: store.compactions,
         settling: { settled: () => Promise.resolve({ kind: 'settled', status: 'done' }) },
         brief: { enabled: () => 'present', job: () => textOf('fake'), write: (_doc, _own, correction) => { world.briefs.push(correction); return Promise.resolve(template === null ? { text: mustParsed(parseText(correction === undefined ? 'first brief' : 'second brief')), why: null } : { text: null, why: mustParsed(parseText(template.why)) }); } },
-        coverage: () => (withCoverage ? { check: () => { clock += 40; return Promise.resolve(must(checks[Math.min(checked++, checks.length - 1)])); } } : null),
+        coverage: () => (withCoverage ? { check: () => { clock += 40; return Promise.resolve(checkedOf(must(checks[Math.min(checked++, checks.length - 1)]))); } } : null),
         decisions: store.autocompact,
         ceilingOverride: () => (ceilingOverride ? 'present' : 'absent'),
         missedFacts: () => options.missedFacts ?? 'append',

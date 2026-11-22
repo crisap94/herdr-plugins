@@ -14,7 +14,7 @@ import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { coverageOf } from '#src/daemon/compaction.ts';
 import type { Settings } from '#src/daemon/config.ts';
 import { loadSettings } from '#src/daemon/config.ts';
-import type { CoverageFact } from '#src/recap/application/brief-coverage.ts';
+import type { CheckedFact } from '#src/recap/domain/autocompact.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
@@ -109,11 +109,11 @@ test('the daemon wiring reads the safe key: warnings of 0.42 wait under eager\'s
 });
 
 test('coverageOf: the pass mark is read from the tuning in force; a missing decider means no check', async () => {
-    const needs: readonly CoverageFact[] = [{ section: 'needs', text: 'Keep the token', why: null }];
+    const needs: readonly CheckedFact[] = [{ section: 'needs', text: textOf('Keep the token'), why: null }];
     const eager = tuningOf(env({ TAB_RECAP_AUTOCOMPACT_STYLE: 'eager' }));
     const balanced = tuningOf(env({}));
-    assert.equal((await coverageOf(keeping(0.65), () => eager)?.check(must(parseText('the brief')), needs))?.ok, true, 'eager passes at 0.60');
-    assert.equal((await coverageOf(keeping(0.65), () => balanced)?.check(must(parseText('the brief')), needs))?.ok, false, 'balanced needs 0.70');
+    assert.equal((await coverageOf(keeping(0.65), () => eager)?.check(must(parseText('the brief')), needs))?.complete, 'present', 'eager passes at 0.60');
+    assert.equal((await coverageOf(keeping(0.65), () => balanced)?.check(must(parseText('the brief')), needs))?.complete, 'absent', 'balanced needs 0.70');
     assert.equal(coverageOf(null, () => balanced), null);
 });
 

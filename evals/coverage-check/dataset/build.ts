@@ -1,6 +1,7 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { factsOf, missingOf, questionsFor } from '../../../tab-recap/src/recap/application/brief-coverage.ts';
+import { checkedFactsOf, questionsOf } from '../../../tab-recap/src/recap/application/brief-coverage.ts';
+import { unmetBy } from '../prompt.ts';
 import type { HistoryFact } from '../../../packages/session-ledger/src/ports/ledger.ts';
 import { isClosedWhy, isSection } from '../../../packages/session-ledger/src/recap/domain/fact.ts';
 import type { ClosedWhy, Section } from '../../../packages/session-ledger/src/recap/domain/fact.ts';
@@ -136,11 +137,11 @@ function build(plan: Plan): unknown {
         const lastAt = firstAt + 95000 + (at % 7) * 61000;
         return { section: sectionOf(fact.section), text: textOf(fact.text), why: fact.why === null ? null : textOf(fact.why), state: fact.state, closedWhy: closedWhyOf(fact.closedWhy), closedAt: fact.closedAt === null ? null : instant(lastAt), firstAt: instant(firstAt), lastAt: instant(lastAt) };
     });
-    const asked = factsOf(history);
+    const asked = checkedFactsOf(history);
     const pickOf = new Map(open.map((pick) => [pick.fact.text, pick]));
     const questions: Record<string, { kept: boolean; how: string; fact: string }> = {};
     const synthetic: Record<string, number> = {};
-    const ids = Object.keys(questionsFor(asked));
+    const ids = Object.keys(questionsOf(asked));
     asked.forEach((fact, at) => {
         const pick = pickOf.get(fact.text);
         if (pick === undefined) throw new Error(`${plan.id}: asked fact has no plan: ${fact.text}`);
@@ -156,7 +157,7 @@ function build(plan: Plan): unknown {
         synthetic[id] = questions[id].kept ? 1 : 0;
     }
     if (Object.keys(questions).length !== ids.length) throw new Error(`${plan.id}: expected answers for questions that are not asked`);
-    const missing = missingOf(synthetic, asked).map(({ index, parts }) => ({ index, parts }));
+    const missing = unmetBy(synthetic, asked).map(({ index, parts }) => ({ index, parts }));
     const notAsked = open.filter((pick) => !asked.some((fact) => fact.text === pick.fact.text)).map((pick) => pick.fact.id);
     return {
         id: plan.id,

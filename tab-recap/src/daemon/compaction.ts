@@ -3,8 +3,10 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
 import type { AskLedger } from '#src/ports/ask-ledger.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
-import { covered } from '#src/recap/application/brief-coverage.ts';
-import type { Coverage, CoverageFact } from '#src/recap/application/brief-coverage.ts';
+import { parseProbability } from '#src/recap/domain/probability.ts';
+import { checkCoverage, probabilityRequired } from '#src/recap/application/brief-coverage.ts';
+import type { CheckedCoverage } from '#src/recap/application/brief-coverage.ts';
+import type { CheckedFact } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { BriefDesk } from '#src/recap/application/compaction-brief.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
@@ -35,7 +37,7 @@ import { refreshVia } from './refresh-status.ts';
 import { loadSettings, messagesOf } from './config.ts';
 
 interface CoverageCheck {
-    check(brief: Text, facts: readonly CoverageFact[]): Promise<Coverage>;
+    check(brief: Text, facts: readonly CheckedFact[]): Promise<CheckedCoverage>;
 }
 
 interface CompactionWebs {
@@ -76,7 +78,7 @@ interface CompactionParts {
 }
 
 export function coverageOf(decider: Decider | null, tuning: () => AutocompactTuning): CoverageCheck | null {
-    return decider === null ? null : { check: (text, facts) => covered(text, facts, decider, tuning().coverageAtLeast) };
+    return decider === null ? null : { check: (text, facts) => checkCoverage(text, facts, decider, probabilityRequired(parseProbability(tuning().coverageAtLeast))) };
 }
 
 export function wireCompaction(parts: CompactionParts): Compaction {

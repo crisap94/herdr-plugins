@@ -14,7 +14,6 @@ import { measureState, plus } from './judge-coverage.ts';
 import type { Carrying, Share } from './judge-coverage.ts';
 import { readBack } from './judge.ts';
 import type { JudgeDeps } from './judge.ts';
-export { compareImported, type CompareDeps } from './legacy.ts';
 
 export const withoutLedgers = (document: Text): Text => textOf(document.replace(/<ledger\b[^>]*?(?:\/>|>[\s\S]*?<\/ledger>)/gu, ''));
 
@@ -89,7 +88,7 @@ interface ChapterOutcome {
     readonly costUsd: Usd;
 }
 
-export interface TypedCompareDeps extends JudgeDeps {
+export interface CompareDeps extends JudgeDeps {
     readonly label: TabId;
 }
 
@@ -121,7 +120,7 @@ async function sideOf(deps: JudgeDeps, parts: SideParts): Promise<SideOutcome> {
     return { side: { coverage: measured.coverage, filler: measured.filler, readback: back.grades, size: must(parseCount(parts.state.length)) }, costUsd: must(parseUsd(back.costUsd)) };
 }
 
-async function compareChapter(deps: TypedCompareDeps, chapter: ImportedChapterRecord, runs: readonly RunRecord[], since: Instant | null): Promise<ChapterOutcome> {
+async function compareChapter(deps: CompareDeps, chapter: ImportedChapterRecord, runs: readonly RunRecord[], since: Instant | null): Promise<ChapterOutcome> {
     const skip = (why: Text, costUsd: Usd = ZERO): ChapterOutcome => ({ result: { kind: 'skipped', n: chapter.n, at: chapter.at, why }, costUsd });
     const at = runs.findLast((run) => run.at <= chapter.at);
     const last = runs.at(-1);
@@ -157,7 +156,7 @@ function totalOf(results: readonly ChapterResult[], pick: (result: ComparedChapt
     };
 }
 
-export async function compareChapters(deps: TypedCompareDeps, chapters: readonly ImportedChapterRecord[]): Promise<Comparison> {
+export async function compareImported(deps: CompareDeps, chapters: readonly ImportedChapterRecord[]): Promise<Comparison> {
     const runs = deps.inputs.runs({ tab: deps.label, since: null, limit: countOf(100_000), input: 'with-input' }).toReversed();
     const results: ChapterResult[] = [];
     let costUsd = ZERO;

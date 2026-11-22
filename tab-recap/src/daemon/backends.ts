@@ -9,7 +9,7 @@ import type { BriefWriter } from '#src/ports/compaction-briefs.ts';
 import type { Decider, DeciderPort } from '#src/ports/decider.ts';
 import type { Curators } from '#src/ports/curators.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
-import type { CheckAnchor, JudgePort } from '#src/ports/judge.ts';
+import type { AnchorChecks, JudgePort } from '#src/ports/judge.ts';
 import type { HarnessDirectory, HarnessList } from '#src/ports/harnesses.ts';
 import type { NotifierPort } from '#src/ports/notifier.ts';
 import type { Summarizer, Written } from '#src/ports/summarizer.ts';
@@ -22,7 +22,7 @@ import { MAKERS } from './harness-makers.ts';
 import { BACKEND_IDS, enumeratesJob, installableHarnessSentence, pick, type BackendId } from '#src/recap/domain/backend.ts';
 import { placementFor } from '#src/recap/domain/job.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
-import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 import type { Settings } from './config.ts';
 import { jobTagFor } from './harness-makers.ts';
@@ -37,8 +37,6 @@ export function availableIn(ids: readonly AgentKind[]): Available {
 }
 
 type Warning = 'unwarned' | 'warned';
-
-export type TextAnchors = ReadonlyMap<Text, readonly CheckAnchor[]>;
 
 export function summarizerWorkIn(root: Directory): Directory {
     return must(parseDirectory(join(root, 'summarizer')));
@@ -76,7 +74,7 @@ export function briefFor(config: Settings, available: Available, work: Directory
     return placed === null ? null : new HarnessBrief(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'compactionBrief'), log), { model: placed.model, effort: placed.effort });
 }
 
-export function judgeWith(config: Settings, available: Available, work: Directory, runtime: HarnessRuntime, anchors?: TextAnchors): JudgePort | null {
+export function judgeWith(config: Settings, available: Available, work: Directory, runtime: HarnessRuntime, anchors?: AnchorChecks): JudgePort | null {
     const placed = placementFor(config.judge, { backend: config.backend, models: config.models }, available);
     return placed === null ? null : new HarnessJudge(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'judge')), { model: placed.model, effort: placed.effort }, anchors);
 }

@@ -7,7 +7,7 @@ import type { Entry } from '#src/ports/transcripts.ts';
 import { LANE_CLOSED } from '#src/recap/domain/lane-closed.ts';
 import type { ClosePoint } from '#src/recap/domain/lane-closed.ts';
 import { type CompactionId, type DecisionId, type PaneId, type TabId, paneId } from '#src/recap/domain/ids.ts';
-import { parseCheckedFact, type CheckedFact, type MissedFacts } from '#src/recap/domain/autocompact.ts';
+import { type CheckedFact, type MissedFacts } from '#src/recap/domain/autocompact.ts';
 import { MISSED_FACTS_DEFAULT } from '#src/recap/domain/autocompact.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
@@ -15,7 +15,7 @@ import { must } from '#src/protocol/result.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
 import { appendedBrief, checkedBrief } from './compaction-coverage.ts';
 import type { Briefed, Checked, CoverageFlow } from './compaction-coverage.ts';
-import { factsOf } from './brief-coverage.ts';
+import { checkedFactsOf } from './brief-coverage.ts';
 import { blockedByCoverage, coverageLog, coverageWhy } from './coverage-verdict.ts';
 import { compactionMaterialInput } from './compaction-material.ts';
 import type { CompactionPorts } from './compaction-deps.ts';
@@ -92,7 +92,7 @@ export class Briefing {
     }
 
     private rememberCoverage(decision: DecisionId | null, checked: Checked, history: History, flow: CoverageFlow): Checked {
-        const checkedFacts: readonly CheckedFact[] = factsOf(history).flatMap((fact) => { const parsed = parseCheckedFact(fact); return parsed === null ? [] : [parsed]; });
+        const checkedFacts: readonly CheckedFact[] = checkedFactsOf(history);
         const appended = flow.appends === 'present' && checked.outcome.kind === 'missed' && checked.brief.text !== null
             ? appendedBrief(checked.brief.text, checked.outcome.facts, checkedFacts)
             : null;

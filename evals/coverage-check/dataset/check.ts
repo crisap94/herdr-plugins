@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { deciderInstructions, probabilitiesOf } from '../../../tab-recap/src/adapters/job/decider.ts';
-import { FACTS_CHECKED, KEPT_AT_LEAST, factsOf, missingOf, questionsFor } from '../../../tab-recap/src/recap/application/brief-coverage.ts';
+import { FACTS_CHECKED, KEPT_AT_LEAST, checkedFactsOf, questionsOf } from '../../../tab-recap/src/recap/application/brief-coverage.ts';
+import { unmetBy } from '../prompt.ts';
 import { isSection } from '../../../packages/session-ledger/src/recap/domain/fact.ts';
 import { BANK, INTRO, SETTLED } from './bank.ts';
 import { textOf } from '../../../packages/session-ledger/src/recap/domain/text.ts';
@@ -69,9 +70,9 @@ for (const [at, line] of lines.entries()) {
         if ((fact.state === 'closed') !== (fact.closedWhy !== null) || (fact.state === 'closed') !== (fact.closedAt !== null)) bad(`${id}: history[${index}] closed fields disagree with state`);
         if (!Number.isInteger(fact.firstAt) || !Number.isInteger(fact.lastAt) || fact.lastAt < fact.firstAt) bad(`${id}: history[${index}] times`);
     }
-    const facts = factsOf(history);
+    const facts = checkedFactsOf(history);
     if (facts.length === 0 || facts.length > FACTS_CHECKED) bad(`${id}: ${facts.length} facts asked`);
-    const questions = questionsFor(facts);
+    const questions = questionsOf(facts);
     const asked = Object.keys(questions);
     const expected = item.expected;
     if (expected.facts_asked !== facts.length) bad(`${id}: facts_asked ${expected.facts_asked} but the builder gives ${facts.length}`);
@@ -84,7 +85,7 @@ for (const [at, line] of lines.entries()) {
     const perfect = Object.fromEntries(asked.map((q) => [q, expected.questions[q]?.kept ? 1 : 0]));
     const parsed = probabilitiesOf(textOf(`\`\`\`json\n${JSON.stringify(perfect)}\n\`\`\``), asked.map((id) => textOf(id)));
     if (parsed === null) { bad(`${id}: the plugin's parser refuses a perfect answer`); continue; }
-    const missing = missingOf(Object.fromEntries(parsed), facts).map(({ index, parts }) => ({ index, parts }));
+    const missing = unmetBy(Object.fromEntries(parsed), facts).map(({ index, parts }) => ({ index, parts }));
     if (JSON.stringify(missing) !== JSON.stringify(expected.missing)) bad(`${id}: expected.missing differs from missingOf on a perfect answer`);
     if (expected.ok !== (missing.length === 0)) bad(`${id}: expected.ok disagrees`);
     for (const miss of expected.missing) if (facts[miss.index] === undefined) bad(`${id}: missing index ${miss.index} out of range`);

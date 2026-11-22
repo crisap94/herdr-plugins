@@ -1,6 +1,8 @@
 import { deciderInstructions } from '../../tab-recap/src/adapters/job/decider.ts';
-import { factsOf, questionsFor } from '../../tab-recap/src/recap/application/brief-coverage.ts';
-import type { CoverageFact } from '../../tab-recap/src/recap/application/brief-coverage.ts';
+import { KEPT_AT_LEAST, checkedFactsOf, probabilityRequired, questionsOf, unmetOf } from '../../tab-recap/src/recap/application/brief-coverage.ts';
+import type { CheckedFact } from '../../tab-recap/src/recap/domain/autocompact.ts';
+import { parseProbability } from '../../packages/session-ledger/src/recap/domain/probability.ts';
+import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import type { HistoryFact } from '../../packages/session-ledger/src/ports/ledger.ts';
 import type { Item, Prompt } from '../lib/types.ts';
 
@@ -27,14 +29,17 @@ export interface Input {
 
 export type CoverageItem = Item<Input, Expected>;
 
-export const factsFor = (item: CoverageItem): readonly CoverageFact[] => factsOf(item.input.history);
+export const factsFor = (item: CoverageItem): readonly CheckedFact[] => checkedFactsOf(item.input.history);
 
-export const idsFor = (item: CoverageItem): string[] => Object.keys(questionsFor(factsFor(item)));
+export const idsFor = (item: CoverageItem): string[] => Object.keys(questionsOf(factsFor(item)));
+
+export const unmetBy = (answers: Readonly<Record<string, number>>, facts: readonly CheckedFact[], keptAtLeast: number = KEPT_AT_LEAST): ReturnType<typeof unmetOf> =>
+    unmetOf(new Map(Object.entries(answers).map(([key, value]) => [textOf(key), probabilityRequired(parseProbability(value))] as const)), facts, probabilityRequired(parseProbability(keptAtLeast)));
 
 export function prompt(item: CoverageItem): Prompt {
     const facts = factsFor(item);
     return {
-        system: deciderInstructions(questionsFor(facts)),
+        system: deciderInstructions(questionsOf(facts)),
         user: JSON.stringify({ brief: item.input.brief, facts: facts.map((fact) => ({ section: fact.section, text: fact.text, why: fact.why })) }),
     };
 }

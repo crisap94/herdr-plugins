@@ -1,11 +1,11 @@
 import type { JudgePort } from '#src/ports/judge.ts';
-import type { ImportedChapter } from '#src/ports/imported-recaps.ts';
+import type { ImportedChapterRecord } from '#src/ports/imported-recaps.ts';
 import type { RunInputReader } from '#src/ports/run-inputs.ts';
 import type { VerdictStore } from '#src/ports/verdicts.ts';
 import { must } from '#src/protocol/result.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { uncheckedTabId } from '#src/recap/domain/ids.ts';
+import { parseTabId, uncheckedTabId } from '#src/recap/domain/ids.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { comparisonText } from '#src/recap/render/compare.ts';
 import { reportText } from '#src/recap/render/eval.ts';
@@ -25,7 +25,7 @@ export interface JudgedReplay {
     readonly store: JudgeStore;
     readonly rubric: string;
     readonly label: string;
-    readonly imported: readonly ImportedChapter[] | null;
+    readonly imported: readonly ImportedChapterRecord[] | null;
     readonly beside: string | null;
     readonly style: Style;
     err(line: string): void;
@@ -40,6 +40,6 @@ export async function judgedReport(replayed: JudgedReplay): Promise<readonly str
     if (replayed.imported === null || replayed.imported.length === 0) {
         return lines;
     }
-    const compared = await compareImported({ ...deps, label: replayed.label }, replayed.imported);
+    const compared = await compareImported({ ...deps, label: must(parseTabId(replayed.label)) }, replayed.imported);
     return [...lines, '', ...comparisonText(compared, textOf(replayed.beside ?? ''), replayed.style)];
 }

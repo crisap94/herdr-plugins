@@ -1,7 +1,7 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { compactionInput, type CompactionMaterial } from '../material.ts';
-import { factsOf } from '../../../tab-recap/src/recap/application/brief-coverage.ts';
+import { checkedFactsOf } from '../../../tab-recap/src/recap/application/brief-coverage.ts';
 import { settledBefore } from '../../../packages/session-ledger/src/recap/domain/boundary.ts';
 import { instant } from '../../../packages/session-ledger/src/recap/domain/time.ts';
 import { textOf, type Text } from '../../../packages/session-ledger/src/recap/domain/text.ts';
@@ -216,7 +216,7 @@ function buildItem(spec: ItemSpec): unknown {
 
     const windowed = sorted.map((raw, index) => ({ raw, index })).filter(({ raw }) => raw.state === 'open' && COVERED.has(raw.section));
     const inWindow = windowed.slice(0, WINDOW);
-    const checked = factsOf(history);
+    const checked = checkedFactsOf(history);
     if (checked.length !== inWindow.length || checked.some((fact, at) => fact.text !== inWindow[at]?.raw.text)) throw new Error(`${spec.id}: the window differs from the plugin's factsOf`);
     const mustKeep = inWindow.filter(({ raw }) => BLOCKING.has(raw.section));
     const goalAt = sorted.findIndex((raw) => raw.state === 'open' && raw.section === 'goal');

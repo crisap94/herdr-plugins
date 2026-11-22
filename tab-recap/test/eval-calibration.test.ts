@@ -4,7 +4,6 @@ import { HarnessJudge } from '#src/adapters/job/judge.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { judgeInstructionsOf, JUDGE_INSTRUCTIONS } from '#src/adapters/job/prompts/judge-instructions.ts';
-import { anchorChecksOf } from '#src/adapters/job/prompts/legacy.ts';
 import { agreementOf, kappaOf, trusted } from '#src/recap/application/eval-stats.ts';
 import { ANCHORS_PER_CHECK, anchorsOf, withText } from '#src/recap/application/judge-anchors.ts';
 import { runEval } from '#src/recap/application/eval-run.ts';
@@ -58,11 +57,11 @@ test('where the operator overruled the judge on I5, the judge\'s next instructio
     const { store } = seeded(7);
     const anchors = anchorsOf(withText(store.verdicts.disagreements(), store.inputs));
     assert.equal(anchors.get(must(parseText('I5')))?.length, ANCHORS_PER_CHECK);
-    const rules = judgeInstructionsOf('score', anchorChecksOf(anchors));
+    const rules = judgeInstructionsOf('score', anchors);
     assert.ok(rules.startsWith(JUDGE_INSTRUCTIONS.score));
     assert.match(rules, /I5:\n- "Worked on it\." — the operator ruled FAIL: effort, not work\n- "t1\/x\/6" — .*reason 6\n- .*reason 5\n- .*reason 4\n- .*reason 3$/);
     assert.ok(!rules.includes('reason 2'), 'only the newest five');
-    assert.equal(judgeInstructionsOf('readback', anchorChecksOf(anchors)), JUDGE_INSTRUCTIONS.readback, 'only the scoring carries checks');
+    assert.equal(judgeInstructionsOf('readback', anchors), JUDGE_INSTRUCTIONS.readback, 'only the scoring carries checks');
     assert.equal(judgeInstructionsOf('score'), JUDGE_INSTRUCTIONS.score, 'no corrections, no section');
 });
 

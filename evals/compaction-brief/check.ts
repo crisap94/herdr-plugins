@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { compactionInput, type CompactionMaterial } from './material.ts';
-import { factsOf } from '../../tab-recap/src/recap/application/brief-coverage.ts';
+import { checkedFactsOf } from '../../tab-recap/src/recap/application/brief-coverage.ts';
 import { FORBIDDEN, vetted } from '../../tab-recap/src/recap/application/compaction-brief.ts';
 import { settledBefore } from '../../packages/session-ledger/src/recap/domain/boundary.ts';
 import { instant, type Instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
@@ -111,7 +111,7 @@ for (const row of rows) {
     points('must_not_reopen', expected.must_not_reopen, (fact) => settledBefore(fact.closedAt, breakAtOf(input)));
     points('planted.reasons', expected.planted.reasons, (fact, pointer) => fact.state === 'open' && fact.why === pointer.why);
 
-    const checked = factsOf(history);
+    const checked = checkedFactsOf(history);
     const window = history.map((fact, index) => ({ fact, index })).filter(({ fact }) => fact.state === 'open' && ['goal', 'now', 'needs', 'decisions', 'next', 'rules'].includes(fact.section)).slice(0, checked.length);
     const keepNow = window.filter(({ fact }) => BLOCKING.has(fact.section)).map(({ index }) => index);
     if (JSON.stringify(keepNow) !== JSON.stringify(expected.must_keep.map((pointer) => pointer.index))) fail(id, 'must_keep is not the blocking facts of the plugin window');

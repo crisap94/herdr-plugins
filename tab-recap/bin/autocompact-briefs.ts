@@ -11,7 +11,7 @@ import { HarnessBrief } from '#src/adapters/job/brief.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { compactionMaterialInput } from '#src/recap/application/compaction-material.ts';
 import { coverageLabelInstructions, coverageLabelsIn } from '#src/experiment/label-prompt.ts';
-import { factsOf } from '#src/recap/application/brief-coverage.ts';
+import { checkedFactsOf } from '#src/recap/application/brief-coverage.ts';
 import { sectionsOf } from '#src/experiment/coverage.ts';
 import { pooledBy } from '#src/experiment/pool.ts';
 import { drawsOf, shuffledBy } from '#src/experiment/seeded.ts';
@@ -30,7 +30,7 @@ const MIN_FACTS = 5;
 const SEED = 42;
 
 export function briefPoints(points: readonly Point[]): readonly Point[] {
-    return shuffledBy(points.filter((point) => point.stratum === 'high' && factsOf(point.history).length >= MIN_FACTS), drawsOf(must(parseCount(SEED)))).slice(0, BRIEFS);
+    return shuffledBy(points.filter((point) => point.stratum === 'high' && checkedFactsOf(point.history).length >= MIN_FACTS), drawsOf(must(parseCount(SEED)))).slice(0, BRIEFS);
 }
 
 const documentOf = (point: Point): string => compactionMaterialInput({
@@ -48,7 +48,7 @@ export async function labelBriefs(dir: string, runtime: HarnessRuntime): Promise
         const began = Date.now();
         const written = await (writers[lane] as HarnessBrief).write(textOf(documentOf(point)));
         if (isUnknown(written)) { log(`${point.id.slice(0, 8)}: no brief (${saying(written.why)})`); return; }
-        const facts = factsOf(point.history);
+        const facts = checkedFactsOf(point.history);
         const asked = facts.map((fact, n) => ({ n, ...fact }));
         const made = await labeller.ask(coverageLabelInstructions(), { brief: written.text, facts: asked }, (reply) => { const found = coverageLabelsIn(reply, asked.map((fact) => ({ n: must(parseFactIndex(fact.n)), reason: fact.section === 'decisions' && fact.why !== null ? 'yes' : 'no' }))); return found === null ? null : Object.fromEntries([...found].map(([n, label]) => [String(n), label])); }, asText(point.id.slice(0, 8)));
         if (made.answer === null) { log(`${point.id.slice(0, 8)}: no coverage labels (${made.why ?? '?'})`); return; }

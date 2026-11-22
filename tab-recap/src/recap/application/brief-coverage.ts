@@ -6,18 +6,20 @@ import { must } from '#src/protocol/result.ts';
 import { parseCheckedFact, type CheckedFact } from '#src/recap/domain/autocompact.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import type { Probability } from '#src/recap/domain/probability.ts';
+import { parseProbability, type Probability } from '#src/recap/domain/probability.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { Usd } from '#src/recap/domain/usd.ts';
 import type { Section } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
 
-export type { Coverage, CoverageFact, MissingFact } from './legacy.ts';
-export { correctionOf, covered, factsOf, linesOf, missingOf, questionsFor } from './legacy.ts';
-
 const COVERED: ReadonlySet<Section> = new Set<Section>(['goal', 'now', 'needs', 'decisions', 'next', 'rules']);
 const BLOCKING: ReadonlySet<Section> = new Set<Section>(['goal', 'needs', 'decisions', 'rules']);
 export const FACTS_CHECKED = 40;
-export const KEPT_AT_LEAST = 0.70;
+export const probabilityRequired = (found: Probability | null): Probability => {
+    if (found === null) throw new RangeError('not a probability');
+    return found;
+};
+
+export const KEPT_AT_LEAST: Probability = probabilityRequired(parseProbability(0.70));
 
 export type MissingPart = 'text' | 'reason';
 
