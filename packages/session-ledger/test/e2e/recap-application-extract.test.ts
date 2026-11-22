@@ -9,8 +9,8 @@ const text = brand<string, 'Text'>;
 
 const ground: Ground = {
     gates: [], now: instant(10 * 3_600_000), facts: new Map(),
-    resolving: { tasks: ['t1'], agents: [], taskOf: new Map(), turns: [], clock: { now: 10 * 3_600_000, zone: 'UTC' } },
-    grounds: [{ key: 't1', tab: 'w1:t1', shown: new Map(), open: [], closedLately: [], source: 'go', language: 'en', agents: [] }],
+    resolving: { tasks: [text('t1')], agents: [], taskOf: new Map(), turns: [], clock: { now: instant(10 * 3_600_000), zone: text('UTC') } },
+    grounds: [{ key: text('t1'), tab: text('w1:t1'), shown: new Map(), open: [], closedLately: [], source: text('go'), language: text('en'), agents: [] }],
 };
 
 const request: RecapRequest = { input: { tab: { id: 'w1:t1', now: 10 * 3_600_000, zone: 'UTC' }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] }, language: 'en', previousLanguage: 'en' };

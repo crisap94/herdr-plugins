@@ -12,6 +12,7 @@ import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
 import { factOf } from './fakes/facts.ts';
 import { requestOf } from './support.ts';
 
+const textOf = brand<string, 'Text'>;
 const NOW = 10 * 3_600_000;
 const released = factOf('done', 'Released tab-recap 1.10.0 through the pipeline');
 const review = factOf('next', 'Review the migration test');
@@ -19,8 +20,8 @@ const shut = factOf('done', 'Merged the lint fix', { state: 'closed', closedWhy:
 const numbering = numbered([{ key: brand<string, 'Text'>('t1'), open: [released, review], closed: [shut] }], [], severalOf(false), { kind: 'full' }, instant(0));
 const ground: Ground = {
     gates: LEDGER_GATES, now: instant(NOW), facts: new Map(numbering.ledgers.flatMap((ledger) => ledger.facts.map((fact) => [brand<string, 'Text'>(fact.id), fact] as const))),
-    resolving: { tasks: ['t1'], agents: [], taskOf: numbering.taskOf, turns: [], clock: { now: NOW, zone: 'UTC' } },
-    grounds: [{ key: 't1', tab: 'w1:t1', shown: numbering.shown.get(brand<string, 'Text'>('t1')) ?? new Map(), open: [released, review], closedLately: [shut], source: 'go', language: 'en', agents: [] }],
+    resolving: { tasks: [textOf('t1')], agents: [], taskOf: numbering.taskOf, turns: [], clock: { now: instant(NOW), zone: textOf('UTC') } },
+    grounds: [{ key: textOf('t1'), tab: textOf('w1:t1'), shown: numbering.shown.get(textOf('t1')) ?? new Map(), open: [released, review], closedLately: [shut], source: textOf('go'), language: textOf('en'), agents: [] }],
 };
 const add = (section: string, text: string): Record<string, unknown> => ({ op: 'add', section, text, anchor: 'go' });
 const ops = (...list: readonly Record<string, unknown>[]): string => JSON.stringify({ ops: list });

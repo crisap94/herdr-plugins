@@ -19,6 +19,10 @@ import { closeEvidenceGate } from '../../packages/session-ledger/src/recap/domai
 import { LEDGER_GATES } from '../../packages/session-ledger/src/recap/domain/gates/ledger-gates.ts';
 import { FRESH_ITEMS, FRESH_SEED, guardOf, overlapOf } from '../lib/fresh.ts';
 import { PROJECTS } from './dataset-vocabulary.ts';
+import { brand } from '../../packages/session-ledger/src/recap/domain/brand.ts';
+import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
+
+const textOf = brand<string, 'Text'>;
 
 interface KeyFact { readonly k: string; readonly section: string; readonly accept_sections: readonly string[]; readonly text: string; readonly why: string | null; readonly span: string; readonly why_span: string | null; readonly entry: number; readonly at: string; readonly via_update_of: string | null }
 
@@ -74,21 +78,21 @@ function groundOf(request: RecapRequest): { resolving: Resolving; ground: TaskGr
     const facts = input.ledgers.flatMap((ledger) => ledger.facts).map((fact) => factOf(fact, input.tab.id, request.previousLanguage));
     const entries = input.transcripts.flatMap((lane) => lane.entries);
     return {
-        resolving: { tasks: [TASK], agents: input.agents, taskOf: new Map(), turns: entries.flatMap((entry) => (entry.at === undefined ? [] : [entry.at])), clock: { now: input.tab.now, zone: input.tab.zone } },
+        resolving: { tasks: [textOf(TASK)], agents: input.agents, taskOf: new Map(), turns: entries.flatMap((entry) => (entry.at === undefined ? [] : [instant(entry.at)])), clock: { now: instant(input.tab.now), zone: textOf(input.tab.zone) } },
         ground: {
-            key: TASK, tab: input.tab.id, shown: new Map(facts.map((fact) => [String(fact.id), fact])), open: facts.filter((fact) => fact.state === 'open'),
-            closedLately: facts.filter((fact) => fact.state === 'closed' && (fact.closedAt ?? 0) >= input.tab.now - DAY), source: anchorSource(input), language: request.language,
-            agents: input.agents.flatMap((agent) => [agent.id, agent.label, agent.kind]).filter((name) => name !== '').map((name) => name.toLowerCase()),
+            key: textOf(TASK), tab: textOf(input.tab.id), shown: new Map(facts.map((fact) => [textOf(String(fact.id)), fact])), open: facts.filter((fact) => fact.state === 'open'),
+            closedLately: facts.filter((fact) => fact.state === 'closed' && (fact.closedAt ?? 0) >= input.tab.now - DAY), source: textOf(anchorSource(input)), language: textOf(request.language),
+            agents: input.agents.flatMap((agent) => [agent.id, agent.label, agent.kind]).filter((name) => name !== '').map((name) => textOf(name.toLowerCase())),
         },
     };
 }
 
 function gated(request: RecapRequest, text: string): { kind: string; problems: readonly string[]; refused: readonly string[]; flagged: number; kept: number } {
     const { resolving, ground } = groundOf(request);
-    const answer = parseAnswer(text, resolving);
+    const answer = parseAnswer(textOf(text), resolving);
     if (answer.kind !== 'ops') return { kind: answer.kind, problems: [], refused: [], flagged: 0, kept: 0 };
-    const judged = judge(LEDGER_GATES, forTask(answer.ops, TASK), ground, request.input.tab.now);
-    const flaggedAll = LEDGER_GATES.flatMap((gate) => gate.check(forTask(answer.ops, TASK), { now: request.input.tab.now, shown: ground.shown, open: ground.open, closedLately: ground.closedLately, source: ground.source, language: ground.language, agents: ground.agents })).filter((finding) => finding.outcome === 'flag');
+    const judged = judge(LEDGER_GATES, forTask(answer.ops, textOf(TASK)), ground, instant(request.input.tab.now));
+    const flaggedAll = LEDGER_GATES.flatMap((gate) => gate.check(forTask(answer.ops, textOf(TASK)), { now: request.input.tab.now, shown: ground.shown, open: ground.open, closedLately: ground.closedLately, source: ground.source, language: ground.language, agents: ground.agents })).filter((finding) => finding.outcome === 'flag');
     const flagged = flaggedAll.length;
     if (process.env['SHOW_FLAGS'] === '1') for (const finding of flaggedAll) process.stdout.write(`flag ${finding.gate}: ${finding.reason}\n`);
     return { kind: 'ops', problems: answer.problems, refused: judged.refused.map((finding) => `${finding.gate} op ${finding.at}: ${finding.reason}`), flagged, kept: judged.kept.length };
@@ -99,17 +103,17 @@ type Gates = Parameters<typeof judge>[0];
 // The gate findings that refuse an answer; empty when the answer does not parse (the parse check reports that).
 function refusalsOf(request: RecapRequest, text: string, gates: Gates): readonly string[] {
     const { resolving, ground } = groundOf(request);
-    const answer = parseAnswer(text, resolving);
+    const answer = parseAnswer(textOf(text), resolving);
     if (answer.kind !== 'ops') return [];
-    return judge(gates, forTask(answer.ops, TASK), ground, request.input.tab.now).refused.map((finding) => `${finding.gate} op ${finding.at}: ${finding.reason}`);
+    return judge(gates, forTask(answer.ops, textOf(TASK)), ground, instant(request.input.tab.now)).refused.map((finding) => `${finding.gate} op ${finding.at}: ${finding.reason}`);
 }
 
 // The file to check: argv[2], or the committed dataset. A copy named dataset-fresh.jsonl gets the fresh checks.
 function closeEvidenceRefuses(request: RecapRequest, text: string): boolean {
     const { resolving, ground } = groundOf(request);
-    const answer = parseAnswer(text, resolving);
+    const answer = parseAnswer(textOf(text), resolving);
     if (answer.kind !== 'ops') return false;
-    return judge([closeEvidenceGate], forTask(answer.ops, TASK), ground, request.input.tab.now).refused.length > 0;
+    return judge([closeEvidenceGate], forTask(answer.ops, textOf(TASK)), ground, instant(request.input.tab.now)).refused.length > 0;
 }
 
 const target = process.argv[2] ?? fileURLToPath(new URL('./dataset.jsonl', import.meta.url));

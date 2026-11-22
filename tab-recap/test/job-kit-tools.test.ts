@@ -8,17 +8,19 @@ import { callOf, submitted } from '#src/recap/application/job-kit/writer-tools.t
 import type { CallVerdict, KitGround } from '#src/recap/application/job-kit/writer-tools.ts';
 import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { factOf } from './fakes/facts.ts';
 
+const textOf = brand<string, 'Text'>;
 const NOW = 10 * 3_600_000;
 const f1 = factOf('next', 'Review the migration test');
 const ground: KitGround = {
     gates: LEDGER_GATES,
     at: instant(NOW),
-    task: { key: 't1', tab: 'w1:t1', shown: new Map([['f1', f1]]), open: [f1], closedLately: [], source: 'the pipeline went green and the release was tagged', language: 'en', agents: [] },
+    task: { key: textOf('t1'), tab: textOf('w1:t1'), shown: new Map([[textOf('f1'), f1]]), open: [f1], closedLately: [], source: textOf('the pipeline went green and the release was tagged'), language: textOf('en'), agents: [] },
 };
-const call = (op: Operation): Tasked => ({ task: 't1', op });
+const call = (op: Operation): Tasked => ({ task: textOf('t1'), op });
 const good = call({ op: 'add', section: 'next', text: 'Write the writer tools', why: null, ref: null, at: null, agent: null, anchor: 'the pipeline went green' });
 
 const refusedBy = (verdict: CallVerdict): readonly string[] => {
@@ -55,5 +57,5 @@ test('a good add is accepted and is live in the stage', () => {
 test('submitted of a stage with ops X equals judge over X with the same ground', () => {
     const ops: readonly Operation[] = [good.op, { op: 'close', id: 'f1', why: 'done' }];
     const stage: Stage = { job: 'writer', calls: ops.map(call), state: 'open' };
-    assert.deepEqual(submitted(stage, ground), judge(LEDGER_GATES, ops, ground.task, NOW));
+    assert.deepEqual(submitted(stage, ground), judge(LEDGER_GATES, ops, ground.task, instant(NOW)));
 });

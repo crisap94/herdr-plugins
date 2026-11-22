@@ -1,18 +1,4 @@
 {
-  "src/recap/application/ops-answer.ts": {
-    "parameter": 7,
-    "return": 11,
-    "property": 5,
-    "container": 17,
-    "assertion": 2
-  },
-  "src/recap/application/ops-gating.ts": {
-    "parameter": 3,
-    "return": 3,
-    "property": 6,
-    "container": 10,
-    "assertion": 4
-  },
   "src/recap/application/recap-job.ts": {
     "parameter": 1
   }

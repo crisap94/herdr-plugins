@@ -14,6 +14,10 @@ import type { CloseEvidence } from '../../packages/session-ledger/src/recap/doma
 import { apply, type Operation } from '../../packages/session-ledger/src/recap/domain/ops.ts';
 import type { Answer, Graded, JudgeView, Mark } from '../lib/types.ts';
 import { transcriptOf, type WriterItem } from './prompt.ts';
+import { brand } from '../../packages/session-ledger/src/recap/domain/brand.ts';
+import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
+
+const textOf = brand<string, 'Text'>;
 
 const TASK = 't1';
 const DAY = 24 * 3_600_000;
@@ -34,11 +38,11 @@ export function groundOf(request: RecapRequest): { readonly resolving: Resolving
     const facts = input.ledgers.flatMap((ledger) => ledger.facts).map((fact) => factOf(fact, input.tab.id, request.previousLanguage));
     const entries = input.transcripts.flatMap((lane) => lane.entries);
     return {
-        resolving: { tasks: [TASK], agents: input.agents, taskOf: new Map(), turns: entries.flatMap((entry) => (entry.at === undefined ? [] : [entry.at])), clock: { now: input.tab.now, zone: input.tab.zone } },
+        resolving: { tasks: [textOf(TASK)], agents: input.agents, taskOf: new Map(), turns: entries.flatMap((entry) => (entry.at === undefined ? [] : [instant(entry.at)])), clock: { now: instant(input.tab.now), zone: textOf(input.tab.zone) } },
         ground: {
-            key: TASK, tab: input.tab.id, shown: new Map(facts.map((fact) => [String(fact.id), fact])), open: facts.filter((fact) => fact.state === 'open'),
-            closedLately: facts.filter((fact) => fact.state === 'closed' && (fact.closedAt ?? 0) >= input.tab.now - DAY), source: anchorSource(input), language: request.language,
-            agents: input.agents.flatMap((agent) => [agent.id, agent.label, agent.kind]).filter((name) => name !== '').map((name) => name.toLowerCase()),
+            key: textOf(TASK), tab: textOf(input.tab.id), shown: new Map(facts.map((fact) => [textOf(String(fact.id)), fact])), open: facts.filter((fact) => fact.state === 'open'),
+            closedLately: facts.filter((fact) => fact.state === 'closed' && (fact.closedAt ?? 0) >= input.tab.now - DAY), source: textOf(anchorSource(input)), language: textOf(request.language),
+            agents: input.agents.flatMap((agent) => [agent.id, agent.label, agent.kind]).filter((name) => name !== '').map((name) => textOf(name.toLowerCase())),
         },
     };
 }
@@ -61,14 +65,14 @@ export function outcomeOf(item: WriterItem, text: string, closeEvidence?: CloseE
     const known = cache.get(key);
     if (known !== undefined) return known;
     const { resolving, ground } = groundOf(item.input);
-    const answer = parseAnswer(unfenced(text), resolving);
+    const answer = parseAnswer(textOf(unfenced(text)), resolving);
     let found: Outcome;
     if (answer.kind !== 'ops') {
         found = { kind: answer.kind, why: answer.kind === 'invalid' ? answer.why : 'the answer has the old recap shape', problems: [], given: [], refused: [], kept: [], ledger: [...ground.shown.values()], ground };
     } else {
         const now = item.input.input.tab.now;
-        const given = forTask(answer.ops, TASK);
-        const judged = judge(closeEvidence === 'on' ? [...LEDGER_GATES, closeEvidenceGate] : LEDGER_GATES, given, ground, now);
+        const given = forTask(answer.ops, textOf(TASK));
+        const judged = judge(closeEvidence === 'on' ? [...LEDGER_GATES, closeEvidenceGate] : LEDGER_GATES, given, ground, instant(now));
         const out = new Set(judged.refused.map((finding) => finding.at));
         let made = 0;
         const folded = apply([...ground.shown.values()], judged.kept, { id: 'eval' as RunId, task: { tab: ground.tab, key: TASK }, at: now, language: item.input.language, mint: () => `eval-${(made += 1)}` as FactId });

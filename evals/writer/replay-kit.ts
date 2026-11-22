@@ -10,6 +10,9 @@ import { readJsonl, runDir } from '../lib/runner.ts';
 import type { Answer } from '../lib/types.ts';
 import { loadItems } from './prompt.ts';
 import { groundOf } from './scoring.ts';
+import { brand } from '../../packages/session-ledger/src/recap/domain/brand.ts';
+
+const textOf = brand<string, 'Text'>;
 
 // Replays every stored writer answer through the job-kit batch driver and
 // through the direct judge, then compares kept, refused and gated byte for byte.
@@ -46,11 +49,11 @@ for (const row of readJsonl<Answer>(file)) {
     const item = items.get(row.id);
     if (item === undefined) throw new Error(`${NAME}: answer ${row.id} has no item in ${dataset}`);
     const { resolving, ground } = groundOf(item.input);
-    const parsed = parseAnswer(unfenced(row.text), resolving);
+    const parsed = parseAnswer(textOf(unfenced(row.text)), resolving);
     if (parsed.kind !== 'ops') continue;
     const now = item.input.input.tab.now;
     const ops = forTask(parsed.ops, ground.key);
-    const direct = judge(LEDGER_GATES, ops, ground, now);
+    const direct = judge(LEDGER_GATES, ops, ground, instant(now));
     const kit = batch('writer', { gates: LEDGER_GATES, task: ground, at: instant(now) }, ops);
     const differing = FIELDS.filter((field) => JSON.stringify(direct[field]) !== JSON.stringify(kit[field]));
     const counts = tally.get(row.config) ?? { answers: 0, differ: 0 };

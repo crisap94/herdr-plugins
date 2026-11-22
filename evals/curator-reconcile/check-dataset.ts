@@ -11,6 +11,10 @@ import type { Operation } from '../../packages/session-ledger/src/recap/domain/o
 import { quotedIn } from '../../packages/session-ledger/src/recap/domain/quote.ts';
 import { EVIDENCE_CHARS, reconciliationOf } from '../../packages/session-ledger/src/recap/domain/reconciliation.ts';
 import { FRESH_ITEMS, FRESH_SEED, guardOf, overlapOf } from '../lib/fresh.ts';
+import { brand } from '../../packages/session-ledger/src/recap/domain/brand.ts';
+import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
+
+const textOf = brand<string, 'Text'>;
 
 // A trap of the fresh set: one wrong answer the item tempts (see dataset-source/fresh.ts). Ids are document ids.
 interface TrapOp {
@@ -151,11 +155,11 @@ for (const row of rows) {
     if (row.plants.includes('update') !== (update.length > 0)) fail('update plant and expected updates disagree');
     if (row.tags.includes('no-op-expected') !== (close.length + update.length + twins.length === 0)) fail('no-op tag is wrong');
 
-    const ground = { key: 'k', tab: 't', shown: built.facts, open: [...built.facts.values()], closedLately: [], source: '', language: row.input.language, agents: ['claude', row.input.name.toLowerCase()] };
+    const ground = { key: textOf('k'), tab: textOf('t'), shown: new Map([...built.facts].map(([id, fact]) => [textOf(id), fact])), open: [...built.facts.values()], closedLately: [], source: textOf(''), language: textOf(row.input.language), agents: [textOf('claude'), textOf(row.input.name.toLowerCase())] };
     const gatedOf = (answer: object): { refused: readonly string[]; gates: number; kept: number } => {
         const checked = reconciliationOf(JSON.stringify(answer), built.facts, built.tail);
         const ops: Operation[] = checked.ops.map((one) => (one.op === 'close' ? { op: 'close', id: one.id, why: one.why } : { op: 'update', id: one.id, text: one.text, why: one.why }));
-        const gated = judge(LEDGER_GATES, ops, ground, row.input.clock.now);
+        const gated = judge(LEDGER_GATES, ops, ground, instant(row.input.clock.now));
         return { refused: checked.refused, gates: gated.refused.filter((finding) => finding.outcome === 'refuse').length, kept: gated.kept.length };
     };
     const oracle = { ops: [

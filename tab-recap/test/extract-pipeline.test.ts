@@ -18,13 +18,14 @@ import { factOf } from '#test/fakes/facts.ts';
 import { longTurn, START } from '#test/fakes/long-turn.ts';
 import { requestOf } from '#test/support.ts';
 
+const textOf = brand<string, 'Text'>;
 const NOW = START + 3_600_000;
 const open = factOf('next', 'Review the migration test');
 const numbering = numbered([{ key: brand<string, 'Text'>('t1'), open: [open], closed: [] }], [], severalOf(false), { kind: 'full' }, instant(0));
 const ground: Ground = {
     gates: LEDGER_GATES, now: instant(NOW), facts: new Map(numbering.ledgers.flatMap((ledger) => ledger.facts.map((each) => [brand<string, 'Text'>(each.id), each] as const))),
-    resolving: { tasks: ['t1'], agents: [], taskOf: numbering.taskOf, turns: [], clock: { now: NOW, zone: 'UTC' } },
-    grounds: [{ key: 't1', tab: 'w1:t1', shown: numbering.shown.get(brand<string, 'Text'>('t1')) ?? new Map(), open: [open], closedLately: [], source: foldedOf('Add retries to the uploader Added a retry with backoff in src/upload.ts. git commit -m "uploader: retry"'), language: 'en', agents: [] }],
+    resolving: { tasks: [textOf('t1')], agents: [], taskOf: numbering.taskOf, turns: [], clock: { now: instant(NOW), zone: textOf('UTC') } },
+    grounds: [{ key: textOf('t1'), tab: textOf('w1:t1'), shown: numbering.shown.get(textOf('t1')) ?? new Map(), open: [open], closedLately: [], source: textOf(foldedOf('Add retries to the uploader Added a retry with backoff in src/upload.ts. git commit -m "uploader: retry"')), language: textOf('en'), agents: [] }],
 };
 const SMALL: readonly Entry[] = [
     { role: 'user', text: 'Add retries to the uploader', at: START },
