@@ -230,6 +230,7 @@
       "test/autocompact-style-service.test.ts",
       "test/autocompact-style-wiring.test.ts",
       "test/autocompact-style.test.ts",
+      "test/autocompact-timing-ports.test.ts",
       "test/autocompact-typed-ledger.test.ts",
       "test/autocompact-verdict.test.ts",
       "test/autocompact-world.ts",

@@ -1,6 +1,7 @@
 import { knownOr } from '#src/ports/guarded-reads.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { Autocompact, type Waiting } from '#src/recap/application/autocompact.ts';
+import { ACTIVE, type LaneActivity, type LaneRecapReadiness, type TimingEvent } from '#src/recap/application/autocompact-gates.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
@@ -53,16 +54,35 @@ interface AutocompactParts {
     log(line: Text): void;
 }
 
+const emitTo = (events: LaneEvents, event: TimingEvent): void => {
+    if (event.kind === 'session-skipped') events.lane(event.pane, 'autocompact-skipped', event.gate);
+    else events.lane(event.pane, 'autocompact-decided', `${event.verdict}-${event.share}`);
+};
+
+const activityOf = (parts: AutocompactParts): LaneActivity => ({
+    activeFor: (tab, pane) => (parts.store.compactions.shownFor(tab).some((record) => record.pane === pane && ACTIVE.has(record.stage)) || parts.claims.has(pane) || parts.store.requests.compactQueued(tab, pane) ? 'active' : 'idle'),
+    automaticInProgress: () => (parts.store.compactions.autoInProgress() ? 'in-progress' : 'idle'),
+});
+
+const readinessOf = (parts: AutocompactParts): LaneRecapReadiness => {
+    const refresh = refreshVia(parts.recaps, parts.store.records);
+    return {
+        ensure: async (tab) => {
+            await parts.recaps.flush(tab, 'autocompact');
+            const recap = knownOr(parts.store.records.readRecap(tab), null);
+            if (!(recap !== null && hasRecap(recap))) await refresh(tab, lanesOf(parts.informer.current, tabId(tab)));
+        },
+    };
+};
+
 export function wireAutocompact(parts: AutocompactParts): Autocompact {
     const { store } = parts;
     const flight = new TranscriptInFlight(parts.transcripts);
     const read = parts.config ?? loadConfig;
     return new Autocompact({
-        policy: () => read().autocompact, tuning: (): CompactTuning => compactTuningOf(read().tuning), idleHold: () => read().holdIdle, decider: parts.decider, contexts: parts.contexts, inFlight: (lane) => flightOf(flight, lane), awaiting: parts.awaiting ?? awaitingPane, events: parts.events, recent: (lane) => parts.recent.of(lane), startedAt: instant(Date.now() - process.uptime() * 1000),
-        ledger: store.ledger, boundaries: store.boundaries, compactions: store.compactions, decisions: store.decisions, requests: store.requests, claims: parts.claims, queue: store.requests,
-        hasRecap: (tab) => { const recap = knownOr(store.records.readRecap(tab), null); return recap !== null && hasRecap(recap) ? 'recapped' : 'unrecapped'; },
-        refresh: refreshVia(parts.recaps, store.records),
-        flush: (tab, why): Promise<void> => parts.recaps.flush(tab, why),
-        lanes: (tab) => lanesOf(parts.informer.current, tabId(tab)), now: () => instant(Date.now()), log: (line) => { parts.log(line); },
+        policy: () => read().autocompact, tuning: (): CompactTuning => compactTuningOf(read().tuning), idleHold: () => read().holdIdle, decider: parts.decider, contexts: parts.contexts, inFlight: (lane) => flightOf(flight, lane), awaiting: parts.awaiting ?? awaitingPane, emit: (event) => { emitTo(parts.events, event); }, recent: (lane) => parts.recent.of(lane), startedAt: instant(Date.now() - process.uptime() * 1000),
+        ledger: store.ledger, sessions: { lastBreakAt: (tab, pane) => { const at = store.boundaries.lastBreakAt(tab, pane); return at === null ? null : instant(at); } }, activity: activityOf(parts), decisions: store.decisions, request: (ask) => { store.requests.requestCompact(ask); },
+        recaps: readinessOf(parts),
+        now: () => instant(Date.now()), log: (line) => { parts.log(line); },
     });
 }

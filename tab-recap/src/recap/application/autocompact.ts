@@ -1,11 +1,6 @@
 import type { DecisionDraft, DecisionGate, DecisionLedger, DecisionMode, DecisionVerdict, SkipGate } from '#src/ports/autocompact-records.ts';
-import type { Boundaries } from '#src/ports/boundaries.ts';
-import type { CompactionView } from '#src/ports/compaction-records.ts';
 import type { DeciderPort } from '#src/ports/decider.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
-import type { CompactionQueue, Requests } from '#src/ports/requests.ts';
-import type { LaneClaims } from './lane-claims.ts';
-import type { RecapRefresh } from './recap-wait.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { isUnknown, saying, type Unknown } from '#src/ports/unknowable.ts';
 import { READY } from '#src/recap/domain/status.ts';
@@ -24,14 +19,11 @@ import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { autocompactState } from './autocompact-state.ts';
 import { QUESTIONS } from './autocompact-questions.ts';
-import { busyOf, detailOf, gateBusyOf, gateSamenessOf, flightTextOf, recheckDue, unchangedOf, type CeilingReach, type Recheck } from './autocompact-gates.ts';
+import { busyOf, detailOf, gateBusyOf, gateSamenessOf, flightTextOf, recheckDue, unchangedOf, type CeilingReach, type CompactionAsk, type LaneActivity, type LaneRecapReadiness, type LaneSignals, type Recheck, type TimingEvent } from './autocompact-gates.ts';
 import { lineOf, moneyOf, type Effect } from './autocompact-line.ts';
 import { flightOf, flightReason, holdsLane, NOT_AWAITING, NOTHING_IN_FLIGHT, awaitedNames, unreadable, type Flight, type Observed } from '#src/recap/domain/in-flight.ts';
 import { continuationNote, type ContinuationNote } from '#src/recap/domain/continuation-note.ts';
-import type { LaneEvents } from './lane-events.ts';
 import { busyDetailOf, coverageBackoffActive, idleEligibility, idleMsOf, policyForLane, reachOf, type Asking, type DeciderHealth, type Marks, type Stop } from './autocompact-shapes.ts';
-
-type RecapState = 'recapped' | 'unrecapped';
 
 export type Waiting = { readonly kind: 'clear' } | { readonly kind: 'waiting'; readonly value: Text } | Unknown;
 
@@ -45,20 +37,15 @@ export interface AutocompactDeps {
     readonly contexts: ContextsOf;
     inFlight(lane: Lane): Promise<Observed>;
     awaiting?(pane: PaneId): Promise<Waiting>;
-    readonly events?: LaneEvents;
+    emit?(event: TimingEvent): void;
     recent(lane: Lane): Promise<readonly Entry[]>;
     readonly ledger: Pick<Ledger, 'historyOf'>;
-    readonly boundaries: Pick<Boundaries, 'lastBreakAt'>;
-    readonly compactions: Pick<CompactionView, 'shownFor' | 'autoInProgress'>;
+    readonly sessions: LaneSignals;
+    readonly activity: LaneActivity;
     readonly decisions: Pick<DecisionLedger, 'record' | 'skip' | 'markRequested' | 'pruneSkips' | 'lastDecisionAt' | 'lastDecision' | 'unlinkedCompactSince' | 'unlinkedCompactAny'>;
     readonly startedAt: Instant;
-    readonly requests: Pick<Requests, 'requestCompact'>;
-    readonly claims: Pick<LaneClaims, 'has'>;
-    readonly queue: CompactionQueue;
-    hasRecap(tab: TabId): RecapState;
-    refresh: RecapRefresh;
-    flush(tab: TabId, why: 'autocompact'): Promise<void>;
-    lanes(tab: TabId): readonly Lane[];
+    request(ask: CompactionAsk): void;
+    readonly recaps: LaneRecapReadiness;
     now(): Instant;
     log(line: Text): void;
 }
@@ -109,11 +96,10 @@ function decisionWhy(judged: Judged, flight: Flight, atCeiling: CeilingReach): T
 }
 
 function marksOf(deps: AutocompactDeps, tab: TabId, pane: PaneId): Marks {
-    const breakAt = deps.boundaries.lastBreakAt(tab, pane);
     const decidedAt = deps.decisions.lastDecisionAt(tab, pane);
     return {
         last: deps.decisions.lastDecision(tab, pane),
-        lastBreakAt: breakAt === null ? null : instant(breakAt),
+        lastBreakAt: deps.sessions.lastBreakAt(tab, pane),
         lastDecisionAt: decidedAt === null ? null : instant(decidedAt),
     };
 }
@@ -187,7 +173,7 @@ export class Autocompact {
         this.deps.decisions.skip({ tab: lane.tab, pane, agent: lane.agent, at: this.deps.now(), gate, share, detail });
         if (this.skipped.get(pane) === gate) return;
         this.skipped.set(pane, gate);
-        this.deps.events?.lane(pane, 'autocompact-skipped', gate);
+        this.deps.emit?.({ kind: 'session-skipped', pane, gate });
         this.deps.log(must(parseText(`autocompact ${pane}: ${share === null ? '? %' : `${share} %`} → skip ${gate}${detail === null ? '' : ` (${detail})`}`)));
     }
 
@@ -214,8 +200,7 @@ export class Autocompact {
         if (use === null) { this.skip(lane, 'no-context', null, NO_CONTEXT); return; }
         const { gate, effect, detail, flight, atCeiling } = await this.gated(lane, policy, use, tuning, forced);
         if (gate !== 'ask' && gate !== 'ceiling') { this.skip(lane, gate, shareCount(use), detail); return; }
-        await deps.flush(tab, 'autocompact');
-        if (deps.hasRecap(tab) === 'unrecapped') await deps.refresh(tab, deps.lanes(tab));
+        await deps.recaps.ensure(tab);
         const judged = gate === 'ceiling' ? CEILING : await this.asking(lane, tuning);
         const seen = await this.lateFlight(lane, use, flight, atCeiling);
         if (seen === null) return;
@@ -256,14 +241,14 @@ export class Autocompact {
         };
         const id = deps.decisions.record(made);
         this.skipped.delete(pane);
-        deps.events?.lane(pane, 'autocompact-decided', `${judged.verdict}-${shareOf(use)}`);
+        deps.emit?.({ kind: 'safe-point-decided', pane, verdict: judged.verdict, share: shareCount(use) });
         deps.log(must(parseText(lineOf(made, effect))));
         if (asksForCompaction(found.mode, judged.verdict, effect) === 'asks') this.request(tab, pane, id, continuationNote(flight.awaiting, flight.background));
     }
 
     private request(tab: TabId, pane: PaneId, id: DecisionId, note: ContinuationNote | null): void {
         this.asked.set(pane, this.deps.now());
-        this.deps.requests.requestCompact({ tab, pane, note, origin: 'auto' });
+        this.deps.request({ tab, pane, note, origin: 'auto' });
         this.deps.decisions.markRequested(id);
     }
 
