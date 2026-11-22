@@ -2,15 +2,19 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseAnswer } from '#src/recap/application/ops-answer.ts';
 import type { Resolving } from '#src/recap/application/ops-answer.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { agentOf } from '#test/support.ts';
 
+const textOf = brand<string, 'Text'>;
 const NOW = Date.parse('2026-10-07T17:00:00Z');
-const at = (clock: string): number => Date.parse(`2026-10-07T${clock}:00Z`);
+const at = (clock: string): Instant => instant(Date.parse(`2026-10-07T${clock}:00Z`));
 const resolving: Resolving = {
-    tasks: ['t1', 't2'], agents: [agentOf('a1', { label: 'orchestrator' }), agentOf('a2')], taskOf: new Map([['f1', 't1'], ['f7', 't2']]),
-    turns: [at('16:41'), at('16:55'), Date.parse('2026-10-05T09:10:00Z')], clock: { now: NOW, zone: 'UTC' },
+    tasks: [textOf('t1'), textOf('t2')], agents: [agentOf('a1', { label: 'orchestrator' }), agentOf('a2')], taskOf: new Map([[textOf('f1'), textOf('t1')], [textOf('f7'), textOf('t2')]]),
+    turns: [at('16:41'), at('16:55'), instant(Date.parse('2026-10-05T09:10:00Z'))], clock: { now: instant(NOW), zone: textOf('UTC') },
 };
-const parse = (value: unknown): ReturnType<typeof parseAnswer> => parseAnswer(typeof value === 'string' ? value : JSON.stringify(value), resolving);
+const parse = (value: unknown): ReturnType<typeof parseAnswer> => parseAnswer(textOf(typeof value === 'string' ? value : JSON.stringify(value)), resolving);
 const opsOf = (answer: ReturnType<typeof parseAnswer>): readonly unknown[] => (answer.kind === 'ops' ? answer.ops : []);
 
 test('the three operations, with their fields tidied; a fenced answer or one wrapped in a sentence is found', () => {

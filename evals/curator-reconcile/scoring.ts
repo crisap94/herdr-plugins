@@ -6,6 +6,7 @@ import { quotedIn } from '../../packages/session-ledger/src/recap/domain/quote.t
 import { reconciliationOf, type Reconciled } from '../../packages/session-ledger/src/recap/domain/reconciliation.ts';
 import type { Answer, Graded, Mark } from '../lib/types.ts';
 import { builtOf, groundOf, type ReconcileItem } from './prompt.ts';
+import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
 
 export const CODE_CRITERIA: readonly string[] = ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8'];
 
@@ -51,7 +52,7 @@ export function checkedOf(item: ReconcileItem, text: string): Checked | null {
         if (prefix.ops.length > accepted.length) accepted.push(entries[size - 1] as Fields);
     }
     const ops = checked.ops.map(operationOf);
-    const gated = judge(LEDGER_GATES, ops, groundOf(item), item.input.clock.now);
+    const gated = judge(LEDGER_GATES, ops, groundOf(item), instant(item.input.clock.now));
     const refusals = gated.refused.filter((finding) => finding.outcome === 'refuse');
     const out = new Set(refusals.map((finding) => finding.at));
     const kept = checked.ops.flatMap((op, at) => (out.has(at) ? [] : [{ op, evidence: textOf(accepted[at]?.['evidence']), into: textOf(accepted[at]?.['into']) }]));

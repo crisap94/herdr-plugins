@@ -9,12 +9,14 @@ import type { Extracted, Ground } from '#src/recap/application/extract-job.ts';
 import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
 import { scratchDir } from '#test/db/support.ts';
 import { requestOf } from './support.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { instant } from '#src/recap/domain/time.ts';
 
+const textOf = brand<string, 'Text'>;
 const ground: Ground = {
     gates: LEDGER_GATES, now: instant(1), facts: new Map(),
-    resolving: { tasks: ['t1'], agents: [], taskOf: new Map(), turns: [], clock: { now: 1, zone: 'UTC' } },
-    grounds: [{ key: 't1', tab: 'w1:t1', shown: new Map(), open: [], closedLately: [], source: 'go', language: 'en', agents: [] }],
+    resolving: { tasks: [textOf('t1')], agents: [], taskOf: new Map(), turns: [], clock: { now: instant(1), zone: textOf('UTC') } },
+    grounds: [{ key: textOf('t1'), tab: textOf('w1:t1'), shown: new Map(), open: [], closedLately: [], source: textOf('go'), language: textOf('en'), agents: [] }],
 };
 
 async function through(script: string): Promise<Extracted> {

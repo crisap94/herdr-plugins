@@ -24,7 +24,7 @@ test('groundOf and judge refuse an add that repeats an open fact hidden by prune
     const operation: Operation = { op: 'add', section: 'done', text: hidden.text, why: null, ref: null, at: null, agent: null, anchor: null };
     const taskGround = ground.grounds[0];
     assert.ok(taskGround);
-    const result = judge(ground.gates, [operation], taskGround, NOW);
+    const result = judge(ground.gates, [operation], taskGround, brand<number, 'Instant'>(NOW));
     assert.equal(result.kept.length, 0);
     assert.match(result.refused.find((finding) => finding.gate === 'G2')?.reason ?? '', /already recorded and hidden \("Released tab-recap 1\.10\.0 through the pipeline"\): drop the add/);
     assert.deepEqual(taskGround.open, [shown, hidden]);
