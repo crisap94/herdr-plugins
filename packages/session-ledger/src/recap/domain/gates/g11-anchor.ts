@@ -1,9 +1,16 @@
-import { brand } from '../brand.ts';
-import { textOf } from '../text.ts';
+import { brand, type Brand } from '../brand.ts';
+import { textOf, type Text } from '../text.ts';
 import type { Finding, Gate, GateContext } from './gate.ts';
-import { ANCHOR_CHARS, anchorQuotedIn as quotedIn } from '../legacy.ts';
+import { foldedOf } from './words.ts';
 
-export { ANCHOR_CHARS, anchorQuotedIn as quotedIn } from '../legacy.ts';
+export const ANCHOR_CHARS = 120;
+
+export type Quoted = Brand<boolean, 'Quoted'>;
+
+export function quotedIn(anchor: Text, source: Text): Quoted {
+    const folded = foldedOf(anchor);
+    return brand<boolean, 'Quoted'>(folded !== '' && ` ${source} `.includes(` ${folded} `));
+}
 
 const MISSING = textOf(`the anchor is missing: copy a quote of at most ${ANCHOR_CHARS} characters from the turn, tool call or note the fact comes from`);
 

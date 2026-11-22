@@ -8,6 +8,8 @@ import type { Fact } from '@stateforge-labs/session-ledger/unstable/recap/domain
 import type { Operation } from '@stateforge-labs/session-ledger/unstable/recap/domain/ops.ts';
 import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import type { InputFact } from '@stateforge-labs/session-ledger/unstable/ports/recap-input.ts';
+import { factIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const text = brand<string, 'Text'>;
 const count = brand<number, 'Count'>;
@@ -37,12 +39,12 @@ test('an answer without a JSON object or an ops list is invalid, and an old-shap
     assert.deepEqual(parseAnswer(text('{"other":1}'), resolving), { kind: 'invalid', why: 'the JSON object has no "ops" list' });
 });
 
-const fact: Fact = { id: brand<string, 'FactId'>('fact-1'), task: { tab: 'w1:t1', key: 't1' }, section: 'next', text: 'ship the uploader', why: null, ref: null, agent: null, anchor: null, firstAt: 1, lastAt: 1, state: 'open', closedWhy: null, closedAt: null, language: 'en', };
+const fact: Fact = { id: brand<string, 'FactId'>('fact-1'), task: { tab: tabIdOf('w1:t1'), key: textOf('t1') }, section: 'next', text: textOf('ship the uploader'), why: null, ref: null, agent: null, anchor: null, firstAt: instant(1), lastAt: instant(1), state: 'open', closedWhy: null, closedAt: null, language: textOf('en'), };
 
 const ground: TaskGround = { key: text('t1'), tab: text('w1:t1'), shown: new Map([[text('f1'), fact]]), open: [fact], closedLately: [], source: text('ship the uploader'), language: text('en'), agents: [] };
 
-const closeUnknown: Operation = { op: 'close', id: 'f9', why: 'done' };
-const closeKnown: Operation = { op: 'close', id: 'f1', why: 'done' };
+const closeUnknown: Operation = { op: 'close', id: factIdOf('f9'), why: 'done' };
+const closeKnown: Operation = { op: 'close', id: factIdOf('f1'), why: 'done' };
 
 test('judging resolves shown ids to fact ids, refuses what the ledger refuses and counts the refusals', () => {
     const judged = judge([], [closeKnown, closeUnknown], ground, instant(5));

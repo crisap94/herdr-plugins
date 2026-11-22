@@ -13,6 +13,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import { agentKind } from '#src/recap/domain/ids.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 const claude = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 'sess-1', cwd: '/repo' });
 const codex = laneFrom({ paneId: 'w1:p2', tabId: 'w1:t1', workspaceId: 'w1', agent: 'codex', cwd: '/repo' });
@@ -74,10 +75,10 @@ test('an agent with no reader of its own is unknown', async () => {
 
 test('autocompact folds a not-started reading into unknown with the same words', async () => {
     const port: InFlight = { read: (): Promise<InFlightReading> => Promise.resolve({ kind: 'not-started', why: 'the transcript of sess-1 not found' }) };
-    assert.deepEqual(await flightOf(port, claude), unreadable(flightReason('the transcript of sess-1 not found')));
+    assert.deepEqual(await flightOf(port, claude), unreadable(flightReason(textOf('the transcript of sess-1 not found'))));
 });
 
 test('autocompact states a count as running', async () => {
     const port: InFlight = { read: (): Promise<InFlightReading> => Promise.resolve({ kind: 'count', count: 3, background: [] }) };
-    assert.deepEqual(await flightOf(port, claude), observedFrom(runningCount(3), [], flightReason('3 running')));
+    assert.deepEqual(await flightOf(port, claude), observedFrom(runningCount(countOf(3)), [], flightReason(textOf('3 running'))));
 });

@@ -12,6 +12,7 @@ import { linked } from './linked.ts';
 import type { Group } from './groups.ts';
 import { coloured, elapsed, plainMarkdown, visibleLength, wrap } from './wrap.ts';
 import type { Style } from './wrap.ts';
+import { countOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/count.ts';
 
 export type Markdown = (markdown: string, width: number) => readonly string[] | null;
 
@@ -61,7 +62,7 @@ function promptLines(lane: Row, width: number, style: Style): string[] {
 }
 
 function contextHint(lane: Row, view: TextColumnView): string[] {
-    const percent = hintFor(lane.context, view.compactHint ?? null);
+    const percent = hintFor(lane.context, view.compactHint === undefined || view.compactHint === null ? null : countOf(view.compactHint));
     const window = lane.context === null || lane.context === undefined ? '' : sizeOf(lane.context.window);
     if (percent === null) {
         return [];

@@ -5,6 +5,8 @@ import { tabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { typeIdOf } from '#src/adapters/db/typeid.ts';
 import { expectSameRows, withParity } from './parity.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const keyOf = (n: number): Uint8Array => Uint8Array.from({ length: 16 }, () => n);
 const literal = (n: number): string => `X'${Buffer.from(keyOf(n)).toString('hex')}'`;
@@ -16,7 +18,7 @@ const CLOSED_SQL = `${FACT_SELECT} AND f.state = 'closed' AND f.closed_at >= ?3 
 const EVERY_SQL = `${FACT_SELECT} ORDER BY f.first_at, f.id`;
 const KEYS_SQL = 'SELECT DISTINCT k.key FROM fact f JOIN task k ON k.id = f.task_id WHERE k.tab_id = ? ORDER BY k.key';
 
-const TASK = { tab: 't1', key: 'k1' };
+const TASK = { tab: tabIdOf('t1'), key: textOf('k1') };
 
 const factRow = (row: Record<string, unknown>, task: typeof TASK): Record<string, unknown> => ({
     id: typeIdOf('fact', row['id'] as Uint8Array), task, section: row['section'], text: row['text'], why: row['why'], ref: row['ref'], agent: row['agent'], anchor: row['anchor'],

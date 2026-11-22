@@ -32,7 +32,7 @@ const STAGES: readonly (readonly [string, Partial<CompactionRecord>, number])[] 
 ];
 
 const column = (m: Messages, record: CompactionRecord, now: number): string[] => {
-    const tab = { tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'Victoria', cwd: null, context: { tokens: 600_000, window: 1_000_000, source: 'catalogue' as const } }] };
+    const tab = { tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'Victoria', cwd: null, context: { tokens: countOf(600_000), window: countOf(1_000_000), source: 'catalogue' as const } }] };
     return present({ tab, recap: blankRecap(tabId('w1:t1')), notes: new Map(), warnings: [], now, messages: m, compactHint: 40, compactions: [record], style: plain }, 44, () => null).slice(1, 4).filter((line) => line !== '');
 };
 
@@ -94,7 +94,7 @@ for (const [locale, m] of [['en', en], ['es', es]] as const) {
 }
 
 test('the stage replaces the hint while it is shown and the hint is back after; the bar goes back to the usual headline', () => {
-    const tab = { tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'Victoria', cwd: null, context: { tokens: 600_000, window: 1_000_000, source: 'catalogue' as const } }] };
+    const tab = { tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'Victoria', cwd: null, context: { tokens: countOf(600_000), window: countOf(1_000_000), source: 'catalogue' as const } }] };
     const view = { tab, recap: blankRecap(tabId('w1:t1')), notes: new Map(), warnings: [], now: 0, messages: en, compactHint: 40, style: plain };
     assert.match(present(view, 44, () => null).join('\n'), /compact\? 60% of 1M/);
     const shown = present({ ...view, compactions: [base] }, 44, () => null).join('\n');
@@ -123,7 +123,7 @@ test('the stage is coloured: yellow while it runs, green when done (the template
 });
 
 test('numbers: the short token form; a pair needs both counts, a missing number is left out, never guessed; the clock is m:ss from the stage start', () => {
-    assert.deepEqual([812, 1000, 3057, 39_532, 100_000, 554_888, 1_000_000, 1_250_000].map(tokensOf), ['812', '1k', '3.1k', '39.5k', '100k', '554.9k', '1M', '1.3M']);
+    assert.deepEqual([812, 1000, 3057, 39_532, 100_000, 554_888, 1_000_000, 1_250_000].map((size) => tokensOf(countOf(size))), ['812', '1k', '3.1k', '39.5k', '100k', '554.9k', '1M', '1.3M']);
     assert.deepEqual(said(39_532, 3057, 15_588), { pair: '39.5k → 3.1k', tokens: '39.5k → 3.1k tokens', took: '16 s' });
     assert.deepEqual(said(39_532, null, null), { pair: '', tokens: '', took: '' });
     assert.deepEqual(said(null, 3057, 59_400), { pair: '', tokens: '', took: '59 s' });

@@ -70,11 +70,11 @@ test('the recap text is tidied, its JSON object is read, and its headline is the
     assert.equal(answerTextOf(textOf('{"a":1}')), '{"a":1}');
     assert.equal(answerTextOf(textOf('here: {"goal":"x"}')), '{"goal":"x"}');
     assert.equal(answerTextOf(textOf('plain words')), 'plain words');
-    const sections = { ...NO_SECTIONS, goal: 'Ship', needs: ['Approve it'], now: ['Testing'] };
+    const sections = { ...NO_SECTIONS, goal: textOf('Ship'), needs: [textOf('Approve it')], now: [textOf('Testing')] };
     assert.equal(renderRecap(sections, 'en').split('\n')[0], '## Goal');
     assert.match(renderRecap(sections, 'en'), /- Approve it/u);
     assert.deepEqual(headlineOf(sections), { kind: 'needs', text: 'Approve it' });
-    assert.deepEqual(headlineOf({ ...NO_SECTIONS, now: ['Testing'] }), { kind: 'now', text: 'Testing' });
+    assert.deepEqual(headlineOf({ ...NO_SECTIONS, now: [textOf('Testing')] }), { kind: 'now', text: 'Testing' });
     assert.equal(headlineOf(NO_SECTIONS), null);
 });
 

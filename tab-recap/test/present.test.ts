@@ -150,7 +150,7 @@ const withSections = (sections: Partial<RecapSections>, language = 'en'): Return
     ({ ...blankRecap(tabId('w1:t1')), language: textOf(language), tasks: oneTask('stale rendering that must not be shown', { ...NO_SECTIONS, ...sections }), at: instant(0) });
 
 test('a recap with sections is drawn from them: all seven headings, in the interface language, — for the empty ones', () => {
-    const recap = withSections({ goal: 'Ship the uploader', now: ['Running CI'] }, 'en');
+    const recap = withSections({ goal: textOf('Ship the uploader'), now: [textOf('Running CI')] }, 'en');
     const draw = (messages: typeof en): string => present({ tab: tabOf('idle', 'x'), recap, notes: new Map(), warnings: [], now: 0, messages }, 60, noGlow).join('\n');
     const english = draw(en);
     for (const heading of ['GOAL', 'NOW', 'NEEDS YOU', 'DONE', 'DECISIONS', 'NEXT', 'LINKS']) {
@@ -168,18 +168,18 @@ const bar = (recap: ReturnType<typeof blankRecap>, messages: typeof en, status =
     presentBar({ tab: tabOf(status, null), recap, notes: new Map(), warnings: [], now: 0, messages }, 70)[0] ?? '';
 
 test('the bar reads its headline from the data: needs you first, then now, then nothing', () => {
-    assert.match(bar(withSections({ needs: ['approve the deploy'], now: ['running CI'] }), en), /needs you: approve the deploy/);
-    assert.match(bar(withSections({ needs: ['aprueba el despliegue'], now: ['ejecutando CI'] }, 'es'), es), /te necesita: aprueba el despliegue/);
-    const calm = bar(withSections({ now: ['running CI'] }), en, 'working');
+    assert.match(bar(withSections({ needs: [textOf('approve the deploy')], now: [textOf('running CI')] }), en), /needs you: approve the deploy/);
+    assert.match(bar(withSections({ needs: [textOf('aprueba el despliegue')], now: [textOf('ejecutando CI')] }, 'es'), es), /te necesita: aprueba el despliegue/);
+    const calm = bar(withSections({ now: [textOf('running CI')] }), en, 'working');
     assert.match(calm, /running CI/);
     assert.doesNotMatch(calm, /needs you/);
     assert.match(bar(withSections({}), en, 'idle'), /no recap yet/);
 });
 
 test('the bar says all done when the recap is written and every fact is done, and no recap yet only when nothing is written', () => {
-    assert.match(bar(withSections({ done: ['Added backoff'] }), en, 'idle'), /all done/);
-    assert.doesNotMatch(bar(withSections({ done: ['Added backoff'] }), en, 'idle'), /no recap yet/);
-    assert.match(bar(withSections({ done: ['agregar reintento'], goal: 'Subir el archivo' }, 'es'), es, 'idle'), /todo hecho/);
+    assert.match(bar(withSections({ done: [textOf('Added backoff')] }), en, 'idle'), /all done/);
+    assert.doesNotMatch(bar(withSections({ done: [textOf('Added backoff')] }), en, 'idle'), /no recap yet/);
+    assert.match(bar(withSections({ done: [textOf('agregar reintento')], goal: textOf('Subir el archivo') }, 'es'), es, 'idle'), /todo hecho/);
     assert.match(presentBar({ tab: tabOf('idle', null), recap: null, notes: new Map(), warnings: [], now: 0, messages: en }, 70)[0] ?? '', /no recap yet/);
 });
 
@@ -195,7 +195,7 @@ const exploding = (): never => { throw new Error('glow must not lay out the fixe
 const plain = (lines: readonly string[]): string[] => lines.map((line) => line.replace(new RegExp(`${String.fromCodePoint(0x1b)}\\[[0-9;]*m`, 'g'), ''));
 
 test('the recap body: exactly one blank line between sections, none between a heading and its first line — whatever renderer is installed', () => {
-    const recap = withSections({ goal: 'Ship it', now: ['Running CI'], done: ['Added backoff'] });
+    const recap = withSections({ goal: textOf('Ship it'), now: [textOf('Running CI')], done: [textOf('Added backoff')] });
     const lines = plain(present({ tab: tabOf('idle', 'x'), recap, notes: new Map(), warnings: [], now: 0, messages: en }, 60, exploding));
     const at = lines.indexOf('GOAL');
     assert.deepEqual(lines.slice(at), [

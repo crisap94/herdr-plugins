@@ -15,14 +15,16 @@ import { instant } from '#src/recap/domain/time.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
+import { paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 const MIN = 60_000;
-const T1 = { tab: 'w1:t1', key: 't1' };
-const view: TabView = { tab: 'w1:t1', column: null, at: NOW, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'orchestrator', cwd: null, context: { tokens: 100_000, window: 200_000, source: 'agent' }, web: { base: 'https://git.example/acme/shop', forge: 'gitlab', branch: 'main' } }] };
+const T1 = { tab: tabIdOf('w1:t1'), key: textOf('t1') };
+const view: TabView = { tab: 'w1:t1', column: null, at: NOW, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'orchestrator', cwd: null, context: { tokens: countOf(100_000), window: countOf(200_000), source: 'agent' }, web: { base: 'https://git.example/acme/shop', forge: 'gitlab', branch: 'main' } }] };
 
 function setup(ledger = new MemoryLedger().seed(fact('f1', 'now', 'Running the tests', NOW - 20 * MIN))): { model: ExpandedModel; ledger: MemoryLedger; store: ReturnType<typeof memoryStore>; asked: string[] } {
     const store = memoryStore();
-    seed(store, { ...blankRecap(tabId('w1:t1')), at: instant(NOW - 3 * 60 * MIN), lanes: [cursor('w1:p1')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'], sections: null, markdown: '## Goal\n- x' }] });
+    seed(store, { ...blankRecap(tabId('w1:t1')), at: instant(NOW - 3 * 60 * MIN), lanes: [cursor('w1:p1')], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')], sections: null, markdown: textOf('## Goal\n- x') }] });
     const asked: string[] = [];
     const deps: ExpandedDeps = { records: store.records, ledger, stories: store.stories, session: store.session, boundaries: store.boundaries, requests: { requestCurate: (tab) => { asked.push(tab); } }, edits: () => [{ path: 'src/a.ts', count: 3 }] };
     return { model: new ExpandedModel(deps), ledger, store, asked };
@@ -31,7 +33,7 @@ function setup(ledger = new MemoryLedger().seed(fact('f1', 'now', 'Running the t
 test('the view is built from the store alone: the task\'s facts, the session facts from the store and the lanes, the lanes\' webs', () => {
     const { model, store } = setup();
     assert.equal(model.read('w1:t1', view, NOW).session.runs, null, 'the imported run is not a turn');
-    recordOps(store, { tab: tabId('w1:t1'), at: instant(NOW - MIN), cause: 'turn-ended', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }], ops: [] });
+    recordOps(store, { tab: tabId('w1:t1'), at: instant(NOW - MIN), cause: 'turn-ended', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')] }], ops: [] });
     const data = model.read('w1:t1', view, NOW);
     assert.deepEqual(data.tasks.map((task) => [task.name, task.facts.map((one) => one.text), task.story]), [['', ['Running the tests'], null]]);
     assert.deepEqual(data.session.agents, [{ label: 'claude · orchestrator', share: 50, window: 200_000 }]);
@@ -78,7 +80,7 @@ test('a story as new as the ledger asks for nothing; another change asks again; 
 
 test('a task with no facts has nothing to curate; a closed fact is a change too', () => {
     assert.equal(newestChange([]), null);
-    const closed = fact('f1', 'now', 'x', 100, { state: 'closed', closedWhy: 'done', closedAt: 900, lastAt: 100 });
+    const closed = fact('f1', 'now', 'x', 100, { state: 'closed', closedWhy: 'done', closedAt: instant(900), lastAt: instant(100) });
     assert.equal(newestChange([closed, fact('f2', 'now', 'y', 500)]), 900);
     const { model, asked } = setup(new MemoryLedger());
     assert.equal(model.read('w1:t1', view, NOW).tasks[0]?.curating, false);

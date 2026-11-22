@@ -1,7 +1,7 @@
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 
 type ListSection = 'now' | 'needs' | 'done' | 'decisions' | 'next' | 'links' | 'rules';
 export type Section = 'goal' | ListSection;
@@ -31,5 +31,5 @@ export function itemsOf(sections: RecapSections): readonly ItemRow[] {
 
 export function sectionsOf(rows: readonly ItemRow[]): RecapSections {
     const lines = (section: Section): Text[] => rows.filter((row) => row.section === section).toSorted(byPosition).map((row) => row.text);
-    return { goal: lines('goal')[0] ?? '', now: lines('now'), needs: lines('needs'), done: lines('done'), decisions: lines('decisions'), next: lines('next'), links: lines('links'), rules: lines('rules') };
+    return { goal: textOf(lines('goal')[0] ?? ''), now: lines('now'), needs: lines('needs'), done: lines('done'), decisions: lines('decisions'), next: lines('next'), links: lines('links'), rules: lines('rules') };
 }

@@ -9,6 +9,7 @@ import type { TaskShape } from '#src/recap/domain/grouping.ts';
 import type { Ground } from './extract-job.ts';
 import { anchorSource } from './anchor-source.ts';
 import type { Built } from './recap-input.ts';
+import { tabIdOf } from '#src/recap/domain/lane-shape.ts';
 
 const REPEAT_WINDOW_MS = 24 * 3_600_000;
 
@@ -30,12 +31,12 @@ export function groundOf(world: GroundWorld): Ground {
         gates: LEDGER_GATES, now, facts: new Map(built.input.ledgers.flatMap((ledger) => ledger.facts.map((fact) => [brand<string, 'Text'>(fact.id), fact] as const))),
         resolving: {
             tasks: tasks.map((task) => brand<string, 'Text'>(task.id)), agents: built.input.agents, taskOf: built.numbering.taskOf,
-            turns: world.entries.flatMap((entry) => (entry.at === undefined ? [] : [instant(entry.at)])), clock: { now, zone: brand<string, 'Text'>(built.input.tab.zone) },
+            turns: world.entries.flatMap((entry) => (entry.at === undefined ? [] : [entry.at])), clock: { now, zone: brand<string, 'Text'>(built.input.tab.zone) },
         },
         grounds: tasks.map((task) => ({
             key: brand<string, 'Text'>(task.id), tab, shown: built.numbering.shown.get(brand<string, 'Text'>(task.id)) ?? new Map(),
-            open: world.ledger.openOf({ tab, key: task.id }),
-            closedLately: world.ledger.recentlyClosed({ tab, key: task.id }, instant(now - REPEAT_WINDOW_MS)), source, language: world.language, agents,
+            open: world.ledger.openOf({ tab: tabIdOf(tab), key: task.id }),
+            closedLately: world.ledger.recentlyClosed({ tab: tabIdOf(tab), key: task.id }, instant(now - REPEAT_WINDOW_MS)), source, language: world.language, agents,
         })),
     };
 }

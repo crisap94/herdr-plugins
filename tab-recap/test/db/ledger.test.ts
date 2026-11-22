@@ -14,15 +14,17 @@ import { instant } from '#src/recap/domain/time.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
+import { paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { factIdOf } from '#src/recap/domain/fact.ts';
 
-const TASK = { tab: 'w1:t1', key: 't1' };
-const add = (section: 'done' | 'next' | 'decisions' | 'goal', text: string, why: string | null = null): Operation => ({ op: 'add', section, text, why, ref: null, at: null, agent: null });
+const TASK = { tab: tabIdOf('w1:t1'), key: textOf('t1') };
+const add = (section: 'done' | 'next' | 'decisions' | 'goal', text: string, why: string | null = null): Operation => ({ op: 'add', section, text: textOf(text), why: why === null ? null : textOf(why), ref: null, at: null, agent: null });
 const run = (at: number, ops: readonly Operation[]): RunInput => ({
-    tab: tabId('w1:t1'), at: instant(at), cause: 'requested', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }], ops: [{ task: 't1', ops }],
+    tab: tabId('w1:t1'), at: instant(at), cause: 'requested', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')] }], ops: [{ task: textOf('t1'), ops }],
 });
 const ref = (db: ReturnType<typeof memoryStore>['db'], at: number): RunRef => {
     const row = db.prepare('SELECT id FROM run ORDER BY id DESC LIMIT 1').get() as { id: Uint8Array };
-    return { id: typeIdOf('run', row.id) as RunId, task: TASK, at, language: 'en', mint: mintFactId };
+    return { id: typeIdOf('run', row.id) as RunId, task: TASK, at: instant(at), language: textOf('en'), mint: mintFactId };
 };
 
 test('open facts come newest last seen first, the order of adding breaking a tie; closed ones leave openOf and show in recentlyClosed and allOf', () => {
@@ -41,8 +43,8 @@ test('open facts come newest last seen first, the order of adding breaking a tie
 
 test('keysOf: the tasks of the tab that have ever had facts, closed or not; another tab\'s are not', () => {
     const store = memoryStore(); const { ledger } = store;
-    recordOps(store, { ...run(100, []), tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }, { id: 't2', name: '', lanes: [] }], ops: [{ task: 't2', ops: [add('done', 'x')] }, { task: 't1', ops: [add('done', 'y')] }] });
-    recordOps(store, { ...run(200, []), tab: tabId('w1:t2'), ops: [{ task: 't1', ops: [add('done', 'z')] }] });
+    recordOps(store, { ...run(100, []), tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')] }, { id: textOf('t2'), name: textOf(''), lanes: [] }], ops: [{ task: textOf('t2'), ops: [add('done', 'x')] }, { task: textOf('t1'), ops: [add('done', 'y')] }] });
+    recordOps(store, { ...run(200, []), tab: tabId('w1:t2'), ops: [{ task: textOf('t1'), ops: [add('done', 'z')] }] });
     assert.deepEqual(storeRead(ledger.keysOf(tabId('w1:t1'))), ['t1', 't2']);
     assert.deepEqual(storeRead(ledger.keysOf(tabId('w1:t9'))), []);
 });
@@ -55,7 +57,7 @@ test('apply through the port: the fold\'s result is stored, refusals come back, 
     assert.deepEqual(first.refused, []);
     const [fact] = first.changed;
     assert.ok(fact !== undefined);
-    const again = repo.apply(ref(db, 150), [{ op: 'close', id: 'fct_missing', why: 'done' }, { op: 'update', id: fact.id, text: 'Merge !34 today', why: null }]);
+    const again = repo.apply(ref(db, 150), [{ op: 'close', id: factIdOf('fct_missing'), why: 'done' }, { op: 'update', id: fact.id, text: textOf('Merge !34 today'), why: null }]);
     assert.deepEqual(again.refused.map((refusal) => refusal.reason), ['unknown-id']);
     assert.deepEqual(storeRead(ledger.openOf(TASK)).map((each) => [each.text, each.firstAt, each.lastAt]), [['Merge !34 today', 100, 150]]);
     assert.equal((db.prepare('SELECT COUNT(*) AS n FROM fact WHERE born_run = last_run').get() as { n: number }).n, 1);
@@ -121,12 +123,12 @@ test('a goal add closes the previous goal as superseded; the column shows the op
 
 test('history: every fact of the agent\'s tasks, open and closed, with why and dates; other tasks and panes stay out; newest first', () => {
     const store = memoryStore(); const { ledger } = store;
-    recordOps(store, { ...run(100, []), lanes: [cursor('w1:p1'), cursor('w1:p2')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }, { id: 't2', name: '', lanes: ['w1:p2'] }], ops: [
-        { task: 't1', ops: [add('decisions', 'Use SQLite', 'one file to back up'), add('done', 'a')] }, { task: 't2', ops: [add('decisions', 'Other pane decision', 'not ours')] },
+    recordOps(store, { ...run(100, []), lanes: [cursor('w1:p1'), cursor('w1:p2')], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')] }, { id: textOf('t2'), name: textOf(''), lanes: [paneIdOf('w1:p2')] }], ops: [
+        { task: textOf('t1'), ops: [add('decisions', 'Use SQLite', 'one file to back up'), add('done', 'a')] }, { task: textOf('t2'), ops: [add('decisions', 'Other pane decision', 'not ours')] },
     ] });
     const decision = storeRead(ledger.openOf(TASK)).find((fact) => fact.section === 'decisions');
     assert.ok(decision !== undefined);
-    recordOps(store, { ...run(200, [{ op: 'close', id: decision.id, why: 'superseded' }, add('decisions', 'Use SQLite and WAL', 'readers never block')]), lanes: [cursor('w1:p1'), cursor('w1:p2')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }, { id: 't2', name: '', lanes: ['w1:p2'] }] });
+    recordOps(store, { ...run(200, [{ op: 'close', id: decision.id, why: 'superseded' }, add('decisions', 'Use SQLite and WAL', 'readers never block')]), lanes: [cursor('w1:p1'), cursor('w1:p2')], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')] }, { id: textOf('t2'), name: textOf(''), lanes: [paneIdOf('w1:p2')] }] });
     const items = ledger.historyOf(tabId('w1:t1'), paneId('w1:p1'));
     assert.deepEqual(items.map((item) => [item.text, item.state, item.closedWhy, item.why]), [
         ['Use SQLite', 'closed', 'superseded', 'one file to back up'], ['Use SQLite and WAL', 'open', null, 'readers never block'], ['a', 'open', null, null],
@@ -141,7 +143,7 @@ test('history: every fact of the agent\'s tasks, open and closed, with why and d
 test('history: at most 300 facts; finished and referring facts are cut first, decisions and open questions last', () => {
     const store = memoryStore(); const { ledger } = store;
     for (let at = 1; at <= 60; at += 1) {
-        recordOps(store, run(at, opsOfSections({ ...NO_SECTIONS, decisions: [`d${at}: because`], needs: [`q${at}`], done: [`x${at}a`, `x${at}b`], links: [`l${at}a`, `l${at}b`], next: [`n${at}`] })));
+        recordOps(store, run(at, opsOfSections({ ...NO_SECTIONS, decisions: [textOf(`d${at}: because`)], needs: [textOf(`q${at}`)], done: [textOf(`x${at}a`), textOf(`x${at}b`)], links: [textOf(`l${at}a`), textOf(`l${at}b`)], next: [textOf(`n${at}`)] })));
     }
     const items = ledger.historyOf(tabId('w1:t1'), paneId('w1:p1'));
     const count = (...names: string[]): number => items.filter((item) => names.includes(item.section)).length;

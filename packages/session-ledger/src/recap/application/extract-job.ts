@@ -1,3 +1,4 @@
+import type { Instant } from '#src/recap/domain/time.ts';
 import type { Usd } from '#src/contract/kernel.ts';
 import { brand, type Brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
@@ -14,7 +15,6 @@ import { forTask, keptOf, refusedIn, retryFor } from './ops-gating.ts';
 import type { Judged, TaskGround } from './ops-gating.ts';
 import type { JobContract } from '#src/recap/domain/backend.ts';
 import { batch } from './job-kit/batch.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
 
 const ATTEMPTS = 2;
 
@@ -46,7 +46,7 @@ const OLD_HINT = textOf('you answered a recap; answer operations on the ledger o
 const gatesFor = (ground: Ground, contract: JobContract): readonly Gate[] => (contract === 'free-text' ? ground.gates.filter((gate) => gate.id !== 'G11') : ground.gates);
 
 function judged(ground: Ground, ops: readonly Tasked[], contract: JobContract): readonly Judged[] {
-    return ground.grounds.map((each) => batch('writer', { gates: gatesFor(ground, contract), task: each, at: instant(ground.now) }, forTask(ops, each.key)));
+    return ground.grounds.map((each) => batch('writer', { gates: gatesFor(ground, contract), task: each, at: ground.now }, forTask(ops, each.key)));
 }
 
 interface Outcome {
@@ -88,11 +88,11 @@ function round(text: Text, ground: Ground, turn: Turn): Round {
         return { kind: 'failed', error: OLD_CONTRACT };
     }
     if (answer.kind !== 'ops') {
-        return { kind: 'retry', follow: { correction: answer.kind === 'old-shape' ? OLD_HINT : textOf(answer.why) }, stats: turn.stats, fallback: null };
+        return { kind: 'retry', follow: { correction: answer.kind === 'old-shape' ? OLD_HINT : answer.why }, stats: turn.stats, fallback: null };
     }
     const each = judged(ground, [...turn.keep, ...answer.ops], turn.contract);
     const final: Outcome = {
-        tasks: each.map((one, at) => ({ task: ground.grounds[at]?.key ?? '', ops: one.kept })).filter((one) => one.ops.length > 0),
+        tasks: each.map((one, at) => ({ task: ground.grounds[at]?.key ?? textOf(''), ops: one.kept })).filter((one) => one.ops.length > 0),
         stats: each.reduce((all, one) => addStats(all, one.gated, brand<number, 'Count'>(one.refused.length)), turn.stats),
     };
     if (turn.retryLeft && (refusedIn(each) > 0 || answer.problems.length > 0)) {
@@ -119,10 +119,10 @@ export async function extract(summarizer: Summarizer, request: RecapRequest, gro
     for (let attempt = 0; attempt < ATTEMPTS; attempt += 1) {
         const written = await summarizer.write(asked(request, follow));
         if (isUnknown(written)) {
-            return fallback === null ? { kind: 'failed', error: textOf(saying(written.why)), cost } : settled(fallback, cost);
+            return fallback === null ? { kind: 'failed', error: saying(written.why), cost } : settled(fallback, cost);
         }
         cost = usd(cost + written.costUsd);
-        const next = round(textOf(written.text), ground, { contract: summarizer.contract, retryLeft: canRetry(attempt < ATTEMPTS - 1), stats, keep: keepOf(follow) });
+        const next = round(written.text, ground, { contract: summarizer.contract, retryLeft: canRetry(attempt < ATTEMPTS - 1), stats, keep: keepOf(follow) });
         if (next.kind === 'failed') {
             return { kind: 'failed', error: next.error, cost };
         }

@@ -9,12 +9,14 @@ import { commitFiles, makeRepo, scratch } from './fixtures/git-repo.ts';
 import { contextOf } from '#src/recap/domain/compaction.ts';
 import type { Observed } from '#src/recap/domain/compaction.ts';
 import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
+import { countOf } from '#src/recap/domain/count.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
-const seen = (model: string | null, window: number | null = null, tokens = 90_000, peak = tokens): Observed => ({ model, window, tokens, peak });
+const seen = (model: string | null, window: number | null = null, tokens = 90_000, peak = tokens): Observed => ({ model: model === null ? null : textOf(model), window: window === null ? null : countOf(window), tokens: countOf(tokens), peak: countOf(peak) });
 
 test('an unregistered screen kind has no context window basis without a stated window, and keeps its stated window', () => {
     const catalogue: ModelCatalogue = { windowOf: () => null };
-    const observed: Observed = { tokens: 1, peak: 1, window: 50, model: null };
+    const observed: Observed = { tokens: countOf(1), peak: countOf(1), window: countOf(50), model: null };
     assert.equal(windowOfKind('gemini', catalogue)({ ...observed, window: null }), null);
     assert.deepEqual(windowOfKind('gemini', catalogue)(observed), { window: 50, source: 'agent', sizes: [] });
 });
@@ -62,12 +64,12 @@ const rows: readonly Row[] = [
 
 for (const row of rows) {
     test(row.name, () => {
-        const catalogue: ModelCatalogue = { windowOf: () => row.catalogued };
-        assert.deepEqual(contextOf({ observed: row.observed, setting: row.setting }, windowOfKind(row.kind, catalogue)), row.expected, row.name);
+        const catalogue: ModelCatalogue = { windowOf: () => (row.catalogued === null ? null : countOf(row.catalogued)) };
+        assert.deepEqual(contextOf({ observed: row.observed, setting: row.setting === null ? null : countOf(row.setting) }, windowOfKind(row.kind, catalogue)), row.expected, row.name);
     });
 }
 
-const seenOf = (model: string | null): Observed => ({ model, window: null, tokens: 1, peak: 1 });
+const seenOf = (model: string | null): Observed => ({ model: model === null ? null : textOf(model), window: null, tokens: countOf(1), peak: countOf(1) });
 
 test('compaction with empty guidance still plans the bare command', () => {
     const result = compactionPlans.forKind('claude', '');

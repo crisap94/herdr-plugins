@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import { itemsOf, sectionsOf, type ItemRow } from '#src/adapters/db/sections-rows.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 
 test('sections ⇄ item rows: the goal is one row, a list one row per bullet, an empty section no rows', () => {
-    const sections = { goal: 'ship', now: ['a', 'b'], needs: [], done: ['x', 'y', 'z'], decisions: [], next: ['n'], links: ['f.ts'], rules: ['no force push'] };
+    const sections = { goal: textOf('ship'), now: [textOf('a'), textOf('b')], needs: [], done: [textOf('x'), textOf('y'), textOf('z')], decisions: [], next: [textOf('n')], links: [textOf('f.ts')], rules: [textOf('no force push')] };
     const rows = itemsOf(sections);
     assert.deepEqual(rows.filter((row) => row.section === 'goal'), [{ section: 'goal', position: 0, text: 'ship' }]);
     assert.equal(rows.filter((row) => row.section === 'needs').length, 0);

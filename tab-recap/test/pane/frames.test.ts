@@ -26,6 +26,7 @@ import type { Role } from '#src/wire/view/protocol.ts';
 import { recapRunningOf, type TabRecap } from '#src/ports/recap-records.ts';
 import { cursor, memoryStore, storeRead } from '#test/db/support.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
+import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const NOW = 1_800_000_000_000;
 const TAB = 'w1:t1';
@@ -42,7 +43,7 @@ const settle = (): Promise<void> => new Promise((resolve) => { setImmediate(reso
 const recapOf = (): TabRecap => ({
     tab: tabId(TAB),
     lanes: [cursor('w1:p1')],
-    tasks: [{ id: 't1', name: 'Build', lanes: ['w1:p1'], sections: null, markdown: '## Done\n\n- shipped the frame source' }],
+    tasks: [{ id: textOf('t1'), name: textOf('Build'), lanes: [paneIdOf('w1:p1')], sections: null, markdown: textOf('## Done\n\n- shipped the frame source') }],
     at: instant(NOW - 60_000),
     running: recapRunningOf(false),
     backend: textOf('claude'),

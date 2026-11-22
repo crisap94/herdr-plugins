@@ -5,7 +5,7 @@ import { sessionId } from '#src/recap/domain/ids.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffEvidence } from '#src/recap/domain/handoff-plan.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
+import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import { collapsedText } from '#src/recap/domain/text-collapse.ts';
 import type { CurrentSession } from './lane-recent.ts';
 import type { Ready } from './handoff-target.ts';
@@ -130,7 +130,7 @@ export class HandoffConfirmation {
                     return { kind: 'delivered' };
                 }
             } catch (error) {
-                this.deps.log(`handoff observe ${target.lane.pane}: ${failureCauseOf(error)}`);
+                this.deps.log(`handoff observe ${target.lane.pane}: ${failureCauseOf(parseThrown(error))}`);
                 return { kind: 'failed', reason: 'unconfirmed' };
             }
         }

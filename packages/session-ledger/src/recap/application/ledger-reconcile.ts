@@ -63,7 +63,7 @@ export interface ReconcileTask {
     readonly agents: readonly Text[];
 }
 
-const operationOf = (one: Reconciled): Operation => (one.op === 'close' ? { op: 'close', id: one.id, why: one.why } : { op: 'update', id: one.id, text: one.text, why: one.why });
+const operationOf = (one: Reconciled): Operation => (one.op === 'close' ? { op: 'close', id: brand<string, 'FactId'>(one.id), why: one.why } : { op: 'update', id: brand<string, 'FactId'>(one.id), text: one.text, why: one.why });
 const changes = (ops: readonly Operation[]): readonly (UpdateOp | CloseOp)[] => ops.flatMap((op) => (op.op === 'add' ? [] : [op]));
 
 type Reading = (answer: Curated) => Reconciliation;
@@ -91,7 +91,7 @@ async function repairedOf(parts: ReconcileParts, task: ReconcileTask, round: Rou
         return round.first;
     }
     const rechecked = round.reading(repair);
-    if (rechecked.refused.includes('the answer is not JSON')) {
+    if (rechecked.refused.some((why) => why === 'the answer is not JSON')) {
         parts.log(textOf(`${where}: reconcile repair refused — the answer is not JSON`));
         return round.first;
     }
@@ -121,12 +121,12 @@ export async function reconcileTask(parts: ReconcileParts, task: ReconcileTask):
     const reading: Reading = (answer) => {
         const text = answer.kind === 'curated' ? answer.text : '';
         const read = parseText(text);
-        return reconciliationOf(read.kind === 'ok' ? answerTextOf(read.value) : text, input.facts, input.tail);
+        return reconciliationOf(read.kind === 'ok' ? answerTextOf(read.value) : textOf(text), input.facts, input.tail);
     };
     const checked = reading(answered);
     checked.refused.forEach((why) => { parts.log(textOf(`${where}: reconcile refused — ${why}`)); });
     const openFacts = [...input.facts.values()].filter((fact) => fact.state === 'open');
-    const ground: TaskGround = { key: textOf(task.key), tab: textOf(task.tab), shown: input.facts, open: openFacts, closedLately: [], source: textOf(''), language: parts.language, agents: task.agents };
+    const ground: TaskGround = { key: task.key, tab: textOf(task.tab), shown: input.facts, open: openFacts, closedLately: [], source: textOf(''), language: parts.language, agents: task.agents };
     const first = batch('reconcile', { gates: LEDGER_GATES, task: ground, at: clock.now }, checked.ops.map(operationOf));
     first.refused.forEach((finding) => { parts.log(textOf(`${where}: reconcile refused — ${finding.gate} ${finding.reason}`)); });
     const gated = await repairedOf(parts, task, { sent: parseText(input.document), said: parseText(answered.text), reading, ground, checked, first });

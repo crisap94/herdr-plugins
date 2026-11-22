@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { environmentName, JOB_HARNESSES, jobEnvironmentNames } from '#src/recap/domain/backend.ts';
 import { scrubEnvironment, scrubbedEnv } from '#src/adapters/os/process/control.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const fixtureEnvironment: NodeJS.ProcessEnv = {
     HERDR_ENV: 'scrub',
@@ -41,7 +42,7 @@ test('scrubbedEnv preserves literal retained keys and removes literal scrub name
 });
 
 test('a harness declared extra name is included in the scrubbed set', () => {
-    const extra = environmentName('EXTRA_HARNESS_SECRET');
+    const extra = environmentName(textOf('EXTRA_HARNESS_SECRET'));
     const harnesses = [...JOB_HARNESSES, { job: { envScrub: [extra] } }];
     const names = jobEnvironmentNames(harnesses);
     assert.deepEqual(scrubEnvironment({ KEEP: '1', EXTRA_HARNESS_SECRET: '2' }, names), { KEEP: '1' });

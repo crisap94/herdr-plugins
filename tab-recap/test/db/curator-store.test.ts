@@ -23,6 +23,8 @@ import { cursor, memoryStore, must, openFixture, scratchDir, recordOps } from '.
 import { instant } from '#src/recap/domain/time.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
+import { paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { factIdOf } from '#src/recap/domain/fact.ts';
 
 const timeOf = (clock: string): number => Date.parse(`2026-10-07T${clock}:00Z`);
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'schema-v1.sql');
@@ -73,12 +75,12 @@ test('upgrading a database of version 6 backs it up as .v6.bak first', () => {
     }
 });
 
-const T1 = { tab: 'w1:t1', key: 't1' };
-const SHAPE = [{ id: 't1', name: '', lanes: ['w1:p1'] }];
-const adding = (text: string, section: AddOp['section'] = 'now'): AddOp => ({ op: 'add', section, text, why: section === 'decisions' ? 'a reason' : null, ref: null, at: null, agent: null });
+const T1 = { tab: tabIdOf('w1:t1'), key: textOf('t1') };
+const SHAPE = [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')] }];
+const adding = (text: string, section: AddOp['section'] = 'now'): AddOp => ({ op: 'add', section, text: textOf(text), why: section === 'decisions' ? textOf('a reason') : null, ref: null, at: null, agent: null });
 
 function writerRun(store: ReturnType<typeof memoryStore>, at: number, ops: readonly Operation[]): void {
-    recordOps(store, { tab: tabId('w1:t1'), at: instant(at), cause: 'turn-ended', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1', at)], tasks: SHAPE, ops: [{ task: 't1', ops }] });
+    recordOps(store, { tab: tabId('w1:t1'), at: instant(at), cause: 'turn-ended', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1', at)], tasks: SHAPE, ops: [{ task: textOf('t1'), ops }] });
 }
 
 test('a task has no story until the curator keeps one; the story keeps the run time it was begun at', () => {
@@ -96,7 +98,7 @@ test('the story and the merges land together: a ledger that fails leaves no stor
     writerRun(store, 10, [adding('a')]);
     const failing = Object.assign(new LedgerRepository(store.db), { apply: (): never => { throw new Error('disk full'); } });
     const stories = new StoriesRepository(store.db, failing);
-    assert.throws(() => stories.keep({ task: T1, at: instant(9), language: textOf('en') }, { story: unwrap(parseText('never stored')), merges: [{ op: 'close', id: 'fct_x', why: 'merged' }] }), /disk full/);
+    assert.throws(() => stories.keep({ task: T1, at: instant(9), language: textOf('en') }, { story: unwrap(parseText('never stored')), merges: [{ op: 'close', id: factIdOf('fct_x'), why: 'merged' }] }), /disk full/);
     assert.equal(stories.read('w1:t1', 't1'), null);
 });
 
@@ -122,7 +124,7 @@ test('a tab that has never run has nothing for a curator to attribute merges to'
 
 test('the real ledger stores what the view reads: a done fact is drawn when it happened, a fact closed wrong at its close, merged as such', () => {
     const store = memoryStore();
-    writerRun(store, timeOf('14:00'), [{ ...adding('Merged !34', 'done'), at: timeOf('13:40') }, adding('Add a retention sweep', 'next'), adding('Keep the guard out', 'decisions')]);
+    writerRun(store, timeOf('14:00'), [{ ...adding('Merged !34', 'done'), at: instant(timeOf('13:40')) }, adding('Add a retention sweep', 'next'), adding('Keep the guard out', 'decisions')]);
     const next = must(storeRead(store.ledger.allOf(T1)).find((each) => each.text === 'Add a retention sweep'));
     writerRun(store, timeOf('14:02'), [{ op: 'close', id: next.id, why: 'wrong' }]);
     const facts = storeRead(store.ledger.allOf(T1));

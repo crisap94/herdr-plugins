@@ -9,6 +9,7 @@ import { add, api, OTHER_TAB, seedOther, seedRun, seqOf, startWorld, TAB, TASK, 
 import { tabId } from '#src/recap/domain/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 interface Doc {
     readonly tasks: readonly { readonly regions: { readonly needs: readonly string[] }; readonly facts: readonly { readonly id: string; readonly section: string; readonly state: string; readonly closedWhy: string | null }[] }[];
@@ -121,10 +122,10 @@ test('a need of another tab cannot be closed through this tab, even when that ta
     const { world } = await seeded();
     try {
         seedOther(world, [add('needs', 'Foreign question?')]);
-        const foreign = storeRead(world.store.ledger.allOf({ tab: OTHER_TAB, key: 't9' }))[0]?.id ?? '';
+        const foreign = storeRead(world.store.ledger.allOf({ tab: tabIdOf(OTHER_TAB), key: textOf('t9') }))[0]?.id ?? '';
         const reply = await api(world, 'POST', answerPath(foreign));
         assert.deepEqual([reply.status, reply.body], [404, { error: 'unknown-need' }]);
-        assert.equal(storeRead(world.store.ledger.openOf({ tab: OTHER_TAB, key: 't9' })).length, 1);
+        assert.equal(storeRead(world.store.ledger.openOf({ tab: tabIdOf(OTHER_TAB), key: textOf('t9') })).length, 1);
     } finally { world.close(); }
 });
 
@@ -148,7 +149,7 @@ test('a curator holding an older picture cannot undo the hand close: its update 
         const id = closed?.id;
         assert.ok(id !== undefined);
         const run = { task: TASK, at: instant(Date.now()), language: textOf('en') };
-        const applied = world.store.stories.keep(run, { story: null, merges: [{ op: 'close', id, why: 'answered' }], reconciled: [{ op: 'update', id, text: 'Which database do we use now?', why: null, anchor: null }] });
+        const applied = world.store.stories.keep(run, { story: null, merges: [{ op: 'close', id, why: 'answered' }], reconciled: [{ op: 'update', id, text: textOf('Which database do we use now?'), why: null, anchor: null }] });
         assert.deepEqual(applied.refused.map((turned) => turned.reason), ['closed', 'closed']);
         assert.deepEqual(storeRead(world.store.ledger.allOf(TASK)).find((fact) => fact.id === need), closed);
     } finally { world.close(); }

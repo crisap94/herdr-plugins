@@ -3,6 +3,7 @@ import type { Instant } from '#src/recap/domain/time.ts';
 import type { Lane } from '#src/recap/domain/lane-shape.ts';
 import type { LaneMark } from '#src/recap/domain/boundary.ts';
 import type { Chunk } from '#src/ports/transcripts.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 export type Advanced = Brand<boolean, 'Advanced'>;
 
@@ -20,7 +21,7 @@ export function marksOf(reads: readonly Read[], now: Instant, advanced: Advanced
             return [];
         }
         return [{
-            pane: String(read.lane.pane), at: mark.at ?? now, cursor: read.chunk.position.cursor,
+            pane: read.lane.pane, at: mark.at ?? now, cursor: countOf(read.chunk.position.cursor),
             ...(mark.tokensBefore === undefined ? {} : { tokensBefore: mark.tokensBefore }),
             ...(mark.tokensAfter === undefined ? {} : { tokensAfter: mark.tokensAfter }),
             ...(mark.tookMs === undefined ? {} : { tookMs: mark.tookMs }),

@@ -25,12 +25,14 @@ import { omittedTotal, serializeHandoff } from '#src/recap/render/handoff-markdo
 import type { OmittedCounts } from '#src/recap/render/handoff-markdown.ts';
 import { worksiteTextOf } from '#src/recap/render/worksite.ts';
 import { fact } from './fakes/fact-at.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 
 type ShownHandoff = Extract<FittedHandoff, { readonly kind: 'text' }>;
 
 const ID = handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2db');
 const AT = Date.parse('2026-10-10T12:00:00Z');
-const TASK: TaskId = { tab: 'w1:t1', key: 't1' };
+const TASK: TaskId = { tab: tabIdOf('w1:t1'), key: brand<string, 'Text'>('t1') };
 const NEVER_CUT: ReadonlySet<HandoffGroupId> = new Set(['goal', 'needs', 'decisions', 'rules']);
 const NEWER_POOL: readonly HandoffGroupId[] = ['now', 'next'];
 const OLDER_POOL: readonly HandoffGroupId[] = ['done', 'links', 'closed'];
@@ -282,7 +284,7 @@ test('a long-lived lane shows 15 of each capped group, newest by last-seen time,
         ...Array.from({ length: 60 }, (_, index) => fact(`d${index}`, 'done', `done ${index}`, AT - (60 - index) * 1_000)),
         ...Array.from({ length: 40 }, (_, index) => fact(`l${index}`, 'links', `link ${index}`, AT - (40 - index) * 1_000)),
     ];
-    const closed = Array.from({ length: 90 }, (_, index): Fact => ({ ...fact(`c${index}`, 'next', `closed ${index}`, AT - 60_000 * (index + 1)), state: 'closed', closedWhy: 'superseded', closedAt: AT - 60_000 * (index + 1) }));
+    const closed = Array.from({ length: 90 }, (_, index): Fact => ({ ...fact(`c${index}`, 'next', `closed ${index}`, AT - 60_000 * (index + 1)), state: 'closed', closedWhy: 'superseded', closedAt: instant(AT - 60_000 * (index + 1)) }));
     const result = shownOf(renderOf(contentOf(open, closed)));
     assert.equal(result.text.match(/^- .* done \d+$/gm)?.length, 15);
     assert.equal(result.text.match(/^- .* link \d+$/gm)?.length, 15);
@@ -295,7 +297,7 @@ test('a long-lived lane shows 15 of each capped group, newest by last-seen time,
 test('the shown facts are selected by last-seen time and rendered by first-seen time', () => {
     const open = [
         fact('g1', 'goal', 'the goal', AT),
-        ...Array.from({ length: 16 }, (_, index) => fact(`d${index}`, 'done', `done ${index}`, AT - index * 1_000, { firstAt: AT - 100_000 - index * 1_000 })),
+        ...Array.from({ length: 16 }, (_, index) => fact(`d${index}`, 'done', `done ${index}`, AT - index * 1_000, { firstAt: instant(AT - 100_000 - index * 1_000) })),
     ];
     const result = shownOf(renderOf(contentOf(open)));
     const shown = result.text.match(/^- .* done \d+$/gm)?.map((line) => line.slice(line.lastIndexOf(' ') + 1)) ?? [];

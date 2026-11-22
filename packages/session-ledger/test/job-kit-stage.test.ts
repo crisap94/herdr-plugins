@@ -5,12 +5,14 @@ import type { Operation } from '@stateforge-labs/session-ledger/unstable/recap/d
 import type { Tasked } from '@stateforge-labs/session-ledger/unstable/recap/application/ops-answer.ts';
 import { listedIn, live, stageFor, staged, submittedStage, toolOf } from '@stateforge-labs/session-ledger/unstable/recap/application/job-kit/stage.ts';
 import type { Stage, Staging } from '@stateforge-labs/session-ledger/unstable/recap/application/job-kit/stage.ts';
+import { factIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 
 const text = brand<string, 'Text'>;
 
-const add: Tasked = { task: text('t1'), op: { op: 'add', section: 'next', text: 'Ship it', why: null, ref: null, at: null, agent: null } };
-const update: Tasked = { task: text('t1'), op: { op: 'update', id: 'f1', text: 'Ship it now', why: null } };
-const close: Tasked = { task: text('t1'), op: { op: 'close', id: 'f1', why: 'done' } };
+const add: Tasked = { task: text('t1'), op: { op: 'add', section: 'next', text: textOf('Ship it'), why: null, ref: null, at: null, agent: null } };
+const update: Tasked = { task: text('t1'), op: { op: 'update', id: factIdOf('f1'), text: textOf('Ship it now'), why: null } };
+const close: Tasked = { task: text('t1'), op: { op: 'close', id: factIdOf('f1'), why: 'done' } };
 
 const accepted = (outcome: Staging): Stage => {
     assert.equal(outcome.kind, 'staged');

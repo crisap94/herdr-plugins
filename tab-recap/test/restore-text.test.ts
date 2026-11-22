@@ -33,6 +33,7 @@ import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const AT = Date.parse('2026-10-10T12:00:00Z');
 const MINUTE = 60_000;
@@ -50,18 +51,18 @@ const ENGLISH: RestoreFacts = factsOf(
     [
         fact('f1', 'goal', 'Add a cart to the shop', AT - 50 * MINUTE),
         fact('f2', 'done', 'Added cart totals in src/totals.ts', AT - 40 * MINUTE),
-        fact('f3', 'decisions', 'Store carts in SQLite', AT - 30 * MINUTE, { why: 'the shop already ships SQLite' }),
+        fact('f3', 'decisions', 'Store carts in SQLite', AT - 30 * MINUTE, { why: textOf('the shop already ships SQLite') }),
         fact('f4', 'next', 'Write the checkout form', AT - 20 * MINUTE),
         fact('f5', 'links', 'Opened !34 for feat/cart', AT - 10 * MINUTE),
     ],
-    [fact('f6', 'needs', 'Wait for the price API key', AT - 45 * MINUTE, { state: 'closed', closedWhy: 'done', closedAt: AT - 5 * MINUTE })],
+    [fact('f6', 'needs', 'Wait for the price API key', AT - 45 * MINUTE, { state: 'closed', closedWhy: 'done', closedAt: instant(AT - 5 * MINUTE) })],
 );
 
 const SPANISH: RestoreFacts = factsOf(
     [
-        fact('f1', 'goal', 'Añadir un carrito a la tienda', AT - 50 * MINUTE, { language: 'es' }),
-        fact('f2', 'now', 'Revisando el cálculo del IVA en src/iva.ts', AT - 15 * MINUTE, { language: 'es' }),
-        fact('f3', 'decisions', 'Guardar los carritos en SQLite', AT - 30 * MINUTE, { why: 'la tienda ya usa SQLite', language: 'es' }),
+        fact('f1', 'goal', 'Añadir un carrito a la tienda', AT - 50 * MINUTE, { language: textOf('es') }),
+        fact('f2', 'now', 'Revisando el cálculo del IVA en src/iva.ts', AT - 15 * MINUTE, { language: textOf('es') }),
+        fact('f3', 'decisions', 'Guardar los carritos en SQLite', AT - 30 * MINUTE, { why: textOf('la tienda ya usa SQLite'), language: textOf('es') }),
     ],
 );
 
@@ -116,9 +117,9 @@ test('golden: a Spanish ledger keeps its facts in Spanish under the same English
 const bodyOf = (content: RestoreContent): RestoreBody => (content.kind === 'content' ? content : assert.fail('expected content, got empty'));
 
 test('the restore template names no plugin word and no hand-over to another agent, whatever the facts', () => {
-    const open = SECTION_IDS.map((section, at) => fact(`o${at}`, section, `${section} the plain text`, AT - at * MINUTE, section === 'decisions' ? { why: 'a plain reason' } : {}));
+    const open = SECTION_IDS.map((section, at) => fact(`o${at}`, section, `${section} the plain text`, AT - at * MINUTE, section === 'decisions' ? { why: textOf('a plain reason') } : {}));
     const more = Array.from({ length: 16 }, (_, at) => fact(`d${at}`, 'done', `finished step ${at}`, AT - (20 + at) * MINUTE));
-    const closed = [fact('c1', 'now', 'a closed plain text', AT - MINUTE, { state: 'closed', closedWhy: 'answered', closedAt: AT })];
+    const closed = [fact('c1', 'now', 'a closed plain text', AT - MINUTE, { state: 'closed', closedWhy: 'answered', closedAt: instant(AT) })];
     const withheld = fact('w1', 'next', 'Show the recap in a tab', AT);
     const fitted = fitRestore(bodyOf(restoreContentOf(factsOf([...open, ...more, withheld], closed))), byteBudgetOf(HANDOFF_BUDGET_BYTES));
     const text = fitted.kind === 'text' ? fitted.text : assert.fail('expected a text');
@@ -137,7 +138,7 @@ test('an empty ledger, a scope never run, or facts that are all withheld give an
     assert.equal(restoreTextOf(factsOf([])), '');
     assert.equal(restoreTextOf(factsOf([fact('f1', 'goal', 'a goal', AT)], [], null)), '');
     assert.equal(restoreTextOf(factsOf([fact('f1', 'goal', 'Show the recap in a tab', AT)])), '');
-    assert.equal(restoreTextOf(factsOf([], [fact('f1', 'now', 'long ago', AT, { state: 'closed', closedWhy: 'superseded', closedAt: AT - 3 * 3_600_000 })])), '');
+    assert.equal(restoreTextOf(factsOf([], [fact('f1', 'now', 'long ago', AT, { state: 'closed', closedWhy: 'superseded', closedAt: instant(AT - 3 * 3_600_000) })])), '');
 });
 
 test('the restore text stays within the handoff budget, dropping the oldest of now and next first and saying how many it left out', () => {

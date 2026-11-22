@@ -12,6 +12,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import { parseMilliseconds, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
 import type { Busy, BusyDetail, CeilingReach, Recheck } from './autocompact-gates.ts';
 import type { Effect } from './autocompact-line.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 export type CoverageHold = 'backing-off' | 'open';
 export type Asking = 'asks' | 'holds';
@@ -38,7 +39,7 @@ export interface LanePolicy extends Omit<AutocompactPolicy, 'mode'> {
 
 export function policyForLane(policy: AutocompactPolicy, agent: AgentKind): LanePolicy | null {
     if (policy.mode === 'off') return null;
-    const registered = registeredKindOf(agent);
+    const registered = registeredKindOf(textOf(agent));
     const shadowed = registered !== null && policy.shadowKinds.includes(registered);
     return { ...policy, mode: shadowed ? 'shadow' : policy.mode };
 }

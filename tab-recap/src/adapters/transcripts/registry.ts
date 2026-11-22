@@ -14,7 +14,7 @@ import { capabilityWording } from '#src/ports/capability-reasons.ts';
 import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 
 export { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 export { readerKindOf, replayKindOf } from './legacy.ts';
@@ -40,7 +40,7 @@ function readersOf(readers: ReaderSet): TranscriptReaders {
 
 function unavailableReason(kind: AgentKind): Text {
     const subject = must(parseText(kind));
-    const registered = registeredKindOf(kind);
+    const registered = registeredKindOf(textOf(kind));
     if (registered === null) return capabilityWording('history-unavailable', subject);
     const capability = READERS[registered];
     return capability.kind === 'unsupported' ? capabilityWording(capability.why, subject) : capabilityWording('history-unavailable', subject);

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { answerTextOf, headlineOf, objectIn, renderRecap, tidy } from '#src/recap/application/recap-shape.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { brand } from '#src/recap/domain/brand.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 
 const asText = brand<string, 'Text'>;
 const asCount = brand<number, 'Count'>;
@@ -93,7 +93,7 @@ test('objectIn: a broken first object with no readable slice still throws', () =
 });
 
 test('renderer: golden output in English with empty sections as —', () => {
-    const text = renderRecap({ ...NO_SECTIONS, goal: 'Ship the uploader', now: ['Running CI on !940'], done: ['Added backoff to upload.ts', 'Tests pass'], links: ['upload.ts', '!940'] }, 'en');
+    const text = renderRecap({ ...NO_SECTIONS, goal: textOf('Ship the uploader'), now: [textOf('Running CI on !940')], done: [textOf('Added backoff to upload.ts'), textOf('Tests pass')], links: [textOf('upload.ts'), textOf('!940')] }, 'en');
     assert.equal(text, [
         '## Goal', 'Ship the uploader', '',
         '## Now', '- Running CI on !940', '',
@@ -110,8 +110,8 @@ test('renderer: golden output in Spanish, everything empty', () => {
 });
 
 test('headline: what needs the operator first, else what is happening now, else nothing — read from the data', () => {
-    assert.deepEqual(headlineOf({ ...NO_SECTIONS, needs: ['approve the deploy'], now: ['running CI'] }), { kind: 'needs', text: 'approve the deploy' });
-    assert.deepEqual(headlineOf({ ...NO_SECTIONS, now: ['running CI', 'second'] }), { kind: 'now', text: 'running CI' });
+    assert.deepEqual(headlineOf({ ...NO_SECTIONS, needs: [textOf('approve the deploy')], now: [textOf('running CI')] }), { kind: 'needs', text: 'approve the deploy' });
+    assert.deepEqual(headlineOf({ ...NO_SECTIONS, now: [textOf('running CI'), textOf('second')] }), { kind: 'now', text: 'running CI' });
     assert.equal(headlineOf(NO_SECTIONS), null);
 });
 
@@ -138,5 +138,5 @@ test('the operations contract survives every harness\'s way of handing the answe
 });
 
 test('rules are stored, not drawn', () => {
-    assert.ok(!renderRecap({ ...NO_SECTIONS, rules: ['never push to main'] }, 'en').includes('never push'));
+    assert.ok(!renderRecap({ ...NO_SECTIONS, rules: [textOf('never push to main')] }, 'en').includes('never push'));
 });

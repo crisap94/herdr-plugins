@@ -1,14 +1,14 @@
 import { must } from '#src/protocol/result.ts';
 import { environmentName, type EnvironmentName } from '#src/recap/domain/backend.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 
 export const JEV_KEY_FILE = ['.config', 'typesafe-api-key'] as const;
 
 export type JevKeySetting = (key: EnvironmentName) => Text | undefined;
 export type JevKeyFile = (path: FsPath) => Text | null;
 
-const KEY_NAMES: readonly EnvironmentName[] = [environmentName('TAB_RECAP_JEV_KEY'), environmentName('TYPESAFE_API_KEY')];
+const KEY_NAMES: readonly EnvironmentName[] = [environmentName(textOf('TAB_RECAP_JEV_KEY')), environmentName(textOf('TYPESAFE_API_KEY'))];
 
 const clean = (raw: Text | null | undefined): Text | null => {
     const key = (raw ?? '').trim();

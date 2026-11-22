@@ -1,6 +1,6 @@
 import type { DecisionLedger, LastDecisionRow } from '#src/ports/autocompact-records.ts';
 import type { AutocompactMode, AutocompactPercent, Gate, GateBusy, GateSameness } from '#src/recap/domain/autocompact.ts';
-import { flightDetail } from '#src/recap/domain/in-flight.ts';
+import { flightDetail, ceilingOf } from '#src/recap/domain/in-flight.ts';
 import type { Flight } from '#src/recap/domain/in-flight.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
@@ -58,7 +58,7 @@ export interface DetailFacts {
 const cooldownText = (facts: DetailFacts): Text => must(parseText(`${Math.ceil((facts.cooldownMs - (facts.now - Math.max(facts.lastBreakAt ?? -Infinity, facts.lastDecisionAt ?? -Infinity))) / 1000)} s left`));
 
 export function flightTextOf(flight: Flight, atCeiling: CeilingReach): Text | null {
-    const detail = flightDetail(flight, atCeiling === 'at-ceiling');
+    const detail = flightDetail(flight, ceilingOf(atCeiling === 'at-ceiling'));
     return detail === null ? null : must(parseText(detail));
 }
 

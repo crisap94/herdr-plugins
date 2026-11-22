@@ -8,6 +8,7 @@ import type { Chunk, Mark } from '#src/ports/transcripts.ts';
 import { instant, duration } from '#src/recap/domain/time.ts';
 import { grewOf, cursorOf } from '#src/ports/transcripts.ts';
 import { countOf } from '#src/recap/domain/count.ts';
+import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const AT = Date.parse('2026-10-07T16:38:09.490Z');
 const read = (marks: readonly Mark[], pane = 'w1:p1'): Read => ({
@@ -39,30 +40,30 @@ test('a record without a time is dated by the read, but only when the read moves
 });
 
 test('triggerOf: plugin from the start of the plugin\'s compaction up to ten minutes after it; else the agent\'s word; else auto', () => {
-    const asked = [AT - 600_000];
-    assert.equal(triggerOf(AT, asked, null), 'plugin');
-    assert.equal(triggerOf(AT, asked, 'manual'), 'plugin', 'the plugin\'s own beats the agent\'s word');
-    assert.equal(triggerOf(AT + 1, asked, null), 'auto');
-    assert.equal(triggerOf(AT, [AT + 1], null), 'auto');
-    assert.equal(triggerOf(AT, [], null), 'auto');
-    assert.equal(triggerOf(AT, [], 'manual'), 'manual', 'the operator typed /compact in the agent');
-    assert.equal(triggerOf(AT, [], 'auto'), 'auto');
+    const asked = [instant(AT - 600_000)];
+    assert.equal(triggerOf(instant(AT), asked, null), 'plugin');
+    assert.equal(triggerOf(instant(AT), asked, 'manual'), 'plugin', 'the plugin\'s own beats the agent\'s word');
+    assert.equal(triggerOf(instant(AT + 1), asked, null), 'auto');
+    assert.equal(triggerOf(instant(AT), [instant(AT + 1)], null), 'auto');
+    assert.equal(triggerOf(instant(AT), [], null), 'auto');
+    assert.equal(triggerOf(instant(AT), [], 'manual'), 'manual', 'the operator typed /compact in the agent');
+    assert.equal(triggerOf(instant(AT), [], 'auto'), 'auto');
 });
 
 test('compactedFrom plans each mark with its trigger: plugin, the agent\'s own word, or auto', () => {
-    const marks = [{ pane: 'p', at: AT, cursor: 1, trigger: 'manual' as const }, { pane: 'p', at: AT + 5, cursor: 1 }, { pane: 'p', at: AT + 10, cursor: 1, trigger: 'auto' as const }];
+    const marks = [{ pane: paneIdOf('p'), at: instant(AT), cursor: countOf(1), trigger: 'manual' as const }, { pane: paneIdOf('p'), at: instant(AT + 5), cursor: countOf(1) }, { pane: paneIdOf('p'), at: instant(AT + 10), cursor: countOf(1), trigger: 'auto' as const }];
     assert.deepEqual(compactedFrom(marks, null, []).map((each) => each.trigger), ['manual', 'auto', 'auto']);
-    assert.deepEqual(compactedFrom(marks, null, [AT - 1]).map((each) => each.trigger), ['plugin', 'plugin', 'plugin']);
+    assert.deepEqual(compactedFrom(marks, null, [instant(AT - 1)]).map((each) => each.trigger), ['plugin', 'plugin', 'plugin']);
 });
 
 test('compactedFrom keeps the marks newer than the last boundary, oldest first', () => {
-    const marks = [AT + 20, AT, AT + 10].map((at) => ({ pane: 'w1:p1', at, cursor: 1 }));
-    assert.deepEqual(compactedFrom(marks, AT, []).map((each) => each.at), [AT + 10, AT + 20]);
+    const marks = [AT + 20, AT, AT + 10].map((at) => ({ pane: paneIdOf('w1:p1'), at: instant(at), cursor: countOf(1) }));
+    assert.deepEqual(compactedFrom(marks, instant(AT), []).map((each) => each.at), [AT + 10, AT + 20]);
     assert.deepEqual(compactedFrom(marks, null, []).map((each) => each.at), [AT, AT + 10, AT + 20]);
 });
 
 test('settledBefore: an item last carried before the lane\'s last boundary is settled; with no boundary nothing is', () => {
-    assert.equal(settledBefore(AT - 1, AT), true);
-    assert.equal(settledBefore(AT, AT), false);
-    assert.equal(settledBefore(AT - 1, null), false);
+    assert.equal(settledBefore(instant(AT - 1), instant(AT)), true);
+    assert.equal(settledBefore(instant(AT), instant(AT)), false);
+    assert.equal(settledBefore(instant(AT - 1), null), false);
 });

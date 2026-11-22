@@ -1,10 +1,11 @@
+import type { Instant } from '#src/recap/domain/time.ts';
 import type { Count } from '#src/contract/kernel.ts';
 import type { Section } from '#src/recap/domain/fact.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { pieceOf } from '#src/recap/domain/quote.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 export type TriggerKind = 'commit' | 'edit' | 'error' | 'question';
 
@@ -29,12 +30,12 @@ const QUESTION_START = /^\s*(?:¿|(?:should|do you|can we|which|debería|deberí
 const REFERENCE = /[!#]\d+/;
 
 const stubOf = (kind: TriggerKind, section: Section, entry: Entry, found: Found): Stub =>
-    ({ kind, section, ref: found.ref ?? null, anchor: found.anchor, at: entry.at === undefined ? null : instant(entry.at) });
+    ({ kind, section, ref: found.ref ?? null, anchor: found.anchor, at: entry.at === undefined ? null : entry.at });
 
 const historyOf = (entry: Entry): readonly Stub[] =>
     entry.text.split(/&&|\|\||;|\n/).filter((part) => HISTORY.test(part)).map((step) => {
         const reference = REFERENCE.exec(step)?.[0];
-        return stubOf('commit', 'done', entry, { anchor: textOf(pieceOf(step)), ref: reference === undefined ? null : textOf(reference) });
+        return stubOf('commit', 'done', entry, { anchor: pieceOf(textOf(step)), ref: reference === undefined ? null : textOf(reference) });
     });
 
 function errorOf(entry: Entry): Stub | null {
@@ -44,7 +45,7 @@ function errorOf(entry: Entry): Stub | null {
     }
     const start = entry.text.lastIndexOf('\n', found.index) + 1;
     const line = entry.text.slice(start, entry.text.indexOf('\n', found.index) < 0 ? undefined : entry.text.indexOf('\n', found.index));
-    return stubOf('error', 'now', entry, { anchor: textOf(pieceOf(line, found.index - start)) });
+    return stubOf('error', 'now', entry, { anchor: pieceOf(textOf(line), countOf(found.index - start)) });
 }
 
 function questionOf(entry: Entry): Stub | null {
@@ -54,13 +55,13 @@ function questionOf(entry: Entry): Stub | null {
     const body = entry.text.trim();
     if (/[?？]$/.test(body)) {
         const start = Math.max(body.lastIndexOf('. '), body.lastIndexOf('! '), body.lastIndexOf('? ', body.length - 2), body.lastIndexOf('\n')) + 1;
-        return stubOf('question', 'needs', entry, { anchor: textOf(pieceOf(body.slice(start), Number.MAX_SAFE_INTEGER)) });
+        return stubOf('question', 'needs', entry, { anchor: pieceOf(textOf(body.slice(start)), countOf(Number.MAX_SAFE_INTEGER)) });
     }
-    return entry.role === 'user' && QUESTION_START.test(body) ? stubOf('question', 'needs', entry, { anchor: textOf(pieceOf(body.split('\n')[0] ?? body)) }) : null;
+    return entry.role === 'user' && QUESTION_START.test(body) ? stubOf('question', 'needs', entry, { anchor: pieceOf(textOf(body.split('\n')[0] ?? body)) }) : null;
 }
 
 function editOf(entry: Entry): Stub | null {
-    return entry.role === 'tool' && entry.kind === 'edit' && entry.text.trim() !== '' ? stubOf('edit', 'done', entry, { anchor: textOf(pieceOf(entry.text)), ref: textOf(pieceOf(entry.text)) }) : null;
+    return entry.role === 'tool' && entry.kind === 'edit' && entry.text.trim() !== '' ? stubOf('edit', 'done', entry, { anchor: pieceOf(entry.text), ref: pieceOf(entry.text) }) : null;
 }
 
 const finders = (entry: Entry): readonly (Stub | null)[] => [

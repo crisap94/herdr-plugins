@@ -15,6 +15,8 @@ import { parseSessionId, agentKind } from '#src/recap/domain/ids.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
 import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
+import { countOf } from '#src/recap/domain/count.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const SESSION = 'session-1';
 const PID = 4242;
@@ -70,7 +72,7 @@ function reader(model: string, tokens: number): Transcripts {
         locate: () => Promise.resolve({ kind: 'located', source: sourcePathOf('s') }),
         read: () => Promise.reject(new Error('not used')),
         latestPrompt: () => Promise.reject(new Error('not used')),
-        observed: () => Promise.resolve({ kind: 'observed', observed: { tokens, peak: tokens, window: null, model } }),
+        observed: () => Promise.resolve({ kind: 'observed', observed: { tokens: countOf(tokens), peak: countOf(tokens), window: null, model: textOf(model) } }),
     };
 }
 

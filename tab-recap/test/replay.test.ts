@@ -22,6 +22,7 @@ import { scratchDir, storeRead } from '#test/db/support.ts';
 import { NO_REPOS } from '#test/support.ts';
 import { factOf } from './fakes/facts.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const FILE = join(import.meta.dirname, 'fixtures', 'replay-claude.jsonl');
 const add = (section: string, text: string, why?: string): Record<string, unknown> => ({ op: 'add', section, text, ...(why === undefined ? {} : { why }) });
@@ -105,7 +106,7 @@ test('imported facts of a tab are read beside the replay, read-only; no database
 
 test('checks: short lines, decisions with a why (the "(not recorded)" gap does not count), no open repeats within a task and section', () => {
     const facts = [
-        factOf('decisions', 'Keep SQLite', { why: 'one file' }), factOf('decisions', 'Skip auth', { why: '(not recorded)' }),
+        factOf('decisions', 'Keep SQLite', { why: textOf('one file') }), factOf('decisions', 'Skip auth', { why: textOf('(not recorded)') }),
         factOf('done', 'Wrote the release notes today'), factOf('done', 'Wrote the release notes today again'), factOf('done', Array.from({ length: 20 }, (_, i) => `w${i}`).join(' ')),
     ];
     const byName = Object.fromEntries(checksOf(facts).map((check) => [check.name, [check.passed, check.of]]));
@@ -117,7 +118,7 @@ test('the store a replay writes to is a real store: the same repositories, the f
     const scratch = scratchStore();
     try {
         assert.equal(scratch.store.kind, 'ready');
-        assert.ok(storeRead(storeOver(scratch.store.db).ledger.openOf({ tab: 'x', key: 't1' })).length === 0);
+        assert.ok(storeRead(storeOver(scratch.store.db).ledger.openOf({ tab: tabIdOf('x'), key: textOf('t1') })).length === 0);
     } finally {
         scratch.dispose();
     }

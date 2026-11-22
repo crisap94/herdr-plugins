@@ -4,6 +4,8 @@ import { curatorInput, documentId, reconcileInput, stillTrueOf, TAIL_CHARS } fro
 import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import type { Fact } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
 import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const text = brand<string, 'Text'>;
 const count = brand<number, 'Count'>;
@@ -12,14 +14,14 @@ const NOW = Date.parse('2026-10-07T16:30:00Z');
 const clock = { now: instant(NOW), zone: text('UTC') };
 
 const fact = (id: string, over: Partial<Fact> = {}): Fact => ({
-    id: brand<string, 'FactId'>(id), task: { tab: 'w1:t1', key: 't1' }, section: 'now', text: 'Fix the <build> & ship', why: null, ref: null, agent: null, anchor: null,
-    firstAt: NOW - 3_600_000, lastAt: NOW, state: 'open', closedWhy: null, closedAt: null, language: 'en', ...over,
+    id: brand<string, 'FactId'>(id), task: { tab: tabIdOf('w1:t1'), key: textOf('t1') }, section: 'now', text: textOf('Fix the <build> & ship'), why: null, ref: null, agent: null, anchor: null,
+    firstAt: instant(NOW - 3_600_000), lastAt: instant(NOW), state: 'open', closedWhy: null, closedAt: null, language: textOf('en'), ...over,
 });
 
 const RUBRIC = ['- **I1** keep it short', '- **I7** a fact stays true until the transcript says otherwise', '  more of I7', '- **I8** another rule'].join('\n');
 
 test('facts are named f1 to fn in the order given, with their times, escaped text and closes', () => {
-    const closed = fact('b', { state: 'closed', closedWhy: 'done', closedAt: NOW, why: text('shipped') });
+    const closed = fact('b', { state: 'closed', closedWhy: 'done', closedAt: instant(NOW), why: text('shipped') });
     const { document, facts } = curatorInput({ name: text('Docs "&" more'), language: text('es'), rubric: text(RUBRIC), facts: [fact('a'), closed], clock });
     assert.equal(documentId(count(0)), 'f1');
     assert.deepEqual([...facts.keys()], ['f1', 'f2']);

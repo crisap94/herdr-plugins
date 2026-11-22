@@ -7,6 +7,7 @@ import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
 import type { Forge } from '@stateforge-labs/session-ledger/unstable/ports/lane-repo.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 export type { LaneWeb, TabLane, TabView, TabViews } from './twins/legacy.ts';
 
@@ -78,7 +79,7 @@ function contextOf(row: Row): Result<ContextUse | null | undefined, ParseFailure
     const { tokens, window } = context;
     if (typeof tokens !== 'number' || typeof window !== 'number') return err({ kind: 'not-a-number' });
     const source = SOURCES.find((option) => option === context.source);
-    return source === undefined ? err({ kind: 'out-of-range' }) : ok({ tokens, window, source });
+    return source === undefined ? err({ kind: 'out-of-range' }) : ok({ tokens: countOf(tokens), window: countOf(window), source });
 }
 
 function coreOf(input: Row): Result<LaneCore, ParseFailure> {

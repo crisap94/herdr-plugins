@@ -5,13 +5,14 @@ import type { GateFacts, GateInput } from '#src/recap/domain/autocompact.ts';
 import { tuningFrom, tuningOf } from '#src/recap/domain/autocompact-style.ts';
 import { backgroundItem, backgroundLabel, backgroundTool, flightOf, flightReason, NOT_AWAITING, observedFrom, runningCount } from '#src/recap/domain/in-flight.ts';
 import type { Flight } from '#src/recap/domain/in-flight.ts';
-import { parseText, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import { duration, instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import type { Milliseconds } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
+import { countOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/count.ts';
 
 const NOW = 10_000_000;
-const flight = (count: number): Flight => flightOf(observedFrom(runningCount(count), [backgroundItem(backgroundTool('Monitor'), backgroundLabel('mrs'))], flightReason(`${count} running`)), NOT_AWAITING);
+const flight = (count: number): Flight => flightOf(observedFrom(runningCount(countOf(count)), [backgroundItem(backgroundTool(textOf('Monitor')), backgroundLabel(textOf('mrs')))], flightReason(textOf(`${count} running`))), NOT_AWAITING);
 
 interface Case { readonly name: string; readonly input: GateInput; readonly facts: GateFacts }
 

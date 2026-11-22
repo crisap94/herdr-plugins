@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import { continuationNote, cutNote, keepsNote, NOTE_LIMIT, withNote } from '#src/recap/domain/continuation-note.ts';
 import { awaitedNames, backgroundItem, backgroundLabel, backgroundTool, NOT_AWAITING } from '#src/recap/domain/in-flight.ts';
 import type { Awaiting, BackgroundItem } from '#src/recap/domain/in-flight.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 
-const on = (names: string): Awaiting => ({ kind: 'on', names: awaitedNames(names) });
-const item = (tool: string, label: string | null): BackgroundItem => backgroundItem(backgroundTool(tool), label === null ? null : backgroundLabel(label));
+const on = (names: string): Awaiting => ({ kind: 'on', names: awaitedNames(textOf(names)) });
+const item = (tool: string, label: string | null): BackgroundItem => backgroundItem(backgroundTool(textOf(tool)), label === null ? null : backgroundLabel(textOf(label)));
 const text = (value: string): Text => must(parseText(value));
 const noteOf = (awaiting: Awaiting, background: readonly BackgroundItem[]): Text => must(parseText(continuationNote(awaiting, background) ?? ''));
 

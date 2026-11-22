@@ -2,7 +2,7 @@ import { claudeContextWindow, ClaudeWindow } from '@stateforge-labs/harness-adap
 import type { Observed, WindowBasis, WindowOf } from '#src/recap/domain/compaction.ts';
 import type { AgentKind } from '#src/recap/domain/ids.ts';
 import type { Count } from '#src/recap/domain/count.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import type { ContextWindowLookup } from '#src/ports/context-windows.ts';
@@ -12,6 +12,7 @@ import type { Capability } from '#src/ports/capability.ts';
 import type { ContextWindowWhy } from '#src/ports/capability-reasons.ts';
 
 import { countsFromLibrary } from './legacy.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 export { contextWindows, claudeWindowOf, windowOfKind } from './legacy.ts';
 
@@ -36,7 +37,7 @@ const reportedWindow = (observed: Observed, catalogue: ModelWindows, sizes: read
 
 const claudeWindow = (observed: Observed, catalogue: ModelWindows): WindowBasis => {
     const sizes = countsFromLibrary(ClaudeWindow.Sizes);
-    return reportedWindow(observed, catalogue, sizes) ?? { window: claudeContextWindow(observed.model ?? '').window, source: 'table', sizes };
+    return reportedWindow(observed, catalogue, sizes) ?? { window: countOf(claudeContextWindow(observed.model ?? '').window), source: 'table', sizes };
 };
 
 const exactWindow = (observed: Observed, catalogue: ModelWindows): WindowBasis | null => reportedWindow(observed, catalogue, []);
@@ -49,7 +50,7 @@ const WINDOW_SOURCES = {
 } satisfies Readonly<Record<RegisteredKind, Capability<Source, ContextWindowWhy>>>;
 
 export function windowOfAgent(kind: AgentKind | null, catalogue: ModelWindows): WindowOf {
-    const registered = kind === null ? null : registeredKindOf(kind);
+    const registered = kind === null ? null : registeredKindOf(textOf(kind));
     const capability = registered === null ? supported(exactWindow) : WINDOW_SOURCES[registered];
     const source = capability.kind === 'supported' ? capability.value : noWindow;
     return (observed) => source(observed, catalogue);

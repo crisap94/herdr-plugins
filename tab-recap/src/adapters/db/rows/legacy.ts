@@ -1,5 +1,5 @@
 import type { Statement } from 'bun:sqlite';
-import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
+import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import { unreadableOf, type Unknown } from '#src/ports/unknowable.ts';
 
 export type Row = Readonly<Record<string, unknown>>;
@@ -59,6 +59,6 @@ export function guardedRead<T>(read: () => T): T | Unknown {
     try {
         return read();
     } catch (error) {
-        return unreadableOf(failureCauseOf(error));
+        return unreadableOf(failureCauseOf(parseThrown(error)));
     }
 }

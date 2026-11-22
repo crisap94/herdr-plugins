@@ -13,6 +13,7 @@ import type { Operation, Refusal } from '#src/recap/domain/ops.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { memoryStore } from '#test/db/support.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 const isLedgerFactId = (id: FactId): id is FactId & sl.FactId => id !== '';
 const isPluginFactId = (id: sl.FactId): id is sl.FactId & FactId => id !== '';
@@ -108,7 +109,7 @@ export const sqliteStoreSubject: Subject<null, StoreUnderTest> = {
             failReads: () => {
                 store.db.close();
             },
-            marksOf: (scope) => store.boundaries.breaksOf(scope).filter((each) => each.kind === 'compacted').map((each) => ({ at: each.at })),
+            marksOf: (scope) => store.boundaries.breaksOf(scope).filter((each) => each.kind === 'compacted').map((each) => ({ at: instant(each.at) })),
         };
     },
 };

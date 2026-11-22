@@ -16,12 +16,13 @@ import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { blankRecap, type RecapRecords, type TabRecap } from '#src/ports/recap-records.ts';
 import type { TabView, TabViews } from '#src/ports/tab-views.ts';
 import { v2Problems } from '#test/gui-schema-support.ts';
+import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const wire = (document: GuiTab): unknown => JSON.parse(JSON.stringify(document));
 
 const recapOf = (tab: string, overrides: Partial<TabRecap> = {}): TabRecap => ({
     ...blankRecap(tabId(tab)), at: instant(1000), backend: textOf('custom'), ...overrides,
-    tasks: [{ id: 't1', name: 'Login page', lanes: ['p1'], markdown: '# Login', sections: { goal: 'Ship the login page', now: ['wiring the form'], needs: [], done: ['route added'], decisions: [], next: ['tests'], links: [], rules: ['secret rule'] } }],
+    tasks: [{ id: textOf('t1'), name: textOf('Login page'), lanes: [paneIdOf('p1')], markdown: textOf('# Login'), sections: { goal: textOf('Ship the login page'), now: [textOf('wiring the form')], needs: [], done: [textOf('route added')], decisions: [], next: [textOf('tests')], links: [], rules: [textOf('secret rule')] } }],
 });
 
 const viewOf = (tab: string): TabView => ({

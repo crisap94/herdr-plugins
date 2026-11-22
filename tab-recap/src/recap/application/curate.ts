@@ -5,13 +5,12 @@ import type { CurationRun } from '#src/ports/stories.ts';
 import { curationOf } from '#src/recap/domain/curation.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import type { CloseOp } from '#src/recap/domain/ops.ts';
-import { parseText, textOf, parseTextOrNull } from '#src/recap/domain/text.ts';
+import { parseText, parseTextOrNull } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { parseTabId, paneId } from '#src/recap/domain/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import { instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import { curatorInput } from '@stateforge-labs/session-ledger/unstable/recap/application/curator-input.ts';
@@ -21,6 +20,7 @@ import { storyAnswerOf } from './job-kit/story-repair.ts';
 import type { StoryReading } from './job-kit/story-repair.ts';
 import { answerTextOf } from '@stateforge-labs/session-ledger/unstable/recap/application/recap-shape.ts';
 import type { CurateWhy, ReconcilingDeps, RunEvent } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-reconcile.ts';
+import { factIdOf } from '#src/recap/domain/fact.ts';
 
 export type { CurateWhy, RunEvent };
 export { Curate } from './legacy.ts';
@@ -90,14 +90,14 @@ export class CurateTasks {
 
     private async curate(tab: TabId, task: RecapTask): Promise<void> {
         const { deps } = this;
-        const [key, now] = [must(parseText(`${tab}\u0000${task.id}`)), instant(deps.clock())];
+        const [key, now] = [must(parseText(`${tab}\u0000${task.id}`)), deps.clock()];
         const facts = deps.ledger.allOf({ tab, key: task.id });
         if (isUnknownRead(facts)) {
             return;
         }
         const writer = deps.writer();
-        const storyAt = deps.stories.read(tab, textOf(task.id))?.at;
-        if (writer === null || this.due(key, facts, storyAt === undefined ? null : instant(storyAt), now) === 'absent') {
+        const storyAt = deps.stories.read(tab, task.id)?.at;
+        if (writer === null || this.due(key, facts, storyAt === undefined ? null : storyAt, now) === 'absent') {
             return;
         }
         this.lastRun.set(key, now);
@@ -132,7 +132,7 @@ export class CurateTasks {
         const [open, where] = [new Set([...named].filter(([, fact]) => fact.state === 'open').map(([id]) => id)), `curator ${run.task.tab} ${run.task.key}`];
         const checked = curationOf(answerTextOf(answer), open);
         checked.refused.forEach((why) => { this.deps.log(must(parseText(`${where}: refused — ${why}`))); });
-        const merges = checked.merges.map((merge): CloseOp => ({ op: 'close', id: named.get(merge.id)?.id ?? '', why: 'merged' }));
+        const merges = checked.merges.map((merge): CloseOp => ({ op: 'close', id: named.get(merge.id)?.id ?? factIdOf(''), why: 'merged' }));
         const applied = this.deps.stories.keep(run, { story: parseTextOrNull(checked.story), merges });
         applied.refused.forEach((one) => { this.deps.log(must(parseText(`${where}: the ledger refused ${one.op.op} — ${one.reason}`))); });
         if (checked.story === null) {

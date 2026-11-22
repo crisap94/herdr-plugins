@@ -3,6 +3,7 @@ import type { SessionRecap } from './model.ts';
 import { assertCount } from './wording.ts';
 import type { TextWording } from './wording.ts';
 import { clockOf, dayOf } from './timeline.ts';
+import { countOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/count.ts';
 
 const MINUTE = 60_000;
 
@@ -43,7 +44,7 @@ function chapterLines(facts: SessionRecap, context: SessionContext): readonly { 
     assertCount(auto);
     const origins = joined([...(operator > 0 ? [origin.operator(operator)] : []), ...(auto > 0 ? [origin.auto(auto)] : [])]);
     const counted = origins === '' ? String(compactions.count) : `${compactions.count} (${origins})`;
-    const pairs = joined(compactions.measured.map((pair) => `${sizeOf(pair.before)} → ${sizeOf(pair.after)}`));
+    const pairs = joined(compactions.measured.map((pair) => `${sizeOf(countOf(pair.before))} → ${sizeOf(countOf(pair.after))}`));
     return [{ label: context.wording.expanded.compactions, text: joined([pairs === '' ? counted : `${counted} (${pairs})`, ...count]) }];
 }
 
@@ -59,7 +60,7 @@ export function sessionLines(facts: SessionRecap, context: SessionContext): read
         lines.push({ label: m.turns, text: `${runs.total} (${joined(runs.byCause.map((entry) => `${m.causes[entry.cause]} ${entry.count}`))})` });
     }
     lines.push(...chapterLines(facts, context));
-    lines.push(...facts.agents.map((agent) => ({ label: agent.label, text: `${agent.share} % ${m.of} ${sizeOf(agent.window)}` })));
+    lines.push(...facts.agents.map((agent) => ({ label: agent.label, text: `${agent.share} % ${m.of} ${sizeOf(countOf(agent.window))}` })));
     if (repo !== null) {
         lines.push({ label: m.repo, text: joined([repo.name, ...(repo.branch === null ? [] : [`${m.branch} ${repo.branch}`])]) });
     }

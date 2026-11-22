@@ -12,11 +12,12 @@ import type { RecapSections } from '#src/recap/domain/shape.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import { opsOfSections } from '#src/adapters/db/import/sections-to-ops.ts';
 import type { TaskOps } from '#src/recap/domain/ops.ts';
+import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 export const NO_REPOS: LaneRepo = { repoOf: () => Promise.resolve({ kind: 'no-repo' }) };
 
 export const oneTask = (markdown: string, sections: RecapSections | null = null, lanes: readonly string[] = []): readonly RecapTask[] =>
-    [{ id: 't1', name: '', lanes, sections, markdown }];
+    [{ id: textOf('t1'), name: textOf(''), lanes: lanes.map((lane) => paneIdOf(lane)), sections, markdown: textOf(markdown) }];
 
 export const withFacts = (tasks: readonly RecapTask[]): { readonly tasks: readonly RecapTask[]; readonly ops: readonly TaskOps[] } =>
     ({ tasks, ops: tasks.map((task) => ({ task: task.id, ops: task.sections === null ? [] : opsOfSections(task.sections) })) });

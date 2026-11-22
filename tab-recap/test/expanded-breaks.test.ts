@@ -13,6 +13,8 @@ import { fact } from '#test/fakes/fact-at.ts';
 import { parseCurating, parseTaskName } from '@stateforge-labs/recap-view';
 import { viewBreakOf } from '#src/view-model/column.ts';
 import { countOf } from '#src/recap/domain/count.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 const at = (clock: string, day = '2026-10-07'): number => Date.parse(`${day}T${clock}:00Z`);
 const BREAKS: readonly Break[] = [
@@ -26,7 +28,7 @@ const withBreaks = (width: number, locale: 'en' | 'es'): ExpandedView => sampleV
     session: sessionFactsOf({
         firstSeen: at('09:12'), now: NOW, runs: { 'turn-ended': 36, focused: 3, requested: 2 },
         compactions: [{ tokensBefore: 800_000, tokensAfter: 14_000, origin: 'operator' }, { tokensBefore: 39_000, tokensAfter: countOf(3000), origin: 'auto' }],
-        lanes: [{ agent: 'claude', label: 'orchestrator', context: { tokens: 340_000, window: 1_000_000, source: 'table' } }],
+        lanes: [{ agent: 'claude', label: 'orchestrator', context: { tokens: countOf(340_000), window: countOf(1_000_000), source: 'table' } }],
         webs: [{ base: 'https://git.example/group/herdr-plugins', branch: 'feat/expanded' }], edits: [], chapters: 4,
     }),
 });
@@ -72,9 +74,9 @@ test('a view with no breaks draws exactly what it drew before', () => {
 });
 
 test('the Decisions region hides the import\'s `rewritten` closes and a "(not recorded)" why, and shows a decision closed for a real reason; the timeline still shows every closed fact', () => {
-    const real = fact('d1', 'decisions', 'Retry three times, not five', at('10:00'), { why: 'the gateway rate-limits after four', state: 'closed', closedWhy: 'superseded', closedAt: at('11:00') });
-    const imported = fact('d2', 'decisions', 'Use the old cart endpoint', at('09:00'), { why: '(not recorded)', state: 'closed', closedWhy: 'rewritten', closedAt: at('09:30') });
-    const unrecorded = fact('d3', 'decisions', 'Keep SQLite', at('09:10'), { why: '(not recorded)' });
+    const real = fact('d1', 'decisions', 'Retry three times, not five', at('10:00'), { why: textOf('the gateway rate-limits after four'), state: 'closed', closedWhy: 'superseded', closedAt: instant(at('11:00')) });
+    const imported = fact('d2', 'decisions', 'Use the old cart endpoint', at('09:00'), { why: textOf('(not recorded)'), state: 'closed', closedWhy: 'rewritten', closedAt: instant(at('09:30')) });
+    const unrecorded = fact('d3', 'decisions', 'Keep SQLite', at('09:10'), { why: textOf('(not recorded)') });
     const lines = expanded(sampleView(60, 'en', { tasks: [{ name: parseTaskName(''), facts: [real, imported, unrecorded], story: null, curating: parseCurating(false) }], breaks: [] })).map((line) => stripVTControlCharacters(line));
     const text = lines.join('\n');
     const decisions = lines.slice(lines.indexOf('DECISIONS'), lines.indexOf('TIMELINE')).join('\n');

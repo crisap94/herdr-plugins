@@ -7,7 +7,7 @@ import type { CompactionPlanResult } from '#src/recap/domain/compaction-plan.ts'
 import type { WindowOf } from '#src/recap/domain/compaction.ts';
 import type { HandoffPlanResult } from '#src/recap/domain/handoff-plan.ts';
 import { parseAgentKind } from '#src/recap/domain/ids.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { parseCount, countOf } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
 import type { ModelWindows } from '#src/ports/model-catalogue.ts';
@@ -60,7 +60,7 @@ const keepingRawWindows = (typed: WindowOf, catalogue: ModelCatalogue): WindowOf
         return basis;
     }
     const raw = catalogue.windowOf(observed.model);
-    return raw === null ? basis : { window: raw, source: 'catalogue', sizes: basis?.sizes ?? [] };
+    return raw === null ? basis : { window: countOf(raw), source: 'catalogue', sizes: basis?.sizes ?? [] };
 };
 
 export function windowOfKind(kind: string, catalogue: ModelCatalogue): WindowOf {

@@ -11,6 +11,7 @@ import { LaneTokenPublisher, TICK_MS, TTL_MS } from '#src/recap/application/lane
 import { factsOf } from '#src/recap/application/lane-facts.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import type { Report } from './fakes/lane-tokens.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 const facts = (over: Partial<LaneFacts> = {}): LaneFacts => ({ share: 40, recapAt: 1000, needs: 0, ...over });
 const laneOf = (pane: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
@@ -148,7 +149,7 @@ const otherFact = { section: 'goal', text: 'x' };
 test('a lane\'s facts: its share from its context, the tab\'s last recap, and the open needs of the tab\'s tasks', () => {
     const lane = laneOf('w1:p1');
     const found = factsOf(lane, {
-        contexts: { of: () => ({ tokens: 50_000, window: 200_000, source: 'agent' }) },
+        contexts: { of: () => ({ tokens: countOf(50_000), window: countOf(200_000), source: 'agent' }) },
         records: { readRecap: () => ({ at: 4242, tasks: [{ id: 'a' }, { id: 'b' }] }) as never },
         ledger: { openOf: (task) => (task.key === 'a' ? [needFact('confirm the schema'), otherFact] : [needFact('pick a name')]) as never },
     });

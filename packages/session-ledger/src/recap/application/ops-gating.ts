@@ -11,6 +11,7 @@ import type { Finding, Gate } from '#src/recap/domain/gates/gate.ts';
 import { apply } from '#src/recap/domain/ops.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
 import type { Tasked } from './ops-answer.ts';
+import { tabIdOf } from '#src/recap/domain/lane-shape.ts';
 
 const textOf = brand<string, 'Text'>;
 const count = brand<number, 'Count'>;
@@ -48,13 +49,13 @@ export interface Judged {
 
 const asFact = (op: Operation, shown: ReadonlyMap<Text, Fact>): Operation => (op.op === 'add' ? op : { ...op, id: shown.get(textOf(op.id))?.id ?? op.id });
 
-const DRY = { id: brand<string, 'RunId'>('dry-run'), language: 'en' };
+const DRY = { id: brand<string, 'RunId'>('dry-run'), language: textOf('en') };
 
 export function judge(gates: readonly Gate[], ops: readonly Operation[], ground: TaskGround, now: Instant): Judged {
     const gated = gatekeeper(gates, ops, { now, shown: ground.shown, open: ground.open, closedLately: ground.closedLately, source: ground.source, language: ground.language, agents: ground.agents });
     const resolved = gated.kept.map((op) => asFact(op, ground.shown));
     let made = 0;
-    const folded = apply([...ground.shown.values()], resolved, { ...DRY, task: { tab: ground.tab, key: ground.key }, at: now, mint: () => brand<string, 'FactId'>(`dry-${(made += 1)}`) });
+    const folded = apply([...ground.shown.values()], resolved, { ...DRY, task: { tab: tabIdOf(ground.tab), key: ground.key }, at: now, mint: () => brand<string, 'FactId'>(`dry-${(made += 1)}`) });
     const late: Finding[] = folded.refused.map((refusal) => {
         const source = gated.kept[resolved.indexOf(refusal.op)];
         return { at: count(source === undefined ? -1 : ops.indexOf(source)), gate: 'L', outcome: 'refuse', reason: textOf(`refused by the ledger: ${refusal.reason}`) };

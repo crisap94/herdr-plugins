@@ -10,6 +10,7 @@ import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { closedDaysOf } from '../fakes/closed-days.ts';
 import { expectSameEffect, normalise, withParity } from './parity.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const keyOf = (n: number): Uint8Array => Uint8Array.from({ length: 16 }, () => n);
 const L = (n: number): string => `X'${Buffer.from(keyOf(n)).toString('hex')}'`;
@@ -114,7 +115,7 @@ describe('parity: closed lanes on the Drizzle projection', () => {
             const repository = new ClosedLanesRepository(parity.raw, closedDaysOf('1'));
             for (const at of [29, 40]) {
                 const raw = rawRows(parity.raw, LAST_RUN_AT, 't1', 'k1', at)[0];
-                const found = repository.runAt({ tab: T1, key: 'k1' }, instant(at));
+                const found = repository.runAt({ tab: T1, key: textOf('k1') }, instant(at));
                 assert.deepEqual(found === null ? null : { at: found.at, cause: found.cause }, raw === undefined ? null : { at: raw.at, cause: raw.cause });
             }
         });

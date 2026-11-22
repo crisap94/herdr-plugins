@@ -6,9 +6,11 @@ import type { StoreUnderTest } from '../memory-store.ts';
 import { cursor, factAt, isUnknownValue, runOf, shapeOf, typeIdAt } from './record-fixtures.ts';
 import { instant } from '@stateforge-labs/session-ledger';
 import { tabId } from '../values.ts';
+import { textOf } from '../../src/recap/domain/text.ts';
+import { tabIdOf, paneIdOf } from '../../src/recap/domain/lane-shape.ts';
 
-const TAB_1_A: TaskId = { tab: 'tab-1', key: 'a' };
-const TAB_1_B: TaskId = { tab: 'tab-1', key: 'b' };
+const TAB_1_A: TaskId = { tab: tabIdOf('tab-1'), key: textOf('a') };
+const TAB_1_B: TaskId = { tab: tabIdOf('tab-1'), key: textOf('b') };
 
 const knownFacts = (read: readonly Fact[] | Unknown, what: string): readonly Fact[] => {
     if (isUnknownValue(read)) {
@@ -30,21 +32,21 @@ const isThenable = (value: unknown): boolean => typeof value === 'object' && val
 
 const writeFacts = (store: StoreUnderTest, at: number, tab: string, facts: readonly Fact[]): void => {
     const keys = [...new Set(facts.map((fact) => fact.task.key))];
-    store.records.recordRun(runOf({ tab: tabId(tab), at: instant(at), lanes: keys.map((k) => cursor(k)), tasks: keys.map((k) => shapeOf(k, [k])), changed: facts }));
+    store.records.recordRun(runOf({ tab: tabId(tab), at: instant(at), lanes: keys.map((k) => cursor(k)), tasks: keys.map((k) => shapeOf(k, [paneIdOf(k)])), changed: facts }));
 };
 
 const openAt = (id: number, text: string, firstAt: number, lastAt: number, task: TaskId = TAB_1_A): Fact =>
-    factAt(typeIdAt(id), { task, text, firstAt, lastAt });
+    factAt(typeIdAt(id), { task, text: textOf(text), firstAt: instant(firstAt), lastAt: instant(lastAt) });
 
 const closedAt = (id: number, text: string, closedAtMs: number, firstAt: number, task: TaskId = TAB_1_A): Fact =>
     factAt(typeIdAt(id), {
         task,
-        text,
-        firstAt,
-        lastAt: closedAtMs,
+        text: textOf(text),
+        firstAt: instant(firstAt),
+        lastAt: instant(closedAtMs),
         state: 'closed',
         closedWhy: 'done',
-        closedAt: closedAtMs,
+        closedAt: instant(closedAtMs),
     });
 
 export const FCT_1: Case<null, StoreUnderTest> = {
@@ -92,7 +94,7 @@ export const FCT_4: Case<null, StoreUnderTest> = {
     level: 'full',
     async run(_world, store) {
         writeFacts(store, 120, 'tab-1', [openAt(1, 'one', 100, 100), openAt(2, 'two', 110, 110, TAB_1_B)]);
-        writeFacts(store, 120, 'tab-2', [openAt(3, 'three', 120, 120, { tab: 'tab-2', key: 'c' })]);
+        writeFacts(store, 120, 'tab-2', [openAt(3, 'three', 120, 120, { tab: tabIdOf('tab-2'), key: textOf('c') })]);
         assert.deepEqual(knownKeys(store.facts.keysOf(scope('tab-1'))).toSorted(), ['a', 'b']);
     },
 };
@@ -106,7 +108,7 @@ export const FCT_5: Case<null, StoreUnderTest> = {
         writeFacts(store, 100, 'tab-1', [openAt(1, 'kept', 100, 100)]);
         writeFacts(store, 110, 'tab-1', [openAt(2, 'other', 110, 110, TAB_1_B)]);
         assert.deepEqual(store.facts.historyOf(scope('tab-1'), key('a')).map((fact) => fact.text), ['kept']);
-        const many = Array.from({ length: 301 }, (_, index) => openAt(100 + index, `fact ${index}`, index, index, { tab: 'tab-1', key: 'c' }));
+        const many = Array.from({ length: 301 }, (_, index) => openAt(100 + index, `fact ${index}`, index, index, { tab: tabIdOf('tab-1'), key: textOf('c') }));
         writeFacts(store, 200, 'tab-1', many);
         assert.equal(store.facts.historyOf(scope('tab-1'), key('c')).length, 300);
     },
@@ -118,7 +120,7 @@ export const FCT_8: Case<null, StoreUnderTest> = {
     title: 'a failed read on openOf, recentlyClosed, allOf or keysOf is Unknown, never an empty list',
     level: 'full',
     async run(_world, store) {
-        const task = { tab: 'nowhere', key: 'a' };
+        const task = { tab: tabIdOf('nowhere'), key: textOf('a') };
         store.failReads?.('openOf', 1);
         assert.equal(isUnknownValue(store.facts.openOf(task)), true);
         store.failReads?.('recentlyClosed', 1);

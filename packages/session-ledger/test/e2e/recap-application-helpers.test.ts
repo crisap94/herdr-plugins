@@ -110,7 +110,7 @@ test('the section headings map to section ids in English and Spanish, and unknow
 test('the ground of a recap names each task and extracting over it returns an outcome', async () => {
     const numbering = numbered([], [], severalOf(false), FULL_WRITER_VIEW, NOW);
     const ground = groundOf({
-        tab: text('tab-1'), tasks: [{ id: 'task-1', name: 'CI', lanes: [] }], built: { input, numbering }, entries: [],
+        tab: text('tab-1'), tasks: [{ id: textOf('task-1'), name: textOf('CI'), lanes: [] }], built: { input, numbering }, entries: [],
         ledger: { openOf: () => [], recentlyClosed: () => [], allOf: () => [] } as never, now: NOW, language: text('en'),
     });
     assert.equal(ground.now, NOW);

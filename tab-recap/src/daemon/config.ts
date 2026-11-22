@@ -47,7 +47,7 @@ export type { CompactionSettings, Glow, Models, SettingReader, Settings } from '
 
 const defaults = xdgPaths(homedir());
 
-const keyOf = (name: SettingName): EnvironmentName => environmentName(name);
+const keyOf = (name: SettingName): EnvironmentName => environmentName(must(parseText(name)));
 
 const LOCALE = keyOf('TAB_RECAP_LOCALE');
 const RECAP_LANG = keyOf('TAB_RECAP_RECAP_LANG');
@@ -94,7 +94,7 @@ export function parseSettingsFile(input: unknown): Result<SettingsFile, ParseFai
         if (value.length >= 2 && (quote === '"' || quote === "'") && value.endsWith(quote)) {
             value = value.slice(1, -1);
         }
-        values.set(environmentName(line.slice(0, eq).trim()), must(parseText(value)));
+        values.set(environmentName(must(parseText(line.slice(0, eq).trim()))), must(parseText(value)));
     }
     return ok(values);
 }
@@ -125,8 +125,8 @@ export function modelsFrom(read: SettingReader, choice: BackendChoice): Models {
             return NO_VALUE;
         }
         const legacyKey = model.legacyEnv;
-        const legacy = legacyKey === null ? undefined : read(environmentName(legacyKey));
-        const own = read(environmentName(`TAB_RECAP_MODEL_${id.toUpperCase()}`)) ?? (legacy === '' ? undefined : legacy);
+        const legacy = legacyKey === null ? undefined : read(legacyKey);
+        const own = read(environmentName(must(parseText(`TAB_RECAP_MODEL_${id.toUpperCase()}`)))) ?? (legacy === '' ? undefined : legacy);
         return own ?? (choice === id ? read(keyOf('TAB_RECAP_MODEL')) : undefined) ?? NO_VALUE;
     };
     return harnessLabels(modelFor);

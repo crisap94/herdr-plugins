@@ -5,9 +5,11 @@ import type { GateInput } from '#src/recap/domain/autocompact.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 import { flightOf, flightReason, NOT_AWAITING, observedFrom, runningCount, unreadable } from '#src/recap/domain/in-flight.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
-const running = (count: number): GateInput['flight'] => flightOf(observedFrom(runningCount(count), [], flightReason(`${count} running`)), NOT_AWAITING);
-const unreadableFlight = (): GateInput['flight'] => flightOf(unreadable(flightReason('unreadable')), NOT_AWAITING);
+const running = (count: number): GateInput['flight'] => flightOf(observedFrom(runningCount(countOf(count)), [], flightReason(textOf(`${count} running`))), NOT_AWAITING);
+const unreadableFlight = (): GateInput['flight'] => flightOf(unreadable(flightReason(textOf('unreadable'))), NOT_AWAITING);
 
 const NOW = 10_000_000;
 const lane = (over: Partial<GateInput> = {}): GateInput => ({ kind: 'claude', kinds: ['claude'], shadowKinds: [], busy: false, flight: null, share: 62, minimum: 40, ceiling: 80, now: NOW, lastBreakAt: null, lastDecisionAt: null, cooldownMs: 600_000, unchanged: false, ...over });

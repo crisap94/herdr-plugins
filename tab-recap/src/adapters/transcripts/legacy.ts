@@ -31,7 +31,7 @@ export function readerKindOfText(raw: Text): RegisteredKind | null {
 }
 
 export function replayKindOfPath(flag: Text | null, file: FsPath): RegisteredKind | null {
-    return registeredKindOf(flag ?? harnessOfTranscriptPath(file) ?? (file.includes(CODEX_HOME_MARKER) ? 'codex' : 'claude'));
+    return registeredKindOf(textOf(flag ?? harnessOfTranscriptPath(file) ?? (file.includes(CODEX_HOME_MARKER) ? 'codex' : 'claude')));
 }
 
 const pathOf = (path: string): FsPath => must(parseFsPath(path));

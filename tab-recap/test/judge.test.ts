@@ -15,7 +15,7 @@ import { oneTask, withFacts } from '#test/support.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 
-const SECTIONS = { goal: 'Ship retries for the upload client.', now: [], needs: [], done: ['Merged !256 after both pipelines went green.', 'Spent the morning on it.'], decisions: ['Keep three retries because the API limits bursts.'], next: [], links: ['!256'], rules: [] };
+const SECTIONS = { goal: textOf('Ship retries for the upload client.'), now: [], needs: [], done: [textOf('Merged !256 after both pipelines went green.'), textOf('Spent the morning on it.')], decisions: [textOf('Keep three retries because the API limits bursts.')], next: [], links: [textOf('!256')], rules: [] };
 const CHECKS = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7'];
 const KEYS = ['t1/goal/0', 't1/done/0', 't1/done/1', 't1/decisions/0', 't1/links/0'];
 const SECTION_OF: Readonly<Record<string, string>> = { 't1/goal/0': 'goal', 't1/done/0': 'done', 't1/done/1': 'done', 't1/decisions/0': 'decisions', 't1/links/0': 'links' };

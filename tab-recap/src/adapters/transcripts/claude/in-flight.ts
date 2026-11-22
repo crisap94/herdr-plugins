@@ -7,7 +7,7 @@ import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import { backgroundItem, backgroundLabel, backgroundTool, NO_RUNNING, runningOf } from '#src/recap/domain/in-flight.ts';
 import type { BackgroundItem } from '#src/recap/domain/in-flight.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { parse } from '../jsonl.ts';
 
 export { claudeInFlight } from './legacy.ts';
@@ -21,7 +21,7 @@ export interface TailScan { readonly count: Count; readonly items: readonly Back
 export function scanFlight(lines: readonly Text[]): TailScan | null {
     if (lines.every((line) => parse(line) === null) && lines.some((line) => line.trim() !== '')) return null;
     const scan = scanClaudeBackground(readClaudeRecords(lines).records);
-    const items = scan.live.map((task) => backgroundItem(backgroundTool(task.tool), task.description === null || task.description.trim() === '' ? null : backgroundLabel(task.description)));
+    const items = scan.live.map((task) => backgroundItem(backgroundTool(textOf(task.tool)), task.description === null || task.description.trim() === '' ? null : backgroundLabel(textOf(task.description))));
     return { count: must(parseCount(items.length)), items, unseen: scan.unseenEnd ? 'present' : 'absent' };
 }
 

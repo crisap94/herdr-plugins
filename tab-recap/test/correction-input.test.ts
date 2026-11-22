@@ -9,6 +9,7 @@ import { instructions } from '#src/adapters/job/prompts/recap-instructions.ts';
 import { writerContext } from '#src/recap/application/writer-context.ts';
 import { agentOf, requestOf } from './support.ts';
 import { dtdTest, validate } from './xmllint.ts';
+import { factIdOf } from '#src/recap/domain/fact.ts';
 
 const at = (clock: string): number => Date.parse(`2026-10-06T${clock}:00Z`);
 const fact = (id: string, over: Partial<InputFact> = {}): InputFact =>
@@ -18,9 +19,9 @@ const RETRY: Correction = {
     tasks: brand<boolean, 'Several'>(true), problems: [textOf('an add needs a section (goal, now, needs, done, decisions, next, links or rules) and a text')],
     facts: [fact('f4'), fact('f9', { section: 'decisions', why: textOf('one file'), state: 'closed', closed: 'superseded' })],
     refused: [
-        { task: textOf('t1'), operation: { op: 'add', section: 'decisions', text: 'Leave <db> alone ]]> & stop', why: null, ref: 'src/a.ts', at: at('02:51'), agent: 'orchestrator', anchor: 'leave the "db" tab' }, reasons: [{ gate: textOf('G3'), reason: textOf('a decision needs its reason: add "because …" or ": <why>"') }] },
-        { task: textOf('t2'), operation: { op: 'update', id: 'f4', text: 'Released 1.10.0 today', why: null, anchor: null }, reasons: [{ gate: textOf('G11'), reason: textOf('the anchor is missing') }, { gate: textOf('G2'), reason: textOf('it repeats f9 ("Released")') }] },
-        { task: textOf('t1'), operation: { op: 'close', id: 'f9', why: 'answered' }, reasons: [{ gate: textOf('G12'), reason: textOf('f9 is a decisions fact') }] },
+        { task: textOf('t1'), operation: { op: 'add', section: 'decisions', text: textOf('Leave <db> alone ]]> & stop'), why: null, ref: textOf('src/a.ts'), at: instant(at('02:51')), agent: textOf('orchestrator'), anchor: textOf('leave the "db" tab') }, reasons: [{ gate: textOf('G3'), reason: textOf('a decision needs its reason: add "because …" or ": <why>"') }] },
+        { task: textOf('t2'), operation: { op: 'update', id: factIdOf('f4'), text: textOf('Released 1.10.0 today'), why: null, anchor: null }, reasons: [{ gate: textOf('G11'), reason: textOf('the anchor is missing') }, { gate: textOf('G2'), reason: textOf('it repeats f9 ("Released")') }] },
+        { task: textOf('t1'), operation: { op: 'close', id: factIdOf('f9'), why: 'answered' }, reasons: [{ gate: textOf('G12'), reason: textOf('f9 is a decisions fact') }] },
     ],
 };
 

@@ -4,11 +4,12 @@ import { REGISTERED_KINDS, kindsWith, registeredKindOf } from '#src/recap/domain
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import { brand, type Brand } from '#src/recap/domain/brand.ts';
 import { isSection, type Section } from '#src/recap/domain/fact.ts';
-import { holdsLane, type Flight } from '#src/recap/domain/in-flight.ts';
+import { holdsLane, type Flight, ceilingOf } from '#src/recap/domain/in-flight.ts';
 import type { Duration, Instant, Milliseconds } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseAgentKind, type AgentKind } from './timing-ids.ts';
 import type { Text } from '#src/recap/domain/text.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 export type CeilingPolicy = 'overrides-check' | 'blocked-by-check';
 export type Backoff = { readonly kind: 'off' } | { readonly kind: 'window'; readonly ms: Milliseconds };
@@ -131,7 +132,7 @@ export type ShadowKinds = readonly RegisteredKind[];
 
 export function parseShadowKinds(raw: unknown): ShadowKinds {
     const text = typeof raw === 'string' ? raw : '';
-    const kinds = text.split(',').map((kind) => registeredKindOf(kind.trim().toLowerCase())).filter((kind): kind is RegisteredKind => kind !== null && REGISTERED_KINDS[kind].hasTranscript);
+    const kinds = text.split(',').map((kind) => registeredKindOf(textOf(kind.trim().toLowerCase()))).filter((kind): kind is RegisteredKind => kind !== null && REGISTERED_KINDS[kind].hasTranscript);
     return [...new Set(kinds)];
 }
 
@@ -248,7 +249,7 @@ export function gateFrom(input: GateFacts): GateDecision {
         if (input.unchanged === 'same') return 'unchanged';
         const backoff = backoffGate(input);
         if (backoff !== null) return backoff;
-        if (input.flight !== null && holdsLane(input.flight, input.share >= input.ceiling)) return 'in-flight';
+        if (input.flight !== null && holdsLane(input.flight, ceilingOf(input.share >= input.ceiling))) return 'in-flight';
         return input.share >= input.ceiling ? 'ceiling' : 'ask';
     })();
     return { gate, recordOnly };

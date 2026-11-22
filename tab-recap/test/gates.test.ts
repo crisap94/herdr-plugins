@@ -46,8 +46,8 @@ test('G2 duplicate: a near-copy of an earlier item of the task is refused and th
 });
 
 test('G2 duplicate: the tokens are lower-cased words of three letters or more', () => {
-    assert.deepEqual([...tokensOf('Fix the CI of a1, ok?')].toSorted(), ['fix', 'the']);
-    assert.equal(jaccard(new Set(['a', 'b']), new Set(['b', 'c'])), 1 / 3);
+    assert.deepEqual([...tokensOf(textOf('Fix the CI of a1, ok?'))].toSorted(), ['fix', 'the']);
+    assert.equal(jaccard(new Set([textOf('a'), textOf('b')]), new Set([textOf('b'), textOf('c')])), 1 / 3);
     assert.equal(jaccard(new Set(), new Set()), 0);
 });
 

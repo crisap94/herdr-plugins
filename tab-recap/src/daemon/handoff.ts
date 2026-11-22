@@ -31,7 +31,7 @@ import type { Board } from '#src/recap/domain/board.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import { storedOf, type HandoffOutcome, type StoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { failureCauseOf } from '#src/recap/domain/failure-cause.ts';
+import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import { parseHandoffId, sessionId, type HandoffId } from '#src/recap/domain/ids.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { instant, type Duration, type Instant } from '#src/recap/domain/time.ts';
@@ -83,7 +83,7 @@ export class HandoffRunner {
             });
             if (id === null) { this.deps.log(must(parseText(`handoff ask ${ask.id}: interrupted without a handoff id; no answer written`))); }
         } catch (error) {
-            this.deps.log(must(parseText(`handoff ask ${ask.id}: restart sweep failed ${failureCauseOf(error)}`)));
+            this.deps.log(must(parseText(`handoff ask ${ask.id}: restart sweep failed ${failureCauseOf(parseThrown(error))}`)));
         }
     }
 
@@ -95,7 +95,7 @@ export class HandoffRunner {
                 await this.serveAsked(row);
             }
         } catch (error) {
-            this.deps.log(must(parseText(`handoff ${row.id}: ${failureCauseOf(error)}`)));
+            this.deps.log(must(parseText(`handoff ${row.id}: ${failureCauseOf(parseThrown(error))}`)));
         }
     }
 
@@ -149,7 +149,7 @@ export class HandoffRunner {
         try {
             return await this.deps.flow.execute(row, mark);
         } catch (error) {
-            this.deps.log(must(parseText(`handoff ${row.id}: ${failureCauseOf(error)}`)));
+            this.deps.log(must(parseText(`handoff ${row.id}: ${failureCauseOf(parseThrown(error))}`)));
             return internalError();
         }
     }
@@ -184,7 +184,7 @@ export class HandoffRunner {
             work();
             return 'written';
         } catch (error) {
-            this.deps.log(must(parseText(`${note}: ${failureCauseOf(error)}`)));
+            this.deps.log(must(parseText(`${note}: ${failureCauseOf(parseThrown(error))}`)));
             return 'failed';
         }
     }
@@ -209,7 +209,7 @@ async function pollOnce(parts: HandoffPollParts): Promise<void> {
     try {
         await parts.runner.take(parts.requests.takeHandoffs());
     } catch (error) {
-        parts.log(must(parseText(`handoff poll: ${failureCauseOf(error)}`)));
+        parts.log(must(parseText(`handoff poll: ${failureCauseOf(parseThrown(error))}`)));
     }
 }
 

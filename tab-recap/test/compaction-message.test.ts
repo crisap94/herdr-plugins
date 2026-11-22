@@ -3,18 +3,18 @@ import assert from 'node:assert/strict';
 import { guidanceOf, MESSAGE_LIMIT, restoreFrom, restoreOf } from '#src/recap/application/compaction-message.ts';
 import type { Material } from '#src/recap/application/compaction-message.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 
 const web = { base: 'https://git.example/team/app', forge: 'gitlab', branch: 'feat/cart' } as const;
 const sections = {
-    ...NO_SECTIONS, goal: 'Ship the cart rewrite', now: ['Running the checkout tests'], needs: ['Should guests keep their basket?'],
-    decisions: ['Use sqlite, it needs no server'], next: ['Open the merge request'], rules: ['Never push to main'], links: ['!252', '`src/cart.ts`'],
+    ...NO_SECTIONS, goal: textOf('Ship the cart rewrite'), now: [textOf('Running the checkout tests')], needs: [textOf('Should guests keep their basket?')],
+    decisions: [textOf('Use sqlite, it needs no server')], next: [textOf('Open the merge request')], rules: [textOf('Never push to main')], links: [textOf('!252'), textOf('`src/cart.ts`')],
 };
 const said = (raw: string): Text => must(parseText(raw));
 const material = (over: Partial<Material> = {}): Material => ({ sections, web, note: null, ...over });
 
-const many = (label: string): string[] => Array.from({ length: 14 }, (_, at) => `${label} ${at} ${'x'.repeat(60)}`);
+const many = (label: string): Text[] => Array.from({ length: 14 }, (_, at) => textOf(`${label} ${at} ${'x'.repeat(60)}`));
 const FORBIDDEN = /recap|\btabs?\b|tool/iu;
 
 test('golden: the guidance with a note is ONE line, numbered, references as URLs', () => {
@@ -33,13 +33,13 @@ test('golden: the guidance with a note is ONE line, numbered, references as URLs
 });
 
 test('a skipped note leaves no trace, and empty priorities are omitted', () => {
-    const text = guidanceOf(material({ note: said('   '), sections: { ...NO_SECTIONS, goal: 'Fix the login bug' } }));
+    const text = guidanceOf(material({ note: said('   '), sections: { ...NO_SECTIONS, goal: textOf('Fix the login bug') } }));
     assert.equal(text, ['When you summarize this conversation, keep these, most important first:', '(1) What I want: Fix the login bug', 'Drop raw command output, the details of steps that are finished, and dead ends we already resolved.'].join(' '));
     assert.ok(!/above all|note/iu.test(text));
 });
 
 test('golden: the restore message for an agent whose compaction takes no instructions', () => {
-    assert.equal(restoreOf(material({ sections: { ...NO_SECTIONS, goal: 'Ship the cart rewrite', rules: ['Never push to main'] } })), [
+    assert.equal(restoreOf(material({ sections: { ...NO_SECTIONS, goal: textOf('Ship the cart rewrite'), rules: [textOf('Never push to main')] } })), [
         'We just compacted this conversation. This is where things stand:',
         '- What I want: Ship the cart rewrite',
         '- Standing rules I gave you: Never push to main.',
@@ -54,7 +54,7 @@ test('over the limit: references go first, then next steps, then decisions; the 
     assert.ok(text.includes('keep the note whole') && text.includes('Ship the cart rewrite'));
     assert.ok(!text.includes('ref 13') && text.includes('next 13'), 'references are cut first, from the end');
     assert.ok(text.includes('decision 13'), 'decisions are whole while references can still give');
-    const tighter = guidanceOf(material({ sections: { ...big, decisions: many('decision').map((line) => line + 'y'.repeat(150)) }, note: said('n') }));
+    const tighter = guidanceOf(material({ sections: { ...big, decisions: many('decision').map((line) => textOf(line + 'y'.repeat(150))) }, note: said('n') }));
     assert.ok(tighter.length <= MESSAGE_LIMIT && !tighter.includes('next 0'), 'next steps go before decisions');
 });
 

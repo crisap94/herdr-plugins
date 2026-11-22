@@ -13,10 +13,11 @@ import { instant } from '#src/recap/domain/time.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
+import { tabIdOf, paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
-const sections = { goal: 'ship', now: ['a'], needs: [], done: ['b', 'c'], decisions: [], next: [], links: ['x.ts'], rules: [] };
-const shape = (id: string, lanes: readonly string[], name = ''): TaskShape => ({ id, name, lanes });
-const adds = (task: string, of: RecapSections = sections): readonly TaskOps[] => [{ task, ops: opsOfSections(of) }];
+const sections = { goal: textOf('ship'), now: [textOf('a')], needs: [], done: [textOf('b'), textOf('c')], decisions: [], next: [], links: [textOf('x.ts')], rules: [] };
+const shape = (id: string, lanes: readonly string[], name = ''): TaskShape => ({ id: textOf(id), name: textOf(name), lanes: lanes.map((lane) => paneIdOf(lane)) });
+const adds = (task: string, of: RecapSections = sections): readonly TaskOps[] => [{ task: textOf(task), ops: opsOfSections(of) }];
 const run = (over: Partial<RunInput> = {}): RunInput => ({
     tab: tabId('w1:t1'), at: instant(100), cause: 'requested', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0.25), error: null, lanes: [cursor('w1:p1')], tasks: [shape('t1', ['w1:p1'])], ops: adds('t1'), ...over,
 });
@@ -81,7 +82,7 @@ test('lanes and tasks keep their order; a task that names a closed lane keeps na
     const store = memoryStore(); const { records } = store;
     recordOps(store, run({
         lanes: [cursor('w1:p2'), cursor('w1:p1')], tasks: [shape('t2', ['w1:p3'], 'Docs'), shape('t1', ['w1:p2', 'w1:p1', 'w1:gone'], 'Payments')],
-        ops: [...adds('t1'), ...adds('t2', { ...NO_SECTIONS, goal: 'document it' })],
+        ops: [...adds('t1'), ...adds('t2', { ...NO_SECTIONS, goal: textOf('document it') })],
     }));
     const recap = must(storeRead(records.readRecap(tabId('w1:t1'))));
     assert.deepEqual(recap.lanes.map((lane) => lane.pane), ['w1:p2', 'w1:p1']);
@@ -99,7 +100,7 @@ test('an empty recap (no facts) is still a task; a second tab is a separate reca
 
 test('a run is all or nothing: a run whose fact the schema refuses (an empty text) leaves no trace', () => {
     const store = memoryStore(); const { db } = store;
-    const refused = [{ task: 't1', ops: [{ op: 'add' as const, section: 'done' as const, text: 'fine', why: null, ref: null, at: null, agent: null }, { op: 'add' as const, section: 'done' as const, text: '', why: null, ref: null, at: null, agent: null }] }];
+    const refused = [{ task: textOf('t1'), ops: [{ op: 'add' as const, section: 'done' as const, text: textOf('fine'), why: null, ref: null, at: null, agent: null }, { op: 'add' as const, section: 'done' as const, text: textOf(''), why: null, ref: null, at: null, agent: null }] }];
     assert.throws(() => { recordOps(store, run({ ops: refused })); }, /CHECK constraint failed/);
     for (const table of ['run', 'task', 'transcript', 'fact', 'run_task']) {
         assert.equal((db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n, 0, table);
@@ -132,13 +133,13 @@ test('the item rows are no longer written: a run adds facts and no items', () =>
     assert.equal((db.prepare('SELECT COUNT(*) AS n FROM fact').get() as { n: number }).n, 5);
 });
 
-const nowAdd = (text: string): readonly TaskOps[] => [{ task: 't1', ops: [{ op: 'add', section: 'now', text, why: null, ref: null, at: null, agent: null }] }];
+const nowAdd = (text: string): readonly TaskOps[] => [{ task: textOf('t1'), ops: [{ op: 'add', section: 'now', text: textOf(text), why: null, ref: null, at: null, agent: null }] }];
 
 test('a writer\'s run closes the now facts it did not carry forward as superseded, in the same transaction; a run with no operations closes nothing', () => {
     const store = memoryStore(); const { ledger } = store;
     recordOps(store, run({ at: instant(100), ops: nowAdd('Reading the logs') }));
     recordOps(store, run({ at: instant(200), ops: nowAdd('Wiring the client') }));
-    const states = (): string[] => storeRead(ledger.allOf({ tab: 'w1:t1', key: 't1' })).map((fact) => `${fact.text}:${fact.state}:${fact.closedWhy}:${fact.closedAt}`);
+    const states = (): string[] => storeRead(ledger.allOf({ tab: tabIdOf('w1:t1'), key: textOf('t1') })).map((fact) => `${fact.text}:${fact.state}:${fact.closedWhy}:${fact.closedAt}`);
     assert.deepEqual(states(), ['Reading the logs:closed:superseded:200', 'Wiring the client:open:null:null']);
     recordOps(store, run({ at: instant(300), ops: [] }));
     assert.deepEqual(states(), ['Reading the logs:closed:superseded:200', 'Wiring the client:open:null:null']);

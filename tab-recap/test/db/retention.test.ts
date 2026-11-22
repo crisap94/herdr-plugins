@@ -11,15 +11,17 @@ import { instant } from '#src/recap/domain/time.ts';
 import { cursor, memoryStore, recordOps } from './support.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
+import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 const DAY = 86_400_000;
 const NOW = Date.parse('2026-10-07T12:00:00Z');
-const MARK = { pane: 'w1:p1', cursor: 5, tokensBefore: 800_000, tokensAfter: 14_000 };
+const MARK = { pane: paneIdOf('w1:p1'), cursor: countOf(5), tokensBefore: countOf(800_000), tokensAfter: countOf(14_000) };
 
 function tab(store: Store, id: string, ago: number): void {
     const at = NOW - ago * DAY;
-    const sections = { goal: 'ship', now: [], needs: [], done: ['b'], decisions: [], next: [], links: [], rules: [] };
-    recordOps(store, { tab: tabId(id), at: instant(at), cause: 'turn-ended', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }], ops: [{ task: 't1', ops: opsOfSections(sections) }], marks: [{ ...MARK, at: at + 1000 }] });
+    const sections = { goal: textOf('ship'), now: [], needs: [], done: [textOf('b')], decisions: [], next: [], links: [], rules: [] };
+    recordOps(store, { tab: tabId(id), at: instant(at), cause: 'turn-ended', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')] }], ops: [{ task: textOf('t1'), ops: opsOfSections(sections) }], marks: [{ ...MARK, at: instant(at + 1000) }] });
     store.db.prepare("INSERT INTO compaction (id, tab_id, pane, agent, stage, started_at, stage_at, finished_at) VALUES (randomblob(16), ?, 'w1:p1', 'claude', 'compacted', ?, ?, ?)").run(id, at, at, at + 10);
     store.db.prepare("INSERT INTO tab_visibility (tab_id, state) VALUES (?, 'hidden')").run(id);
 }

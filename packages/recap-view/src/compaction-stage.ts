@@ -3,6 +3,7 @@ import type { CompactionRow } from './model.ts';
 import { assertSeconds } from './wording.ts';
 import type { TextWording } from './wording.ts';
 import type { Style } from './wrap.ts';
+import { countOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/count.ts';
 
 export function stageClockOf(since: number, now: number): string {
     const seconds = Math.max(0, Math.floor((now - since) / 1000));
@@ -13,7 +14,7 @@ export function figuresOf(record: Pick<CompactionRow, 'tokensBefore' | 'tokensAf
     const { tokensBefore: before, tokensAfter: after, tookMs } = record;
     const seconds = Math.round((tookMs ?? 0) / 1000);
     assertSeconds(seconds);
-    const [from, to] = before === null || after === null ? ['', ''] : [tokensOf(before), tokensOf(after)];
+    const [from, to] = before === null || after === null ? ['', ''] : [tokensOf(countOf(before)), tokensOf(countOf(after))];
     return {
         pair: from === '' ? '' : `${from} → ${to}`,
         tokens: from === '' ? '' : m.compaction.stage.tokens(from, to),

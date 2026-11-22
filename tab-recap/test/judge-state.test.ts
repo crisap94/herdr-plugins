@@ -17,19 +17,21 @@ import { oneTask } from '#test/support.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
+import { factIdOf } from '#src/recap/domain/fact.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
-const add = (section: 'done' | 'next', text: string): Operation => ({ op: 'add', section, text, why: null, ref: null, at: null, agent: null });
-const TAB = { tab: 'w1:t1', key: 't1' };
+const add = (section: 'done' | 'next', text: string): Operation => ({ op: 'add', section, text: textOf(text), why: null, ref: null, at: null, agent: null });
+const TAB = { tab: tabIdOf('w1:t1'), key: textOf('t1') };
 
 function history(): { store: ReturnType<typeof memoryStore>; runs: readonly StoredRun[] } {
     const store = memoryStore();
     const record = (at: number, ops: (ids: Record<string, string>) => readonly Operation[]): void => {
         const ids = Object.fromEntries(storeRead(store.ledger.openOf(TAB)).map((fact) => [fact.text, fact.id]));
-        const tasks: readonly TaskOps[] = [{ task: 't1', ops: ops(ids) }];
+        const tasks: readonly TaskOps[] = [{ task: textOf('t1'), ops: ops(ids) }];
         recordOps(store, { tab: tabId('w1:t1'), at: instant(at), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], tasks: oneTask(''), ops: tasks, input: textOf(`<recap_input version="2">run at ${at}</recap_input>`) });
     };
     record(1000, () => [add('done', 'Merged !256.'), add('next', 'Tag the release.')]);
-    record(2000, (ids) => [add('done', 'Tagged 1.9.0.'), { op: 'close', id: ids['Tag the release.'] ?? '', why: 'done' }]);
+    record(2000, (ids) => [add('done', 'Tagged 1.9.0.'), { op: 'close', id: factIdOf(ids['Tag the release.'] ?? ''), why: 'done' }]);
     record(3000, () => [add('next', 'Announce 1.9.0.')]);
     return { store, runs: store.inputs.runs({ tab: null, since: null, limit: 10, withInput: true }).toReversed() };
 }
@@ -82,8 +84,8 @@ test('judging the third run: coverage and no-filler over the state (an older fac
 
 test('judge vs anchor: a fact whose quote is in the input and that the judge calls unsupported is listed; an unanchored one is only a failing item', async () => {
     const store = memoryStore();
-    const anchored: Operation = { op: 'add', section: 'done', text: 'Merged !256.', why: null, ref: null, at: null, agent: null, anchor: 'merge !256' };
-    recordOps(store, { tab: tabId('w1:t1'), at: instant(1000), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], tasks: oneTask(''), ops: [{ task: 't1', ops: [anchored, add('done', 'Tagged 1.9.0.')] }], input: textOf('<recap_input version="2">merge !256</recap_input>') });
+    const anchored: Operation = { op: 'add', section: 'done', text: textOf('Merged !256.'), why: null, ref: null, at: null, agent: null, anchor: textOf('merge !256') };
+    recordOps(store, { tab: tabId('w1:t1'), at: instant(1000), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], tasks: oneTask(''), ops: [{ task: textOf('t1'), ops: [anchored, add('done', 'Tagged 1.9.0.')] }], input: textOf('<recap_input version="2">merge !256</recap_input>') });
     const run = store.inputs.runs({ tab: null, since: null, limit: 5, withInput: true })[0];
     assert.ok(run !== undefined);
     const score = JSON.stringify({

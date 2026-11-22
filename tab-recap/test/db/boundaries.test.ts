@@ -7,19 +7,20 @@ import { tabId } from '#src/recap/domain/ids.ts';
 import { cursor, memoryStore, must, recordOps, type RunInput } from './support.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import { countOf } from '#src/recap/domain/count.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant, duration } from '#src/recap/domain/time.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
+import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const T0 = Date.parse('2026-10-07T14:00:00Z');
 const MIN = 60_000;
-const sections = { goal: 'ship', now: [], needs: [], done: ['b'], decisions: [], next: [], links: [], rules: [] };
+const sections = { goal: textOf('ship'), now: [], needs: [], done: [textOf('b')], decisions: [], next: [], links: [], rules: [] };
 const run = (over: Partial<RunInput> = {}): RunInput => ({
     tab: tabId('w1:t1'), at: instant(T0), cause: 'turn-ended', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')],
-    tasks: [{ id: 't1', name: '', lanes: ['w1:p1'] }], ops: [{ task: 't1', ops: opsOfSections(sections) }], ...over,
+    tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')] }], ops: [{ task: textOf('t1'), ops: opsOfSections(sections) }], ...over,
 });
-const claude = (at: number, over: Partial<LaneMark> = {}): LaneMark => ({ pane: 'w1:p1', at, cursor: 200, tokensBefore: 800_000, tokensAfter: 14_000, tookMs: 15_588, ...over });
+const claude = (at: number, over: Partial<LaneMark> = {}): LaneMark => ({ pane: paneIdOf('w1:p1'), at: instant(at), cursor: countOf(200), tokensBefore: countOf(800_000), tokensAfter: countOf(14_000), tookMs: duration(15_588), ...over });
 
 const rows = (db: Database, sql: string): Record<string, unknown>[] => db.prepare(sql).all().map((row) => Object.assign({}, row));
 const compaction = (db: Database, startedAt: number, stage = 'compacted', pane = 'w1:p1'): void => {
@@ -111,7 +112,7 @@ test('a mark already recorded (the cursor did not move on) is not recorded twice
 test('two compactions in one read are two boundaries, oldest first, two new chapters', () => {
     const store = memoryStore();
     seedTab(store);
-    recordOps(store, run({ at: instant(T0 + 10 * MIN), marks: [claude(T0 + 6 * MIN, { tokensBefore: 39_000, tokensAfter: countOf(3000) }), claude(T0 + 2 * MIN)] }));
+    recordOps(store, run({ at: instant(T0 + 10 * MIN), marks: [claude(T0 + 6 * MIN, { tokensBefore: countOf(39_000), tokensAfter: countOf(3000) }), claude(T0 + 2 * MIN)] }));
     assert.deepEqual(rows(store.db, 'SELECT at, tokens_before FROM boundary_readable ORDER BY at'), [{ at: T0 + 2 * MIN, tokens_before: 800_000 }, { at: T0 + 6 * MIN, tokens_before: 39_000 }]);
     assert.deepEqual(rows(store.db, 'SELECT n FROM chapter ORDER BY n'), [{ n: 1 }, { n: 2 }, { n: 3 }]);
 });
@@ -146,7 +147,7 @@ test('the timeline reads: the breaks oldest first with the mark\'s tokens, else 
     seedTab(store);
     compaction(store.db, T0 + MIN);
     store.db.exec('UPDATE compaction SET tokens_before = 39000, tokens_after = 3000, took_ms = 16000');
-    recordOps(store, run({ at: instant(T0 + 3 * MIN), marks: [{ pane: 'w1:p1', at: T0 + 2 * MIN, cursor: 200 }] }));
+    recordOps(store, run({ at: instant(T0 + 3 * MIN), marks: [{ pane: paneIdOf('w1:p1'), at: instant(T0 + 2 * MIN), cursor: countOf(200) }] }));
     assert.deepEqual(store.boundaries.breaksOf('w1:t1'), [{ kind: 'compacted', at: T0 + 2 * MIN, trigger: 'plugin', tokensBefore: 39_000, tokensAfter: countOf(3000), tookMs: 16_000 }]);
     assert.equal(store.boundaries.lastBreakAt(tabId('w1:t1'), 'w1:p1'), T0 + 2 * MIN);
     assert.equal(store.boundaries.lastBreakAt(tabId('w1:t1'), 'w1:p2'), null);

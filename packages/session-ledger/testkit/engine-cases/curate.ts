@@ -6,9 +6,12 @@ import { followed, key, scope, session } from '../ids.ts';
 import type { Behaviour, CuratedAnswer, EngineWorld } from '../world.ts';
 import { addOf, blockedOps, chunkOf, countOf, spoken, writtenOps } from './support.ts';
 import { failure } from '../values.ts';
+import { instant } from '../../src/recap/domain/time.ts';
+import { textOf } from '../../src/recap/domain/text.ts';
+import { tabIdOf } from '../../src/recap/domain/lane-shape.ts';
 
 export const TAB = scope('one');
-const TASK = { tab: TAB, key: key('a') };
+const TASK = { tab: tabIdOf(TAB), key: textOf(key('a')) };
 const WRITES: readonly string[] = ['beginRun', 'recordRun', 'failRun', 'advance', 'apply'];
 
 const CURATED: Behaviour<CuratedAnswer> = { kind: 'answer', value: { kind: 'curated', text: 'curated story' } };
@@ -25,13 +28,13 @@ const factsOf = (world: EngineWorld): readonly Fact[] => {
 const scopeFactsOf = (world: EngineWorld): readonly Fact[] => {
     const keys = world.store.facts.keysOf(TAB);
     return 'kind' in keys ? [] : keys.flatMap((one) => {
-        const found = world.store.facts.allOf({ tab: TAB, key: one });
+        const found = world.store.facts.allOf({ tab: tabIdOf(TAB), key: textOf(one) });
         return 'kind' in found ? [] : found;
     });
 };
 
 const seedFacts = (world: EngineWorld): void => {
-    world.store.seed(null, [factOf('fct_1', { task: TASK, text: 'open work', firstAt: 1, lastAt: 1 })]);
+    world.store.seed(null, [factOf('fct_1', { task: TASK, text: textOf('open work'), firstAt: instant(1), lastAt: instant(1) })]);
 };
 
 export const seedOpen = async (world: EngineWorld, engine: Engine): Promise<void> => {

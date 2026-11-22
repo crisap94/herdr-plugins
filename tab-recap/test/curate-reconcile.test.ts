@@ -25,18 +25,19 @@ import type { Count } from '#src/recap/domain/count.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const [textOf, countOf, tabOf, boundaryOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Count'>, brand<string, 'TabId'>, brand<boolean, 'Boundary'>, brand<number, 'Instant'>];
 
 const NOW = Date.parse('2026-10-07T16:30:00Z');
 const MIN = 60_000;
-const T1 = { tab: 'w1:t1', key: 't1' };
+const T1 = { tab: tabIdOf('w1:t1'), key: textOf('t1') };
 const facts = [
     fact('q', 'needs', 'Which branch should the release ship from?', NOW - 50 * MIN),
-    fact('d', 'decisions', 'Keep carts in SQLite', NOW - 40 * MIN, { why: 'one file to back up' }),
+    fact('d', 'decisions', 'Keep carts in SQLite', NOW - 40 * MIN, { why: textOf('one file to back up') }),
     fact('n', 'now', 'Running the migration tests', NOW - 30 * MIN),
     fact('m', 'now', 'Running tests of the migration', NOW - 29 * MIN),
-    fact('x', 'done', 'Wrote migration 007', NOW - 28 * MIN, { state: 'closed', closedWhy: 'done', closedAt: NOW - 27 * MIN }),
+    fact('x', 'done', 'Wrote migration 007', NOW - 28 * MIN, { state: 'closed', closedWhy: 'done', closedAt: instant(NOW - 27 * MIN) }),
 ];
 const TAIL: readonly Entry[] = [
     { role: 'agent', text: textOf('Which branch should the release ship from?'), at: instant(NOW - 20 * MIN) },

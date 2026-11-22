@@ -5,6 +5,9 @@ import { factOf } from '../facts.ts';
 import { followed, key, scope, session } from '../ids.ts';
 import type { EngineWorld } from '../world.ts';
 import { addOf, countOf, NO_OPS, spoken, writtenOps } from './support.ts';
+import { instant } from '../../src/recap/domain/time.ts';
+import { textOf } from '../../src/recap/domain/text.ts';
+import { tabIdOf } from '../../src/recap/domain/lane-shape.ts';
 
 const TAB = scope('one');
 const OTHER = scope('two');
@@ -22,8 +25,8 @@ const runWritten = async (world: EngineWorld, engine: Engine, text: string): Pro
 
 const seedHistory = (world: EngineWorld): void => {
     world.store.seed(null, [
-        factOf('fct_1', { task: { tab: TAB, key: key('a') }, text: 'stored fact', firstAt: 1, lastAt: 1 }),
-        factOf('fct_2', { task: { tab: TAB, key: key('a') }, text: 'closed fact', state: 'closed', closedWhy: 'done', closedAt: 2, firstAt: 1, lastAt: 2 }),
+        factOf('fct_1', { task: { tab: tabIdOf(TAB), key: textOf(key('a')) }, text: textOf('stored fact'), firstAt: instant(1), lastAt: instant(1) }),
+        factOf('fct_2', { task: { tab: tabIdOf(TAB), key: textOf(key('a')) }, text: textOf('closed fact'), state: 'closed', closedWhy: 'done', closedAt: instant(2), firstAt: instant(1), lastAt: instant(2) }),
     ]);
 };
 

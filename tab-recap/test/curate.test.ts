@@ -27,10 +27,11 @@ import { brand } from '#src/recap/domain/brand.ts';
 import { must } from '#src/protocol/result.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const [textOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Instant'>];
 
-const T1 = { tab: 'w1:t1', key: 't1' };
+const T1 = { tab: tabIdOf('w1:t1'), key: textOf('t1') };
 
 function setup(answers: readonly (Curated)[], over: { readonly ledger?: MemoryLedger; readonly repair?: RepairMode } = {}):{ curate: Curate; ledger: MemoryLedger; stories: MemoryStories; store: ReturnType<typeof memoryStore>; logs: string[]; calls: string[]; clock: { now: number } } {
     const ledger = over.ledger ?? new MemoryLedger().seed(...facts);
@@ -48,7 +49,7 @@ function setup(answers: readonly (Curated)[], over: { readonly ledger?: MemoryLe
 const answer = (body: object): Curated => ({ kind: 'curated', text: textOf(JSON.stringify(body)) });
 
 test('the curator document stays byte-identical and includes every open fact when the writer view is pruned', async () => {
-    const open = Array.from({ length: 20 }, (_, at) => factOf('done', `done ${at}`, { lastAt: at + 1 }));
+    const open = Array.from({ length: 20 }, (_, at) => factOf('done', `done ${at}`, { lastAt: instant(at + 1) }));
     const ledger = new MemoryLedger().seed(...open);
     const runCurator = async (): Promise<string> => {
         const { curate, calls } = setup([answer({ story: 'All facts are retained.' })], { ledger });
@@ -57,7 +58,7 @@ test('the curator document stays byte-identical and includes every open fact whe
         return calls[0] ?? '';
     };
     const beforePruning = await runCurator();
-    const built = await inputOf([], { tab: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(NOW), tasks: [{ id: 't1', name: '', lanes: [] }], facts: [{ key: brand<string, 'Text'>('t1'), open, closed: [] }], writerView: prunedWriterView(keepNewestOf(10), nextHoursOf(24)) });
+    const built = await inputOf([], { tab: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(NOW), tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [] }], facts: [{ key: brand<string, 'Text'>('t1'), open, closed: [] }], writerView: prunedWriterView(keepNewestOf(10), nextHoursOf(24)) });
     assert.match(writerContext({ ...requestOf(), input: built.input }), /<hidden section="done" count="10"\/>/u, 'the writer view really prunes in this run');
     const withPruning = await runCurator();
     assert.equal(withPruning, beforePruning);

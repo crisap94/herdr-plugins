@@ -1,7 +1,7 @@
 import type { Count } from '#src/contract/kernel.ts';
 import type { InputAgent } from '#src/ports/recap-input.ts';
 import { brand } from '#src/recap/domain/brand.ts';
-import { WRITER_CLOSES, isSection } from '#src/recap/domain/fact.ts';
+import { WRITER_CLOSES, isSection, type FactId } from '#src/recap/domain/fact.ts';
 import type { ClosedWhy, Section } from '#src/recap/domain/fact.ts';
 import { ANCHOR_CHARS } from '#src/recap/domain/gates/g11-anchor.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
@@ -89,7 +89,7 @@ function taskFor(fields: ParsedObject, resolving: Resolving): Text {
     return named !== undefined && resolving.tasks.includes(named) ? named : (resolving.tasks[0] ?? textOf('t1'));
 }
 
-const idOf = (fields: ParsedObject): Text => textOf(rawField(fields, 'id')?.trim() ?? '');
+const idOf = (fields: ParsedObject): FactId => brand<string, 'FactId'>(rawField(fields, 'id')?.trim() ?? '');
 
 function addOf(fields: ParsedObject, resolving: Resolving): Operation | Text {
     const section = sectionField(fields);

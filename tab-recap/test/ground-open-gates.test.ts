@@ -9,14 +9,16 @@ import { keepNewestOf, nextHoursOf, prunedWriterView } from '#src/recap/domain/w
 import type { Operation } from '#src/recap/domain/ops.ts';
 import { NO_REPOS } from '#test/support.ts';
 import { brand } from '#src/recap/domain/brand.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 const NOW = Date.parse('2026-10-06T03:05:00Z');
 
 test('groundOf and judge refuse an add that repeats an open fact hidden by pruned numbering', async () => {
-    const hidden = factOf('done', 'Released tab-recap 1.10.0 through the pipeline', { lastAt: NOW - 2 });
-    const shown = factOf('done', 'Keep the release checklist current', { lastAt: NOW - 1 });
+    const hidden = factOf('done', 'Released tab-recap 1.10.0 through the pipeline', { lastAt: instant(NOW - 2) });
+    const shown = factOf('done', 'Keep the release checklist current', { lastAt: instant(NOW - 1) });
     const ledger = new MemoryLedger().seed(hidden, shown);
-    const task = { id: 't1', name: '', lanes: [] };
+    const task = { id: textOf('t1'), name: textOf(''), lanes: [] };
     const view = prunedWriterView(keepNewestOf(1), nextHoursOf(24));
     const built = await inputOf([], { tab: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(NOW), tasks: [task], facts: [{ key: brand<string, 'Text'>('t1'), open: [hidden, shown], closed: [] }], writerView: view });
     assert.deepEqual(built.input.ledgers[0]?.facts.map((fact) => fact.text), ['Keep the release checklist current']);

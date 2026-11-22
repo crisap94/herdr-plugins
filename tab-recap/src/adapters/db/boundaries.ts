@@ -8,6 +8,9 @@ import { boundary, chapter, compaction, transcript } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import type { Moved, TranscriptRows } from './transcripts/legacy.ts';
 import { ids } from './uuid7.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 export interface Found {
     readonly at: Instant;
@@ -45,15 +48,15 @@ export class BoundaryRows {
                 .where(and(eq(boundary.kind, 'compacted'), eq(transcript.tabId, tabId(tab)), eq(transcript.pane, paneId(pane)))).get()?.at ?? null;
             const asked = this.orm.select({ startedAt: compaction.startedAt }).from(compaction)
                 .where(and(eq(compaction.tabId, tabId(tab)), eq(compaction.pane, paneId(pane)), ne(compaction.stage, 'skipped'))).all()
-                .map((row) => row.startedAt);
-            const planned = compactedFrom(found.marks.filter((mark) => mark.pane === pane), last, asked);
+                .map((row) => instant(row.startedAt));
+            const planned = compactedFrom(found.marks.filter((mark) => mark.pane === pane), last === null ? null : instant(last), asked);
             return planned.map((each) => Object.assign({}, each, { transcript: this.transcripts.ofPane(tab, pane, found.at), replaces: null }));
         });
     }
 
     private switched(found: Found): readonly Row[] {
         return found.moved.flatMap((moved) => (moved.replaces === null ? [] : [{
-            kind: 'switched' as const, pane: moved.pane, at: found.at, trigger: null, cursor: moved.to,
+            kind: 'switched' as const, pane: paneIdOf(moved.pane), at: found.at, trigger: null, cursor: countOf(moved.to),
             tokensBefore: null, tokensAfter: null, tookMs: null, transcript: moved.id, replaces: moved.replaces,
         }]));
     }
@@ -63,7 +66,7 @@ export class BoundaryRows {
             .where(eq(chapter.tabId, tabId(tab))).orderBy(desc(chapter.n)).limit(1).get();
         const chapterRow = ids.next();
         this.orm.insert(chapter).values({
-            id: chapterRow, tabId: tabId(tab), n: (sealed?.n ?? 1) + 1, startedAt: chapterStart(row.at, sealed?.startedAt ?? row.at),
+            id: chapterRow, tabId: tabId(tab), n: (sealed?.n ?? 1) + 1, startedAt: chapterStart(row.at, instant(sealed?.startedAt ?? row.at)),
         }).run();
         this.orm.insert(boundary).values({
             id: ids.next(), chapterId: chapterRow, transcriptId: row.transcript, kind: row.kind, at: row.at, trigger: row.trigger, cursor: row.cursor,

@@ -20,7 +20,7 @@ import { autocompactState } from './autocompact-state.ts';
 import { QUESTIONS } from './autocompact-questions.ts';
 import { busyOf, detailOf, gateBusyOf, gateSamenessOf, flightTextOf, recheckDue, unchangedOf, type CeilingReach, type Recheck } from './autocompact-gates.ts';
 import { lineOf, moneyOf, type Effect } from './autocompact-line.ts';
-import { flightOf, flightReason, holdsLane, NOT_AWAITING, NOTHING_IN_FLIGHT, awaitedNames, unreadable, type Flight, type Observed } from '#src/recap/domain/in-flight.ts';
+import { flightOf, flightReason, holdsLane, NOT_AWAITING, NOTHING_IN_FLIGHT, awaitedNames, unreadable, type Flight, type Observed, ceilingOf } from '#src/recap/domain/in-flight.ts';
 import { continuationNote, type ContinuationNote } from '#src/recap/domain/continuation-note.ts';
 import { busyDetailOf, coverageBackoffActive, idleEligibility, idleMsOf, policyForLane, reachOf, type Asking, type DeciderHealth, type Marks, type Stop } from './autocompact-shapes.ts';
 
@@ -102,7 +102,7 @@ function marksOf(deps: AutocompactDeps, placed: Placement): Marks {
     return {
         last: deps.decisions.lastDecision(tab, pane),
         lastBreakAt: brokeAt === null ? null : instant(brokeAt),
-        lastDecisionAt: decidedAt === null ? null : instant(decidedAt),
+        lastDecisionAt: decidedAt === null ? null : decidedAt,
     };
 }
 
@@ -219,7 +219,7 @@ export class Autocompact {
 
     private async lateFlight(placed: Placement, use: ContextUse, flight: Flight, atCeiling: CeilingReach): Promise<Flight | null> {
         const seen = lateFlightOf(flight, await this.waitingOf(placed.pane));
-        if (!holdsLane(seen, atCeiling === 'at-ceiling')) return seen;
+        if (!holdsLane(seen, ceilingOf(atCeiling === 'at-ceiling'))) return seen;
         this.skip(placed, 'in-flight', shareCount(use), flightTextOf(seen, atCeiling));
         return null;
     }
