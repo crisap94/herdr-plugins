@@ -1,3 +1,5 @@
+import { countOf } from '#src/recap/domain/count.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
@@ -5,7 +7,7 @@ import { loadConfig, stateDir } from '#src/daemon/config.ts';
 import { messagesFor } from '#src/i18n/index.ts';
 import { EMPTY_NOTE, step } from '#src/recap/application/compact-keys.ts';
 import type { NoteEffect, NoteState } from '#src/recap/application/compact-keys.ts';
-import { compactFooter, compactView } from '#src/recap/render/compact.ts';
+import { compactFooterText, compactViewText } from '#src/recap/render/compact.ts';
 import { coloured } from '#src/recap/render/wrap.ts';
 import { BEL, FRAME_END, FRAME_HOME, LINE_END, RESET_SGR, SCREEN_OFF, SCREEN_ON, TITLE_OSC } from '#src/adapters/os/tui.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
@@ -23,7 +25,7 @@ let agent = 'agent';
 
 function draw(): void {
     const width = Math.max(10, (process.stdout.columns || 40) - GUTTER);
-    const lines = [...compactView(state, messages, agent, width, style), '', compactFooter(messages, width, style)];
+    const lines = [...compactViewText(state, messages, textOf(agent), countOf(width), style), '', compactFooterText(messages, countOf(width), style)];
     process.stdout.write(`${FRAME_HOME}${lines.map((line) => ` ${line}${RESET}${LINE_END}`).join('\r\n')}${FRAME_END}`);
 }
 

@@ -1,3 +1,5 @@
+import { catalogFor } from '#src/i18n/index.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { parseInstant } from '#src/recap/domain/time.ts';
@@ -18,7 +20,7 @@ import { draftFrom, initial, locksOf, saved, step, tested, withAvailable } from 
 import type { Draft, Effect, Setup } from '#src/recap/application/setup-keys.ts';
 import { coloured } from '#src/recap/render/wrap.ts';
 import { AUTO_ORDER, harnessLabels } from '#src/recap/domain/backend.ts';
-import { setupFooter, setupView } from '#src/recap/render/setup.ts';
+import { setupFooterLine, setupLines } from '#src/recap/render/setup.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { join } from 'node:path';
 import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
@@ -64,15 +66,15 @@ function draw(): void {
     const [columns, rows] = size();
     const width = Math.max(10, columns - GUTTER);
     const m = messages();
-    const lines = setupView(state, m, width, style);
+    const lines = setupLines(state, catalogFor(m.locale), countOf(width), style);
     const room = Math.max(3, rows) - 1;
     const focus = Math.max(0, lines.findIndex((line) => stripVTControlCharacters(line).startsWith('▸')));
     scroll = Math.max(0, Math.min(focus - Math.floor(room / 3), lines.length - room));
-    const shown = lines.slice(scroll, scroll + room);
+    const shown: string[] = lines.slice(scroll, scroll + room);
     while (shown.length < room) {
         shown.push('');
     }
-    shown.push(setupFooter(state, m, width, style));
+    shown.push(setupFooterLine(state, catalogFor(m.locale), countOf(width), style));
     process.stdout.write(`${FRAME_HOME}${shown.map((line) => ` ${line}${RESET}${LINE_END}`).join('\r\n')}${FRAME_END}`);
 }
 

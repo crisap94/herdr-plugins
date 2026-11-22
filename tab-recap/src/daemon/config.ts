@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { xdgPaths } from '#src/adapters/os/config/paths-xdg.ts';
-import { languageSetting, messagesFor, recapLanguageOf } from '#src/i18n/index.ts';
+import { languageSettingOf, messagesFor, recapLanguageOfSetting } from '#src/i18n/index.ts';
 import type { LanguageSource, Locale, Messages } from '#src/i18n/index.ts';
 import { duration, parseDuration } from '#src/recap/domain/time.ts';
 import { DEFAULT_POLICY, screenKindsOf } from '#src/recap/domain/policy.ts';
@@ -150,7 +150,8 @@ export function settingReader(): SettingReader {
 
 export function recapLanguageSource(): LanguageSource {
     const file = readFile();
-    if (languageSetting(file.get(RECAP_LANG) ?? given(RECAP_LANG)) !== 'ui') {
+    const setting = file.get(RECAP_LANG) ?? given(RECAP_LANG);
+    if (languageSettingOf(setting === undefined ? undefined : uncheckedText(setting)) !== 'ui') {
         return file.has(RECAP_LANG) ? 'settings' : 'environment';
     }
     const locale = file.get(LOCALE) ?? given(LOCALE);
@@ -206,9 +207,10 @@ export function loadSettings(): Settings {
     const backend = backendFrom(get('TAB_RECAP_BACKEND'));
     const locale = localeFrom(get('TAB_RECAP_LOCALE'), given);
     const herdrEvents = herdrEventsFrom(get('TAB_RECAP_HERDR_EVENTS'));
+    const recapLanguageSetting = get('TAB_RECAP_RECAP_LANG');
     return {
         locale,
-        recapLanguage: must(parseText(recapLanguageOf(get('TAB_RECAP_RECAP_LANG'), locale))),
+        recapLanguage: must(parseText(recapLanguageOfSetting(recapLanguageSetting === undefined ? undefined : uncheckedText(recapLanguageSetting), locale))),
         backend,
         models: modelsFrom(typed, backend),
         customCommand: get('TAB_RECAP_CUSTOM_CMD') ?? NO_VALUE,

@@ -5,7 +5,6 @@ import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { NoteState } from '#src/recap/application/compact-keys.ts';
 import { coloured, visibleLength, wrap } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import type { Style } from '@stateforge-labs/recap-view/unstable/wrap.ts';
-export { compactFooter, compactView } from './legacy.ts';
 
 export function compactViewText(state: NoteState, m: Messages, agent: Text, width: Count, style: Style = coloured): readonly Text[] {
     return [

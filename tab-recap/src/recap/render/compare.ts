@@ -6,7 +6,6 @@ import { percent } from '#src/recap/application/eval-report.ts';
 import type { ChapterResult, Comparison, Side } from '#src/recap/application/compare-imported.ts';
 import type { Share } from '#src/recap/application/judge-coverage.ts';
 import type { Style } from '@stateforge-labs/recap-view/unstable/wrap.ts';
-export { comparisonLines } from './legacy.ts';
 
 const EMPTY = must(parseText(''));
 

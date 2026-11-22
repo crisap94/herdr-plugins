@@ -1,6 +1,6 @@
 // The README's screenshots, step one: the plugin's own views, drawn from invented data into HTML.
 // `bun docs/screens/render.ts [outDir]` writes one page per screen; `shoot.mjs` turns them into PNGs.
-// Gated like the code: it only calls the pure views (`present`, `presentBar`, `setupView`).
+// Gated like the code: it only calls the pure views (`present`, `presentBar`, `setupLines`).
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { en } from '#src/i18n/en.ts';
@@ -16,7 +16,8 @@ import { renderRecap } from '#src/recap/application/recap-shape.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
 import { present, presentBar } from '#src/recap/render/present.ts';
 import type { ColumnView } from '#src/recap/render/present.ts';
-import { setupView } from '#src/recap/render/setup.ts';
+import { catalogFor } from '#src/i18n/index.ts';
+import { setupLines } from '#src/recap/render/setup.ts';
 import { expandedLines } from './expanded-fixture.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -194,7 +195,7 @@ export function pages(): readonly Page[] {
         return [
             page(`column-${locale}`, COLUMN, present(view, COLUMN, noMarkdown)),
             page(`bar-${locale}`, BAR, presentBar(view, BAR)),
-            page(`setup-${locale}`, SETUP, setupView(setupState(locale), fixture.messages, SETUP)),
+            page(`setup-${locale}`, SETUP, setupLines(setupState(locale), catalogFor(fixture.messages.locale), countOf(SETUP))),
         ];
     })];
 }

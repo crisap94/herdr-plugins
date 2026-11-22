@@ -11,7 +11,6 @@ import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { parseUsd, type Usd } from '#src/recap/domain/usd.ts';
 import { coloured, visibleLength, wrap } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import type { Style } from '@stateforge-labs/recap-view/unstable/wrap.ts';
-export { setupFooter, setupView } from './legacy.ts';
 
 type SetupCatalog = Pick<Catalog, 'locale' | 'setup'>;
 

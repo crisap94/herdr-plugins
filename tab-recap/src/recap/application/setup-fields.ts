@@ -1,4 +1,4 @@
-import { languageSetting } from '#src/i18n/index.ts';
+import { languageSettingOf } from '#src/i18n/index.ts';
 import { MINIMUM_DEFAULT, parseAutocompactPercent } from '#src/recap/domain/autocompact.ts';
 import { hintSetting, targetSetting, windowSetting } from '#src/recap/domain/compaction.ts';
 import { screenSetting } from '#src/recap/domain/policy.ts';
@@ -44,7 +44,7 @@ export const CHOICES: Readonly<Partial<Record<FieldId, ChoiceField>>> = {
 };
 
 export const TEXTS: Readonly<Partial<Record<FieldId, TextField>>> = {
-    recapLanguage: { read: (draft) => draft.recapLanguage, keep: (draft, typed): Draft => ({ ...draft, recapLanguage: languageSetting(typed) }) },
+    recapLanguage: { read: (draft) => draft.recapLanguage, keep: (draft, typed): Draft => ({ ...draft, recapLanguage: languageSettingOf(textOf(typed)) }) },
     screenAgents: { read: (draft) => draft.screenAgents, keep: (draft, typed): Draft => ({ ...draft, screenAgents: screenSetting(textOf(typed)) }) },
     compactTarget: { read: (draft) => draft.compactTarget, keep: (draft, typed): Draft => ({ ...draft, compactTarget: targetSetting(textOf(typed)) }) },
     compactHint: { read: (draft) => draft.compactHint, keep: (draft, typed): Draft => ({ ...draft, compactHint: hintSetting(textOf(typed)) }) },
