@@ -24,7 +24,7 @@ const presenceOf = (directory: Directory): Promise<Presence> =>
 
 export class GitWorksite implements WorksiteReaderPort {
     lastCommit(directory: Text): Promise<LastCommitOutcome> {
-        return this.read(directory, async (handle: Handle): Promise<LastCommitOutcome> => {
+        return this.within(directory, async (handle: Handle): Promise<LastCommitOutcome> => {
             const commit = await lastCommitOf(handle);
             const hash = commit === null ? null : okOrNull(parseText(commit.hash));
             const subject = commit === null ? null : okOrNull(parseText(commit.subject));
@@ -33,7 +33,7 @@ export class GitWorksite implements WorksiteReaderPort {
     }
 
     uncommitted(directory: Text): Promise<UncommittedOutcome> {
-        return this.read(directory, async (handle: Handle): Promise<UncommittedOutcome> => {
+        return this.within(directory, async (handle: Handle): Promise<UncommittedOutcome> => {
             const changes = await changesOf(handle);
             if (changes.kind === 'err') {
                 return unreadable(changes.error);
@@ -43,7 +43,7 @@ export class GitWorksite implements WorksiteReaderPort {
         });
     }
 
-    private async read<T>(directory: Text, work: (handle: Handle) => Promise<T | Unknown>): Promise<T | Unknown> {
+    async within<T>(directory: Text, work: (handle: Handle) => Promise<T | Unknown>): Promise<T | Unknown> {
         const checked = parseDirectory(directory);
         if (checked.kind === 'err' || (await presenceOf(checked.value)) === 'absent') {
             return unknown({ why: 'not-found', what: 'directory' });

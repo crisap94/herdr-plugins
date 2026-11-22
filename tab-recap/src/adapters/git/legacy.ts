@@ -1,6 +1,7 @@
 import { unknown } from '#src/ports/unknowable.ts';
 import type { LastCommitResult, UncommittedResult, WorksiteReader } from '#src/ports/worksite-reader.ts';
 import { parseText } from '#src/recap/domain/text.ts';
+import { lastCommitOf } from './reach-history.ts';
 import { GitWorksite } from './worksite.ts';
 
 const NO_DIRECTORY = unknown({ why: 'not-found', what: 'directory' });
@@ -10,7 +11,13 @@ export class GitWorksiteReader implements WorksiteReader {
 
     lastCommit(directory: string): Promise<LastCommitResult> {
         const text = parseText(directory);
-        return text.kind === 'ok' ? this.worksite.lastCommit(text.value) : Promise.resolve(NO_DIRECTORY);
+        if (text.kind === 'err') {
+            return Promise.resolve(NO_DIRECTORY);
+        }
+        return this.worksite.within(text.value, async (handle): Promise<LastCommitResult> => {
+            const commit = await lastCommitOf(handle);
+            return commit === null ? unknown({ why: 'not-found', what: 'commit' }) : { kind: 'commit', ...commit };
+        });
     }
 
     uncommitted(directory: string): Promise<UncommittedResult> {
