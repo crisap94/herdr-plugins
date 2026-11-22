@@ -7,7 +7,7 @@ import type { JobAnswer } from '#src/recap/domain/job.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { CURATOR_INSTRUCTIONS } from './prompts/curator-instructions.ts';
 import { RECONCILE_CURATOR_INSTRUCTIONS } from './prompts/curator-reconcile-instructions.ts';
-import { unfenced } from './prompts/recap-prompt.ts';
+import { unfencedText } from './prompts/recap-prompt.ts';
 
 export class HarnessCurator implements Curators {
     readonly backend: Text;
@@ -30,6 +30,6 @@ export class HarnessCurator implements Curators {
             return unknown({ why: 'unreadable', detail: causeOf(must(parseText(`the document is too long for ${this.harness.id}`))) });
         }
         const ran = await this.harness.run(call, this.settings);
-        return isUnknown(ran) ? ran : { kind: 'curated', text: unfenced(ran.text) };
+        return isUnknown(ran) ? ran : { kind: 'curated', text: unfencedText(must(parseText(ran.text))) };
     }
 }

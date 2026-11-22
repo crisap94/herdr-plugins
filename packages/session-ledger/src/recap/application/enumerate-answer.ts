@@ -103,7 +103,7 @@ function candidateOf(fields: ParsedObject, ground: AnswerGround, said: Text): Ca
     if (!isSection(section) || text === null || found === null) {
         return null;
     }
-    const one: InputCandidate = { section, text, why: maybe(textField(fields, 'why'), WHY_WORDS), ref: maybe(textField(fields, 'ref'), REF_WORDS), at: resolveAt(textField(fields, 'at'), ground), anchor: found.anchor, agent: ground.agent, flagged: false };
+    const one: InputCandidate = { section, text, why: maybe(textField(fields, 'why'), WHY_WORDS), ref: maybe(textField(fields, 'ref'), REF_WORDS), at: resolveAt(textField(fields, 'at'), ground), anchor: found.anchor, agent: ground.agent, flagged: brand<boolean, 'Flagged'>(false) };
     return { one, stub: found.stub };
 }
 

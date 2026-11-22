@@ -1,3 +1,4 @@
+import { textOf } from '#src/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -238,14 +239,14 @@ test('the curator over claude: a schema answer reaches the job as the run output
     const runtime = scripted('claude', { text: '', output: { ops: [{ op: 'close', id: 'f1', why: 'merged', into: 'f2' }], story: 'the story' } });
     const harness = new LibraryHarness(runtime, 'claude', 1000, undefined, true);
     const curated = await new HarnessCurator(harness, settings, 'schema').write(must(parseText('doc')), 'story');
-    assert.deepEqual(curated, { kind: 'curated', text: '{"ops":[{"op":"close","id":"f1","why":"merged","into":"f2"}],"story":"the story"}' });
+    assert.deepEqual(curated, { kind: 'curated', text: textOf('{"ops":[{"op":"close","id":"f1","why":"merged","into":"f2"}],"story":"the story"}') });
     assert.deepEqual(firstCall(runtime).request.outputSchema, ANSWER_SCHEMAS.story);
 });
 
 test('the curator over opencode with a schema answer: the call falls back to text, one run without an outputSchema', async () => {
     const runtime = scripted('opencode', { text: '{"ops":[]}' });
     const curated = await new HarnessCurator(new LibraryHarness(runtime, 'opencode', 1000), settings, 'schema').write(must(parseText('doc')), 'reconcile');
-    assert.deepEqual(curated, { kind: 'curated', text: '{"ops":[]}' });
+    assert.deepEqual(curated, { kind: 'curated', text: textOf('{"ops":[]}') });
     assert.equal(runtime.calls.length, 1);
     assert.equal(Object.hasOwn(firstCall(runtime).request, 'outputSchema'), false);
 });

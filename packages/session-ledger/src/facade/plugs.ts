@@ -149,7 +149,7 @@ const ledgerRequest = (request: RecapRequest): sl.RecapRequest => {
 const pluginWritten = (written: sl.Written): Written => (written.kind === 'written' ? written : pluginUnknown(written));
 
 const pluginSummarizer = (writer: sl.Writer): Summarizer => ({
-    backend: writer.backend,
+    backend: must(parseText(writer.backend)),
     contract: writer.contract,
     write: async (request: RecapRequest): Promise<Written> => pluginWritten(await writer.write(ledgerRequest(request))),
 });

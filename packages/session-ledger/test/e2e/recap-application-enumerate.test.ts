@@ -4,10 +4,10 @@ import { ASK_BACK_CHARS, deduplicated, enumerate, enumerateAsked } from '@statef
 import type { AgentTurns, EnumerateRun } from '@stateforge-labs/session-ledger/unstable/recap/application/enumerate.ts';
 import { correctionDocument } from '@stateforge-labs/session-ledger/unstable/recap/application/correction-input.ts';
 import type { Enumerators, Enumerated } from '@stateforge-labs/session-ledger/unstable/ports/enumerators.ts';
-import type { InputCandidate, RecapInput } from '@stateforge-labs/session-ledger/unstable/ports/legacy.ts';
+import type { InputCandidate, RecapInput } from '@stateforge-labs/session-ledger/unstable/ports/recap-input.ts';
 import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { Correction } from '@stateforge-labs/session-ledger/unstable/ports/legacy.ts';
+import type { Correction } from '@stateforge-labs/session-ledger/unstable/ports/summarizer.ts';
 
 const textOf = brand<string, 'Text'>;
 const count = brand<number, 'Count'>;
@@ -15,7 +15,7 @@ const usd = brand<number, 'Usd'>;
 
 const NOW = 1_700_000_000_000;
 
-const candidate = (text: string, flagged: boolean): InputCandidate => ({ section: 'next', text, why: null, ref: null, at: null, anchor: text, agent: 'claude', flagged });
+const candidate = (text: string, flagged: boolean): InputCandidate => ({ section: 'next', text: textOf(text), why: null, ref: null, at: null, anchor: textOf(text), agent: textOf('claude'), flagged: brand<boolean, 'Flagged'>(flagged) });
 
 const silentEnumerator = (): Enumerators => ({
     backend: textOf('fake'),
@@ -66,15 +66,15 @@ test('enumerateAsked reports a failed backend on the newest turns', async () => 
 
 test('the correction document names the tab, the problems and the refused operations', () => {
     const input: RecapInput = {
-        tab: { id: 'tab-1', now: NOW, zone: 'UTC' },
+        tab: { id: textOf('tab-1'), now: instant(NOW), zone: textOf('UTC') },
         agents: [],
         tasks: [],
         ledgers: [],
         notes: [],
         transcripts: [],
     };
-    const retry: Correction = { refused: [], problems: ['the fact id is unknown'], facts: [], tasks: false };
-    const document = correctionDocument({ input, language: 'en', previousLanguage: 'en', retry });
+    const retry: Correction = { refused: [], problems: [textOf('the fact id is unknown')], facts: [], tasks: brand<boolean, 'Several'>(false) };
+    const document = correctionDocument({ input, language: textOf('en'), previousLanguage: textOf('en'), retry });
     assert.match(document, /<correction_input/);
     assert.match(document, /<tab id="tab-1"/);
     assert.match(document, /the fact id is unknown/);

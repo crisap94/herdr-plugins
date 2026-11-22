@@ -42,7 +42,7 @@ export interface Enumeration {
 }
 
 const flaggedOf = (stub: Stub, agent: Text): InputCandidate =>
-    ({ section: stub.section, text: tidy(stub.anchor, count(16)) || stub.anchor, why: null, ref: stub.ref, at: stub.at, anchor: stub.anchor, agent, flagged: true });
+    ({ section: stub.section, text: tidy(stub.anchor, count(16)) || stub.anchor, why: null, ref: stub.ref, at: stub.at, anchor: stub.anchor, agent, flagged: brand<boolean, 'Flagged'>(true) });
 
 export function deduplicated(candidates: readonly InputCandidate[]): readonly InputCandidate[] {
     const kept: InputCandidate[] = [];

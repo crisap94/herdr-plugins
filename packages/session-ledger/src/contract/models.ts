@@ -1,71 +1,82 @@
-import type { Unknown } from './kernel.ts';
+import type { AgentKind, Brand, Instant, PaneId, Text, Unknown, Usd } from './kernel.ts';
+import type { Directory } from './ids.ts';
 import type { ClosedWhy, Operation, Section } from './facts.ts';
 import type { AgentNote, Entry } from './session.ts';
 import type { CloseEvidence, HiddenCounts } from './settings.ts';
 
+export type Flagged = Brand<boolean, 'Flagged'>;
+
+export type Several = Brand<boolean, 'Several'>;
+
 export interface InputAgent extends LaneHint {
-    readonly id: string;
-    readonly kind: string;
-    readonly label: string;
-    readonly pane: string;
+    readonly id: Text;
+    readonly kind: AgentKind;
+    readonly label: Text;
+    readonly pane: PaneId;
     readonly source: 'transcript' | 'screen';
 }
 
 export interface LaneHint {
-    readonly cwd: string | null;
-    readonly repo: string | null;
-    readonly branch: string | null;
-    readonly files: readonly string[];
+    readonly cwd: Directory | null;
+    readonly repo: Directory | null;
+    readonly branch: Text | null;
+    readonly files: readonly Text[];
 }
 
 export interface TaskGroup {
-    readonly id: string;
-    readonly name: string;
-    readonly lanes: readonly string[];
+    readonly id: Text;
+    readonly name: Text;
+    readonly lanes: readonly PaneId[];
 }
 
 export interface InputNote extends AgentNote {
-    readonly agent: string;
+    readonly agent: Text;
 }
 
 export interface InputTranscript {
-    readonly agent: string;
+    readonly agent: Text;
     readonly entries: readonly Entry[];
 }
 
 export interface InputFact {
-    readonly id: string;
+    readonly id: Text;
     readonly section: Section;
-    readonly text: string;
+    readonly text: Text;
     readonly state: 'open' | 'closed';
-    readonly first: number;
-    readonly last: number;
-    readonly why: string | null;
-    readonly ref: string | null;
-    readonly anchor: string | null;
-    readonly agent: string | null;
+    readonly first: Instant;
+    readonly last: Instant;
+    readonly why: Text | null;
+    readonly ref: Text | null;
+    readonly anchor: Text | null;
+    readonly agent: Text | null;
     readonly closed: ClosedWhy | null;
 }
 
 export interface InputLedger {
-    readonly task: string | null;
+    readonly task: Text | null;
     readonly facts: readonly InputFact[];
     readonly hidden?: HiddenCounts;
 }
 
 export interface InputCandidate {
     readonly section: Section;
-    readonly text: string;
-    readonly why: string | null;
-    readonly ref: string | null;
-    readonly at: number | null;
-    readonly anchor: string;
-    readonly agent: string | null;
-    readonly flagged: boolean;
+    readonly text: Text;
+    readonly why: Text | null;
+    readonly ref: Text | null;
+    readonly at: Instant | null;
+    readonly anchor: Text;
+    readonly agent: Text | null;
+    readonly flagged: Flagged;
+}
+
+export interface InputTab {
+    readonly id: Text;
+    readonly now: Instant;
+    readonly zone: Text;
 }
 
 export interface RecapInput {
-    readonly tab: { readonly id: string; readonly now: number; readonly zone: string };
+    readonly tab: InputTab;
     readonly agents: readonly InputAgent[];
     readonly tasks: readonly TaskGroup[];
     readonly ledgers: readonly InputLedger[];
@@ -74,35 +85,40 @@ export interface RecapInput {
     readonly candidates?: readonly InputCandidate[];
 }
 
+export interface GateReason {
+    readonly gate: Text;
+    readonly reason: Text;
+}
+
 export interface RefusedOperation {
-    readonly task: string;
+    readonly task: Text;
     readonly operation: Operation;
-    readonly reasons: readonly { readonly gate: string; readonly reason: string }[];
+    readonly reasons: readonly GateReason[];
 }
 
 export interface Correction {
     readonly refused: readonly RefusedOperation[];
-    readonly problems: readonly string[];
+    readonly problems: readonly Text[];
     readonly facts: readonly InputFact[];
-    readonly tasks: boolean;
+    readonly tasks: Several;
 }
 
 export interface RecapRequest {
     readonly input: RecapInput;
-    readonly language: string;
-    readonly previousLanguage: string;
-    readonly correction?: string;
+    readonly language: Text;
+    readonly previousLanguage: Text;
+    readonly correction?: Text;
     readonly retry?: Correction;
     readonly closeEvidence?: CloseEvidence;
 }
 
-export type Written = { readonly kind: 'written'; readonly text: string; readonly costUsd: number } | Unknown;
+export type Written = { readonly kind: 'written'; readonly text: Text; readonly costUsd: Usd } | Unknown;
 
 export type JobContract = 'strict' | 'free-text';
 
-export type Enumerated = { readonly kind: 'enumerated'; readonly text: string; readonly costUsd: number } | Unknown;
+export type Enumerated = { readonly kind: 'enumerated'; readonly text: Text; readonly costUsd: Usd } | Unknown;
 
-export type Curated = { readonly kind: 'curated'; readonly text: string } | Unknown;
+export type Curated = { readonly kind: 'curated'; readonly text: Text } | Unknown;
 
 export type CuratorMode = 'story' | 'reconcile';
 

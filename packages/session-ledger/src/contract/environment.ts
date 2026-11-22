@@ -1,15 +1,15 @@
-import type { Brand, Instant, Unknown } from './kernel.ts';
+import type { Brand, Instant, Text, Unknown } from './kernel.ts';
 import type { Directory } from './ids.ts';
 
 export type Forge = 'gitlab' | 'github';
 
 export interface WebBase {
-    readonly base: string;
+    readonly base: Text;
     readonly forge: Forge;
 }
 
 export type RepoResult =
-    | { readonly kind: 'repo'; readonly root: string; readonly branch: string | null; readonly web: WebBase | null }
+    | { readonly kind: 'repo'; readonly root: Directory; readonly branch: Text | null; readonly web: WebBase | null }
     | { readonly kind: 'no-repo' }
     | Unknown;
 

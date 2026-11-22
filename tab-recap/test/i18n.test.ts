@@ -7,7 +7,7 @@ import { SECTIONS, sectionOf } from '#src/i18n/sections.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { localeOf } from '#src/daemon/config.ts';
 
-const base = { previousLanguage: 'en', input: requestOf().input };
+const base = { previousLanguage: textOf('en'), input: requestOf().input };
 
 test('sections: seven, always in this order, with both headings; a heading is recognised in either language — and the old ones too', () => {
     assert.deepEqual(SECTIONS.map((section) => section.id), ['goal', 'now', 'needs', 'done', 'decisions', 'next', 'links']);
@@ -24,7 +24,7 @@ test('sections: seven, always in this order, with both headings; a heading is re
 });
 
 test('instructions: the operations contract — add, update, close, the sections and what the column shows; the language only changes the values', () => {
-    const en = instructions({ ...base, language: 'en' });
+    const en = instructions({ ...base, language: textOf('en') });
     assert.match(en, /Answer with ONLY one JSON object/);
     assert.match(en, /Write every text and why in English\. Keep the JSON keys and the words add, update, close in English\./);
     assert.match(en, /\{"op": "add", "section": "done", "text": "\.\.\."/);
@@ -36,31 +36,31 @@ test('instructions: the operations contract — add, update, close, the sections
     }
     assert.match(en, /Plain everyday words\. Short sentences in the present tense, 16 words or fewer per text, 24 per why\./);
     assert.doesNotMatch(en, /Spanish|Português|## |"tasks"/);
-    const es = instructions({ ...base, language: 'es', previousLanguage: 'es' });
+    const es = instructions({ ...base, language: textOf('es'), previousLanguage: textOf('es') });
     assert.match(es, /Write every text and why in Spanish \(neutral Latin American, informal "tú"\)\. Keep the JSON keys and the words add, update, close in English\./);
-    const free = instructions({ ...base, language: 'Português', previousLanguage: 'Português' });
+    const free = instructions({ ...base, language: textOf('Português'), previousLanguage: textOf('Português') });
     assert.match(free, /Write every text and why in Português\. Keep the JSON keys and the words add, update, close in English\./);
     assert.doesNotMatch(free, /Objetivo/);
 });
 
 test('instructions: with several tasks an add names its task', () => {
-    const several = requestOf({ ledgers: [{ task: 't1', facts: [] }, { task: 't2', facts: [] }] });
-    assert.match(instructions({ ...base, input: several.input, language: 'en' }), /one <ledger task="…"> per task: give an add the "task" it belongs to/);
-    assert.doesNotMatch(instructions({ ...base, language: 'en' }), /<ledger task=/);
+    const several = requestOf({ ledgers: [{ task: textOf('t1'), facts: [] }, { task: textOf('t2'), facts: [] }] });
+    assert.match(instructions({ ...base, input: several.input, language: textOf('en') }), /one <ledger task="…"> per task: give an add the "task" it belongs to/);
+    assert.doesNotMatch(instructions({ ...base, language: textOf('en') }), /<ledger task=/);
 });
 
 test('instructions: a ledger in another language is updated to the new one', () => {
-    const switching = instructions({ ...base, language: 'es', previousLanguage: 'en' });
+    const switching = instructions({ ...base, language: textOf('es'), previousLanguage: textOf('en') });
     assert.match(switching, /The facts in <ledger> are in English: update every open fact that is still relevant, rewritten in Spanish/);
-    assert.doesNotMatch(instructions({ ...base, language: 'en' }), /rewritten in/);
-    assert.match(instructions({ ...base, language: 'en', retry: { tasks: false, refused: [] } as never }), /Write every text and why in English\./);
+    assert.doesNotMatch(instructions({ ...base, language: textOf('en') }), /rewritten in/);
+    assert.match(instructions({ ...base, language: textOf('en'), retry: { tasks: false, refused: [] } as never }), /Write every text and why in English\./);
 });
 
 test('a switch with nothing new still gives the model something to do; a retry says what was wrong', () => {
-    const switching = message(requestOf({ language: 'es' }));
+    const switching = message(requestOf({ language: textOf('es') }));
     assert.match(switching, /<ledger\/>/);
     assert.match(switching, /<transcript agent="a1"\/>/, 'nothing new: an empty transcript');
-    assert.match(message(requestOf({ correction: 'the answer is not valid JSON' })), /<correction>the answer is not valid JSON<\/correction>\n<\/recap_input>/);
+    assert.match(message(requestOf({ correction: textOf('the answer is not valid JSON') })), /<correction>the answer is not valid JSON<\/correction>\n<\/recap_input>/);
 });
 
 test('recap language: ui follows the locale; en/es by code or name; free text is sanitised', () => {

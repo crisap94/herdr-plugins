@@ -1,3 +1,4 @@
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { CLOSED_SHOWN_MS, numbered, severalOf, taskFactsOf, writerFacts } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-input.ts';
@@ -6,7 +7,8 @@ import { FULL_WRITER_VIEW } from '@stateforge-labs/session-ledger/unstable/recap
 import { TRANSCRIPT_BUDGET, writerContext } from '@stateforge-labs/session-ledger/unstable/recap/application/writer-context.ts';
 import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { RecapInput, RecapRequest } from '@stateforge-labs/session-ledger/unstable/ports/legacy.ts';
+import type { RecapInput } from '@stateforge-labs/session-ledger/unstable/ports/recap-input.ts';
+import type { RecapRequest } from '@stateforge-labs/session-ledger/unstable/ports/summarizer.ts';
 
 const text = brand<string, 'Text'>;
 const count = brand<number, 'Count'>;
@@ -14,15 +16,15 @@ const count = brand<number, 'Count'>;
 const NOW = 1_700_000_000_000;
 
 const input: RecapInput = {
-    tab: { id: 'tab-1', now: NOW, zone: 'UTC' },
+    tab: { id: textOf('tab-1'), now: instant(NOW), zone: textOf('UTC') },
     agents: [],
     tasks: [],
     ledgers: [],
-    notes: [{ agent: 'claude', kind: 'compaction', at: null, text: 'Build is green' }],
-    transcripts: [{ agent: 'claude', entries: [{ role: 'user', text: 'Fix the CI' }] }],
+    notes: [{ agent: textOf('claude'), kind: 'compaction', at: null, text: 'Build is green' }],
+    transcripts: [{ agent: textOf('claude'), entries: [{ role: 'user', text: 'Fix the CI' }] }],
 };
 
-const request: RecapRequest = { input, language: 'en', previousLanguage: 'en' };
+const request: RecapRequest = { input, language: textOf('en'), previousLanguage: textOf('en') };
 
 test('the writer context carries the transcript and notes within the default budget', () => {
     const context = writerContext(request);

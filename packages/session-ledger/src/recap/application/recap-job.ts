@@ -227,7 +227,7 @@ export class RecapJob {
         const stale = facts.flatMap((task) => task.open).find((fact) => fact.language !== plan.want);
         const built = await inputOf(readings, { tab: brand<string, 'Text'>(prior.tab), repos: this.deps.repos, now, tasks, facts, writerView });
         const ground = groundOf({ tab: brand<string, 'Text'>(prior.tab), tasks, built, entries: readings.flatMap((r) => r.chunk?.entries ?? []), ledger, now, language: brand<string, 'Text'>(plan.want) });
-        return { tasks, ground, request: { input: built.input, language: plan.want, previousLanguage: stale?.language ?? plan.was } };
+        return { tasks, ground, request: { input: built.input, language: brand<string, 'Text'>(plan.want), previousLanguage: brand<string, 'Text'>(stale?.language ?? plan.was) } };
     }
 
     private async preparedOrFail(prior: TabRecap, readings: readonly Reading[], plan: Plan): Promise<Prepared> {

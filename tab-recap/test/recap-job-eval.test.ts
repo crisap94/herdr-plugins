@@ -1,3 +1,4 @@
+import { textOf } from '#src/recap/domain/text.ts';
 import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
@@ -27,7 +28,7 @@ const transcripts: Transcripts = {
 async function recapWith(keepInput: (() => KeepInput) | undefined): Promise<ReturnType<ReturnType<typeof memoryStore>['inputs']['runs']>> {
     const answer = JSON.stringify({ ops: [{ op: 'add', section: 'goal', text: 'Migrate the metrics store', anchor: 'migrate victoria' }, { op: 'add', section: 'done', text: 'claude completed the migration.', anchor: 'migrate victoria' }, { op: 'add', section: 'done', text: 'Metrics are copied to `victoria`.', anchor: 'migrate victoria' }] });
     const narrator = JSON.stringify({ ops: [{ op: 'add', section: 'done', text: 'claude completed the migration.', anchor: 'migrate victoria' }] });
-    const summarizer: Summarizer = { backend: 'fake', contract: 'strict', write: (request: RecapRequest): Promise<Written> => Promise.resolve({ kind: 'written', text: request.retry === undefined ? answer : narrator, costUsd: 0 }) };
+    const summarizer: Summarizer = { backend: textOf('fake'), contract: 'strict', write: (request: RecapRequest): Promise<Written> => Promise.resolve({ kind: 'written', text: textOf(request.retry === undefined ? answer : narrator), costUsd: brand<number, 'Usd'>(0) }) };
     const store = memoryStore();
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId,
         repos: NO_REPOS, transcripts: registryWith({ [transcripts.agent]: transcripts }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(5) },

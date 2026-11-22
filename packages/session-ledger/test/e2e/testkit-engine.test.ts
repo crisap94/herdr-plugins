@@ -1,3 +1,4 @@
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { instant, type Fact, type RecapRequest, type RecordedRun, type Unknown } from '@stateforge-labs/session-ledger';
@@ -26,9 +27,9 @@ import {
 } from '@stateforge-labs/session-ledger/testkit';
 
 const request = (): RecapRequest => ({
-    input: { tab: { id: 'tab-1', now: 0, zone: 'UTC' }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] },
-    language: 'en',
-    previousLanguage: 'en',
+    input: { tab: { id: textOf('tab-1'), now: instant(0), zone: textOf('UTC') }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] },
+    language: textOf('en'),
+    previousLanguage: textOf('en'),
 });
 
 const listed = (value: readonly Fact[] | Unknown): readonly Fact[] => {

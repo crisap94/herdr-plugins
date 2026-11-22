@@ -1,35 +1,19 @@
-import type { JobContract } from '#src/recap/domain/backend.ts';
 import type { LaneMark } from '#src/recap/domain/boundary.ts';
-import type { ClosedWhy, Fact, Section, TaskId } from '#src/recap/domain/fact.ts';
+import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
 import type { BackgroundItem } from '#src/recap/domain/in-flight.ts';
 import type { Lane } from '#src/recap/domain/lane-shape.ts';
-import type { CloseOp, Operation, Refusal, UpdateOp } from '#src/recap/domain/ops.ts';
-import type { CloseEvidence } from '#src/recap/domain/pipeline.ts';
+import type { CloseOp, Refusal, UpdateOp } from '#src/recap/domain/ops.ts';
 import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import type { FailureCause } from '#src/recap/domain/failure-cause.ts';
 import type { Duration } from '#src/recap/domain/time.ts';
-import type { HiddenCounts } from '#src/recap/domain/writer-view.ts';
 import type { InFlightWhy } from './capability-reasons.ts';
 import type { Applied } from './ledger.ts';
 import type { RunFacts } from './recap-records.ts';
 import type { BackgroundSplit, CallKind, ChunkResult, ObservedResult } from './transcripts.ts';
 import type { Unknown } from './unknowable.ts';
-
-export type Curated = { readonly kind: 'curated'; readonly text: string } | Unknown;
-
-export type Enumerated = { readonly kind: 'enumerated'; readonly text: string; readonly costUsd: number } | Unknown;
-
-export type Forge = 'gitlab' | 'github';
-
-export interface WebBase { readonly base: string; readonly forge: Forge; }
-
-export type RepoResult =
-    | { readonly kind: 'repo'; readonly root: string; readonly branch: string | null; readonly web: WebBase | null }
-    | { readonly kind: 'no-repo' }
-    | Unknown;
 
 export interface HistoryFact { readonly section: string; readonly text: string; readonly why: string | null; readonly state: 'open' | 'closed'; readonly closedWhy: string | null; readonly closedAt: number | null; readonly firstAt: number; readonly lastAt: number; }
 
@@ -40,24 +24,6 @@ export interface Ledger {
     keysOf(tab: string): readonly string[];
     historyOf(tab: string, pane: string): readonly HistoryFact[];
 }
-
-export interface InputAgent extends LaneHint { readonly id: string; readonly kind: string; readonly label: string; readonly pane: string; readonly source: 'transcript' | 'screen'; }
-
-export interface LaneHint { readonly cwd: string | null; readonly repo: string | null; readonly branch: string | null; readonly files: readonly string[]; }
-
-export interface TaskGroup { readonly id: string; readonly name: string; readonly lanes: readonly string[]; }
-
-export interface InputNote extends AgentNote { readonly agent: string; }
-
-export interface InputTranscript { readonly agent: string; readonly entries: readonly Entry[]; }
-
-export interface InputFact { readonly id: string; readonly section: Section; readonly text: string; readonly state: 'open' | 'closed'; readonly first: number; readonly last: number; readonly why: string | null; readonly ref: string | null; readonly anchor: string | null; readonly agent: string | null; readonly closed: ClosedWhy | null; }
-
-export interface InputLedger { readonly task: string | null; readonly facts: readonly InputFact[]; readonly hidden?: HiddenCounts; }
-
-export interface InputCandidate { readonly section: Section; readonly text: string; readonly why: string | null; readonly ref: string | null; readonly at: number | null; readonly anchor: string; readonly agent: string | null; readonly flagged: boolean; }
-
-export interface RecapInput { readonly tab: { readonly id: string; readonly now: number; readonly zone: string }; readonly agents: readonly InputAgent[]; readonly tasks: readonly TaskGroup[]; readonly ledgers: readonly InputLedger[]; readonly notes: readonly InputNote[]; readonly transcripts: readonly InputTranscript[]; readonly candidates?: readonly InputCandidate[]; }
 
 export interface LaneCursor { readonly pane: string; readonly agent: string; readonly transcript: string; readonly cursor: number; readonly tail: string | null; readonly title: string | null; readonly lastPrompt: string | null; readonly claudeRecap: string | null; }
 
@@ -93,20 +59,6 @@ export interface CurationRun { readonly task: TaskId; readonly at: number; reado
 export interface Stories {
     read(tab: string, task: string): Story | null;
     keep(run: CurationRun, change: { readonly story: string | null; readonly merges: readonly CloseOp[]; readonly reconciled?: readonly (UpdateOp | CloseOp)[] }): Applied;
-}
-
-export interface RefusedOperation { readonly task: string; readonly operation: Operation; readonly reasons: readonly { readonly gate: string; readonly reason: string }[]; }
-
-export interface Correction { readonly refused: readonly RefusedOperation[]; readonly problems: readonly string[]; readonly facts: readonly InputFact[]; readonly tasks: boolean; }
-
-export interface RecapRequest { readonly input: RecapInput; readonly language: string; readonly previousLanguage: string; readonly correction?: string; readonly retry?: Correction; readonly closeEvidence?: CloseEvidence; }
-
-export type Written = { readonly kind: 'written'; readonly text: string; readonly costUsd: number } | Unknown;
-
-export interface Summarizer {
-    readonly backend: string;
-    readonly contract: JobContract;
-    write(request: RecapRequest): Promise<Written>;
 }
 
 export class TranscriptRegistry {

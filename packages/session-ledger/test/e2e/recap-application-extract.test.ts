@@ -1,3 +1,4 @@
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { extract, OLD_CONTRACT, type Ground } from '@stateforge-labs/session-ledger/unstable/recap/application/extract-job.ts';
@@ -13,15 +14,15 @@ const ground: Ground = {
     grounds: [{ key: text('t1'), tab: text('w1:t1'), shown: new Map(), open: [], closedLately: [], source: text('go'), language: text('en'), agents: [] }],
 };
 
-const request: RecapRequest = { input: { tab: { id: 'w1:t1', now: 10 * 3_600_000, zone: 'UTC' }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] }, language: 'en', previousLanguage: 'en' };
+const request: RecapRequest = { input: { tab: { id: textOf('w1:t1'), now: instant(10 * 3_600_000), zone: textOf('UTC') }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] }, language: textOf('en'), previousLanguage: textOf('en') };
 
 const writing = (answers: readonly string[], contract: Summarizer['contract'] = 'strict'): { summarizer: Summarizer; calls: RecapRequest[] } => {
     const calls: RecapRequest[] = [];
     const write = (asked: RecapRequest): Promise<Written> => {
         calls.push(asked);
-        return Promise.resolve({ kind: 'written', text: answers[Math.min(calls.length - 1, answers.length - 1)] ?? '', costUsd: 0.5 });
+        return Promise.resolve({ kind: 'written', text: textOf(answers[Math.min(calls.length - 1, answers.length - 1)] ?? ''), costUsd: brand<number, 'Usd'>(0.5) });
     };
-    return { summarizer: { backend: 'fake', contract, write }, calls };
+    return { summarizer: { backend: textOf('fake'), contract, write }, calls };
 };
 
 test('an operations answer is kept for its task and costs one call', async () => {

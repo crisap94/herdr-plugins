@@ -1,3 +1,5 @@
+import { brand } from '#src/recap/domain/brand.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { statSync } from 'node:fs';
@@ -23,14 +25,14 @@ const candidateFor = (document: string, call: number): string => answer([{ secti
 function adding(): { summarizer: Summarizer; seen: RecapRequest[] } {
     const seen: RecapRequest[] = [];
     const summarizer: Summarizer = {
-        backend: 'fake',
+        backend: textOf('fake'),
         contract: 'strict',
         write: (request): Promise<Written> => {
             seen.push(request);
             const picked = request.input.candidates?.[0];
             const first = request.input.transcripts[0]?.entries[0]?.text.split(/\s+/).slice(0, 5).join(' ') ?? '';
             const op = picked === undefined ? { op: 'add', anchor: first, section: 'done', text: ['Wrote the cart schema', 'Opened the checkout flow', 'Tested guests baskets', 'Shipped the invoice export', 'Reviewed pricing rules', 'Merged the tax fix'][seen.length - 1] ?? 'More work' } : { op: 'add', anchor: picked.anchor, section: picked.section, text: picked.text };
-            return Promise.resolve({ kind: 'written', text: JSON.stringify({ ops: [op] }), costUsd: 0.25 });
+            return Promise.resolve({ kind: 'written', text: textOf(JSON.stringify({ ops: [op] })), costUsd: brand<number, 'Usd'>(0.25) });
         },
     };
     return { summarizer, seen };

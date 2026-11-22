@@ -17,7 +17,7 @@ function based(host: Text, path: Text, port: Text | null): WebBase | null {
     if (host === '' || clean === null || clean === '' || !clean.includes('/') || CONTROL.test(`${host}${clean}`)) {
         return null;
     }
-    return { base: `https://${host}${port ?? ''}/${clean}`, forge: forgeOf(host) };
+    return { base: must(parseText(`https://${host}${port ?? ''}/${clean}`)), forge: forgeOf(host) };
 }
 
 function viaUrl(remote: Text): WebBase | null {

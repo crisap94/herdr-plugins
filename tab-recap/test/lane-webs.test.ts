@@ -11,8 +11,13 @@ import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
 import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 
-const WEB = { base: 'https://gitlab.example/acme/shop', forge: 'gitlab' } as const;
+const WEB = { base: must(parseText('https://gitlab.example/acme/shop')), forge: 'gitlab' } as const;
+const dir = (path: string): Directory => must(parseDirectory(path));
+const branch = (name: string): Text => must(parseText(name));
 const lane = (pane: string, cwd: string | null): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd });
 
 function repos(answers: Record<string, RepoResult>): LaneRepo {
@@ -22,7 +27,7 @@ function repos(answers: Record<string, RepoResult>): LaneRepo {
 const seen = (paneId: string): { paneId: string; tabId: string; workspaceId: string; agent: string; status: string; cwd: string } => ({ paneId, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', cwd: '/w' });
 
 test('a lane in a repository with an origin gets its web base and branch; the change is reported once', async () => {
-    const webs = new LaneWebs(repos({ '/w/shop': { kind: 'repo', root: '/w/shop', branch: 'feat/cart', web: WEB } }));
+    const webs = new LaneWebs(repos({ '/w/shop': { kind: 'repo', root: dir('/w/shop'), branch: branch('feat/cart'), web: WEB } }));
     assert.equal(webs.of('w1:p1'), null);
     assert.equal(await webs.refresh(lane('w1:p1', '/w/shop')), true);
     assert.deepEqual(webs.of('w1:p1'), { ...WEB, branch: 'feat/cart' });
@@ -30,7 +35,7 @@ test('a lane in a repository with an origin gets its web base and branch; the ch
 });
 
 test('a lane with no repository, no origin or no cwd has web null and reports no change; an unknown answer keeps what was known', async () => {
-    const webs = new LaneWebs(repos({ '/w/shop': { kind: 'repo', root: '/w/shop', branch: null, web: WEB }, '/w/bare': { kind: 'repo', root: '/w/bare', branch: 'main', web: null } }));
+    const webs = new LaneWebs(repos({ '/w/shop': { kind: 'repo', root: dir('/w/shop'), branch: null, web: WEB }, '/w/bare': { kind: 'repo', root: dir('/w/bare'), branch: branch('main'), web: null } }));
     assert.equal(await webs.refresh(lane('w1:p1', '/w/bare')), false);
     assert.equal(await webs.refresh(lane('w1:p2', null)), false);
     assert.equal(await webs.refresh(lane('w1:p3', '/elsewhere')), false);
@@ -42,7 +47,7 @@ test('a lane with no repository, no origin or no cwd has web null and reports no
 });
 
 test('a lane that leaves its repository loses its web context', async () => {
-    const answers: Record<string, RepoResult> = { '/w/shop': { kind: 'repo', root: '/w/shop', branch: 'a', web: WEB } };
+    const answers: Record<string, RepoResult> = { '/w/shop': { kind: 'repo', root: dir('/w/shop'), branch: branch('a'), web: WEB } };
     const webs = new LaneWebs(repos(answers));
     await webs.refresh(lane('w1:p1', '/w/shop'));
     assert.equal(await webs.refresh(lane('w1:p1', '/tmp')), true);

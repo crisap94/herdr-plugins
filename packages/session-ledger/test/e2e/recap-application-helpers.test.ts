@@ -16,19 +16,20 @@ import { FULL_WRITER_VIEW, positiveCount } from '@stateforge-labs/session-ledger
 import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import type { Lane } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
-import type { Entry, RecapInput } from '@stateforge-labs/session-ledger/unstable/ports/legacy.ts';
+import type { Entry } from '@stateforge-labs/session-ledger/unstable/ports/legacy.ts';
+import type { RecapInput } from '@stateforge-labs/session-ledger/unstable/ports/recap-input.ts';
 
 const NOW = instant(1_000_000);
 const text = brand<string, 'Text'>;
 const ZONE = 'UTC';
 
 const input: RecapInput = {
-    tab: { id: 'tab-1', now: NOW, zone: ZONE },
+    tab: { id: textOf('tab-1'), now: NOW, zone: textOf(ZONE) },
     agents: [],
     tasks: [],
     ledgers: [],
-    notes: [{ agent: 'claude', kind: 'compaction', at: null, text: 'Build is green' }],
-    transcripts: [{ agent: 'claude', entries: [{ role: 'user', text: 'Fix the CI' }] }],
+    notes: [{ agent: textOf('claude'), kind: 'compaction', at: null, text: 'Build is green' }],
+    transcripts: [{ agent: textOf('claude'), entries: [{ role: 'user', text: 'Fix the CI' }] }],
 };
 
 test('the anchor source folds the transcript and notes into one searchable text', () => {
@@ -39,7 +40,7 @@ test('candidates render as a candidates element, and none renders as empty', () 
     assert.equal(candidatesOf(input), '');
     const withCandidate: RecapInput = {
         ...input,
-        candidates: [{ section: 'next', text: 'bump to v2', why: 'asked', ref: 'src/a.ts', at: null, anchor: 'anchor', agent: 'claude', flagged: false }],
+        candidates: [{ section: 'next', text: textOf('bump to v2'), why: textOf('asked'), ref: textOf('src/a.ts'), at: null, anchor: textOf('anchor'), agent: textOf('claude'), flagged: brand<boolean, 'Flagged'>(false) }],
     };
     assert.match(candidatesOf(withCandidate), /<candidates>[\s\S]*bump to v2[\s\S]*<\/candidates>/u);
 });
@@ -55,7 +56,7 @@ test('the touched files keep the last five distinct edits, newest last', () => {
 const big = (word: string): Entry => ({ role: 'agent', text: word.repeat(Math.floor(Number(CONTEXT_CHARS) * 2 / 3)) });
 
 const kept = (entries: readonly Entry[]): readonly string[] =>
-    reconcileRequest({ input: { ...input, transcripts: [{ agent: 'claude', entries }] }, language: 'en', previousLanguage: 'en' }, []).input.transcripts.flatMap((lane) => lane.entries.map((entry) => entry.text.slice(0, 1)));
+    reconcileRequest({ input: { ...input, transcripts: [{ agent: textOf('claude'), entries }] }, language: textOf('en'), previousLanguage: textOf('en') }, []).input.transcripts.flatMap((lane) => lane.entries.map((entry) => entry.text.slice(0, 1)));
 
 test('the reconcile request keeps the newest entries within the context budget and always at least one entry', () => {
     assert.deepEqual(kept([big('x'), big('y')]), ['y']);
@@ -113,7 +114,7 @@ test('the ground of a recap names each task and extracting over it returns an ou
     assert.equal(ground.now, NOW);
     assert.deepEqual(ground.grounds.map((one) => one.key), ['task-1']);
     const summarizer = { backend: 'test', contract: { contract: 'free-text', enumerates: false, envScrub: [] }, write: async () => ({ kind: 'written', text: '', costUsd: 0 }) } as never;
-    const request = { input, language: 'en', previousLanguage: 'en' };
+    const request = { input, language: textOf('en'), previousLanguage: textOf('en') };
     const result = await extractPiped(summarizer, request, ground, { pipeline: 'one', enumerator: null, log: () => {} });
     assert.ok(['ops', 'failed'].includes(result.kind));
 });

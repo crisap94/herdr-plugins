@@ -1,3 +1,4 @@
+import { textOf } from '#src/recap/domain/text.ts';
 import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -55,11 +56,11 @@ function harness(settings: Settings, causes: string[], answer?: () => Promise<Wr
     };
     const store = memoryStore();
     const summarizer: Summarizer = {
-        backend: 'fake',
+        backend: textOf('fake'),
         contract: 'strict',
         write: (): Promise<Written> => {
             calls += 1;
-            return answer?.() ?? Promise.resolve({ kind: 'written', text: JSON.stringify({ ops: [] }), costUsd: 0 });
+            return answer?.() ?? Promise.resolve({ kind: 'written', text: textOf(JSON.stringify({ ops: [] })), costUsd: brand<number, 'Usd'>(0) });
         },
     };
     const job = new RecapJob({
@@ -74,7 +75,7 @@ function harness(settings: Settings, causes: string[], answer?: () => Promise<Wr
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
 const second = laneFrom({ paneId: 'w1:p2', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
 const settle = (): Promise<void> => new Promise((resolve) => { setImmediate(resolve); });
-const written: Written = { kind: 'written', text: JSON.stringify({ ops: [] }), costUsd: 0 };
+const written: Written = { kind: 'written', text: textOf(JSON.stringify({ ops: [] })), costUsd: brand<number, 'Usd'>(0) };
 
 test('an invalid window falls back to off', () => {
     assert.deepEqual(debounceOf(undefined), { kind: 'off' });

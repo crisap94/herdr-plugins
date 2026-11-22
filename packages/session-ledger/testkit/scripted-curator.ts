@@ -1,6 +1,6 @@
 import type { Curator, CuratorMode } from '@stateforge-labs/session-ledger';
 import type { Behaviour, Run } from './behaviour.ts';
-import { failure } from './values.ts';
+import { failure, text } from './values.ts';
 
 export type CuratedAnswer = { readonly kind: 'curated'; readonly text: string };
 
@@ -20,7 +20,7 @@ export const curatorOf = (run: Run, record: (call: CuratorCall) => void, plugged
         write: (document: string, mode?: CuratorMode) => {
             const call: CuratorCall = { document, mode };
             record(call);
-            return run(answer(call) ?? UNPLUGGED);
+            return run(answer(call) ?? UNPLUGGED).then((answered) => (answered.kind === 'curated' ? { kind: 'curated', text: text(answered.text) } : answered));
         },
     };
 };

@@ -43,7 +43,7 @@ function setup(answers: readonly (Curated)[], over: { readonly ledger?: MemoryLe
     return { curate, ledger, stories, store, logs, calls, clock };
 }
 
-const answer = (body: object): Curated => ({ kind: 'curated', text: JSON.stringify(body) });
+const answer = (body: object): Curated => ({ kind: 'curated', text: textOf(JSON.stringify(body)) });
 
 test('the curator document stays byte-identical and includes every open fact when the writer view is pruned', async () => {
     const open = Array.from({ length: 20 }, (_, at) => factOf('done', `done ${at}`, { lastAt: at + 1 }));
@@ -123,13 +123,13 @@ test('a curator that is off, silent or failing leaves everything as it was, and 
     const empty = setup([answer({ story: 'never' })], { ledger: new MemoryLedger() });
     await empty.curate.run('w1:t1');
     assert.equal(empty.calls.length, 0, 'a task with no facts is not worth a call');
-    const garbage = setup([{ kind: 'curated', text: 'sorry, no' }]);
+    const garbage = setup([{ kind: 'curated', text: textOf('sorry, no') }]);
     await garbage.curate.run('w1:t1');
     assert.deepEqual(garbage.logs, ['curator w1:t1 t1: refused — the answer is not JSON', 'curator w1:t1 t1: no paragraph in the answer; the old one stays']);
 });
 
 test('a story answer with text around its JSON object is read as that object', async () => {
-    const { curate, ledger, stories, logs } = setup([{ kind: 'curated', text: 'Here it is: {"ops":[{"op":"close","id":"f2","why":"merged","into":"f1"}],"story":"One line."} Thanks.' }]);
+    const { curate, ledger, stories, logs } = setup([{ kind: 'curated', text: textOf('Here it is: {"ops":[{"op":"close","id":"f2","why":"merged","into":"f1"}],"story":"One line."} Thanks.') }]);
     await curate.run('w1:t1');
     assert.equal(ledger.allOf(T1).find((each) => each.id === 'b')?.closedWhy, 'merged');
     assert.equal(stories.read('w1:t1', 't1')?.text, 'One line.');
@@ -137,14 +137,14 @@ test('a story answer with text around its JSON object is read as that object', a
 });
 
 test('a story answer that is not JSON is refused and nothing is stored', async () => {
-    const { curate, stories, logs } = setup([{ kind: 'curated', text: 'not json' }]);
+    const { curate, stories, logs } = setup([{ kind: 'curated', text: textOf('not json') }]);
     await curate.run('w1:t1');
     assert.ok(logs.includes('curator w1:t1 t1: refused — the answer is not JSON'));
     assert.equal(stories.read('w1:t1', 't1'), null);
 });
 
 test('a story answer that is a JSON array is refused and nothing is stored', async () => {
-    const { curate, stories, logs } = setup([{ kind: 'curated', text: '[{"a":1}]' }]);
+    const { curate, stories, logs } = setup([{ kind: 'curated', text: textOf('[{"a":1}]') }]);
     await curate.run('w1:t1');
     assert.ok(logs.includes('curator w1:t1 t1: refused — the answer is not an object'));
     assert.equal(stories.read('w1:t1', 't1'), null);
@@ -181,7 +181,7 @@ test('with repair once, a clean merge and a paragraph get no repair call', async
 
 test('with repair once, a refused merge is sent back once with the first answer, and the repaired answer is stored', async () => {
     const first = JSON.stringify({ ops: [MERGE_F9], story: 'First.' });
-    const { curate, calls, logs, stories } = setup([{ kind: 'curated', text: first }, answer({ ops: [MERGE_F1], story: 'Fixed.' })], { repair: 'once' });
+    const { curate, calls, logs, stories } = setup([{ kind: 'curated', text: textOf(first) }, answer({ ops: [MERGE_F1], story: 'Fixed.' })], { repair: 'once' });
     await curate.run('w1:t1');
     assert.equal(calls.length, 2);
     assert.ok(calls[1]?.startsWith(calls[0] ?? ''), 'the repair call carries the same document first');
@@ -203,7 +203,7 @@ test('with repair once, an answer with no paragraph is sent back once, and a rep
 });
 
 test('with repair once, a repair that is not JSON is not stored: the first answer is kept', async () => {
-    const { curate, calls, logs, stories } = setup([answer({ ops: [MERGE_F9], story: 'First.' }), { kind: 'curated', text: 'not json' }], { repair: 'once' });
+    const { curate, calls, logs, stories } = setup([answer({ ops: [MERGE_F9], story: 'First.' }), { kind: 'curated', text: textOf('not json') }], { repair: 'once' });
     await curate.run('w1:t1');
     assert.equal(calls.length, 2);
     assert.ok(logs.includes(F9_REFUSAL));

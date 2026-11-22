@@ -97,7 +97,7 @@ export function retryFor(judged: readonly Judged[], world: RetryWorld, problems:
             return operation === undefined ? [] : [{ task: world.tasks[task]?.key ?? textOf(''), operation, reasons: why }];
         });
     });
-    return { refused, problems, facts: namedFacts(refused, world.facts), tasks: world.tasks.length > 1 };
+    return { refused, problems, facts: namedFacts(refused, world.facts), tasks: brand<boolean, 'Several'>(world.tasks.length > 1) };
 }
 
 export const refusedIn = (judged: readonly Judged[]): Count => count(judged.reduce((all, each) => all + each.refused.length, 0));

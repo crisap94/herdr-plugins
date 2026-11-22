@@ -1,3 +1,4 @@
+import { textOf } from '#src/recap/domain/text.ts';
 import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
@@ -39,9 +40,9 @@ function recording(agent: string, source: (pane: string) => string, tail: string
 }
 
 const writer = (requests: RecapRequest[]): Summarizer => ({
-    backend: 'fake',
+    backend: textOf('fake'),
     contract: 'strict',
-    write: (request): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: JSON.stringify({ ops: [] }), costUsd: 0 }); },
+    write: (request): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: textOf(JSON.stringify({ ops: [] })), costUsd: brand<number, 'Usd'>(0) }); },
 });
 
 async function recapOf(transcripts: TranscriptRegistry, agents: readonly string[], store = memoryStore()): Promise<{ store: Store; requests: RecapRequest[] }> {

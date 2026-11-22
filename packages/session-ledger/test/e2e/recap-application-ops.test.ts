@@ -1,3 +1,4 @@
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { parseAnswer, WHY_WORDS, type Resolving } from '@stateforge-labs/session-ledger/unstable/recap/application/ops-answer.ts';
@@ -57,7 +58,7 @@ test('judging resolves shown ids to fact ids, refuses what the ledger refuses an
 
 test('a retry names each refused operation with its reasons and the facts it mentions, in order', () => {
     const judged = judge([], [closeUnknown], ground, instant(5));
-    const input: InputFact = { id: 'f1', section: 'next', text: 'ship the uploader', state: 'open', first: 1, last: 1, why: null, ref: null, anchor: null, agent: null, closed: null };
+    const input: InputFact = { id: textOf('f1'), section: 'next', text: textOf('ship the uploader'), state: 'open', first: instant(1), last: instant(1), why: null, ref: null, anchor: null, agent: null, closed: null };
     const retry = retryFor([judged], { tasks: [ground], facts: new Map([[text('f1'), input]]) }, [text('one problem')]);
     assert.deepEqual(retry.refused.map((each) => [each.task, each.operation.op, each.reasons.length]), [['t1', 'close', 1]]);
     assert.deepEqual(retry.problems, ['one problem']);

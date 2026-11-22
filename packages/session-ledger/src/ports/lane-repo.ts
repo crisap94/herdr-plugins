@@ -1,7 +1,15 @@
 import type { Directory } from '#src/recap/domain/directory.ts';
-import type { RepoResult } from './legacy.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+import type { Unknown } from './unknowable.ts';
 
-export type { Forge, RepoResult, WebBase } from './legacy.ts';
+export type Forge = 'gitlab' | 'github';
+
+export interface WebBase { readonly base: Text; readonly forge: Forge; }
+
+export type RepoResult =
+    | { readonly kind: 'repo'; readonly root: Directory; readonly branch: Text | null; readonly web: WebBase | null }
+    | { readonly kind: 'no-repo' }
+    | Unknown;
 
 export interface LaneRepo {
     repoOf(cwd: Directory): Promise<RepoResult>;

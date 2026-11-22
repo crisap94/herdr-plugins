@@ -1,3 +1,5 @@
+import { brand } from '#src/recap/domain/brand.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import type { Enumerated, Enumerators } from '#src/ports/enumerators.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
@@ -17,7 +19,7 @@ export function scripted(replies: readonly Reply[]): { readonly enumerator: Enum
             if (reply === FAIL) {
                 return Promise.resolve(unknown({ why: 'timeout', after: 1 as never }));
             }
-            return Promise.resolve({ kind: 'enumerated', text: typeof reply === 'string' ? reply : reply(document, documents.length), costUsd: 0.01 });
+            return Promise.resolve({ kind: 'enumerated', text: textOf(typeof reply === 'string' ? reply : reply(document, documents.length)), costUsd: brand<number, 'Usd'>(0.01) });
         },
     };
     return { enumerator, documents };

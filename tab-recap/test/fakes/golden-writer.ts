@@ -1,3 +1,5 @@
+import { brand } from '#src/recap/domain/brand.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 
 const QUOTES = ['Add a cart to the shop', 'Use SQLite for it, no server', 'also add totals', 'open a merge request', 'can guests keep their basket?', 'cookie is fine'];
@@ -15,13 +17,13 @@ const ANSWERS: readonly (readonly Record<string, unknown>[])[] = [
 export function writer(): { readonly summarizer: Summarizer; readonly seen: RecapRequest[] } {
     const seen: RecapRequest[] = [];
     const summarizer: Summarizer = {
-        backend: 'fake',
+        backend: textOf('fake'),
         contract: 'strict',
         write: (request: RecapRequest): Promise<Written> => {
             seen.push(request);
             const picked = request.input.candidates?.[0];
             const ops = picked === undefined ? ANSWERS[Math.min(seen.length - 1, ANSWERS.length - 1)] ?? [] : [{ op: 'add', anchor: picked.anchor, section: picked.section, text: picked.text }];
-            return Promise.resolve({ kind: 'written', text: JSON.stringify({ ops }), costUsd: 0.25 });
+            return Promise.resolve({ kind: 'written', text: textOf(JSON.stringify({ ops })), costUsd: brand<number, 'Usd'>(0.25) });
         },
     };
     return { summarizer, seen };

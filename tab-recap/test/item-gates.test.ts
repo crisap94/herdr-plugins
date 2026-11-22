@@ -29,11 +29,11 @@ const groundOf = (over: { readonly language?: string; readonly agents?: readonly
 function writer(...texts: readonly string[]): { summarizer: Summarizer; asked: RecapRequest[] } {
     const asked: RecapRequest[] = [];
     const summarizer: Summarizer = {
-        backend: 'fake',
+        backend: textOf('fake'),
         contract: 'strict',
         write: (request): Promise<Written> => {
             asked.push(request);
-            return Promise.resolve({ kind: 'written', text: texts[Math.min(asked.length, texts.length) - 1] ?? '', costUsd: 0.01 });
+            return Promise.resolve({ kind: 'written', text: textOf(texts[Math.min(asked.length, texts.length) - 1] ?? ''), costUsd: brand<number, 'Usd'>(0.01) });
         },
     };
     return { summarizer, asked };

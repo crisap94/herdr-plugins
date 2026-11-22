@@ -338,7 +338,7 @@ test('gemini refuses: not compactable, `no reader for gemini` in the recap, and 
     assert.match(world.toasts.join('\n'), /No agent here can be compacted/);
 
     const store = memoryStore();
-    const writer: Summarizer = { backend: 'fake', contract: 'strict', write: (): Promise<Written> => Promise.resolve({ kind: 'written', text: '{"ops":[]}', costUsd: 0 }) };
+    const writer: Summarizer = { backend: textOf('fake'), contract: 'strict', write: (): Promise<Written> => Promise.resolve({ kind: 'written', text: textOf('{"ops":[]}'), costUsd: brand<number, 'Usd'>(0) }) };
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId,
         repos: NO_REPOS, transcripts: registryWith({}), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger),
         clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Summarizer => writer,
