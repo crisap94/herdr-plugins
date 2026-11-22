@@ -12,6 +12,14 @@
       "types": "./types/tab-recap-naming.d.ts",
       "default": "./mods/tab-recap/naming.js"
     },
+    "./tab-recap/catalog": {
+      "types": "./types/tab-recap-catalog.d.ts",
+      "default": "./mods/tab-recap/catalog.js"
+    },
+    "./tab-recap/language": {
+      "types": "./types/tab-recap-language.d.ts",
+      "default": "./mods/tab-recap/language.js"
+    },
     "./tab-recap/keys": {
       "types": "./types/tab-recap-keys.d.ts",
       "default": "./mods/tab-recap/keys.js"

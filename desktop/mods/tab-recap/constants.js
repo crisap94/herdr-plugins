@@ -38,16 +38,16 @@ export const FOOTER = [
   { keys: ["Esc"], label: "back" },
 ];
 
-export const COMMANDS = { ensure: "ensure", refresh: "refresh", stop: "stop", start: "start" };
+export const COMMANDS = { ensure: "ensure", refresh: "refresh", stop: "stop", start: "start", settings: "settings", set: "set" };
 export const SYSTEM = { printenv: "printenv", touch: "touch", rm: "rm", rmForce: "-f", opener: "xdg-open" };
-export const ENV = { bin: "TAB_RECAP_BIN", state: "TAB_RECAP_STATE" };
+export const ENV = { bin: "TAB_RECAP_BIN", state: "TAB_RECAP_STATE", lang: "LANG" };
 export const DEFAULT_BIN = "tab-recap-desktop";
 export const DEFAULT_STATE = ".local/state/herdr/plugins/tab-recap/desktop";
 export const PATHS = { gui: "gui", index: "index.json", api: "api.json", marker: "open.", icons: "mods/tab-recap/icons/", extension: ".json" };
 export const SAFE_TAB = /^[A-Za-z0-9%@_][\w.:%@-]*$/;
 export const WEB_URL = /^https?:\/\//;
 export const URL_IN_TEXT = /\s*https?:\/\/\S+/g;
-export const SHARED = { rows: "tab-recap.rows", notified: "tab-recap.notified", popup: "tab-recap.popup" };
+export const SHARED = { rows: "tab-recap.rows", notified: "tab-recap.notified", popup: "tab-recap.popup", lang: "tab-recap.lang" };
 export const STORAGE = { seen: "tab-recap.seen" };
 
 export const MS = { second: 1000, minute: 60000, hour: 3600000, day: 86400000 };
@@ -70,8 +70,10 @@ export const TINT = { pill: "29", need: "0f", needBorder: "8c", banner: "1a", ba
 export const FALLBACK_ZONE = "UTC";
 export const CLOCK_PAD = 2;
 export const CLOCK_FILL = "0";
-export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-export const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+export const LANGS = ["en", "es"];
+export const DEFAULT_LANG = "en";
+export const AUTO_LANG = "auto";
+export const SYSTEM_LANG_PREFIX = { es: "es" };
 export const DOC = { needs: "needs", decisions: "decisions", now: "now", done: "done", next: "next", links: "links", compacted: "compacted", switched: "switched" };
 export const SECTION_TOKEN = { needs: "blocked", decisions: "violet", done: "done", progress: "working" };
 export const NOTIFIED_KEEP = 50;

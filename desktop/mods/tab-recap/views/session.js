@@ -29,7 +29,7 @@ function laneRow(c, l, i) {
   return h_flex().gap(SIZE.padSm).items_center().py(SIZE.rowPadV).border_t(i ? SIZE.border : 0).border_color(t.border).text_size(SIZE.text)
     .child(status(t, l.status, SIZE.icon)).child(div().w(SIZE.laneRow).text_color(t.muted).child(l.agent)).child(div().font_semibold().child(l.name))
     .child(div().flex_1()).child(meter(t, pct, SIZE.meterSession, c.hint))
-    .child(div().child(pct === null ? TEXT.dash : `${pct}% of ${l.window ? sizeOf(l.window) : TEXT.dash}`));
+    .child(div().child(pct === null ? TEXT.dash : TEXT.ofWindow(pct, l.window ? sizeOf(l.window) : TEXT.dash)));
 }
 
 export function session(c) {

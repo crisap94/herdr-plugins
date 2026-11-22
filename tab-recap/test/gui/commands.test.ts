@@ -24,7 +24,7 @@ const ensureFails = (name: string, argv: readonly string[]): Reply | null => (na
 const succeeds = (): Reply | null => null;
 const explodes = (): never => { throw new Error('boom'); };
 const allowed = new Set([constants.SYSTEM['printenv'], constants.SYSTEM['touch'], constants.SYSTEM['rm'], constants.SYSTEM['opener'], BIN]);
-const desk = (): ExecCall[] => world.execLog.filter((call) => call.command === BIN);
+const desk = (): ExecCall[] => world.execLog.filter((call) => call.command === BIN && call.argv[0] !== 'settings');
 const touches = (): number => world.execLog.filter((call) => call.command === 'touch').length;
 
 test.beforeEach(() => { reset(); storage.map.clear(); fleet(); });
@@ -61,7 +61,7 @@ test('a tab id that fails validation never reaches exec, whatever the entry poin
     }
     assert.equal(commands.safe(undefined), false);
     assert.equal(commands.safe(42), false);
-    assert.deepEqual(world.execLog.filter((call) => call.command !== 'printenv'), []);
+    assert.deepEqual(world.execLog.filter((call) => call.command !== 'printenv' && call.argv[0] !== 'settings'), []);
     assert.deepEqual(world.runLog, []);
 });
 

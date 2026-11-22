@@ -14,3 +14,5 @@ export function resolve() {
   }
   return environment;
 }
+
+export const systemLang = () => envOf(ENV.lang);

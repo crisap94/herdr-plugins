@@ -1234,6 +1234,7 @@
       "test/gui/derive.test.ts",
       "test/gui/fleet.test.ts",
       "test/gui/guidance.test.ts",
+      "test/gui/language.test.ts",
       "test/gui/need-done.test.ts",
       "test/gui/popover.test.ts",
       "test/gui/roles.test.ts",

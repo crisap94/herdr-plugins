@@ -44,12 +44,21 @@ export default class Window extends WindowActions {
     this.seenAt = 0;
     this.acx = cx;
     this.handle = cx.focus_handle();
-    this.qState = this.field(InputState.new({ placeholder: TEXT.searchTabs }), "q", "qFocus");
-    this.tqState = this.field(InputState.new({ placeholder: TEXT.searchEvents }), "tq", "tqFocus");
+    this.makeFields();
     this.store.start(cx, null, INTERVAL.poll).then(() => this.arrive(p, cx));
     cx.timer.after(INTERVAL.focus, () => this.handle.focus());
     cx.timer.every(INTERVAL.marker, () => { if (this.scene === SCENES.brief && this.sel) touchMarker(this.sel); });
     cx.timer.every(INTERVAL.tick, (c) => c.notify());
+  }
+
+  makeFields() {
+    this.qState = this.field(InputState.new({ placeholder: TEXT.searchTabs, value: this.qState?.value() ?? "" }), "q", "qFocus");
+    this.tqState = this.field(InputState.new({ placeholder: TEXT.searchEvents, value: this.tqState?.value() ?? "" }), "tq", "tqFocus");
+  }
+
+  onLanguage(cx) {
+    this.makeFields();
+    cx.notify();
   }
 
   field(state, key, flag) {

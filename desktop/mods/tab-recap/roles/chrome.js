@@ -29,6 +29,6 @@ export function briefBar(c) {
 export function footer(t) {
   return h_flex().flex_wrap().gap(SIZE.footerGap).px(SIZE.pad).py(SIZE.gap).flex_none().bg(t.chrome).border_t(SIZE.border).border_color(t.border)
     .text_size(SIZE.hint).text_color(t.dim)
-    .children(FOOTER.map((f, i) => h_flex().id(`hint-${i}`).gap(SIZE.gapSm).items_center().children(f.keys.map((k) => kbd(t, k))).child(f.label)));
+    .children(FOOTER.map((f, i) => h_flex().id(`hint-${i}`).gap(SIZE.gapSm).items_center().children(f.keys.map((k) => kbd(t, k))).child(TEXT.footer[f.label])));
 }
 
