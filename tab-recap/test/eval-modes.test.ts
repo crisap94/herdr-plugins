@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { runEval } from '#src/recap/application/eval-run.ts';
-import type { Judge } from '#src/ports/judge.ts';
-import type { Verdict } from '#src/ports/verdicts.ts';
-import { optionsOf, rig, seed } from '#test/eval-rig.ts';
+import type { VerdictRecord } from '#src/ports/verdicts.ts';
+import { optionsOf, rig, seed, judgeOf } from '#test/eval-rig.ts';
+import { runsOf, verdictOf } from '#test/db/support.ts';
 
 test('`--label 3` shows the newest unlabelled items, asks again until it understands, stores one operator verdict per check, and never asks about a labelled item twice', async () => {
     const { store, deps, out, err, asked } = rig({ lines: ['maybe', 'ok', 'fail I3 done', 'too vague', 'fail S-nonsense', 'quit'] });
@@ -12,11 +12,11 @@ test('`--label 3` shows the newest unlabelled items, asks again until it underst
     assert.match(out.join('\n'), /1\/3 {2}w1:t1 .* t1\/goal\/0\n"Ship retries 0"/);
     assert.match(err.join('\n'), /answer ok, fail \[checks\], skip or quit/);
     assert.match(err.join('\n'), /S-NONSENSE is not a check of this item/i);
-    const [run] = store.inputs.runs({ tab: null, since: null, limit: 1, withInput: false });
+    const [run] = runsOf(store.inputs, { tab: null, since: null, limit: 1, withInput: false });
     assert.ok(run !== undefined);
     const mine = store.verdicts.ofRun(run.id).filter((v) => v.source === 'operator');
     assert.equal(mine.length, 16, 'eight checks for each of the two answered items');
-    assert.deepEqual(mine.filter((v) => !v.pass).map((v) => [v.item, v.check, v.critique]), [['t1/done/0', 'I3', 'too vague'], ['t1/done/0', 'S-done', 'too vague']]);
+    assert.deepEqual(mine.filter((v) => v.pass === 'fail').map((v) => [v.item, v.check, v.critique]), [['t1/done/0', 'I3', 'too vague'], ['t1/done/0', 'S-done', 'too vague']]);
     assert.ok(mine.every((v) => v.judge === 'operator'));
     assert.equal(asked.filter((prompt) => prompt.startsWith('why')).length, 1, 'a reason only for a failure');
     out.length = 0;
@@ -37,13 +37,13 @@ test('`--label` with the input ended stops cleanly; `skip` stores nothing', asyn
 test('`--agree`: 50 items with both verdicts for I3 and 44 agreeing print 88 % and kappa 0.76 beside the 0.6 bar, with false passes, false fails and the newest items they disagree on', async () => {
     const { store, deps, out } = rig();
     seed(store, 1);
-    const [run] = store.inputs.runs({ tab: null, since: null, limit: 1, withInput: false });
+    const [run] = runsOf(store.inputs, { tab: null, since: null, limit: 1, withInput: false });
     assert.ok(run !== undefined);
-    const both = (n: number, judge: boolean, operator: boolean): Verdict[] => [
-        { run: run.id, item: `t1/x/${n}`, check: 'I3', pass: judge, critique: null, judge: 'j', at: 1, source: 'judge' },
-        { run: run.id, item: `t1/x/${n}`, check: 'I3', pass: operator, critique: null, judge: 'operator', at: 2, source: 'operator' },
+    const both = (n: number, judge: boolean, operator: boolean): VerdictRecord[] => [
+        verdictOf({ run: run.id, item: `t1/x/${n}`, check: 'I3', pass: judge, critique: null, judge: 'j', at: 1, source: 'judge' }),
+        verdictOf({ run: run.id, item: `t1/x/${n}`, check: 'I3', pass: operator, critique: null, judge: 'operator', at: 2, source: 'operator' }),
     ];
-    const judged = (n: number): Verdict[] => {
+    const judged = (n: number): VerdictRecord[] => {
         if (n < 44) {
             return both(n, n % 2 === 0, n % 2 === 0);
         }
@@ -64,7 +64,7 @@ test('`--agree`: 50 items with both verdicts for I3 and 44 agreeing print 88 % a
 
 test('`--gates --since 7` prints the counts of the last seven days of runs per gate, with no model call', async () => {
     const calls: string[] = [];
-    const { store, deps, out } = rig({ judge: { label: 'x', ask: (task): ReturnType<Judge['ask']> => { calls.push(task); return Promise.resolve({ kind: 'said', text: '', costUsd: 0 }); } } });
+    const { store, deps, out } = rig({ judge: judgeOf('x', (task) => { calls.push(task); return ''; }) });
     seed(store, 2, { gate: true, first: 2 });
     seed(store, 4, { gate: true, first: 30 });
     seed(store, 1, { first: 1 });

@@ -12,7 +12,7 @@ import { awaitingPane } from './autocompact.ts';
 import { must } from '#src/protocol/result.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
-import type { CheckAnchors, Judge } from '#src/ports/judge.ts';
+import type { CheckAnchors, JudgePort } from '#src/ports/judge.ts';
 import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
 import type { CompactRequests } from '#src/recap/application/compact-requests.ts';
 import { ANY_KIND } from '#src/recap/domain/policy.ts';
@@ -161,7 +161,7 @@ export function summarizerWork(root: string): Directory {
 
 const textAnchors = (anchors: CheckAnchors): TextAnchors => new Map([...anchors].map(([key, found]) => [must(parseText(key)), found]));
 
-export type JudgeWith = (config: Config, available: Available, work: Directory, runtime: HarnessRuntime, anchors?: TextAnchors) => Judge | null;
+export type JudgeWith = (config: Config, available: Available, work: Directory, runtime: HarnessRuntime, anchors?: TextAnchors) => JudgePort | null;
 
 const judges: { made?: JudgeWith } = {};
 
@@ -169,7 +169,7 @@ export function judgeVia(made: JudgeWith): void {
     judges.made = made;
 }
 
-export function judgeFor(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, anchors?: CheckAnchors): Judge | null {
+export function judgeFor(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, anchors?: CheckAnchors): JudgePort | null {
     if (judges.made === undefined) {
         throw new Error('judgeFor runs once src/daemon/backends.ts is loaded');
     }

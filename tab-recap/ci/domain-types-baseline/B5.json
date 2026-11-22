@@ -5,11 +5,8 @@
   "src/adapters/db/rows/legacy.ts": {
     "legacy": 33
   },
-  "src/adapters/db/run-inputs/legacy.ts": {
-    "legacy": 8
-  },
   "src/adapters/db/run-write/legacy.ts": {
-    "legacy": 4
+    "legacy": 3
   },
   "src/adapters/db/session-source/legacy.ts": {
     "legacy": 6
@@ -19,8 +16,5 @@
   },
   "src/adapters/db/typeid/legacy.ts": {
     "legacy": 4
-  },
-  "src/adapters/db/verdicts/legacy.ts": {
-    "legacy": 3
   }
 }

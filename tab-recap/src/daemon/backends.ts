@@ -8,7 +8,7 @@ import type { BriefWriter } from '#src/ports/compaction-briefs.ts';
 import type { Decider, DeciderPort } from '#src/ports/decider.ts';
 import type { Curators } from '#src/ports/curators.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
-import type { CheckAnchor, Judge } from '#src/ports/judge.ts';
+import type { CheckAnchor, JudgePort } from '#src/ports/judge.ts';
 import type { HarnessDirectory, HarnessList } from '#src/ports/harnesses.ts';
 import type { NotifierPort } from '#src/ports/notifier.ts';
 import type { Summarizer, Written } from '#src/ports/summarizer.ts';
@@ -73,7 +73,7 @@ export function briefFor(config: Config, available: Available, work: Directory, 
     return placed === null ? null : new HarnessBrief(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'compactionBrief'), log), { model: placed.model, effort: placed.effort });
 }
 
-export function judgeWith(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, anchors?: TextAnchors): Judge | null {
+export function judgeWith(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, anchors?: TextAnchors): JudgePort | null {
     const placed = placementFor(config.judge, { backend: config.backend, models: config.models }, available);
     return placed === null ? null : new HarnessJudge(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'judge')), { model: placed.model, effort: placed.effort }, anchors);
 }

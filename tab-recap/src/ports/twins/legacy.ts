@@ -76,8 +76,6 @@ export interface FleetSource {
     subscribe(topics: readonly Topic[]): Promise<StreamResult>;
 }
 
-export type ItemsMode = 'added' | 'state';
-
 export interface StoredRun {
     readonly id: string;
     readonly tab: string;
@@ -95,26 +93,6 @@ export interface RunItem {
     readonly fact: string;
     readonly born: boolean;
     readonly anchor: string | null;
-}
-
-export interface RunQuery {
-    readonly tab: string | null;
-    readonly since: number | null;
-    readonly limit: number;
-    readonly withInput: boolean;
-}
-
-export interface GateCount {
-    readonly at: number;
-    readonly stats: GateStats;
-}
-
-export interface RunInputs {
-    runs(query: RunQuery): readonly StoredRun[];
-    document(run: string): string | null;
-    itemsOf(run: string, mode: ItemsMode): readonly RunItem[];
-    gateCounts(since: number | null): readonly GateCount[];
-    prune(before: number): number;
 }
 
 export interface LaneWeb {

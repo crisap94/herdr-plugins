@@ -4,7 +4,6 @@ import { parseRunId } from '#src/recap/domain/run-ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
-export type { Disagreement, Pair, Verdict, Verdicts, VerdictSource } from './twins/verdicts/legacy.ts';
 
 export type Outcome = 'pass' | 'fail';
 

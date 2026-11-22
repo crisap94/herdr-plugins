@@ -6,11 +6,11 @@ import { must } from '#src/protocol/result.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { judgeRun, judgeRuns } from '#src/recap/application/judge.ts';
 import type { JudgeDeps } from '#src/recap/application/judge.ts';
-import type { Judge, JudgeTask, Said } from '#src/ports/judge.ts';
+import type { JudgeAnswer, JudgePort, JudgeTask } from '#src/ports/judge.ts';
 import { unknown } from '#src/ports/unknowable.ts';
-import type { StoredRun } from '#src/ports/run-inputs.ts';
+import type { RunRecord } from '#src/ports/run-inputs.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
-import { cursor, memoryStore, recordOps } from '#test/db/support.ts';
+import { cursor, memoryStore, recordOps, runsOf } from '#test/db/support.ts';
 import { oneTask, withFacts } from '#test/support.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
@@ -31,31 +31,31 @@ const SCORE = JSON.stringify({
 const ANSWERS = JSON.stringify({ answers: ['Ship retries', '!256 merged', 'not stated', 'not stated', 'The API limits bursts', 'not stated'] });
 const GRADES = JSON.stringify({ grades: [1, 2, 3, 4, 5, 6].map((question) => ({ question, pass: question !== 6, critique: question === 6 ? 'the next action is in the input' : '' })) });
 
-type Script = Partial<Record<JudgeTask, string | (() => Said)>>;
+type Script = Partial<Record<JudgeTask, string | (() => JudgeAnswer)>>;
 
-function judgeOf(script: Script): { judge: Judge; asked: { task: JudgeTask; document: string }[] } {
+function judgeOf(script: Script): { judge: JudgePort; asked: { task: JudgeTask; document: string }[] } {
     const asked: { task: JudgeTask; document: string }[] = [];
-    const judge: Judge = {
-        label: 'claude · sonnet · medium',
+    const judge: JudgePort = {
+        label: textOf('claude · sonnet · medium'),
         ask: (task, document) => {
             asked.push({ task, document });
             const answer = script[task];
-            return Promise.resolve(typeof answer === 'function' ? answer() : { kind: 'said', text: answer ?? '', costUsd: 0.01 });
+            return Promise.resolve(typeof answer === 'function' ? answer() : { kind: 'said', text: textOf(answer ?? ''), costUsd: usdOf(0.01) });
         },
     };
     return { judge, asked };
 }
 
-function setup(script: Script, input: string | null = '<recap_input version="1">what the writer saw</recap_input>'): { deps: JudgeDeps; run: StoredRun; store: ReturnType<typeof memoryStore>; asked: { task: JudgeTask; document: string }[] } {
+function setup(script: Script, input: string | null = '<recap_input version="1">what the writer saw</recap_input>'): { deps: JudgeDeps; run: RunRecord; store: ReturnType<typeof memoryStore>; asked: { task: JudgeTask; document: string }[] } {
     const store = memoryStore();
     recordOps(store, {
         tab: tabId('w1:t1'), at: instant(1000), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], ...withFacts(oneTask('', SECTIONS)),
         ...(input === null ? {} : { input: textOf(input) }),
     });
-    const run = store.inputs.runs({ tab: null, since: null, limit: 5, withInput: false }).at(0);
+    const run = runsOf(store.inputs, { tab: null, since: null, limit: 5, withInput: false }).at(0);
     assert.ok(run !== undefined);
     const { judge, asked } = judgeOf(script);
-    return { deps: { judge, inputs: store.inputs, verdicts: store.verdicts, rubric: must(parseText(RUBRIC_TEXT)), now: (): number => 5000 }, run, store, asked };
+    return { deps: { judge, inputs: store.inputs, verdicts: store.verdicts, rubric: must(parseText(RUBRIC_TEXT)), now: () => instant(5000) }, run, store, asked };
 }
 
 test('a sampled run: a verdict per item and check, key facts and coverage, filler, the read-back — all stored with the judge used', async () => {
@@ -66,11 +66,11 @@ test('a sampled run: a verdict per item and check, key facts and coverage, fille
     const stored = store.verdicts.ofRun(run.id);
     assert.equal(stored.filter((v) => CHECKS.includes(v.check)).length, 5 * 7, 'seven item checks for each of five items');
     assert.equal(stored.filter((v) => v.check.startsWith('S-')).length, 5, 'and the section check of each');
-    assert.deepEqual(stored.filter((v) => !v.pass && v.item === 't1/done/1' && v.check !== 'filler').map((v) => [v.check, v.critique]).toSorted((a, b) => String(a[0]).localeCompare(String(b[0]))), [['I3', 'effort, not a result'], ['S-done', 'effort, not a result']]);
+    assert.deepEqual(stored.filter((v) => v.pass === 'fail' && v.item === 't1/done/1' && v.check !== 'filler').map((v) => [v.check, v.critique]).toSorted((a, b) => String(a[0]).localeCompare(String(b[0]))), [['I3', 'effort, not a result'], ['S-done', 'effort, not a result']]);
     assert.deepEqual(result.coverage, { passed: 2, total: 3 });
     assert.deepEqual(result.filler, { passed: 2, total: 5 }, 'only the merged item and the decision carry a key fact; the goal, the effort item and the link are filler');
-    assert.deepEqual(stored.filter((v) => v.check === 'coverage' && !v.pass).map((v) => [v.item, v.critique]), [['keyfact/2', 'The release is tagged']]);
-    assert.deepEqual(stored.filter((v) => v.check.startsWith('readback-')).map((v) => [v.check, v.pass, v.item]), [1, 2, 3, 4, 5, 6].map((n) => [`readback-${n}`, n !== 6, null]));
+    assert.deepEqual(stored.filter((v) => v.check === 'coverage' && v.pass === 'fail').map((v) => [v.item, v.critique]), [['keyfact/2', 'The release is tagged']]);
+    assert.deepEqual(stored.filter((v) => v.check.startsWith('readback-')).map((v) => [v.check, v.pass, v.item]), [1, 2, 3, 4, 5, 6].map((n) => [`readback-${n}`, n !== 6 ? 'pass' : 'fail', null]));
     assert.ok(stored.every((v) => v.judge === 'claude · sonnet · medium' && v.source === 'judge' && v.at === 5000));
     assert.equal(result.costUsd, 0.03);
 });
@@ -92,7 +92,7 @@ test('an unparsable answer is a run not judged, nothing stored, and the next run
     assert.deepEqual(store.verdicts.ofRun(run.id), []);
     const answers = ['nonsense', SCORE];
     const text = (task: JudgeTask): string => ({ score: answers.shift() ?? SCORE, readback: ANSWERS, grade: GRADES, cover: '' })[task];
-    const flaky: JudgeDeps = { ...deps, judge: { label: 'x', ask: (task) => Promise.resolve({ kind: 'said', text: text(task), costUsd: 0 }) } };
+    const flaky: JudgeDeps = { ...deps, judge: { label: textOf('x'), ask: (task) => Promise.resolve({ kind: 'said', text: textOf(text(task)), costUsd: usdOf(0) }) } };
     const seen: string[] = [];
     const results = await judgeRuns(flaky, [run, run], (each) => { seen.push(each.kind); });
     assert.deepEqual(results.map((each) => each.kind), ['not-judged', 'judged']);
@@ -114,7 +114,7 @@ test('a verdict for an item\'s own section only: S-done on a goal is dropped; th
     });
     const { deps, run, store } = setup({ score: answer, readback: ANSWERS, grade: GRADES });
     await judgeRun(deps, run);
-    assert.deepEqual(store.verdicts.ofRun(run.id).filter((v) => v.item === 't1/goal/0' && v.check !== 'filler').map((v) => [v.check, v.pass]), [['S-goal', true]]);
+    assert.deepEqual(store.verdicts.ofRun(run.id).filter((v) => v.item === 't1/goal/0' && v.check !== 'filler').map((v) => [v.check, v.pass]), [['S-goal', 'pass']]);
 });
 
 test('a run whose input was deleted, one the model cannot be reached for, and an unusable read-back', async () => {

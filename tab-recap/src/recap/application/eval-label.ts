@@ -1,14 +1,14 @@
-import type { RunInputs, StoredRun } from '#src/ports/run-inputs.ts';
-import type { Verdict } from '#src/ports/verdicts.ts';
+import type { RunInputReader, RunRecord } from '#src/ports/run-inputs.ts';
+import type { VerdictRecord } from '#src/ports/verdicts.ts';
 import { must } from '#src/protocol/result.ts';
 import type { Count } from '#src/recap/domain/count.ts';
-import { isSection, type Section } from '#src/recap/domain/fact.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import type { Section } from '#src/recap/domain/fact.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { ITEM_CHECKS } from './judge-answer.ts';
 
 export interface Candidate {
-    readonly run: StoredRun;
+    readonly run: RunRecord;
     readonly key: Text;
     readonly section: Section;
     readonly text: Text;
@@ -16,12 +16,12 @@ export interface Candidate {
 
 const ITEM_TEXTS = ITEM_CHECKS.map((check) => must(parseText(check)));
 
-export function candidatesOf(runs: readonly StoredRun[], inputs: Pick<RunInputs, 'itemsOf'>, labelled: ReadonlySet<Text>, count: Count, check: Text | null = null): readonly Candidate[] {
+export function candidatesOf(runs: readonly RunRecord[], inputs: Pick<RunInputReader, 'itemsOf'>, labelled: ReadonlySet<Text>, count: Count, check: Text | null = null): readonly Candidate[] {
     const found: Candidate[] = [];
     for (const run of runs) {
         for (const item of inputs.itemsOf(run.id, 'added')) {
-            if (found.length < count && !labelled.has(must(parseText(`${run.id}|${item.key}`))) && isSection(item.section) && (check === null || checksFor(item.section).includes(check))) {
-                found.push({ run, key: must(parseText(item.key)), section: item.section, text: must(parseText(item.text)) });
+            if (found.length < count && !labelled.has(must(parseText(`${run.id}|${item.key}`))) && (check === null || checksFor(item.section).includes(check))) {
+                found.push({ run, key: item.key, section: item.section, text: item.text });
             }
         }
     }
@@ -74,11 +74,11 @@ function failedChecks(named: readonly Text[], valid: readonly Text[]): Answer {
     return wrong === undefined ? { kind: 'fail', checks: named.length === 0 ? valid : named } : { kind: 'again', why: must(parseText(`${wrong} is not a check of this item (${valid.join(' ')})`)) };
 }
 
-export function labelVerdicts(candidate: Candidate, answer: Extract<Answer, { kind: 'pass' | 'fail' }>, reason: Text, at: Instant, only: Text | null = null): readonly Verdict[] {
+export function labelVerdicts(candidate: Candidate, answer: Extract<Answer, { kind: 'pass' | 'fail' }>, reason: Text, at: Instant, only: Text | null = null): readonly VerdictRecord[] {
     const failing = answer.kind === 'fail' ? answer.checks : [];
     const note = reason === '' ? '(no reason given)' : reason;
-    return (only === null ? checksFor(candidate.section) : [only]).map((check): Verdict => ({
-        run: candidate.run.id, item: candidate.key, check, pass: !failing.includes(check), critique: failing.includes(check) ? note : null,
-        judge: 'operator', at, source: 'operator',
+    return (only === null ? checksFor(candidate.section) : [only]).map((check): VerdictRecord => ({
+        run: candidate.run.id, item: candidate.key, check, pass: failing.includes(check) ? 'fail' : 'pass', critique: failing.includes(check) ? textOf(note) : null,
+        judge: textOf('operator'), at, source: 'operator',
     }));
 }

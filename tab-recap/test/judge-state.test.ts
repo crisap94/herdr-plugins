@@ -8,12 +8,13 @@ import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { reportOf } from '#src/recap/application/eval-report.ts';
 import { judgeRun } from '#src/recap/application/judge.ts';
 import type { JudgeDeps } from '#src/recap/application/judge.ts';
-import type { Judge, JudgeTask } from '#src/ports/judge.ts';
-import type { StoredRun } from '#src/ports/run-inputs.ts';
+import type { JudgeTask } from '#src/ports/judge.ts';
+import { judgeOf } from '#test/eval-rig.ts';
+import type { RunRecord } from '#src/ports/run-inputs.ts';
 import type { Operation, TaskOps } from '#src/recap/domain/ops.ts';
 import { reportText } from '#src/recap/render/eval.ts';
 import { plain } from '#src/recap/render/wrap.ts';
-import { cursor, memoryStore, recordOps, storeRead } from '#test/db/support.ts';
+import { cursor, memoryStore, recordOps, runIdOf, runsOf, storeRead } from '#test/db/support.ts';
 import { oneTask } from '#test/support.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
@@ -24,7 +25,7 @@ import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/l
 const add = (section: 'done' | 'next', text: string): Operation => ({ op: 'add', section, text: textOf(text), why: null, ref: null, at: null, agent: null });
 const TAB = { tab: tabIdOf('w1:t1'), key: textOf('t1') };
 
-function history(): { store: ReturnType<typeof memoryStore>; runs: readonly StoredRun[] } {
+function history(): { store: ReturnType<typeof memoryStore>; runs: readonly RunRecord[] } {
     const store = memoryStore();
     const record = (at: number, ops: (ids: Record<string, string>) => readonly Operation[]): void => {
         const ids = Object.fromEntries(storeRead(store.ledger.openOf(TAB)).map((fact) => [fact.text, fact.id]));
@@ -34,14 +35,14 @@ function history(): { store: ReturnType<typeof memoryStore>; runs: readonly Stor
     record(1000, () => [add('done', 'Merged !256.'), add('next', 'Tag the release.')]);
     record(2000, (ids) => [add('done', 'Tagged 1.9.0.'), { op: 'close', id: factIdOf(ids['Tag the release.'] ?? ''), why: 'done' }]);
     record(3000, () => [add('next', 'Announce 1.9.0.')]);
-    return { store, runs: store.inputs.runs({ tab: null, since: null, limit: 10, withInput: true }).toReversed() };
+    return { store, runs: runsOf(store.inputs, { tab: null, since: null, limit: 10, withInput: true }).toReversed() };
 }
 
 test('the state after a run: a fact born earlier and still open is in it, one closed by or before the run is not; the added view holds only what the run created', () => {
     const { store, runs } = history();
     const [first, second, third] = runs;
     assert.ok(first !== undefined && second !== undefined && third !== undefined);
-    const view = (run: StoredRun, mode: 'state' | 'added'): string[] => store.inputs.itemsOf(run.id, mode).map((item) => `${item.key} ${item.born ? '+' : '='} ${item.text}`);
+    const view = (run: RunRecord, mode: 'state' | 'added'): string[] => store.inputs.itemsOf(run.id, mode).map((item) => `${item.key} ${item.birth === 'born' ? '+' : '='} ${item.text}`);
     assert.deepEqual(view(first, 'state'), ['state/t1/done/0 + Merged !256.', 'state/t1/next/0 + Tag the release.']);
     assert.deepEqual(view(second, 'state'), ['state/t1/done/0 = Merged !256.', 'state/t1/done/1 + Tagged 1.9.0.'], 'the next fact closed by this run is gone');
     assert.deepEqual(view(third, 'state'), ['state/t1/done/0 = Merged !256.', 'state/t1/done/1 = Tagged 1.9.0.', 'state/t1/next/0 + Announce 1.9.0.']);
@@ -50,7 +51,7 @@ test('the state after a run: a fact born earlier and still open is in it, one cl
     const [merged] = store.inputs.itemsOf(first.id, 'state');
     const [again] = store.inputs.itemsOf(third.id, 'state');
     assert.equal(merged?.fact, again?.fact, 'the same fact has the same identity in every state');
-    assert.deepEqual(store.inputs.itemsOf('run_nonsense', 'state'), []);
+    assert.deepEqual(store.inputs.itemsOf(runIdOf('run_nonsense'), 'state'), []);
 });
 
 const SCORE = JSON.stringify({
@@ -67,8 +68,8 @@ test('judging the third run: coverage and no-filler over the state (an older fac
     assert.ok(run !== undefined);
     const seen: { task: JudgeTask; document: string }[] = [];
     const script: Readonly<Record<string, string>> = { score: SCORE, readback: ANSWERS, grade: GRADES };
-    const judge: Judge = { label: 'fake', ask: (task, document) => { seen.push({ task, document }); return Promise.resolve({ kind: 'said', text: script[task] ?? '', costUsd: 0 }); } };
-    const deps: JudgeDeps = { judge, inputs: store.inputs, verdicts: store.verdicts, rubric: must(parseText(RUBRIC_TEXT)), now: (): number => 9000 };
+    const judge = judgeOf('fake', (task, document) => { seen.push({ task, document }); return script[task] ?? ''; });
+    const deps: JudgeDeps = { judge, inputs: store.inputs, verdicts: store.verdicts, rubric: must(parseText(RUBRIC_TEXT)), now: () => instant(9000) };
     const result = await judgeRun(deps, run);
     assert.ok(result.kind === 'judged');
     assert.deepEqual(result.coverage, { passed: 2, total: 3 }, 'a key fact an earlier run added is carried; one named by an added key, which is not in the state, is not');
@@ -76,8 +77,8 @@ test('judging the third run: coverage and no-filler over the state (an older fac
     assert.deepEqual(result.added, { coverage: { passed: 1, total: 3 }, filler: { passed: 1, total: 1 } }, 'only the announcement was born in this run');
     assert.equal(result.stateSize, 3);
     const rows = store.verdicts.ofRun(run.id);
-    assert.deepEqual(rows.filter((row) => row.check === 'filler').map((row) => [row.item, row.pass]), [['state/t1/done/0', true], ['state/t1/done/1', false], ['state/t1/next/0', true]], 'state rows are keyed state/…');
-    assert.deepEqual(rows.filter((row) => row.check === 'I1').map((row) => [row.item, row.pass]), [['t1/next/0', true]], 'a verdict about a state key is not an item check');
+    assert.deepEqual(rows.filter((row) => row.check === 'filler').map((row) => [row.item, row.pass]), [['state/t1/done/0', 'pass'], ['state/t1/done/1', 'fail'], ['state/t1/next/0', 'pass']], 'state rows are keyed state/…');
+    assert.deepEqual(rows.filter((row) => row.check === 'I1').map((row) => [row.item, row.pass]), [['t1/next/0', 'pass']], 'a verdict about a state key is not an item check');
     const [score, readback] = seen.map((call) => call.document);
     assert.ok(score?.includes('<state>') && score.includes('key="state/t1/done/0"') && score.includes('<recap>') && score.includes('key="t1/next/0"'));
     assert.ok(readback?.includes('Merged !256.') && readback.includes('Tagged 1.9.0.') && !readback.includes('Tag the release.'), 'the read-back sees the open ledger, not the closed fact');
@@ -87,14 +88,14 @@ test('judge vs anchor: a fact whose quote is in the input and that the judge cal
     const store = memoryStore();
     const anchored: Operation = { op: 'add', section: 'done', text: textOf('Merged !256.'), why: null, ref: null, at: null, agent: null, anchor: textOf('merge !256') };
     recordOps(store, { tab: tabId('w1:t1'), at: instant(1000), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], tasks: oneTask(''), ops: [{ task: textOf('t1'), ops: [anchored, add('done', 'Tagged 1.9.0.')] }], input: textOf('<recap_input version="2">merge !256</recap_input>') });
-    const run = store.inputs.runs({ tab: null, since: null, limit: 5, withInput: true })[0];
+    const run = runsOf(store.inputs, { tab: null, since: null, limit: 5, withInput: true })[0];
     assert.ok(run !== undefined);
     const score = JSON.stringify({
         verdicts: [{ item: 't1/done/0', check: 'I4', pass: false, critique: 'the input never says it was merged' }, { item: 't1/done/1', check: 'I4', pass: false, critique: 'no source' }, { item: 't1/done/1', check: 'I3', pass: false, critique: 'vague' }],
         keyfacts: ['!256 is merged'], coverage: [{ keyfact: 0, item: 'state/t1/done/0' }],
     });
-    const judge: Judge = { label: 'fake', ask: (task) => Promise.resolve({ kind: 'said', text: ({ score, readback: ANSWERS, grade: GRADES, cover: '' })[task], costUsd: 0 }) };
-    const result = await judgeRun({ judge, inputs: store.inputs, verdicts: store.verdicts, rubric: must(parseText(RUBRIC_TEXT)), now: (): number => 9000 }, run);
+    const judge = judgeOf('fake', (task) => ({ score, readback: ANSWERS, grade: GRADES, cover: '' })[task]);
+    const result = await judgeRun({ judge, inputs: store.inputs, verdicts: store.verdicts, rubric: must(parseText(RUBRIC_TEXT)), now: () => instant(9000) }, run);
     const report = reportOf('fake', [result]);
     assert.deepEqual(report.judgeVsAnchor.map((each) => [each.key, each.check, each.text]), [['t1/done/0', 'I4', 'Merged !256.']]);
     assert.deepEqual(report.failures.map((each) => each.key), ['t1/done/0', 't1/done/1', 't1/done/1'], 'all three are failing items');
@@ -106,8 +107,8 @@ test('golden: the report of the third run shows the state numbers with the added
     const run = runs[2];
     assert.ok(run !== undefined);
     const script: Readonly<Record<string, string>> = { score: SCORE, readback: ANSWERS, grade: GRADES };
-    const judge: Judge = { label: 'fake', ask: (task) => Promise.resolve({ kind: 'said', text: script[task] ?? '', costUsd: 0 }) };
-    const result = await judgeRun({ judge, inputs: store.inputs, verdicts: store.verdicts, rubric: must(parseText(RUBRIC_TEXT)), now: (): number => 9000 }, run);
+    const judge = judgeOf('fake', (task) => script[task] ?? '');
+    const result = await judgeRun({ judge, inputs: store.inputs, verdicts: store.verdicts, rubric: must(parseText(RUBRIC_TEXT)), now: () => instant(9000) }, run);
     const text = reportText(reportOf('fake', [result]), plain, countOf(0)).join('\n').replace(/run_…[0-9a-z]{6}/g, 'run_…XXXXXX');
     assert.equal(`${text}\n`, readFileSync(new URL('fixtures/eval-report-state.txt', import.meta.url), 'utf8'));
 });

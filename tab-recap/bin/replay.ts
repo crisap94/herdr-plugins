@@ -19,7 +19,7 @@ import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { loadConfig, stateDirectory } from '#src/daemon/config.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
-import type { Judge } from '#src/ports/judge.ts';
+import type { JudgePort } from '#src/ports/judge.ts';
 import type { Summarizer } from '#src/ports/summarizer.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
@@ -100,7 +100,7 @@ async function run(file: string, reader: Transcripts, options: EvalRequest, size
     const runtime = createRuntime();
     const scratch = scratchStore();
     const label = options.tab ?? 'replay:t1';
-    const judge: Judge | null = judgeFor(config, availableIn(available), must(parseDirectory(join(scratch.dir, 'judge'))), runtime, operatorAnchors(databaseFile(stateDirectory())));
+    const judge: JudgePort | null = judgeFor(config, availableIn(available), must(parseDirectory(join(scratch.dir, 'judge'))), runtime, operatorAnchors(databaseFile(stateDirectory())));
     try {
         await replayed({ file, reader, options, size, judge: judge?.label ?? 'none' }, scratch, { config, available, runtime });
         if (judge === null) {

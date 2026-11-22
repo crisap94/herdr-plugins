@@ -1,4 +1,5 @@
-import { storeRead } from '#test/db/support.ts';
+import { runsOf, storeRead } from '#test/db/support.ts';
+import type { RunEntry, RunRecord } from '#src/ports/run-inputs.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -38,15 +39,20 @@ function stable(text: string): string {
 const section = (title: string, body: string): string => `=== ${title}\n${body}\n`;
 const json = (value: unknown): string => JSON.stringify(value, null, 2);
 
+const storedShape = (rest: Omit<RunRecord, 'id' | 'input'>, input: RunRecord['input']): object => ({ tab: rest.tab, at: rest.at, language: rest.language, backend: rest.backend, hasInput: input === 'present', gateStats: rest.gateStats });
+
+const itemShape = (entry: RunEntry): object => ({ key: entry.key, section: entry.section, text: entry.text, fact: entry.fact, born: entry.birth === 'born', anchor: entry.anchor });
+
 function ledgerOf(store: Store): string {
-    const runs = store.inputs.runs({ tab: LABEL, since: null, limit: 100, withInput: true }).toReversed();
+    const runs = runsOf(store.inputs, { tab: LABEL, since: null, limit: 100, withInput: true }).toReversed();
     const parts = runs.map((run, at) => {
-        const { id, ...kept } = run;
+        const { id, input, ...rest } = run;
+        const kept = storedShape(rest, input);
         return [
             section(`run ${at + 1}`, json(kept)),
             section(`run ${at + 1} stored document`, store.inputs.document(id) ?? '(none)'),
-            section(`run ${at + 1} added items`, json(store.inputs.itemsOf(id, 'added'))),
-            section(`run ${at + 1} state items`, json(store.inputs.itemsOf(id, 'state'))),
+            section(`run ${at + 1} added items`, json(store.inputs.itemsOf(id, 'added').map(itemShape))),
+            section(`run ${at + 1} state items`, json(store.inputs.itemsOf(id, 'state').map(itemShape))),
         ].join('');
     });
     const recap = storeRead(store.records.readRecap(tabId(LABEL)));

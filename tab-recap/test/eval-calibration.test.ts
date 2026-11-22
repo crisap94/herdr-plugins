@@ -13,14 +13,15 @@ import { parseEvalRequest } from '#src/recap/application/eval-options.ts';
 import type { HarnessAsk, HarnessPort } from '#src/ports/harness.ts';
 import { choice } from '#test/fakes/harness-runtime.ts';
 import { parseUsd } from '#src/recap/domain/usd.ts';
-import type { Pair, Verdict } from '#src/ports/verdicts.ts';
+import type { PairRecord, VerdictRecord } from '#src/ports/verdicts.ts';
+import { runsOf, verdictOf } from '#test/db/support.ts';
 import { optionsOf, rig, seed } from '#test/eval-rig.ts';
 
-const pairs = (judge: number, operator: number, both: number, neither: number): readonly Pair[] => [
-    ...Array.from({ length: judge }, () => ({ check: 'I5', judge: true, operator: false })),
-    ...Array.from({ length: operator }, () => ({ check: 'I5', judge: false, operator: true })),
-    ...Array.from({ length: both }, () => ({ check: 'I5', judge: true, operator: true })),
-    ...Array.from({ length: neither }, () => ({ check: 'I5', judge: false, operator: false })),
+const pairs = (judge: number, operator: number, both: number, neither: number): readonly PairRecord[] => [
+    ...Array.from({ length: judge }, () => ({ check: textOf('I5'), judge: 'pass' as const, operator: 'fail' as const })),
+    ...Array.from({ length: operator }, () => ({ check: textOf('I5'), judge: 'fail' as const, operator: 'pass' as const })),
+    ...Array.from({ length: both }, () => ({ check: textOf('I5'), judge: 'pass' as const, operator: 'pass' as const })),
+    ...Array.from({ length: neither }, () => ({ check: textOf('I5'), judge: 'fail' as const, operator: 'fail' as const })),
 ];
 
 test('Cohen\'s kappa: perfect agreement is 1, chance level is 0, worse than chance is negative, and a check nobody ever fails has none', () => {
@@ -43,11 +44,11 @@ test('the bar is 0.6: a check at 0.62 is trusted, one at 0.45 is not, and one wi
 function seeded(count: number): ReturnType<typeof rig> {
     const found = rig();
     seed(found.store, 1);
-    const [run] = found.store.inputs.runs({ tab: null, since: null, limit: 1, withInput: false });
+    const [run] = runsOf(found.store.inputs, { tab: null, since: null, limit: 1, withInput: false });
     assert.ok(run !== undefined);
-    const verdicts: Verdict[] = Array.from({ length: count + 1 }, (_, n) => [
-        { run: run.id, item: n === count ? 't1/done/1' : `t1/x/${n}`, check: 'I5', pass: true, critique: null, judge: 'j', at: 10 + n, source: 'judge' as const },
-        { run: run.id, item: n === count ? 't1/done/1' : `t1/x/${n}`, check: 'I5', pass: false, critique: n === count ? 'effort, not work' : `reason ${n}`, judge: 'operator', at: 20 + n, source: 'operator' as const },
+    const verdicts: VerdictRecord[] = Array.from({ length: count + 1 }, (_, n) => [
+        verdictOf({ run: run.id, item: n === count ? 't1/done/1' : `t1/x/${n}`, check: 'I5', pass: true, critique: null, judge: 'j', at: 10 + n, source: 'judge' }),
+        verdictOf({ run: run.id, item: n === count ? 't1/done/1' : `t1/x/${n}`, check: 'I5', pass: false, critique: n === count ? 'effort, not work' : `reason ${n}`, judge: 'operator', at: 20 + n, source: 'operator' }),
     ]).flat();
     found.store.verdicts.add(verdicts);
     return found;
@@ -79,16 +80,16 @@ test('a judge built with anchors hands them to the harness with its scoring call
 test('`--label 2 --check I5` asks about the one check only, stores one operator verdict per item, and offers items already labelled on other checks', async () => {
     const { store, deps, asked, out } = rig({ lines: ['ok', 'fail', 'too vague', 'quit'] });
     seed(store, 1);
-    const [run] = store.inputs.runs({ tab: null, since: null, limit: 1, withInput: false });
+    const [run] = runsOf(store.inputs, { tab: null, since: null, limit: 1, withInput: false });
     assert.ok(run !== undefined);
-    store.verdicts.add([{ run: run.id, item: 't1/goal/0', check: 'I3', pass: true, critique: null, judge: 'operator', at: 1, source: 'operator' }]);
+    store.verdicts.add([verdictOf({ run: run.id, item: 't1/goal/0', check: 'I3', pass: true, critique: null, judge: 'operator', at: 1, source: 'operator' })]);
     assert.equal(await runEval(optionsOf('--label', '2', '--check', 'I5'), deps), 0);
     assert.match(out.join('\n'), /t1\/goal\/0/, 'labelled on I3 only: still asked about I5');
     assert.deepEqual(asked.filter((prompt) => prompt.includes('ok /')), ['I5: ok / fail / skip / quit > ', 'I5: ok / fail / skip / quit > ']);
     const mine = store.verdicts.ofRun(run.id).filter((v) => v.source === 'operator' && v.check === 'I5');
-    assert.deepEqual(mine.map((v) => [v.item, v.pass, v.critique]), [['t1/goal/0', true, null], ['t1/done/0', false, 'too vague']]);
+    assert.deepEqual(mine.map((v) => [v.item, v.pass, v.critique]), [['t1/goal/0', 'pass', null], ['t1/done/0', 'fail', 'too vague']]);
     assert.equal(store.verdicts.ofRun(run.id).filter((v) => v.source === 'operator').length, 3, 'nothing else was labelled');
-    assert.deepEqual([...store.verdicts.labelled('I5')].toSorted(), [`${run.id}|t1/done/0`, `${run.id}|t1/goal/0`]);
+    assert.deepEqual([...store.verdicts.labelled(textOf('I5'))].toSorted(), [`${run.id}|t1/done/0`, `${run.id}|t1/goal/0`]);
 });
 
 test('`--check S-done` asks only about items of that section, and another check named is asked again', async () => {

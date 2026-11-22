@@ -1,3 +1,4 @@
+import { runIdOf, verdictOf } from './support.ts';
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import type { Database } from 'bun:sqlite';
@@ -13,7 +14,7 @@ import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { TranscriptStore } from '#src/adapters/db/transcripts.ts';
 import { typeIdOf } from '#src/adapters/db/typeid.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
-import { VerdictsRepository } from '#src/adapters/db/verdicts/legacy.ts';
+import { VerdictRowStore } from '#src/adapters/db/verdicts.ts';
 import { LedgerRepository } from '#src/adapters/db/ledger.ts';
 import { expectSameEffect, expectSameRows, withParity } from './parity.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
@@ -35,7 +36,7 @@ INSERT INTO verdict (id, run_id, item_key, check_id, pass, critique, judge, at, 
 
 const seedAll = (db: Database): void => { db.exec(SEED); };
 
-const RUN_ID = typeIdOf('run', keyOf(4));
+const RUN_ID = runIdOf(typeIdOf('run', keyOf(4)));
 
 const SESSION_RUNS = 'SELECT run.cause AS cause, count(*) AS n FROM run JOIN chapter ON chapter.id = run.chapter_id WHERE chapter.tab_id = ? GROUP BY run.cause ORDER BY run.cause';
 const SESSION_COMPACTED = "SELECT tokens_before, tokens_after, origin FROM compaction WHERE tab_id = ? AND stage = 'compacted' ORDER BY started_at, id";
@@ -151,8 +152,8 @@ describe('parity: finish (boundaries, reads, retention, session source, stories,
 
     test('verdicts: add writes the rows like the raw insert', () => {
         const rows = [
-            { run: RUN_ID, item: 'i9', check: 'c9', pass: true, critique: null, judge: 'j', at: 70, source: 'judge' as const },
-            { run: RUN_ID, item: 'i9', check: 'c9', pass: false, critique: 'why', judge: 'op', at: 71, source: 'operator' as const },
+            verdictOf({ run: RUN_ID, item: 'i9', check: 'c9', pass: true, critique: null, judge: 'j', at: 70, source: 'judge' }),
+            verdictOf({ run: RUN_ID, item: 'i9', check: 'c9', pass: false, critique: 'why', judge: 'op', at: 71, source: 'operator' }),
         ];
         expectSameEffect({
             seed: seedAll,
@@ -161,16 +162,16 @@ describe('parity: finish (boundaries, reads, retention, session source, stories,
                 write.run(ids.next(), keyOf(4), 'i9', 'c9', 1, null, 'j', 70, 'judge');
                 write.run(ids.next(), keyOf(4), 'i9', 'c9', 0, 'why', 'op', 71, 'operator');
             },
-            builder: (db) => { new VerdictsRepository(db).add(rows); },
+            builder: (db) => { new VerdictRowStore(db).add(rows); },
             dump: (db) => db.prepare(VERDICT_ROWS).all(),
         });
     });
 
     test('verdicts: ofRun returns the run verdicts like the raw select', () => {
         withParity(seedAll, (parity) => {
-            const produced = new VerdictsRepository(parity.raw).ofRun(RUN_ID);
+            const produced = new VerdictRowStore(parity.raw).ofRun(RUN_ID);
             expectSameRows(parity, { sql: VERDICT_OF_RUN, params: [keyOf(4)] }, produced, (row) => ({
-                run: typeIdOf('run', row.run_id as Uint8Array), item: row.item_key, check: row.check_id, pass: Number(row.pass) === 1,
+                run: typeIdOf('run', row.run_id as Uint8Array), item: row.item_key, check: row.check_id, pass: Number(row.pass) === 1 ? 'pass' : 'fail',
                 critique: row.critique, judge: row.judge, at: Number(row.at), source: row.source,
             }));
         });
@@ -178,9 +179,9 @@ describe('parity: finish (boundaries, reads, retention, session source, stories,
 
     test('verdicts: labelled returns the operator-labelled items like the raw distinct select', () => {
         withParity(seedAll, (parity) => {
-            const verdicts = new VerdictsRepository(parity.raw);
+            const verdicts = new VerdictRowStore(parity.raw);
             assert.deepStrictEqual([...verdicts.labelled()].toSorted(), toKeys(parity.reader.prepare(LABELLED).all(null) as Record<string, unknown>[]));
-            assert.deepStrictEqual([...verdicts.labelled('c1')].toSorted(), toKeys(parity.reader.prepare(LABELLED).all('c1') as Record<string, unknown>[]));
+            assert.deepStrictEqual([...verdicts.labelled(textOf('c1'))].toSorted(), toKeys(parity.reader.prepare(LABELLED).all('c1') as Record<string, unknown>[]));
         });
     });
 

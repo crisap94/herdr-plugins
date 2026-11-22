@@ -56,7 +56,6 @@
   },
   "src/recap/application/judge.ts": {
     "parameter": 1,
-    "return": 1,
     "property": 3
   },
   "src/recap/application/lane-claims.ts": {
@@ -163,7 +162,7 @@
     "legacy": 13
   },
   "src/recap/application/twins/eval-stats/legacy.ts": {
-    "legacy": 20
+    "legacy": 15
   },
   "src/recap/application/twins/expanded-view/legacy.ts": {
     "legacy": 12

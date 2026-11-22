@@ -4,9 +4,9 @@ import { gunzipSync, gzipSync } from 'node:zlib';
 import type { Database, SQLQueryBindings } from 'bun:sqlite';
 import { ClosedLanesRepository } from '#src/adapters/db/closed-lanes.ts';
 import { LedgerHistory } from '#src/adapters/db/ledger-history.ts';
-import { RunInputRows, RunInputsRepository } from '#src/adapters/db/run-inputs/legacy.ts';
+import { RunInputRows, RunInputStore } from '#src/adapters/db/run-inputs.ts';
 import { typeIdOf } from '#src/adapters/db/typeid.ts';
-import { VerdictsRepository } from '#src/adapters/db/verdicts/legacy.ts';
+import { VerdictRowStore } from '#src/adapters/db/verdicts.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import { must } from '#src/protocol/result.ts';
 import type { ClosedLane } from '#src/recap/domain/closures.ts';
@@ -15,6 +15,7 @@ import { instant } from '#src/recap/domain/time.ts';
 import { closedDaysOf } from '../fakes/closed-days.ts';
 import { directoryOf } from '../fakes/closed-values.ts';
 import { expectSameEffect, expectSameRows, normalise, withParity } from './parity.ts';
+import { filterOf, runIdOf } from './support.ts';
 import { isClosedWhy, isSection, type ClosedWhy, type Section } from '#src/recap/domain/fact.ts';
 import { textOf as textBrand } from '#src/recap/domain/text.ts';
 
@@ -141,13 +142,13 @@ const historyOf = (row: Record<string, unknown>): HistoryFact => ({
 
 const storedOf = (row: Record<string, unknown>): unknown => ({
     id: typeIdOf('run', idBytes(row.id)), tab: textOf(row.tab_id), at: Number(row.at), language: textOf(row.language),
-    backend: parseTextOrNull(row.backend), hasInput: Number(row.has_input) === 1,
+    backend: parseTextOrNull(row.backend), input: Number(row.has_input) === 1 ? 'present' : 'absent',
     gateStats: row.gate_stats === null ? null : JSON.parse(textOf(row.gate_stats)),
 });
 
 const itemOf = (prefix: string) => (row: Record<string, unknown>): unknown => ({
     key: `${prefix}${textOf(row.task)}/${textOf(row.section)}/${Number(row.position)}`, section: textOf(row.section), text: textOf(row.text),
-    fact: typeIdOf('fact', idBytes(row.fact)), born: Number(row.born) === 1, anchor: parseTextOrNull(row.anchor),
+    fact: typeIdOf('fact', idBytes(row.fact)), birth: Number(row.born) === 1 ? 'born' : 'carried', anchor: parseTextOrNull(row.anchor),
 });
 
 const dumpClosed = (db: Database): unknown => db.prepare('SELECT * FROM closed_lane ORDER BY tab_id, pane, closed_at').all();
@@ -188,14 +189,14 @@ test('the ASSOCIATE template ignores a second close of the same lane, as OR IGNO
 });
 
 test('verdict pairs match the old statement, including the NULL item_key pair', () => withParity(seedVerdicts, (parity) => {
-    expectSameRows(parity, { sql: OLD_PAIRS }, new VerdictsRepository(parity.raw).pairs(),
-        (row) => ({ check: row.check_id, judge: Number(row.judge_pass) === 1, operator: Number(row.operator_pass) === 1 }));
+    expectSameRows(parity, { sql: OLD_PAIRS }, new VerdictRowStore(parity.raw).pairs(),
+        (row) => ({ check: row.check_id, judge: Number(row.judge_pass) === 1 ? 'pass' : 'fail', operator: Number(row.operator_pass) === 1 ? 'pass' : 'fail' }));
 }));
 
 test('verdict disagreements match the old statement, newest first', () => withParity(seedVerdicts, (parity) => {
-    expectSameRows(parity, { sql: OLD_DISAGREE }, new VerdictsRepository(parity.raw).disagreements(), (row) => ({
-        run: typeIdOf('run', idBytes(row.run_id)), item: row.item_key, check: row.check_id, judge: Number(row.judge_pass) === 1,
-        operator: Number(row.operator_pass) === 1, judgeCritique: row.judge_critique, reason: row.reason, at: row.at,
+    expectSameRows(parity, { sql: OLD_DISAGREE }, new VerdictRowStore(parity.raw).disagreements(), (row) => ({
+        run: typeIdOf('run', idBytes(row.run_id)), item: row.item_key, check: row.check_id, judge: Number(row.judge_pass) === 1 ? 'pass' : 'fail',
+        operator: Number(row.operator_pass) === 1 ? 'pass' : 'fail', judgeCritique: row.judge_critique, reason: row.reason, at: row.at,
     }));
 }));
 
@@ -208,7 +209,7 @@ test('ledger history matches the old statement for two panes, sorted by last cha
 }));
 
 test('run inputs list the runs the old statement listed, for each filter', () => withParity(seedRuns, (parity) => {
-    const repository = new RunInputsRepository(parity.raw);
+    const repository = new RunInputStore(parity.raw);
     for (const query of [
         { tab: null, since: null, withInput: false, limit: 10 },
         { tab: 't1', since: 0, withInput: true, limit: 1 },
@@ -216,13 +217,13 @@ test('run inputs list the runs the old statement listed, for each filter', () =>
         { tab: null, since: null, withInput: true, limit: 10 },
     ]) {
         expectSameRows(parity, { sql: OLD_RUNS, params: [query.tab, query.since ?? 0, query.withInput ? 1 : 0, query.limit] },
-            repository.runs(query), storedOf);
+            repository.runs(filterOf(query)), storedOf);
     }
 }));
 
 test('run input items match the old added and state statements', () => withParity(seedRuns, (parity) => {
-    const repository = new RunInputsRepository(parity.raw);
-    const run = typeIdOf('run', keyOf(4));
+    const repository = new RunInputStore(parity.raw);
+    const run = runIdOf(typeIdOf('run', keyOf(4)));
     const added: Record<string, unknown>[] = parity.reader.prepare(OLD_ADDED).all(keyOf(4));
     const state: Record<string, unknown>[] = parity.reader.prepare(OLD_STATE).all(keyOf(4));
     assert.deepStrictEqual(normalise(repository.itemsOf(run, 'added')), normalise(added.map(itemOf(''))));
@@ -230,14 +231,14 @@ test('run input items match the old added and state statements', () => withParit
 }));
 
 test('run input documents read back the gzip the old statement stored, and none for a run without one', () => withParity(seedRuns, (parity) => {
-    const repository = new RunInputsRepository(parity.raw);
+    const repository = new RunInputStore(parity.raw);
     const stored = packedOf(parity.reader.prepare('SELECT document FROM run_input WHERE run_id = ?').get(keyOf(4)));
-    assert.equal(repository.document(typeIdOf('run', keyOf(4))), gunzipSync(stored).toString('utf8'));
-    assert.equal(repository.document(typeIdOf('run', keyOf(16))), null);
+    assert.equal(repository.document(runIdOf(typeIdOf('run', keyOf(4)))), gunzipSync(stored).toString('utf8'));
+    assert.equal(repository.document(runIdOf(typeIdOf('run', keyOf(16)))), null);
 }));
 
 test('gate counts match the old statement', () => withParity(seedRuns, (parity) => {
-    expectSameRows(parity, { sql: OLD_GATES, params: [0] }, new RunInputsRepository(parity.raw).gateCounts(0),
+    expectSameRows(parity, { sql: OLD_GATES, params: [0] }, new RunInputStore(parity.raw).gateCounts(instant(0)),
         (row) => ({ at: Number(row.at), stats: JSON.parse(textOf(row.gate_stats)) }));
 }));
 
@@ -247,7 +248,7 @@ test('pruning run inputs deletes what the old statement deleted and counts it', 
         seed: seedRuns,
         raw: (db) => execute(db, 'DELETE FROM run_input WHERE run_id IN (SELECT id FROM run WHERE at < ?)', [30]),
         builder: (db) => {
-            removed = new RunInputsRepository(db).prune(30);
+            removed = new RunInputStore(db).prune(instant(30));
         },
         dump: dumpInputs,
     });
@@ -258,7 +259,7 @@ test('putting a run input stores the same gzip and byte count as the old stateme
     expectSameEffect({
         seed: seedRuns,
         raw: (db) => execute(db, 'INSERT INTO run_input (run_id, document, bytes) VALUES (?, ?, ?)', [keyOf(16), gzipSync('hello'), 5]),
-        builder: (db) => new RunInputRows(db).put(keyOf(16), 'hello'),
+        builder: (db) => new RunInputRows(db).put(keyOf(16), textBrand('hello')),
         dump: dumpInputs,
     });
 });

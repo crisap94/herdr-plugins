@@ -16,7 +16,6 @@ import type { Count } from '#src/recap/domain/count.ts';
 import type { Probability } from '#src/recap/domain/probability.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Noul } from './decider.ts';
-import type { JudgeTask } from './judge.ts';
 
 export interface Ask {
     readonly exchange: ExchangeName;
@@ -221,13 +220,6 @@ export type DecidedResult = Decided | Unknown;
 export interface Decider {
     readonly label: Text;
     ask(state: Text, questions: ReadonlyMap<Text, Noul>): Promise<DecidedResult>;
-}
-
-export type Said = { readonly kind: 'said'; readonly text: string; readonly costUsd: number } | Unknown;
-
-export interface Judge {
-    readonly label: string;
-    ask(task: JudgeTask, document: string): Promise<Said>;
 }
 
 export interface LaneTokens {

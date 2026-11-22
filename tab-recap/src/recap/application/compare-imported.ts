@@ -1,13 +1,13 @@
 import type { ImportedChapterRecord } from '#src/ports/imported-recaps.ts';
-import type { RunInputs, RunItem, StoredRun } from '#src/ports/run-inputs.ts';
+import type { RunInputReader, RunItem, RunRecord } from '#src/ports/run-inputs.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { countOf, parseCount, type Count } from '#src/recap/domain/count.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { parseUsd, type Usd } from '#src/recap/domain/usd.ts';
-import { coverDocument } from './judge-context.ts';
+import { coverDocument, itemsOf } from './judge-context.ts';
 import { parseCover } from './judge-answer.ts';
 import type { Grade } from './judge-answer.ts';
 import { measureState, plus } from './judge-coverage.ts';
@@ -93,9 +93,9 @@ export interface TypedCompareDeps extends JudgeDeps {
     readonly label: TabId;
 }
 
-function evidenceOf(inputs: RunInputs, runs: readonly StoredRun[]): Text | null {
+function evidenceOf(inputs: RunInputReader, runs: readonly RunRecord[]): Text | null {
     const documents = runs.flatMap((run) => {
-        const kept = withoutLedgers(textOf(inputs.document(run.id) ?? ''));
+        const kept = withoutLedgers(inputs.document(run.id) ?? textOf(''));
         return kept === '' ? [] : [kept];
     });
     let kept = documents;
@@ -111,8 +111,8 @@ async function carrying(deps: JudgeDeps, parts: CarryParts): Promise<Carried> {
     if (isUnknown(asked)) {
         return { found: must(parseText(saying(asked.why))), costUsd: ZERO };
     }
-    const parsed = parseCover(must(parseText(asked.text)), new Map(parts.state.map((item): [Text, Text] => [must(parseText(item.key)), must(parseText(item.section))])), parts.prior?.keyfacts ?? null);
-    return { found: parsed.kind === 'ok' ? parsed.value : must(parseText(parsed.why)), costUsd: must(parseUsd(asked.costUsd)) };
+    const parsed = parseCover(asked.text, new Map(parts.state.map((item): [Text, Text] => [must(parseText(item.key)), must(parseText(item.section))])), parts.prior?.keyfacts ?? null);
+    return { found: parsed.kind === 'ok' ? parsed.value : must(parseText(parsed.why)), costUsd: asked.costUsd };
 }
 
 async function sideOf(deps: JudgeDeps, parts: SideParts): Promise<SideOutcome> {
@@ -121,14 +121,14 @@ async function sideOf(deps: JudgeDeps, parts: SideParts): Promise<SideOutcome> {
     return { side: { coverage: measured.coverage, filler: measured.filler, readback: back.grades, size: must(parseCount(parts.state.length)) }, costUsd: must(parseUsd(back.costUsd)) };
 }
 
-async function compareChapter(deps: TypedCompareDeps, chapter: ImportedChapterRecord, runs: readonly StoredRun[], since: Instant | null): Promise<ChapterOutcome> {
+async function compareChapter(deps: TypedCompareDeps, chapter: ImportedChapterRecord, runs: readonly RunRecord[], since: Instant | null): Promise<ChapterOutcome> {
     const skip = (why: Text, costUsd: Usd = ZERO): ChapterOutcome => ({ result: { kind: 'skipped', n: chapter.n, at: chapter.at, why }, costUsd });
     const at = runs.findLast((run) => run.at <= chapter.at);
     const last = runs.at(-1);
     if (at === undefined || last === undefined || chapter.at > last.at + SLACK_MS) {
         return skip(must(parseText('the replay does not reach this chapter')));
     }
-    const state = deps.inputs.itemsOf(at.id, 'state');
+    const state = itemsOf(deps.inputs, at.id, 'state');
     const input = evidenceOf(deps.inputs, runs.filter((run) => (since === null || run.at > since) && run.at <= at.at));
     if (state.length === 0 || input === null) {
         return skip(must(parseText('the replay has no ledger state or no input there')));
@@ -158,7 +158,7 @@ function totalOf(results: readonly ChapterResult[], pick: (result: ComparedChapt
 }
 
 export async function compareChapters(deps: TypedCompareDeps, chapters: readonly ImportedChapterRecord[]): Promise<Comparison> {
-    const runs = deps.inputs.runs({ tab: deps.label, since: null, limit: 100_000, withInput: true }).toReversed();
+    const runs = deps.inputs.runs({ tab: deps.label, since: null, limit: countOf(100_000), input: 'with-input' }).toReversed();
     const results: ChapterResult[] = [];
     let costUsd = ZERO;
     let since: Instant | null = null;

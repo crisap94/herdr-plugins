@@ -1,3 +1,4 @@
+import { usdOf } from '#src/recap/domain/usd.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import { brand } from '#src/recap/domain/brand.ts';
@@ -15,12 +16,12 @@ import { openDatabase } from '#src/adapters/db/open.ts';
 import { scratchStore } from '#src/adapters/db/scratch.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
-import type { Judge, JudgeTask } from '#src/ports/judge.ts';
+import type { JudgePort, JudgeTask } from '#src/ports/judge.ts';
 import { judgedReport } from '#src/recap/application/replay-judge.ts';
 import { replay, windowsOf } from '#src/recap/application/replay.ts';
 import { FULL_WRITER_VIEW } from '#src/recap/domain/writer-view.ts';
 import { checksOf, ledgerText, reportOf } from '#src/recap/application/replay-report.ts';
-import { scratchDir, storeRead } from '#test/db/support.ts';
+import { runIdOf, runsOf, scratchDir, storeRead } from '#test/db/support.ts';
 import { NO_REPOS } from '#test/support.ts';
 import { factOf } from './fakes/facts.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
@@ -126,8 +127,8 @@ test('the store a replay writes to is a real store: the same repositories, the f
     }
 });
 
-const lenient: Judge = {
-    label: 'fake · judge · low',
+const lenient: JudgePort = {
+    label: textOf('fake · judge · low'),
     ask: (task, document) => {
         const keys = [...document.matchAll(/<item key="([^"]+)" section="([^"]+)"/g)].map((found) => ({ key: found[1] ?? '', section: found[2] ?? '' }));
         const answers: Record<JudgeTask, unknown> = {
@@ -136,7 +137,7 @@ const lenient: Judge = {
             grade: { grades: [1, 2, 3, 4, 5, 6].map((question) => ({ question, pass: true, critique: '' })) },
             cover: { keyfacts: ['the cart'], coverage: [{ keyfact: 0, item: keys.find(({ key }) => key.startsWith('state/'))?.key ?? null }] },
         };
-        return Promise.resolve({ kind: 'said', text: JSON.stringify(answers[task]), costUsd: 0 });
+        return Promise.resolve({ kind: 'said', text: textOf(JSON.stringify(answers[task])), costUsd: usdOf(0) });
     },
 };
 
@@ -152,7 +153,7 @@ test('the judge over a replay: every run of the replay is scored like a stored o
         assert.match(text, /the last good 1\.x recap of each chapter of w1:t9 against the replay's ledger state at the same time/);
         assert.match(text, /chapter 1 \(2026-10-07 09:20, 1 key facts\)/);
         assert.match(text, /I1/);
-        assert.equal(scratch.store.verdicts.ofRun(scratch.store.inputs.runs({ tab: 'replay:t1', since: null, limit: 5, withInput: true })[0]?.id ?? '').length > 0, true, 'the replay\'s verdicts are kept in the scratch store');
+        assert.equal(scratch.store.verdicts.ofRun(runsOf(scratch.store.inputs, { tab: 'replay:t1', since: null, limit: 5, withInput: true })[0]?.id ?? runIdOf('')).length > 0, true, 'the replay\'s verdicts are kept in the scratch store');
     } finally {
         scratch.dispose();
     }
