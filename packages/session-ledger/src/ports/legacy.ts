@@ -2,17 +2,13 @@ import type { LaneMark } from '#src/recap/domain/boundary.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
-import type { BackgroundItem } from '#src/recap/domain/in-flight.ts';
-import type { Lane } from '#src/recap/domain/lane-shape.ts';
 import type { CloseOp, Refusal, UpdateOp } from '#src/recap/domain/ops.ts';
 import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import type { FailureCause } from '#src/recap/domain/failure-cause.ts';
 import type { Duration } from '#src/recap/domain/time.ts';
-import type { InFlightWhy } from './capability-reasons.ts';
 import type { Applied } from './ledger.ts';
 import type { RunFacts } from './recap-records.ts';
-import type { BackgroundSplit, CallKind, ChunkResult, ObservedResult } from './transcripts.ts';
 import type { Unknown } from './unknowable.ts';
 
 export interface HistoryFact { readonly section: string; readonly text: string; readonly why: string | null; readonly state: 'open' | 'closed'; readonly closedWhy: string | null; readonly closedAt: number | null; readonly firstAt: number; readonly lastAt: number; }
@@ -59,63 +55,6 @@ export interface CurationRun { readonly task: TaskId; readonly at: number; reado
 export interface Stories {
     read(tab: string, task: string): Story | null;
     keep(run: CurationRun, change: { readonly story: string | null; readonly merges: readonly CloseOp[]; readonly reconciled?: readonly (UpdateOp | CloseOp)[] }): Applied;
-}
-
-export class TranscriptRegistry {
-    private readonly readers: Readonly<Record<string, Transcripts>>;
-    private readonly fallback: Transcripts | null;
-    private readonly unavailable: (kind: string) => string;
-
-    constructor(readers: Readonly<Record<string, Transcripts>>, fallback: Transcripts | null, unavailable: (kind: string) => string) {
-        this.readers = readers;
-        this.fallback = fallback;
-        this.unavailable = unavailable;
-    }
-
-    exact(kind: string): Transcripts | undefined {
-        return Object.hasOwn(this.readers, kind) ? this.readers[kind] : undefined;
-    }
-
-    readerFor(kind: string): Transcripts | undefined {
-        return this.exact(kind) ?? this.fallback ?? undefined;
-    }
-
-    unavailableReason(kind: string): string {
-        return this.unavailable(kind);
-    }
-}
-
-export const SCREEN_PREFIX = 'screen:';
-export const isScreenSource = (transcript: string): boolean => transcript.startsWith(SCREEN_PREFIX);
-
-export interface Entry { readonly role: 'user' | 'agent' | 'tool'; readonly text: string; readonly at?: number; readonly queued?: boolean; readonly kind?: CallKind; readonly what?: string; }
-
-export interface AgentNote { readonly kind: 'away_summary' | 'compaction'; readonly at: number | null; readonly text: string; }
-
-export interface Position { readonly cursor: number; readonly tail: string | null; }
-
-export interface Mark { readonly kind: 'compacted' | 'compaction-failed'; readonly at: number | null; readonly tokensBefore?: number; readonly tokensAfter?: number; readonly tookMs?: number; readonly trigger?: 'auto' | 'manual'; }
-
-export interface Chunk { readonly kind: 'chunk'; readonly entries: readonly Entry[]; readonly title: string | null; readonly lastPrompt: string | null; readonly claudeRecap: string | null; readonly notes: readonly AgentNote[]; readonly marks?: readonly Mark[]; readonly position: Position; readonly grew: boolean; readonly more?: boolean; }
-
-export type Located = { readonly kind: 'located'; readonly source: string } | Unknown;
-
-export type PromptResult = { readonly kind: 'prompt'; readonly text: string | null } | Unknown;
-
-export type InFlightResult = { readonly kind: 'in-flight'; readonly count: number; readonly background: readonly BackgroundItem[] } | Unknown;
-
-export type InFlightCapability =
-    | { readonly kind: 'supported'; readonly split: BackgroundSplit; readonly read: (source: string, budget: number) => Promise<InFlightResult> }
-    | { readonly kind: 'unsupported'; readonly why: InFlightWhy };
-
-export interface Transcripts {
-    readonly agent: string;
-    locate(lane: Lane): Promise<Located>;
-    read(source: string, was: Position, budget: number): Promise<ChunkResult>;
-    carry?(from: Located, to: Located, at: Position): Promise<Position>;
-    latestPrompt(source: string, budget: number): Promise<PromptResult>;
-    observed?(source: string, budget: number): Promise<ObservedResult>;
-    readonly inFlight: InFlightCapability;
 }
 
 export type Unknowable =

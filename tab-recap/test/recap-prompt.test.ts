@@ -23,7 +23,7 @@ test('fitBytes: one overlong multibyte line loses its head, never a half charact
 });
 
 test('an argv prompt is bounded: whole oldest turns are dropped, the instructions and the ledger are not, and the markup stays whole', () => {
-    const entries = Array.from({ length: 200 }, (_, i): Entry => ({ role: 'agent', text: `turn ${i}: ${'日'.repeat(1500)}` }));
+    const entries = Array.from({ length: 200 }, (_, i): Entry => ({ role: 'agent', text: textOf(`turn ${i}: ${'日'.repeat(1500)}`) }));
     const request = requestOf({ entries, ledgers: [{ task: null, facts: [{ id: textOf('f1'), section: 'goal', text: textOf('PREV-RECAP'), state: 'open', first: instant(1), last: instant(1), why: null, ref: null, anchor: null, agent: null, closed: null }] }] });
     assert.ok(Buffer.byteLength(prompt(request)) > ARGV_BYTES, 'the full document would not fit');
     const text = argvPrompt(request);

@@ -7,6 +7,7 @@ import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { cursorOf } from '#src/ports/transcripts.ts';
 
 export { arr, obj, parse, readJsonl, str, tailLines, tailOf, toolBrief } from './legacy.ts';
 
@@ -128,7 +129,7 @@ export function readJsonlFrom(path: FsPath, was: Position, budget: Count): Jsonl
         ? forwardSpan(path, must(parseCount(was.cursor)), size, budget)
         : readLines(path, must(parseCount(Math.max(0, size - budget))), budget);
     const more = was.cursor > 0 && span.end > was.cursor && size > span.end;
-    return { lines: span.lines, position: { cursor: span.end, tail: null }, grew: size > was.cursor ? 'present' : 'absent', more: more ? 'present' : 'absent' };
+    return { lines: span.lines, position: { cursor: cursorOf(span.end), tail: null }, grew: size > was.cursor ? 'present' : 'absent', more: more ? 'present' : 'absent' };
 }
 
 const SAME_START_CHUNK = 64 * 1024;

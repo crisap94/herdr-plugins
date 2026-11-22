@@ -3,17 +3,19 @@ import assert from 'node:assert/strict';
 import { parseAskEntry, parseRequester } from '#src/ports/ask-ledger.ts';
 import { parseSkipRow, parseCoverageRecord, parseStoredDecisionRow } from '#src/ports/autocompact-records.ts';
 import { parseBriefOrigin, parseCompactionRow, parseStage } from '#src/ports/compaction-records.ts';
+import { countOf } from '#src/recap/domain/count.ts';
+import { duration } from '#src/recap/domain/time.ts';
 
 const ask = { exchange: 'handoff', requester: 'claude', id: 'req-1', pane: 'p1', at: 100, ref: null, outcome: 'done' };
 const skip = { tab: 't1', pane: 'p1', agent: 'claude', at: 200, gate: 'busy', share: 42, detail: null };
 const decision = {
     id: 'dec-1', compactionId: null, tab: 't1', pane: 'p1', agent: 'claude', at: 300, mode: 'on', share: 80, tokens: 1000, window: 1250,
-    gate: 'ceiling', verdict: 'compact', askedVerdict: 'wait', answers: { a: 1 }, coverage: null, decider: null, costUsd: 0.02, tookMs: 50,
+    gate: 'ceiling', verdict: 'compact', askedVerdict: 'wait', answers: { a: 1 }, coverage: null, decider: null, costUsd: 0.02, tookMs: duration(50),
     why: 'over the ceiling', laneStatus: 'idle', coverageOutcome: { kind: 'missed', count: 2 }, coverageMs: 10, coverageCostUsd: null,
 };
 const compaction = {
     id: 'cmp-1', tab: 't1', pane: 'p1', agent: 'claude', stage: 'briefing', brief: 'written', writer: null, templateWhy: null, startedAt: 1, stageAt: 2,
-    finishedAt: null, tokensBefore: 900, tokensAfter: null, tookMs: null, retried: false, queued: true, why: null, origin: 'auto',
+    finishedAt: null, tokensBefore: countOf(900), tokensAfter: null, tookMs: null, retried: false, queued: true, why: null, origin: 'auto',
 };
 
 test('an ask parses from its domain fields, and an ask with an unknown exchange or outcome is refused', () => {

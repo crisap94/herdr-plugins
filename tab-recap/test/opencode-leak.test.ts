@@ -5,8 +5,9 @@ import { LibraryHarness } from '#src/adapters/harness/library.ts';
 import { RecapWriter } from '#src/adapters/job/writer.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { requestOf } from '#test/support.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
-const request = requestOf({ entries: [{ role: 'user', text: 'hi' }] });
+const request = requestOf({ entries: [{ role: 'user', text: textOf('hi') }] });
 
 const opencode = (runtime: ReturnType<typeof fakeRuntime>): RecapWriter => new RecapWriter(new LibraryHarness(runtime, 'opencode', 100), { model: '', effort: 'default' });
 

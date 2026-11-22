@@ -4,6 +4,7 @@ import { RUBRIC, rubricOf } from '#src/adapters/job/prompts/rubric.ts';
 import { instructions } from '#src/adapters/job/prompts/recap-prompt.ts';
 import { checkIds, examplesOf, RUBRIC_TEXT } from '#test/rubric.ts';
 import { requestOf } from '#test/support.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const SECTIONS = ['goal', 'now', 'needs', 'done', 'decisions', 'next', 'rules', 'links'];
 
@@ -16,7 +17,7 @@ test('the rubric holds the seven item checks and one check per section, each wit
 });
 
 test('the writer\'s instructions carry every check line of the rubric verbatim', () => {
-    const rules = instructions(requestOf({ entries: [{ role: 'user', text: 'hi' }] }));
+    const rules = instructions(requestOf({ entries: [{ role: 'user', text: textOf('hi') }] }));
     assert.ok(rules.includes(RUBRIC.items) && rules.includes(RUBRIC.sections));
     for (const line of RUBRIC_TEXT.split('\n').filter((row) => /^- \*\*(I|S-)/.test(row))) {
         assert.ok(rules.includes(line), line);

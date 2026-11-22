@@ -30,7 +30,7 @@ const run = (enumerator: Enumerators): EnumerateRun => ({
     log: () => undefined,
 });
 
-const turns: readonly AgentTurns[] = [{ agent: textOf('claude'), entries: [{ role: 'user', text: 'Fix the CI' }] }];
+const turns: readonly AgentTurns[] = [{ agent: textOf('claude'), entries: [{ role: 'user', text: textOf('Fix the CI') }] }];
 
 test('duplicates keep the first candidate and a model candidate replaces a flagged twin', () => {
     const flagged = candidate('Ship the parser fix', true);

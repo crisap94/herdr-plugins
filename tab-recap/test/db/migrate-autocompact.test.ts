@@ -9,6 +9,7 @@ import { versionOf } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { scratchDir } from './support.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 const shape = (db: Database): string[] => (db.prepare("SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { type: string; name: string; tbl_name: string; sql: string }[])
     .map((row) => `${row.type} ${row.name} ${row.tbl_name} ${row.sql.replaceAll(/\s+/g, ' ').replaceAll('"', '').replaceAll(/\s*\(\s*/g, '(').replaceAll(/\s*\)\s*/g, ')').replaceAll(/\s*,\s*/g, ',').trim()}`);
@@ -35,8 +36,8 @@ test('migration 10 from a v9 database: manual boundaries read as plugin, links a
         assert.equal(versionOf(db), MIGRATIONS.length);
         assert.deepEqual(backupsOf(path).map((name) => name.slice(-7)), ['.v9.bak']);
         assert.deepEqual(rows(db, 'SELECT kind, at, trigger, cursor, tokens_before, tokens_after, took_ms FROM boundary ORDER BY at'), [
-            { kind: 'compacted', at: 50, trigger: 'plugin', cursor: 9, tokens_before: 800, tokens_after: 14, took_ms: 15 },
-            { kind: 'compacted', at: 60, trigger: 'auto', cursor: 10, tokens_before: null, tokens_after: null, took_ms: null },
+            { kind: 'compacted', at: instant(50), trigger: 'plugin', cursor: 9, tokens_before: 800, tokens_after: 14, took_ms: 15 },
+            { kind: 'compacted', at: instant(60), trigger: 'auto', cursor: 10, tokens_before: null, tokens_after: null, took_ms: null },
             { kind: 'switched', at: 70, trigger: null, cursor: 11, tokens_before: null, tokens_after: null, took_ms: null },
         ]);
         assert.deepEqual(rows(db, "SELECT trigger FROM boundary_readable WHERE at = 50"), [{ trigger: 'plugin' }]);

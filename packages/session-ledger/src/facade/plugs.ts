@@ -2,7 +2,7 @@ import type * as sl from './contract-names.ts';
 import { parseHarnessKind, parseScopeId, parseSessionKey, type RestoreText } from '#src/contract/ids.ts';
 import { must } from '#src/protocol/result.ts';
 import { brand } from '#src/recap/domain/brand.ts';
-import { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
+import { TranscriptRegistry, type AgentKind } from '#src/ports/transcript-registry.ts';
 import type { CheckedLedger } from '#src/ports/ledger.ts';
 import type { CheckedRecapRecords, RecordedRun, FailedRun, Advance, TabRecap, LastRun } from '#src/ports/recap-records.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
@@ -13,7 +13,7 @@ import type { Unknown, Unknowable } from '#src/ports/unknowable.ts';
 import type { Fact, FactId, Section } from '#src/recap/domain/fact.ts';
 import type { Operation, Refusal } from '#src/recap/domain/ops.ts';
 import type { Lane, TabId } from '#src/recap/domain/lane-shape.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import { parseDuration, parseInstant, type Duration } from '#src/recap/domain/time.ts';
 import { parseFailureCause, type FailureCause } from '#src/recap/domain/failure-cause.ts';
 import { FULL_WRITER_VIEW, keepNewestOf, nextHoursOf, prunedWriterView, type HiddenCounts, type PositiveCount, type WriterView } from '#src/recap/domain/writer-view.ts';
@@ -163,7 +163,7 @@ const ledgerPosition = (position: Position): sl.Position => ({
 });
 
 const transcriptsOf = (reader: sl.SessionReader): Transcripts => ({
-    agent: reader.harness,
+    agent: brand<string, 'AgentKind'>(reader.harness),
     inFlight: { kind: 'unsupported', why: 'in-flight-unavailable' },
     locate: async (lane: Lane): Promise<Located> => {
         const session = followedOf(lane);
@@ -181,20 +181,20 @@ class SessionRegistry extends TranscriptRegistry {
     private readonly sessions: sl.SessionSource;
 
     constructor(sessions: sl.SessionSource) {
-        super({}, null, (kind: string) => {
+        super(new Map(), null, (kind: AgentKind): Text => {
             const harness = parseHarnessKind(kind);
-            return harness.kind === 'ok' ? sessions.unavailableReason(harness.value) : `no reader for ${kind}`;
+            return harness.kind === 'ok' ? sessions.unavailableReason(harness.value) : textOf(`no reader for ${kind}`);
         });
         this.sessions = sessions;
     }
 
-    override exact(kind: string): Transcripts | undefined {
+    override exact(kind: AgentKind): Transcripts | undefined {
         const harness = parseHarnessKind(kind);
         const reader = harness.kind === 'ok' ? this.sessions.readerFor(harness.value) : undefined;
         return reader === undefined ? undefined : transcriptsOf(reader);
     }
 
-    override readerFor(kind: string): Transcripts | undefined {
+    override readerFor(kind: AgentKind): Transcripts | undefined {
         return this.exact(kind);
     }
 }

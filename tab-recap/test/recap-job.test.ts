@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId, agentKind } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -19,6 +19,7 @@ import { causeOf } from './fakes/cause.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
+import { cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
 
 const add = (section: string, text: string): Record<string, unknown> => ({ op: 'add', section, text, anchor: 'migrate victoria' });
 const answer = (...ops: readonly Record<string, unknown>[]): string => JSON.stringify({ ops });
@@ -27,13 +28,13 @@ const said: Record<string, string> = { 'w1:p1': 'migrate victoria', 'w1:p2': 'ru
 
 function transcriptsOf(agent: string): Transcripts {
     return {
-        agent,
+        agent: agentKind(agent),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-        locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: `/t/${lane.pane}` }),
+        locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
         latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
         read: (source: string): Promise<ChunkResult> => {
             const pane = source.slice(3);
-            return Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: said[pane] ?? '' }], title: null, lastPrompt: said[pane] ?? null, claudeRecap: null, notes: [], position: { cursor: 100, tail: null }, grew: true });
+            return Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf(said[pane] ?? '') }], title: null, lastPrompt: said[pane] === undefined ? null : textOf(said[pane]), claudeRecap: null, notes: [], position: { cursor: cursorOf(100), tail: null }, grew: grewOf(true) });
         },
     };
 }
@@ -69,11 +70,11 @@ test('one recap for the tab, written from every lane, advancing every cursor', a
 });
 
 const quiet: Transcripts = {
-    agent: 'claude',
+    agent: agentKind('claude'),
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-    locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: `/t/${lane.pane}` }),
+    locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
-    read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 100, tail: null }, grew: false }),
+    read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(100), tail: null }, grew: grewOf(false) }),
 };
 
 async function rewriteWith(language: string, stored: string | undefined, cause: 'requested' | 'focused'): Promise<{ calls: RecapRequest[]; recap: TabRecap | null }> {
@@ -232,7 +233,7 @@ test('refreshNow resolves only once the recap of the tab has been written', asyn
     };
     const store = memoryStore();
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
-    const reader: Transcripts = { ...quiet, read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: 'go' }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 5, tail: null }, grew: true }) };
+    const reader: Transcripts = { ...quiet, read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf('go') }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(5), tail: null }, grew: grewOf(true) }) };
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ [reader.agent]: reader }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => summarizer, language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined });
     await job.refreshNow(tabId('w1:t1'), [lane]);
     assert.equal(firstTask(storeRead(store.records.readRecap('w1:t1')) ?? blankRecap('w1:t1')).sections?.goal, 'written late');
@@ -244,7 +245,7 @@ test('a run logs how long it took and why it ran, written or failed', async () =
         const [store, lines] = [memoryStore(), [] as string[]];
         let ticks = -1;
         const clock = { now: (): ReturnType<typeof instant> => { ticks += 1; return instant(1_000 + (ticks < 2 ? 0 : 12_400)); } };
-        const reader: Transcripts = { ...quiet, read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: 'go' }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 5, tail: null }, grew: true }) };
+        const reader: Transcripts = { ...quiet, read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf('go') }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(5), tail: null }, grew: grewOf(true) }) };
         const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ [reader.agent]: reader }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock, summarizer: (): Summarizer => summarizer, language: (): Text => brand<string, 'Text'>('en'), log: (line): void => { lines.push(line); } });
         job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'turn-ended');
         await new Promise((resolve) => { setTimeout(resolve, 2700); });

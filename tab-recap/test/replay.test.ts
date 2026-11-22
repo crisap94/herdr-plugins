@@ -45,13 +45,13 @@ function scripted(answers: readonly (readonly Record<string, unknown>[])[]): { s
 const hash = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex');
 
 test('windows: one turn each — a prompt and everything up to the next prompt; a queued prompt belongs to the turn it was typed in', () => {
-    const entries = [{ role: 'agent' as const, text: 'hello' }, { role: 'user' as const, text: 'a' }, { role: 'tool' as const, text: 'ls' }, { role: 'user' as const, text: 'q', queued: true }, { role: 'user' as const, text: 'b' }, { role: 'agent' as const, text: 'ok' }];
+    const entries = [{ role: 'agent' as const, text: textOf('hello') }, { role: 'user' as const, text: textOf('a') }, { role: 'tool' as const, text: textOf('ls') }, { role: 'user' as const, text: textOf('q'), queued: true }, { role: 'user' as const, text: textOf('b') }, { role: 'agent' as const, text: textOf('ok') }];
     assert.deepEqual(windowsOf(entries).map((window) => window.map((entry) => entry.text)), [['hello', 'a', 'ls', 'q'], ['b', 'ok']]);
     assert.deepEqual(windowsOf([]), []);
 });
 
 test('merging turns groups whole turns in order and drops nothing', () => {
-    const entries = [{ role: 'user' as const, text: 'a' }, { role: 'agent' as const, text: 'x' }, { role: 'user' as const, text: 'b' }, { role: 'user' as const, text: 'c' }, { role: 'agent' as const, text: 'y' }, { role: 'user' as const, text: 'd' }, { role: 'user' as const, text: 'e' }];
+    const entries = [{ role: 'user' as const, text: textOf('a') }, { role: 'agent' as const, text: textOf('x') }, { role: 'user' as const, text: textOf('b') }, { role: 'user' as const, text: textOf('c') }, { role: 'agent' as const, text: textOf('y') }, { role: 'user' as const, text: textOf('d') }, { role: 'user' as const, text: textOf('e') }];
     assert.equal(windowsOf(entries).length, 5);
     assert.deepEqual(windowsOf(entries, 1).map((window) => window.map((entry) => entry.text)), [['a', 'x'], ['b'], ['c', 'y'], ['d'], ['e']]);
     assert.deepEqual(windowsOf(entries, 2).map((window) => window.map((entry) => entry.text)), [['a', 'x', 'b'], ['c', 'y', 'd'], ['e']]);

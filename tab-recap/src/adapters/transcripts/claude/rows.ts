@@ -2,8 +2,10 @@ import type { ClaudeCompact, ClaudeRecord } from '@stateforge-labs/harness-adapt
 import * as claude from '@stateforge-labs/harness-adapters/claude';
 import type { AgentNote, Chunk, Entry, Mark } from '#src/ports/transcripts.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { namedCall, toolEntry } from '../tool-calls.ts';
+import { instant, duration, type Instant } from '#src/recap/domain/time.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 export { extractClaude } from './legacy.ts';
 
@@ -27,13 +29,15 @@ function compactRecapOf(record: ClaudeRecord): Text | null {
     return text === '' ? null : must(parseText(text));
 }
 
+const atOf = (record: ClaudeRecord): Instant | null => (record.at === null ? null : instant(record.at));
+
 function compactedMark(record: ClaudeRecord, compact: ClaudeCompact): Mark {
     return {
         kind: 'compacted',
-        at: record.at,
-        ...(compact.preTokens === null ? {} : { tokensBefore: compact.preTokens }),
-        ...(compact.postTokens === null ? {} : { tokensAfter: compact.postTokens }),
-        ...(compact.durationMs === null ? {} : { tookMs: compact.durationMs }),
+        at: atOf(record),
+        ...(compact.preTokens === null ? {} : { tokensBefore: countOf(compact.preTokens) }),
+        ...(compact.postTokens === null ? {} : { tokensAfter: countOf(compact.postTokens) }),
+        ...(compact.durationMs === null ? {} : { tookMs: duration(compact.durationMs) }),
         ...(compact.trigger === null ? {} : { trigger: compact.trigger }),
     };
 }
@@ -53,12 +57,12 @@ function agentEntries(record: ClaudeRecord): Entry[] {
         return [];
     }
     const entries: Entry[] = [];
-    const at = record.at === null ? {} : { at: record.at };
+    const at = record.at === null ? {} : { at: instant(record.at) };
     for (const block of record.blocks) {
         if (block.kind === 'text' && block.text.trim() !== '') {
-            entries.push({ role: 'agent', text: block.text, ...at });
+            entries.push({ role: 'agent', text: textOf(block.text), ...at });
         } else if (block.kind === 'tool_use') {
-            entries.push(toolEntry(namedCall('claude', block.name, block.input), record.at ?? undefined));
+            entries.push(toolEntry(namedCall('claude', block.name, block.input), atOf(record) ?? undefined));
         }
     }
     return entries;
@@ -66,8 +70,8 @@ function agentEntries(record: ClaudeRecord): Entry[] {
 
 function entriesOf(record: ClaudeRecord): Entry[] {
     const prompt = claude.humanPrompt(record);
-    const at = record.at === null ? {} : { at: record.at };
-    const user: Entry[] = prompt === null ? [] : [{ role: 'user', text: prompt, ...at, ...(record.kind === 'attachment' ? { queued: true } : {}) }];
+    const at = record.at === null ? {} : { at: instant(record.at) };
+    const user: Entry[] = prompt === null ? [] : [{ role: 'user', text: textOf(prompt), ...at, ...(record.kind === 'attachment' ? { queued: true } : {}) }];
     return [...user, ...agentEntries(record)];
 }
 
@@ -76,10 +80,10 @@ function notesOf(record: ClaudeRecord): AgentNote[] {
     const away = awayOf(record);
     const compacted = compactRecapOf(record);
     if (away !== null) {
-        notes.push({ kind: 'away_summary', at: record.at, text: away });
+        notes.push({ kind: 'away_summary', at: atOf(record), text: away });
     }
     if (compacted !== null) {
-        notes.push({ kind: 'compaction', at: record.at, text: compacted });
+        notes.push({ kind: 'compaction', at: atOf(record), text: compacted });
     }
     return notes;
 }
@@ -89,7 +93,7 @@ function marksOf(record: ClaudeRecord): Mark[] {
     if (compact !== null) {
         return [compactedMark(record, compact)];
     }
-    return claude.compactionFailed(record) ? [{ kind: 'compaction-failed', at: record.at }] : [];
+    return claude.compactionFailed(record) ? [{ kind: 'compaction-failed', at: atOf(record) }] : [];
 }
 
 export function extractClaudeOf(lines: readonly Text[]): Omit<Chunk, 'kind' | 'position' | 'grew'> {

@@ -4,6 +4,7 @@ import type { Case } from '../run.ts';
 import { directory, followed, key, scope, session } from '../ids.ts';
 import type { Behaviour, EngineWorld } from '../world.ts';
 import { NO_OPS, spoken } from './support.ts';
+import { grew, text } from '../values.ts';
 
 const TAB = scope('one');
 const BUDGET = Math.floor(786432 / 3);
@@ -12,7 +13,7 @@ const HELD_READ: Behaviour<Chunk> = {
     kind: 'block',
     after: {
         kind: 'answer',
-        value: { kind: 'chunk', entries: [{ role: 'user', text: 'hello' }], title: null, lastPrompt: 'hello', claudeRecap: null, notes: [], position: UNREAD, grew: true },
+        value: { kind: 'chunk', entries: [{ role: 'user', text: text('hello') }], title: null, lastPrompt: text('hello'), claudeRecap: null, notes: [], position: UNREAD, grew: grew(true) },
     },
 };
 

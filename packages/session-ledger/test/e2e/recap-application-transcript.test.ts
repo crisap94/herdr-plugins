@@ -6,8 +6,9 @@ import type { EnumerateMaterial } from '@stateforge-labs/session-ledger/unstable
 import { itemsOf, transcriptOf, turnsOf } from '@stateforge-labs/session-ledger/unstable/recap/application/writer-transcript.ts';
 import type { Clock } from '@stateforge-labs/session-ledger/unstable/recap/application/writer-transcript.ts';
 import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { Entry } from '@stateforge-labs/session-ledger/unstable/ports/legacy.ts';
+import type { Entry } from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
 
 const text = brand<string, 'Text'>;
 const count = brand<number, 'Count'>;
@@ -18,10 +19,10 @@ const tab = { id: text('tab-1'), now: instant(NOW), zone: text('UTC') };
 const turnClock = { now: instant(NOW), zone: text('UTC') };
 
 const entries: readonly Entry[] = [
-    { role: 'user', text: 'Fix the CI', at: NOW },
-    { role: 'tool', text: '', kind: 'edit', what: 'src/a.ts' },
-    { role: 'tool', text: '', kind: 'edit', what: 'src/b.ts' },
-    { role: 'agent', text: 'Done', at: NOW },
+    { role: 'user', text: textOf('Fix the CI'), at: instant(NOW) },
+    { role: 'tool', text: textOf(''), kind: 'edit', what: textOf('src/a.ts') },
+    { role: 'tool', text: textOf(''), kind: 'edit', what: textOf('src/b.ts') },
+    { role: 'agent', text: textOf('Done'), at: instant(NOW) },
 ];
 
 test('the items group consecutive tool calls into one burst between the turns', () => {

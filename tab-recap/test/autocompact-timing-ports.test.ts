@@ -19,6 +19,9 @@ import { decidedAnswersOf, textOf } from './fakes/decider-fixtures.ts';
 import { SAFE, candidateFor } from './autocompact-world.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
+import { sourcePathOf } from '#src/ports/transcripts.ts';
+import { runningOf } from '#src/recap/domain/in-flight.ts';
 
 interface Scripted {
     readonly store: ReturnType<typeof memoryStore>;
@@ -29,11 +32,11 @@ interface Scripted {
 }
 
 const transcripts: Transcripts = {
-    agent: 'claude',
-    locate: () => Promise.resolve({ kind: 'located', source: 'transcript' }),
+    agent: agentKind('claude'),
+    locate: () => Promise.resolve({ kind: 'located', source: sourcePathOf('transcript') }),
     read: () => Promise.reject(new Error('not read here')),
     latestPrompt: () => Promise.reject(new Error('not read here')),
-    inFlight: { kind: 'supported', split: { kind: 'foreground-only', why: 'codex-cells' }, read: () => Promise.resolve({ kind: 'in-flight', count: 0, background: [] }) },
+    inFlight: { kind: 'supported', split: { kind: 'foreground-only', why: 'codex-cells' }, read: () => Promise.resolve({ kind: 'in-flight', count: runningOf(0), background: [] }) },
 };
 
 function scripted(claims: LaneClaims): Scripted {

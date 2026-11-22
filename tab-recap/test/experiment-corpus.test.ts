@@ -9,7 +9,7 @@ import { stratify } from '#src/experiment/stratify.ts';
 import type { Candidate } from '#src/experiment/stratify.ts';
 import { onlyInRecent, verbatimLabel } from '#src/experiment/verbatim.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 
 const asText = (value: string): Text => must(parseText(value));
 
@@ -60,11 +60,11 @@ test('outcomes: only the 10 calls after count, and a different prompt is not a r
 });
 
 test('hindsight: six entries or the character budget, and the next operator prompt', () => {
-    const entries = Array.from({ length: 9 }, (_, i) => ({ role: i === 2 ? 'user' as const : 'agent' as const, text: `entry ${i} ${'x'.repeat(100)}` }));
+    const entries = Array.from({ length: 9 }, (_, i) => ({ role: i === 2 ? 'user' as const : 'agent' as const, text: textOf(`entry ${i} ${'x'.repeat(100)}`) }));
     const found = hindsightOf(entries);
     assert.equal(found.following.length, 6);
     assert.match(found.next_prompt ?? '', /^entry 2/);
-    const clipped = hindsightOf([{ role: 'agent', text: 'y'.repeat(9000) }]);
+    const clipped = hindsightOf([{ role: 'agent', text: textOf('y'.repeat(9000)) }]);
     assert.ok((clipped.following[0]?.text.length ?? 0) <= 8001);
     assert.ok(!agentTextOf(found).includes('entry 2'));
 });

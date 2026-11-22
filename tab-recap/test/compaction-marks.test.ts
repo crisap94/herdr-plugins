@@ -9,11 +9,13 @@ import { extractCodex } from '#src/adapters/transcripts/codex/transcripts.ts';
 import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcripts.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import { opencodeFixture } from '#test/opencode-fixture.ts';
+import { countOf } from '#src/recap/domain/count.ts';
+import { duration } from '#src/recap/domain/time.ts';
 
 const linesOf = (name: string): string[] => readFileSync(join(import.meta.dirname, 'fixtures', name), 'utf8').split('\n').filter((line) => line !== '');
 
 test('claude: compact_boundary carries what compactMetadata says (rows recorded from a real /compact, private text replaced)', () => {
-    assert.deepEqual(extractClaude(linesOf('claude-compact-boundary.jsonl')).marks, [{ kind: 'compacted', at: Date.parse('2026-10-07T16:38:09.490Z'), tokensBefore: 39532, tokensAfter: 3057, tookMs: 15588, trigger: 'manual' }]);
+    assert.deepEqual(extractClaude(linesOf('claude-compact-boundary.jsonl')).marks, [{ kind: 'compacted', at: Date.parse('2026-10-07T16:38:09.490Z'), tokensBefore: countOf(39532), tokensAfter: countOf(3057), tookMs: duration(15588), trigger: 'manual' }]);
 });
 
 test('claude: compactMetadata.trigger is the agent\'s own word; anything but manual or auto is left out', () => {
@@ -31,7 +33,7 @@ test('claude: a Claude version that drops compactMetadata still confirms, with n
 test('codex: before is the last token_count before the compacted row, after the first one after it (rows recorded from a real /compact)', () => {
     const lines = linesOf('codex-compacted.jsonl');
     const [mark] = extractCodex(lines).marks ?? [];
-    assert.deepEqual(mark, { kind: 'compacted', at: Date.parse('2026-10-06T13:09:05.181Z'), tokensBefore: 17133, tokensAfter: 4617 });
+    assert.deepEqual(mark, { kind: 'compacted', at: Date.parse('2026-10-06T13:09:05.181Z'), tokensBefore: countOf(17133), tokensAfter: countOf(4617) });
 });
 
 test('codex: a compaction whose token_counts are not in the lines read has no numbers; two compactions pair with their own counts', () => {
@@ -52,7 +54,7 @@ test('opencode: the compaction answer is a mark with the message\'s tokens and h
         const reader = new OpencodeTranscripts(fixture.db);
         const chunk = await reader.read(`${fixture.db}#ses_new`, UNREAD, 1 << 20);
         assert.ok(chunk.kind === 'chunk');
-        assert.deepEqual(chunk.marks, [{ kind: 'compacted', at: created, tokensBefore: 1020, tookMs: 7000 }]);
+        assert.deepEqual(chunk.marks, [{ kind: 'compacted', at: created, tokensBefore: countOf(1020), tookMs: duration(7000) }]);
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }

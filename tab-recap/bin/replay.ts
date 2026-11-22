@@ -35,6 +35,7 @@ import { countedWriter } from '#src/recap/application/counted-writer.ts';
 import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
 
 export function viewOf(options: Pick<EvalOptions, 'prune'>, config: Pick<Config, 'writerViewSettings'>): WriterView {
     return options.prune ? config.writerViewSettings : FULL_WRITER_VIEW;
@@ -112,7 +113,7 @@ export function replayCommand(options: EvalOptions): Promise<number> {
     const readers = replayTranscriptRegistry();
     const file = options.replay ?? '';
     const kind = replayKindOf(options.kind, file);
-    const reader = kind === null ? undefined : readers.exact(kind);
+    const reader = kind === null ? undefined : readers.exact(agentKind(kind));
     if (reader === undefined) {
         console.error('tab-recap: 2 — --kind takes claude or codex');
         return Promise.resolve(2);

@@ -5,6 +5,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ClaudeTranscripts, KEPT_UNKNOWN_MAX } from '#src/adapters/transcripts/claude/transcripts.ts';
 import { CLAUDE_SPLIT, claudeInFlight } from '#src/adapters/transcripts/claude/in-flight.ts';
+import { sourcePathOf } from '#src/ports/transcripts.ts';
+import { countOf } from '#src/recap/domain/count.ts';
+import { runningOf } from '#src/recap/domain/in-flight.ts';
 
 const TAIL = 512 * 1024;
 const MB = 1024 * 1024;
@@ -39,23 +42,23 @@ const pair = [launch('t1'), started('t1', 'b1'), launch('t2'), started('t2', 'b2
 test('past the tail: completed work launched 1 MB before the end (a 3 MB transcript) is ended, so zero in flight', async () => {
     const path = write('completed.jsonl', transcript(2 * MB, pair, 0.9 * MB, 0.25 * MB));
     assert.ok(statSync(path).size > 3 * MB, 'a 3 MB transcript');
-    assert.deepEqual(await new ClaudeTranscripts(dir).inFlight.read(path, TAIL), { kind: 'in-flight', count: 0, background: [] });
+    assert.deepEqual(await new ClaudeTranscripts(dir).inFlight.read(sourcePathOf(path), countOf(TAIL)), { kind: 'in-flight', count: runningOf(0), background: [] });
 });
 
 test('past the tail: a background shell launched 1 MB before the end, with no end, is still running, as background work', async () => {
     const shell = [launch('t9'), started('t9', 'b9')];
     const path = write('open.jsonl', transcript(2 * MB, [...pair, ...shell], 0.9 * MB, 0.25 * MB));
-    assert.deepEqual(await new ClaudeTranscripts(dir).inFlight.read(path, TAIL), { kind: 'in-flight', count: 0, background: [{ tool: 'Bash', label: 'Bash' }] });
+    assert.deepEqual(await new ClaudeTranscripts(dir).inFlight.read(sourcePathOf(path), countOf(TAIL)), { kind: 'in-flight', count: runningOf(0), background: [{ tool: 'Bash', label: 'Bash' }] });
 });
 
 test('a file under the budget is read once: its notices end nothing it does not hold, so it is counted', async () => {
     const path = write('small.jsonl', [chat('hello'), notice('b0', 'gone')]);
-    assert.deepEqual(await new ClaudeTranscripts(dir).inFlight.read(path, TAIL), { kind: 'in-flight', count: 0, background: [] });
+    assert.deepEqual(await new ClaudeTranscripts(dir).inFlight.read(sourcePathOf(path), countOf(TAIL)), { kind: 'in-flight', count: runningOf(0), background: [] });
 });
 
 test('over 16 MB: the launch lies before the bound, so the answer stays unknown', async () => {
     const path = write('huge.jsonl', transcript(0, pair, 17 * MB, 0.1 * MB));
-    const answer = await new ClaudeTranscripts(dir).inFlight.read(path, TAIL);
+    const answer = await new ClaudeTranscripts(dir).inFlight.read(sourcePathOf(path), countOf(TAIL));
     assert.deepEqual(answer, { kind: 'unknown', why: { why: 'unreadable', detail: 'the tail ends work that started before it' } });
 });
 
@@ -64,28 +67,28 @@ after(() => { rmSync(dir, { recursive: true, force: true }); });
 test('an unknown answer is kept with the file size: the same size is not read again (the same tail, changed, still gives the first answer); a new size is read', async () => {
     const path = write('kept.jsonl', transcript(0, pair, 17 * MB, 0.1 * MB));
     const reader = new ClaudeTranscripts(dir);
-    const first = await reader.inFlight.read(path, TAIL);
+    const first = await reader.inFlight.read(sourcePathOf(path), countOf(TAIL));
     assert.equal(first.kind, 'unknown');
     const size = statSync(path).size;
     writeFileSync(path, `${'x'.repeat(size - 1)}\n`);
-    assert.deepEqual(await reader.inFlight.read(path, TAIL), first, 'same size: answered from the kept answer, not read again');
+    assert.deepEqual(await reader.inFlight.read(sourcePathOf(path), countOf(TAIL)), first, 'same size: answered from the kept answer, not read again');
     writeFileSync(path, `${notice('b1', 't1')}\n`);
-    assert.deepEqual(await reader.inFlight.read(path, TAIL), { kind: 'in-flight', count: 0, background: [] }, 'a new size is read');
+    assert.deepEqual(await reader.inFlight.read(sourcePathOf(path), countOf(TAIL)), { kind: 'in-flight', count: runningOf(0), background: [] }, 'a new size is read');
 });
 
 test('the kept unknown answers are capped at KEPT_UNKNOWN_MAX: the oldest is forgotten (read again), the newest is still kept', async () => {
     const reader = new ClaudeTranscripts(dir);
     const oldest = write('cap-0.jsonl', ['not json!']);
-    assert.equal((await reader.inFlight.read(oldest, TAIL)).kind, 'unknown');
+    assert.equal((await reader.inFlight.read(sourcePathOf(oldest), countOf(TAIL))).kind, 'unknown');
     let newest = oldest;
     for (let at = 1; at <= KEPT_UNKNOWN_MAX; at += 1) {
         newest = write(`cap-${at}.jsonl`, ['not json!']);
-        assert.equal((await reader.inFlight.read(newest, TAIL)).kind, 'unknown');
+        assert.equal((await reader.inFlight.read(sourcePathOf(newest), countOf(TAIL))).kind, 'unknown');
     }
     writeFileSync(oldest, '{"a":"b"}\n');
-    assert.deepEqual(await reader.inFlight.read(oldest, TAIL), { kind: 'in-flight', count: 0, background: [] }, 'forgotten: the same size is read again');
+    assert.deepEqual(await reader.inFlight.read(sourcePathOf(oldest), countOf(TAIL)), { kind: 'in-flight', count: runningOf(0), background: [] }, 'forgotten: the same size is read again');
     writeFileSync(newest, '{"a":"b"}\n');
-    assert.equal((await reader.inFlight.read(newest, TAIL)).kind, 'unknown', 'kept: the same size is not read again');
+    assert.equal((await reader.inFlight.read(sourcePathOf(newest), countOf(TAIL))).kind, 'unknown', 'kept: the same size is not read again');
 });
 
 test('the reader split is CLAUDE_SPLIT, and the reader result is the one claudeInFlight gives under it', async () => {
@@ -93,9 +96,9 @@ test('the reader split is CLAUDE_SPLIT, and the reader result is the one claudeI
     const path = write('split.jsonl', lines);
     const reader = new ClaudeTranscripts(dir);
     assert.equal(reader.inFlight.split, CLAUDE_SPLIT);
-    assert.deepEqual(await reader.inFlight.read(path, TAIL), claudeInFlight(lines, false, CLAUDE_SPLIT));
+    assert.deepEqual(await reader.inFlight.read(sourcePathOf(path), countOf(TAIL)), claudeInFlight(lines, false, CLAUDE_SPLIT));
 });
 
 test('the same tail under separates lists the live shell as a background item, with its tool for a label without a description', () => {
-    assert.deepEqual(claudeInFlight([launch('t1'), started('t1', 'b1')], false, { kind: 'separates' }), { kind: 'in-flight', count: 0, background: [{ tool: 'Bash', label: 'Bash' }] });
+    assert.deepEqual(claudeInFlight([launch('t1'), started('t1', 'b1')], false, { kind: 'separates' }), { kind: 'in-flight', count: runningOf(0), background: [{ tool: 'Bash', label: 'Bash' }] });
 });

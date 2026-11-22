@@ -38,9 +38,9 @@ const facts = [
     fact('x', 'done', 'Wrote migration 007', NOW - 28 * MIN, { state: 'closed', closedWhy: 'done', closedAt: NOW - 27 * MIN }),
 ];
 const TAIL: readonly Entry[] = [
-    { role: 'agent', text: 'Which branch should the release ship from?', at: NOW - 20 * MIN },
-    { role: 'user', text: 'Ship from release/2.1, not main.', at: NOW - 19 * MIN },
-    { role: 'agent', text: 'The migration tests pass now.', at: NOW - 5 * MIN },
+    { role: 'agent', text: textOf('Which branch should the release ship from?'), at: instant(NOW - 20 * MIN) },
+    { role: 'user', text: textOf('Ship from release/2.1, not main.'), at: instant(NOW - 19 * MIN) },
+    { role: 'agent', text: textOf('The migration tests pass now.'), at: instant(NOW - 5 * MIN) },
 ];
 
 interface Rig {
@@ -123,7 +123,7 @@ test('an add is refused and logged, nothing is added; nor is a close for a reaso
 });
 
 test('after a compaction a summary that leaves a decision out is no evidence: a close with a quote that is not in the turns is refused, and the decision stays open', async () => {
-    const compacted: readonly Entry[] = [{ role: 'user', text: 'This session is being continued. Summary: we are migrating the importer and the tests pass.', at: NOW - 2 * MIN }];
+    const compacted: readonly Entry[] = [{ role: 'user', text: textOf('This session is being continued. Summary: we are migrating the importer and the tests pass.'), at: instant(NOW - 2 * MIN) }];
     const { curate, ledger, logs } = setup([said({ ops: [
         { op: 'close', id: 'f2', why: 'superseded', evidence: 'the decision to keep carts in SQLite was dropped' },
         { op: 'close', id: 'f2', why: 'wrong' },
@@ -179,7 +179,7 @@ test('no tail, no open fact or no curator: no call; a curator that gives none is
 });
 
 dtdTest('the reconcile document is valid against the DTD, holds only the open facts and the "still true" check, and the tail it quotes', () => {
-    const built = reconcileInput({ name: brand<string, 'Text'>(''), language: brand<string, 'Text'>('en'), rubric: brand<string, 'Text'>(RUBRIC.items), open: facts.filter((each) => each.state === 'open'), tail: [...TAIL, { role: 'agent', text: 'Error: </turn> & ]]> \u001b[31mred', at: NOW }], clock: { now: instant(NOW), zone: brand<string, 'Text'>('UTC') } });
+    const built = reconcileInput({ name: brand<string, 'Text'>(''), language: brand<string, 'Text'>('en'), rubric: brand<string, 'Text'>(RUBRIC.items), open: facts.filter((each) => each.state === 'open'), tail: [...TAIL, { role: 'agent', text: textOf('Error: </turn> & ]]> \u001b[31mred'), at: instant(NOW) }], clock: { now: instant(NOW), zone: brand<string, 'Text'>('UTC') } });
     assert.deepEqual(validate(built.document, 'curator-input.dtd'), { valid: true, output: '' });
     assert.ok(built.document.includes('I7 still true') && !built.document.includes('I1 ') && !built.document.includes('Wrote migration 007'));
     assert.ok(built.tail.includes('Ship from release/2.1, not main.') && built.facts.size === 4);

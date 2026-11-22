@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { UNREAD, createEngine, type Chunk, type Fact, type TaskId } from '@stateforge-labs/session-ledger';
+import { grewOf } from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import { createEngineWorld, followed, key, scope, session, type Behaviour, type CuratedAnswer, type WrittenAnswer } from '@stateforge-labs/session-ledger/testkit';
 
@@ -13,7 +15,7 @@ const NO_OPS: Behaviour<WrittenAnswer> = { kind: 'answer', value: { kind: 'writt
 
 const spoken = (line: string): Behaviour<Chunk> => ({
     kind: 'answer',
-    value: { kind: 'chunk', entries: [{ role: 'user', text: line }], title: null, lastPrompt: line, claudeRecap: null, notes: [], position: UNREAD, grew: true },
+    value: { kind: 'chunk', entries: [{ role: 'user', text: textOf(line) }], title: null, lastPrompt: textOf(line), claudeRecap: null, notes: [], position: UNREAD, grew: grewOf(true) },
 });
 
 const factOf = (id: string, task: TaskId, text: string, lastAt: number): Fact => ({

@@ -12,13 +12,14 @@ import { longTurn, START } from '#test/fakes/long-turn.ts';
 import { answer, FAIL, scripted } from '#test/fakes/enumerator.ts';
 import type { Reply } from '#test/fakes/enumerator.ts';
 import { dtdTest, validate } from '#test/xmllint.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 const textOf = brand<string, 'Text'>;
 const count = brand<number, 'Count'>;
 const TAB = { id: textOf('w1:t1'), now: brand<number, 'Instant'>(START + 3_600_000), zone: textOf('UTC') };
-const user = (text: string, row = 0): Entry => ({ role: 'user', text, at: START + row * 60_000 });
-const agent = (text: string, row = 1): Entry => ({ role: 'agent', text, at: START + row * 60_000 });
-const shell = (text: string, row = 2): Entry => ({ role: 'tool', kind: 'shell', text, at: START + row * 60_000 });
+const user = (text: string, row = 0): Entry => ({ role: 'user', text: textOf(text), at: instant(START + row * 60_000) });
+const agent = (text: string, row = 1): Entry => ({ role: 'agent', text: textOf(text), at: instant(START + row * 60_000) });
+const shell = (text: string, row = 2): Entry => ({ role: 'tool', kind: 'shell', text: textOf(text), at: instant(START + row * 60_000) });
 
 function setup(replies: readonly Reply[]): { run: EnumerateRun; documents: string[]; logs: string[] } {
     const { enumerator, documents } = scripted(replies);
@@ -57,7 +58,7 @@ test('candidates come from the answer; a quote that is in the chunk is kept, wit
 });
 
 test('a stub the answer ignores becomes a flagged candidate; one it fills or skips does not', async () => {
-    const entries = [...TURN, shell('glab mr create --fill', 4), { role: 'agent' as const, text: 'Should I tag the release?', at: START + 5 * 60_000 }];
+    const entries = [...TURN, shell('glab mr create --fill', 4), { role: 'agent' as const, text: textOf('Should I tag the release?'), at: instant(START + 5 * 60_000) }];
     const { run, documents } = setup([answer([{ section: 'done', text: 'Committed the uploader retry', anchor: 'nothing like it in the chunk', stub: 'g1' }], { skip: [{ stub: 'g3', reason: 'only a question to myself' }] })]);
     const done = await enumerate(run, [{ agent: textOf('a1'), entries }]);
     assert.ok(documents[0]?.includes('id="g3"'));

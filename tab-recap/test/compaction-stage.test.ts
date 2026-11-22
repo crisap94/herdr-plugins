@@ -11,9 +11,11 @@ import type { CompactionRecord } from '#src/ports/compaction-records.ts';
 import type { Messages } from '#src/i18n/messages.ts';
 import { parseDuration, parseTokens } from '@stateforge-labs/recap-view';
 import { maybe } from '#src/view-model/column.ts';
+import { countOf } from '#src/recap/domain/count.ts';
+import { duration } from '#src/recap/domain/time.ts';
 
 const base: CompactionRecord = { id: 'cmp_x', tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'compacting', brief: 'written', writer: 'codex · gpt-6-luna · high', templateWhy: null, startedAt: 0, stageAt: 0, finishedAt: null, tokensBefore: null, tokensAfter: null, tookMs: null, retried: false, queued: false, why: null, origin: 'operator' };
-const done = { finishedAt: 1, tokensBefore: 39532, tokensAfter: 3057, tookMs: 15588 };
+const done = { finishedAt: 1, tokensBefore: countOf(39532), tokensAfter: countOf(3057), tookMs: duration(15588) };
 
 const STAGES: readonly (readonly [string, Partial<CompactionRecord>, number])[] = [
     ['briefing', { stage: 'briefing' }, 8000],

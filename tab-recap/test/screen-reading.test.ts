@@ -8,7 +8,7 @@ import { loadConfig } from '#src/daemon/config.ts';
 import { cleanScreen, screenEntries, steady } from '#src/recap/application/screen-text.ts';
 import { DEFAULT_POLICY, screenKindsOf, screenSetting, wantsKind } from '#src/recap/domain/policy.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import { UNREAD } from '#src/ports/transcripts.ts';
+import { UNREAD, sourcePathOf } from '#src/ports/transcripts.ts';
 import type { Chunk } from '#src/ports/transcripts.ts';
 import type { ScreenResult, Screens } from '#src/ports/screens.ts';
 import { causeOf } from './fakes/cause.ts';
@@ -49,7 +49,7 @@ test('ScreenTranscripts: only for the kinds asked, one source per pane, the revi
     assert.equal(reader.agent, SCREEN_READER_ID);
     assert.equal((await reader.locate(lane('qwen'))).kind, 'unknown');
     const located = await reader.locate(lane('gemini'));
-    assert.deepEqual(located, { kind: 'located', source: 'screen:w1:p3' });
+    assert.deepEqual(located, { kind: 'located', source: sourcePathOf('screen:w1:p3') });
     const first = await reader.read('screen:w1:p3', UNREAD, 10_000) as Chunk;
     assert.deepEqual(screens.asked, [{ pane: 'w1:p3', lines: 200 }]);
     assert.equal(first.grew, true);

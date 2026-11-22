@@ -6,7 +6,7 @@ import type { Noul } from '#src/ports/decider.ts';
 import type { EnvironmentName } from '#src/recap/domain/backend.ts';
 import { parseJevModel, parseJevUrl } from '#src/recap/domain/autocompact.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant, duration } from '#src/recap/domain/time.ts';
 import { saying } from '#src/ports/unknowable.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { documentOf, noulOf, textOf } from './fakes/decider-fixtures.ts';
@@ -29,7 +29,7 @@ function decider(respond: (url: string, init: RequestInit) => Promise<Response>,
 test('jev: posts {model, state, questions} with the bearer key; the answers, tokens, cost (input × 0.042 / 1e6) and time come back', async () => {
     const { jev, seen } = decider(() => Promise.resolve(reply(good)));
     const found = await jev.ask(documentOf({ goal: 'x' }), questions);
-    assert.deepEqual(found.kind === 'decided' ? { ...found, answers: Object.fromEntries(found.answers) } : found, { kind: 'decided', answers: { closes_request: 0.95, stuck: 0.04 }, tokens: 732, costUsd: 732 * 0.042 / 1e6, tookMs: 550, model: 'jev-1.13.0' });
+    assert.deepEqual(found.kind === 'decided' ? { ...found, answers: Object.fromEntries(found.answers) } : found, { kind: 'decided', answers: { closes_request: 0.95, stuck: 0.04 }, tokens: 732, costUsd: 732 * 0.042 / 1e6, tookMs: duration(550), model: 'jev-1.13.0' });
     assert.equal(jev.label, 'jev · jev-1.13.0');
     const [call] = seen as [{ url: string; init: { headers: Record<string, string>; body: string } }];
     assert.equal(call.url, 'https://gateway.test/v1/systemone');

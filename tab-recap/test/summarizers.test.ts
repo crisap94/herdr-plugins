@@ -15,7 +15,7 @@ import type { Harness } from '#src/ports/harness.ts';
 import type { BackendId } from '#src/recap/domain/backend.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 
-const request = requestOf({ entries: [{ role: 'user', text: 'hi' }] });
+const request = requestOf({ entries: [{ role: 'user', text: textOf('hi') }] });
 
 type Id = 'claude' | 'codex' | 'opencode';
 

@@ -11,7 +11,7 @@ import type { Board } from '#src/recap/domain/board.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 import { observe } from '#src/recap/domain/fold.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId, agentKind } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane, SeenLane } from '#src/recap/domain/lane.ts';
@@ -23,15 +23,17 @@ import type { TabView, TabViews } from '#src/ports/tab-views.ts';
 import type { Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { sourcePathOf } from '#src/ports/transcripts.ts';
 
 const lane = (pane: string, agent = 'claude'): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, session: `s-${pane}` });
 
 function reader(agent: string, prompts: Record<string, PromptResult>): { transcripts: Transcripts; asked: { source: string; budget: number }[] } {
     const asked: { source: string; budget: number }[] = [];
     const transcripts: Transcripts = {
-        agent,
+        agent: agentKind(agent),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-        locate: (found: Lane): Promise<Located> => Promise.resolve(found.pane === 'w9:p9' ? unknown({ why: 'not-found', what: 'it' }) : { kind: 'located', source: `/t/${found.pane}` }),
+        locate: (found: Lane): Promise<Located> => Promise.resolve(found.pane === 'w9:p9' ? unknown({ why: 'not-found', what: 'it' }) : { kind: 'located', source: sourcePathOf(`/t/${found.pane}`) }),
         read: () => Promise.reject(new Error('the live prompt never reads a chunk')),
         latestPrompt: (source, budget) => { asked.push({ source, budget }); return Promise.resolve(prompts[source] ?? { kind: 'prompt', text: null }); },
     };
@@ -39,7 +41,7 @@ function reader(agent: string, prompts: Record<string, PromptResult>): { transcr
 }
 
 test('LivePrompts: the newest prompt of a lane, true only when it changed; a bounded tail is asked for', async () => {
-    const { transcripts, asked } = reader('claude', { '/t/w1:p1': { kind: 'prompt', text: 'fix the build' } });
+    const { transcripts, asked } = reader('claude', { '/t/w1:p1': { kind: 'prompt', text: textOf('fix the build') } });
     const prompts = new LivePrompts(registryWith({ [transcripts.agent]: transcripts }));
     assert.equal(prompts.of('w1:p1'), null);
     assert.equal(await prompts.refresh(lane('w1:p1')), true);
@@ -49,7 +51,7 @@ test('LivePrompts: the newest prompt of a lane, true only when it changed; a bou
 });
 
 test('LivePrompts: a lane that cannot be read, has no prompt or no reader keeps what it had', async () => {
-    const { transcripts } = reader('claude', { '/t/w1:p1': { kind: 'prompt', text: 'kept' }, '/t/w1:p2': unknown({ why: 'unreadable', detail: causeOf('x') }) });
+    const { transcripts } = reader('claude', { '/t/w1:p1': { kind: 'prompt', text: textOf('kept') }, '/t/w1:p2': unknown({ why: 'unreadable', detail: causeOf('x') }) });
     const prompts = new LivePrompts(registryWith({ [transcripts.agent]: transcripts }));
     await prompts.refresh(lane('w1:p1'));
     assert.equal(await prompts.refresh(laneFrom({ paneId: 'w9:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' })), false, 'cannot locate');
@@ -68,15 +70,15 @@ test('LivePrompts: an agent without a store of its own goes through the any-agen
 });
 
 test('LivePrompts: a changed prompt replaces the old one; the table stays bounded', async () => {
-    const answers: Record<string, PromptResult> = { '/t/w1:p1': { kind: 'prompt', text: 'one' } };
+    const answers: Record<string, PromptResult> = { '/t/w1:p1': { kind: 'prompt', text: textOf('one') } };
     const { transcripts } = reader('claude', answers);
     const prompts = new LivePrompts(registryWith({ [transcripts.agent]: transcripts }));
     await prompts.refresh(lane('w1:p1'));
-    answers['/t/w1:p1'] = { kind: 'prompt', text: 'two' };
+    answers['/t/w1:p1'] = { kind: 'prompt', text: textOf('two') };
     assert.equal(await prompts.refresh(lane('w1:p1')), true);
     assert.equal(prompts.of('w1:p1'), 'two');
     for (let at = 0; at < 300; at += 1) {
-        answers[`/t/p${at}`] = { kind: 'prompt', text: `prompt ${at}` };
+        answers[`/t/p${at}`] = { kind: 'prompt', text: textOf(`prompt ${at}`) };
         await prompts.refresh(lane(`p${at}`));
     }
     assert.equal(prompts.of('p299'), 'prompt 299');

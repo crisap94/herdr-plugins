@@ -168,7 +168,7 @@ test('the restore path runs on the engine\'s store and a scope and followed sess
         const clock = { now: 1 };
         const { summarizer } = writer();
         const engine = createEngine({
-            source: { transcripts: new TranscriptRegistry({ [reader.agent]: reader }, null, (kind): string => capabilityWording('history-unavailable', must(parseText(kind)))) },
+            source: { transcripts: new TranscriptRegistry(new Map([[reader.agent, reader]]), null, (kind) => capabilityWording('history-unavailable', must(parseText(kind)))) },
             store: { records: scratch.store.records, ledger: scratch.store.ledger },
             models: { summarizer: () => summarizer },
             environment: { clock: { now: (): Instant => instant(clock.now) }, repos: NO_REPOS, mint: mintFactId, log: () => undefined },

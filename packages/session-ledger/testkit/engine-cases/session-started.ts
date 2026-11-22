@@ -4,7 +4,7 @@ import type { Case } from '../run.ts';
 import { directory, followed, harness, key, scope, session } from '../ids.ts';
 import type { EngineWorld } from '../world.ts';
 import { cursorsOf } from './support.ts';
-import { cursorAt, text } from '../values.ts';
+import { cursorAt, grew, text } from '../values.ts';
 
 const TAB = scope('one');
 const CLAUDE = harness('claude');
@@ -112,7 +112,7 @@ export const STA_CASES: readonly Case<EngineWorld, Engine>[] = [
             world.setLocate((followedSession) => ({ kind: 'answer', value: { kind: 'located', source: followedSession.session ?? followedSession.key } }));
             world.setRead({
                 kind: 'answer',
-                value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorAt(5), tail: null }, grew: true },
+                value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorAt(5), tail: null }, grew: grew(true) },
             });
             engine.follow(TAB, followed(key('a'), { session: session('s1') }));
             await engine.refresh(TAB);

@@ -3,6 +3,8 @@ import { brand, type Brand } from '#src/recap/domain/brand.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 
 export type Count = Brand<number, 'Count'>;
+export const countOf = brand<number, 'Count'>;
+
 export type PositiveCount = Brand<number, 'PositiveCount'>;
 
 export function parseCount(input: unknown): Result<Count, ParseFailure> {

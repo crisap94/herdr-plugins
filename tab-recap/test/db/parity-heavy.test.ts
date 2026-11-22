@@ -6,6 +6,8 @@ import { typeIdOf } from '#src/adapters/db/typeid.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { expectSameEffect, expectSameRows, withParity } from './parity.ts';
 import { memoryStore } from './support.ts';
+import { countOf } from '#src/recap/domain/count.ts';
+import { duration } from '#src/recap/domain/time.ts';
 
 const hex = (bytes: Uint8Array): string => Buffer.from(bytes).toString('hex');
 const keyOf = (n: number): Uint8Array => Uint8Array.from({ length: 16 }, () => n);
@@ -71,7 +73,7 @@ describe('parity: compaction records', () => {
             builder: (db) => {
                 const repo = new CompactionRecordsRepository(db);
                 const id = typeIdOf('compaction', keyOf(1));
-                repo.finish(id, { stage: 'compacted', at: 30, tokensBefore: 100, tokensAfter: 40, tookMs: 500, retried: true, why: 'ok' });
+                repo.finish(id, { stage: 'compacted', at: 30, tokensBefore: countOf(100), tokensAfter: countOf(40), tookMs: duration(500), retried: true, why: 'ok' });
                 repo.finish(id, { stage: 'failed', at: 31 });
             },
             dump: dumpOf(COMPACTION_DUMP),

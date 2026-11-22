@@ -8,6 +8,8 @@ import { migrate, versionOf } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { memoryStore, newId, openFixture, scratchDir } from './support.ts';
+import { countOf } from '#src/recap/domain/count.ts';
+import { duration } from '#src/recap/domain/time.ts';
 
 const store = (): ReturnType<typeof memoryStore> => {
     const made = memoryStore();
@@ -66,7 +68,7 @@ test('begin, advance, finish: a record walks its stages and keeps what each step
     compactions.advance(id, 'restoring', { at: 120 });
     const shown = compactions.shownFor('w1:t1');
     assert.deepEqual(shown.map((r) => [r.stage, r.brief, r.templateWhy, r.writer, r.startedAt, r.stageAt]), [['restoring', 'template', 'the answer says "tab"', 'codex · gpt-6-luna · high', 100, 120]]);
-    compactions.finish(id, { stage: 'compacted', at: 130, tokensBefore: 39532, tokensAfter: 3057, tookMs: 15588, retried: true });
+    compactions.finish(id, { stage: 'compacted', at: 130, tokensBefore: countOf(39532), tokensAfter: countOf(3057), tookMs: duration(15588), retried: true });
     const [done] = compactions.shownFor('w1:t1');
     assert.deepEqual([done?.stage, done?.finishedAt, done?.tokensBefore, done?.tokensAfter, done?.tookMs, done?.retried], ['compacted', 130, 39532, 3057, 15588, true]);
     compactions.advance(id, 'compacting', { at: 140 });

@@ -1,6 +1,6 @@
 import { statSync } from 'node:fs';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
-import { type ChunkResult, type InFlightResult, type ObservedResult, type Position, type PromptResult } from '#src/ports/transcripts.ts';
+import { type ChunkResult, type InFlightResult, type ObservedResult, type Position, type PromptResult, grewOf } from '#src/ports/transcripts.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
@@ -47,7 +47,7 @@ export class ClaudeReader {
 
     read(path: FsPath, was: Position, budget: Count): ChunkResult {
         const { lines, position, grew, more } = readJsonlFrom(path, was, budget);
-        return { kind: 'chunk', ...extractClaudeOf(lines), position, grew: grew === 'present', more: more === 'present' };
+        return { kind: 'chunk', ...extractClaudeOf(lines), position, grew: grewOf(grew === 'present'), more: more === 'present' };
     }
 
     inFlight(path: FsPath, budget: Count): InFlightResult {

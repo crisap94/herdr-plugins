@@ -2,6 +2,7 @@ import type { InFlightResult } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import { runningOf } from '#src/recap/domain/in-flight.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { openWork, readRollout } from '@stateforge-labs/harness-adapters/codex';
@@ -16,5 +17,5 @@ export function codexInFlightOf(lines: readonly Text[], truncated: Presence): In
     if (truncated === 'present' && work.openCallIds.length > 0) {
         return unknown({ why: 'unreadable', detail: causeOf(must(parseText('the truncated rollout tail contains an open call'))) });
     }
-    return { kind: 'in-flight', count: work.openCallIds.length + work.runningCells.length, background: [] };
+    return { kind: 'in-flight', count: runningOf(work.openCallIds.length + work.runningCells.length), background: [] };
 }

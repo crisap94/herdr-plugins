@@ -12,6 +12,8 @@ import type { Transcripts } from '#src/ports/transcripts.ts';
 import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
 import type { CompactLimits } from '#src/ports/compact-limits.ts';
 import { memoryStore } from './db/support.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
+import { sourcePathOf } from '#src/ports/transcripts.ts';
 
 const noGlow = (): null => null;
 const noLimits: CompactLimits = { limitOf: () => ({ window: null, percent: null }) };
@@ -35,9 +37,9 @@ const lane = (agent: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: 
 
 function reader(agent: string, model: string | null, tokens: number, window: number | null): Transcripts {
     return {
-        agent,
+        agent: agentKind(agent),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-        locate: () => Promise.resolve({ kind: 'located', source: 's' }),
+        locate: () => Promise.resolve({ kind: 'located', source: sourcePathOf('s') }),
         read: () => Promise.reject(new Error('not used')),
         latestPrompt: () => Promise.reject(new Error('not used')),
         observed: () => Promise.resolve({ kind: 'observed', observed: { tokens, peak: tokens, window, model } }),

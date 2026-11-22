@@ -14,6 +14,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import type { Chunk, ChunkResult, Located } from '#src/ports/transcripts.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const scratch = (): string => mkdtempSync(join(tmpdir(), 'recap-readers-'));
 const laneIn = (agent: string, extra: { session?: string; cwd?: string } = {}): Lane =>
@@ -68,7 +69,7 @@ test('the budget is the reader\'s: a long file is read from its end, never from 
         const day = new Date();
         const sessions = join(dir, 'codex', String(day.getFullYear()), String(day.getMonth() + 1).padStart(2, '0'), String(day.getDate()).padStart(2, '0'));
         mkdirSync(sessions, { recursive: true });
-        const rollout = [{ type: 'session_meta', payload: { cwd: '/repo' } }, ...Array.from({ length: 100 }, (_, at) => ({ type: 'response_item', payload: { type: 'message', role: 'user', content: [{ text: `ask ${at} ${'y'.repeat(40)}` }] } }))];
+        const rollout = [{ type: 'session_meta', payload: { cwd: '/repo' } }, ...Array.from({ length: 100 }, (_, at) => ({ type: 'response_item', payload: { type: 'message', role: 'user', content: [{ text: textOf(`ask ${at} ${'y'.repeat(40)}`) }] } }))];
         writeFileSync(join(sessions, 'rollout-a.jsonl'), rollout.map((row) => `${JSON.stringify(row)}\n`).join(''));
         const codex = new CodexTranscripts(join(dir, 'codex'));
         const seen = chunkOf(await codex.read(sourceOf(await codex.locate(laneIn('codex', { cwd: '/repo' }))), UNREAD, 1500));
@@ -83,7 +84,7 @@ test('opencode: the newest top-level, unarchived session of the lane\'s cwd; the
     const dir = scratch();
     try {
         const fixture = opencodeFixture(dir);
-        fixture.add({ id: 'm1', session: 'ses_new', role: 'user', updated: 100, parts: [{ type: 'text', text: 'why does the build fail?' }] });
+        fixture.add({ id: 'm1', session: 'ses_new', role: 'user', updated: 100, parts: [{ type: 'text', text: textOf('why does the build fail?') }] });
         fixture.add({ id: 'm2', session: 'ses_new', role: 'assistant', updated: 120, parts: [
             { type: 'step-start' }, { type: 'reasoning', text: 'hidden thoughts' },
             { type: 'tool', tool: 'bash', state: { status: 'completed', input: { command: 'npm test' }, output: 'huge output' } },
@@ -98,7 +99,7 @@ test('opencode: the newest top-level, unarchived session of the lane\'s cwd; the
         assert.equal(source, `${fixture.db}#ses_new`);
         const first = chunkOf(await reader.read(source, UNREAD, 1 << 20));
         assert.deepEqual(first.entries, [
-            { role: 'user', text: 'why does the build fail?' }, { role: 'tool', kind: 'shell', text: 'npm test' }, { role: 'agent', text: 'A type error in the parser.' },
+            { role: 'user', text: textOf('why does the build fail?') }, { role: 'tool', kind: 'shell', text: textOf('npm test') }, { role: 'agent', text: textOf('A type error in the parser.') },
         ]);
         assert.deepEqual([first.position, first.grew, first.title, first.lastPrompt], [{ cursor: 120, tail: null }, true, 'Fix the build', 'why does the build fail?']);
         const quiet = chunkOf(await reader.read(source, first.position, 1 << 20));
@@ -114,13 +115,13 @@ test('opencode: a message written after the cursor is the only thing read next; 
     const dir = scratch();
     try {
         const fixture = opencodeFixture(dir);
-        fixture.add({ id: 'm1', session: 'ses_new', role: 'user', updated: 100, parts: [{ type: 'text', text: 'one' }] });
+        fixture.add({ id: 'm1', session: 'ses_new', role: 'user', updated: 100, parts: [{ type: 'text', text: textOf('one') }] });
         const reader = new OpencodeTranscripts(fixture.db);
         const source = sourceOf(await reader.locate(laneIn('opencode', { cwd: '/repo' })));
         const first = chunkOf(await reader.read(source, UNREAD, 1 << 20));
-        fixture.add({ id: 'm2', session: 'ses_new', role: 'user', updated: 130, parts: [{ type: 'text', text: 'two' }] });
+        fixture.add({ id: 'm2', session: 'ses_new', role: 'user', updated: 130, parts: [{ type: 'text', text: textOf('two') }] });
         const next = chunkOf(await reader.read(source, first.position, 1 << 20));
-        assert.deepEqual(next.entries, [{ role: 'user', text: 'two' }]);
+        assert.deepEqual(next.entries, [{ role: 'user', text: textOf('two') }]);
         assert.equal(next.position.cursor, 130);
         fixture.close();
         const missing = new OpencodeTranscripts(join(dir, 'nope.db'));
@@ -194,9 +195,9 @@ test('latestPrompt (opencode): the newest user message of the session; none for 
     const dir = scratch();
     try {
         const fixture = opencodeFixture(dir);
-        fixture.add({ id: 'm1', session: 'ses_new', role: 'user', updated: 100, parts: [{ type: 'text', text: 'first' }] });
+        fixture.add({ id: 'm1', session: 'ses_new', role: 'user', updated: 100, parts: [{ type: 'text', text: textOf('first') }] });
         fixture.add({ id: 'm2', session: 'ses_new', role: 'assistant', updated: 110, parts: [{ type: 'text', text: 'reply' }] });
-        fixture.add({ id: 'm3', session: 'ses_new', role: 'user', updated: 120, parts: [{ type: 'text', text: 'second' }, { type: 'text', text: 'injected', synthetic: true }] });
+        fixture.add({ id: 'm3', session: 'ses_new', role: 'user', updated: 120, parts: [{ type: 'text', text: textOf('second') }, { type: 'text', text: textOf('injected'), synthetic: true }] });
         fixture.add({ id: 'm4', session: 'ses_new', role: 'assistant', updated: 130, parts: [{ type: 'tool', tool: 'bash', state: { input: { command: 'ls' } } }] });
         fixture.add({ id: 'm5', session: 'ses_old', role: 'assistant', updated: 20, parts: [{ type: 'text', text: 'only me' }] });
         fixture.close();

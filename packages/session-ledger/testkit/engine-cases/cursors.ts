@@ -4,7 +4,7 @@ import type { Case } from '../run.ts';
 import { followed, harness, key, scope, session } from '../ids.ts';
 import type { Behaviour, EngineWorld, LocatedAnswer, WrittenAnswer } from '../world.ts';
 import { chunkAt, countOf, cursorsOf, NO_OPS, quietAt, recapOf } from './support.ts';
-import { failure, notFound } from '../values.ts';
+import { failure, notFound, text } from '../values.ts';
 
 const TAB = scope('one');
 const FAILED = failure(1, 'scripted writer failure');
@@ -160,7 +160,7 @@ export const CSR_CASES: readonly Case<EngineWorld, Engine>[] = [
         level: 'full',
         async run(world, engine) {
             engine.follow(TAB, followed(key('a'), { session: session('s1') }));
-            world.setRead(chunkAt(1, { title: 'T1', lastPrompt: 'P1', claudeRecap: 'R1' }));
+            world.setRead(chunkAt(1, { title: text('T1'), lastPrompt: text('P1'), claudeRecap: text('R1') }));
             world.setWriter(NO_OPS);
             await engine.refresh(TAB);
             const first = laneOf(world, 'a');

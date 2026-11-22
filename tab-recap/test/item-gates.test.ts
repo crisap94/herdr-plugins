@@ -41,7 +41,7 @@ function writer(...texts: readonly string[]): { summarizer: Summarizer; asked: R
 
 const retryDoc = (request: RecapRequest | undefined): string => (request === undefined ? '' : writerContext(request));
 
-const run = (summarizer: Summarizer, ground = groundOf()): Promise<Extracted> => extract(summarizer, requestOf({ entries: [{ role: 'user', text: 'go' }] }), ground);
+const run = (summarizer: Summarizer, ground = groundOf()): Promise<Extracted> => extract(summarizer, requestOf({ entries: [{ role: 'user', text: textOf('go') }] }), ground);
 const texts = (done: Extracted): readonly string[] => (done.kind === 'ops' ? done.tasks.flatMap((task) => task.ops.flatMap((op) => (op.op === 'add' ? op.text : []))) : []);
 
 test('the adapter: an add or update becomes the item it would put in the recap; a close puts nothing; a decision\'s why is its reason clause', () => {

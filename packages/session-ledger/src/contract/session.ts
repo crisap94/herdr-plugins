@@ -1,5 +1,5 @@
 import { brand } from '../recap/domain/brand.ts';
-import type { Brand, Count, Text, Unknown } from './kernel.ts';
+import type { Brand, Count, Duration, Instant, Text, Unknown } from './kernel.ts';
 import type { Directory, HarnessKind, SessionId, SessionKey } from './ids.ts';
 
 export interface FollowedSession {
@@ -15,17 +15,17 @@ export type CallKind = 'shell' | 'edit' | 'web' | 'agent' | 'other' | 'read';
 
 export interface Entry {
     readonly role: 'user' | 'agent' | 'tool';
-    readonly text: string;
-    readonly at?: number;
+    readonly text: Text;
+    readonly at?: Instant;
     readonly queued?: boolean;
     readonly kind?: CallKind;
-    readonly what?: string;
+    readonly what?: Text;
 }
 
 export interface AgentNote {
     readonly kind: 'away_summary' | 'compaction';
-    readonly at: number | null;
-    readonly text: string;
+    readonly at: Instant | null;
+    readonly text: Text;
 }
 
 export type Cursor = Brand<number, 'Cursor'>;
@@ -39,23 +39,25 @@ export const UNREAD: Position = { cursor: brand<number, 'Cursor'>(0), tail: null
 
 export interface Mark {
     readonly kind: 'compacted' | 'compaction-failed';
-    readonly at: number | null;
-    readonly tokensBefore?: number;
-    readonly tokensAfter?: number;
-    readonly tookMs?: number;
+    readonly at: Instant | null;
+    readonly tokensBefore?: Count;
+    readonly tokensAfter?: Count;
+    readonly tookMs?: Duration;
     readonly trigger?: 'auto' | 'manual';
 }
+
+export type Grew = Brand<boolean, 'Grew'>;
 
 export interface Chunk {
     readonly kind: 'chunk';
     readonly entries: readonly Entry[];
-    readonly title: string | null;
-    readonly lastPrompt: string | null;
-    readonly claudeRecap: string | null;
+    readonly title: Text | null;
+    readonly lastPrompt: Text | null;
+    readonly claudeRecap: Text | null;
     readonly notes: readonly AgentNote[];
     readonly marks?: readonly Mark[];
     readonly position: Position;
-    readonly grew: boolean;
+    readonly grew: Grew;
     readonly more?: boolean;
 }
 

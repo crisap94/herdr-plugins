@@ -9,7 +9,7 @@ import { clipHead, clipTurn } from '@stateforge-labs/session-ledger/unstable/rec
 import { NO_SECTIONS } from '@stateforge-labs/session-ledger/unstable/recap/domain/shape.ts';
 import { parseText, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { Entry } from '@stateforge-labs/session-ledger/unstable/ports/legacy.ts';
+import type { Entry } from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
 import type { InputFact } from '@stateforge-labs/session-ledger/unstable/ports/recap-input.ts';
 
 const count = brand<number, 'Count'>;
@@ -42,11 +42,11 @@ test('the ask-back questions are asked only when the recap is thin or spans chun
 
 test('the triggers find commits, errors, questions and edits in transcript entries', () => {
     const entries: Entry[] = [
-        { role: 'tool', kind: 'shell', text: 'git commit -m "ship it"' },
-        { role: 'tool', kind: 'shell', text: 'npm test: Error: boom' },
-        { role: 'user', text: 'Should we ship?' },
-        { role: 'tool', kind: 'edit', text: 'src/a.ts' },
-        { role: 'tool', kind: 'read', text: 'src/b.ts' },
+        { role: 'tool', kind: 'shell', text: textOf('git commit -m "ship it"') },
+        { role: 'tool', kind: 'shell', text: textOf('npm test: Error: boom') },
+        { role: 'user', text: textOf('Should we ship?') },
+        { role: 'tool', kind: 'edit', text: textOf('src/a.ts') },
+        { role: 'tool', kind: 'read', text: textOf('src/b.ts') },
     ];
     const stubs = triggersOf(entries);
     assert.deepEqual(stubs.map((one) => one.kind), ['commit', 'error', 'question', 'edit']);
@@ -81,10 +81,10 @@ test('the recap text is tidied, its JSON object is read, and its headline is the
 test('the transcript splits into chunks within a limit, and the newest chunk fits its budget', () => {
     assert.equal(CHUNK_CHARS, 6_000);
     const entries: Entry[] = [
-        { role: 'user', text: 'first question', at: 1_000_000 },
-        { role: 'agent', text: 'first answer' },
-        { role: 'user', text: 'second question' },
-        { role: 'agent', text: 'second answer' },
+        { role: 'user', text: textOf('first question'), at: instant(1_000_000) },
+        { role: 'agent', text: textOf('first answer') },
+        { role: 'user', text: textOf('second question') },
+        { role: 'agent', text: textOf('second answer') },
     ];
     const chunks = chunksOf(entries, clock, count(120));
     assert.ok(chunks.length >= 1);

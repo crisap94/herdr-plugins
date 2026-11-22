@@ -14,6 +14,10 @@ import type { Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { cursor } from '#test/db/support.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
+import { cursorOf, sourcePathOf, grewOf } from '#src/ports/transcripts.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 const NOW = Date.parse('2026-10-07T16:30:00Z');
 const at = (clock: string, day = '2026-10-07'): number => Date.parse(`${day}T${clock}:00Z`);
@@ -43,7 +47,7 @@ test('turns: the runs by cause, the causes with none left out, imported runs not
 test('compactions: how many, with the tokens of those that say; a count alone when none says', () => {
     assert.deepEqual(lines({ ...nothing, compactions: [{ tokensBefore: 800_000, tokensAfter: 14_000, origin: 'operator' }, { tokensBefore: 39_000, tokensAfter: 3_000, origin: 'operator' }] }), ['compactions 2 (2 by you) (800k → 14k · 39k → 3k)']);
     assert.deepEqual(lines({ ...nothing, compactions: [{ tokensBefore: 1_200_000, tokensAfter: 20_000, origin: 'operator' }, { tokensBefore: null, tokensAfter: null, origin: 'operator' }] }), ['compactions 2 (2 by you) (1.2M → 20k)']);
-    assert.deepEqual(lines({ ...nothing, compactions: [{ tokensBefore: null, tokensAfter: 3000, origin: 'operator' }] }), ['compactions 1 (1 by you)']);
+    assert.deepEqual(lines({ ...nothing, compactions: [{ tokensBefore: null, tokensAfter: countOf(3000), origin: 'operator' }] }), ['compactions 1 (1 by you)']);
 });
 
 test('compactions by origin: the operator\'s and autocompact\'s counted apart, zeros left out, in both languages', () => {
@@ -80,16 +84,16 @@ test('edit counts: per path, most edited first, ties by path', () => {
     assert.deepEqual(countEdits([]), []);
 });
 
-const reader = (agent: string, entries: readonly { role: 'tool' | 'agent'; kind?: 'edit' | 'shell'; text: string }[] | 'unreadable'): Transcripts => ({
-    agent, inFlight: { kind: 'unsupported', why: 'unregistered-reader' }, locate: () => Promise.resolve({ kind: 'located', source: 'x' }), latestPrompt: () => Promise.resolve({ kind: 'prompt', text: null }),
-    read: () => Promise.resolve(entries === 'unreadable' ? unknown({ why: 'unreadable', detail: causeOf('x') }) : { kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 0, tail: null }, grew: false }),
+const reader = (agent: string, entries: readonly { role: 'tool' | 'agent'; kind?: 'edit' | 'shell'; text: Text }[] | 'unreadable'): Transcripts => ({
+    agent: agentKind(agent), inFlight: { kind: 'unsupported', why: 'unregistered-reader' }, locate: () => Promise.resolve({ kind: 'located', source: sourcePathOf('x') }), latestPrompt: () => Promise.resolve({ kind: 'prompt', text: null }),
+    read: () => Promise.resolve(entries === 'unreadable' ? unknown({ why: 'unreadable', detail: causeOf('x') }) : { kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(0), tail: null }, grew: grewOf(false) }),
 });
 
 test('edit calls are counted through each lane\'s own reader; screens, unreadable records and other calls count nothing', async () => {
     const counts = new EditCounts(registryWith({
-        claude: reader('claude', [{ role: 'tool', kind: 'edit', text: 'src/a.ts' }, { role: 'tool', kind: 'edit', text: 'src/a.ts' }, { role: 'tool', kind: 'shell', text: 'npm test' }, { role: 'agent', text: 'src/a.ts' }]),
+        claude: reader('claude', [{ role: 'tool', kind: 'edit', text: textOf('src/a.ts') }, { role: 'tool', kind: 'edit', text: textOf('src/a.ts') }, { role: 'tool', kind: 'shell', text: textOf('npm test') }, { role: 'agent', text: textOf('src/a.ts') }]),
         codex: reader('codex', 'unreadable'),
-    }, reader(SCREEN_READER_ID, [{ role: 'tool', kind: 'edit', text: 'src/b.ts' }])));
+    }, reader(SCREEN_READER_ID, [{ role: 'tool', kind: 'edit', text: textOf('src/b.ts') }])));
     const lanes = [cursor('w1:p1'), { ...cursor('w1:p2'), agent: 'codex' }, { ...cursor('w1:p3'), agent: 'gemini' }, { ...cursor('w1:p4'), transcript: 'screen:w1:p4' }, { ...cursor('w1:p5'), transcript: '' }];
     assert.deepEqual(await counts.of(lanes), [{ path: 'src/a.ts', count: 2 }, { path: 'src/b.ts', count: 1 }]);
     assert.deepEqual(await new EditCounts(registryWith({})).of(lanes), []);
@@ -98,7 +102,7 @@ test('edit calls are counted through each lane\'s own reader; screens, unreadabl
 test('the edit counts read each transcript with the one shared read budget, 4 MiB', async () => {
     const budgets: number[] = [];
     const recording: Transcripts = {
-        ...reader('claude', [{ role: 'tool', kind: 'edit', text: 'src/a.ts' }]),
+        ...reader('claude', [{ role: 'tool', kind: 'edit', text: textOf('src/a.ts') }]),
         read: (source, was, budget) => {
             budgets.push(budget);
             return reader('claude', []).read(source, was, budget);
@@ -111,7 +115,7 @@ test('the edit counts read each transcript with the one shared read budget, 4 Mi
 
 test('the cache answers at once with what it has and refreshes in the background once a minute', async () => {
     let reads = 0;
-    const entries = [{ role: 'tool' as const, kind: 'edit' as const, text: 'src/a.ts' }];
+    const entries = [{ role: 'tool' as const, kind: 'edit' as const, text: textOf('src/a.ts') }];
     const counting: Transcripts = { ...reader('claude', entries), read: (...args) => { reads += 1; return reader('claude', entries).read(...args); } };
     const cache = new EditCache(new EditCounts(registryWith({ claude: counting })), 60_000);
     assert.deepEqual(cache.of([cursor('w1:p1')], 0), [], 'the first look does not wait');

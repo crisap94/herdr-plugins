@@ -26,7 +26,7 @@ async function through(script: string): Promise<Extracted> {
         const file = join(dir, 'writer.mjs');
         writeFileSync(file, `import { readFileSync } from 'node:fs';\nconst document = readFileSync(0, 'utf8');\n${script}`);
         const writer = new RecapWriter(new CustomHarness(`${process.execPath} ${file}`, dir, 20_000), { model: '', effort: 'default' });
-        return await extract(writer, requestOf({ entries: [{ role: 'user', text: 'go' }] }), ground);
+        return await extract(writer, requestOf({ entries: [{ role: 'user', text: textOf('go') }] }), ground);
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }

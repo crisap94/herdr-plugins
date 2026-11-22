@@ -1,13 +1,14 @@
-import { UNREAD } from '#src/ports/transcripts.ts';
+import { UNREAD, sourcePathOf } from '#src/ports/transcripts.ts';
 import { isScreenSource } from '#src/ports/screens.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import { parseMilliseconds, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
 import { TRANSCRIPT_READ_BUDGET_BYTES } from './transcript-read-budget.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
 
 type Ordering = -1 | 0 | 1;
 
@@ -48,12 +49,12 @@ export class EditTally implements EditSource {
     }
 
     private async editsOf(lane: LaneCursor): Promise<readonly Text[]> {
-        const reader = this.transcripts.readerFor(lane.agent);
-        if (reader === undefined || lane.transcript === '' || isScreenSource(lane.transcript)) {
+        const reader = this.transcripts.readerFor(agentKind(lane.agent));
+        if (reader === undefined || lane.transcript === '' || isScreenSource(sourcePathOf(lane.transcript))) {
             return [];
         }
-        const chunk = await reader.read(lane.transcript, UNREAD, TRANSCRIPT_READ_BUDGET_BYTES);
-        return isUnknown(chunk) ? [] : chunk.entries.filter((entry) => entry.role === 'tool' && entry.kind === 'edit' && entry.text !== '').map((entry) => must(parseText(entry.text)));
+        const chunk = await reader.read(sourcePathOf(lane.transcript), UNREAD, TRANSCRIPT_READ_BUDGET_BYTES);
+        return isUnknown(chunk) ? [] : chunk.entries.filter((entry) => entry.role === 'tool' && entry.kind === 'edit' && entry.text !== '').map((entry) => entry.text);
     }
 
     async of(lanes: readonly LaneCursor[]): Promise<readonly FileEdits[]> {

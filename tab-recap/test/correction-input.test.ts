@@ -25,7 +25,7 @@ const RETRY: Correction = {
 };
 
 const withRetry = (retry: Correction = RETRY): ReturnType<typeof requestOf> =>
-    ({ ...requestOf({ agents: [agentOf('a1', { label: textOf('orchestrator') })], entries: [{ role: 'user', text: 'a very long transcript that must not come back' }] }), retry });
+    ({ ...requestOf({ agents: [agentOf('a1', { label: textOf('orchestrator') })], entries: [{ role: 'user', text: textOf('a very long transcript that must not come back') }] }), retry });
 
 test('the document holds the refused operations with their reasons and the facts they name, and no transcript', () => {
     const document = writerContext(withRetry());

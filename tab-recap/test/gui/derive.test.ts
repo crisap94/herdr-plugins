@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Derive, Event, Keys, Seen, Timeline } from './support/api.ts';
 import { loadGui, storage } from './support/register.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 const HOUR = 3_600_000;
 const NOW = Date.parse('2026-11-08T12:00:00Z');
@@ -140,7 +141,7 @@ test('a chosen bin keeps events inside [t0, t1) only', () => {
 });
 
 const FACT = (section: string, firstAt: number, state = 'open'): { section: string; firstAt: number; state: string } => ({ section, firstAt, state });
-const doc = { breaks: [{ kind: 'compacted', at: 500 }, { kind: 'compacted', at: 50 }, { kind: 'switched', at: 600 }], tasks: [{ facts: [FACT('needs', 200), FACT('needs', 200, 'closed'), FACT('needs', 50), FACT('decisions', 300), FACT('now', 400), FACT('done', 450), FACT('done', 10), FACT('next', 900)] }, { facts: [FACT('decisions', 120)] }] };
+const doc = { breaks: [{ kind: 'compacted', at: instant(500) }, { kind: 'compacted', at: instant(50) }, { kind: 'switched', at: 600 }], tasks: [{ facts: [FACT('needs', 200), FACT('needs', 200, 'closed'), FACT('needs', 50), FACT('decisions', 300), FACT('now', 400), FACT('done', 450), FACT('done', 10), FACT('next', 900)] }, { facts: [FACT('decisions', 120)] }] };
 
 test('since you last looked counts what is newer than the stored time, per kind', () => {
     assert.deepEqual(seen.since(doc, 100), { seen: 100, need: 1, dec: 2, fact: 2, comp: 1 });

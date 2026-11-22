@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import { instant, type AccomplishmentEstablished, type Engine, type LedgerEvent, type RecapWritten, type TurnRecorded } from '@stateforge-labs/session-ledger';
+import { instant, type AccomplishmentEstablished, type Engine, type Entry, type LedgerEvent, type RecapWritten, type TurnRecorded } from '@stateforge-labs/session-ledger';
 import type { Case } from '../run.ts';
 import { followed, key, scope, session } from '../ids.ts';
 import type { EngineWorld } from '../world.ts';
+import { text } from '../values.ts';
 import { addOf, causeOf, chunkOf, countOf, NO_OPS, spoken, writtenOps } from './support.ts';
 
 const TAB = scope('one');
@@ -21,10 +22,10 @@ const writtenOf = (world: EngineWorld): readonly RecapWritten[] => world.events(
 const turnsOf = (world: EngineWorld): readonly TurnRecorded[] => world.events().filter(isKind('turn-recorded'));
 const accomplishmentsOf = (world: EngineWorld): readonly AccomplishmentEstablished[] => world.events().filter(isKind('accomplishment-established'));
 
-const TWO_USER = [
-    { role: 'user' as const, text: 'one', at: 10 },
-    { role: 'user' as const, text: 'two', at: 20 },
-    { role: 'user' as const, text: 'queued', at: 30, queued: true },
+const TWO_USER: readonly Entry[] = [
+    { role: 'user', text: text('one'), at: instant(10) },
+    { role: 'user', text: text('two'), at: instant(20) },
+    { role: 'user', text: text('queued'), at: instant(30), queued: true },
 ];
 
 export const EVT_CASES: readonly Case<EngineWorld, Engine>[] = [

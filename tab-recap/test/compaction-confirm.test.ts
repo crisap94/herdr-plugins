@@ -4,23 +4,25 @@ import assert from 'node:assert/strict';
 import { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { outcomeOf } from '#src/recap/application/compaction-outcome.ts';
 import type { OutcomeDeps } from '#src/recap/application/compaction-outcome.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant, duration } from '#src/recap/domain/time.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Mark, Transcripts } from '#src/ports/transcripts.ts';
-import { UNREAD } from '#src/ports/transcripts.ts';
+import { UNREAD, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
+import { countOf } from '#src/recap/domain/count.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
 
 const SINCE = Date.parse('2026-10-10T02:21:48Z');
-const compactedAt = (at: number): Mark => ({ kind: 'compacted', at, tokensBefore: 54_709, tokensAfter: 4_460, tookMs: 4_000 });
+const compactedAt = (at: number): Mark => ({ kind: 'compacted', at: instant(at), tokensBefore: countOf(54_709), tokensAfter: countOf(4_460), tookMs: duration(4_000) });
 
 function claude(files: ReadonlyMap<string, readonly Mark[]>): Transcripts {
     return {
-        agent: 'claude',
+        agent: agentKind('claude'),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-        locate: (lane: Lane) => Promise.resolve(lane.session === null ? unknown({ why: 'not-found', what: 'a session id' }) : { kind: 'located' as const, source: `/projects/x/${lane.session}.jsonl` }),
-        read: (source) => Promise.resolve({ kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], marks: files.get(source) ?? [], position: UNREAD, grew: false }),
+        locate: (lane: Lane) => Promise.resolve(lane.session === null ? unknown({ why: 'not-found', what: 'a session id' }) : { kind: 'located' as const, source: sourcePathOf(`/projects/x/${lane.session}.jsonl`) }),
+        read: (source) => Promise.resolve({ kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], marks: files.get(source) ?? [], position: UNREAD, grew: grewOf(false) }),
         latestPrompt: () => Promise.resolve({ kind: 'prompt', text: null }),
     };
 }

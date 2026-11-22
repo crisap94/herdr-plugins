@@ -1,5 +1,5 @@
 import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { en } from '#src/i18n/en.ts';
 import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
@@ -17,6 +17,7 @@ import type { LaneSettling } from '#src/ports/lane-settling.ts';
 import { memoryStore } from '#test/db/support.ts';
 import { lineBreakRefusal } from '#test/fakes/typed-line.ts';
 import { oneTask } from '#test/support.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 export const lane = (pane: string, agent: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent });
 export const CLAUDE_CODEX_GEMINI = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'gemini')];
@@ -67,8 +68,8 @@ export function typingFleet(statuses: Record<string, string>, blocked: readonly 
 }
 
 export const NOW = Date.parse('2026-10-07T10:00:00Z');
-export const compacted: Mark = { kind: 'compacted', at: NOW + 5000 };
-export const failed: Mark = { kind: 'compaction-failed', at: NOW + 5000 };
+export const compacted: Mark = { kind: 'compacted', at: instant(NOW + 5000) };
+export const failed: Mark = { kind: 'compaction-failed', at: instant(NOW + 5000) };
 
 export function compactionDeps(world: Fleet, setting = 'focused', focused: string | null = 'w1:p1', reads: readonly (readonly Mark[])[] = [[]], lanes: readonly Lane[] = CLAUDE_CODEX_GEMINI): CompactionDeps {
     let looked = 0;
@@ -83,7 +84,7 @@ export function compactionDeps(world: Fleet, setting = 'focused', focused: strin
         compactions: world.store.compactions,
         settling: world.settling,
         brief: { enabled: () => 'absent', job: () => null, write: () => Promise.resolve({ text: null, why: must(parseText('the job is off')) }) },
-        recent: () => Promise.resolve([{ role: 'user', text: 'run the tests' }]),
+        recent: () => Promise.resolve([{ role: 'user', text: textOf('run the tests') }]),
         now: () => NOW,
         marks: () => { const shown = reads[Math.min(looked, reads.length - 1)] ?? []; looked += 1; return Promise.resolve(shown); },
         pause: (ms) => { world.pauses.push(ms); return Promise.resolve(); },

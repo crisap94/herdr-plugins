@@ -119,10 +119,10 @@
     "return": 1
   },
   "src/adapters/transcripts/claude/legacy.ts": {
-    "legacy": 19
+    "legacy": 17
   },
   "src/adapters/transcripts/codex/legacy.ts": {
-    "legacy": 22
+    "legacy": 20
   },
   "src/adapters/transcripts/context-values.ts": {
     "parameter": 1,

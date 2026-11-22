@@ -8,6 +8,7 @@ import type { LaneWeb, TabLane, TabView } from '#src/ports/tab-views.ts';
 import type { Messages } from '#src/i18n/messages.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
+import { sourcePathOf } from '#src/ports/transcripts.ts';
 
 export interface PluginColumnView extends Omit<ColumnView<string>, 'rows' | 'daemonVersion' | 'recap' | 'wording' | 'compactions'> {
     readonly tab: TabView | null;
@@ -48,7 +49,7 @@ export function rowOf(lane: TabLane, cursor: LaneCursor | undefined): Row {
         state: laneStatus(lane.status),
         title: maybe(lane.title, parseTitle),
         cwd: maybe(lane.cwd, parseDirectory),
-        fromScreen: parseFromScreen(cursor !== undefined && isScreenSource(cursor.transcript)),
+        fromScreen: parseFromScreen(cursor !== undefined && isScreenSource(sourcePathOf(cursor.transcript))),
         harnessRecap: maybe(cursor?.claudeRecap ?? null, parseProse),
     };
 }
