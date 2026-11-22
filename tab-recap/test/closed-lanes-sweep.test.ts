@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { forgetClosedTabs } from '#src/recap/application/retention.ts';
 import type { SweepDeps } from '#src/recap/application/retention.ts';
 import type { ClosureSweep } from '#src/ports/closed-lanes.ts';
-import type { Removed, Retention } from '#src/ports/retention.ts';
+import type { RemovedCounts, RetentionPort } from '#src/ports/retention.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -14,15 +14,15 @@ import type { Instant } from '#src/recap/domain/time.ts';
 const DAY = 86_400_000;
 const NOW = instant(100 * DAY);
 
-const taken: Removed = { runs: 1, chapters: 1, boundaries: 0, compactions: 0, facts: 0 };
+const taken: RemovedCounts = { runs: countFrom(1), chapters: countFrom(1), boundaries: countFrom(0), compactions: countFrom(0), facts: countFrom(0) };
 
-function fakeRetention(old: readonly TabId[], failing: readonly TabId[] = []): { readonly retention: Retention; readonly removed: string[] } {
+function fakeRetention(old: readonly TabId[], failing: readonly TabId[] = []): { readonly retention: RetentionPort; readonly removed: string[] } {
     const removed: string[] = [];
     return {
         removed,
         retention: {
-            expired: (_cutoff: number, protectedTabs: readonly TabId[]): readonly TabId[] => old.filter((tab) => !protectedTabs.includes(tab)),
-            remove: (tab: string): Removed => {
+            expired: (_cutoff: Instant, protectedTabs: readonly TabId[]): readonly TabId[] => old.filter((tab) => !protectedTabs.includes(tab)),
+            remove: (tab: TabId): RemovedCounts => {
                 if (failing.some((id) => id === tab)) {
                     throw new Error('locked');
                 }
@@ -46,7 +46,7 @@ function fakeClosures(options: { readonly protectedNow?: readonly TabId[]; reado
     };
 }
 
-function deps(retention: Retention, closures: ClosureSweep, days: number, lines: string[]): SweepDeps {
+function deps(retention: RetentionPort, closures: ClosureSweep, days: number, lines: string[]): SweepDeps {
     return { retention, closures, clock: { now: (): Instant => NOW }, days: () => days, log: (line) => { lines.push(line); } };
 }
 

@@ -6,7 +6,7 @@ import { AutocompactBriefsRepository } from '#src/adapters/db/legacy.ts';
 import { ColumnVisibilityRepository } from '#src/adapters/db/column-visibility.ts';
 import { encode } from '#src/adapters/db/checked-fact-codec.ts';
 import { MEMORY } from '#src/adapters/db/connection.ts';
-import { HandoffAnswersRepository } from '#src/adapters/db/legacy.ts';
+import { HandoffAnswerRepository } from '#src/adapters/db/handoff-answers.ts';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { idOf, typeIdOf } from '#src/adapters/db/typeid.ts';
@@ -15,6 +15,7 @@ import { must } from '#src/protocol/result.ts';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 import { parseText } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { rid } from '../fakes/ask-ledger.ts';
 import { expectSameEffect, normalise } from './parity.ts';
 
@@ -58,7 +59,7 @@ describe('parity: handoff answers', () => {
         expectSameEffect({
             seed: exec(ANSWER_SEED),
             raw: (db) => { db.prepare('INSERT INTO handoff_answer (id, at, outcome, reason) VALUES (?, ?, ?, ?)').run(keyOf(3), 42, 'delivered', null); },
-            builder: (db) => new HandoffAnswersRepository(db, () => 42).answerHandoff(handoffIdOf(keyOf(3)), { kind: 'delivered' }),
+            builder: (db) => new HandoffAnswerRepository(db, () => instant(42)).answerHandoff(handoffIdOf(keyOf(3)), { kind: 'delivered' }),
             dump: dumpOf(ANSWER_DUMP),
         });
     });
@@ -71,7 +72,7 @@ describe('parity: handoff answers', () => {
                     db.prepare('INSERT INTO handoff_answer (id, at, outcome, reason) VALUES (?, ?, ?, ?)').run(keyOf(1), 42, 'delivered', null);
                 }
             },
-            builder: (db) => new HandoffAnswersRepository(db, () => 42).answerHandoff(handoffIdOf(keyOf(1)), { kind: 'delivered' }),
+            builder: (db) => new HandoffAnswerRepository(db, () => instant(42)).answerHandoff(handoffIdOf(keyOf(1)), { kind: 'delivered' }),
             dump: dumpOf(ANSWER_DUMP),
         });
     });
@@ -80,7 +81,7 @@ describe('parity: handoff answers', () => {
         expectSameEffect({
             seed: exec(ANSWER_SEED),
             raw: (db) => { db.prepare('DELETE FROM handoff_answer WHERE at < ?').run(10); },
-            builder: (db) => new HandoffAnswersRepository(db).prune(10),
+            builder: (db) => new HandoffAnswerRepository(db).prune(instant(10)),
             dump: dumpOf(ANSWER_DUMP),
         });
     });
@@ -88,7 +89,7 @@ describe('parity: handoff answers', () => {
     test('handoffAnswer reads the stored row and null for an unknown id', () => {
         const db = memory(exec(ANSWER_SEED));
         try {
-            const repo = new HandoffAnswersRepository(db);
+            const repo = new HandoffAnswerRepository(db);
             assert.deepStrictEqual(normalise(repo.handoffAnswer(handoffIdOf(keyOf(1)))), normalise({ kind: 'refused', reason: 'task-ambiguous', id: handoffIdOf(keyOf(1)), at: 5 }));
             assert.equal(repo.handoffAnswer(handoffIdOf(keyOf(9))), null);
         } finally {

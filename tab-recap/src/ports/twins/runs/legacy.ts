@@ -5,7 +5,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import type { BackgroundItem } from '#src/recap/domain/in-flight.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
-import type { StoredHandoffOutcome, HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
+import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffPlanResult } from '#src/recap/domain/handoff-plan.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
@@ -36,19 +36,6 @@ export interface TabLayout {
 export type LayoutResult = TabLayout | Unknown;
 
 export type ClosedAll = { readonly kind: 'closed'; readonly closed: number; readonly failed: number } | Unknown;
-
-export interface HandoffAnswerRow {
-    readonly kind: StoredHandoffOutcome['kind'];
-    readonly reason: string | null;
-    readonly id: HandoffId;
-    readonly at: number;
-}
-
-export interface HandoffAnswers {
-    answerHandoff(id: HandoffId, outcome: StoredHandoffOutcome): void;
-    handoffAnswer(id: HandoffId): HandoffAnswerRow | null;
-    prune(before: number): void;
-}
 
 export interface HandoffPlans {
     forKind(rawKind: string): HandoffPlanResult;
@@ -191,17 +178,4 @@ export interface Requests extends HandoffRequester, HandoffResponder {
 
 export interface CompactionQueue {
     compactQueued(tab: TabId, pane: PaneId): boolean;
-}
-
-export interface Removed {
-    readonly runs: number;
-    readonly chapters: number;
-    readonly boundaries: number;
-    readonly compactions: number;
-    readonly facts: number;
-}
-
-export interface Retention {
-    expired(cutoff: number, protectedTabs: readonly TabId[]): readonly TabId[];
-    remove(tab: TabId): Removed;
 }

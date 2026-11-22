@@ -4,14 +4,12 @@ import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
 import type { AnswerTally, AutocompactRecords, CoverageAmendment, Decision, DecisionCounts, LastDecision, LinkedDecision, PaneKey, Skip, StoredDecision, StoredDecisionRow } from '#src/ports/autocompact-records.ts';
 import type { Boundaries, BoundaryBreak, Break } from '#src/ports/boundaries.ts';
 import type { ActiveStage, BeginCompaction, CompactionEnd, CompactionRecord, CompactionRecords, CompactionRow, StageFacts } from '#src/ports/compaction-records.ts';
-import type { HandoffAnswerRow, HandoffAnswers } from '#src/ports/handoff-answers.ts';
 import type { ExchangeName, RequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import type { CheckedFact } from '#src/recap/domain/autocompact.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseFactIndex } from '#src/recap/domain/fact-index.ts';
-import type { StoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { agentKind, paneId, parseCompactionId, parseDecisionId, parsePaneId, parseTabId, tabId, type CompactionId, type DecisionId, type HandoffId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import { parseProbability, type Probability } from '#src/recap/domain/probability.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
@@ -23,7 +21,6 @@ import { DecisionBriefsRepository } from './autocompact-briefs.ts';
 import { DecisionLedgerRepository } from './autocompact-records.ts';
 import { BoundaryLogRepository } from './boundary-read.ts';
 import { CompactionLogRepository } from './compaction-records.ts';
-import { HandoffAnswerRepository } from './handoff-answers.ts';
 import { RequestsStore } from './requests.ts';
 
 const textOf = (raw: string | null | undefined): Text | null => (raw === null || raw === undefined ? null : must(parseText(raw)));
@@ -153,18 +150,6 @@ export class CompactionRecordsRepository implements CompactionRecords {
     interrupted(at: number, why: string): number { return this.log.interrupted(instant(at), must(parseText(why))); }
     autoInProgress(): boolean { return this.log.autoInProgress() === 'auto-in-progress'; }
     shownFor(tab: string): readonly CompactionRecord[] { const id = parseTabId(tab); return id.kind === 'ok' ? this.log.shownFor(id.value).map(compactionRecordOf) : []; }
-}
-
-export class HandoffAnswersRepository implements HandoffAnswers {
-    private readonly store: HandoffAnswerRepository;
-
-    constructor(db: Database, now: () => number = Date.now) {
-        this.store = new HandoffAnswerRepository(db, () => instant(now()));
-    }
-
-    answerHandoff(id: HandoffId, outcome: StoredHandoffOutcome): void { this.store.answerHandoff(id, outcome); }
-    handoffAnswer(id: HandoffId): HandoffAnswerRow | null { return this.store.handoffAnswer(id); }
-    prune(before: number): void { this.store.prune(instant(before)); }
 }
 
 export class RequestsRepository implements Requests, CompactionQueue {

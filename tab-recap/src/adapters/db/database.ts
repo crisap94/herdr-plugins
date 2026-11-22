@@ -11,7 +11,7 @@ import type { RunInputs } from '#src/ports/run-inputs.ts';
 import type { Verdicts } from '#src/ports/verdicts.ts';
 import type { SessionSource } from '#src/ports/session-source.ts';
 import type { Stories } from '#src/ports/stories.ts';
-import type { Retention, TabRetirement } from '#src/ports/retention.ts';
+import type { RetentionPort, TabRetirement } from '#src/ports/retention.ts';
 import type { ClosureReader, ClosureRecorder, ClosureRuns, ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { LiveLanes, TabViews } from '#src/ports/tab-views.ts';
 import { ClosedLanesRepository } from './closed-lanes.ts';
@@ -23,7 +23,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { DEFAULT_CLOSED_LANE_DAYS } from '#src/recap/domain/retention.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
-import { AskLedgerRepository, AutocompactBriefsRepository, AutocompactRecordsRepository, BoundaryRepository, CompactionRecordsRepository, HandoffAnswersRepository } from './legacy.ts';
+import { AskLedgerRepository, AutocompactBriefsRepository, AutocompactRecordsRepository, BoundaryRepository, CompactionRecordsRepository } from './legacy.ts';
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
 import { ColumnVisibilityRepository } from './column-visibility.ts';
 import { LedgerRepository } from './ledger.ts';
@@ -40,7 +40,8 @@ import { SessionSourceRepository } from './session-source/legacy.ts';
 import { StoriesRepository } from './stories.ts';
 import { RetentionRepository } from './retention.ts';
 import { TabViewsRepository } from './tab-views/legacy.ts';
-import type { HandoffAnswers } from '#src/ports/handoff-answers.ts';
+import type { HandoffAnswerStore } from '#src/ports/handoff-answers.ts';
+import { HandoffAnswerRepository } from './handoff-answers.ts';
 import type { PaneNoteReader, PaneNoteWriter, WorktreeStatusReader, WorktreeStatusWriter } from '#src/ports/worktree-status.ts';
 import type { PaneAlertReader, PaneAlertWriter } from '#src/ports/pane-alerts.ts';
 import { PaneAlertsRepository } from './pane-alerts.ts';
@@ -55,7 +56,7 @@ export interface Store {
     readonly views: TabViews & LiveLanes;
     readonly visibility: ColumnVisibility;
     readonly requests: Requests & CompactionQueue;
-    readonly handoffs: HandoffAnswers;
+    readonly handoffs: HandoffAnswerStore;
     readonly compactions: CompactionRecords;
     readonly asks: AskLedger;
     readonly autocompact: AutocompactRecords;
@@ -66,7 +67,7 @@ export interface Store {
     readonly stories: Stories;
     readonly session: SessionSource;
     readonly boundaries: Boundaries;
-    readonly retention: Retention & TabRetirement;
+    readonly retention: RetentionPort & TabRetirement;
     readonly closedLanes: ClosureRecorder & ClosureReader & ClosureRuns & ClosureSweep;
     readonly closedDays: ClosedLaneDays;
     readonly worktrees: WorktreeStatusWriter & WorktreeStatusReader;
@@ -87,7 +88,7 @@ export function storeOver(db: Database, options: StoreSettings = {}): Store {
     const ledger = new LedgerRepository(db);
     return {
         kind: 'ready', db, records: new RecapRecordsRepository(db), ledger, views: new TabViewsRepository(db, options.daemonVersion ?? null),
-        visibility: new ColumnVisibilityRepository(db), requests: new RequestsRepository(db, options.now), handoffs: new HandoffAnswersRepository(db, options.now), compactions: new CompactionRecordsRepository(db), asks: new AskLedgerRepository(db, options.log), autocompact: new AutocompactRecordsRepository(db), decisions: new DecisionLedgerRepository(db), autocompactBriefs: new AutocompactBriefsRepository(db),
+        visibility: new ColumnVisibilityRepository(db), requests: new RequestsRepository(db, options.now), handoffs: new HandoffAnswerRepository(db, options.now), compactions: new CompactionRecordsRepository(db), asks: new AskLedgerRepository(db, options.log), autocompact: new AutocompactRecordsRepository(db), decisions: new DecisionLedgerRepository(db), autocompactBriefs: new AutocompactBriefsRepository(db),
         inputs: new RunInputsRepository(db), verdicts: new VerdictsRepository(db),
         stories: new StoriesRepository(db, ledger), session: new SessionSourceRepository(db),
         boundaries: new BoundaryRepository(db), retention: new RetentionRepository(db),

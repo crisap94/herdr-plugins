@@ -7,7 +7,7 @@ import type { Fleet } from '#src/ports/fleet.ts';
 import { GitWorksiteReader } from '#src/adapters/git/worksite.ts';
 import { TranscriptInFlight } from '#src/adapters/transcripts/in-flight.ts';
 import { LOCAL_REQUESTER, type Ask, type AskKey, type AskLedger } from '#src/ports/ask-ledger.ts';
-import type { HandoffAnswers } from '#src/ports/handoff-answers.ts';
+import type { HandoffAnswerStore } from '#src/ports/handoff-answers.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
@@ -43,7 +43,7 @@ import { within } from './bounded.ts';
 export interface HandoffRunnerDeps {
     readonly flow: Pick<HandoffFlow, 'execute'>;
     readonly asks: AskLedger;
-    readonly answers: HandoffAnswers;
+    readonly answers: HandoffAnswerStore;
     readonly claims: Pick<LaneClaims, 'release'>;
     readonly mirror: HandoffMirror;
     readonly transaction: <T>(work: () => T) => T;
@@ -197,7 +197,7 @@ interface HandoffPollParts {
 }
 
 interface HandoffPruneParts {
-    readonly answers: Pick<HandoffAnswers, 'prune'>;
+    readonly answers: Pick<HandoffAnswerStore, 'prune'>;
     readonly now: () => Instant;
 }
 
@@ -214,7 +214,7 @@ async function pollOnce(parts: HandoffPollParts): Promise<void> {
 }
 
 export function pruneHandoffAnswers(parts: HandoffPruneParts): void {
-    parts.answers.prune(parts.now() - HANDOFF_ANSWER_TTL_MS);
+    parts.answers.prune(instant(parts.now() - HANDOFF_ANSWER_TTL_MS));
 }
 
 export function handoffRestartOf(runner: Pick<HandoffRunner, 'interrupted'>): (ask: Ask) => void {

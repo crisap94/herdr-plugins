@@ -2,11 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryRequests } from './fakes/requests.ts';
 import { MemoryHandoffAnswers } from './fakes/handoff-answers.ts';
-import type { HandoffAnswerRow } from '#src/ports/handoff-answers.ts';
+import type { HandoffAnswerRecord } from '#src/ports/handoff-answers.ts';
 import { deliverHandoff, type DeliverDeps, type DeliverRequest, type DaemonReading } from '#src/recap/application/handoff-request.ts';
 import { paneId, type HandoffId } from '#src/recap/domain/ids.ts';
 import { NOW } from './fakes/handoff-flow-harness.ts';
 import { HANDOFF_POLL_MS, HANDOFF_WAIT_MS, HANDOFF_WAIT_REFRESH_MS } from '#src/recap/application/handoff-limits.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { must } from '#src/protocol/result.ts';
 
 const SOURCE = paneId('w1:p1');
 const TARGET = paneId('w1:p2');
@@ -148,7 +151,7 @@ test('an answer written between the last poll and the withdrawal is reported, no
 
 test('an answer row whose pair the outcome table does not know is reported as internal-error', async () => {
     const s = setup({ tabs: TABS });
-    s.answers.handoffAnswer = (id: HandoffId): HandoffAnswerRow => ({ id, at: NOW, kind: 'failed', reason: 'not-a-reason' });
+    s.answers.handoffAnswer = (id: HandoffId): HandoffAnswerRecord => ({ id, at: instant(NOW), kind: 'failed', reason: must(parseText('not-a-reason')) });
     assert.deepEqual(await deliverHandoff(request(), s.deps), { kind: 'failed', reason: 'internal-error' });
 });
 

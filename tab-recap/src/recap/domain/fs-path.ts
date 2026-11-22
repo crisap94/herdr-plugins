@@ -5,6 +5,8 @@ import { parseNonEmptyText } from '@stateforge-labs/session-ledger/unstable/reca
 
 export type FsPath = Brand<string, 'FsPath'>;
 
+export const fsPathOf = brand<string, 'FsPath'>;
+
 const NUL = '\u0000';
 
 export function parseFsPath(input: unknown): Result<FsPath, ParseFailure> {

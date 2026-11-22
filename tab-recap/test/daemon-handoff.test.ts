@@ -19,7 +19,7 @@ import type { HandoffRequestRow } from '#src/ports/requests.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { parseRequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
-import type { HandoffAnswers } from '#src/ports/handoff-answers.ts';
+import type { HandoffAnswerStore } from '#src/ports/handoff-answers.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
 import { memoryStore } from './db/support.ts';
 import { MemoryAskLedger } from './fakes/ask-ledger.ts';
@@ -203,10 +203,10 @@ test('a flow that never finishes after typing is answered unconfirmed at the bou
     assert.deepEqual(probe.released, []);
 });
 
-function flakyAnswers(failing: (id: HandoffId, times: number) => boolean): { readonly answers: HandoffAnswers; readonly inner: MemoryHandoffAnswers } {
+function flakyAnswers(failing: (id: HandoffId, times: number) => boolean): { readonly answers: HandoffAnswerStore; readonly inner: MemoryHandoffAnswers } {
     const inner = new MemoryHandoffAnswers(() => NOW);
     const attempts = new Map<string, number>();
-    const answers: HandoffAnswers = {
+    const answers: HandoffAnswerStore = {
         answerHandoff: (id, outcome): void => {
             const times = (attempts.get(String(id)) ?? 0) + 1;
             attempts.set(String(id), times);

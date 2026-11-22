@@ -3,8 +3,6 @@ import type { HandoffId } from '#src/recap/domain/ids.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 
-export type { HandoffAnswerRow, HandoffAnswers } from './twins/runs/legacy.ts';
-
 export interface HandoffAnswerRecord {
     readonly kind: StoredHandoffOutcome['kind'];
     readonly reason: Text | null;
