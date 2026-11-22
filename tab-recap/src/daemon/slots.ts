@@ -12,6 +12,7 @@ import type { Clock } from '#src/ports/clock.ts';
 import type { PreCompacts } from '#src/adapters/hooks/pre-compacts.ts';
 import type { IdleClaim } from '#src/recap/application/autocompact.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
+import type { Candidate } from '@stateforge-labs/session-ledger/compaction-timing';
 import type { Viewers } from './view/viewers.ts';
 import { brand, type Brand } from '#src/recap/domain/brand.ts';
 
@@ -42,6 +43,8 @@ export interface SlotContext {
     readonly observe: (observation: Observation) => void;
     readonly statuses: (listener: (event: StatusEvent) => void) => () => void;
     readonly ledger: (listener: (event: LedgerEvent) => void) => () => void;
+    readonly candidates: () => readonly Candidate[];
+    readonly consider: (candidate: Candidate) => Promise<void>;
     readonly clock: Clock;
     readonly viewers: Viewers;
     readonly preCompacts: PreCompacts;
