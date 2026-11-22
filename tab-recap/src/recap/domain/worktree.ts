@@ -137,7 +137,7 @@ export function movesOf(known: ReadonlyMap<PaneId, LaneGlance>, lanes: ReadonlyM
         if (before === undefined || before.cwd !== lane.cwd) {
             attach.push({ pane, cwd: lane.cwd });
         }
-        if (before !== undefined && endsTurn(before.status, lane.status)) {
+        if (before !== undefined && endsTurn(before.status, lane.status) === 'present') {
             ended.push(pane);
         }
     }

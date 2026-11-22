@@ -79,7 +79,7 @@ const omittedLineOf = (text: string): RegExpExecArray | null => /^(\d+) facts om
 const filler = (size: number): string => 'x'.repeat(size);
 
 const WORKSITE_BLOCK = worksiteTextOf(
-    { kind: 'known', directory: 'w'.repeat(HANDOFF_WORKSITE_BYTES - '## Worksite\n- directory: '.length), repository: null, lastCommit: null, uncommitted: null, edited: [], tokens: [] },
+    { kind: 'known', directory: brand<string, 'Directory'>('w'.repeat(HANDOFF_WORKSITE_BYTES - '## Worksite\n- directory: '.length)), repository: null, lastCommit: null, uncommitted: null, edited: [], tokens: [] },
     byteBudgetOf(HANDOFF_WORKSITE_BYTES),
 );
 

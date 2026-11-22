@@ -25,7 +25,7 @@ import { instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import type { LaneEvents } from './lane-events.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { countOf, parseCount } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 
@@ -208,7 +208,7 @@ export class LaneDispatch {
             this.failed(tab, must(parseText(saying(opened.why))));
             return;
         }
-        const cells = shape === 'side' ? targetCols(layout.width, this.deps.sizing()) : BAR_ROWS;
+        const cells = shape === 'side' ? targetCols(countOf(layout.width), this.deps.sizing()) : BAR_ROWS;
         const counted = parseCount(cells);
         if (counted.kind === 'ok') {
             await this.narrow(tab, opened.pane, axis, counted.value);

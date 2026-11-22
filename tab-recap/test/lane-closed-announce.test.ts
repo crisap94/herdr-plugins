@@ -19,6 +19,7 @@ import type { ClosureRecorder } from '#src/ports/closed-lanes.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
+import { SIZING } from './fakes/layout-values.ts';
 
 const noop = (): void => undefined;
 const noWebs = { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) };
@@ -47,7 +48,7 @@ function recorder(): { readonly records: ClosedLane[]; readonly port: ClosureRec
 function dispatchWith(options: { readonly events?: LaneEvents; readonly sharing?: boolean; readonly closures?: ClosureRecorder; readonly days: string; readonly log: (line: string) => void }): Dispatch {
     return new Dispatch({
         columns: {} as Columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() },
-        prompts: noPrompts, webs: noWebs, log: options.log, board: () => emptyBoard(), sizing: () => ({ fraction: 0.3, minCols: 36, maxCols: 64 }),
+        prompts: noPrompts, webs: noWebs, log: options.log, board: () => emptyBoard(), sizing: () => SIZING,
         feedback: noop, ...silentClosures, closedDays: () => closedLaneDaysOf(options.days),
         ...(options.closures === undefined ? {} : { closures: options.closures }),
         ...(options.events === undefined ? {} : { events: options.events }),

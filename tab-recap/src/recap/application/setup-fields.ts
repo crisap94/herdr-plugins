@@ -45,7 +45,7 @@ export const CHOICES: Readonly<Partial<Record<FieldId, ChoiceField>>> = {
 
 export const TEXTS: Readonly<Partial<Record<FieldId, TextField>>> = {
     recapLanguage: { read: (draft) => draft.recapLanguage, keep: (draft, typed): Draft => ({ ...draft, recapLanguage: languageSetting(typed) }) },
-    screenAgents: { read: (draft) => draft.screenAgents, keep: (draft, typed): Draft => ({ ...draft, screenAgents: screenSetting(typed) }) },
+    screenAgents: { read: (draft) => draft.screenAgents, keep: (draft, typed): Draft => ({ ...draft, screenAgents: screenSetting(textOf(typed)) }) },
     compactTarget: { read: (draft) => draft.compactTarget, keep: (draft, typed): Draft => ({ ...draft, compactTarget: targetSetting(textOf(typed)) }) },
     compactHint: { read: (draft) => draft.compactHint, keep: (draft, typed): Draft => ({ ...draft, compactHint: hintSetting(textOf(typed)) }) },
     contextWindow: { read: (draft) => draft.contextWindow, keep: (draft, typed): Draft => ({ ...draft, contextWindow: windowSetting(textOf(typed)) }) },

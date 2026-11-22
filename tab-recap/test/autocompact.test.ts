@@ -23,6 +23,7 @@ import { causeOf } from './fakes/cause.ts';
 import { must } from './db/support.ts';
 import { NOW, SAFE, lane, rows, world } from './autocompact-world.ts';
 import { decidedOf } from './fakes/decider-fixtures.ts';
+import { SIZING } from './fakes/layout-values.ts';
 
 test('on: a safe moment between the limits is recorded, logged with its figures and requested once with origin auto', async () => {
     const w = world();
@@ -198,7 +199,7 @@ test('dispatch: a read-prompt of a lane that is idle or done tells the settled h
     const dispatch = new Dispatch({
         columns: {} as Columns, views: { writeTab: (): void => undefined } as unknown as TabViews, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() },
         prompts: { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) }, webs: { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) }, log: (): void => undefined,
-        board: (): Board => board, sizing: (): Sizing => ({ fraction: 0.3, minCols: 36, maxCols: 64 }), feedback: (): void => undefined, settled: (found): void => { told.push(`${found.pane}:${found.status}`); },
+        board: (): Board => board, sizing: (): Sizing => SIZING, feedback: (): void => undefined, settled: (found): void => { told.push(`${found.pane}:${found.status}`); },
         ...silentClosures,
     });
     for (const status of ['idle', 'done', 'working', 'blocked']) await dispatch.send({ kind: 'read-prompt', lane: lane('claude', status) });

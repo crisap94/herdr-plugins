@@ -1,3 +1,4 @@
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -76,13 +77,13 @@ test('ScreenTranscripts: an unreadable pane is the reader\'s Unknown, and a scre
 
 test('policy: opencode gets a column by default; the screen agents add kinds and `all` is a wildcard', () => {
     assert.deepEqual(DEFAULT_POLICY.kinds, ['claude', 'codex', 'opencode']);
-    assert.equal(wantsKind(DEFAULT_POLICY, 'opencode'), true);
-    assert.equal(wantsKind(DEFAULT_POLICY, 'gemini'), false);
-    assert.equal(wantsKind({ ...DEFAULT_POLICY, kinds: ['*'] }, 'gemini'), true);
-    assert.deepEqual(screenKindsOf('Gemini, qwen  copilot!'), ['gemini', 'qwen', 'copilot']);
-    assert.deepEqual(screenKindsOf('gemini, ALL'), ['*']);
+    assert.equal(wantsKind(DEFAULT_POLICY, textOf('opencode')), 'present');
+    assert.equal(wantsKind(DEFAULT_POLICY, textOf('gemini')), 'absent');
+    assert.equal(wantsKind({ ...DEFAULT_POLICY, kinds: [textOf('*')] }, textOf('gemini')), 'present');
+    assert.deepEqual(screenKindsOf(textOf('Gemini, qwen  copilot!')), ['gemini', 'qwen', 'copilot']);
+    assert.deepEqual(screenKindsOf(textOf('gemini, ALL')), ['*']);
     assert.deepEqual(screenKindsOf(undefined), []);
-    assert.deepEqual([screenSetting('gemini,,qwen'), screenSetting('all'), screenSetting('')], ['gemini,qwen', 'all', '']);
+    assert.deepEqual([screenSetting(textOf('gemini,,qwen')), screenSetting(textOf('all')), screenSetting(textOf(''))], ['gemini,qwen', 'all', '']);
 });
 
 test('loadConfig: TAB_RECAP_SCREEN_AGENTS widens the policy and says which kinds are read from the screen', () => {
@@ -97,7 +98,7 @@ test('loadConfig: TAB_RECAP_SCREEN_AGENTS widens the policy and says which kinds
         writeFileSync(join(dir, 'config.env'), 'TAB_RECAP_SCREEN_AGENTS=gemini, qwen\n');
         assert.deepEqual([loadConfig().policy.kinds, loadConfig().screenAgents], [['claude', 'codex', 'opencode', 'gemini', 'qwen'], ['gemini', 'qwen']]);
         process.env['TAB_RECAP_SCREEN_AGENTS'] = 'all';
-        assert.deepEqual([loadConfig().policy.kinds.includes('*'), loadConfig().screenAgents], [true, ['*']]);
+        assert.deepEqual([loadConfig().policy.kinds.includes(textOf('*')), loadConfig().screenAgents], [true, ['*']]);
         process.env['TAB_RECAP_AGENTS'] = 'claude';
         assert.deepEqual(loadConfig().policy.kinds, ['claude', '*']);
     } finally {

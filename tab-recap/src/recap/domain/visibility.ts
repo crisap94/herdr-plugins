@@ -1,10 +1,16 @@
 import { added, removed, without } from './board.ts';
 import type { Board, HiddenState, Visibility, VisibilityTarget } from './board.ts';
+import { uncheckedTabId } from './ids.ts';
 import type { TabId } from './ids.ts';
 import type { Presence } from './presence.ts';
-import { isHidden } from './twins/visibility/legacy.ts';
 
-export * from './twins/visibility/legacy.ts';
+export function isHidden(board: Board, tab: TabId): Presence {
+    return (board.allHidden ? !board.shown.has(tab) : board.hidden.has(tab)) ? 'present' : 'absent';
+}
+
+export function restoreHidden(board: Board, state: HiddenState): Board {
+    return { ...board, allHidden: state.all, hidden: new Set(state.hidden.map(uncheckedTabId)), shown: new Set(state.shown.map(uncheckedTabId)) };
+}
 
 function forgiven(board: Board, tab: TabId): Board {
     return { ...board, reopens: without(board.reopens, tab), givenUp: without(board.givenUp, tab) };
@@ -14,7 +20,7 @@ function resolved(board: Board, target: VisibilityTarget, change: Visibility): P
     if (change !== 'toggle') {
         return change ? 'present' : 'absent';
     }
-    const toggled = target === 'all' ? !board.allHidden : !isHidden(board, target.tab);
+    const toggled = target === 'all' ? !board.allHidden : isHidden(board, target.tab) === 'absent';
     return toggled ? 'present' : 'absent';
 }
 

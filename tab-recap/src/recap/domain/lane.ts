@@ -5,7 +5,7 @@ import type { LaneStatus } from './status.ts';
 import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import { parseDirectory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
 import type { Directory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
-import { parseText, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { parseText, textOf, type Text } from './text.ts';
 import type { SeenLane } from './twins/lane/legacy.ts';
 
 export type { SeenLane } from './twins/lane/legacy.ts';
@@ -31,7 +31,7 @@ export function laneFrom(seen: SeenLane): Lane {
         tab: tabId(seen.tabId),
         workspace: workspaceId(seen.workspaceId),
         agent: agentKind(seen.agent),
-        status: laneStatus(seen.status),
+        status: laneStatus(seen.status === undefined || seen.status === null ? seen.status : textOf(seen.status)),
         session: session.kind === 'ok' && session.value.trim() !== '' ? sessionId(session.value) : null,
         cwd: cwd.kind === 'ok' ? cwd.value : null,
         title: title.kind === 'ok' && title.value.trim() !== '' ? title.value : null,

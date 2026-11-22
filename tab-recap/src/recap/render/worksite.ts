@@ -3,7 +3,7 @@ import { fits, type ByteBudget } from '#src/recap/domain/byte-budget.ts';
 import { brand, type Brand } from '#src/recap/domain/brand.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { sanitizeHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import type { WorksiteFacts, WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 
 export type WorksiteBlock = Brand<string, 'WorksiteBlock'>;
@@ -83,7 +83,7 @@ function withSubjectCut(bare: WorksiteFacts, budget: ByteBudget): WorksiteBlock 
     }
     const { hash, subject } = bare.lastCommit;
     const points = Array.from(subject);
-    const cutAt = (count: Count): WorksiteFacts => ({ ...bare, lastCommit: { hash, subject: points.slice(0, count).join('') } });
+    const cutAt = (count: Count): WorksiteFacts => ({ ...bare, lastCommit: { hash, subject: textOf(points.slice(0, count).join('')) } });
     const kept = largestFitting(must(parseCount(points.length)), (count) => fitting(budget, linesOf(cutAt(count))));
     return linesOf(cutAt(kept));
 }

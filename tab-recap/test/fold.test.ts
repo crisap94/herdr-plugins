@@ -1,3 +1,4 @@
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { emptyBoard } from '#src/recap/domain/board.ts';
@@ -154,7 +155,7 @@ test('a turn ending in one lane recaps the tab with all its lanes', () => {
 });
 
 test('a staged rollout: only the listed tabs get a column', () => {
-    const policy = { ...DEFAULT_POLICY, onlyTabs: ['w1:t2'] };
+    const policy = { ...DEFAULT_POLICY, onlyTabs: [textOf('w1:t2')] };
     const outcome = observe(emptyBoard(), seen([lane('w1:p1', 'w1:t1'), lane('w1:p2', 'w1:t2')]), instant(0), policy);
     assert.deepEqual(outcome.intents.filter((intent) => intent.kind === 'open-column'), [{ kind: 'open-column', tab: 'w1:t2', shape: 'side' }]);
 });

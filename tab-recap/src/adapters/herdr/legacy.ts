@@ -14,7 +14,8 @@ import { unknown, type Unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { countOf, parseCount } from '#src/recap/domain/count.ts';
+import { uncheckedPaneId, uncheckedRatio } from '#src/recap/domain/ids.ts';
 import type { CompactionLine } from '#src/recap/domain/compaction-plan.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
 import type { Reconciliation } from '#src/recap/domain/fold.ts';
@@ -50,7 +51,7 @@ export function str(value: unknown): string {
 export function rectOf(value: unknown): Rect {
     const r = parseJson(value);
     const n = (key: string): number => (typeof r[key] === 'number' ? r[key] : 0);
-    return { x: n('x'), y: n('y'), width: n('width'), height: n('height') };
+    return { x: countOf(n('x')), y: countOf(n('y')), width: countOf(n('width')), height: countOf(n('height')) };
 }
 
 export function reconciliationOf(snapshot: Json): Reconciliation {
@@ -71,10 +72,10 @@ export function paneTokensOf(snapshot: Json): ReadonlyMap<string, TokenMap> {
 }
 
 export function layoutOf(layout: Json): LayoutResult {
-    const panes: Placed[] = list(layout['panes']).map((pane) => ({ paneId: str(pane['pane_id']), rect: rectOf(pane['rect']) }));
+    const panes: Placed[] = list(layout['panes']).map((pane) => ({ paneId: uncheckedPaneId(str(pane['pane_id'])), rect: rectOf(pane['rect']) }));
     const splits: Split[] = list(layout['splits']).map((split) => ({
-        direction: str(split['direction']),
-        ratio: typeof split['ratio'] === 'number' ? split['ratio'] : 0.5,
+        direction: textOf(str(split['direction'])),
+        ratio: uncheckedRatio(typeof split['ratio'] === 'number' ? split['ratio'] : 0.5),
         rect: rectOf(split['rect']),
     }));
     const area = rectOf(layout['area']);

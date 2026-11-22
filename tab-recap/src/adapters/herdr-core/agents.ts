@@ -32,7 +32,7 @@ export class HcCoreAgents implements Agents {
             return found;
         }
         const terminal = found.terminal;
-        return terminal === null ? unknown({ why: 'not-found', what: textOf(`agent ${pane}`) }) : { kind: 'agent', agent: terminal.app, status: laneStatus(terminal.status) };
+        return terminal === null ? unknown({ why: 'not-found', what: textOf(`agent ${pane}`) }) : { kind: 'agent', agent: terminal.app, status: laneStatus(textOf(terminal.status)) };
     }
 
     prompt(): Promise<Prompted> {

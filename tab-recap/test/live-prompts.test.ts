@@ -25,6 +25,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
+import { SIZING } from './fakes/layout-values.ts';
 
 const lane = (pane: string, agent = 'claude'): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, session: `s-${pane}` });
 
@@ -134,7 +135,7 @@ function dispatchWith(prompts: LivePromptSource): { dispatch: Dispatch; written:
     const board = observe(emptyBoard(), reconciled(seenLane('w1:p1')), instant(0), DEFAULT_POLICY).board;
     const dispatch = new Dispatch({
         columns: {} as Columns, views, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() }, prompts, webs: { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) }, log: (): void => undefined,
-        board: (): Board => board, sizing: (): Sizing => ({ fraction: 0.3, minCols: 36, maxCols: 64 }), feedback: (): void => undefined, ...silentClosures,
+        board: (): Board => board, sizing: (): Sizing => SIZING, feedback: (): void => undefined, ...silentClosures,
     });
     return { dispatch, written };
 }

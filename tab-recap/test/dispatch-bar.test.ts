@@ -10,14 +10,14 @@ import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { Columns, LayoutResult } from '#src/ports/columns.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
+import { SIZING, placedOf, rectOf as rect, splitOf } from './fakes/layout-values.ts';
 
-const rect = (x: number, y: number, width: number, height: number): { x: number; y: number; width: number; height: number } => ({ x, y, width, height });
 
 const noop = (): void => undefined;
 const noWebs = { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) };
 const noPrompts = { of: (): null => null, refresh: (): Promise<boolean> => Promise.resolve(false) };
 const noBoard = (): Board => emptyBoard();
-const sizing = (): Sizing => ({ fraction: 0.3, minCols: 36, maxCols: 64 });
+const sizing = (): Sizing => SIZING;
 
 function fakeColumns(): { columns: Columns; calls: string[] } {
     const calls: string[] = [];
@@ -25,11 +25,11 @@ function fakeColumns(): { columns: Columns; calls: string[] } {
     const layout = (): LayoutResult => ({
         kind: 'layout', width: 60, height: 40, focused: 'w1:p1',
         panes: [
-            { paneId: 'w1:p1', rect: rect(0, 0, 60, 20) },
-            { paneId: 'w1:p2', rect: rect(0, 21, 60, opened ? 15 : 19) },
-            ...(opened ? [{ paneId: 'w1:p9', rect: rect(0, 37, 60, 3) }] : []),
+            placedOf('w1:p1', rect(0, 0, 60, 20)),
+            placedOf('w1:p2', rect(0, 21, 60, opened ? 15 : 19)),
+            ...(opened ? [placedOf('w1:p9', rect(0, 37, 60, 3))] : []),
         ],
-        splits: [{ direction: 'down', ratio: opened ? 0.5 : 0.5, rect: rect(0, 21, 60, 19) }],
+        splits: [splitOf('down', 0.5, rect(0, 21, 60, 19))],
     });
     const columns: Columns = {
         layout: (tab) => { calls.push(`layout ${tab}`); return Promise.resolve(layout()); },

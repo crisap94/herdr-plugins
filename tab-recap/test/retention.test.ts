@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cutoffAt, cutoffOf, DEFAULT_CLOSED_LANE_DAYS, DEFAULT_KEEP_DAYS, inWindow, tabKeepCountOf, tabKeepDaysOf } from '#src/recap/domain/retention.ts';
+import { cutoffAt, DEFAULT_CLOSED_LANE_DAYS, DEFAULT_KEEP_DAYS, inWindow, tabKeepCountOf } from '#src/recap/domain/retention.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
@@ -9,22 +9,16 @@ import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
 
 const DAY = 86_400_000;
 
-test('TAB_RECAP_KEEP_DAYS: whole days, 0 = for ever, anything else is 30', () => {
-    assert.deepEqual([undefined, '', '30', '7', '0', ' 14 '].map((raw) => tabKeepDaysOf(raw)), [30, 30, 30, 7, 0, 14]);
-    assert.deepEqual(['-1', '1.5', 'many', 'NaN'].map((raw) => tabKeepDaysOf(raw)), [DEFAULT_KEEP_DAYS, DEFAULT_KEEP_DAYS, DEFAULT_KEEP_DAYS, DEFAULT_KEEP_DAYS]);
-});
+const keepDays = (raw: string | undefined): number => tabKeepCountOf(raw === undefined ? undefined : must(parseText(raw)));
 
-test('the typed keep-days and cutoff take domain values and agree with the legacy names', () => {
-    const raws = [undefined, '', '30', '7', '0', ' 14 ', '-1', '1.5', 'many'];
-    const texts = raws.map((raw) => (raw === undefined ? undefined : must(parseText(raw))));
-    assert.deepEqual(texts.map((raw) => tabKeepCountOf(raw)), raws.map((raw) => tabKeepDaysOf(raw)));
-    assert.equal(cutoffAt(instant(10 * DAY), must(parseCount(3))), 7 * DAY);
-    assert.equal(cutoffAt(instant(10 * DAY), must(parseCount(0))), null);
+test('TAB_RECAP_KEEP_DAYS: whole days, 0 = for ever, anything else is 30', () => {
+    assert.deepEqual([undefined, '', '30', '7', '0', ' 14 '].map((raw) => keepDays(raw)), [30, 30, 30, 7, 0, 14]);
+    assert.deepEqual(['-1', '1.5', 'many', 'NaN'].map((raw) => keepDays(raw)), [DEFAULT_KEEP_DAYS, DEFAULT_KEEP_DAYS, DEFAULT_KEEP_DAYS, DEFAULT_KEEP_DAYS]);
 });
 
 test('the cutoff is that many days before now; none when nothing expires', () => {
-    assert.equal(cutoffOf(instant(10 * 86_400_000), 3), 7 * 86_400_000);
-    assert.equal(cutoffOf(instant(10 * 86_400_000), 0), null);
+    assert.equal(cutoffAt(instant(10 * DAY), must(parseCount(3))), 7 * DAY);
+    assert.equal(cutoffAt(instant(10 * DAY), must(parseCount(0))), null);
 });
 
 test('TAB_RECAP_CLOSED_LANE_DAYS: whole days of up to nine digits, 0 = record nothing, anything else is 14', () => {

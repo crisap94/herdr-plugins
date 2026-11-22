@@ -3,14 +3,28 @@ import assert from 'node:assert/strict';
 import { WORKSITE_UNAVAILABLE, worksiteTextOf } from '#src/recap/render/worksite.ts';
 import { byteBudgetOf } from '#src/recap/domain/byte-budget.ts';
 import { FORBIDDEN } from '#src/recap/domain/forbidden-words.ts';
-import type { WorksiteFacts, WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
+import type { WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+import { countOf } from '#src/recap/domain/count.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+
+interface Plain {
+    readonly directory: string;
+    readonly repository: { readonly root: string; readonly branch: string | null } | null;
+    readonly lastCommit: { readonly hash: string; readonly subject: string } | null;
+    readonly uncommitted: { readonly count: number; readonly paths: readonly string[] } | null;
+    readonly edited: readonly { readonly path: string; readonly edits: number }[];
+    readonly tokens: readonly string[];
+}
+
+const directoryOf = brand<string, 'Directory'>;
 
 const LIMIT = byteBudgetOf(2_048);
 const encoder = new TextEncoder();
 const bytes = (text: string): number => encoder.encode(text).byteLength;
 const paths = (count: number): string[] => Array.from({ length: count }, (_, index) => `src/module-${String(index).padStart(2, '0')}.ts`);
 
-const full: WorksiteFacts = {
+const full: Plain = {
     directory: '/work/project',
     repository: { root: '/work/project', branch: 'feat/x' },
     lastCommit: { hash: 'a1b2c3d', subject: 'fix the rows' },
@@ -19,7 +33,15 @@ const full: WorksiteFacts = {
     tokens: ['awaiting-review', 'note-tool'],
 };
 
-const known = (facts: WorksiteFacts): WorksiteSnapshot => ({ kind: 'known', ...facts });
+const known = (facts: Plain): WorksiteSnapshot => ({
+    kind: 'known',
+    directory: directoryOf(facts.directory),
+    repository: facts.repository === null ? null : { root: directoryOf(facts.repository.root), branch: facts.repository.branch === null ? null : textOf(facts.repository.branch) },
+    lastCommit: facts.lastCommit === null ? null : { hash: textOf(facts.lastCommit.hash), subject: textOf(facts.lastCommit.subject) },
+    uncommitted: facts.uncommitted === null ? null : { count: countOf(facts.uncommitted.count), paths: facts.uncommitted.paths.map(textOf) },
+    edited: facts.edited.map((file) => ({ path: textOf(file.path), edits: countOf(file.edits) })),
+    tokens: facts.tokens.map(textOf),
+});
 
 const withoutTokens = { ...full, tokens: [] };
 const withoutEdits = { ...withoutTokens, edited: [] };
@@ -119,7 +141,7 @@ test('a control character or a line break in a value cannot forge a heading', ()
 });
 
 test('invisible format characters in a value are removed: bidi overrides, zero-width characters and tag characters', () => {
-    const hostile: WorksiteFacts = {
+    const hostile: Plain = {
         ...full,
         lastCommit: { hash: 'a1b2c3d', subject: 'fix‮ the​ rows' },
         uncommitted: { count: 1, paths: ['src/\u{E0041}a.ts⁦'] },
@@ -134,7 +156,7 @@ test('invisible format characters in a value are removed: bidi overrides, zero-w
 });
 
 test('every value passes the one sanitizer: a variation selector, a combining grapheme joiner, a tag payload, a byte order mark and a line separator in a path, branch, hash, subject, token or edited file come out clean', () => {
-    const hostile: WorksiteFacts = {
+    const hostile: Plain = {
         directory: '/work/\u{FE0F}pro\u{34F}ject\u{E0100}',
         repository: { root: '/work/project\u{FEFF}', branch: 'feat/x\u{2028}y\u{FE0F}' },
         lastCommit: { hash: 'a1b2\u{34F}c3d', subject: 'fix\u{E0100}\u{FEFF} rows' },
@@ -153,7 +175,7 @@ test('every value passes the one sanitizer: a variation selector, a combining gr
 });
 
 test('the labels and the fixed words of a worksite section contain no forbidden word', () => {
-    const neutral: WorksiteFacts = {
+    const neutral: Plain = {
         directory: '/srv/app', repository: { root: '/srv/app', branch: 'main' }, lastCommit: { hash: 'a1b2c3d', subject: 'fix' },
         uncommitted: { count: 1, paths: ['a.ts'] }, edited: [{ path: 'a.ts', edits: 2 }], tokens: ['awaiting-review'],
     };
@@ -161,7 +183,7 @@ test('the labels and the fixed words of a worksite section contain no forbidden 
 });
 
 test('a repository whose path, branch and commit subject contain forbidden words is rendered whole: the worksite is never blanked for its name', () => {
-    const named: WorksiteFacts = {
+    const named: Plain = {
         directory: '/work/herdr-tab-plugins', repository: { root: '/work/herdr-tab-plugins', branch: 'herdr/tab' }, lastCommit: { hash: 'a1b2c3d', subject: 'herdr tab fix' },
         uncommitted: { count: 0, paths: [] }, edited: [], tokens: [],
     };

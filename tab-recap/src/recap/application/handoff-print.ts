@@ -13,7 +13,7 @@ import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
@@ -57,7 +57,7 @@ const laneOf = (tab: TabId, lane: TabLane): HandoffLane => ({
     tab,
     pane: paneId(lane.pane),
     agent: agentKind(lane.agent),
-    status: laneStatus(lane.status),
+    status: laneStatus(textOf(lane.status)),
     cwd: lane.cwd,
 });
 

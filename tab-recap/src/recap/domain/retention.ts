@@ -6,8 +6,6 @@ import { parseText, type Text } from '@stateforge-labs/session-ledger/unstable/r
 import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 
-export { cutoffOf, tabKeepDaysOf } from './twins/retention/legacy.ts';
-
 export const DEFAULT_KEEP_DAYS = 30;
 const DAY_MS = 86_400_000;
 const DEFAULT_TAB_KEEP = must(parseCount(DEFAULT_KEEP_DAYS));
