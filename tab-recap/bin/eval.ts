@@ -6,7 +6,8 @@ import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { AUTO_ORDER, availableIn, judgeFor, summarizerWork } from '#src/daemon/backends.ts';
 import { loadConfig, messagesOf, stateDir } from '#src/daemon/config.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
-import { EVAL_USAGE, parseEval } from '#src/recap/application/eval-options.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { EVAL_USAGE, parseEvalRequest } from '#src/recap/application/eval-options.ts';
 import { anchorsOf, withText } from '#src/recap/application/judge-anchors.ts';
 import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import { runEval } from '#src/recap/application/eval-run.ts';
@@ -33,7 +34,7 @@ function lines(): { ask(prompt: string): Promise<string | null>; close(): void }
 }
 
 export async function evalCommand(argv: readonly string[]): Promise<number> {
-    const parsed = parseEval(argv);
+    const parsed = parseEvalRequest(argv.map(textOf));
     if (parsed.kind === 'usage') {
         console.error(`tab-recap: 2 — ${parsed.why}\n${EVAL_USAGE}`);
         return 2;

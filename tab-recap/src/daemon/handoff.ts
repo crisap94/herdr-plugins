@@ -16,13 +16,13 @@ import { requestId, type RequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { HandoffFlow, unrendered, type HandoffRun } from '#src/recap/application/handoff-flow.ts';
 import { HandoffConfirmation } from '#src/recap/application/handoff-confirmation.ts';
-import { EditCounts } from '#src/recap/application/edit-counts.ts';
+import { EditTally } from '#src/recap/application/edit-tally.ts';
 import { renderHandoff } from '#src/recap/application/handoff-pipeline.ts';
 import type { HandoffLane } from '#src/recap/application/handoff-render.ts';
 import { HandoffSender } from '#src/recap/application/handoff-sender.ts';
 import { askKeyOf, type HandoffMirror, type Route } from '#src/recap/application/handoff-mirror.ts';
 import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
-import { DeliveryMark } from '#src/recap/application/delivery-mark.ts';
+import { DeliveryTracker } from '#src/recap/application/delivery-tracker.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { TypingLease } from '#src/recap/application/typing-lease.ts';
 import { HANDOFF_ANSWER_TTL_MS, HANDOFF_FLOW_MAX_MS, HANDOFF_TAKE_MAX_AGE_MS } from '#src/recap/application/handoff-limits.ts';
@@ -134,7 +134,7 @@ export class HandoffRunner {
     }
 
     private async flowOf(row: HandoffRequestRow): Promise<HandoffRun> {
-        const mark = new DeliveryMark();
+        const mark = new DeliveryTracker();
         const run = await within<HandoffRun | null>(this.executed(row, mark), HANDOFF_FLOW_MAX_MS, null);
         if (run !== null) { return run; }
         const abandoned = mark.abandon();
@@ -145,7 +145,7 @@ export class HandoffRunner {
         return unrendered({ kind: 'failed', reason: abandoned === 'typed' ? 'unconfirmed' : 'expired' });
     }
 
-    private async executed(row: HandoffRequestRow, mark: DeliveryMark): Promise<HandoffRun> {
+    private async executed(row: HandoffRequestRow, mark: DeliveryTracker): Promise<HandoffRun> {
         try {
             return await this.deps.flow.execute(row, mark);
         } catch (error) {
@@ -262,7 +262,7 @@ export function wireHandoffs(parts: HandoffWiring): HandoffRunner {
             transcripts,
             log,
             locate: (lane: HandoffLane): Promise<FsPath | null> => sourceOf(transcripts, board, lane),
-            worksite: { reader: new GitWorksiteReader(), repo: repos, edits: new EditCounts(transcripts) },
+            worksite: { reader: new GitWorksiteReader(), repo: repos, edits: new EditTally(transcripts) },
             tokens: fleet,
         }),
         sender: new HandoffSender({

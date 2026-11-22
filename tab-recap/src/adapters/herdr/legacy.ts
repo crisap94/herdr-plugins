@@ -26,7 +26,7 @@ import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { parseMilliseconds } from '#src/recap/domain/time.ts';
 import { PANE_WRITABLE, WORKSPACE_WRITABLE } from '#src/recap/domain/lane-tokens.ts';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
-import { seenFrom, sessionOf, tokensOf } from '#src/recap/application/decode.ts';
+import { paneTokenMapOf, seenFrom, sessionOf } from '#src/recap/application/decode.ts';
 import { agentPanesIn, columnsIn, deadColumnsIn } from './column-panes.ts';
 import { HerdrAgentPanes, herdrWire, type Wire } from './agents.ts';
 import { usePlugin } from './client.ts';
@@ -66,8 +66,8 @@ export function reconciliationOf(snapshot: Json): Reconciliation {
 
 export function paneTokensOf(snapshot: Json): ReadonlyMap<string, TokenMap> {
     return new Map(list(snapshot['panes']).flatMap((pane) => {
-        const found = tokensOf(pane);
-        return found === null ? [] : [[found.pane, found.tokens] as const];
+        const found = paneTokenMapOf(pane);
+        return found === null ? [] : [[found.pane, Object.fromEntries(found.tokens)] as const];
     }));
 }
 

@@ -9,7 +9,7 @@ import { Labeller, LABELLER } from '#src/adapters/experiment/labeller.ts';
 import type { Point } from '#src/adapters/experiment/point.ts';
 import { HarnessBrief } from '#src/adapters/job/brief.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
-import { compactionInput } from '#src/recap/application/compaction-input.ts';
+import { compactionMaterialInput } from '#src/recap/application/compaction-material.ts';
 import { coverageLabelInstructions, coverageLabelsIn } from '#src/experiment/label-prompt.ts';
 import { factsOf } from '#src/recap/application/brief-coverage.ts';
 import { sectionsOf } from '#src/experiment/coverage.ts';
@@ -19,7 +19,8 @@ import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { parseFactIndex } from '#src/recap/domain/fact-index.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 const asText = (value: string): Text => must(parseText(value));
 const asFsPath = (value: string): FsPath => must(parseFsPath(value));
 
@@ -31,9 +32,9 @@ export function briefPoints(points: readonly Point[]): readonly Point[] {
     return shuffledBy(points.filter((point) => point.stratum === 'high' && factsOf(point.history).length >= MIN_FACTS), drawsOf(must(parseCount(SEED)))).slice(0, BRIEFS);
 }
 
-const documentOf = (point: Point): string => compactionInput({
-    agent: { kind: CLAUDE_KIND, label: '', repo: null, branch: null }, note: null, current: sectionsOf(point.history), history: point.history, lastBreakAt: point.lastBreakAt,
-    recent: point.recent, clock: { now: point.at, zone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+const documentOf = (point: Point): string => compactionMaterialInput({
+    agent: { kind: textOf(CLAUDE_KIND), label: textOf(''), repo: null, branch: null }, note: null, current: sectionsOf(point.history), history: point.history, lastBreakAt: point.lastBreakAt === null ? null : instant(point.lastBreakAt),
+    recent: point.recent, clock: { now: instant(point.at), zone: textOf(Intl.DateTimeFormat().resolvedOptions().timeZone) },
 });
 
 export async function labelBriefs(dir: string, runtime: HarnessRuntime): Promise<void> {

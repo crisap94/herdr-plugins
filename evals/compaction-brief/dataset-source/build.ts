@@ -1,6 +1,6 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { compactionInput, type CompactionMaterial } from '../../../tab-recap/src/recap/application/compaction-input.ts';
+import { compactionInput, type CompactionMaterial } from '../material.ts';
 import { factsOf } from '../../../tab-recap/src/recap/application/brief-coverage.ts';
 import { settledBefore } from '../../../packages/session-ledger/src/recap/domain/boundary.ts';
 import { instant } from '../../../packages/session-ledger/src/recap/domain/time.ts';

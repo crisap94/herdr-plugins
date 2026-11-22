@@ -9,15 +9,15 @@ import type { ClosePoint } from '#src/recap/domain/lane-closed.ts';
 import { type CompactionId, type DecisionId, type PaneId, type TabId, paneId } from '#src/recap/domain/ids.ts';
 import { parseCheckedFact, type CheckedFact, type MissedFacts } from '#src/recap/domain/autocompact.ts';
 import { MISSED_FACTS_DEFAULT } from '#src/recap/domain/autocompact.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { must } from '#src/protocol/result.ts';
-import { duration } from '#src/recap/domain/time.ts';
+import { duration, instant } from '#src/recap/domain/time.ts';
 import { appendedBrief, checkedBrief } from './compaction-coverage.ts';
 import type { Briefed, Checked, CoverageFlow } from './compaction-coverage.ts';
 import { factsOf } from './brief-coverage.ts';
 import { blockedByCoverage, coverageLog, coverageWhy } from './coverage-verdict.ts';
-import { compactionInput } from './compaction-input.ts';
+import { compactionMaterialInput } from './compaction-material.ts';
 import type { CompactionPorts } from './compaction-deps.ts';
 import type { Material } from './compaction-message.ts';
 
@@ -59,8 +59,9 @@ export class Briefing {
             return { text: null, why: null, own, history };
         }
         const label = knownOr(records.readRecap(tab), null)?.lanes.find((each) => each.pane === pane)?.title ?? lane.title ?? '';
-        const clock = { now: this.deps.now(), zone: Intl.DateTimeFormat().resolvedOptions().timeZone };
-        const document = must(parseText(compactionInput({ agent: { kind: agent, label, repo: null, branch: null }, note: material.note, current: material.sections, history, lastBreakAt: this.deps.boundaries.lastBreakAt(tab, pane), recent, clock })));
+        const clock = { now: this.deps.now(), zone: textOf(Intl.DateTimeFormat().resolvedOptions().timeZone) };
+        const broke = this.deps.boundaries.lastBreakAt(tab, pane);
+        const document = compactionMaterialInput({ agent: { kind: textOf(agent), label: textOf(label), repo: null, branch: null }, note: material.note, current: material.sections, history, lastBreakAt: broke === null ? null : instant(broke), recent, clock });
         return { ...(await brief.write(document, own, correction)), own, history };
     }
 

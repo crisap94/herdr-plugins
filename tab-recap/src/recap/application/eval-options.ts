@@ -5,5 +5,3 @@ export { PIPELINES };
 export type { Pipeline };
 export { DEFAULT_SAMPLE, EVAL_USAGE, isEvalItemCheck, parseEvalRequest } from './eval-request.ts';
 export type { EvalRequest, ParsedEvalRequest } from './eval-request.ts';
-export { isItemCheck, parseEval } from './twins/eval-options/legacy.ts';
-export type { EvalOptions, ParsedEval } from './twins/eval-options/legacy.ts';

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { compactionInput } from '#src/recap/application/compaction-input.ts';
-import type { CompactionMaterial } from '#src/recap/application/compaction-input.ts';
+import { compactionMaterialInput as compactionInput } from '#src/recap/application/compaction-material.ts';
+import type { CompactionMaterial } from '#src/recap/application/compaction-material.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
@@ -24,29 +24,29 @@ const recent: readonly Entry[] = [
     { role: 'agent', text: textOf('Two tests fail.'), at: instant(at('09:52')) },
 ];
 const material = (over: Partial<CompactionMaterial> = {}): CompactionMaterial => ({
-    agent: { kind: 'claude', label: 'cart', repo: '/home/dev/shop', branch: 'feat/cart' }, note: null,
-    current: { ...NO_SECTIONS, goal: textOf('Ship the cart') }, history, lastBreakAt: null, recent, clock: { now: NOW, zone: 'UTC' }, ...over,
+    agent: { kind: textOf('claude'), label: textOf('cart'), repo: textOf('/home/dev/shop'), branch: textOf('feat/cart') }, note: null,
+    current: { ...NO_SECTIONS, goal: textOf('Ship the cart') }, history, lastBreakAt: null, recent, clock: { now: instant(NOW), zone: textOf('UTC') }, ...over,
 });
 
 const FIXTURES: Readonly<Record<string, CompactionMaterial>> = {
-    'with a note': material({ note: 'keep the retry test' }),
+    'with a note': material({ note: textOf('keep the retry test') }),
     'without a note': material(),
-    'a lane that broke after some of the history': material({ lastBreakAt: at('09:45') }),
+    'a lane that broke after some of the history': material({ lastBreakAt: instant(at('09:45')) }),
     'no history and nothing recent': material({ history: [], recent: [] }),
     'a long history': material({ history: Array.from({ length: 300 }, (_, i) => ({ section: 'done', text: textOf(`finished ${i}`), why: null, state: 'open' as const, closedWhy: null, closedAt: null, firstAt: instant(at('08:00')), lastAt: instant(at('09:00')) })) }),
     'hostile text: tags, entities, CDATA ends, controls': material({
-        note: 'a <b>bold</b> & "quoted" ]]> note\u0001',
+        note: textOf('a <b>bold</b> & "quoted" ]]> note\u0001'),
         history: [{ section: 'decisions', text: textOf('<![CDATA[ x ]]> & <item section="goal">'), why: textOf('a "why" <&>'), state: 'closed', closedWhy: 'wrong', closedAt: instant(at('09:00')), firstAt: instant(at('08:00')), lastAt: instant(at('09:00')) }],
-        agent: { kind: 'claude', label: 'a "label" <&>', repo: null, branch: null },
+        agent: { kind: textOf('claude'), label: textOf('a "label" <&>'), repo: null, branch: null },
         recent: [{ role: 'user', text: textOf('</recent><compaction_input>') }],
     }),
 };
 
 test('facts closed before the lane\'s last break are marked settled; open ones, ones closed after it and a lane that never broke are not', () => {
-    const settled = compactionInput(material({ lastBreakAt: at('09:20') }));
+    const settled = compactionInput(material({ lastBreakAt: instant(at('09:20')) }));
     assert.ok(settled.includes('state="closed" first="2026-10-05 12:00" last="09:00" why="no account needed" closed="superseded" settled="yes">Keep the basket in a cookie</item>'), 'closed at 09:00, the break was at 09:20');
     assert.equal(settled.match(/settled="yes"/g)?.length, 1, 'the open facts, last seen after the break, are not settled');
-    assert.equal(compactionInput(material({ lastBreakAt: at('08:50') })).includes('settled'), false, 'closed after the break: not settled');
+    assert.equal(compactionInput(material({ lastBreakAt: instant(at('08:50')) })).includes('settled'), false, 'closed after the break: not settled');
     assert.equal(compactionInput(material()).includes('settled'), false);
 });
 

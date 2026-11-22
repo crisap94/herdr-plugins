@@ -4,7 +4,7 @@ import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { NOW, SOURCE, TARGET, TAB, TARGET_TAB, T1, TEXT, SETTLE_MS, SOURCE_LISTED, bothFree, harness, recapOf, request, task } from './fakes/handoff-flow-harness.ts';
 import { fact } from './fakes/fact-at.ts';
-import { DeliveryMark } from '#src/recap/application/delivery-mark.ts';
+import { DeliveryTracker } from '#src/recap/application/delivery-tracker.ts';
 
 test('handing a lane to itself is refused before anything is read', async () => {
     const h = harness();
@@ -220,7 +220,7 @@ test('an internal error is logged once with the request id and the error name, a
 test('a run abandoned before it claims its lanes types nothing, claims nothing and is expired', async () => {
     const h = harness();
     const row = request();
-    const mark = new DeliveryMark();
+    const mark = new DeliveryTracker();
     mark.abandon();
     assert.deepEqual((await h.flow.execute(row, mark)).outcome, { kind: 'failed', reason: 'expired' });
     assert.deepEqual(h.sent, []);
@@ -228,7 +228,7 @@ test('a run abandoned before it claims its lanes types nothing, claims nothing a
 });
 
 test('a run abandoned while it waits for the settle hold keeps its claims for the abandoner and never types', async () => {
-    const mark = new DeliveryMark();
+    const mark = new DeliveryTracker();
     const h = harness({ onPause: (): void => { mark.abandon(); } });
     const row = request();
     assert.deepEqual((await h.flow.execute(row, mark)).outcome, { kind: 'failed', reason: 'expired' });

@@ -12,7 +12,7 @@ import { codeVersion } from '#src/adapters/os/plugin-version.ts';
 import { loadConfig, messagesOf, stateDir, stateDirectory } from '#src/daemon/config.ts';
 import type { HandoffPrinter } from '#src/ports/handoff-print.ts';
 import { requestNoteOf } from '#src/recap/application/compact-start.ts';
-import { EditCounts } from '#src/recap/application/edit-counts.ts';
+import { EditTally } from '#src/recap/application/edit-tally.ts';
 import { PrintedHandoffs } from '#src/recap/application/handoff-print.ts';
 import { deliverHandoff, type DeliverDeps, type DeliverRequest } from '#src/recap/application/handoff-request.ts';
 import { listClosedLanes, type ClosedListing } from '#src/recap/application/handoff-listing.ts';
@@ -149,7 +149,7 @@ function printerOf(): HandoffPrinter {
     return new PrintedHandoffs({
         openStore: () => openPrintStore(databaseFile(stateDirectory()), loadConfig().closedLaneDays),
         transcripts,
-        worksite: { reader: new GitWorksiteReader(), repo: new GitLaneRepo(new SystemClock()), edits: new EditCounts(transcripts) },
+        worksite: { reader: new GitWorksiteReader(), repo: new GitLaneRepo(new SystemClock()), edits: new EditTally(transcripts) },
         tokens: fleet,
         target: { status: (pane) => fleet.agents().status(pane) },
         closedDays: loadConfig().closedLaneDays,

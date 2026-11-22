@@ -96,7 +96,7 @@
     "container": 2
   },
   "src/recap/application/legacy.ts": {
-    "legacy": 63
+    "legacy": 73
   },
   "src/recap/application/live-prompts.ts": {
     "parameter": 1,
@@ -154,29 +154,8 @@
   "src/recap/application/transcript-tail.ts": {
     "return": 1
   },
-  "src/recap/application/twins/compact-requests/legacy.ts": {
-    "legacy": 4
-  },
-  "src/recap/application/twins/compaction-input/legacy.ts": {
-    "legacy": 10
-  },
   "src/recap/application/twins/compaction-wiring/legacy.ts": {
     "legacy": 13
-  },
-  "src/recap/application/twins/counted-writer/legacy.ts": {
-    "legacy": 1
-  },
-  "src/recap/application/twins/decode/legacy.ts": {
-    "legacy": 4
-  },
-  "src/recap/application/twins/delivery-mark/legacy.ts": {
-    "legacy": 3
-  },
-  "src/recap/application/twins/edit-counts/legacy.ts": {
-    "legacy": 5
-  },
-  "src/recap/application/twins/eval-options/legacy.ts": {
-    "legacy": 14
   },
   "src/recap/application/twins/eval-report/legacy.ts": {
     "legacy": 28
@@ -188,16 +167,7 @@
     "legacy": 20
   },
   "src/recap/application/twins/expanded-view/legacy.ts": {
-    "legacy": 11
-  },
-  "src/recap/application/twins/ledgers/legacy.ts": {
-    "legacy": 2
-  },
-  "src/recap/application/twins/restart/legacy.ts": {
-    "legacy": 4
-  },
-  "src/recap/application/twins/typing-lease-deps/legacy.ts": {
-    "legacy": 2
+    "legacy": 12
   },
   "src/recap/application/worksite-section.ts": {
     "return": 1,

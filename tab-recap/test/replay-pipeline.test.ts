@@ -1,12 +1,12 @@
 import { brand } from '#src/recap/domain/brand.ts';
-import { textOf } from '#src/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
 import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.ts';
 import { scratchStore } from '#src/adapters/db/scratch.ts';
-import { parseEval } from '#src/recap/application/eval-options.ts';
+import { parseEvalRequest } from '#src/recap/application/eval-options.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { replay } from '#src/recap/application/replay.ts';
 import type { Replayed, ReplayDeps } from '#src/recap/application/replay.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
@@ -57,20 +57,22 @@ async function run(pipeline: Pipeline | undefined, writerView: WriterView, merge
     }
 }
 
+const parseEvalArgs = (argv: readonly string[]): ReturnType<typeof parseEvalRequest> => parseEvalRequest(argv.map(textOf));
+
 test('--pipeline is parsed, checked, and goes with --replay only', () => {
-    assert.deepEqual(parseEval(['--replay', 'x.jsonl', '--pipeline', 'full']), { kind: 'options', options: { mode: 'replay', count: 20, tab: null, since: null, json: false, replay: 'x.jsonl', kind: null, compareImported: null, pipeline: 'full', mergeTurns: 1, check: null, prune: false } });
-    assert.ok(parseEval(['--replay', 'x.jsonl', '--prune']).kind === 'options');
+    assert.deepEqual(parseEvalArgs(['--replay', 'x.jsonl', '--pipeline', 'full']), { kind: 'options', options: { mode: 'replay', count: 20, tab: null, since: null, json: 'absent', replay: 'x.jsonl', kind: null, compareImported: null, pipeline: 'full', mergeTurns: 1, check: null, prune: 'absent' } });
+    assert.ok(parseEvalArgs(['--replay', 'x.jsonl', '--prune']).kind === 'options');
     for (const name of ['one', 'enumerate', 'enumerate+gates', 'full']) {
-        const parsed = parseEval(['--replay', 'x.jsonl', '--pipeline', name]);
+        const parsed = parseEvalArgs(['--replay', 'x.jsonl', '--pipeline', name]);
         assert.ok(parsed.kind === 'options' && parsed.options.pipeline === name, name);
     }
-    const bad = parseEval(['--replay', 'x.jsonl', '--pipeline', 'fast']);
+    const bad = parseEvalArgs(['--replay', 'x.jsonl', '--pipeline', 'fast']);
     assert.ok(bad.kind === 'usage' && /--pipeline takes one, enumerate, enumerate\+gates, full/.test(bad.why));
-    const alone = parseEval(['--pipeline', 'one']);
+    const alone = parseEvalArgs(['--pipeline', 'one']);
     assert.ok(alone.kind === 'usage' && /go with --replay/.test(alone.why));
-    const without = parseEval(['--replay', 'x.jsonl']);
+    const without = parseEvalArgs(['--replay', 'x.jsonl']);
     assert.ok(without.kind === 'options' && without.options.pipeline === null);
-    assert.ok(parseEval(['--prune']).kind === 'usage');
+    assert.ok(parseEvalArgs(['--prune']).kind === 'usage');
 });
 
 test('a pruned replay input hides older facts and reports the count without changing the ledger', async () => {
@@ -83,13 +85,13 @@ test('a pruned replay input hides older facts and reports the count without chan
 });
 
 test('--merge-turns is a positive whole number and goes with --replay', () => {
-    const merged = parseEval(['--replay', 'x.jsonl', '--merge-turns', '2']);
+    const merged = parseEvalArgs(['--replay', 'x.jsonl', '--merge-turns', '2']);
     assert.ok(merged.kind === 'options' && merged.options.mergeTurns === 2);
     for (const [flag, value] of [['--merge-turns', '0'], ['--merge-turns=-1', ''], ['--merge-turns', '1.2'], ['--merge-turns', 'no']] as const) {
-        const invalid = parseEval(['--replay', 'x.jsonl', flag, ...(value === '' ? [] : [value])]);
+        const invalid = parseEvalArgs(['--replay', 'x.jsonl', flag, ...(value === '' ? [] : [value])]);
         assert.ok(invalid.kind === 'usage' && /--merge-turns takes a whole number above 0/.test(invalid.why), value);
     }
-    const aloneMerge = parseEval(['--merge-turns', '2']);
+    const aloneMerge = parseEvalArgs(['--merge-turns', '2']);
     assert.ok(aloneMerge.kind === 'usage' && /go with --replay/.test(aloneMerge.why));
 });
 

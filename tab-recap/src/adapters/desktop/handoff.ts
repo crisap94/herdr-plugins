@@ -2,7 +2,7 @@ import { loadConfig, stateDirectory } from '#src/daemon/config.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
 import type { HandoffPrinter } from '#src/ports/handoff-print.ts';
 import type { FlushTab } from '#src/ports/frontend.ts';
-import { EditCounts } from '#src/recap/application/edit-counts.ts';
+import { EditTally } from '#src/recap/application/edit-tally.ts';
 import { PrintedHandoffs } from '#src/recap/application/handoff-print.ts';
 import { databaseFile } from '../db/database.ts';
 import { openPrintStore } from '../db/print-store.ts';
@@ -16,7 +16,7 @@ export function desktopPrinter(fleet: Pick<Fleet, 'read' | 'agents'>, flush: Flu
     return new PrintedHandoffs({
         openStore: () => openPrintStore(databaseFile(stateDirectory()), loadConfig().closedLaneDays),
         transcripts,
-        worksite: { reader: new GitWorksiteReader(), repo: new GitLaneRepo(new SystemClock()), edits: new EditCounts(transcripts) },
+        worksite: { reader: new GitWorksiteReader(), repo: new GitLaneRepo(new SystemClock()), edits: new EditTally(transcripts) },
         tokens: fleet,
         target: fleet.agents(),
         closedDays: loadConfig().closedLaneDays,

@@ -3,7 +3,7 @@ import { tokenEntries } from './fakes/token-entries.ts';
 import assert from 'node:assert/strict';
 import { worksiteOf } from '#src/recap/application/worksite-section.ts';
 import type { WorksiteDeps, WorksiteInput } from '#src/recap/application/worksite-section.ts';
-import type { FileCount } from '#src/recap/application/edit-counts.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import { unknown } from '#src/ports/unknowable.ts';
@@ -21,9 +21,9 @@ const DIR = '/work/project';
 const CURSOR: LaneCursor = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('session.jsonl'), cursor: cursorOf(10), tail: null, title: null, lastPrompt: null, claudeRecap: null };
 const repoAt = (result: RepoResult): LaneRepo => ({ repoOf: () => Promise.resolve(result) });
 const repo: RepoResult = { kind: 'repo', root: must(parseDirectory('/work/project')), branch: must(parseText('feat/x')), web: null };
-const edits = (files: readonly FileCount[]): WorksiteDeps['edits'] & { readonly asked: (readonly LaneCursor[])[] } => {
+const edits = (files: readonly { readonly path: string; readonly count: number }[]): WorksiteDeps['edits'] & { readonly asked: (readonly LaneCursor[])[] } => {
     const asked: LaneCursor[][] = [];
-    return { asked, of: (lanes) => { asked.push([...lanes]); return Promise.resolve(files); } };
+    return { asked, of: (lanes) => { asked.push([...lanes]); return Promise.resolve(files.map((file) => ({ path: textOf(file.path), count: countOf(file.count) }))); } };
 };
 const knownOf = (snapshot: WorksiteSnapshot): WorksiteFacts => {
     if (snapshot.kind !== 'known') {
@@ -33,7 +33,7 @@ const knownOf = (snapshot: WorksiteSnapshot): WorksiteFacts => {
 };
 const many = Array.from({ length: 31 }, (_, index) => `f${index}.ts`);
 
-function deps(site: MemoryWorksite, result: RepoResult = repo, files: readonly FileCount[] = []): WorksiteDeps {
+function deps(site: MemoryWorksite, result: RepoResult = repo, files: readonly { readonly path: string; readonly count: number }[] = []): WorksiteDeps {
     return { reader: site, repo: repoAt(result), edits: edits(files) };
 }
 

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
-import { decode, paneSessionOf, seenFrom, sessionOf } from '#src/recap/application/decode.ts';
+import { decode, paneSessionRefOf, seenFrom, sessionOf } from '#src/recap/application/decode.ts';
 
 const kinds = ['claude', 'codex', 'opencode', 'unknown'] as const;
 
@@ -33,7 +33,7 @@ test('degenerate session values remain total through every decoder entry point',
     for (const value of pathValues) {
         const pathData = { pane_id: 'p', tab_id: 't', workspace_id: 'w', agent: 'claude', agent_session: { kind: 'path', value } };
         assert.equal(sessionOf(pathData, sessionOfForKind), '');
-        assert.equal(paneSessionOf(pathData, sessionOfForKind)?.session, '');
+        assert.equal(paneSessionRefOf(pathData, sessionOfForKind)?.session, '');
         assert.equal(seenFrom(pathData, sessionOfForKind)?.session, '');
         assert.equal(decode({ event: 'pane_agent_detected', data: pathData }, sessionOfForKind).kind, 'detected');
     }

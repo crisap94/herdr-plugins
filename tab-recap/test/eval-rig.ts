@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { parseEval } from '#src/recap/application/eval-options.ts';
-import type { EvalOptions } from '#src/recap/application/eval-options.ts';
+import { parseEvalRequest } from '#src/recap/application/eval-options.ts';
+import type { EvalRequest } from '#src/recap/application/eval-options.ts';
 import type { EvalDeps } from '#src/recap/application/eval-run.ts';
 import type { Judge, JudgeTask } from '#src/ports/judge.ts';
 import { brand } from '#src/recap/domain/brand.ts';
@@ -62,8 +62,8 @@ export function seed(store: Rig['store'], count: number, over: { readonly input?
     }
 }
 
-export const optionsOf = (...argv: string[]): EvalOptions => {
-    const parsed = parseEval(argv);
+export const optionsOf = (...argv: string[]): EvalRequest => {
+    const parsed = parseEvalRequest(argv.map(textOf));
     assert.ok(parsed.kind === 'options', JSON.stringify(parsed));
     return parsed.options;
 };
