@@ -11,6 +11,9 @@ import { questionsFor } from '#src/recap/application/brief-coverage.ts';
 import type { CoverageFact } from '#src/recap/application/brief-coverage.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { pooled, retried } from '#src/experiment/pool.ts';
+import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
+const asText = (value: string): Text => must(parseText(value));
+const asFsPath = (value: string): FsPath => must(parseFsPath(value));
 
 const CONCURRENCY = 4;
 
@@ -24,8 +27,8 @@ interface Job { readonly key: string; readonly kind: 'point' | 'brief'; readonly
 interface BriefRow { readonly id: string; readonly brief: string; readonly facts: readonly CoverageFact[] }
 
 export function jobsOf(dir: string): readonly Job[] {
-    const points = [...readPoints(join(dir, 'corpus.jsonl')), ...readPoints(join(dir, 'outcome-points.jsonl'))];
-    const briefs = readJsonl(join(dir, 'briefs.jsonl')) as readonly BriefRow[];
+    const points = [...readPoints(asText(join(dir, 'corpus.jsonl'))), ...readPoints(asText(join(dir, 'outcome-points.jsonl')))];
+    const briefs = readJsonl(asText(join(dir, 'briefs.jsonl'))) as readonly BriefRow[];
     return [
         ...points.map((point): Job => ({ key: point.id, kind: 'point', state: must(parseText(JSON.stringify(point.state))), questions: QUESTIONS })),
         ...briefs.map((row): Job => ({ key: row.id, kind: 'brief', state: must(parseText(JSON.stringify({ brief: row.brief, facts: row.facts }))), questions: questionsFor(row.facts) })),
@@ -50,15 +53,15 @@ async function main(): Promise<void> {
         return;
     }
     const [file, log] = [join(dir, `answers-${arm}-${rep}.jsonl`), (line: string): void => { console.error(`${new Date().toISOString()} ${line}`); }];
-    const done = doneKeys(file, 'key');
-    const todo = jobsOf(dir).filter((job) => !done.has(job.key));
+    const done = doneKeys(asText(file), asText('key'));
+    const todo = jobsOf(dir).filter((job) => !done.has(asText(job.key)));
     const runtime = createRuntime();
     const deciders = Array.from({ length: CONCURRENCY }, () => deciderOf(arm, runtime));
     let finished = 0;
     await pooled(todo, CONCURRENCY, async (job, _index, lane) => {
         const { answer, attempts } = await ask(deciders[lane] as Decider, job, log);
-        if (answer.kind === 'decided') appendJsonl(file, { key: job.key, kind: job.kind, answers: answer.answers, tokens: answer.tokens, costUsd: answer.costUsd, tookMs: answer.tookMs, model: answer.model, attempts });
-        else appendJsonl(file, { key: job.key, kind: job.kind, unknown: saying(answer.why), attempts });
+        if (answer.kind === 'decided') appendJsonl(asFsPath(file), { key: job.key, kind: job.kind, answers: answer.answers, tokens: answer.tokens, costUsd: answer.costUsd, tookMs: answer.tookMs, model: answer.model, attempts });
+        else appendJsonl(asFsPath(file), { key: job.key, kind: job.kind, unknown: saying(answer.why), attempts });
         finished += 1;
         if (finished % 25 === 0) log(`${arm} rep ${rep}: ${finished}/${todo.length}`);
     });

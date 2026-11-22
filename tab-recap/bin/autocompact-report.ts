@@ -13,6 +13,9 @@ import { table } from '#src/experiment/report-render.ts';
 import { verbatimAgainstCode } from '#src/experiment/report-code.ts';
 import { decide } from '#src/experiment/report-rule.ts';
 import { mean } from '#src/experiment/stats.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+const asText = (value: string): Text => must(parseText(value));
 
 const IDS = [...QUESTIONS.keys()];
 const COVERAGE = ['brief_keeps_fact', 'brief_keeps_reason'] as const;
@@ -22,13 +25,13 @@ interface BriefRow { readonly id: string; readonly facts: readonly { readonly n:
 
 const repsOf = (dir: string, arm: string): Reps => [1, 2].map((rep) => {
     const file = join(dir, `answers-${arm}-${rep}.jsonl`);
-    return existsSync(file) ? expandBriefs(readJsonl(file) as readonly Answer[]) : [];
+    return existsSync(file) ? expandBriefs(readJsonl(asText(file)) as readonly Answer[]) : [];
 }).filter((rows) => rows.length > 0);
 
 const coverageLabel = (label: { readonly keeps: 0 | 1; readonly reason?: 0 | 1 }): Readonly<Record<string, 0 | 1>> => (label.reason === undefined ? { brief_keeps_fact: label.keeps } : { brief_keeps_fact: label.keeps, brief_keeps_reason: label.reason });
 
 function briefLabels(dir: string): Labels {
-    const rows = existsSync(join(dir, 'briefs.jsonl')) ? (readJsonl(join(dir, 'briefs.jsonl')) as readonly BriefRow[]) : [];
+    const rows = existsSync(join(dir, 'briefs.jsonl')) ? (readJsonl(asText(join(dir, 'briefs.jsonl'))) as readonly BriefRow[]) : [];
     return new Map(rows.flatMap((row) => Object.entries(row.labels).map(([n, label]) => [`${row.id}#${n}`, coverageLabel(label)] as const)));
 }
 
@@ -47,12 +50,12 @@ const questionTable = (arms: Readonly<Record<string, Reps>>, labels: Labels, bri
     table(['arm', 'question', 'n', 'labelled 1', 'AUC', 'Brier', 'undecided', 'drift', 'median ms', 'p95 ms', 'tokens', 'usd'], Object.entries(arms).flatMap(([arm, reps]) => questionRows(arm, reps, labels, briefs)));
 
 export function main(dir: string): string {
-    const points = readPoints(join(dir, 'corpus.jsonl'));
-    const labels: Labels = new Map(readLabelled(join(dir, 'labels.jsonl')).map((row) => [row.id, row.labels]));
-    const high = new Set(points.filter((point) => (point.share ?? 0) >= 40).map((point) => point.id));
+    const points = readPoints(asText(join(dir, 'corpus.jsonl')));
+    const labels: Labels = new Map(readLabelled(asText(join(dir, 'labels.jsonl'))).map((row) => [row.id, row.labels]));
+    const high = new Set<string>(points.filter((point) => (point.share ?? 0) >= 40).map((point) => point.id));
     const arms = Object.fromEntries(ARMS.map((arm) => [arm, repsOf(dir, arm)]));
     const briefs = briefLabels(dir);
-    const boundaries = existsSync(join(dir, 'outcomes.jsonl')) ? (readJsonl(join(dir, 'outcomes.jsonl')) as readonly BoundaryRow[]) : [];
+    const boundaries = existsSync(join(dir, 'outcomes.jsonl')) ? (readJsonl(asText(join(dir, 'outcomes.jsonl'))) as readonly BoundaryRow[]) : [];
     const policy = Object.entries(arms).map(([arm, reps]) => {
         const [all, above] = [reps.map((rep) => policyMetrics(rep, labels, () => true)), reps.map((rep) => policyMetrics(rep, labels, (key) => high.has(key)))];
         return { arm, all: { precision: mean(all.map((m) => m.precision)), recall: mean(all.map((m) => m.recall)), compact: mean(all.map((m) => m.compact)), safe: all[0]?.safe ?? 0 }, above: { precision: mean(above.map((m) => m.precision)), recall: mean(above.map((m) => m.recall)) } };
@@ -62,10 +65,10 @@ export function main(dir: string): string {
         coverageAuc: mean(COVERAGE.map((id) => coverageAuc(arms[arm] ?? [], briefs, id)).filter((v) => !Number.isNaN(v))),
     }));
     const decision = decide(scores);
-    const operator = existsSync(join(dir, 'operator-labels.jsonl')) ? readLabelled(join(dir, 'operator-labels.jsonl')) : [];
+    const operator = existsSync(join(dir, 'operator-labels.jsonl')) ? readLabelled(asText(join(dir, 'operator-labels.jsonl'))) : [];
     const sections = [
         `## Labels\n\n${points.length} points, ${labels.size} labelled, ${high.size} at or above the minimum; positives per question: ${IDS.map((id) => `${id} ${[...labels.values()].filter((l) => l[id] === 1).length}`).join(' · ')}; labelled safe (verdict compact): ${policy[0]?.all.safe ?? 0}.`,
-        `## Operator kappa\n\n${operator.length === 0 ? 'Operator labels are pending: no question is gated by kappa yet.' : table(['question', 'n', 'kappa', 'usable (≥ 0.6)'], kappaRows(operator, readLabelled(join(dir, 'labels.jsonl')), IDS).map((row) => [row.question, row.n, row.kappa, row.usable ? 'yes' : 'no']))}`,
+        `## Operator kappa\n\n${operator.length === 0 ? 'Operator labels are pending: no question is gated by kappa yet.' : table(['question', 'n', 'kappa', 'usable (≥ 0.6)'], kappaRows(operator, readLabelled(asText(join(dir, 'labels.jsonl'))), IDS).map((row) => [row.question, row.n, row.kappa, row.usable ? 'yes' : 'no']))}`,
         `## Per arm and question (both repetitions)\n\n${questionTable(arms, labels, briefs)}`,
         `## Per policy (mean of the repetitions)\n\n${table(['arm', 'precision (all)', 'recall (all)', 'compact verdicts', 'precision (share ≥ 40)', 'recall (share ≥ 40)', 'drift (mean of 6)', 'coverage AUC'], policy.map(({ arm, all, above }, i) => [arm, all.precision, all.recall, all.compact, above.precision, above.recall, scores[i]?.drift ?? Number.NaN, scores[i]?.coverageAuc ?? Number.NaN]))}`,
         `## Outcome set (${boundaries.filter((row) => row.point_id !== null).length} compactions with a stored run before them, ${boundaries.filter((row) => row.point_id !== null && row.followed).length} with something after)\n\n${table(['arm', 'allowed n', 'allowed re-reads', 'allowed restated', 'blocked n', 'blocked re-reads', 'blocked restated'], Object.entries(arms).map(([arm, reps]) => { const gap = outcomeGap(boundaries, reps); return [arm, gap.allowed.n, gap.allowed.reReads, gap.allowed.restated, gap.blocked.n, gap.blocked.reReads, gap.blocked.restated]; }))}`,

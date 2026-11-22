@@ -6,6 +6,7 @@ import { CODEX_BINARY } from '@stateforge-labs/harness-adapters/codex';
 import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
 import { Labeller } from '#src/adapters/experiment/labeller.ts';
+import type { Point } from '#src/adapters/experiment/point.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
 import { crossCheck } from '#src/experiment/cross-check.ts';
 import { kappaRows } from '#src/experiment/kappa-report.ts';
@@ -14,6 +15,11 @@ import { pooled } from '#src/experiment/pool.ts';
 import { agreement, kappa } from '#src/experiment/stats.ts';
 import { labelBriefs } from './autocompact-briefs.ts';
 import { operatorLabels } from './autocompact-operator.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+const asText = (value: string): Text => must(parseText(value));
+const asFsPath = (value: string): FsPath => must(parseFsPath(value));
 
 const IDS = [...QUESTIONS.keys()];
 const flag = (name: string): boolean => process.argv.includes(`--${name}`);
@@ -24,14 +30,14 @@ const value = (name: string): string | null => {
 
 async function labelPoints(dir: string, limit: number | null, runtime: HarnessRuntime): Promise<void> {
     const [file, log] = [join(dir, 'labels.jsonl'), (line: string): void => { console.error(`${new Date().toISOString()} ${line}`); }];
-    const done = doneKeys(file, 'id');
-    const todo = readPoints(join(dir, 'corpus.jsonl')).filter((point) => !done.has(point.id)).slice(0, limit ?? Infinity);
+    const done = doneKeys(asText(file), asText('id'));
+    const todo = readPoints(asText(join(dir, 'corpus.jsonl'))).filter((point) => !done.has(asText(point.id))).slice(0, limit ?? Infinity);
     const labeller = new Labeller(runtime, 6, log);
     const instructions = labelInstructions(QUESTIONS);
     let finished = 0;
     await pooled(todo, 6, async (point) => {
-        const made = await labeller.ask(instructions, { state: point.state, hindsight: point.hindsight }, (reply) => labelsOf(reply, IDS), point.id.slice(0, 8));
-        if (made.answer !== null) appendJsonl(file, { id: point.id, labels: made.answer, ms: made.ms, attempts: made.attempts, labeller: `codex/${labeller.settings.model}/${labeller.settings.effort}` });
+        const made = await labeller.ask(instructions, { state: point.state, hindsight: point.hindsight }, (reply) => labelsOf(reply, IDS), asText(point.id.slice(0, 8)));
+        if (made.answer !== null) appendJsonl(asFsPath(file), { id: point.id, labels: made.answer, ms: made.ms, attempts: made.attempts, labeller: `codex/${labeller.settings.model}/${labeller.settings.effort}` });
         else log(`${point.id.slice(0, 8)}: no label (${made.why ?? '?'})`);
         finished += 1;
         log(`labelled ${finished}/${todo.length}`);
@@ -39,8 +45,8 @@ async function labelPoints(dir: string, limit: number | null, runtime: HarnessRu
 }
 
 function tally(dir: string): void {
-    const [points, labels] = [readPoints(join(dir, 'corpus.jsonl')), readLabelled(join(dir, 'labels.jsonl'))];
-    const byId = new Map(points.map((point) => [point.id, point]));
+    const [points, labels] = [readPoints(asText(join(dir, 'corpus.jsonl'))), readLabelled(asText(join(dir, 'labels.jsonl')))];
+    const byId = new Map<string, Point>(points.map((point) => [point.id, point]));
     const rows = labels.flatMap((label) => { const point = byId.get(label.id); return point === undefined ? [] : [{ model: label.labels['needs_verbatim'] ?? 0, code: crossCheck(point) }]; });
     const result = {
         labelled: labels.length, points: points.length, positives: Object.fromEntries(IDS.map((id) => [id, labels.filter((l) => l.labels[id] === 1).length])),
@@ -51,8 +57,8 @@ function tally(dir: string): void {
 }
 
 function kappas(dir: string): void {
-    const operator = readLabelled(join(dir, 'operator-labels.jsonl'));
-    console.log(operator.length === 0 ? 'no operator labels yet' : JSON.stringify(kappaRows(operator, readLabelled(join(dir, 'labels.jsonl')), IDS), null, 2));
+    const operator = readLabelled(asText(join(dir, 'operator-labels.jsonl')));
+    console.log(operator.length === 0 ? 'no operator labels yet' : JSON.stringify(kappaRows(operator, readLabelled(asText(join(dir, 'labels.jsonl'))), IDS), null, 2));
 }
 
 async function main(): Promise<void> {

@@ -11,6 +11,11 @@ import { outcomesOf } from '#src/experiment/outcomes.ts';
 import type { Outcome } from '#src/experiment/outcomes.ts';
 import { stratify } from '#src/experiment/stratify.ts';
 import type { Candidate } from '#src/experiment/stratify.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+const asText = (value: string): Text => must(parseText(value));
+const asFsPath = (value: string): FsPath => must(parseFsPath(value));
 
 const TEN_MINUTES = 10 * 60_000;
 type Stored = ReturnType<ExperimentStore['frame']>[number];
@@ -51,20 +56,20 @@ function outcomeRows(outcomes: ReadonlyMap<string, readonly Outcome[]>, bySource
 async function main(): Promise<void> {
     const [db, out] = [arg('db'), arg('out')];
     mkdirSync(out, { recursive: true });
-    const [store, catalogue] = [new ExperimentStore(db), new LocalCatalogue()];
+    const [store, catalogue] = [new ExperimentStore(asText(db)), new LocalCatalogue()];
     const all = store.frame();
     const frame = all.filter((point) => existsSync(point.source));
     const bySource = new Map<string, Stored[]>();
     for (const point of frame) bySource.set(point.source, [...(bySource.get(point.source) ?? []), point]);
-    const files = withBoundaries([...new Set([...recentTranscripts(join(homedir(), '.claude', 'projects'), 30), ...bySource.keys()])]);
+    const files = withBoundaries([...new Set<string>([...recentTranscripts(asText(join(homedir(), '.claude', 'projects')), 30), ...bySource.keys()])].map((file) => asText(file)));
     const outcomes = new Map<string, readonly Outcome[]>();
-    for (const file of files) outcomes.set(file, outcomesOf(await eventsOf(file)));
+    for (const file of files) outcomes.set(file, outcomesOf(await eventsOf(asFsPath(file))));
     const before = new Set([...bySource].flatMap(([source, points]) => Array.from(lastBefore((outcomes.get(source) ?? []).map((o) => o.pos), points))));
     const candidates: Candidate[] = frame.map((point) => ({ id: point.id, share: shareAt(point.source, point.cursor, catalogue)?.share ?? null, beforeBoundary: before.has(point.id) }));
     const sampled = stratify(candidates);
     const strata = new Map(sampled.picked.map((pick) => [pick.id, pick.stratum]));
-    const points = frame.flatMap((stored) => (strata.has(stored.id) ? [pointOf(store, catalogue, stored, strata.get(stored.id) ?? '')] : [])).filter((point) => point !== null);
-    const made = outcomeRows(outcomes, bySource, (stored) => points.find((p) => p.id === stored.id) ?? pointOf(store, catalogue, stored, 'outcome'));
+    const points = frame.flatMap((stored) => (strata.has(stored.id) ? [pointOf(store, catalogue, stored, asText(strata.get(stored.id) ?? ''))] : [])).filter((point) => point !== null);
+    const made = outcomeRows(outcomes, bySource, (stored) => points.find((p) => p.id === stored.id) ?? pointOf(store, catalogue, stored, asText('outcome')));
     store.close();
     const manifest = writeAll(out, db, { points, ...made }, { frame: frame.length, skipped: all.length - frame.length, strata: sampled.counts });
     console.log(JSON.stringify(manifest, null, 2));
@@ -75,7 +80,7 @@ function writeAll(out: string, db: string, data: { readonly points: readonly Poi
     for (const [name, items] of Object.entries(files)) writeFileSync(join(out, name), jsonl(items));
     const manifest = {
         seed: 42, ...counts, corpus: data.points.length, boundaries: data.rows.length, boundariesWithRun: data.rows.filter((r) => (r as { point_id: string | null }).point_id !== null).length,
-        outcomePointsNotInSample: data.extra.length, db: { file: 'tab-recap.db', sha256: sha256Of(db) }, files: Object.fromEntries(Object.keys(files).map((name) => [name, sha256Of(join(out, name))])),
+        outcomePointsNotInSample: data.extra.length, db: { file: 'tab-recap.db', sha256: sha256Of(asFsPath(db)) }, files: Object.fromEntries(Object.keys(files).map((name) => [name, sha256Of(asFsPath(join(out, name)))])),
     };
     writeFileSync(join(out, 'manifest.json'), JSON.stringify(manifest, null, 2));
     return manifest;

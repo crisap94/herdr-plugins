@@ -1,5 +1,9 @@
 import { createReadStream } from 'node:fs';
 import { createInterface } from 'node:readline';
+import { must } from '#src/protocol/result.ts';
+import type { FsPath } from '#src/recap/domain/fs-path.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { readsOf } from '#src/experiment/read-paths.ts';
 import type { Event } from '#src/experiment/outcomes.ts';
 import { extractClaude } from '../transcripts/claude/rows.ts';
@@ -7,13 +11,13 @@ import { arr, obj, parse, str } from '../transcripts/jsonl.ts';
 
 const number = (value: unknown): number | null => (typeof value === 'number' ? value : null);
 
-function toolEvents(line: string): readonly Event[] {
+function toolEvents(line: Text): readonly Event[] {
     const row = parse(line);
     if (row === null || row['type'] !== 'assistant' || row['isSidechain'] === true) return [];
     return arr(obj(row['message'])['content']).filter((block) => block['type'] === 'tool_use').map((block) => ({ kind: 'tool', reads: readsOf(str(block['name']) ?? '', obj(block['input'])) }));
 }
 
-function entryEvents(line: string, pos: number): readonly Event[] {
+function entryEvents(line: Text, pos: Count): readonly Event[] {
     const found = extractClaude([line]);
     const prompts: Event[] = found.entries.filter((entry) => entry.role === 'user').map((entry) => ({ kind: 'prompt', text: entry.text }));
     const metadata = obj(obj(parse(line) ?? {})['compactMetadata']);
@@ -23,12 +27,13 @@ function entryEvents(line: string, pos: number): readonly Event[] {
     return [...prompts, ...marks];
 }
 
-export async function eventsOf(path: string): Promise<readonly Event[]> {
+export async function eventsOf(path: FsPath): Promise<readonly Event[]> {
     const events: Event[] = [];
     let pos = 0;
     for await (const line of createInterface({ input: createReadStream(path, { encoding: 'utf8' }), crlfDelay: Infinity })) {
-        if (line.includes('"type":"assistant"')) events.push(...toolEvents(line));
-        else if (line.includes('"type":"user"') || line.includes('compact_boundary') || line.includes('queued_command')) events.push(...entryEvents(line, pos));
+        const text = must(parseText(line));
+        if (line.includes('"type":"assistant"')) events.push(...toolEvents(text));
+        else if (line.includes('"type":"user"') || line.includes('compact_boundary') || line.includes('queued_command')) events.push(...entryEvents(text, must(parseCount(pos))));
         pos += Buffer.byteLength(line) + 1;
     }
     return events;

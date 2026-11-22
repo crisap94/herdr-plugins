@@ -5,7 +5,13 @@ import { lstatSync, mkdirSync, mkdtempSync, readdirSync, rmSync, truncateSync, u
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { recentTranscripts, sha256Of, withBoundaries } from '#src/adapters/experiment/files.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { BOUNDARY_LITERAL, DAY_MS, SCAN_CHUNK_BYTES, SUBAGENT_SEGMENT } from '#src/adapters/experiment/file-constants.ts';
+
+const txt = (value: string): Text => must(parseText(value));
+const fsp = (value: string): FsPath => must(parseFsPath(value));
 
 const NOW = 1_800_000_000_000;
 const DAYS = 30;
@@ -72,7 +78,7 @@ function withRoot(run: (root: string) => void): void {
 test('recentTranscripts: recent *.jsonl only, no subagents, dotfiles and deep files kept', () => {
     withRoot((root) => {
         layout(root);
-        assert.deepEqual(new Set(recentTranscripts(root, DAYS, NOW)), new Set([
+        assert.deepEqual(new Set(recentTranscripts(txt(root), DAYS, NOW)), new Set([
             join(root, 'a/new.jsonl'),
             join(root, 'a/plain.jsonl'),
             join(root, 'a/b/deep.jsonl'),
@@ -97,7 +103,7 @@ test('recentTranscripts: the threshold is strict, sub-second precision counts', 
         utimesSync(join(root, 'exact.jsonl'), floorSeconds, floorSeconds);
         utimesSync(join(root, 'later.jsonl'), floorSeconds + 1, floorSeconds + 1);
         utimesSync(join(root, 'half.jsonl'), floorSeconds + 0.5, floorSeconds + 0.5);
-        assert.deepEqual(recentTranscripts(root, DAYS, NOW).toSorted(), [join(root, 'half.jsonl'), join(root, 'later.jsonl')]);
+        assert.deepEqual(recentTranscripts(txt(root), DAYS, NOW).toSorted(), [join(root, 'half.jsonl'), join(root, 'later.jsonl')]);
     });
 });
 
@@ -107,14 +113,14 @@ test('recentTranscripts: same order as a pre-order walk in readdir order', () =>
         mkdirSync(join(root, 'z/y'), { recursive: true });
         writeFileSync(join(root, 'z/y/last.jsonl'), LINE);
         writeFileSync(join(root, 'aa.jsonl'), LINE);
-        assert.deepEqual(recentTranscripts(root, DAYS, NOW), oracle(root, FLOOR));
-        assert.ok(recentTranscripts(root, DAYS, NOW).length > 3);
+        assert.deepEqual(recentTranscripts(txt(root), DAYS, NOW), oracle(root, FLOOR));
+        assert.ok(recentTranscripts(txt(root), DAYS, NOW).length > 3);
     });
 });
 
 test('recentTranscripts: a missing root gives an empty list', () => {
     withRoot((root) => {
-        assert.deepEqual(recentTranscripts(join(root, 'absent'), DAYS, NOW), []);
+        assert.deepEqual(recentTranscripts(txt(join(root, 'absent')), DAYS, NOW), []);
     });
 });
 
@@ -131,7 +137,7 @@ test('withBoundaries: input order, literal-bearing files only, edge cases', () =
             join(root, 'a/b/deep.jsonl'),
             join(root, 'empty.jsonl'),
         ];
-        assert.deepEqual(withBoundaries(input), [
+        assert.deepEqual(withBoundaries(input.map(txt)), [
             join(root, 'tail.jsonl'),
             join(root, 'straddle.jsonl'),
             join(root, 'big.jsonl'),
@@ -146,9 +152,9 @@ test('withBoundaries: rss growth stays bounded over a large sparse file', () => 
         const path = join(root, 'sparse.jsonl');
         writeFileSync(path, '');
         truncateSync(path, 64 * 1024 * 1024);
-        withBoundaries([path]);
+        withBoundaries([txt(path)]);
         const before = process.memoryUsage().rss;
-        assert.deepEqual(withBoundaries([path]), []);
+        assert.deepEqual(withBoundaries([txt(path)]), []);
         const growth = process.memoryUsage().rss - before;
         assert.ok(growth < 30 * 1024 * 1024, `rss grew by ${growth} bytes`);
     });
@@ -159,6 +165,6 @@ test('sha256Of: the digest of the file bytes', () => {
         const path = join(root, 'bytes.bin');
         const bytes = Buffer.from('recap bytes é\u0000 end');
         writeFileSync(path, bytes);
-        assert.equal(sha256Of(path), createHash('sha256').update(bytes).digest('hex'));
+        assert.equal(sha256Of(fsp(path)), createHash('sha256').update(bytes).digest('hex'));
     });
 });

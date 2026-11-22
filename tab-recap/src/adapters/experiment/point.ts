@@ -14,18 +14,32 @@ import { extractClaude } from '../transcripts/claude/rows.ts';
 import { claudeInFlight } from '../transcripts/claude/in-flight.ts';
 import { claudeObserved } from '../transcripts/claude/context.ts';
 import { linesAfter, linesBefore } from '../transcripts/slice.ts';
-import type { ExperimentStore, StoredPoint } from './store.ts';
+import type { ExperimentStore, FramePoint, StoredPoint } from './store.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 
 const TAIL_BYTES = 256 * 1024;
 const EXPERIMENT_MINIMUM = 40;
 const RECENT_KEPT = 60_000;
 
+export type InFlight = number | 'unknown';
+
+export interface ShareReading {
+    readonly tokens: number;
+    readonly window: number;
+    readonly share: number;
+}
+
+export interface GateReading {
+    readonly inFlight: InFlight;
+    readonly gate: Gate;
+}
+
 export interface Point extends StoredPoint {
-    readonly stratum: string;
+    readonly stratum: Text;
     readonly share: number | null;
     readonly tokens: number | null;
     readonly window: number | null;
-    readonly inFlight: number | 'unknown';
+    readonly inFlight: InFlight;
     readonly lastBreakAt: number | null;
     readonly gate: Gate;
     readonly state: AutocompactState;
@@ -45,13 +59,13 @@ function trimmed(entries: readonly Entry[]): readonly Entry[] {
     return kept.toReversed();
 }
 
-export function shareAt(source: string, cursor: number, catalogue: ModelCatalogue): { readonly tokens: number; readonly window: number; readonly share: number } | null {
+export function shareAt(source: Text, cursor: number, catalogue: ModelCatalogue): ShareReading | null {
     const observed = claudeObserved(linesBefore(source, cursor, TAIL_BYTES));
     const use = observed === null ? null : contextOf({ observed, setting: null }, claudeWindowOf(catalogue));
     return use === null ? null : { tokens: use.tokens, window: use.window, share: shareOf(use) };
 }
 
-function gateAt(stored: StoredPoint, lines: readonly string[], lastBreakAt: number | null, share: number): { readonly inFlight: number | 'unknown'; readonly gate: Gate } {
+function gateAt(stored: StoredPoint, lines: readonly string[], lastBreakAt: number | null, share: number): GateReading {
     const flight = claudeInFlight(lines);
     const inFlight = flight.kind === 'in-flight' ? flight.count : 'unknown';
     const observed = flight.kind === 'in-flight' ? observedFrom(runningCount(flight.count), flight.background, flightReason('running')) : unreadable(flightReason('unreadable'));
@@ -59,7 +73,7 @@ function gateAt(stored: StoredPoint, lines: readonly string[], lastBreakAt: numb
     return { inFlight, gate };
 }
 
-export function pointOf(store: ExperimentStore, catalogue: ModelCatalogue, stored: StoredPoint & { readonly blob: Uint8Array }, stratum: string): Point | null {
+export function pointOf(store: ExperimentStore, catalogue: ModelCatalogue, stored: FramePoint, stratum: Text): Point | null {
     try {
         const lines = linesBefore(stored.source, stored.cursor, TAIL_BYTES);
         const recent = trimmed(extractClaude(lines).entries);

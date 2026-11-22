@@ -5,6 +5,11 @@ import { appendJsonl, doneKeys } from '#src/adapters/experiment/io.ts';
 import type { Point } from '#src/adapters/experiment/point.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
 import { seeded, shuffled } from '#src/experiment/seeded.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+const asText = (value: string): Text => must(parseText(value));
+const asFsPath = (value: string): FsPath => must(parseFsPath(value));
 
 const IDS = [...QUESTIONS.keys()];
 
@@ -22,8 +27,8 @@ function show(point: Point, n: number, total: number): void {
 
 export async function operatorLabels(dir: string, count: number): Promise<void> {
     const file = join(dir, 'operator-labels.jsonl');
-    const done = doneKeys(file, 'id');
-    const points = shuffled(readPoints(join(dir, 'corpus.jsonl')), seeded(7)).slice(0, count).filter((point) => !done.has(point.id));
+    const done = doneKeys(asText(file), asText('id'));
+    const points = shuffled(readPoints(asText(join(dir, 'corpus.jsonl'))), seeded(7)).slice(0, count).filter((point) => !done.has(asText(point.id)));
     const lines = createInterface({ input: process.stdin })[Symbol.asyncIterator]();
     for (const [n, point] of points.entries()) {
         show(point, n + 1, points.length);
@@ -31,6 +36,6 @@ export async function operatorLabels(dir: string, count: number): Promise<void> 
         const typed: unknown = (await lines.next()).value;
         if (typeof typed !== 'string' || typed.trim() === 'q') return;
         const digits = typed.replace(/\s/g, '');
-        if (new RegExp(`^[01]{${IDS.length}}$`).test(digits)) appendJsonl(file, { id: point.id, labels: Object.fromEntries(IDS.map((id, i) => [id, Number(digits[i])])), at: Date.now() });
+        if (new RegExp(`^[01]{${IDS.length}}$`).test(digits)) appendJsonl(asFsPath(file), { id: point.id, labels: Object.fromEntries(IDS.map((id, i) => [id, Number(digits[i])])), at: Date.now() });
     }
 }
