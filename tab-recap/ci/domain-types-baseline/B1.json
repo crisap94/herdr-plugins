@@ -1,15 +1,15 @@
 {
   "src/ports/legacy.ts": {
-    "legacy": 96
+    "legacy": 86
   },
   "src/ports/twins/checks/legacy.ts": {
     "legacy": 3
   },
   "src/ports/twins/legacy.ts": {
-    "legacy": 99
+    "legacy": 92
   },
   "src/ports/twins/runs/legacy.ts": {
-    "legacy": 54
+    "legacy": 42
   },
   "src/ports/twins/verdicts/legacy.ts": {
     "legacy": 21
