@@ -213,8 +213,9 @@ const pluginPacing = (pacing: sl.Pacing): Pacing => (pacing.kind === 'turn' ? PA
 
 export const legacyPlugsOf = (plugs: sl.EnginePlugs): FacadePlugs => {
     const { settings } = plugs;
+    const readers = new SessionRegistry(plugs.source.sessions);
     return {
-        source: { transcripts: new SessionRegistry(plugs.source.sessions) },
+        source: { transcripts: readers },
         store: { records: pluginRecords(plugs.store.records), ledger: pluginLedger(plugs.store.facts) },
         models: { summarizer: () => pluginSummarizer(plugs.models.writer()) },
         environment: {
@@ -234,7 +235,7 @@ export const legacyPlugsOf = (plugs: sl.EnginePlugs): FacadePlugs => {
             ...(settings.pacing === undefined ? {} : { pacing: () => pluginPacing(settings.pacing?.() ?? { kind: 'turn' }) }),
             ...(settings.visible === undefined ? {} : { visible: (id: TabId) => settings.visible?.(must(parseScopeId(String(id)))) ?? 'shown' }),
         },
-        curate: curate(plugs),
+        curate: curate(plugs, { ledger: pluginLedger(plugs.store.facts), readers }),
         restore: {
             bytes: () => settings.restoreBytes?.(),
             render: (facts: LegacyRestoreFacts) => settings.restoreText?.({
