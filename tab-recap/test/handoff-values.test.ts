@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { countOf } from '#src/recap/domain/count.ts';
+import { textOf as asText } from '#src/recap/domain/text.ts';
 import assert from 'node:assert/strict';
 import { NotAnIdentifierError, handoffId, parseHandoffId } from '#src/recap/domain/ids.ts';
 import { CLAIM_KINDS } from '#src/recap/domain/lane-claim.ts';
@@ -40,9 +42,9 @@ const describeRefresh = (status: RefreshStatus): string => {
 
 test('a handoff id is a TypeID hnd_ with 26 base32 characters, and anything else is refused at the edge', () => {
     const id = 'hnd_01j3tt8z1efcd9tfr14d2pf2db';
-    assert.equal(handoffId(id), id);
+    assert.equal(handoffId(asText(id)), id);
     for (const bad of ['', 'not-an-id', 'hnd_', 'req_01j3tt8z1efcd9tfr14d2pf2db', 'HND_01J3TT8Z1EFCD9TFR14D2PF2DB', 'hnd_81j3tt8z1efcd9tfr14d2pf2db', 'hnd_01j3tt8z1efcd9tfr14d2pf2d', 'hnd_01j3tt8z1efcd9tfr14d2pf2dil']) {
-        assert.throws(() => handoffId(bad), NotAnIdentifierError, bad);
+        assert.throws(() => handoffId(asText(bad)), NotAnIdentifierError, bad);
     }
 });
 
@@ -60,9 +62,9 @@ test('claim kinds are the two compaction and handoff', () => {
 
 test('newer prompts: no transcript is unknown, no prompt is none, and a count is at least that many', () => {
     assert.deepEqual(newerPromptsOf(null), { kind: 'unknown' });
-    assert.deepEqual(newerPromptsOf(0), { kind: 'none' });
-    assert.deepEqual(newerPromptsOf(7), { kind: 'at-least', count: 7 });
-    assert.equal(describeNewer(newerPromptsOf(7)), 'at least 7');
+    assert.deepEqual(newerPromptsOf(countOf(0)), { kind: 'none' });
+    assert.deepEqual(newerPromptsOf(countOf(7)), { kind: 'at-least', count: 7 });
+    assert.equal(describeNewer(newerPromptsOf(countOf(7))), 'at least 7');
     assert.equal(describeNewer(newerPromptsOf(null)), 'unknown');
 });
 

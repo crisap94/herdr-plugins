@@ -1,3 +1,4 @@
+import { textOf } from '#src/recap/domain/text.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { sessionId } from '#src/recap/domain/ids.ts';
 import { UNREAD, type Entry, type Mark } from '#src/ports/transcripts.ts';
@@ -25,7 +26,7 @@ export class LaneRecent {
 
     private async now(lane: Lane): Promise<Lane> {
         const current = await this.session(String(lane.pane));
-        return typeof current === 'string' ? { ...lane, session: sessionId(current) } : lane;
+        return typeof current === 'string' ? { ...lane, session: sessionId(textOf(current)) } : lane;
     }
 
     private async tail(lane: Lane): Promise<RecentTail> {

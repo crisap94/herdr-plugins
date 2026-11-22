@@ -17,5 +17,5 @@ test('remove drops a control character that is not whitespace and spaces the whi
 
 test('the request note and the token text both use it', () => {
     assert.equal(requestNoteOf('a\tb\u001b[31mred\u0007 x'), 'a b[31mred x');
-    assert.equal(plainText('  x\u0007\u0007 y  '), 'x y');
+    assert.equal(plainText(textOf('  x\u0007\u0007 y  ')), 'x y');
 });

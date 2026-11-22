@@ -267,7 +267,7 @@ test('the autocompact rows: mode (shadow by default), the minimum (10, 10–95) 
 
 test('the key and the endpoint of the TypeSafe API are never a row or a config entry the modal writes', () => {
     const everything = typed(start(), ['\r', ...down(2), '\r']).state;
-    const keys = [...changes({ ...everything, draft: { ...everything.draft, autocompact: 'on', decide: { by: 'jev', model: 'm', effort: 'high' } } }).keys()];
+    const keys = [...changes({ ...everything, draft: { ...everything.draft, autocompact: 'on', decide: { by: 'jev', model: textOf('m'), effort: 'high' } } }).keys()];
     assert.ok(keys.every((key) => !/JEV|TYPESAFE/u.test(key)), keys.join(','));
 });
 

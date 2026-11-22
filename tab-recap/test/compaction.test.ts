@@ -199,7 +199,7 @@ test('codex that cannot finish its /compact gets no restore message', async () =
 
 test('an unsupported send tells the operator after the started toast', async () => {
     const world = fleet({ 'w1:p2': 'idle' });
-    const plans: CompactionPlans = { forKind: () => unsupported('no compaction plan is registered for codex') };
+    const plans: CompactionPlans = { forKind: () => unsupported(textOf('no compaction plan is registered for codex')) };
     await flow({ ...world, plans }, 'focused', 'w1:p2').run({ tab: 'w1:t1', pane: null, note: null });
     assert.deepEqual(world.toasts, [
         'Compact codex | Compacting codex',
@@ -595,7 +595,7 @@ test('a request whose typing is refused for any other cause is answered failed-e
 
 test('a request for an agent with no compaction plan is answered failed-error', async () => {
     const world = fleet({ 'w1:p2': 'idle' });
-    const plans: CompactionPlans = { forKind: () => unsupported('no compaction plan is registered for codex') };
+    const plans: CompactionPlans = { forKind: () => unsupported(textOf('no compaction plan is registered for codex')) };
     await flow({ ...world, plans }, 'focused', 'w1:p2').run({ tab: 'w1:t1', pane: 'w1:p2', note: null, origin: 'request', answer: 'r7' });
     assert.deepEqual(world.answered, ['r7 w1:p2 running', 'r7 w1:p2 failed-error']);
 });

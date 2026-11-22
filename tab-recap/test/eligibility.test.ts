@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { kindsWith } from '#src/recap/domain/registered-kinds.ts';
 import { compactableKinds, COMPACTABLE } from '#src/recap/domain/compaction.ts';
 import { REGISTERED_KINDS } from '#src/recap/domain/registered-kinds.ts';
-import { autocompactDefaultKinds, KINDS_DEFAULT } from '#src/recap/domain/autocompact.ts';
+import { KINDS_DEFAULT } from '#src/recap/domain/autocompact.ts';
 import { defaultPolicyKinds, DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { capable } from '@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts';
 
@@ -30,5 +31,5 @@ test('each eligibility list reads its own capability from the supplied table', (
     } as const;
     assert.deepEqual(compactableKinds(table), ['claude']);
     assert.deepEqual(defaultPolicyKinds(table), ['codex']);
-    assert.deepEqual(autocompactDefaultKinds(table), ['opencode']);
+    assert.deepEqual(kindsWith(table, 'autocompactDefault'), ['opencode']);
 });

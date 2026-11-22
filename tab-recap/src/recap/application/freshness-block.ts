@@ -1,4 +1,5 @@
 import { isUnknownRead, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 import { isScreenSource } from '#src/ports/screens.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import { isUnknown, type Unknown } from '#src/ports/unknowable.ts';
@@ -60,5 +61,5 @@ export async function freshnessOf(deps: FreshnessDeps, input: FreshnessInput): P
         return { kind: 'ledger-unreadable' };
     }
     const count = await newerPromptCount(deps.transcripts, input);
-    return { kind: 'fresh', freshness: { lastRun, status: input.status, newerPrompts: newerPromptsOf(count), refresh: input.refresh } };
+    return { kind: 'fresh', freshness: { lastRun, status: input.status, newerPrompts: newerPromptsOf(count === null ? null : countOf(count)), refresh: input.refresh } };
 }

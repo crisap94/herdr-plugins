@@ -17,7 +17,7 @@ import { messagesFor } from '#src/i18n/index.ts';
 import { draftFrom, initial, locksOf, saved, step, tested, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Draft, Effect, Setup } from '#src/recap/application/setup-keys.ts';
 import { coloured } from '#src/recap/render/wrap.ts';
-import { AUTO_ORDER } from '#src/recap/domain/backend.ts';
+import { AUTO_ORDER, harnessLabels } from '#src/recap/domain/backend.ts';
 import { setupFooter, setupView } from '#src/recap/render/setup.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { join } from 'node:path';
@@ -83,7 +83,7 @@ async function available(): Promise<void> {
 }
 
 async function runTest(draft: Draft, ids: readonly string[]): Promise<void> {
-    const summarizer = summarizerFor({ ...loadConfig(), backend: draft.backend, models: draft.models, effort: draft.effort }, availableIn(ids), summarizerWork(stateDir()), createRuntime());
+    const summarizer = summarizerFor({ ...loadConfig(), backend: draft.backend, models: harnessLabels((id) => textOf(draft.models[id])), effort: draft.effort }, availableIn(ids), summarizerWork(stateDir()), createRuntime());
     const began = Date.now();
     try {
         const written = await summarizer.write(TINY);

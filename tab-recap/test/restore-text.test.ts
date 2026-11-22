@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { textOf as asText } from '#src/recap/domain/text.ts';
 import assert from 'node:assert/strict';
 import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -15,8 +16,8 @@ import { restoreContentOf, restoreTextOf } from '#src/recap/application/restore-
 import { byteBudgetOf } from '#src/recap/domain/byte-budget.ts';
 import { SECTION_IDS } from '#src/recap/domain/fact.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
-import { sanitizeHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
-import { isForbidden } from '#src/recap/domain/handoff-vetting.ts';
+import { cleanHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
+import { vetHandoffText } from '#src/recap/domain/handoff-vetting.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -128,7 +129,7 @@ test('the restore template names no plugin word and no hand-over to another agen
     }
     assert.ok(text.endsWith('3 older notes left out'), text);
     const template = text.split('\n').filter((line) => !line.startsWith('- ') && !line.startsWith('  - ')).join('\n');
-    assert.equal(isForbidden(sanitizeHandoffText(text)), false, text);
+    assert.equal((vetHandoffText(cleanHandoffText(asText(text))).kind === 'err'), false, text);
     assert.equal(HAND_OVER.test(text), false, text);
     assert.equal(HAND_OVER.test(template), false, template);
     assert.ok(HAND_OVER.test(HANDOFF_PREAMBLE), 'the probe bites the handoff preamble it must tell apart');

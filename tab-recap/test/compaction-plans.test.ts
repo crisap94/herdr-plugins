@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { textOf } from '#src/recap/domain/text.ts';
 import assert from 'node:assert/strict';
 import { compactionPlans } from '#src/adapters/capability/compaction-plans.ts';
 import { needsIdle, NotAReasonError, QUEUES } from '#src/recap/domain/compaction-plan.ts';
@@ -36,9 +37,9 @@ test('plan lookup refuses an unregistered lane kind explicitly', () => {
 });
 
 test('a kind that needs the lane idle must say why; one that queues says nothing', () => {
-    assert.throws(() => needsIdle(''), NotAReasonError);
-    assert.throws(() => needsIdle('   '), NotAReasonError);
-    assert.deepEqual(needsIdle(' not measured '), { kind: 'needs-idle', reason: 'not measured' });
+    assert.throws(() => needsIdle(textOf('')), NotAReasonError);
+    assert.throws(() => needsIdle(textOf('   ')), NotAReasonError);
+    assert.deepEqual(needsIdle(textOf(' not measured ')), { kind: 'needs-idle', reason: 'not measured' });
     assert.deepEqual(QUEUES, { kind: 'queues' });
 });
 

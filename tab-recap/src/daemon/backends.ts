@@ -19,7 +19,7 @@ import { coverageDeciderFor, deciderPortFor } from './deciders.ts';
 import { loadConfig } from './config.ts';
 import { MAKERS } from './harness-makers.ts';
 import { BACKEND_IDS, enumeratesJob, installableHarnessSentence, pick, type BackendId } from '#src/recap/domain/backend.ts';
-import { placementOf } from '#src/recap/domain/job.ts';
+import { placementFor } from '#src/recap/domain/job.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
@@ -69,19 +69,19 @@ export function enumeratorFor(config: Config, available: Available, work: Direct
 }
 
 export function briefFor(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): CompactionBriefs | null {
-    const placed = placementOf(config.brief, { backend: config.backend, models: config.models }, available);
+    const placed = placementFor(config.brief, { backend: config.backend, models: config.models }, available);
     return placed === null ? null : new HarnessBrief(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'compactionBrief'), log), { model: placed.model, effort: placed.effort });
 }
 
 export function judgeWith(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, anchors?: TextAnchors): Judge | null {
-    const placed = placementOf(config.judge, { backend: config.backend, models: config.models }, available);
+    const placed = placementFor(config.judge, { backend: config.backend, models: config.models }, available);
     return placed === null ? null : new HarnessJudge(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'judge')), { model: placed.model, effort: placed.effort }, anchors);
 }
 
 judgeVia(judgeWith);
 
 export function curatorFor(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): Curators | null {
-    const placed = placementOf(config.curator, { backend: config.backend, models: config.models }, available);
+    const placed = placementFor(config.curator, { backend: config.backend, models: config.models }, available);
     return placed === null ? null : new HarnessCurator(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'curator'), log), { model: placed.model, effort: placed.effort, ...(placed.timeoutMs === undefined ? {} : { timeoutMs: placed.timeoutMs }) }, placed.answer ?? 'text');
 }
 

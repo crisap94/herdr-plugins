@@ -35,7 +35,7 @@ import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts'
 import { parseHandoffId, sessionId, type HandoffId } from '#src/recap/domain/ids.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { instant, type Duration, type Instant } from '#src/recap/domain/time.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { textOf, parseText, type Text } from '#src/recap/domain/text.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { awaitingNow, logVia, pauseVia, refreshVia } from './legacy.ts';
 import { within } from './bounded.ts';
@@ -242,7 +242,7 @@ async function sourceOf(transcripts: TranscriptRegistry, board: () => Board, lan
     const reader = transcripts.readerFor(lane.agent);
     const session = await readPaneSession(String(lane.pane));
     if (reader === undefined || typeof session !== 'string') { return null; }
-    const located = await reader.locate({ ...full, session: sessionId(session) });
+    const located = await reader.locate({ ...full, session: sessionId(textOf(session)) });
     if (isUnknown(located)) { return null; }
     const parsed = parseFsPath(located.source);
     return parsed.kind === 'ok' ? parsed.value : null;

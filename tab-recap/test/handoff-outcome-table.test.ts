@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { textOf } from '#src/recap/domain/text.ts';
 import assert from 'node:assert/strict';
 import { handoff, HANDOFF_EVENTS } from '#src/protocol/exchanges/handoff.ts';
 import { answerValue } from '#src/protocol/exchange.ts';
@@ -59,6 +60,6 @@ test('every descriptor refusal, unsupported and failure reason maps to one answe
 test('the longest handoff event, a 16-character request id with the longest stage, is not truncated', () => {
     const detail = `${'x'.repeat(16)}:refused-source-equals-target`;
     const full = `zzzzzzzz:${HANDOFF_EVENTS.failed}:${detail}`;
-    assert.equal(eventValue('zzzzzzzz', HANDOFF_EVENTS.failed, detail), full);
+    assert.equal(eventValue(textOf('zzzzzzzz'), HANDOFF_EVENTS.failed, textOf(detail)), full);
     assert.ok(full.length <= 80);
 });

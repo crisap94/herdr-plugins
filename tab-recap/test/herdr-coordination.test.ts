@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { countOf } from '#src/recap/domain/count.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { tokenEntries } from './fakes/token-entries.ts';
 import assert from 'node:assert/strict';
 import { awaitingOf, notesOf } from '#src/recap/domain/coordination.ts';
@@ -31,12 +33,12 @@ test('the typing lease: an earlier live lease of another tool holds tab-recap ba
 });
 
 test('an event value is `<seq>:<kind>[:<detail>]`, cut to 80 characters; the sequence starts at the daemon start in base 36 and rises by one', () => {
-    assert.equal(eventValue('abc', 'recap-written', 'turn-ended'), 'abc:recap-written:turn-ended');
-    assert.equal(eventValue('abc', 'lane-closed'), 'abc:lane-closed');
-    assert.equal(eventValue('abc', 'lane-closed', ''), 'abc:lane-closed');
-    assert.equal(eventValue('abc', 'compact-failed', 'x'.repeat(200)).length, VALUE_MAX);
-    assert.equal(seqOf(36 * 36, 0), '100');
-    assert.equal(seqOf(36 * 36, 1), '101');
+    assert.equal(eventValue(textOf('abc'), 'recap-written', textOf('turn-ended')), 'abc:recap-written:turn-ended');
+    assert.equal(eventValue(textOf('abc'), 'lane-closed'), 'abc:lane-closed');
+    assert.equal(eventValue(textOf('abc'), 'lane-closed', textOf('')), 'abc:lane-closed');
+    assert.equal(eventValue(textOf('abc'), 'compact-failed', textOf('x'.repeat(200))).length, VALUE_MAX);
+    assert.equal(seqOf(instant(36 * 36), countOf(0)), '100');
+    assert.equal(seqOf(instant(36 * 36), countOf(1)), '101');
 });
 
 test('notes are plain text: escapes, line breaks and tabs become spaces, runs of spaces collapse; a note that is only control characters is no note', () => {

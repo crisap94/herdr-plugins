@@ -4,8 +4,8 @@ import { deciderPortOf } from '#src/adapters/job/decider.ts';
 import { JevPortDecider } from '#src/adapters/job/jev-decider.ts';
 import { jevKey } from '#src/adapters/job/jev-key.ts';
 import type { Decider, DeciderPort } from '#src/ports/decider.ts';
-import { placementOf } from '#src/recap/domain/job.ts';
-import type { Job } from '#src/recap/domain/job.ts';
+import { placementFor } from '#src/recap/domain/job.ts';
+import type { JobSetting } from '#src/recap/domain/job.ts';
 import { settingReader } from './config.ts';
 import type { Config } from './config.ts';
 import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
@@ -20,8 +20,8 @@ import type { FsPath } from '#src/recap/domain/fs-path.ts';
 
 type HarnessFor = (harness: BackendId, tag: JobTag | undefined) => Harness<BackendId>;
 
-function harnessDeciderFor(config: Config, job: Job, available: readonly BackendId[], harnessFor: HarnessFor, call: JobCall): DeciderPort | null {
-    const placed = placementOf(job, { backend: config.backend, models: config.models }, available);
+function harnessDeciderFor(config: Config, job: JobSetting, available: readonly BackendId[], harnessFor: HarnessFor, call: JobCall): DeciderPort | null {
+    const placed = placementFor(job, { backend: config.backend, models: config.models }, available);
     return placed === null ? null : deciderPortOf(harnessFor(placed.harness, jobTagFor(config, call)), { model: placed.model, effort: placed.effort });
 }
 

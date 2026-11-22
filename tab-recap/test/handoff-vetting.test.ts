@@ -1,12 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { FORBIDDEN_PHRASES, FORBIDDEN_WORDS } from '#src/recap/domain/forbidden-words.ts';
-import { sanitizeHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
-import { isForbidden as isVetted } from '#src/recap/domain/handoff-vetting.ts';
+import { cleanHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
+import { vetHandoffText } from '#src/recap/domain/handoff-vetting.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const SAMPLES = ['recap', 'recaps', 'plugin', 'plugins', 'herdr', 'tab', 'tabs', 'tab-recap', 'recap column'];
 
-const isForbidden = (raw: string): boolean => isVetted(sanitizeHandoffText(raw));
+const isForbidden = (raw: string): boolean => vetHandoffText(cleanHandoffText(textOf(raw))).kind === 'err';
 
 test('every template of the shared list is forbidden in its own words', () => {
     for (const template of [...FORBIDDEN_WORDS, ...FORBIDDEN_PHRASES]) {

@@ -5,7 +5,8 @@ import { handoffReport, type HandoffArguments, type HandoffWiring } from '../bin
 import { messagesOf } from '#src/daemon/config.ts';
 import type { PrintRequest, PrintResult } from '#src/ports/handoff-print.ts';
 import type { DeliverRequest } from '#src/recap/application/handoff-request.ts';
-import { HANDOFF_OUTCOME_ROWS, handoffOutcomeOf, type HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
+import { HANDOFF_OUTCOME_ROWS, type HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
+import { handoffOutcomeOf } from './fakes/handoff-outcome-readers.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 
 const FROM = paneId('w1:p1');

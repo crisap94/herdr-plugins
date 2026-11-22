@@ -50,8 +50,8 @@ export const TEXTS: Readonly<Partial<Record<FieldId, TextField>>> = {
     compactHint: { read: (draft) => draft.compactHint, keep: (draft, typed): Draft => ({ ...draft, compactHint: hintSetting(textOf(typed)) }) },
     contextWindow: { read: (draft) => draft.contextWindow, keep: (draft, typed): Draft => ({ ...draft, contextWindow: windowSetting(textOf(typed)) }) },
     autocompactAt: { read: (draft) => draft.autocompactAt, keep: (draft, typed): Draft => ({ ...draft, autocompactAt: String(parseAutocompactPercent(typed, MINIMUM_DEFAULT)) }) },
-    decideModel: { read: (draft) => draft.decide.model, keep: (draft, typed): Draft => ({ ...draft, decide: { ...draft.decide, model: typed.trim() } }) },
-    compactModel: { read: (draft) => draft.compact.model, keep: (draft, typed): Draft => ({ ...draft, compact: { ...draft.compact, model: typed.trim() } }) },
-    judgeModel: { read: (draft) => draft.judge.model, keep: (draft, typed): Draft => ({ ...draft, judge: { ...draft.judge, model: typed.trim() } }) },
-    curateModel: { read: (draft) => draft.curate.model, keep: (draft, typed): Draft => ({ ...draft, curate: { ...draft.curate, model: typed.trim() } }) },
+    decideModel: { read: (draft) => draft.decide.model, keep: (draft, typed): Draft => ({ ...draft, decide: { ...draft.decide, model: textOf(typed.trim()) } }) },
+    compactModel: { read: (draft) => draft.compact.model, keep: (draft, typed): Draft => ({ ...draft, compact: { ...draft.compact, model: textOf(typed.trim()) } }) },
+    judgeModel: { read: (draft) => draft.judge.model, keep: (draft, typed): Draft => ({ ...draft, judge: { ...draft.judge, model: textOf(typed.trim()) } }) },
+    curateModel: { read: (draft) => draft.curate.model, keep: (draft, typed): Draft => ({ ...draft, curate: { ...draft.curate, model: textOf(typed.trim()) } }) },
 };

@@ -8,11 +8,6 @@ import { parseCount } from './count.ts';
 import type { Count } from './count.ts';
 import { EFFORTS } from './effort.ts';
 import type { Effort } from './effort.ts';
-import type { DeciderJob, Job } from './legacy.ts';
-
-export { compactJobOf, coverageJobOf, curateJobOf, deciderJobOf, judgeJobOf, keepDaysOf, placementOf } from './legacy.ts';
-export type { DeciderJob, Job, RecapChoices } from './legacy.ts';
-
 export type JobBy = BackendChoice | 'recap' | 'off';
 
 export type JobAnswer = 'text' | 'schema';
@@ -63,13 +58,13 @@ const CURATE_SETTING: JobSetting = { by: 'recap', model: NO_MODEL, effort: 'medi
 
 const DECIDER_SETTING: DeciderSetting = { by: 'recap', model: NO_MODEL, effort: 'low' };
 
-export const COMPACT_DEFAULT: Job = COMPACT_SETTING;
+export const COMPACT_DEFAULT: JobSetting = COMPACT_SETTING;
 
-export const JUDGE_DEFAULT: Job = JUDGE_SETTING;
+export const JUDGE_DEFAULT: JobSetting = JUDGE_SETTING;
 
-export const CURATE_DEFAULT: Job = CURATE_SETTING;
+export const CURATE_DEFAULT: JobSetting = CURATE_SETTING;
 
-export const DECIDER_DEFAULT: DeciderJob = DECIDER_SETTING;
+export const DECIDER_DEFAULT: DeciderSetting = DECIDER_SETTING;
 
 export const KEEP_INPUT_DAYS = 14;
 

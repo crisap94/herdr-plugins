@@ -1,4 +1,7 @@
 import type { EventKind } from '#src/recap/domain/event-token.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { countOf } from '#src/recap/domain/count.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { EVENT_TOKEN, EVENT_TTL_MS, eventValue, seqOf } from '#src/recap/domain/event-token.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import type { WorkspaceTokens } from '#src/ports/workspace-tokens.ts';
@@ -80,7 +83,7 @@ export class EventStream implements LaneEvents {
     }
 
     private async write(target: Target, id: string, kind: EventKind, seq: string, detail: string | null): Promise<void> {
-        const value = eventValue(seq, kind, detail);
+        const value = eventValue(textOf(seq), kind, detail === null ? null : textOf(detail));
         const done = target === 'pane' ? await this.deps.tokens.report(id, { [EVENT_TOKEN]: value }, EVENT_TTL_MS) : await this.deps.workspaces.reportWorkspace(id, { [EVENT_TOKEN]: value }, EVENT_TTL_MS);
         if (isUnknown(done)) {
             this.deps.log(`event ${kind} on ${id}: not written (${saying(done.why)})`);
@@ -111,7 +114,7 @@ export class EventStream implements LaneEvents {
         const base = this.used.has(key) ? Math.floor(now) : Math.floor(this.deps.startedAt);
         const counter = this.counts.get(key) ?? { base, n: 0, at: now };
         this.used.add(key);
-        const seq = seqOf(counter.base, counter.n);
+        const seq = seqOf(instant(counter.base), countOf(counter.n));
         this.counts.set(key, { base: counter.base, n: counter.n + 1, at: now });
         return seq;
     }

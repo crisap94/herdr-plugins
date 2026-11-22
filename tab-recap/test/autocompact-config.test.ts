@@ -1,4 +1,5 @@
 import { must } from '#src/protocol/result.ts';
+import { deciderJobOf, jevOf, policyOf } from './fakes/settings-readers.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -7,9 +8,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { HarnessPortDecider } from '#src/adapters/job/decider.ts';
 import { JevPortDecider } from '#src/adapters/job/jev-decider.ts';
-import { COVERAGE_BY_DEFAULT, MINIMUM_DEFAULT, type AutocompactPercent, jevOf, parseAutocompactCeiling, parseAutocompactKinds, parseAutocompactMode, parseAutocompactPercent, parseCooldownMs, parseCoverageBy, parseMissedFacts, parseShadowKinds, policyOf } from '#src/recap/domain/autocompact.ts';
+import { COVERAGE_BY_DEFAULT, MINIMUM_DEFAULT, type AutocompactPercent, parseAutocompactCeiling, parseAutocompactKinds, parseAutocompactMode, parseAutocompactPercent, parseCooldownMs, parseCoverageBy, parseMissedFacts, parseShadowKinds } from '#src/recap/domain/autocompact.ts';
 import { brand } from '#src/recap/domain/brand.ts';
-import { DECIDER_BY_CHOICES, DECIDER_DEFAULT, deciderJobOf, JOB_BY_CHOICES } from '#src/recap/domain/job.ts';
+import { DECIDER_BY_CHOICES, DECIDER_DEFAULT, JOB_BY_CHOICES } from '#src/recap/domain/job.ts';
 import { coverageDeciderFor, deciderFor } from '#src/daemon/deciders.ts';
 import { loadConfig } from '#src/daemon/config.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';

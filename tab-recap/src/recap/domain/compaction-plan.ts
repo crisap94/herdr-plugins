@@ -1,8 +1,9 @@
-import { err, ok, type Result } from '#src/protocol/result.ts';
+import { err, must, ok, type Result } from '#src/protocol/result.ts';
 import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 import type { Duration } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { CompactionPlan, Unsupported } from './legacy.ts';
+import type { CompactionPlan } from './legacy.ts';
+import type { Text } from './text.ts';
 
 export type CompactionPiece = Brand<string, 'CompactionPiece'>;
 export type ConfirmationReads = Brand<number, 'ConfirmationReads'>;
@@ -52,5 +53,15 @@ export type Confirmation =
 
 export type CompactionPlanResult = { readonly kind: 'supported'; readonly plan: CompactionPlan } | Unsupported;
 
-export type { CompactionPlan, CompactionPlanFactory, FollowUp, Unsupported } from './legacy.ts';
-export { compactionPiece, confirmationReads, needsIdle, unsupported } from './legacy.ts';
+export type { CompactionPlan, CompactionPlanFactory, FollowUp } from './legacy.ts';
+
+export type Unsupported = { readonly kind: 'unsupported'; readonly why: Text };
+
+export function unsupported(why: Text): Unsupported { return { kind: 'unsupported', why }; }
+
+export function needsIdle(reason: Text): WhileWorking {
+    if (reason.trim() === '') {
+        throw new NotAReasonError('a kind that needs the lane idle must say why');
+    }
+    return { kind: 'needs-idle', reason: must(parseNeedsIdleReason(reason)) };
+}
