@@ -103,7 +103,7 @@ const onDisk = (path: FsPath): FsPath => {
     }
 };
 
-export class ExperimentStore {
+export class ExperimentStoreAt {
     private readonly db: Database;
     private readonly facts: Statement;
     private readonly breaks: Statement;
@@ -135,3 +135,5 @@ export class ExperimentStore {
         this.db.close();
     }
 }
+
+export { ExperimentStore } from './legacy.ts';

@@ -2,11 +2,8 @@ import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { LocalCatalogue } from '#src/adapters/capability/catalogue.ts';
-import type { ExperimentStore } from '#src/adapters/experiment/store.ts';
-import { storeAt } from '#src/adapters/experiment/legacy.ts';
+import { ExperimentStore } from '#src/adapters/experiment/store.ts';
 import { recentTranscripts, sha256Of, withBoundaries } from '#src/adapters/experiment/files.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
 import { pointOf, shareAt } from '#src/adapters/experiment/point.ts';
 import type { Point } from '#src/adapters/experiment/point.ts';
 import { eventsOf } from '#src/adapters/experiment/events.ts';
@@ -54,7 +51,7 @@ function outcomeRows(outcomes: ReadonlyMap<string, readonly Outcome[]>, bySource
 async function main(): Promise<void> {
     const [db, out] = [arg('db'), arg('out')];
     mkdirSync(out, { recursive: true });
-    const [store, catalogue] = [storeAt(db), new LocalCatalogue()];
+    const [store, catalogue] = [new ExperimentStore(db), new LocalCatalogue()];
     const all = store.frame();
     const frame = all.filter((point) => existsSync(point.source));
     const bySource = new Map<string, Stored[]>();
@@ -65,9 +62,9 @@ async function main(): Promise<void> {
     const before = new Set([...bySource].flatMap(([source, points]) => Array.from(lastBefore((outcomes.get(source) ?? []).map((o) => o.pos), points))));
     const candidates: Candidate[] = frame.map((point) => ({ id: point.id, share: shareAt(point.source, point.cursor, catalogue)?.share ?? null, beforeBoundary: before.has(point.id) }));
     const sampled = stratify(candidates);
-    const strata = new Map(sampled.picked.map((pick) => [pick.id, must(parseText(pick.stratum))]));
-    const points = frame.flatMap((stored) => { const stratum = strata.get(stored.id); return stratum === undefined ? [] : [pointOf(store, catalogue, stored, stratum)]; }).filter((point) => point !== null);
-    const made = outcomeRows(outcomes, bySource, (stored) => points.find((p) => p.id === stored.id) ?? pointOf(store, catalogue, stored, must(parseText('outcome'))));
+    const strata = new Map(sampled.picked.map((pick) => [pick.id, pick.stratum]));
+    const points = frame.flatMap((stored) => (strata.has(stored.id) ? [pointOf(store, catalogue, stored, strata.get(stored.id) ?? '')] : [])).filter((point) => point !== null);
+    const made = outcomeRows(outcomes, bySource, (stored) => points.find((p) => p.id === stored.id) ?? pointOf(store, catalogue, stored, 'outcome'));
     store.close();
     const manifest = writeAll(out, db, { points, ...made }, { frame: frame.length, skipped: all.length - frame.length, strata: sampled.counts });
     console.log(JSON.stringify(manifest, null, 2));

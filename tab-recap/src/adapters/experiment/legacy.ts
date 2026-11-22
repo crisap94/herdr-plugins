@@ -1,6 +1,9 @@
 import type { Row } from '#src/adapters/transcripts/jsonl.ts';
 import { must } from '#src/protocol/result.ts';
-import { ExperimentStore } from './store.ts';
+import { ExperimentStoreAt } from './store.ts';
+import type { FramePoint } from './store.ts';
+import type { ModelCatalogue } from '#src/ports/model-catalogue.ts';
+import { pointAt, usageAt, type PointAt } from './point.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { existsSync, readFileSync } from 'node:fs';
@@ -17,7 +20,6 @@ import { noticing } from '../harness/confinement-notice.ts';
 import { LIBRARY_IDS, LibraryHarness, type HarnessRuntime } from '../harness/library.ts';
 import type { Harness, HarnessSettings } from '#src/ports/harness.ts';
 import { LABELLER, LabelRunner } from './labeller.ts';
-import type { Point } from './point.ts';
 import { appendRecord, readRecords } from './io.ts';
 
 const pathOf = (path: string): FsPath => must(parseFsPath(path));
@@ -67,4 +69,37 @@ export class Labeller {
     }
 }
 
-export const storeAt = (path: string, live?: string): ExperimentStore => (live === undefined ? new ExperimentStore(pathOf(path)) : new ExperimentStore(pathOf(path), pathOf(live)));
+export const storeAt = (path: string, live?: string): ExperimentStoreAt => (live === undefined ? new ExperimentStoreAt(pathOf(path)) : new ExperimentStoreAt(pathOf(path), pathOf(live)));
+
+export class ExperimentStore {
+    readonly typed: ExperimentStoreAt;
+
+    constructor(path: string, live?: string) {
+        this.typed = storeAt(path, live);
+    }
+
+    frame(): readonly FramePoint[] {
+        return this.typed.frame();
+    }
+
+    close(): void {
+        this.typed.close();
+    }
+}
+
+export type Point = Omit<PointAt, 'id'> & { readonly id: string };
+
+export interface Usage {
+    readonly tokens: number;
+    readonly window: number;
+    readonly share: number | null;
+}
+
+export function pointOf(store: ExperimentStore, catalogue: ModelCatalogue, stored: FramePoint, stratum: string): Point | null {
+    return pointAt(store.typed, catalogue, stored, must(parseText(stratum)));
+}
+
+export function shareAt(source: string, cursor: number, catalogue: ModelCatalogue): Usage | null {
+    const used = usageAt(pathOf(source), must(parseCount(cursor)), catalogue);
+    return used === null ? null : { tokens: used.tokens, window: used.window, share: used.share };
+}

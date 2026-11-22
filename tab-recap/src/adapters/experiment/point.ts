@@ -20,7 +20,7 @@ import { extractClaudeOf } from '../transcripts/claude/rows.ts';
 import { claudeInFlightOf } from '../transcripts/claude/in-flight.ts';
 import { claudeObservedOf } from '../transcripts/claude/context.ts';
 import { linesAfterOf, linesBeforeOf } from '../transcripts/slice.ts';
-import type { ExperimentStore, FramePoint, StoredPoint } from './store.ts';
+import type { ExperimentStoreAt, FramePoint, StoredPoint } from './store.ts';
 
 const TAIL_BYTES = must(parseCount(256 * 1024));
 const EXPERIMENT_MINIMUM = 40;
@@ -28,7 +28,7 @@ const RECENT_KEPT = 60_000;
 
 export type InFlight = Count | 'unknown';
 
-export interface Point extends StoredPoint {
+export interface PointAt extends StoredPoint {
     readonly stratum: Text;
     readonly share: Probability | null;
     readonly tokens: Count | null;
@@ -42,7 +42,7 @@ export interface Point extends StoredPoint {
     readonly hindsight: Hindsight;
 }
 
-export interface Usage {
+export interface UsageAt {
     readonly tokens: Count;
     readonly window: Count;
     readonly share: Probability | null;
@@ -59,7 +59,7 @@ function trimmed(entries: readonly Entry[]): readonly Entry[] {
     return kept.toReversed();
 }
 
-export function shareAt(source: FsPath, cursor: Count, catalogue: ModelCatalogue): Usage | null {
+export function usageAt(source: FsPath, cursor: Count, catalogue: ModelCatalogue): UsageAt | null {
     const observed = claudeObservedOf(linesBeforeOf(source, cursor, TAIL_BYTES));
     const use = observed === null ? null : contextOf({ observed, setting: null }, claudeWindowOf(catalogue));
     if (use === null) return null;
@@ -83,12 +83,12 @@ function gateAt(stored: StoredPoint, lines: readonly Text[], lastBreakAt: Millis
     return { inFlight, gate };
 }
 
-export function pointOf(store: ExperimentStore, catalogue: ModelCatalogue, stored: FramePoint, stratum: Text): Point | null {
+export function pointAt(store: ExperimentStoreAt, catalogue: ModelCatalogue, stored: FramePoint, stratum: Text): PointAt | null {
     try {
         const lines = linesBeforeOf(stored.source, stored.cursor, TAIL_BYTES);
         const recent = trimmed(extractClaudeOf(lines).entries);
         const history = store.factsAt(stored);
-        const used = shareAt(stored.source, stored.cursor, catalogue);
+        const used = usageAt(stored.source, stored.cursor, catalogue);
         const lastBreakAt = store.lastBreakAt(stored.tab, stored.at);
         const after = extractClaudeOf(linesAfterOf(stored.source, stored.cursor, TAIL_BYTES)).entries;
         const { blob: _blob, ...plain } = stored;
@@ -100,3 +100,6 @@ export function pointOf(store: ExperimentStore, catalogue: ModelCatalogue, store
         return null;
     }
 }
+
+export type { Point } from './legacy.ts';
+export { pointOf, shareAt } from './legacy.ts';
