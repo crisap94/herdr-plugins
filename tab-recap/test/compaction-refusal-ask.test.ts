@@ -2,10 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
-import type { CompactionDeps } from '#src/recap/application/compaction.ts';
+import type { CompactionPorts } from '#src/recap/application/compaction-deps.ts';
 import { idleClaudePlans } from '#test/fakes/idle-claude-plans.ts';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
-import { CompactRequests } from '#src/recap/application/compact-requests.ts';
+import { CompactRequestQueue } from '#src/recap/application/compact-requests.ts';
+import { stageOf } from './fakes/wire-tokens.ts';
 import { targetOf } from '#src/recap/domain/compaction.ts';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
@@ -20,9 +21,12 @@ import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { memoryStore } from './db/support.ts';
 import { paneId, tabId, agentKind } from '#src/recap/domain/ids.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
+import { type Instant } from '#src/recap/domain/time.ts';
 
 const NOW = Date.parse('2026-10-10T10:00:00Z');
 const LANE = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' });
@@ -48,7 +52,7 @@ function world(states: readonly AgentLookup[], answerOn: boolean, claims: LaneCl
     const toasts: string[] = [];
     const typed: string[] = [];
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
-    const handler = new CompactRequests({ enabled: (): boolean => true, board, requests: { requestCompact: (): void => undefined }, asks, tokens, now: (): number => NOW, log: (): void => undefined });
+    const handler = new CompactRequestQueue({ enabled: (): Presence => 'present', board, requests: { requestCompact: (): void => undefined }, asks, tokens, now: (): Instant => instant(NOW), log: (): void => undefined });
     asks.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: NOW, ref: null });
     const agents: AgentPanes = {
         status: (): Promise<AgentLookup> => {
@@ -61,7 +65,7 @@ function world(states: readonly AgentLookup[], answerOn: boolean, claims: LaneCl
         askNote: () => Promise.resolve({ kind: 'done' }),
     };
     const settling: LaneSettling = { settled: () => Promise.resolve({ kind: 'settled', status: 'done' }) };
-    const deps: CompactionDeps = {
+    const deps: CompactionPorts = {
         compactionPlans: idleClaudePlans,
         agents,
         notifier: { notify: (_title: string, body: string) => { toasts.push(body); return Promise.resolve({ kind: 'shown' }); } },
@@ -73,17 +77,17 @@ function world(states: readonly AgentLookup[], answerOn: boolean, claims: LaneCl
         brief: { enabled: () => 'absent', job: () => null, write: () => Promise.resolve({ text: null, why: null }) },
         coverage: () => null,
         decisions: null,
-        answer: (id, pane, stage): void => { if (answerOn) { handler.answer(id, pane, stage); } },
+        answer: (id, pane, stage): void => { if (answerOn) { handler.answer(id, pane, stageOf(stage)); } },
         asks,
         claims,
         recent: () => Promise.resolve([]),
         marks: () => Promise.resolve([]),
         pause: () => Promise.resolve(),
-        now: () => NOW,
+        now: () => instant(NOW),
         webs: { of: () => null },
         lanes: () => [LANE],
-        listsPane: () => true,
-        focused: () => Promise.resolve('w1:p1'),
+        listsPane: () => 'present',
+        focused: () => Promise.resolve(paneId('w1:p1')),
         refresh: () => Promise.resolve('refreshed'),
         target: () => targetOf('focused'),
         messages: () => en,

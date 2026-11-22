@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
-import { EMPTY_NOTE, noteOf, step } from '#src/recap/application/compact-keys.ts';
+import { EMPTY_NOTE, noteOf, stepNote } from '#src/recap/application/compact-keys.ts';
 import type { NoteState } from '#src/recap/application/compact-keys.ts';
 import { NOTE_LIMIT } from '#src/recap/application/compaction-message.ts';
 import { compactFooterText, compactViewText } from '#src/recap/render/compact.ts';
@@ -14,11 +14,11 @@ import { plain, visibleLength } from '#src/recap/render/wrap.ts';
 
 const ESC = String.fromCodePoint(0x1b);
 
-function type(keys: readonly string[]): { state: NoteState; effect: ReturnType<typeof step>['effect'] } {
+function type(keys: readonly string[]): { state: NoteState; effect: ReturnType<typeof stepNote>['effect'] } {
     let state = EMPTY_NOTE;
-    let effect: ReturnType<typeof step>['effect'] = null;
+    let effect: ReturnType<typeof stepNote>['effect'] = null;
     for (const key of keys) {
-        ({ state, effect } = step(state, key));
+        ({ state, effect } = stepNote(state, textOf(key)));
     }
     return { state, effect };
 }

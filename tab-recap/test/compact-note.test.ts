@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { compactNoteOf } from '#src/recap/domain/compact-note.ts';
-import { requestNoteOf, startCompact } from '#src/recap/application/compact-start.ts';
+import { beginCompact } from '#src/recap/application/compact-start.ts';
+import { requestNoteOf } from './fakes/compact-note.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { CompactStart } from '#src/recap/application/compact-start.ts';
 import { NOTE_LIMIT } from '#src/recap/application/compaction-message.ts';
 import { changes, draftFrom, initial, locksOf } from '#src/recap/application/setup-keys.ts';
@@ -35,28 +37,28 @@ test('the setting is ask unless it says skip: a fresh install opens the note pop
 
 test('ask: the popup opens for the pane and nothing is queued until the operator sends it', async () => {
     const r = recorder();
-    assert.deepEqual(await startCompact(TAB, PANE, undefined, 'ask', r.start), { kind: 'done' });
+    assert.deepEqual(await beginCompact(tabId(TAB), paneId(PANE), undefined, 'ask', r.start), { kind: 'done' });
     assert.deepEqual(r.asked, [[TAB, PANE]]);
     assert.deepEqual(r.queued, []);
 });
 
 test('skip: the request the popup sends for an empty note is queued at once, and no popup opens', async () => {
     const r = recorder();
-    assert.deepEqual(await startCompact(TAB, PANE, undefined, 'skip', r.start), { kind: 'done' });
+    assert.deepEqual(await beginCompact(tabId(TAB), paneId(PANE), undefined, 'skip', r.start), { kind: 'done' });
     assert.deepEqual(r.asked, [], 'no modal call');
     assert.deepEqual(r.queued, [{ tab: TAB, pane: PANE, note: null }]);
 });
 
 test('skip with no pane known queues for the tab, as the popup does when no pane is given', async () => {
     const r = recorder();
-    await startCompact(TAB, null, undefined, 'skip', r.start);
+    await beginCompact(tabId(TAB), null, undefined, 'skip', r.start);
     assert.deepEqual(r.queued, [{ tab: TAB, pane: null, note: null }]);
 });
 
 test('--note queues at once with that note, whatever the setting says, and opens no popup', async () => {
     for (const setting of ['ask', 'skip'] as const) {
         const r = recorder();
-        await startCompact(TAB, PANE, requestNoteOf('keep  the\ntests '), setting, r.start);
+        await beginCompact(tabId(TAB), paneId(PANE), requestNoteOf('keep  the\ntests '), setting, r.start);
         assert.deepEqual(r.asked, [], `no popup when the setting is ${setting}`);
         assert.deepEqual(r.queued, [{ tab: TAB, pane: PANE, note: 'keep the tests' }]);
     }
@@ -65,7 +67,7 @@ test('--note queues at once with that note, whatever the setting says, and opens
 test('--note "" queues with no note and opens no popup, even when the setting is ask', async () => {
     assert.equal(requestNoteOf('   '), null);
     const r = recorder();
-    await startCompact(TAB, PANE, requestNoteOf('   '), 'ask', r.start);
+    await beginCompact(tabId(TAB), paneId(PANE), requestNoteOf('   '), 'ask', r.start);
     assert.deepEqual(r.asked, []);
     assert.deepEqual(r.queued, [{ tab: TAB, pane: PANE, note: null }]);
 });
@@ -88,10 +90,10 @@ test('control characters are not sent: a tab or a newline is a space, an escape 
 
 test('a request that cannot be queued, or a popup that does not open, is reported as unknown', async () => {
     const queueFails = recorder(unknown({ why: 'unreadable', detail: causeOf('the state store is not ready') }));
-    const queued = await startCompact(TAB, PANE, undefined, 'skip', queueFails.start);
+    const queued = await beginCompact(tabId(TAB), paneId(PANE), undefined, 'skip', queueFails.start);
     assert.equal(queued.kind, 'unknown');
     const popupFails = recorder(unknown({ why: 'unreachable', detail: causeOf('no herdr') }));
-    const asked = await startCompact(TAB, PANE, undefined, 'ask', popupFails.start);
+    const asked = await beginCompact(tabId(TAB), paneId(PANE), undefined, 'ask', popupFails.start);
     assert.equal(asked.kind, 'unknown');
 });
 

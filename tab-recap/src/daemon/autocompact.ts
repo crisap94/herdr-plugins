@@ -22,7 +22,7 @@ import type { DeciderPort } from '#src/ports/decider.ts';
 import type { CompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { parseThreshold } from '#src/recap/domain/autocompact-verdict.ts';
 import type { Store } from '#src/adapters/db/database.ts';
-import { refreshVia } from './legacy.ts';
+import { refreshVia } from './refresh-status.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { awaitingOf } from '#src/recap/domain/coordination.ts';
 import { readPaneTokens } from '#src/adapters/herdr/fleet.ts';

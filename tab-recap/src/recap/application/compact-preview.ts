@@ -5,8 +5,9 @@ import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { collapsedText } from '#src/recap/domain/text-collapse.ts';
-import { requestNoteOf } from './compact-start.ts';
+import { noteFromRequest } from './compact-start.ts';
 import { guidanceOf, NOTE_LIMIT, type Material } from './compaction-message.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 export type CompactRefusal = 'note-too-long' | 'unknown-pane';
 
@@ -36,7 +37,7 @@ function materialOf(deps: CompactPreviewDeps, tab: TabId, pane: PaneId, note: Te
 
 export function compactPreviewOf(deps: CompactPreviewDeps, tab: TabId, pane: PaneId, note: Text): CompactPreview {
     if (Array.from(collapsedText(note, 'remove')).length > NOTE_LIMIT) { return refused('note-too-long'); }
-    const material = materialOf(deps, tab, pane, requestNoteOf(note));
+    const material = materialOf(deps, tab, pane, noteFromRequest(textOf(note)));
     if (material === null) { return refused('unknown-pane'); }
     return { kind: 'guidance', text: guidanceOf(material) };
 }

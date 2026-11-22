@@ -1,4 +1,4 @@
-import { startCompact, type CompactStart } from '#src/recap/application/compact-start.ts';
+import { beginCompact, type CompactStart } from '#src/recap/application/compact-start.ts';
 import { parseLine, parseMessage, type Line } from '#src/daemon/slots.ts';
 import type { Done } from '#src/ports/columns.ts';
 import { must } from '#src/protocol/result.ts';
@@ -71,7 +71,7 @@ export function runIntent(parts: IntentParts): IntentSink {
                     connection.close();
                     return;
                 }
-                void settle('compact', startCompact(connection.tab, null, undefined, parts.compactNote(), parts.compact));
+                void settle('compact', beginCompact(connection.tab, null, undefined, parts.compactNote(), parts.compact));
                 return;
             case 'configure':
                 parts.launch({ kind: 'configure', tab: connection.tab, role: connection.role });

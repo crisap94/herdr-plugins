@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import { paneTokensOf } from '#src/adapters/herdr/json.ts';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
-import { CompactRequests } from '#src/recap/application/compact-requests.ts';
+import { CompactRequestQueue } from '#src/recap/application/compact-requests.ts';
+import { paneId } from '#src/recap/domain/ids.ts';
+import { wireOf } from './fakes/wire-tokens.ts';
 import { Informer } from '#src/recap/application/informer.ts';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
 import type { Board } from '#src/recap/domain/board.ts';
@@ -17,6 +19,8 @@ import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
+import { type Instant } from '#src/recap/domain/time.ts';
 
 const PANE = 'w1:p1';
 const lane = { paneId: PANE, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', session: null };
@@ -73,7 +77,7 @@ interface Harness {
     readonly control: Control;
     readonly herdr: Herdr;
     readonly informer: Informer;
-    readonly answers: CompactRequests;
+    readonly answers: CompactRequestQueue;
     readonly asked: CompactRequest[];
     readonly asks: MemoryAskLedger;
     readonly tokens: RecordingTokens;
@@ -96,14 +100,14 @@ function harness(): Harness {
         },
     };
     const board = (): Board => informer.current;
-    const answers = new CompactRequests({ enabled: (): boolean => control.on, board, requests, asks, tokens, now: (): number => 1000, log: (): void => undefined });
+    const answers = new CompactRequestQueue({ enabled: (): Presence => (control.on ? 'present' : 'absent'), board, requests, asks, tokens, now: (): Instant => instant(1000), log: (): void => undefined });
     const informer = new Informer(herdr, { now: (): ReturnType<typeof instant> => instant(0) }, DEFAULT_POLICY, {
         onIntents: (): Promise<void> => Promise.resolve(),
         onBlind: (): void => undefined,
         onUnknownKind: (): void => undefined,
         onBeat: (): void => undefined,
         sessionIdentity: sessionOfForKind,
-        onPaneTokens: (pane, map): void => { answers.onPaneTokens(pane, map); },
+        onPaneTokens: (pane, map): void => { answers.onPaneTokens(paneId(pane), wireOf(map)); },
     });
     return { control, herdr, informer, answers, asked, asks, tokens };
 }
@@ -192,11 +196,11 @@ test('the ledger decides, not the value: a map read again with the same request 
     };
     const seeded = laneFrom(lane);
     const board: Board = { ...emptyBoard(), seeded: true, lanes: new Map([[seeded.pane, seeded]]) };
-    const answers = new CompactRequests({ enabled: (): boolean => true, board: (): Board => board, requests, asks: new MemoryAskLedger(), tokens: new RecordingTokens(), now: (): number => 1000, log: (): void => undefined });
+    const answers = new CompactRequestQueue({ enabled: (): Presence => 'present', board: (): Board => board, requests, asks: new MemoryAskLedger(), tokens: new RecordingTokens(), now: (): Instant => instant(1000), log: (): void => undefined });
     const tokens = { 'compact-req-coordinator': 'r9' };
-    answers.onPaneTokens(PANE, tokens);
-    answers.onPaneTokens(PANE, tokens);
-    answers.onPaneTokens(PANE, tokens);
+    answers.onPaneTokens(paneId(PANE), wireOf(tokens));
+    answers.onPaneTokens(paneId(PANE), wireOf(tokens));
+    answers.onPaneTokens(paneId(PANE), wireOf(tokens));
     assert.equal(attempts, 2);
     assert.deepEqual(asked.map((request) => request.answer), ['r9']);
 });

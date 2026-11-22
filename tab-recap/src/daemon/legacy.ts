@@ -1,16 +1,14 @@
-import type { GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
-import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import type { Waiting } from '#src/recap/application/autocompact.ts';
-import { RECAP_WAIT_MS } from '#src/recap/application/recap-wait.ts';
-import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
-import { refreshWithin } from './refresh-status.ts';
 import { awaitingPane } from './autocompact.ts';
 import { must } from '#src/protocol/result.ts';
+import type { CompactionRecords } from '#src/ports/legacy.ts';
+import type { CompactionLog } from '#src/ports/compaction-records.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
-import type { CompactRequests } from '#src/recap/application/compact-requests.ts';
+import type { CompactRequestQueue } from '#src/recap/application/compact-requests.ts';
+import { parseWireText, type WireText } from '#src/protocol/primitives.ts';
 import { herdrEventsFrom } from '#src/recap/domain/herdr-events.ts';
 import { capabilityOf } from '#src/recap/domain/lane-tokens.ts';
 import { notesOf } from '#src/recap/domain/coordination.ts';
@@ -20,8 +18,6 @@ import { environmentName } from '#src/recap/domain/backend.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import type { HandoffExchangeWiring } from './handoff-exchange-wiring.ts';
 import type { Worktrees } from './worktrees.ts';
-import type { Informer } from '#src/recap/application/informer.ts';
-import { listsPane } from '#src/recap/domain/board.ts';
 import { ANY_KIND } from '#src/recap/domain/policy.ts';
 import type { AgentKind } from '#src/recap/domain/ids.ts';
 import type { Box } from './dispatch-parts.ts';
@@ -33,10 +29,6 @@ export function logVia(write: (line: Text) => void): (line: string) => void {
 
 export function pauseVia(pause: (span: Duration) => Promise<void>): (ms: number) => Promise<void> {
     return (ms) => pause(duration(ms));
-}
-
-export function refreshVia(recaps: Pick<TabRecaps, 'refresh'>, records: Pick<GuardedRecapRecords, 'readRecap'>): (tab: string, lanes: readonly Lane[]) => Promise<RefreshStatus> {
-    return (tab, lanes) => refreshWithin(recaps.refresh(tabId(tab), lanes), records, tabId(tab), duration(RECAP_WAIT_MS));
 }
 
 export function awaitingNow(pane: string): Promise<Waiting> {
@@ -55,10 +47,22 @@ export function failureLog(log: (line: string) => void, what: string): (error: u
     return (error) => { log(`${what}: ${error instanceof Error ? error.message : String(error)}`); };
 }
 
-export function paneTokensTo(worktrees: Worktrees, answers: CompactRequests, exchange: HandoffExchangeWiring): (pane: string, tokens: TokenMap) => void {
+const wireMap = (tokens: TokenMap): ReadonlyMap<WireText, WireText> => {
+    const wire = new Map<WireText, WireText>();
+    for (const [name, raw] of Object.entries(tokens)) {
+        const key = parseWireText(name);
+        const value = parseWireText(raw);
+        if (key.kind === 'ok' && value.kind === 'ok') {
+            wire.set(key.value, value.value);
+        }
+    }
+    return wire;
+};
+
+export function paneTokensTo(worktrees: Worktrees, answers: CompactRequestQueue, exchange: HandoffExchangeWiring): (pane: string, tokens: TokenMap) => void {
     return (pane, tokens) => {
         worktrees.feed.update(paneId(pane), notesOf(tokens));
-        answers.onPaneTokens(pane, tokens);
+        answers.onPaneTokens(paneId(pane), wireMap(tokens));
         exchange.responder.onPaneTokens(paneId(pane), new Map(Object.entries(tokens).map(([name, raw]): [Text, Text] => [must(parseText(name)), must(parseText(raw))])));
     };
 }
@@ -67,12 +71,12 @@ export function parseEnv(text: string): ReadonlyMap<string, string> {
     return must(parseSettingsFile(text));
 }
 
-export function listsPaneIn(informer: Pick<Informer, 'current'>): (pane: string) => boolean {
-    return (pane) => listsPane(informer.current, paneId(pane));
+export function herdrEventsPresence(): Presence {
+    return herdrEventsOn() ? 'present' : 'absent';
 }
 
-export function ceilingOverrideNow(): boolean {
-    return loadSettings().autocompact.ceilingPolicy === 'overrides-check';
+export function interruptedBy(compactions: Pick<CompactionRecords, 'interrupted'>): Pick<CompactionLog, 'interrupted'> {
+    return { interrupted: (at, why) => must(parseCount(compactions.interrupted(at, why))) };
 }
 
 export function herdrEventsOn(): boolean {

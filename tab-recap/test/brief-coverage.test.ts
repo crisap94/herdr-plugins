@@ -16,7 +16,7 @@ import { appendedBrief } from '#src/recap/application/compaction-coverage.ts';
 import { compactionPlanner } from '#src/adapters/capability/compaction-plans.ts';
 import { HerdrAgentPanes } from '#src/adapters/herdr/agents.ts';
 import type { Wire } from '#src/adapters/herdr/agents.ts';
-import type { CompactionDeps } from '#src/recap/application/compaction.ts';
+import type { CompactionPorts } from '#src/recap/application/compaction-deps.ts';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { targetOf } from '#src/recap/domain/compaction.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
@@ -84,21 +84,21 @@ function flow(checks: readonly Coverage[], withCoverage = true, template: { read
     let checked = 0;
     let clock = NOW;
     const recap = { ...blankRecap(tabId('w1:t1')), tasks: oneTask('x', NO_SECTIONS, ['w1:p1']) };
-    const deps: CompactionDeps = {
+    const deps: CompactionPorts = {
         compactionPlans: compactionPlanner,
         claims: new LaneClaims(),
         agents: { status: () => Promise.resolve({ kind: 'agent', agent: agentKind(world.harness.agent), status: 'idle' }), prompt: (_pane, text) => { world.prompts.push(text); return Promise.resolve({ kind: 'sent' }); }, typeLine: (pane, line, behavior) => { if (world.harness.typeLine !== null) return world.harness.typeLine(pane, line, behavior); const refused = lineBreakRefusal(line); if (refused !== null) return Promise.resolve(refused); world.typed.push(line.pieces.map(String).join('')); return Promise.resolve({ kind: 'sent' }); }, askNote: () => Promise.resolve({ kind: 'done' }) },
         notifier: { notify: (title, body) => { world.toasts.push(`${title} | ${body}`); return Promise.resolve({ kind: 'shown' }); } },
         records: { readRecap: () => recap }, ledger: { historyOf: () => history }, boundaries: { lastBreakAt: () => null }, compactions: store.compactions,
         settling: { settled: () => Promise.resolve({ kind: 'settled', status: 'done' }) },
-        brief: { enabled: () => 'present', job: () => 'fake', write: (_doc, _own, correction) => { world.briefs.push(correction); return Promise.resolve(template === null ? { text: mustParsed(parseText(correction === undefined ? 'first brief' : 'second brief')), why: null } : { text: null, why: mustParsed(parseText(template.why)) }); } },
+        brief: { enabled: () => 'present', job: () => textOf('fake'), write: (_doc, _own, correction) => { world.briefs.push(correction); return Promise.resolve(template === null ? { text: mustParsed(parseText(correction === undefined ? 'first brief' : 'second brief')), why: null } : { text: null, why: mustParsed(parseText(template.why)) }); } },
         coverage: () => (withCoverage ? { check: () => { clock += 40; return Promise.resolve(must(checks[Math.min(checked++, checks.length - 1)])); } } : null),
         decisions: store.autocompact,
-        ceilingOverride: () => ceilingOverride,
+        ceilingOverride: () => (ceilingOverride ? 'present' : 'absent'),
         missedFacts: () => options.missedFacts ?? 'append',
         checkedBriefs: store.autocompactBriefs,
-        recent: () => Promise.resolve([{ role: 'user', text: textOf('go') }]), marks: () => Promise.resolve([{ kind: 'compacted', at: instant(NOW + 5000) }]), pause: () => Promise.resolve(), now: () => clock,
-        webs: { of: () => null }, listsPane: () => true, lanes: () => [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: world.harness.agent })], focused: () => Promise.resolve('w1:p1'),
+        recent: () => Promise.resolve([{ role: 'user', text: textOf('go') }]), marks: () => Promise.resolve([{ kind: 'compacted', at: instant(NOW + 5000) }]), pause: () => Promise.resolve(), now: () => instant(clock),
+        webs: { of: () => null }, listsPane: () => 'present', lanes: () => [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: world.harness.agent })], focused: () => Promise.resolve(paneId('w1:p1')),
         refresh: () => Promise.resolve('refreshed'), target: () => targetOf('focused'), messages: () => en, log: (line) => { world.logs.push(line); },
     };
     return { world, compaction: new Compaction(deps) };

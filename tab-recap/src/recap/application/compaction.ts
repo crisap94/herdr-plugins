@@ -15,7 +15,6 @@ import { clean } from './compaction-brief.ts';
 import type { CoverageFlow, Briefed, Checked } from './compaction-coverage.ts';
 import { blockedByCoverage } from './coverage-verdict.ts';
 import type { CompactionPorts } from './compaction-deps.ts';
-import { wiringOf, type CompactionDeps } from './twins/compaction-wiring/legacy.ts';
 import type { Material } from './compaction-message.ts';
 import { Briefing } from './compaction-briefing.ts';
 import { Sender, type Placed, type Placement } from './compaction-send.ts';
@@ -28,7 +27,6 @@ import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import { parseAnswerStage, type AnswerStage } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 
-export type { CompactionDeps } from './twins/compaction-wiring/legacy.ts';
 
 type Gate = { readonly kind: 'refused'; readonly refusal: Refusal } | ({ readonly kind: 'proceed' } & Placed);
 
@@ -273,6 +271,6 @@ export class Compactor {
 
 export class Compaction {
     private readonly compactor: Compactor;
-    constructor(deps: CompactionDeps) { this.compactor = new Compactor(wiringOf(deps)); }
+    constructor(deps: CompactionPorts) { this.compactor = new Compactor(deps); }
     run(request: CompactRequest): Promise<void> { return this.compactor.run(request); }
 }

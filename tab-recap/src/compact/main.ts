@@ -6,7 +6,7 @@ import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { loadSettings, stateDirectory } from '#src/daemon/config.ts';
 import { messagesFor } from '#src/i18n/index.ts';
-import { EMPTY_NOTE, step } from '#src/recap/application/compact-keys.ts';
+import { EMPTY_NOTE, stepNote } from '#src/recap/application/compact-keys.ts';
 import type { NoteEffect, NoteState } from '#src/recap/application/compact-keys.ts';
 import { compactFooterText, compactViewText } from '#src/recap/render/compact.ts';
 import { coloured } from '#src/recap/render/wrap.ts';
@@ -49,7 +49,7 @@ if (process.stdin.isTTY) {
     process.stdin.setRawMode(true);
     process.stdin.setEncoding('utf8');
     process.stdin.on('data', (chunk) => {
-        const stepped = step(state, String(chunk));
+        const stepped = stepNote(state, textOf(String(chunk)));
         state = stepped.state;
         if (stepped.effect !== null) {
             perform(stepped.effect);

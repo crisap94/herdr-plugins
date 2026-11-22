@@ -1,3 +1,4 @@
+import type { RecapRefresh } from './recap-wait.ts';
 import { knownOr } from '#src/ports/guarded-reads.ts';
 import type { HandoffRequestRow } from '#src/ports/requests.ts';
 import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
@@ -32,7 +33,7 @@ export interface HandoffFlowDeps {
     readonly closed: ClosedFlowDeps;
     readonly target: Omit<TargetDeps, 'lanes'>;
     readonly claims: Pick<LaneClaims, 'has' | 'claimAll' | 'release'>;
-    readonly refresh: (tab: string, lanes: readonly Lane[]) => Promise<RefreshStatus>;
+    readonly refresh: RecapRefresh;
     readonly flush: (tab: TabId, why: 'handoff') => Promise<void>;
     readonly render: HandoffRender;
     readonly sender: Pick<HandoffSender, 'send'>;
@@ -133,7 +134,7 @@ export class HandoffFlow {
 
     private async refreshed(tab: TabId): Promise<RefreshStatus> {
         try {
-            return await this.deps.refresh(String(tab), this.deps.lanes().filter((lane) => lane.tab === tab));
+            return await this.deps.refresh(tab, this.deps.lanes().filter((lane) => lane.tab === tab));
         } catch (error) {
             this.deps.log(`handoff refresh ${tab}: ${failureCauseOf(parseThrown(error))}`);
             return 'failed';

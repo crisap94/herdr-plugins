@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import { tokenEntries } from './fakes/token-entries.ts';
 import assert from 'node:assert/strict';
 import { HANDOFF_OBSERVATIONS } from '#src/recap/application/handoff-limits.ts';
-import { TypingLease } from '#src/recap/application/typing-lease.ts';
+import { PaneTypingLease } from '#src/recap/application/typing-lease.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { Ready } from '#src/recap/application/handoff-target.ts';
 import { LEASE, LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
@@ -13,6 +13,7 @@ import { causeOf } from './fakes/cause.ts';
 import type { Done } from '#src/ports/columns.ts';
 import { FakePanes } from './fakes/herdr-panes.ts';
 import { echoing, laneWith, leaseSpy, PANE, planWith, readyOf, senderOf, worldOf } from './fakes/handoff-delivery.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
 
 const TEXT = 'Handoff of the parser refactor.\n\nNext steps: finish the lexer.';
 const DELIVERED: HandoffOutcome = { kind: 'delivered' };
@@ -41,7 +42,7 @@ test('an earlier live lease of another tool returns typing-lease-busy without pa
     };
     const panes: PaneTokens = { read: async (pane): Promise<PaneTokensResult> => ({ kind: 'tokens', tokens: tokenEntries(herdr.read(pane)) }) };
     const leasePauses: number[] = [];
-    const lease = new TypingLease({ tokens, panes, now: (): number => clock.at, pause: async (ms: number): Promise<void> => { leasePauses.push(ms); clock.at += ms; }, log: (): void => undefined });
+    const lease = new PaneTypingLease({ tokens, panes, now: (): Instant => instant(clock.at), pause: async (ms: number): Promise<void> => { leasePauses.push(ms); clock.at += ms; }, log: (): void => undefined });
     herdr.report(PANE, 'coordinator', { 'typing-coordinator': '500' }, LEASE_TTL_MS);
     const world = echoing(worldOf({ latest: 'older' }));
     assert.deepEqual(await senderOf(world, lease).send(readyClaude(), TEXT), LEASE_BUSY);

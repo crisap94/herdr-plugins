@@ -3,7 +3,8 @@ import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Compaction } from '#src/recap/application/compaction.ts';
-import type { CompactionDeps } from '#src/recap/application/compaction.ts';
+import type { CompactionPorts } from '#src/recap/application/compaction-deps.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
 import type { Coverage } from '#src/recap/application/brief-coverage.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
 import type { AgentLookup, AgentPanes } from '#src/ports/agents.ts';
@@ -41,12 +42,12 @@ function hostile(steps: Steps = {}): Hostile {
     const states = [...(steps.statuses ?? [])];
     const agents: AgentPanes = { ...world.agents, status: () => Promise.resolve(states.shift() ?? IDLE) };
     const base = compactionDeps({ ...world, agents }, 'focused', 'w1:p1', [[compacted]]);
-    const deps: CompactionDeps = {
+    const deps: CompactionPorts = {
         ...base,
-        listsPane: () => board.listed,
+        listsPane: () => (board.listed ? 'present' : 'absent'),
         brief: {
             enabled: () => 'present',
-            job: () => 'writer',
+            job: () => textOf('writer'),
             write: (_document, _own, correction) => {
                 if (correction === undefined) calls.writer += 1; else calls.rewrites += 1;
                 if (steps.closesIn === 'writer' && correction === undefined) board.listed = false;
@@ -143,7 +144,7 @@ test('an operator compaction of a lane that closes while the writer runs is skip
 test('an automatic request for a pane that left the board before any record exists is answered skipped, with one log line and no toast', async () => {
     const gone = typingFleet({});
     const logs: string[] = [];
-    await new Compaction({ ...compactionDeps(gone, 'focused', 'w1:p1', [[compacted]], []), listsPane: (): boolean => false, log: (line: string): void => { logs.push(line); } }).run(AUTO);
+    await new Compaction({ ...compactionDeps(gone, 'focused', 'w1:p1', [[compacted]], []), listsPane: (): Presence => 'absent', log: (line: string): void => { logs.push(line); } }).run(AUTO);
     assert.deepEqual(gone.answered, ['r1 w1:p1 failed-skipped']);
     assert.deepEqual(gone.toasts, []);
     assert.equal(closedLines(logs).length, 1);

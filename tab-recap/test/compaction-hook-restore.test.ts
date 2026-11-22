@@ -5,7 +5,6 @@ import { createPreCompacts, type PreCompacts } from '#src/adapters/hooks/pre-com
 import { createReceiver, type RestoreMode } from '#src/adapters/hooks/receiver.ts';
 import { createTurnEnds } from '#src/adapters/hooks/turn-ends.ts';
 import { NOT_QUEUED, Sender } from '#src/recap/application/compaction-send.ts';
-import { wiringOf } from '#src/recap/application/twins/compaction-wiring/legacy.ts';
 import { Trail } from '#src/recap/application/compaction-trail.ts';
 import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
@@ -74,7 +73,7 @@ async function compactWith(mode: RestoreMode, hookAt: 'during-confirm' | 'after-
         }
         return base.marks(lane);
     };
-    await new Sender(wiringOf({ ...base, marks, restores: preCompacts })).send(LANE, TEXT, trailOf(), NOT_QUEUED);
+    await new Sender({ ...base, marks, restores: preCompacts }).send(LANE, TEXT, trailOf(), NOT_QUEUED);
     if (hookAt === 'after-send') {
         hooked.push(hook(COMPACT_START));
     }
@@ -83,7 +82,7 @@ async function compactWith(mode: RestoreMode, hookAt: 'during-confirm' | 'after-
 
 test('a typed Codex compaction reaches the agent once, with the same restore text, whichever of the hook and the confirmation comes first', async () => {
     const plain = typingFleet({ 'w1:p9': 'idle' });
-    await new Sender(wiringOf(compactionDeps(plain, 'focused', 'w1:p9', LOOKS))).send(LANE, TEXT, trailOf(), NOT_QUEUED);
+    await new Sender(compactionDeps(plain, 'focused', 'w1:p9', LOOKS)).send(LANE, TEXT, trailOf(), NOT_QUEUED);
     assert.equal(plain.typed.length, 2, 'without the hook, the command and the typed restore');
     const restoreText = plain.typed[1]?.text;
     assert.ok(restoreText?.includes('keep the schema'));
@@ -106,7 +105,7 @@ test('a compaction tab-recap did not type gets the open facts from the hook, als
     const hook = hookOf(preCompacts, 'on');
     assert.deepEqual(hook(COMPACT_START), { kind: 'context', text: FACTS });
 
-    await new Sender(wiringOf({ ...compactionDeps(typingFleet({ 'w1:p9': 'idle' }), 'focused', 'w1:p9', LOOKS), restores: preCompacts })).send(LANE, TEXT, trailOf(), NOT_QUEUED);
+    await new Sender({ ...compactionDeps(typingFleet({ 'w1:p9': 'idle' }), 'focused', 'w1:p9', LOOKS), restores: preCompacts }).send(LANE, TEXT, trailOf(), NOT_QUEUED);
     const session = LANE.session;
     assert.ok(session);
     preCompacts.mark(session, instant(NOW + 60_000));

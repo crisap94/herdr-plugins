@@ -1,7 +1,7 @@
 import { mock, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
-import { answerRestart } from '#src/recap/application/ask-restart.ts';
+import { restartAnswers } from '#src/recap/application/ask-restart.ts';
 import { handoffStageOf, HandoffMirror } from '#src/recap/application/handoff-mirror.ts';
 import type { Route } from '#src/recap/application/handoff-mirror.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
@@ -22,6 +22,10 @@ import type { Done } from '#src/ports/columns.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
 
 const HID = handoffIdOf(new Uint8Array(16).fill(7));
 
@@ -134,9 +138,9 @@ test('restart: an unsettled exchange ask is answered failed-interrupted on the s
     const asks = new MemoryAskLedger();
     const withdrawn: string[] = [];
     asks.record({ exchange: HANDOFF_EXCHANGE, requester: must(parseToolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: 1, ref: HID });
-    answerRestart({
-        exchanges: REGISTRY.exchanges, ledger: asks, requests: { takeAnswered: () => [] }, compactions: { interrupted: (): number => 0 }, tokens, enabled: (): boolean => true,
-        local: (): void => undefined, handoff: (): void => undefined, withdraw: (ask): void => { withdrawn.push(ask.ref ?? ''); }, log: (): void => undefined, now: (): number => 1000, restartedWhy: 'restarted',
+    restartAnswers({
+        exchanges: REGISTRY.exchanges, ledger: asks, requests: { takeAnswered: () => [] }, compactions: { interrupted: (): Count => must(parseCount(0)) }, tokens, enabled: (): Presence => 'present',
+        local: (): void => undefined, handoff: (): void => undefined, withdraw: (ask): void => { withdrawn.push(ask.ref ?? ''); }, log: (): void => undefined, now: (): Instant => instant(1000), restartedWhy: textOf('restarted'),
     });
     assert.deepEqual(tokens.reports.map((report) => [report.pane, report.tokens]), [['w1:p1', { 'tab-recap-handoff': 'h1:failed-interrupted' }]]);
     assert.deepEqual(withdrawn, [HID]);
