@@ -1,0 +1,38 @@
+path	tab-recap/src/recap/application/autocompact.ts	packages/session-ledger/src/recap/application/autocompact.ts
+path	tab-recap/src/recap/application/autocompact-gates.ts	packages/session-ledger/src/recap/application/autocompact-gates.ts
+path	tab-recap/src/recap/application/autocompact-shapes.ts	packages/session-ledger/src/recap/application/autocompact-shapes.ts
+path	tab-recap/src/recap/application/autocompact-state.ts	packages/session-ledger/src/recap/application/autocompact-state.ts
+path	tab-recap/src/recap/application/autocompact-questions.ts	packages/session-ledger/src/recap/application/autocompact-questions.ts
+path	tab-recap/src/recap/domain/autocompact.ts	packages/session-ledger/src/recap/domain/autocompact.ts
+path	tab-recap/src/recap/domain/autocompact-style.ts	packages/session-ledger/src/recap/domain/autocompact-style.ts
+path	tab-recap/src/recap/domain/autocompact-verdict.ts	packages/session-ledger/src/recap/domain/autocompact-verdict.ts
+path	tab-recap/src/recap/domain/continuation-note.ts	packages/session-ledger/src/recap/domain/continuation-note.ts
+path	tab-recap/src/ports/decider.ts	packages/session-ledger/src/ports/decider.ts
+path	tab-recap/src/ports/autocompact-records.ts	packages/session-ledger/src/ports/autocompact-records.ts
+path	tab-recap/src/daemon/autocompact-sweep.ts	packages/session-ledger/src/daemon/autocompact-sweep.ts
+path	tab-recap/src/recap/domain/count.ts	packages/session-ledger/src/recap/domain/count.ts
+path	tab-recap/src/recap/domain/probability.ts	packages/session-ledger/src/recap/domain/probability.ts
+path	tab-recap/src/recap/domain/usd.ts	packages/session-ledger/src/recap/domain/usd.ts
+path	tab-recap/src/recap/domain/idle-hold.ts	packages/session-ledger/src/recap/domain/idle-hold.ts
+path	tab-recap/src/recap/domain/timing-ids.ts	packages/session-ledger/src/recap/domain/timing-ids.ts
+path	tab-recap/src/recap/domain/token-amount.ts	packages/session-ledger/src/recap/domain/token-amount.ts
+path	tab-recap/src/recap/application/autocompact-line.ts	packages/session-ledger/src/recap/application/autocompact-line.ts
+stub	tab-recap/src/recap/application/autocompact.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/autocompact.ts';
+stub	tab-recap/src/recap/application/autocompact-gates.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/autocompact-gates.ts';
+stub	tab-recap/src/recap/application/autocompact-shapes.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/autocompact-shapes.ts';
+stub	tab-recap/src/recap/application/autocompact-state.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/autocompact-state.ts';
+stub	tab-recap/src/recap/application/autocompact-questions.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/autocompact-questions.ts';
+stub	tab-recap/src/recap/domain/autocompact.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/autocompact.ts';
+stub	tab-recap/src/recap/domain/autocompact-style.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/autocompact-style.ts';
+stub	tab-recap/src/recap/domain/autocompact-verdict.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/autocompact-verdict.ts';
+stub	tab-recap/src/recap/domain/continuation-note.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/continuation-note.ts';
+stub	tab-recap/src/ports/decider.ts	export * from '@stateforge-labs/session-ledger/unstable/ports/decider.ts';
+stub	tab-recap/src/ports/autocompact-records.ts	export * from '@stateforge-labs/session-ledger/unstable/ports/autocompact-records.ts';
+stub	tab-recap/src/daemon/autocompact-sweep.ts	export * from '@stateforge-labs/session-ledger/unstable/daemon/autocompact-sweep.ts';
+stub	tab-recap/src/recap/domain/count.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/count.ts';
+stub	tab-recap/src/recap/domain/probability.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/probability.ts';
+stub	tab-recap/src/recap/domain/usd.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/usd.ts';
+stub	tab-recap/src/recap/domain/idle-hold.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/idle-hold.ts';
+stub	tab-recap/src/recap/domain/timing-ids.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/timing-ids.ts';
+stub	tab-recap/src/recap/domain/token-amount.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/domain/token-amount.ts';
+stub	tab-recap/src/recap/application/autocompact-line.ts	export * from '@stateforge-labs/session-ledger/unstable/recap/application/autocompact-line.ts';

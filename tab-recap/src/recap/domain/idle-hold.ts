@@ -1,3 +1,1 @@
-export type IdleHold = 'on' | 'off';
-
-export const parseIdleHold = (raw: unknown): IdleHold => (raw === 'off' ? 'off' : 'on');
+export * from '@stateforge-labs/session-ledger/unstable/recap/domain/idle-hold.ts';
