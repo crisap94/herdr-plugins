@@ -1,7 +1,7 @@
 import { parseOrigin } from './origin.ts';
 import type { ParsedValue } from '#src/protocol/codec.ts';
 import { BACKEND_IDS, harnessLabels, type BackendChoice, type BackendId } from '@stateforge-labs/session-ledger/unstable/recap/domain/backend.ts';
-import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { parseText, textOf, type Text } from './text.ts';
 import type { Milliseconds } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import { placementFor, judgeSettingOf, compactSettingOf, coverageSettingOf, curateSettingOf, deciderSettingOf, keepDaysCountOf } from './job.ts';
 import type { DeciderBy, JobAnswer, JobBy, JobPlacement, JobReader } from './job.ts';

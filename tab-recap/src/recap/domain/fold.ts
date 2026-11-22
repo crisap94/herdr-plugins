@@ -1,4 +1,4 @@
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { textOf } from './text.ts';
 import { lanesOf, put, removed, tabOfColumn, tabsWithLanes, without } from './board.ts';
 import type { Board, HiddenState, Placement, Visibility, VisibilityTarget } from './board.ts';
 import { closureOf, closuresBetween, incarnating } from './closures.ts';

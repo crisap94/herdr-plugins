@@ -1,4 +1,4 @@
-import { textOf, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { textOf, type Text } from './text.ts';
 
 export type ControlPolicy = 'remove' | 'space';
 

@@ -3,8 +3,8 @@ import type { Count } from './count.ts';
 import { uncheckedRatio } from './ids.ts';
 import type { PaneId } from './ids.ts';
 import type { Presence } from './presence.ts';
-import type { Probability } from '@stateforge-labs/session-ledger/unstable/recap/domain/probability.ts';
-import type { Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import type { Probability } from './probability.ts';
+import type { Text } from './text.ts';
 
 export interface Rect {
     readonly x: Count;

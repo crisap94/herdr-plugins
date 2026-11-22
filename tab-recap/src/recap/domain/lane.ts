@@ -5,7 +5,7 @@ import type { LaneStatus } from './status.ts';
 import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import { parseDirectory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
 import type { Directory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
-import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { parseText, textOf, type Text } from './text.ts';
 import type { SeenLane } from './twins/lane/legacy.ts';
 
 export type { SeenLane } from './twins/lane/legacy.ts';

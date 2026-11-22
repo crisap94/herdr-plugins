@@ -7,12 +7,12 @@ import { parseCount } from './count.ts';
 import type { Count } from './count.ts';
 import type { Presence } from './presence.ts';
 import { must } from '#src/protocol/result.ts';
-import { duration, elapsed, instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { Duration, Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import { REGISTERED_KINDS, kindsWith } from '@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts';
-import type { RegisteredKindTable } from '@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts';
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import type { Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { duration, elapsed, instant } from './time.ts';
+import type { Duration, Instant } from './time.ts';
+import { REGISTERED_KINDS, kindsWith } from './registered-kinds.ts';
+import type { RegisteredKindTable } from './registered-kinds.ts';
+import { textOf } from './text.ts';
+import type { Text } from './text.ts';
 
 export const ANY_KIND = textOf('*');
 
