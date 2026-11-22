@@ -4,9 +4,7 @@ import type { TabRecap } from '#src/ports/recap-records.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
-import { microsOf } from '../run-write/legacy.ts';
-
-export { holdsAnything, recapDifferences, viewDifferences } from './legacy.ts';
+import { microsOf } from '../run-write.ts';
 
 export type Presence = 'present' | 'absent';
 

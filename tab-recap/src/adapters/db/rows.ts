@@ -1,2 +1,64 @@
-export type { Row } from './rows/legacy.ts';
-export { BadRow, all, blob, flag, guarded, guardedRead, isRow, maybeText, maybeWhole, one, text, whole } from './rows/legacy.ts';
+import type { Statement } from 'bun:sqlite';
+import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
+import { unreadableOf, type Unknown } from '#src/ports/unknowable.ts';
+
+export type Row = Readonly<Record<string, unknown>>;
+
+export const isRow = (input: unknown): input is Row => typeof input === 'object' && input !== null;
+
+export class BadRow extends Error {}
+
+export function text(row: Row, key: string): string {
+    const value = row[key];
+    if (typeof value !== 'string') {
+        throw new BadRow(`${key} is not text`);
+    }
+    return value;
+}
+
+export const maybeText = (row: Row, key: string): string | null => (row[key] === null ? null : text(row, key));
+
+export function whole(row: Row, key: string): number {
+    const value = row[key];
+    if (typeof value === 'bigint') {
+        return Number(value);
+    }
+    if (typeof value !== 'number') {
+        throw new BadRow(`${key} is not a number`);
+    }
+    return value;
+}
+
+export const maybeWhole = (row: Row, key: string): number | null => (row[key] === null ? null : whole(row, key));
+
+export function blob(row: Row, key: string): Uint8Array {
+    const value = row[key];
+    if (!(value instanceof Uint8Array) || value.length !== 16) {
+        throw new BadRow(`${key} is not an id`);
+    }
+    return value.constructor === Uint8Array ? value : Uint8Array.from(value);
+}
+
+export const flag = (row: Row, key: string): boolean => whole(row, key) === 1;
+
+type Param = string | number | bigint | Uint8Array | null;
+
+export const all = (statement: Statement, ...params: readonly Param[]): readonly Row[] => statement.all(...params);
+
+export const one = (statement: Statement, ...params: readonly Param[]): Row | null => statement.get(...params) ?? null;
+
+export function guarded<T>(read: () => T, fallback: T): T {
+    try {
+        return read();
+    } catch {
+        return fallback;
+    }
+}
+
+export function guardedRead<T>(read: () => T): T | Unknown {
+    try {
+        return read();
+    } catch (error) {
+        return unreadableOf(failureCauseOf(parseThrown(error)));
+    }
+}

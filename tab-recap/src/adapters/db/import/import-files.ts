@@ -12,8 +12,6 @@ import { canonicalRecap, canonicalView, holdingOf, recapDifferenceLines, viewDif
 import { attempt, RowsWriter } from './import-rows.ts';
 import type { LegacyStoreFiles } from './legacy-files.ts';
 
-export { importFiles, loadAndCompare } from './legacy.ts';
-
 export interface ImportReport {
     readonly recaps: Count;
     readonly views: Count;

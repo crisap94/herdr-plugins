@@ -1,13 +1,14 @@
 import { describe, test } from 'node:test';
 import type { Database } from 'bun:sqlite';
 import { RecapRecordsRepository } from '#src/adapters/db/recap-records.ts';
-import { RunRows } from '#src/adapters/db/run-write/legacy.ts';
-import { TranscriptRows } from '#src/adapters/db/transcripts/legacy.ts';
+import { RunRows } from '#src/adapters/db/run-write.ts';
+import { TranscriptStore } from '#src/adapters/db/transcripts.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { RECAP_CAUSES } from '#src/recap/domain/intent.ts';
 import { expectSameEffect, expectSameRows, withParity } from './parity.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 
@@ -33,7 +34,7 @@ const rawRun = (db: Database): void => {
 
 describe('parity: run records', () => {
     test('insertReads replaces a stored read and adds new ones like INSERT OR REPLACE', () => {
-        const reads = [{ id: keyOf(2), pane: 'p1', from: 5, to: 9, replaces: null }, { id: keyOf(3), pane: 'p2', from: 0, to: 4, replaces: null }];
+        const reads = [{ id: keyOf(2), pane: paneId('p1'), from: countOf(5), to: countOf(9), replaces: null }, { id: keyOf(3), pane: paneId('p2'), from: countOf(0), to: countOf(4), replaces: null }];
         expectSameEffect({
             seed: exec(`PRAGMA foreign_keys = OFF; INSERT INTO run_read (run_id, transcript_id, from_cursor, to_cursor) VALUES (${literal(1)}, ${literal(2)}, 1, 2)`),
             raw: (db) => {
@@ -41,7 +42,7 @@ describe('parity: run records', () => {
                 write.run(keyOf(1), keyOf(2), 5, 9);
                 write.run(keyOf(1), keyOf(3), 0, 4);
             },
-            builder: (db) => { new RunRows(db, new TranscriptRows(db)).insertReads(keyOf(1), reads); },
+            builder: (db) => { new RunRows(db, new TranscriptStore(db)).insertReads(keyOf(1), reads); },
             dump: dumpOf(READS),
         });
     });
@@ -50,7 +51,7 @@ describe('parity: run records', () => {
         expectSameEffect({
             seed: exec(RUN_SEED),
             raw: rawRun,
-            builder: (db) => { new RunRows(db, new TranscriptRows(db)).insertRun(FACTS, null, null); },
+            builder: (db) => { new RunRows(db, new TranscriptStore(db)).insertRun(FACTS, null, null); },
             dump: (db) => ({ chapters: dumpOf(CHAPTERS)(db), runs: dumpOf(RUNS)(db) }),
         });
     });
@@ -63,7 +64,7 @@ describe('parity: run records', () => {
                 rawRun(db);
             },
             builder: (db) => {
-                const rows = new RunRows(db, new TranscriptRows(db));
+                const rows = new RunRows(db, new TranscriptStore(db));
                 rows.insertRun(FACTS, null, null);
                 rows.insertRun(FACTS, null, null);
             },

@@ -38,8 +38,8 @@ import { openStoreAt, storeOver, type Store, type StoreSettings } from './databa
 import { HandoffAnswerRepository } from './handoff-answers.ts';
 import type { NewerDatabase } from './open.ts';
 import { RequestsStore } from './requests.ts';
-import { RunInputsRepository } from './run-inputs/legacy.ts';
-import { VerdictsRepository } from './verdicts/legacy.ts';
+import { RunInputsRepository } from './run-inputs.ts';
+import { VerdictsRepository } from './verdicts.ts';
 
 const textOf = (raw: string | null | undefined): Text | null => (raw === null || raw === undefined ? null : must(parseText(raw)));
 const countOf = (raw: number | null | undefined): Count | null => (raw === null || raw === undefined ? null : must(parseCount(raw)));

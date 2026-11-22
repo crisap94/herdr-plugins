@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import type { Database } from 'bun:sqlite';
-import { TabViewsRepository } from '#src/adapters/db/tab-views/legacy.ts';
+import { TabViewsRepository } from '#src/adapters/db/tab-views.ts';
 import { expectSameEffect } from './parity.ts';
 
 const exec = (sql: string) => (db: Database): void => { db.exec(sql); };

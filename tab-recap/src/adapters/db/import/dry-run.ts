@@ -2,7 +2,9 @@ import { MEMORY } from '../connection.ts';
 import { storeOver } from '../database.ts';
 import { openDatabase } from '../open.ts';
 import { compareLegacyFiles } from './import-files.ts';
-import { LegacyFiles } from './legacy-files.ts';
+import { LegacyStoreFiles } from './legacy-files.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import { instant } from '#src/recap/domain/time.ts';
 
 const directory = process.argv.slice(2).find((argument) => !argument.startsWith('--'));
@@ -14,7 +16,7 @@ const opened = openDatabase(MEMORY);
 if (opened.kind !== 'ready') {
     throw new Error('an in-memory database cannot be newer');
 }
-const report = compareLegacyFiles(storeOver(opened.db), new LegacyFiles(directory).files, instant(Date.now()));
+const report = compareLegacyFiles(storeOver(opened.db), new LegacyStoreFiles(must(parseFsPath(directory))), instant(Date.now()));
 process.stdout.write(`recaps ${report.recaps} · views ${report.views} · requests ${report.requests} · visibility requests ${report.visibility} · hidden.json ${report.hidden === 'present' ? 'yes' : 'no'}\n`);
 process.stdout.write(`${report.differences.length === 0 ? 'no differences' : `${report.differences.length} difference(s):\n${report.differences.map((line) => `  ${line}`).join('\n')}`}\n`);
 process.exitCode = report.differences.length === 0 ? 0 : 1;

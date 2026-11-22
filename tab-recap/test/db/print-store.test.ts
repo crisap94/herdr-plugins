@@ -8,7 +8,7 @@ import { versionOf } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { openPrintStore } from '#src/adapters/db/print-store.ts';
 import { RecapRecordsRepository } from '#src/adapters/db/recap-records.ts';
-import { TabViewsRepository } from '#src/adapters/db/tab-views/legacy.ts';
+import { TabViewsRepository } from '#src/adapters/db/tab-views.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { closedDaysOf as closedLaneDaysOf } from '../fakes/closed-days.ts';
 import { scratchDir } from './support.ts';

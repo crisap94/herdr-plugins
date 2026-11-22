@@ -6,14 +6,14 @@ import { BoundaryRows } from '#src/adapters/db/boundaries.ts';
 import { RetentionRepository } from '#src/adapters/db/retention.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { SessionSourceRepository } from '#src/adapters/db/session-source/legacy.ts';
+import { SessionSourceRepository } from '#src/adapters/db/session-source.ts';
 import { StoriesRepository } from '#src/adapters/db/stories.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
-import { TranscriptRows } from '#src/adapters/db/transcripts/legacy.ts';
+import { TranscriptStore } from '#src/adapters/db/transcripts.ts';
 import { typeIdOf } from '#src/adapters/db/typeid.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
-import { VerdictsRepository } from '#src/adapters/db/verdicts/legacy.ts';
+import { VerdictsRepository } from '#src/adapters/db/verdicts.ts';
 import { LedgerRepository } from '#src/adapters/db/ledger.ts';
 import { expectSameEffect, expectSameRows, withParity } from './parity.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
@@ -197,7 +197,7 @@ describe('parity: finish (boundaries, reads, retention, session source, stories,
             ORDER BY b.at LIMIT 1)
           WHERE tab_id = ? AND boundary_id IS NULL AND stage IN ('compacting','restoring','compacted')`).run('t4');
             },
-            builder: (db) => { new BoundaryRows(db, new TranscriptRows(db)).record(tabId('t4'), { at: instant(500), marks: [], moved: [] }); },
+            builder: (db) => { new BoundaryRows(db, new TranscriptStore(db)).record(tabId('t4'), { at: instant(500), marks: [], moved: [] }); },
             dump: (db) => ({ chapters: db.prepare(CHAPTERS).all(), links: db.prepare(COMPACTION_LINKS).all() }),
         });
     });

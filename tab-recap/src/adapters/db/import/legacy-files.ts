@@ -11,8 +11,6 @@ import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { Presence } from './equivalence.ts';
 
-export { LegacyFiles } from './legacy.ts';
-
 type Kind = 'recaps' | 'tabs' | 'requests' | 'visibility';
 
 const KINDS: readonly Kind[] = ['recaps', 'tabs', 'requests', 'visibility'];

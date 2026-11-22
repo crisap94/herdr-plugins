@@ -1,15 +1,24 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import type { Database } from 'bun:sqlite';
-import { TranscriptRows, type Moved } from '#src/adapters/db/transcripts/legacy.ts';
+import { TranscriptStore } from '#src/adapters/db/transcripts.ts';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import { normalise } from './parity.ts';
-import { agentKind, paneId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { sourcePathOf, cursorOf } from '#src/ports/transcripts.ts';
 import { parseTextOrNull } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
+
+interface Moved {
+    readonly id: Uint8Array;
+    readonly pane: string;
+    readonly from: number;
+    readonly to: number;
+    readonly replaces: Uint8Array | null;
+}
 
 const UPSERT_SQL = `INSERT INTO transcript (id, tab_id, pane, agent, source, attached, position, cursor, tail, title, last_prompt, claude_note, first_seen)
           VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)
@@ -67,10 +76,10 @@ function attachSteps(seed: (db: Database) => void, steps: readonly { tab: string
     const raw = memory(seed);
     const built = memory(seed);
     try {
-        const rows = new TranscriptRows(built);
+        const rows = new TranscriptStore(built);
         for (const step of steps) {
             const oracle = rawAttach(raw, step.tab, step.lanes, step.at);
-            const produced = rows.attach(step.tab, step.lanes, step.at);
+            const produced = rows.attach(tabId(step.tab), step.lanes, instant(step.at));
             assert.deepStrictEqual(shape(built, produced), shape(raw, oracle));
             for (const each of produced) {
                 assert.equal(Object.getPrototypeOf(each.id), Uint8Array.prototype);
@@ -109,7 +118,7 @@ describe('transcript attach and ofPane move to Drizzle with the same effect', ()
             const built = memory(seedBoth);
             try {
                 const oracle = rawOfPane(raw, 'tab-1', pane, 800);
-                const produced = new TranscriptRows(built).ofPane('tab-1', pane, 800);
+                const produced = new TranscriptStore(built).ofPane(tabId('tab-1'), paneId(pane), instant(800));
                 assert.equal(Object.getPrototypeOf(produced), Uint8Array.prototype);
                 assert.equal(sourceOf(built, produced), sourceOf(raw, oracle));
                 assert.deepStrictEqual(normalise(dumpOf(built)), normalise(dumpOf(raw)));
