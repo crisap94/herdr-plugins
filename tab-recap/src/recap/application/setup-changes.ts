@@ -57,7 +57,7 @@ type JobSettings = Pick<Draft['compact'], 'model' | 'effort'> & { readonly by: s
 const jobs = (by: FieldId, model: FieldId, effort: FieldId, prefix: string, job: JobSettings): readonly Entry[] => [[by, `${prefix}_BY`, job.by], [model, `${prefix}_MODEL`, job.model], [effort, `${prefix}_EFFORT`, job.effort]];
 
 
-function entriesOf(draft: Draft): readonly Entry[] {
+export function entriesOf(draft: Draft): readonly Entry[] {
     return [
         ['harness', 'TAB_RECAP_BACKEND', draft.backend],
         ...BACKEND_IDS.map((id): readonly [FieldId, string, string] => ['model', `TAB_RECAP_MODEL_${id.toUpperCase()}`, draft.models[id]]),

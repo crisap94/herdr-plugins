@@ -5,6 +5,7 @@ import { messagesOf } from '#src/daemon/config.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { USAGE_EXIT } from '#src/recap/domain/handoff-outcome.ts';
 import { desktopDocumentCommand } from './desktop-document.ts';
+import { settingsCommand } from './desktop-settings.ts';
 import { enableDesktopDaemon, ensureDesktopDaemon, stopDesktopDaemon } from './desktop-daemon.ts';
 
 const OK = 0;
@@ -51,9 +52,11 @@ const commands: Readonly<Record<string, (arg: string | undefined) => number>> = 
 };
 
 const [name, arg] = process.argv.slice(2);
-const command = name === undefined ? undefined : commands[name];
+const settings = (): number => settingsCommand(process.argv.slice(3));
+const known = name === undefined ? undefined : commands[name];
+const command = name === 'settings' ? settings : known;
 if (command === undefined) {
-    console.error(`tab-recap: 2 — ${Object.keys(commands).join('|')}`);
+    console.error(`tab-recap: 2 — ${[...Object.keys(commands), 'settings'].join('|')}`);
     process.exitCode = USAGE_EXIT;
 } else {
     try {
