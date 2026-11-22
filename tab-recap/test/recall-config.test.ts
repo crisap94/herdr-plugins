@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { enumeratorFor } from '#src/daemon/backends.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
-import { loadConfig } from '#src/daemon/config.ts';
+import { loadSettings } from '#src/daemon/config.ts';
 import { fakeRuntime } from '#test/fakes/harness-runtime.ts';
 
 const runtime = fakeRuntime({ scripts: {} });
@@ -30,29 +30,29 @@ function withConfig(lines: string, body: () => void): void {
 
 test('TAB_RECAP_PIPELINE names the steps of a run (one unless set; nonsense is the default); TAB_RECAP_RECONCILE_EVERY the turns between two reconciliations (8; a whole number of 1 or more)', () => {
     withConfig('', () => {
-        assert.deepEqual([loadConfig().pipeline, loadConfig().reconcileEvery], ['one', 8]);
+        assert.deepEqual([loadSettings().pipeline, loadSettings().reconcileEvery], ['one', 8]);
     });
     withConfig('TAB_RECAP_PIPELINE=Enumerate+Gates\nTAB_RECAP_RECONCILE_EVERY=3\n', () => {
-        assert.deepEqual([loadConfig().pipeline, loadConfig().reconcileEvery], ['enumerate+gates', 3]);
+        assert.deepEqual([loadSettings().pipeline, loadSettings().reconcileEvery], ['enumerate+gates', 3]);
     });
     withConfig('TAB_RECAP_PIPELINE=fast\nTAB_RECAP_RECONCILE_EVERY=0\n', () => {
-        assert.deepEqual([loadConfig().pipeline, loadConfig().reconcileEvery], ['one', 8]);
+        assert.deepEqual([loadSettings().pipeline, loadSettings().reconcileEvery], ['one', 8]);
     });
     withConfig('TAB_RECAP_RECONCILE_EVERY=2.7\n', () => {
-        assert.equal(loadConfig().reconcileEvery, 2);
+        assert.equal(loadSettings().reconcileEvery, 2);
     });
 });
 
 test('the enumeration is the writer\'s harness at low effort; none when no harness is installed or the writer is a custom command', () => {
     withConfig('TAB_RECAP_BACKEND=claude\nTAB_RECAP_MODEL_CLAUDE=sonnet\nTAB_RECAP_EFFORT=high\n', () => {
-        const config = loadConfig();
+        const config = loadSettings();
         const made = enumeratorFor(config, ['claude', 'codex'], must(parseDirectory('/tmp/none')), runtime);
         assert.ok(made !== null && made.job === 'claude · sonnet · low', made?.job);
     });
     withConfig('TAB_RECAP_BACKEND=auto\n', () => {
-        assert.equal(enumeratorFor(loadConfig(), [], must(parseDirectory('/tmp/none')), runtime), null);
+        assert.equal(enumeratorFor(loadSettings(), [], must(parseDirectory('/tmp/none')), runtime), null);
     });
     withConfig('TAB_RECAP_BACKEND=custom\nTAB_RECAP_CUSTOM_CMD=cat\n', () => {
-        assert.equal(enumeratorFor(loadConfig(), ['custom'], must(parseDirectory('/tmp/none')), runtime), null);
+        assert.equal(enumeratorFor(loadSettings(), ['custom'], must(parseDirectory('/tmp/none')), runtime), null);
     });
 });

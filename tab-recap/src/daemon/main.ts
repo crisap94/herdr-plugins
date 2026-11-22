@@ -43,14 +43,14 @@ import { contextOf, parseRoot, parseSwitch, parseVersion, startSlots, taps, type
 import { Backends } from './backends.ts';
 import { boundedBy } from './bounded.ts';
 import { capabilityNow, failureLog, herdrEventsOn, listeningIn, logVia, paneTokensTo, wantsScreen } from './legacy.ts';
-import { shutDown } from './shutdown.ts';
-import { openState } from './state.ts';
+import { SHUTDOWN_MS, shutDownWithin } from './shutdown.ts';
+import { openStateAt } from './state.ts';
 import type { Autocompact } from '#src/recap/application/autocompact.ts';
 import { candidateOf, candidatesOf, wireAutocompact } from './autocompact.ts';
 import { AutocompactSweep } from './autocompact-sweep.ts';
 import { wireCompaction } from './compaction.ts';
 import { createPreCompacts } from '#src/adapters/hooks/pre-compacts.ts';
-import { configGetter, loadConfig, loadSettings, messagesOf, stateDirectory } from './config.ts';
+import { settingGetter, loadSettings, messagesOf, stateDirectory } from './config.ts';
 import { wireCurate } from './curate.ts';
 import type { Curate } from '#src/recap/application/curate.ts';
 import { InputRetention } from '#src/recap/application/input-retention.ts';
@@ -111,7 +111,7 @@ interface Wired {
     readonly ledger: (listener: (event: LedgerEvent) => void) => () => void;
 }
 
-const handoffRequestsOn = (): HandoffRequests => loadConfig().handoffRequests;
+const handoffRequestsOn = (): HandoffRequests => loadSettings().handoffRequests;
 
 function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wired {
     const clock = new SystemClock();
@@ -125,7 +125,7 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
     const { engine, recaps, viewers } = wireEngine({ store, backends, transcripts, clock, repos, curate, events, board, ledger: ledgerTaps.emit, log });
     const worktrees = wireWorktrees(store, log);
     const answers = new CompactRequests({ enabled: herdrEventsOn, board, requests: store.requests, asks: store.asks, tokens: fleet, now: nowInstant, log });
-    const exchange = handoffExchangeOf({ store, tokens: fleet, events, board, sharing: (): HerdrEvents => loadConfig().herdrEvents, requests: handoffRequestsOn, log });
+    const exchange = handoffExchangeOf({ store, tokens: fleet, events, board, sharing: (): HerdrEvents => loadSettings().herdrEvents, requests: handoffRequestsOn, log });
     const hub = new SettleHub({ agents: fleet.agents(), listening: listeningIn(box), pause: sleep, now: nowInstant });
     const webs = new LaneWebs(repos);
     const contexts = new LaneContexts(transcripts, agentWindows(new CatalogueWindows()), systemCompactLimits(), () => loadSettings().compaction.window);
@@ -133,7 +133,7 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
 
     const dispatch = dispatchFor(box, { fleet, store, recaps, transcripts, webs, contexts, events, sharing: (): Sharing => (herdrEventsOn() ? 'on' : 'off') }, log);
     const turns = laneTurns({ hub, compactions: store.compactions, board: (): Board => box.informer?.current ?? emptyBoard(), now: nowInstant, statused: statusTaps.emit });
-    const informer = new Informer(fleet, clock, loadConfig().policy, {
+    const informer = new Informer(fleet, clock, loadSettings().policy, {
         onIntents: async (intents: readonly Intent[]): Promise<void> => {
             for (const intent of intents) {
                 if (await boundedBy(dispatch.send(intent), duration(INTENT_MS)) === 'timeout') {
@@ -144,7 +144,7 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
         },
         onBlind: (blindness: Blindness): void => { log(`blind at ${blindness.at}: ${blindness.saying}`); },
         onUnknownKind: (): void => { },
-        onBeat: onBeatOf((current: Board): void => { worktrees.registry.beat(current); }, recaps, board, loadConfig().pacing),
+        onBeat: onBeatOf((current: Board): void => { worktrees.registry.beat(current); }, recaps, board, loadSettings().pacing),
         onStatus: parseStatusPush.bind(undefined, turns),
         onPaneTokens: paneTokensTo(worktrees, answers, exchange),
         sessionIdentity: sessionOfForKind,
@@ -158,7 +158,7 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
         briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact, checkedBriefs: store.autocompactBriefs, answers, asks: store.asks, events, claims, preCompacts,
         typing: new TypingLease({ tokens: fleet, panes: fleet, now: nowInstant, pause: sleep, log }),
     });
-    return { informer, fleet, backends, store, engine, recaps, transcripts, clock, viewers, autocompact, statuses: statusTaps.tap, ledger: ledgerTaps.tap, compaction, retention: new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: () => loadSettings().keepInputDays, briefRetention: (): BriefRetention => loadConfig().keepBrief, log }), curate, sweep: new AutocompactSweep({ candidates: () => candidatesOf(informer.current, log), autocompact: (): Autocompact | null => box.autocompact, log }), laneTokens, answers, events, worktrees, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror: exchange.mirror, pause: sleep, log: write }) };
+    return { informer, fleet, backends, store, engine, recaps, transcripts, clock, viewers, autocompact, statuses: statusTaps.tap, ledger: ledgerTaps.tap, compaction, retention: new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: () => loadSettings().keepInputDays, briefRetention: (): BriefRetention => loadSettings().keepBrief, log }), curate, sweep: new AutocompactSweep({ candidates: () => candidatesOf(informer.current, log), autocompact: (): Autocompact | null => box.autocompact, log }), laneTokens, answers, events, worktrees, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror: exchange.mirror, pause: sleep, log: write }) };
 }
 
 function versionOf(): Version | null { const version = codeVersion(); return version === null ? null : parseVersion(version); }
@@ -193,7 +193,7 @@ async function boot(root: Directory, pidfile: Pidfile): Promise<Wired | ExitCode
     pidfile.claim(process.pid, codeVersion());
     pidfile.beat();
     const frontend = frontendFor(() => new HerdrFleet(textOf(root)));
-    const opened = await openState(root, frontend.fleet, log);
+    const opened = await openStateAt(root, frontend.fleet, log);
     if (opened === null) {
         pidfile.release(process.pid);
         return 1;
@@ -218,7 +218,7 @@ async function start(): Promise<ExitCode> {
             return;
         }
         stopping = true;
-        void boundedBy(events.daemon('daemon-stopping', codeVersion() ?? 'unknown'), duration(EVENT_STOP_MS)).then(() => shutDown(fleet, informer, log)).then(() => boundedBy(slots?.stop() ?? Promise.resolve(), duration(EVENT_STOP_MS))).then(() => boundedBy(recaps.flushAll(), duration(FLUSH_STOP_MS))).finally(() => { store.close(); pidfile.release(process.pid); process.exit(0); });
+        void boundedBy(events.daemon('daemon-stopping', codeVersion() ?? 'unknown'), duration(EVENT_STOP_MS)).then(() => shutDownWithin(fleet, informer, log, duration(SHUTDOWN_MS))).then(() => boundedBy(slots?.stop() ?? Promise.resolve(), duration(EVENT_STOP_MS))).then(() => boundedBy(recaps.flushAll(), duration(FLUSH_STOP_MS))).finally(() => { store.close(); pidfile.release(process.pid); process.exit(0); });
     };
     process.on('SIGTERM', stop).on('SIGINT', stop);
     const restarted = answerRestart({
@@ -251,7 +251,7 @@ async function start(): Promise<ExitCode> {
         void backends.refresh();
     }, RESYNC_MS).unref();
     await backends.refresh();
-    slots = await startSlots(SLOT_TABLE, contextOf({ root: parseRoot(root), store, fleet, engine, recaps, transcripts, events, board: (): Board => informer.current, observe: (observation): void => { informer.push(observation); }, statuses, ledger, candidates: () => candidatesOf(informer.current, log), consider: (candidate) => booted.autocompact.consider(candidate), clock, viewers, preCompacts, claimIdle: (lane) => { const found = candidateOf(lane); return found === null ? 'declined' : booted.autocompact.claimIdle(found); }, log }, versionOf(), (key: SlotKey): Switch => parseSwitch(configGetter()(key))));
+    slots = await startSlots(SLOT_TABLE, contextOf({ root: parseRoot(root), store, fleet, engine, recaps, transcripts, events, board: (): Board => informer.current, observe: (observation): void => { informer.push(observation); }, statuses, ledger, candidates: () => candidatesOf(informer.current, log), consider: (candidate) => booted.autocompact.consider(candidate), clock, viewers, preCompacts, claimIdle: (lane) => { const found = candidateOf(lane); return found === null ? 'declined' : booted.autocompact.claimIdle(found); }, log }, versionOf(), (key: SlotKey): Switch => parseSwitch(settingGetter()(key))));
     log(`daemon ${process.pid} up, state in ${root}`);
     void events.daemon('daemon-started', codeVersion() ?? 'unknown');
     await informer.enterSubscription();

@@ -1,3 +1,4 @@
+import type { SettingGet } from '#src/daemon/settings.ts';
 import { BACKEND_IDS, hasModel } from '#src/recap/domain/backend.ts';
 import type { BackendId } from '#src/recap/domain/backend.ts';
 import { entriesOf } from '#src/recap/application/setup-changes.ts';
@@ -41,7 +42,7 @@ const RAW_KEYS = {
 
 export type RawSettings = Parameters<typeof draftFrom>[1];
 
-export const rawSettingsFrom = (get: (key: string) => string | undefined): RawSettings => {
+export const rawSettingsFrom = (get: SettingGet): RawSettings => {
     const raw = (field: keyof typeof RAW_KEYS): string | undefined => get(RAW_KEYS[field]);
     return {
         locale: raw('locale'), recapLanguage: raw('recapLanguage'), screenAgents: raw('screenAgents'), gitNote: raw('gitNote'), telemetryTags: raw('telemetryTags'),

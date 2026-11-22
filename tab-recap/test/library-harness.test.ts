@@ -14,8 +14,8 @@ import type { Entry } from '#src/ports/transcripts.ts';
 import type { BackendHarness, HarnessAsk, HarnessRun, StructuredSupport } from '#src/ports/harness.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { parseUsd } from '#src/recap/domain/usd.ts';
-import { loadConfig } from '#src/daemon/config.ts';
-import type { Config } from '#src/daemon/config.ts';
+import { loadSettings } from '#src/daemon/config.ts';
+import type { Settings } from '#src/daemon/config.ts';
 import { MAKERS } from '#src/daemon/harness-makers.ts';
 import { CLAUDE_POLICY_ACK_DEFAULT } from '#src/recap/domain/claude-policy-ack.ts';
 import { LIBRARY_IDS } from '#src/adapters/harness/library-constants.ts';
@@ -283,15 +283,15 @@ function withAck(value: string | undefined, body: () => void): void {
 }
 
 test('TAB_RECAP_CLAUDE_POLICY_ACK: off by default, on and off by name, anything else is the default', () => {
-    withAck(undefined, () => { assert.equal(loadConfig().claudePolicyAck, CLAUDE_POLICY_ACK_DEFAULT); assert.equal(CLAUDE_POLICY_ACK_DEFAULT, 'off'); });
-    withAck('on', () => { assert.equal(loadConfig().claudePolicyAck, 'on'); });
-    withAck(' ON ', () => { assert.equal(loadConfig().claudePolicyAck, 'on'); });
-    withAck('off', () => { assert.equal(loadConfig().claudePolicyAck, 'off'); });
-    withAck('yes', () => { assert.equal(loadConfig().claudePolicyAck, CLAUDE_POLICY_ACK_DEFAULT); });
+    withAck(undefined, () => { assert.equal(loadSettings().claudePolicyAck, CLAUDE_POLICY_ACK_DEFAULT); assert.equal(CLAUDE_POLICY_ACK_DEFAULT, 'off'); });
+    withAck('on', () => { assert.equal(loadSettings().claudePolicyAck, 'on'); });
+    withAck(' ON ', () => { assert.equal(loadSettings().claudePolicyAck, 'on'); });
+    withAck('off', () => { assert.equal(loadSettings().claudePolicyAck, 'off'); });
+    withAck('yes', () => { assert.equal(loadSettings().claudePolicyAck, CLAUDE_POLICY_ACK_DEFAULT); });
 });
 
 test('the claude maker passes the configured acknowledgement: off makes no run call, on makes one', async () => {
-    const config = { timeoutMs: 1000 } as Config;
+    const config = { timeoutMs: 1000 } as Settings;
     const refused = scripted('claude', { text: 'x' });
     const off = await MAKERS.claude({ ...config, claudePolicyAck: 'off' }, must(parseDirectory('/work')), refused).run(call, settings);
     assert.ok(isUnknown(off));
@@ -319,7 +319,7 @@ const emulatedBuiltins = [
 test('a run on a harness with an emulated cell is logged with the weak cells and nothing else', async () => {
     const lines: string[] = [];
     const runtime = scripted('opencode', { text: '## Goal\n- x', confinement: emulatedBuiltins, cost: { usd: 0.01, basis: 'billed' } });
-    const writer = summarizerFor({ ...loadConfig(), backend: 'opencode' }, ['opencode'], must(parseDirectory(must(parseDirectory('/work')))), runtime, (line) => { lines.push(line); });
+    const writer = summarizerFor({ ...loadSettings(), backend: 'opencode' }, ['opencode'], must(parseDirectory(must(parseDirectory('/work')))), runtime, (line) => { lines.push(line); });
     const written = await writer.write(requestOf({ entries: ENTRIES }));
     assert.ok(!isUnknown(written));
     assert.deepEqual(lines, ['harness opencode: builtins emulated, mcp unmeasured']);
@@ -328,7 +328,7 @@ test('a run on a harness with an emulated cell is logged with the weak cells and
 test('a run whose cost is unavailable says so in the same line, and a fully supported billed run logs nothing', async () => {
     const lines: string[] = [];
     const log = (line: string): void => { lines.push(line); };
-    const config = { timeoutMs: 1000 } as Config;
+    const config = { timeoutMs: 1000 } as Settings;
     const codex = scripted('codex', { text: 'a', cost: { usd: null, basis: 'unavailable' } });
     await MAKERS.codex(config, must(parseDirectory('/work')), codex, undefined, log).run(call, settings);
     const opencode = scripted('opencode', { text: 'a', cost: { usd: 0.01, basis: 'billed' } });

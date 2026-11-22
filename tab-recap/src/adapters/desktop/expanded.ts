@@ -1,10 +1,10 @@
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
-import { notesOf, warningsOf } from '#src/extensions/load.ts';
+import { notesByPaneOf, warningTextsOf } from '#src/extensions/load.ts';
 import { storedNotes } from '#src/extensions/stored-notes.ts';
 import type { Extension, Note } from '#src/ports/extension.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
-import { loadConfig } from '#src/daemon/config.ts';
+import { loadSettings } from '#src/daemon/config.ts';
 import { worktreeSwitch } from '#src/daemon/worktree-switch.ts';
 import { must } from '#src/protocol/result.ts';
 import { EditCache, EditTally } from '#src/recap/application/edit-tally.ts';
@@ -75,10 +75,10 @@ export class DesktopReads {
         const settled = this.settledAt(now);
         const lanes = view?.lanes;
         const git = (pane: PaneId): WorktreeStatus | null => (worktreeSwitch() === 'on' ? this.deps.store.worktrees.statusOf(pane) : null);
-        const found = notesOf(settled.extensions, lanes, settled.locale);
+        const found = notesByPaneOf(settled.extensions, lanes, settled.locale);
         return {
             expanded: this.expandedFor(tab, view, now), notes: (pane): readonly Note[] => found.get(pane) ?? [],
-            warnings: warningsOf(settled.extensions, settled.locale).map(parseText).map(must), compactions: this.deps.store.compactions.shownFor(tab),
+            warnings: warningTextsOf(settled.extensions, settled.locale), compactions: this.deps.store.compactions.shownFor(tab),
             compactHint: settled.hint, locale: settled.locale, zone: must(parseText(ZONE)), plugin: this.pluginVersion(), git,
         };
     }
@@ -90,7 +90,7 @@ export class DesktopReads {
 
     private settledAt(now: Instant): Settled {
         if (this.settled !== null && now - this.settled.at < SETTLE_MS) { return this.settled; }
-        const config = loadConfig();
+        const config = loadSettings();
         const hint = config.compaction.hint === null ? null : must(parseCount(config.compaction.hint));
         const store = this.deps.store;
         const own = storedNotes({ statuses: store.worktrees, notes: store.paneNotes, alerts: store.paneAlerts, gitNote: worktreeSwitch });

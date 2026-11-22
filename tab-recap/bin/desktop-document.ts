@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { DesktopReads } from '#src/adapters/desktop/expanded.ts';
 import { GuiPublisher } from '#src/adapters/desktop/publisher.ts';
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
-import { messagesOf, stateDir } from '#src/daemon/config.ts';
+import { messagesOf, stateDirectory } from '#src/daemon/config.ts';
 import { must } from '#src/protocol/result.ts';
 import type { GuiReads } from '#src/recap/application/gui-tab-reads.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
@@ -26,7 +26,7 @@ function publishedBy(daemon: string, tab: TabId): string | null {
 const now = (): Instant => instant(Date.now());
 
 export function desktopDocumentCommand(tab: TabId): number {
-    const dir = must(parseDirectory(join(stateDir(), 'gui')));
+    const dir = must(parseDirectory(join(stateDirectory(), 'gui')));
     const published = publishedBy(dir, tab);
     if (published !== null) {
         console.log(published);

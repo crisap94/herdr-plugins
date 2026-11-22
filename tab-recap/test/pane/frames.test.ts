@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import { stripVTControlCharacters } from 'node:util';
 import type { Store } from '#src/adapters/db/database.ts';
 import { expandedScreen } from '#src/column/expanded-modal.ts';
-import { loadConfig } from '#src/daemon/config.ts';
-import type { Config } from '#src/daemon/config.ts';
+import { loadSettings } from '#src/daemon/config.ts';
+import type { Settings } from '#src/daemon/config.ts';
 import { worktreeSwitch } from '#src/daemon/worktree-switch.ts';
 import { frameSource } from '#src/daemon/view/frames.ts';
 import type { FrameParts, Screen } from '#src/daemon/view/frames.ts';
 import { glowCache } from '#src/daemon/view/glow-cache.ts';
 import type { GlowCache, GlowSpawn } from '#src/daemon/view/glow-cache.ts';
-import { notesOf, warningsOf } from '#src/extensions/load.ts';
+import { notesByPaneOf, warningTextsOf } from '#src/extensions/load.ts';
 import { storedNotes } from '#src/extensions/stored-notes.ts';
 import { messagesFor } from '#src/i18n/index.ts';
 import { must } from '#src/protocol/result.ts';
@@ -52,7 +52,7 @@ const recapOf = (): TabRecap => ({
     language: textOf('en'),
 });
 
-const fixture = (spawn: GlowSpawn): { store: Store; config: Config; glow: GlowCache; parts: FrameParts; source: ReturnType<typeof frameSource> } => {
+const fixture = (spawn: GlowSpawn): { store: Store; config: Settings; glow: GlowCache; parts: FrameParts; source: ReturnType<typeof frameSource> } => {
     const base = memoryStore();
     base.views.writeTab({ tab: TAB, column: null, at: NOW - 3_600_000, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'orchestrator', cwd: null, web: { base: 'https://git.example/acme/shop', forge: 'gitlab', branch: 'main' } }] });
     const recap = recapOf();
@@ -67,7 +67,7 @@ const fixture = (spawn: GlowSpawn): { store: Store; config: Config; glow: GlowCa
             advance: (move) => { base.records.advance(move); },
         },
     };
-    const config = loadConfig();
+    const config = loadSettings();
     const glow = glowCache(spawn);
     const parts: FrameParts = { store, glow, clock: { now: () => instant(NOW) }, version: () => null, config: () => config };
     return { store, config, glow, parts, source: frameSource(parts) };
@@ -75,14 +75,14 @@ const fixture = (spawn: GlowSpawn): { store: Store; config: Config; glow: GlowCa
 
 const instantGlow: GlowSpawn = async (): Promise<Text | null> => must(parseText(GLOW_OUTPUT));
 
-const viewOf = (store: Store, config: Config, style: Style): ColumnView => {
+const viewOf = (store: Store, config: Settings, style: Style): ColumnView => {
     const stored = store.views.readTab(TAB);
     const extensions = [storedNotes({ statuses: store.worktrees, notes: store.paneNotes, alerts: store.paneAlerts, gitNote: worktreeSwitch })];
     return {
         tab: stored,
         recap: storeRead(store.records.readRecap(tabId(TAB))),
-        notes: notesOf(extensions, stored?.lanes, config.locale),
-        warnings: warningsOf(extensions, config.locale),
+        notes: notesByPaneOf(extensions, stored?.lanes, config.locale),
+        warnings: warningTextsOf(extensions, config.locale),
         now: NOW,
         messages: messagesFor(config.locale),
         version: null,

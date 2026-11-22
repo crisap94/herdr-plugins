@@ -20,7 +20,7 @@ import { enumeratorFor } from '#src/daemon/backends.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { MAKERS } from '#src/daemon/harness-makers.ts';
-import type { Config } from '#src/daemon/config.ts';
+import type { Settings } from '#src/daemon/config.ts';
 import { Autocompact } from '#src/recap/application/autocompact.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
@@ -184,7 +184,7 @@ async function skipOf(readers: TranscriptRegistry, placed: Lane, kind: Kind): Pr
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
     const decider: DeciderPort = { label: textOf('fake'), ask: () => Promise.reject(new Error('the decider is not reached when the in-flight gate stops the lane')) };
     const env = (key: string): string | undefined => (key === 'TAB_RECAP_AUTOCOMPACT_KINDS' ? kind : undefined);
-    const config = { autocompact: { ...policyOf(env), mode: 'on' }, tuning: tuningOf(() => undefined) } as unknown as Config;
+    const config = { autocompact: { ...policyOf(env), mode: 'on' }, tuning: tuningOf(() => undefined) } as unknown as Settings;
     const service: Autocompact = wireAutocompact({
         config: () => config, awaiting: () => Promise.resolve({ kind: 'clear' }), store, transcripts: readers,
         contexts: { of: () => ({ tokens: 620_000, window: 1_000_000, source: 'observed' }) } as unknown as LaneContexts,
@@ -316,7 +316,7 @@ test('a registered transcript reader without in-flight support shows its declare
 });
 
 test('every BACKEND_IDS id has a maker that names itself; custom has no model or enumerator; pins today: custom label ignores model setting', () => {
-    const config = { backend: 'auto', models: { claude: 'haiku', codex: '', opencode: '', custom: '' }, effort: 'default', customCommand: 'my-llm --model x', timeoutMs: 1000 } as unknown as Config;
+    const config = { backend: 'auto', models: { claude: 'haiku', codex: '', opencode: '', custom: '' }, effort: 'default', customCommand: 'my-llm --model x', timeoutMs: 1000 } as unknown as Settings;
     assert.deepEqual(Object.keys(MAKERS).toSorted(), [...BACKEND_IDS].toSorted());
     for (const id of BACKEND_IDS) {
         assert.equal(MAKERS[id](config, must(parseDirectory(dir)), runtime).id, id);

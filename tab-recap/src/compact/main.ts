@@ -4,7 +4,7 @@ import { parsePaneId } from '#src/recap/domain/ids.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
-import { loadConfig, stateDir } from '#src/daemon/config.ts';
+import { loadSettings, stateDirectory } from '#src/daemon/config.ts';
 import { messagesFor } from '#src/i18n/index.ts';
 import { EMPTY_NOTE, step } from '#src/recap/application/compact-keys.ts';
 import type { NoteEffect, NoteState } from '#src/recap/application/compact-keys.ts';
@@ -20,7 +20,7 @@ const TITLE = 'tab-recap:compact';
 
 const tab = process.env['TAB_RECAP_TAB'] ?? '';
 const pane = process.env['TAB_RECAP_PANE'] ?? '';
-const messages = messagesFor(loadConfig().locale);
+const messages = messagesFor(loadSettings().locale);
 let state: NoteState = EMPTY_NOTE;
 let agent = 'agent';
 
@@ -61,7 +61,7 @@ draw();
 
 async function name(): Promise<void> {
     const id = parsePaneId(pane);
-    const found = id.kind === 'ok' ? await new HerdrFleet(textOf(stateDir())).agents().status(id.value) : null;
+    const found = id.kind === 'ok' ? await new HerdrFleet(textOf(stateDirectory())).agents().status(id.value) : null;
     agent = found === null || isUnknown(found) ? agent : found.agent;
     draw();
 }

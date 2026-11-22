@@ -1,3 +1,4 @@
+import type { SettingGet, SettingName } from '#src/daemon/settings.ts';
 type CommandLoader = () => Promise<{ run: (args: readonly string[]) => number | Promise<number> }>;
 
 export const COMMAND_TABLE: Readonly<Record<string, CommandLoader>> = {
@@ -5,7 +6,7 @@ export const COMMAND_TABLE: Readonly<Record<string, CommandLoader>> = {
     pane: () => import('./commands/pane.ts'),
 };
 
-export const COMMAND_SLOTS: Readonly<Record<string, { readonly slot: string; readonly key: string }>> = {
+export const COMMAND_SLOTS: Readonly<Record<string, { readonly slot: string; readonly key: SettingName }>> = {
     hooks: { slot: 'hooks', key: 'TAB_RECAP_HOOKS' },
     pane: { slot: 'view', key: 'TAB_RECAP_VIEW_SERVER' },
 };
@@ -21,7 +22,7 @@ export async function slotDefault(slot: string, folder: URL = SLOT_FOLDER): Prom
     }
 }
 
-export async function listedWords(setting: (key: string) => string | undefined, defaultOf: (slot: string) => Promise<boolean> = slotDefault): Promise<readonly string[]> {
+export async function listedWords(setting: SettingGet, defaultOf: (slot: string) => Promise<boolean> = slotDefault): Promise<readonly string[]> {
     const listed = await Promise.all(Object.entries(COMMAND_SLOTS).map(async ([word, { slot, key }]) => {
         const value = setting(key);
         return value === 'on' || (value !== 'off' && await defaultOf(slot)) ? [word] : [];

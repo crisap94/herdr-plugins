@@ -12,7 +12,7 @@ import { COVERAGE_BY_DEFAULT, MINIMUM_DEFAULT, type AutocompactPercent, parseAut
 import { brand } from '#src/recap/domain/brand.ts';
 import { DECIDER_BY_CHOICES, DECIDER_DEFAULT, JOB_BY_CHOICES } from '#src/recap/domain/job.ts';
 import { coverageDeciderFor, deciderFor } from '#src/daemon/deciders.ts';
-import { loadConfig } from '#src/daemon/config.ts';
+import { loadSettings } from '#src/daemon/config.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import { documentOf } from './fakes/decider-fixtures.ts';
@@ -116,22 +116,22 @@ async function withEnvAsync(values: Readonly<Record<string, string>>, body: () =
 
 test('deciderFor: jev builds the Jev decider, a harness job a harness decider, off or nothing installed none', () => {
     withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_AUTOCOMPACT_BY: 'jev' }, () => {
-        const jev = deciderFor(loadConfig(), [], WORK, runtime);
+        const jev = deciderFor(loadSettings(), [], WORK, runtime);
         assert.ok(jev instanceof JevPortDecider);
         assert.equal(jev.label, 'jev · jev-1.13.0');
     });
     withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_AUTOCOMPACT_BY: 'recap' }, () => {
-        assert.ok(deciderFor(loadConfig(), ['claude'], WORK, runtime) instanceof HarnessPortDecider);
-        assert.equal(deciderFor(loadConfig(), [], WORK, runtime), null);
+        assert.ok(deciderFor(loadSettings(), ['claude'], WORK, runtime) instanceof HarnessPortDecider);
+        assert.equal(deciderFor(loadSettings(), [], WORK, runtime), null);
     });
     withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_AUTOCOMPACT_BY: 'off' }, () => {
-        assert.equal(deciderFor(loadConfig(), ['claude'], WORK, runtime), null);
+        assert.equal(deciderFor(loadSettings(), ['claude'], WORK, runtime), null);
     });
 });
 
 test('the loaded configuration carries the policy, the job and the Jev settings', () => {
     withEnv({ TAB_RECAP_AUTOCOMPACT: 'on', TAB_RECAP_AUTOCOMPACT_AT: '55', TAB_RECAP_JEV_MODEL: 'jev-9' }, () => {
-        const loaded = loadConfig();
+        const loaded = loadSettings();
         assert.deepEqual([loaded.autocompact.mode, loaded.autocompact.minimum, loaded.autocompact.ceiling, loaded.decider, loaded.jev.model], ['on', 55, 80, { by: 'recap', model: '', effort: 'low' }, 'jev-9']);
     });
 });
@@ -139,7 +139,7 @@ test('the loaded configuration carries the policy, the job and the Jev settings'
 test('the brief coverage decider: auto (the default), jev or decider; anything else is auto', () => {
     assert.equal(COVERAGE_BY_DEFAULT, 'auto');
     assert.deepEqual([' JEV ', 'Decider', 'auto', 'nonsense', '', undefined].map(parseCoverageBy), ['jev', 'decider', 'auto', 'auto', 'auto', 'auto']);
-    assert.equal(loadConfig().coverage, 'auto');
+    assert.equal(loadSettings().coverage, 'auto');
 });
 
 function withHome(body: () => void): void {
@@ -156,20 +156,20 @@ function withHome(body: () => void): void {
 
 test('coverageDeciderFor: auto picks Jev when a key is found, else the moment decider', () => {
     withHome(() => withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_JEV_KEY: 'sk-test-coverage' }, () => {
-        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], WORK, runtime) instanceof JevPortDecider);
+        assert.ok(coverageDeciderFor(loadSettings(), ['claude'], WORK, runtime) instanceof JevPortDecider);
     }));
     withHome(() => withEnv({ TAB_RECAP_BACKEND: 'auto' }, () => {
-        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], WORK, runtime) instanceof HarnessPortDecider);
-        assert.equal(coverageDeciderFor(loadConfig(), [], WORK, runtime), null, 'no key and no harness: no decider, so the check does not run');
+        assert.ok(coverageDeciderFor(loadSettings(), ['claude'], WORK, runtime) instanceof HarnessPortDecider);
+        assert.equal(coverageDeciderFor(loadSettings(), [], WORK, runtime), null, 'no key and no harness: no decider, so the check does not run');
     }));
 });
 
 test('coverageDeciderFor: decider is the moment decider even with a key; jev is Jev always', () => {
     withHome(() => withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_JEV_KEY: 'sk-test-coverage', TAB_RECAP_AUTOCOMPACT_COVERAGE_BY: 'decider' }, () => {
-        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], WORK, runtime) instanceof HarnessPortDecider);
+        assert.ok(coverageDeciderFor(loadSettings(), ['claude'], WORK, runtime) instanceof HarnessPortDecider);
     }));
     withHome(() => withEnv({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_AUTOCOMPACT_COVERAGE_BY: 'jev' }, () => {
-        assert.ok(coverageDeciderFor(loadConfig(), ['claude'], WORK, runtime) instanceof JevPortDecider);
+        assert.ok(coverageDeciderFor(loadSettings(), ['claude'], WORK, runtime) instanceof JevPortDecider);
     }));
 });
 
@@ -179,7 +179,7 @@ test('coverageDeciderFor: jev with no key cannot answer, so the check fails clos
     process.env['HOME'] = home;
     try {
         await withEnvAsync({ TAB_RECAP_BACKEND: 'auto', TAB_RECAP_AUTOCOMPACT_COVERAGE_BY: 'jev' }, async () => {
-            const decider = coverageDeciderFor(loadConfig(), ['claude'], WORK, runtime);
+            const decider = coverageDeciderFor(loadSettings(), ['claude'], WORK, runtime);
             assert.ok(decider instanceof JevPortDecider);
             assert.ok(isUnknown(await decider.ask(documentOf({}), new Map())), 'an unknown answer, never a probability');
         });
@@ -191,11 +191,11 @@ test('coverageDeciderFor: jev with no key cannot answer, so the check fails clos
 
 test('the brief check runs on its own model and effort when set, else on the moment decider\'s', () => {
     withHome(() => withEnv({ TAB_RECAP_AUTOCOMPACT_BY: 'codex', TAB_RECAP_AUTOCOMPACT_MODEL: 'gpt-6.1-sol', TAB_RECAP_AUTOCOMPACT_COVERAGE_MODEL: 'gpt-6.1-terra', TAB_RECAP_AUTOCOMPACT_COVERAGE_EFFORT: 'medium' }, () => {
-        const loaded = loadConfig();
+        const loaded = loadSettings();
         assert.deepEqual(loaded.coverageJob, { by: 'codex', model: 'gpt-6.1-terra', effort: 'medium' });
         assert.deepEqual(loaded.decider, { by: 'codex', model: 'gpt-6.1-sol', effort: 'low' }, 'the moment decider keeps its own setting');
     }));
     withHome(() => withEnv({ TAB_RECAP_AUTOCOMPACT_BY: 'codex', TAB_RECAP_AUTOCOMPACT_MODEL: 'gpt-6.1-sol', TAB_RECAP_AUTOCOMPACT_COVERAGE_EFFORT: 'loud' }, () => {
-        assert.deepEqual(loadConfig().coverageJob, { by: 'codex', model: 'gpt-6.1-sol', effort: 'low' }, 'unset model and an unknown effort fall back to the decider');
+        assert.deepEqual(loadSettings().coverageJob, { by: 'codex', model: 'gpt-6.1-sol', effort: 'low' }, 'unset model and an unknown effort fall back to the decider');
     }));
 });

@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { dirsOf, PathHarnessDirectory, presenceOnPath } from '#src/adapters/harness/on-path.ts';
 import { Backends, intersect, pick } from '#src/daemon/backends.ts';
-import { backendOf, modelsOf } from '#src/daemon/config.ts';
+import { backendFrom, modelsFrom, type BackendChoice } from '#src/daemon/config.ts';
 import type { HarnessList } from '#src/ports/harnesses.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { fakeRuntime } from '#test/fakes/harness-runtime.ts';
@@ -15,10 +15,12 @@ import { causeOf } from './fakes/cause.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { agentKind } from '#src/recap/domain/ids.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 
 const found = (...ids: string[]): HarnessList => ({ kind: 'available', ids: ids.map((id) => agentKind(id)) });
-const get = (values: Record<string, string>) => (key: string): string | undefined => values[key];
+const get = (values: Record<string, string>) => (key: string): Text | undefined => (values[key] === undefined ? undefined : textOf(values[key]));
+const backendOf = (raw: string | undefined): BackendChoice => backendFrom(raw === undefined ? undefined : textOf(raw));
+const modelsOf = modelsFrom;
 const down = unknown({ why: 'unreachable', detail: causeOf('no socket') });
 
 test('auto: the first of claude → codex → opencode that is available; a named one is taken as named', () => {

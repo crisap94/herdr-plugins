@@ -5,8 +5,6 @@ import { isUnknown } from '#src/ports/unknowable.ts';
 import { parsePaneId, type PaneId } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 
-export { notesOf, warningsOf } from './legacy.ts';
-
 export function notesByPaneOf(extensions: readonly Extension[], lanes?: readonly TabLane[], locale?: Locale): ReadonlyMap<PaneId, readonly Note[]> {
     const merged = new Map<PaneId, readonly Note[]>();
     for (const extension of extensions) {

@@ -5,7 +5,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { CLAUDE_SCREEN_CHROME, ScreenTranscripts, SCREEN_READER_ID } from '#src/adapters/transcripts/screen.ts';
-import { loadConfig } from '#src/daemon/config.ts';
+import { loadSettings } from '#src/daemon/config.ts';
 import { cleanScreen, screenEntries, steady } from '#src/recap/application/screen-text.ts';
 import { DEFAULT_POLICY, screenKindsOf, screenSetting, wantsKind } from '#src/recap/domain/policy.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
@@ -88,7 +88,7 @@ test('policy: opencode gets a column by default; the screen agents add kinds and
     assert.deepEqual([screenSetting(textOf('gemini,,qwen')), screenSetting(textOf('all')), screenSetting(textOf(''))], ['gemini,qwen', 'all', '']);
 });
 
-test('loadConfig: TAB_RECAP_SCREEN_AGENTS widens the policy and says which kinds are read from the screen', () => {
+test('loadSettings: TAB_RECAP_SCREEN_AGENTS widens the policy and says which kinds are read from the screen', () => {
     const keys = ['HERDR_PLUGIN_CONFIG_DIR', 'TAB_RECAP_SCREEN_AGENTS', 'TAB_RECAP_AGENTS'] as const;
     const saved = keys.map((key) => process.env[key]);
     const dir = mkdtempSync(join(tmpdir(), 'recap-screen-config-'));
@@ -96,13 +96,13 @@ test('loadConfig: TAB_RECAP_SCREEN_AGENTS widens the policy and says which kinds
         process.env['HERDR_PLUGIN_CONFIG_DIR'] = dir;
         delete process.env['TAB_RECAP_SCREEN_AGENTS'];
         delete process.env['TAB_RECAP_AGENTS'];
-        assert.deepEqual([loadConfig().policy.kinds, loadConfig().screenAgents], [['claude', 'codex', 'opencode'], []]);
+        assert.deepEqual([loadSettings().policy.kinds, loadSettings().screenAgents], [['claude', 'codex', 'opencode'], []]);
         writeFileSync(join(dir, 'config.env'), 'TAB_RECAP_SCREEN_AGENTS=gemini, qwen\n');
-        assert.deepEqual([loadConfig().policy.kinds, loadConfig().screenAgents], [['claude', 'codex', 'opencode', 'gemini', 'qwen'], ['gemini', 'qwen']]);
+        assert.deepEqual([loadSettings().policy.kinds, loadSettings().screenAgents], [['claude', 'codex', 'opencode', 'gemini', 'qwen'], ['gemini', 'qwen']]);
         process.env['TAB_RECAP_SCREEN_AGENTS'] = 'all';
-        assert.deepEqual([loadConfig().policy.kinds.includes(textOf('*')), loadConfig().screenAgents], [true, ['*']]);
+        assert.deepEqual([loadSettings().policy.kinds.includes(textOf('*')), loadSettings().screenAgents], [true, ['*']]);
         process.env['TAB_RECAP_AGENTS'] = 'claude';
-        assert.deepEqual(loadConfig().policy.kinds, ['claude', '*']);
+        assert.deepEqual(loadSettings().policy.kinds, ['claude', '*']);
     } finally {
         keys.forEach((key, at) => { const value = saved[at]; if (value === undefined) { delete process.env[key]; } else { process.env[key] = value; } });
         rmSync(dir, { recursive: true });

@@ -4,12 +4,12 @@ import { mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
-import { bounded } from '#src/daemon/bounded.ts';
+import { boundedBy } from '#src/daemon/bounded.ts';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { Informer } from '#src/recap/application/informer.ts';
 import type { Blindness } from '#src/recap/application/informer.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { duration, instant } from '#src/recap/domain/time.ts';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import type { Frame, FleetSource, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
 
@@ -95,9 +95,9 @@ test('watchdog: a frame, or a snapshot, counts as a sign of life', async () => {
 });
 
 test('bounded: a task that takes too long is given up on, one that fails still fails, and a quick one is done', async () => {
-    assert.equal(await bounded(Promise.resolve(), 1000), 'done');
-    assert.equal(await bounded(new Promise<void>(() => undefined), 20), 'timeout');
-    await assert.rejects(bounded(Promise.reject(new Error('boom')), 1000), /boom/);
+    assert.equal(await boundedBy(Promise.resolve(), duration(1000)), 'done');
+    assert.equal(await boundedBy(new Promise<void>(() => undefined), duration(20)), 'timeout');
+    await assert.rejects(boundedBy(Promise.reject(new Error('boom')), duration(1000)), /boom/);
 });
 
 test('the daemon beat: beating makes it fresh; no beat for too long while the daemon lives makes it wedged; no beat file at all is not', () => {

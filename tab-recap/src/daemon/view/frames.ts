@@ -3,10 +3,10 @@ import { stripVTControlCharacters } from 'node:util';
 import { parseCursor, parseHeight, parseLine, screen as fitScreen } from '@stateforge-labs/recap-view';
 import { expandedScreen } from '#src/column/expanded-modal.ts';
 import type { Store } from '#src/adapters/db/database.ts';
-import type { Config } from '#src/daemon/config.ts';
+import type { Settings } from '#src/daemon/config.ts';
 import type { Version } from '#src/daemon/slots.ts';
 import type { GlowCache } from '#src/daemon/view/glow-cache.ts';
-import { notesOf, warningsOf } from '#src/extensions/load.ts';
+import { notesByPaneOf, warningTextsOf } from '#src/extensions/load.ts';
 import { storedNotes } from '#src/extensions/stored-notes.ts';
 import { messagesFor } from '#src/i18n/index.ts';
 import { worktreeSwitch } from '#src/daemon/worktree-switch.ts';
@@ -39,7 +39,7 @@ export interface FrameParts {
     readonly glow: GlowCache;
     readonly clock: Clock;
     readonly version: () => Version | null;
-    readonly config: () => Config;
+    readonly config: () => Settings;
 }
 
 export interface Frame {
@@ -64,8 +64,8 @@ export function frameSource(parts: FrameParts): FrameSource {
             const view: ColumnView = {
                 tab: stored,
                 recap: knownOr(parts.store.records.readRecap(screen.tab), null),
-                notes: notesOf(extensions, stored?.lanes, config.locale),
-                warnings: warningsOf(extensions, config.locale),
+                notes: notesByPaneOf(extensions, stored?.lanes, config.locale),
+                warnings: warningTextsOf(extensions, config.locale),
                 now: parts.clock.now(),
                 messages,
                 version: parts.version(),

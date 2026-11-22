@@ -3,8 +3,11 @@ import { RUBRIC_TEXT } from '#src/adapters/job/prompts/rubric.ts';
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import { AUTO_PATH_KINDS, PathHarnessDirectory } from '#src/adapters/harness/on-path.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
-import { availableIn, judgeFor, summarizerWork } from '#src/daemon/backends.ts';
-import { loadConfig, messagesOf, stateDir } from '#src/daemon/config.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseDirectory } from '#src/recap/domain/directory.ts';
+import { join } from 'node:path';
+import { availableIn, judgeWith } from '#src/daemon/backends.ts';
+import { loadSettings, messagesOf, stateDirectory } from '#src/daemon/config.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { EVAL_USAGE, parseEvalRequest } from '#src/recap/application/eval-options.ts';
@@ -54,7 +57,7 @@ export async function evalCommand(argv: readonly string[]): Promise<number> {
         const runtime = createRuntime();
         return await runEval(parsed.options, {
             inputs: store.inputs, verdicts: store.verdicts, now: Date.now, rubric: RUBRIC_TEXT, style: styleFor(process.stdout),
-            judge: () => judgeFor(loadConfig(), availableIn(available), summarizerWork(stateDir()), runtime, anchorsOf(withText(store.verdicts.disagreements(), store.inputs))),
+            judge: () => judgeWith(loadSettings(), availableIn(available), must(parseDirectory(join(stateDirectory(), 'summarizer'))), runtime, anchorsOf(withText(store.verdicts.disagreements(), store.inputs))),
             out: (line) => { console.log(line); },
             err: (line) => { console.error(line); },
             ask: (prompt) => operator.ask(prompt),

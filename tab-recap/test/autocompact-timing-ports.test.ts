@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { policyOf, tuningOf } from './fakes/settings-readers.ts';
 import { test } from 'node:test';
 import { wireAutocompact } from '#src/daemon/autocompact.ts';
-import type { Config } from '#src/daemon/config.ts';
+import type { Settings } from '#src/daemon/config.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
@@ -45,7 +45,7 @@ function scripted(claims: LaneClaims): Scripted {
     const flushed: string[] = [];
     const decider: DeciderPort = { label: textOf('fake'), ask: () => Promise.resolve(decidedAnswersOf(SAFE)) };
     const service = wireAutocompact({
-        config: (): Config => ({ autocompact: { ...policyOf(() => undefined), mode: 'on' }, tuning: tuningOf(() => undefined) }) as unknown as Config,
+        config: (): Settings => ({ autocompact: { ...policyOf(() => undefined), mode: 'on' }, tuning: tuningOf(() => undefined) }) as unknown as Settings,
         awaiting: () => Promise.resolve({ kind: 'clear' }), store, claims,
         transcripts: registryWith({ claude: transcripts }),
         contexts: { of: () => ({ tokens: 620_000, window: 1_000_000, source: 'observed' }) } as unknown as LaneContexts,

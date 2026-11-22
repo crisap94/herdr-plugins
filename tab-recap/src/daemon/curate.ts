@@ -8,7 +8,7 @@ import { instant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
-import { loadConfig } from './config.ts';
+import { loadSettings } from './config.ts';
 
 interface CurateParts {
     readonly store: Store;
@@ -21,6 +21,6 @@ export function wireCurate(parts: CurateParts): Curate {
     const { store } = parts;
     return new Curate({
         records: store.records, ledger: store.ledger, stories: store.stories, writer: parts.curator, clock: () => instant(Date.now()),
-        zone: () => must(parseText(Intl.DateTimeFormat().resolvedOptions().timeZone)), language: () => must(parseText(loadConfig().recapLanguage)), rubric: RUBRIC.items, tail: (lanes) => tailOf(parts.transcripts, lanes), every: () => must(parseCount(loadConfig().reconcileEvery)), repair: () => loadConfig().curatorRepair, log: parts.log,
+        zone: () => must(parseText(Intl.DateTimeFormat().resolvedOptions().timeZone)), language: () => must(parseText(loadSettings().recapLanguage)), rubric: RUBRIC.items, tail: (lanes) => tailOf(parts.transcripts, lanes), every: () => must(parseCount(loadSettings().reconcileEvery)), repair: () => loadSettings().curatorRepair, log: parts.log,
     });
 }

@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { configGetter } from '#src/daemon/config.ts';
+import { settingGetter } from '#src/daemon/config.ts';
 import { BESIDE_KEY } from '#src/pane/relay-env.ts';
 
 const NOT_COVERED = 3;
@@ -28,7 +28,7 @@ export function paneEnvOf(args: readonly string[], env: NodeJS.ProcessEnv): Node
 }
 
 export function run(args: readonly string[]): number {
-    if (configGetter()('TAB_RECAP_VIEW_SERVER') === 'off') {
+    if (settingGetter()('TAB_RECAP_VIEW_SERVER') === 'off') {
         console.error('tab-recap: 3 — pane: not available');
         return NOT_COVERED;
     }

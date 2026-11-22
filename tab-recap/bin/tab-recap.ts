@@ -17,7 +17,7 @@ import { STORED_NOTES_ID } from '#src/extensions/stored-notes.ts';
 import { AUTO_ORDER } from '#src/daemon/backends.ts';
 import type { BackendChoice } from '#src/daemon/config.ts';
 import type { Messages } from '#src/i18n/index.ts';
-import { BACKEND_IDS, configDir, configGetter, loadConfig, messagesOf, parseEnv, recapLanguageSource, stateDir } from '#src/daemon/config.ts';
+import { BACKEND_IDS, configDirectory, settingGetter, loadSettings, messagesOf, parseEnv, recapLanguageSource, stateDirectory } from '#src/daemon/config.ts';
 import { hasModel } from '#src/recap/domain/backend.ts';
 import { USAGE_EXIT } from '#src/recap/domain/handoff-outcome.ts';
 import { autocompactCommand } from './autocompact.ts';
@@ -38,12 +38,12 @@ const NOT_COVERED = 3;
 const m = (): Messages => messagesOf();
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const pidfile = new Pidfile(stateDir());
+const pidfile = new Pidfile(stateDirectory());
 
 const WEDGED_MS = 180_000;
 
 async function launch(): Promise<number> {
-    if (await stillStopping(stateDir())) { console.error(`tab-recap: 1 — ${m().cli.daemonStillStopping}`); return FAILED; }
+    if (await stillStopping(stateDirectory())) { console.error(`tab-recap: 1 — ${m().cli.daemonStillStopping}`); return FAILED; }
     let running = pidfile.alive();
     if (running !== null && pidfile.wedged(WEDGED_MS)) {
         console.log(`tab-recap: ${m().cli.daemonWedged(running)}`);
@@ -57,7 +57,7 @@ async function launch(): Promise<number> {
     }
     const out = openSync(pidfile.logPath, 'a');
     const child = spawn(process.execPath, [join(root, 'src', 'daemon', 'launch.mjs')], {
-        cwd: root, detached: true, stdio: ['ignore', out, out], env: { ...process.env, TAB_RECAP_STATE: stateDir() },
+        cwd: root, detached: true, stdio: ['ignore', out, out], env: { ...process.env, TAB_RECAP_STATE: stateDirectory() },
     });
     child.unref();
     console.log(`tab-recap: ${m().cli.daemonStarted(String(child.pid ?? '?'), pidfile.logPath)}`);
@@ -71,7 +71,7 @@ function stop(): number {
         console.log(`tab-recap: ${m().cli.offIdle}`);
         return OK;
     }
-    markStopping(stateDir(), running);
+    markStopping(stateDirectory(), running);
     process.kill(running, 'SIGTERM');
     console.log(`tab-recap: ${m().cli.offClosing(running)}`);
     return OK;
@@ -110,7 +110,7 @@ function choiceOf(arg: string | undefined, model: string | undefined): BackendCh
 const modelSuffix = (model: string): string => (model === '' ? '' : `/${model}`);
 
 function status(): number {
-    const config = loadConfig();
+    const config = loadSettings();
     const t = m().cli;
     const running = pidfile.alive();
     const host = bunHost();
@@ -124,8 +124,8 @@ function status(): number {
         t.statusBackend(`${config.backend}${config.backend === 'auto' ? ` (${AUTO_ORDER.join(' → ')})` : modelSuffix(config.models[config.backend])}`),
         `${t.statusLanguage} ${config.recapLanguage} (${t.statusSources[recapLanguageSource()]})`,
         t.statusExtensions(STORED_NOTES_ID),
-        `${t.statusState} ${stateDir()}`,
-        `${t.statusConfig} ${join(configDir(), 'config.env')}`,
+        `${t.statusState} ${stateDirectory()}`,
+        `${t.statusConfig} ${join(configDirectory(), 'config.env')}`,
     ].join('\n'));
     return OK;
 }
@@ -133,7 +133,7 @@ function status(): number {
 async function configure(): Promise<number> {
     const tab = currentTab();
     await sleep(Number(process.env['TAB_RECAP_OPEN_DELAY_MS'] ?? 0) || 0);
-    const opened = await new HerdrFleet(textOf(stateDir())).setup(tab === null ? null : tabId(tab));
+    const opened = await new HerdrFleet(textOf(stateDirectory())).setup(tab === null ? null : tabId(tab));
     if (isUnknown(opened)) {
         console.error(`tab-recap: 1 — ${m().cli.modalFailed(saying(opened.why))}`);
         return FAILED;
@@ -184,7 +184,7 @@ async function show(): Promise<number> {
         console.error(`tab-recap: 3 — ${m().cli.tabUnknown}`);
         return NOT_COVERED;
     }
-    const shown = await new HerdrFleet(textOf(stateDir())).show(tabId(tab));
+    const shown = await new HerdrFleet(textOf(stateDirectory())).show(tabId(tab));
     if (isUnknown(shown)) {
         console.error(`tab-recap: 1 — ${m().cli.modalFailed(saying(shown.why))}`);
         return FAILED;
@@ -229,8 +229,8 @@ const commands: Readonly<Record<string, (arg: string | undefined) => number | Pr
         if (modelArg !== undefined && choice !== 'auto') {
             values.set(`TAB_RECAP_MODEL_${choice.toUpperCase()}`, modelArg);
         }
-        setValues(join(configDir(), 'config.env'), values, parseEnv);
-        const config = loadConfig();
+        setValues(join(configDirectory(), 'config.env'), values, parseEnv);
+        const config = loadSettings();
         console.log(`tab-recap: ${m().cli.backendNow(`${choice}${choice === 'auto' ? '' : modelSuffix(config.models[choice])}`)}`);
         return OK;
     },
@@ -242,7 +242,7 @@ const EVAL = 'eval';
 const AUTOCOMPACT = 'autocompact';
 const RAW = new Set<string | undefined>([EVAL, AUTOCOMPACT, ...Object.keys(COMMAND_TABLE)]);
 
-const usage = async (): Promise<string> => m().cli.usage([...Object.keys(commands), EVAL, AUTOCOMPACT, ...(await listedWords(configGetter()))].join('|'));
+const usage = async (): Promise<string> => m().cli.usage([...Object.keys(commands), EVAL, AUTOCOMPACT, ...(await listedWords(settingGetter()))].join('|'));
 const argv = process.argv.slice(2);
 const parsed = RAW.has(argv[0]) ? { positionals: [argv[0] ?? ''], note: undefined, handoff: null } : parseArguments(argv);
 const [name, arg, modelArg] = 'positionals' in parsed ? parsed.positionals : [];

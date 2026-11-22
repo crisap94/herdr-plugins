@@ -48,7 +48,7 @@ test('the curator time limit: TAB_RECAP_CURATE_TIMEOUT_MS sets a positive whole 
 const CURATOR_KEYS = ['TAB_RECAP_BACKEND', 'TAB_RECAP_CLAUDE_POLICY_ACK', 'TAB_RECAP_CURATE_TIMEOUT_MS'];
 
 async function curatorLimit(limit: string | undefined): Promise<unknown> {
-    const { loadConfig } = await import('#src/daemon/config.ts');
+    const { loadSettings } = await import('#src/daemon/config.ts');
     const was = CURATOR_KEYS.map((key) => process.env[key]);
     try {
         Object.assign(process.env, { TAB_RECAP_BACKEND: 'claude', TAB_RECAP_CLAUDE_POLICY_ACK: 'on' });
@@ -58,7 +58,7 @@ async function curatorLimit(limit: string | undefined): Promise<unknown> {
             process.env['TAB_RECAP_CURATE_TIMEOUT_MS'] = limit;
         }
         const runtime = fakeRuntime({ scripts: { claude: [fakeOutput({ text: 'ok' }), fakeOutput({ text: 'ok' })] } });
-        await curatorFor(loadConfig(), ['claude'], must(parseDirectory('work')), runtime)?.write(must(parseText('document')));
+        await curatorFor(loadSettings(), ['claude'], must(parseDirectory('work')), runtime)?.write(must(parseText('document')));
         const request = runtime.calls[0]?.request;
         return request === undefined ? undefined : { has: 'timeoutMs' in request, value: request.timeoutMs };
     } finally {
@@ -112,14 +112,14 @@ test('the Models group draws the curator in both languages, explains itself whil
 });
 
 test('config: the curator job is read from TAB_RECAP_CURATE_BY / _MODEL / _EFFORT, defaulting to the recap writer at medium effort', async () => {
-    const { loadConfig } = await import('#src/daemon/config.ts');
+    const { loadSettings } = await import('#src/daemon/config.ts');
     const keys = ['TAB_RECAP_CURATE_BY', 'TAB_RECAP_CURATE_MODEL', 'TAB_RECAP_CURATE_EFFORT'];
     const was = keys.map((key) => process.env[key]);
     try {
         keys.forEach((key) => { delete process.env[key]; });
-        assert.deepEqual(loadConfig().curator, { by: 'recap', model: '', effort: 'medium' });
+        assert.deepEqual(loadSettings().curator, { by: 'recap', model: '', effort: 'medium' });
         Object.assign(process.env, { TAB_RECAP_CURATE_BY: 'claude', TAB_RECAP_CURATE_MODEL: 'haiku', TAB_RECAP_CURATE_EFFORT: 'low' });
-        assert.deepEqual(loadConfig().curator, { by: 'claude', model: 'haiku', effort: 'low' });
+        assert.deepEqual(loadSettings().curator, { by: 'claude', model: 'haiku', effort: 'low' });
     } finally {
         keys.forEach((key, at) => {
             const value = was[at];

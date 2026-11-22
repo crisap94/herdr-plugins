@@ -3,7 +3,7 @@ import { parsePaneId, type SessionId, type TabId } from '#src/recap/domain/ids.t
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
-import { stateDir } from '#src/daemon/config.ts';
+import { stateDirectory } from '#src/daemon/config.ts';
 import type { CurrentSession } from '#src/recap/application/lane-recent.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import type { NonEmptyText } from '#src/recap/domain/text.ts';
@@ -52,7 +52,7 @@ interface Publishing {
 }
 
 function publisherFor(store: Store, log: (line: NonEmptyText) => void, shared: Shared): Publishing {
-    const dir = must(parseDirectory(join(stateDir(), 'gui')));
+    const dir = must(parseDirectory(join(stateDirectory(), 'gui')));
     const later: { publisher: GuiPublisher | null } = { publisher: null };
     const reads = new DesktopReads({ store, dir, now, republish: (tab): void => { later.publisher?.publish(tab); }, mode: 'daemon', leases: shared.leases });
     const deps: GuiPublisherDeps = { dir, records: store.records, views: store.views, now, log, bus: shared.bus, reads: (tab, view): GuiReads => reads.read(tab, view) };
@@ -77,7 +77,7 @@ export function desktopFrontend(path?: SocketPath): Frontend {
             const shared: Shared = { bus: new DesktopBus(now), leases: new OpenLeases(now) };
             const publishing = publisherFor(store, log, shared);
             const { publisher } = publishing;
-            const api = startDesktopApi({ dir: must(parseDirectory(join(stateDir(), 'gui'))), ...shared, requests: store.requests, now, engine: engineFor(store, fleet, publishing, flush) }, log);
+            const api = startDesktopApi({ dir: must(parseDirectory(join(stateDirectory(), 'gui'))), ...shared, requests: store.requests, now, engine: engineFor(store, fleet, publishing, flush) }, log);
             const publish = (tab: Parameters<GuiPublisher['publish']>[0]): void => { publisher.publish(tab); };
             return { ...store, records: new PublishingRecords(store.records, publish), views: new PublishingViews(store.views, publish), visibility: new AllHidden(), close: (): void => { api?.close(); store.close(); } };
         },

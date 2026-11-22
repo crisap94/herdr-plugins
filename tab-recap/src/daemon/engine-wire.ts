@@ -18,7 +18,7 @@ import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { lanesOf, type Board } from '#src/recap/domain/board.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import type { Backends } from './backends.ts';
-import { loadConfig } from './config.ts';
+import { loadSettings } from './config.ts';
 import { parseLine, parseMessage } from './slots.ts';
 import { brand, type Brand } from '#src/recap/domain/brand.ts';
 import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
@@ -31,11 +31,11 @@ type EngineRepos = Parameters<typeof pluginEngine>[0]['environment']['repos'];
 type KeepInput = Brand<boolean, 'KeepInput'>;
 
 function parseRecapLanguage(): Text {
-    return must(parseText(loadConfig().recapLanguage));
+    return must(parseText(loadSettings().recapLanguage));
 }
 
 function parseKeepInput(): KeepInput {
-    return brand<boolean, 'KeepInput'>(loadConfig().keepInputDays > 0);
+    return brand<boolean, 'KeepInput'>(loadSettings().keepInputDays > 0);
 }
 
 export interface EngineParts {
@@ -80,11 +80,11 @@ export function wireEngine({ store, backends, transcripts, clock, repos, curate,
         settings: {
             language: parseRecapLanguage,
             keepInput: parseKeepInput,
-            pipeline: (): Pipeline => loadConfig().pipeline,
-            closeEvidence: (): CloseEvidence => loadConfig().writerCloseEvidence,
-            writerView: (): WriterView => loadConfig().writerView,
-            debounce: (): Debounce => loadConfig().recapDebounce,
-            pacing: (): Pacing => loadConfig().pacing,
+            pipeline: (): Pipeline => loadSettings().pipeline,
+            closeEvidence: (): CloseEvidence => loadSettings().writerCloseEvidence,
+            writerView: (): WriterView => loadSettings().writerView,
+            debounce: (): Debounce => loadSettings().recapDebounce,
+            pacing: (): Pacing => loadSettings().pacing,
             visible: visibleOf(board, viewers),
         },
         restore: {

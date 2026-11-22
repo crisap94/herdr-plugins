@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import type { Decider } from '#src/ports/decider.ts';
 import type { HarnessChoice, HarnessPort } from '#src/ports/harness.ts';
-import { loadConfig, settingReader } from '#src/daemon/config.ts';
+import { loadSettings, settingReader } from '#src/daemon/config.ts';
 import { parseJevModel, parseJevUrl } from '#src/recap/domain/autocompact.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
@@ -20,7 +20,7 @@ export const ARMS: readonly ArmName[] = ['jev', 'haiku-low', 'haiku-medium', 'lu
 
 const TIMEOUT_MS = uncheckedMilliseconds(5 * 60_000);
 
-const acknowledgement = (): Acknowledgement => (loadConfig().claudePolicyAck === 'on' ? 'acknowledged' : 'unacknowledged');
+const acknowledgement = (): Acknowledgement => (loadSettings().claudePolicyAck === 'on' ? 'acknowledged' : 'unacknowledged');
 
 const readKeyFile = (path: FsPath): Text | null => {
     try { return must(parseText(readFileSync(path, 'utf8'))); } catch { return null; }

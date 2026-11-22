@@ -1,3 +1,4 @@
+import type { AgentKind } from '#src/recap/domain/ids.ts';
 import { join } from 'node:path';
 import { HarnessBrief } from '#src/adapters/job/brief.ts';
 import { HarnessJudge } from '#src/adapters/job/judge.ts';
@@ -16,22 +17,24 @@ import { isUnknown, saying, unknown } from '#src/ports/unknowable.ts';
 import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
 import type { LogLine } from '#src/ports/harness.ts';
 import { coverageDeciderFor, deciderPortFor } from './deciders.ts';
-import { loadConfig } from './config.ts';
+import { loadSettings } from './config.ts';
 import { MAKERS } from './harness-makers.ts';
 import { BACKEND_IDS, enumeratesJob, installableHarnessSentence, pick, type BackendId } from '#src/recap/domain/backend.ts';
 import { placementFor } from '#src/recap/domain/job.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
-import type { Config } from './config.ts';
+import type { Settings } from './config.ts';
 import { jobTagFor } from './harness-makers.ts';
 
 export { AUTO_ORDER, pick } from '#src/recap/domain/backend.ts';
-import { judgeVia } from './legacy.ts';
-
-export { availableIn, judgeFor, summarizerWork } from './legacy.ts';
-
 export type Available = readonly BackendId[];
+
+const isBackendId = (id: AgentKind): id is AgentKind & BackendId => BACKEND_IDS.some((known) => known === id);
+
+export function availableIn(ids: readonly AgentKind[]): Available {
+    return ids.filter(isBackendId);
+}
 
 type Warning = 'unwarned' | 'warned';
 
@@ -58,29 +61,27 @@ class Nothing implements Summarizer {
     }
 }
 
-export function summarizerFor(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): Summarizer {
+export function summarizerFor(config: Settings, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): Summarizer {
     const id = pick(config.backend, available);
     return id === null ? new Nothing() : new RecapWriter(MAKERS[id](config, work, runtime, jobTagFor(config, 'recapWriter'), log), { model: config.models[id], effort: config.effort }, config.writerAnswer ?? 'text');
 }
 
-export function enumeratorFor(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): Enumerators | null {
+export function enumeratorFor(config: Settings, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): Enumerators | null {
     const id = pick(config.backend, available);
     return id === null || !enumeratesJob(id) ? null : new HarnessEnumerator(MAKERS[id](config, work, runtime, jobTagFor(config, 'enumerator'), log), { model: config.models[id], effort: 'low' });
 }
 
-export function briefFor(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): BriefWriter | null {
+export function briefFor(config: Settings, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): BriefWriter | null {
     const placed = placementFor(config.brief, { backend: config.backend, models: config.models }, available);
     return placed === null ? null : new HarnessBrief(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'compactionBrief'), log), { model: placed.model, effort: placed.effort });
 }
 
-export function judgeWith(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, anchors?: TextAnchors): JudgePort | null {
+export function judgeWith(config: Settings, available: Available, work: Directory, runtime: HarnessRuntime, anchors?: TextAnchors): JudgePort | null {
     const placed = placementFor(config.judge, { backend: config.backend, models: config.models }, available);
     return placed === null ? null : new HarnessJudge(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'judge')), { model: placed.model, effort: placed.effort }, anchors);
 }
 
-judgeVia(judgeWith);
-
-export function curatorFor(config: Config, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): Curators | null {
+export function curatorFor(config: Settings, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): Curators | null {
     const placed = placementFor(config.curator, { backend: config.backend, models: config.models }, available);
     return placed === null ? null : new HarnessCurator(MAKERS[placed.harness](config, work, runtime, jobTagFor(config, 'curator'), log), { model: placed.model, effort: placed.effort, ...(placed.timeoutMs === undefined ? {} : { timeoutMs: placed.timeoutMs }) }, placed.answer ?? 'text');
 }
@@ -118,7 +119,7 @@ export class Backends {
     }
 
     private async warnWhenNone(): Promise<void> {
-        if (this.warning === 'warned' || loadConfig().backend !== 'auto' || pick('auto', this.available) !== null) {
+        if (this.warning === 'warned' || loadSettings().backend !== 'auto' || pick('auto', this.available) !== null) {
             return;
         }
         this.warning = 'warned';
@@ -127,26 +128,26 @@ export class Backends {
     }
 
     brief(): BriefWriter | null {
-        return briefFor(loadConfig(), this.available, this.work, this.runtime, this.log);
+        return briefFor(loadSettings(), this.available, this.work, this.runtime, this.log);
     }
 
     decider(): DeciderPort | null {
-        return deciderPortFor(loadConfig(), this.available, this.work, this.runtime, this.log);
+        return deciderPortFor(loadSettings(), this.available, this.work, this.runtime, this.log);
     }
 
     coverageDecider(): Decider | null {
-        return coverageDeciderFor(loadConfig(), this.available, this.work, this.runtime, this.log);
+        return coverageDeciderFor(loadSettings(), this.available, this.work, this.runtime, this.log);
     }
 
     curator(): Curators | null {
-        return curatorFor(loadConfig(), this.available, this.work, this.runtime, this.log);
+        return curatorFor(loadSettings(), this.available, this.work, this.runtime, this.log);
     }
 
     summarizer(): Summarizer {
-        return summarizerFor(loadConfig(), this.available, this.work, this.runtime, this.log);
+        return summarizerFor(loadSettings(), this.available, this.work, this.runtime, this.log);
     }
 
     enumerator(): Enumerators | null {
-        return enumeratorFor(loadConfig(), this.available, this.work, this.runtime, this.log);
+        return enumeratorFor(loadSettings(), this.available, this.work, this.runtime, this.log);
     }
 }

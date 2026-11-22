@@ -1,4 +1,4 @@
-import { loadConfig, stateDirectory } from '#src/daemon/config.ts';
+import { loadSettings, stateDirectory } from '#src/daemon/config.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
 import type { HandoffPrinter } from '#src/ports/handoff-print.ts';
 import type { FlushTab } from '#src/ports/frontend.ts';
@@ -14,12 +14,12 @@ import { modalTranscriptRegistry } from '../transcripts/registry.ts';
 export function desktopPrinter(fleet: Pick<Fleet, 'read' | 'agents'>, flush: FlushTab): HandoffPrinter {
     const transcripts = modalTranscriptRegistry();
     return new PrintedHandoffs({
-        openStore: () => openPrintStore(databaseFile(stateDirectory()), loadConfig().closedLaneDays),
+        openStore: () => openPrintStore(databaseFile(stateDirectory()), loadSettings().closedLaneDays),
         transcripts,
         worksite: { reader: new GitWorksite(), repo: new GitLaneRepo(new SystemClock()), edits: new EditTally(transcripts) },
         tokens: fleet,
         target: fleet.agents(),
-        closedDays: loadConfig().closedLaneDays,
+        closedDays: loadSettings().closedLaneDays,
         now: Date.now,
         flush,
         log: (): void => undefined,

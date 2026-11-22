@@ -5,7 +5,8 @@ import { instructions, messageText } from '#src/adapters/job/prompts/recap-promp
 import { languageNameOf, messagesFor, recapLanguageOfSetting } from '#src/i18n/index.ts';
 import { SECTIONS, sectionOf } from '#src/i18n/sections.ts';
 import { textOf } from '#src/recap/domain/text.ts';
-import { localeOf } from '#src/daemon/config.ts';
+import { localeFrom } from '#src/daemon/config.ts';
+import type { Locale } from '#src/i18n/index.ts';
 
 const base = { previousLanguage: textOf('en'), input: requestOf().input };
 
@@ -77,6 +78,8 @@ test('recap language: ui follows the locale; en/es by code or name; free text is
     assert.equal(languageNameOf(textOf('es')), 'Spanish');
     assert.equal(languageNameOf(textOf('Português')), 'Português');
 });
+
+const localeOf = (setting: string | undefined, env: Readonly<Record<string, string | undefined>>): Locale => localeFrom(setting === undefined ? undefined : textOf(setting), (key) => (env[key] === undefined ? undefined : textOf(env[key])));
 
 test('locale: an explicit setting wins; auto reads LC_ALL, then LC_MESSAGES, then LANG', () => {
     assert.equal(localeOf('es', { LANG: 'en_US.UTF-8' }), 'es');

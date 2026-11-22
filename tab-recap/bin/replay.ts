@@ -1,3 +1,4 @@
+import type { AgentKind } from '#src/recap/domain/ids.ts';
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
 import { RUBRIC_TEXT } from '#src/adapters/job/prompts/rubric.ts';
@@ -12,12 +13,12 @@ import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
 import { AUTO_PATH_KINDS, PathHarnessDirectory } from '#src/adapters/harness/on-path.ts';
 import { SystemClock } from '#src/adapters/os/system-clock.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
-import { availableIn, enumeratorFor, judgeFor, summarizerFor, summarizerWork } from '#src/daemon/backends.ts';
+import { availableIn, enumeratorFor, judgeWith, summarizerFor } from '#src/daemon/backends.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { textOf } from '#src/recap/domain/text.ts';
-import { loadConfig, stateDirectory } from '#src/daemon/config.ts';
+import { loadSettings, stateDirectory } from '#src/daemon/config.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { JudgePort } from '#src/ports/judge.ts';
 import type { Summarizer } from '#src/ports/summarizer.ts';
@@ -29,7 +30,7 @@ import { replay } from '#src/recap/application/replay.ts';
 import type { Replayed } from '#src/recap/application/replay.ts';
 import { FULL_WRITER_VIEW } from '#src/recap/domain/writer-view.ts';
 import type { Scratch } from '#src/adapters/db/scratch.ts';
-import type { Config } from '#src/daemon/config.ts';
+import type { Settings } from '#src/daemon/config.ts';
 import { anchoredLine, ledgerText, reportOf } from '#src/recap/application/replay-report.ts';
 import { gateReportOf } from '#src/recap/application/eval-stats.ts';
 import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
@@ -40,7 +41,7 @@ import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { agentKind } from '#src/recap/domain/ids.ts';
 
-export function viewOf(options: Pick<EvalRequest, 'prune'>, config: Pick<Config, 'writerViewSettings'>): WriterView {
+export function viewOf(options: Pick<EvalRequest, 'prune'>, config: Pick<Settings, 'writerViewSettings'>): WriterView {
     return options.prune === 'present' ? config.writerViewSettings : FULL_WRITER_VIEW;
 }
 
@@ -66,16 +67,16 @@ function printMechanical(done: Replayed, file: string, beside: string | null, ra
     }
 }
 
-function counted(config: Config, available: readonly string[], dir: string, runtime: HarnessRuntime): { readonly writer: Summarizer; readonly enumerator: Enumerators | null; readonly calls: { writer: number; enumeration: number } } {
+function counted(config: Settings, available: readonly AgentKind[], dir: string, runtime: HarnessRuntime): { readonly writer: Summarizer; readonly enumerator: Enumerators | null; readonly calls: { writer: number; enumeration: number } } {
     const calls = { writer: 0, enumeration: 0 };
-    const made = summarizerFor(config, availableIn(available), summarizerWork(dir), runtime);
+    const made = summarizerFor(config, availableIn(available), must(parseDirectory(join(dir, 'summarizer'))), runtime);
     const writer = countedWriter(made, () => { calls.writer += 1; });
     const own = enumeratorFor(config, availableIn(available), must(parseDirectory(join(dir, 'enumerator'))), runtime);
     const enumerator: Enumerators | null = own === null ? null : { backend: own.backend, job: own.job, write: (document) => { calls.enumeration += 1; return own.write(document); } };
     return { writer, enumerator, calls };
 }
 
-async function replayed(input: { readonly file: string; readonly reader: Transcripts; readonly options: EvalRequest; readonly size: number; readonly judge: string }, scratch: Scratch, parts: { readonly config: Config; readonly available: readonly string[]; readonly runtime: HarnessRuntime }): Promise<void> {
+async function replayed(input: { readonly file: string; readonly reader: Transcripts; readonly options: EvalRequest; readonly size: number; readonly judge: string }, scratch: Scratch, parts: { readonly config: Settings; readonly available: readonly AgentKind[]; readonly runtime: HarnessRuntime }): Promise<void> {
     const { config, available, runtime } = parts;
     const { writer, enumerator, calls } = counted(config, available, scratch.dir, runtime);
     const pipeline = input.options.pipeline ?? config.pipeline;
@@ -94,13 +95,13 @@ function importedBeside(tab: string | null): ReturnType<typeof importedChaptersA
 }
 
 async function run(file: string, reader: Transcripts, options: EvalRequest, size: number): Promise<number> {
-    const config = loadConfig();
+    const config = loadSettings();
     const found = await new PathHarnessDirectory(AUTO_PATH_KINDS).available();
     const available = isUnknown(found) ? [] : found.ids;
     const runtime = createRuntime();
     const scratch = scratchStore();
     const label = options.tab ?? 'replay:t1';
-    const judge: JudgePort | null = judgeFor(config, availableIn(available), must(parseDirectory(join(scratch.dir, 'judge'))), runtime, operatorAnchors(databaseFile(stateDirectory())));
+    const judge: JudgePort | null = judgeWith(config, availableIn(available), must(parseDirectory(join(scratch.dir, 'judge'))), runtime, operatorAnchors(databaseFile(stateDirectory())));
     try {
         await replayed({ file, reader, options, size, judge: judge?.label ?? 'none' }, scratch, { config, available, runtime });
         if (judge === null) {
