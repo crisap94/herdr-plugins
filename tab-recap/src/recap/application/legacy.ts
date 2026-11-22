@@ -34,14 +34,60 @@ import type { Entry } from '#src/ports/transcripts.ts';
 import { mergedWindows, replayFile, type Replayed, type TypedReplayDeps } from './replay.ts';
 import type { ImportedChapter } from '#src/ports/imported-recaps.ts';
 import { compareChapters, type Comparison, type TypedCompareDeps } from './compare-imported.ts';
-import { wireMap } from './twins/compact-requests/legacy.ts';
-import type { CompactRequestDeps } from './twins/compact-requests/legacy.ts';
-import type { RestartDeps } from './twins/restart/legacy.ts';
-import type { TypingLeaseDeps } from './twins/typing-lease-deps/legacy.ts';
-import { withoutLedgers } from './twins/ledgers/legacy.ts';
+import type { AskLedger, Ask } from '#src/ports/ask-ledger.ts';
+import type { CompactionRecords } from '#src/ports/compaction-records.ts';
+import type { LaneTokens } from '#src/ports/lane-tokens.ts';
+import type { PaneTokens } from '#src/ports/pane-tokens.ts';
+import type { Requests } from '#src/ports/requests.ts';
+import type { Exchange } from '#src/protocol/exchange.ts';
+import type { Board } from '#src/recap/domain/board.ts';
+import type { Milliseconds } from '#src/recap/domain/time.ts';
+import type { WireText } from '#src/protocol/primitives.ts';
 
-export type { CompactRequestDeps, RestartDeps, TypingLeaseDeps };
-export { withoutLedgers };
+export interface CompactRequestDeps {
+    readonly enabled: () => boolean;
+    readonly board: () => Board;
+    readonly requests: Pick<Requests, 'requestCompact'>;
+    readonly asks: AskLedger;
+    readonly tokens: LaneTokens;
+    readonly now: () => number;
+    readonly log: (line: string) => void;
+}
+
+export interface RestartDeps {
+    readonly exchanges: readonly Exchange[];
+    readonly ledger: AskLedger;
+    readonly requests: Pick<Requests, 'takeAnswered'>;
+    readonly compactions: Pick<CompactionRecords, 'interrupted'>;
+    readonly tokens: Pick<LaneTokens, 'report'>;
+    readonly enabled: () => boolean;
+    readonly local: (ask: Ask) => void;
+    readonly handoff: (ask: Ask) => void;
+    readonly withdraw: (ask: Ask) => void;
+    readonly log: (line: string) => void;
+    readonly now: () => number;
+    readonly restartedWhy: string;
+}
+
+export interface TypingLeaseDeps {
+    readonly tokens: LaneTokens;
+    readonly panes: PaneTokens;
+    readonly now: () => number;
+    readonly pause: (ms: Milliseconds) => Promise<void>;
+    readonly log: (line: string) => void;
+}
+
+const wireMap = (tokens: TokenMap): ReadonlyMap<WireText, WireText> => {
+    const wire = new Map<WireText, WireText>();
+    for (const [name, raw] of Object.entries(tokens)) {
+        const key = parseWireText(name);
+        const value = parseWireText(raw);
+        if (key.kind === 'ok' && value.kind === 'ok') {
+            wire.set(key.value, value.value);
+        }
+    }
+    return wire;
+};
 
 export interface CoverageFact {
     readonly section: string;

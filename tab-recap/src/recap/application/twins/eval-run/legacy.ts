@@ -9,7 +9,7 @@ import { agreeLines, candidateLines, gateLines, reportLines } from '#src/recap/r
 import type { Style } from '#src/recap/render/wrap.ts';
 import { answerOf, candidatesOf, labelVerdicts } from '../../eval-label.ts';
 import type { Candidate } from '../../eval-label.ts';
-import type { EvalOptions } from '../../eval-options.ts';
+import type { EvalRequest } from '../../eval-request.ts';
 import { reportOf } from '../../eval-report.ts';
 import { agreementOf, gateReportOf } from '../../eval-stats.ts';
 import { withText } from '../../judge-anchors.ts';
@@ -32,10 +32,10 @@ export interface EvalDeps {
     ask(prompt: string): Promise<string | null>;
 }
 
-const queryOf = (options: EvalOptions, deps: EvalDeps, limit: number, withInput: boolean): RunQuery =>
+const queryOf = (options: EvalRequest, deps: EvalDeps, limit: number, withInput: boolean): RunQuery =>
     ({ tab: options.tab, since: options.since === null ? null : deps.now() - options.since * DAY_MS, limit, withInput });
 
-async function sample(options: EvalOptions, deps: EvalDeps): Promise<number> {
+async function sample(options: EvalRequest, deps: EvalDeps): Promise<number> {
     const judge = deps.judge();
     if (judge === null) {
         deps.err(`tab-recap: 1 — no harness is available for the judge job: install ${installableHarnessSentence()}, or set TAB_RECAP_JUDGE_BY`);
@@ -47,7 +47,7 @@ async function sample(options: EvalOptions, deps: EvalDeps): Promise<number> {
     let done = 0;
     const results = await judgeRuns(judging, runs, () => { done += 1; deps.err(`judged ${done}/${runs.length}`); });
     const report = reportOf(judge.label, results);
-    deps.out(options.json ? JSON.stringify({ ...report, missingInput: missing }) : reportLines(report, deps.style, missing).join('\n'));
+    deps.out(options.json === 'present' ? JSON.stringify({ ...report, missingInput: missing }) : reportLines(report, deps.style, missing).join('\n'));
     return results.length > 0 && results.every((result) => result.kind === 'not-judged') ? 1 : 0;
 }
 
@@ -68,9 +68,9 @@ async function labelOne(candidate: Candidate, position: string, deps: EvalDeps, 
     }
 }
 
-async function label(options: EvalOptions, deps: EvalDeps): Promise<number> {
+async function label(options: EvalRequest, deps: EvalDeps): Promise<number> {
     const runs = deps.inputs.runs(queryOf(options, deps, LABEL_RUNS, false));
-    const check = options.check === null ? null : must(parseText(options.check));
+    const check = options.check;
     const labelled = new Set([...deps.verdicts.labelled(options.check)].map((key) => must(parseText(key))));
     const items = candidatesOf(runs, deps.inputs, labelled, must(parseCount(options.count)), check);
     if (items.length === 0) {
@@ -88,7 +88,7 @@ async function label(options: EvalOptions, deps: EvalDeps): Promise<number> {
     return 0;
 }
 
-export async function runEval(options: EvalOptions, deps: EvalDeps): Promise<number> {
+export async function runEval(options: EvalRequest, deps: EvalDeps): Promise<number> {
     switch (options.mode) {
         case 'sample':
             return sample(options, deps);
@@ -96,12 +96,12 @@ export async function runEval(options: EvalOptions, deps: EvalDeps): Promise<num
             return label(options, deps);
         case 'agree': {
             const rows = agreementOf(deps.verdicts.pairs(), withText(deps.verdicts.disagreements(), deps.inputs));
-            deps.out(options.json ? JSON.stringify(rows) : agreeLines(rows, deps.style).join('\n'));
+            deps.out(options.json === 'present' ? JSON.stringify(rows) : agreeLines(rows, deps.style).join('\n'));
             return 0;
         }
         case 'gates': {
             const report = gateReportOf(deps.inputs.gateCounts(options.since === null ? null : deps.now() - options.since * DAY_MS));
-            deps.out(options.json ? JSON.stringify(report) : gateLines(report, deps.style).join('\n'));
+            deps.out(options.json === 'present' ? JSON.stringify(report) : gateLines(report, deps.style).join('\n'));
             return 0;
         }
         case 'replay':

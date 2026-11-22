@@ -108,7 +108,7 @@ test('the replay counting wrapper preserves a custom writer contract', async () 
     const old = JSON.stringify({ goal: 'x', now: ['y'] });
     const made = writer([old], 'custom/mine', 'free-text');
     const calls = { writer: 0 };
-    const wrapped = countedWriter(made.summarizer, calls);
+    const wrapped = countedWriter(made.summarizer, () => { calls.writer += 1; });
     const done = await extract(wrapped, requestOf(), ground);
     assert.equal(wrapped.contract, 'free-text');
     assert.equal(calls.writer, 1);

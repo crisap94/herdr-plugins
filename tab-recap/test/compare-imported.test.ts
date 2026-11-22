@@ -92,7 +92,7 @@ test('the same key facts go to both sides, and the evidence is the chapter\'s tu
 });
 
 test('the ledgers of a writer\'s document are cut out of the evidence, however they are written', () => {
-    assert.equal(withoutLedgers('<a/><ledger task="t1"><fact id="f1">x</fact></ledger><ledger/><b/>'), '<a/><b/>');
+    assert.equal(withoutLedgers(textOf('<a/><ledger task="t1"><fact id="f1">x</fact></ledger><ledger/><b/>')), '<a/><b/>');
 });
 
 test('the report: one row per chapter, 1.x beside the replay, the sums, and why a chapter was skipped', async () => {

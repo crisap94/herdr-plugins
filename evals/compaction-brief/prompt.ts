@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { BRIEF_INSTRUCTIONS } from '../../tab-recap/src/adapters/job/prompts/brief-instructions.ts';
-import { compactionInput, type CompactionMaterial } from '../../tab-recap/src/recap/application/compaction-input.ts';
+import { compactionInput, type CompactionMaterial } from './material.ts';
 import type { Item, Prompt } from '../lib/types.ts';
 import { ownOf } from './checks.ts';
 

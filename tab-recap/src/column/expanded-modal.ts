@@ -1,7 +1,7 @@
 import type { Store } from '#src/adapters/db/database.ts';
 import { must } from '#src/protocol/result.ts';
 import { modalTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
-import { EditCache, EditCounts } from '#src/recap/application/edit-counts.ts';
+import { EditCache, EditTally } from '#src/recap/application/edit-tally.ts';
 import { ExpandedModel } from '#src/recap/application/expanded-view.ts';
 import { expanded } from '#src/recap/render/expanded.ts';
 import type { ColumnView } from '#src/recap/render/present.ts';
@@ -10,7 +10,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import { coloured, wrap } from '#src/recap/render/wrap.ts';
 
 export function expandedScreen(store: Store | null): (view: ColumnView, width: number) => readonly Text[] {
-    const edits = new EditCache(new EditCounts(modalTranscriptRegistry()));
+    const edits = new EditCache(new EditTally(modalTranscriptRegistry()));
     const model = store === null ? null : new ExpandedModel({ records: store.records, ledger: store.ledger, stories: store.stories, session: store.session, autocompact: store.autocompact, boundaries: store.boundaries, requests: store.requests, edits: edits.of.bind(edits) });
     const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     return (view, width) => {

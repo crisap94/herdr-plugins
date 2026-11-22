@@ -5,7 +5,7 @@ import { HandoffRunner } from '#src/daemon/handoff.ts';
 import { silentMirror } from './fakes/handoff-mirror.ts';
 import type { HandoffRunnerDeps } from '#src/daemon/handoff.ts';
 import { HANDOFF_FLOW_MAX_MS, HANDOFF_TAKE_MAX_AGE_MS } from '#src/recap/application/handoff-limits.ts';
-import { DeliveryMark } from '#src/recap/application/delivery-mark.ts';
+import { DeliveryTracker } from '#src/recap/application/delivery-tracker.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { unrendered } from '#src/recap/application/handoff-flow.ts';
 import type { HandoffRun } from '#src/recap/application/handoff-flow.ts';
@@ -183,7 +183,7 @@ test('a flow that throws is logged once with the request id and the error name, 
 test('a flow that never finishes before anything is typed is answered expired at the bound, and the lanes it claimed are released', async (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
     const taken = row();
-    const { runner, answers, probe } = runnerOf(delivered, { flow: { execute: (_request, mark: DeliveryMark): Promise<HandoffRun> => { mark.claim(); return new Promise<HandoffRun>(() => undefined); } } });
+    const { runner, answers, probe } = runnerOf(delivered, { flow: { execute: (_request, mark: DeliveryTracker): Promise<HandoffRun> => { mark.claim(); return new Promise<HandoffRun>(() => undefined); } } });
     const running = runner.take([taken]);
     t.mock.timers.tick(HANDOFF_FLOW_MAX_MS);
     await running;
@@ -195,7 +195,7 @@ test('a flow that never finishes before anything is typed is answered expired at
 test('a flow that never finishes after typing is answered unconfirmed at the bound, and its lanes stay claimed until the flow ends', async (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
     const taken = row();
-    const { runner, answers, probe } = runnerOf(delivered, { flow: { execute: (_request, mark: DeliveryMark): Promise<HandoffRun> => { mark.claim(); mark.startTyping(); return new Promise<HandoffRun>(() => undefined); } } });
+    const { runner, answers, probe } = runnerOf(delivered, { flow: { execute: (_request, mark: DeliveryTracker): Promise<HandoffRun> => { mark.claim(); mark.startTyping(); return new Promise<HandoffRun>(() => undefined); } } });
     const running = runner.take([taken]);
     t.mock.timers.tick(HANDOFF_FLOW_MAX_MS);
     await running;

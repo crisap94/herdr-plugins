@@ -9,7 +9,6 @@ import type { Fact } from '#src/recap/domain/fact.ts';
 import type { AutocompactRecords, DecisionCounts } from '#src/ports/autocompact-records.ts';
 import { sessionFactsOf } from '#src/recap/domain/session-facts.ts';
 import type { ExpandedTask, ExpandedView } from '#src/recap/render/expanded.ts';
-import type { FileCount } from '../../edit-counts.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseTabId } from '#src/recap/domain/ids.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
@@ -17,6 +16,12 @@ import { parseCount } from '#src/recap/domain/count.ts';
 import { parseCurating, parseInstant, parseProse, parseTaskName } from '@stateforge-labs/recap-view';
 import { viewBreakOf, webOf } from '#src/view-model/column.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
+
+export interface FileCount {
+    readonly path: string;
+    readonly count: number;
+}
 
 export const CURATING_MS = 10 * 60_000;
 const LABEL_CHARS = 20;
@@ -30,7 +35,7 @@ export interface ExpandedDeps {
     readonly autocompact?: Pick<AutocompactRecords, 'countsFor'>;
     readonly boundaries: Pick<Boundaries, 'breaksOf' | 'chapterCount'>;
     readonly requests: Pick<Requests, 'requestCurate'>;
-    readonly edits: (lanes: readonly LaneCursor[], now: number) => readonly FileCount[];
+    readonly edits: (lanes: readonly LaneCursor[], now: Instant) => readonly FileCount[];
 }
 
 export type ExpandedData = Pick<ExpandedView, 'tasks' | 'session' | 'webs' | 'breaks'>;
@@ -85,7 +90,7 @@ export class ExpandedModel {
         const session = sessionFactsOf({
             firstSeen: this.deps.session.firstSeen(tab), now, runs: this.deps.session.runsByCause(tab), compactions: this.deps.session.compactions(tab),
             lanes: lanes.map((lane) => ({ agent: lane.agent, label: clipped(lane.title), context: lane.context ?? null })),
-            webs: lanes.map((lane) => lane.web ?? null), edits: this.deps.edits(recap?.lanes ?? [], now),
+            webs: lanes.map((lane) => lane.web ?? null), edits: this.deps.edits(recap?.lanes ?? [], instant(now)),
             chapters: this.deps.boundaries.chapterCount(tab),
             ...(this.deps.autocompact === undefined ? {} : { autocompact: counted.kind === 'ok' ? this.deps.autocompact.countsFor(counted.value) : NO_DECISIONS }),
         });
