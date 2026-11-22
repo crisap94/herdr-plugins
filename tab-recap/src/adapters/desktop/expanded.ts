@@ -7,8 +7,7 @@ import type { TabView } from '#src/ports/tab-views.ts';
 import { loadConfig } from '#src/daemon/config.ts';
 import { worktreeSwitch } from '#src/daemon/worktree-switch.ts';
 import { must } from '#src/protocol/result.ts';
-import { EditCache, EditCounts } from '#src/recap/application/edit-counts.ts';
-import type { FileCount } from '#src/recap/application/edit-counts.ts';
+import { EditCache, EditTally } from '#src/recap/application/edit-tally.ts';
 import { ExpandedModel, type ExpandedData, type ExpandedDeps } from '#src/recap/application/expanded-view.ts';
 import type { GuiReads } from '#src/recap/application/gui-tab-reads.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
@@ -48,7 +47,7 @@ interface Settled {
     readonly extensions: readonly Extension[];
 }
 
-const nobody = (): readonly FileCount[] => [];
+const nobody = (): ReturnType<ExpandedDeps['edits']> => [];
 
 const ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -62,7 +61,7 @@ export class DesktopReads {
 
     constructor(deps: DesktopReadsDeps) {
         this.deps = deps;
-        const edits = new EditCache(new EditCounts(modalTranscriptRegistry()));
+        const edits = new EditCache(new EditTally(modalTranscriptRegistry()));
         const base: Omit<ExpandedDeps, 'requests'> = {
             records: deps.store.records, ledger: deps.store.ledger, stories: deps.store.stories, session: deps.store.session, autocompact: deps.store.autocompact, boundaries: deps.store.boundaries,
             edits: deps.mode === 'daemon' ? edits.of.bind(edits) : nobody,

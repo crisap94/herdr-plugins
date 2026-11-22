@@ -5,7 +5,7 @@ import { observe } from '#src/recap/domain/fold.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import { emptyBoard, watchSet } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
 import type { Clock } from '#src/ports/clock.ts';
@@ -14,7 +14,7 @@ import type { SessionOf } from '#src/ports/session-identity.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import { AsyncQueue } from './async-queue.ts';
-import { decode, paneSessionOf, tokensOf } from './decode.ts';
+import { decode, paneSessionRefOf, paneTokenMapOf } from './decode.ts';
 import { specsFor } from './watch-set.ts';
 
 type Snapshot = Exclude<SnapshotResult, { readonly kind: 'unknown' }>;
@@ -215,13 +215,13 @@ export class Informer {
     }
 
     private paneUpdated(data: Readonly<Record<string, unknown>>): void {
-        const tokens = tokensOf(data);
+        const tokens = paneTokenMapOf(data);
         if (tokens !== null) {
-            this.queue.push({ kind: 'tokens', pane: tokens.pane, tokens: tokens.tokens });
+            this.queue.push({ kind: 'tokens', pane: tokens.pane, tokens: Object.fromEntries(tokens.tokens) });
         }
-        const session = paneSessionOf(data, this.identityForSession);
+        const session = paneSessionRefOf(data, this.identityForSession);
         if (session !== null) {
-            this.push({ kind: 'session', pane: paneId(session.pane), session: session.session });
+            this.push({ kind: 'session', pane: session.pane, session: session.session });
         }
     }
 

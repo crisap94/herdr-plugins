@@ -16,7 +16,6 @@ import { StoriesRepository } from '#src/adapters/db/stories.ts';
 import { must as unwrap } from '#src/protocol/result.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { newestChange, ExpandedModel } from '#src/recap/application/expanded-view.ts';
-import type { FileCount } from '#src/recap/application/edit-counts.ts';
 import { clockOf, timelineOf } from '#src/recap/render/timeline.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { cursor, memoryStore, must, openFixture, scratchDir, recordOps } from './support.ts';
@@ -133,7 +132,7 @@ test('the real ledger stores what the view reads: a done fact is drawn when it h
     const closed = must(facts.find((each) => each.id === next.id));
     assert.deepEqual([closed.closedAt, closed.lastAt >= timeOf('14:02')], [timeOf('14:02'), true], 'a closed fact is a change: the newest change is its close');
     assert.equal(newestChange(facts), timeOf('14:02'));
-    const view = new ExpandedModel({ records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), stories: store.stories, session: store.session, boundaries: store.boundaries, requests: store.requests, edits: (): readonly FileCount[] => [] }).read('w1:t1', null, timeOf('15:00'));
+    const view = new ExpandedModel({ records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), stories: store.stories, session: store.session, boundaries: store.boundaries, requests: store.requests, edits: (): [] => [] }).read('w1:t1', null, timeOf('15:00'));
     assert.deepEqual(view.tasks[0]?.facts.map((each) => each.text).toSorted(), ['Add a retention sweep', 'Keep the guard out', 'Merged !34']);
 });
 

@@ -5,7 +5,6 @@ import type { Observation } from '#src/recap/domain/fold.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import type { Frame } from '#src/ports/fleet-source.ts';
 import type { SessionOf } from '#src/ports/session-identity.ts';
-import type { PaneSession, PaneTokens } from './twins/decode/legacy.ts';
 
 export interface ResyncDecoded {
     readonly kind: 'resync';
@@ -109,11 +108,6 @@ export function paneSessionRefOf(data: JsonObject, identity: SessionOf): PaneSes
     return pane === null || session === null ? null : { pane: paneId(pane), session };
 }
 
-export function paneSessionOf(data: JsonObject, identity: SessionOf): PaneSession | null {
-    const found = paneSessionRefOf(data, identity);
-    return found === null ? null : { pane: found.pane, session: found.session };
-}
-
 export function paneTokenMapOf(data: JsonObject): PaneTokenMap | null {
     const pane = field(data, 'pane_id');
     const raw = nestedAt(data, 'pane')['tokens'] ?? data['tokens'];
@@ -129,11 +123,6 @@ export function paneTokenMapOf(data: JsonObject): PaneTokenMap | null {
         }
     }
     return { pane: paneId(pane), tokens };
-}
-
-export function tokensOf(data: JsonObject): PaneTokens | null {
-    const found = paneTokenMapOf(data);
-    return found === null ? null : { pane: found.pane, tokens: Object.fromEntries(found.tokens) };
 }
 
 function decodeKnown(kind: Text, data: JsonObject, identity: SessionOf): Decoded | null {

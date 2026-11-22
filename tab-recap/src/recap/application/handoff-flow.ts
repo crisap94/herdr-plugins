@@ -14,7 +14,7 @@ import { isLaneOfTab, resolveSource, unfoundOutcome } from './handoff-source.ts'
 import type { FoundSource, SourceDeps, SourceResolution } from './handoff-source.ts';
 import { closedLaneOf } from './closed-lane-source.ts';
 import type { ClosedSourceDeps } from './closed-lane-source.ts';
-import { DeliveryMark } from './delivery-mark.ts';
+import { DeliveryTracker } from './delivery-tracker.ts';
 import { resolveTarget } from './handoff-target.ts';
 import type { Ready, TargetDeps, TargetResolution } from './handoff-target.ts';
 
@@ -61,7 +61,7 @@ export class HandoffFlow {
         return (await this.execute(request)).outcome;
     }
 
-    async execute(request: HandoffRequestRow, mark: DeliveryMark = new DeliveryMark()): Promise<HandoffRun> {
+    async execute(request: HandoffRequestRow, mark: DeliveryTracker = new DeliveryTracker()): Promise<HandoffRun> {
         try {
             return await this.steps(request, mark);
         } catch (error) {
@@ -70,7 +70,7 @@ export class HandoffFlow {
         }
     }
 
-    private async steps(request: HandoffRequestRow, mark: DeliveryMark): Promise<HandoffRun> {
+    private async steps(request: HandoffRequestRow, mark: DeliveryTracker): Promise<HandoffRun> {
         if (request.source.kind === 'live' && request.pane === request.toPane) {
             return unrendered({ kind: 'refused', reason: 'source-equals-target' });
         }
@@ -88,14 +88,14 @@ export class HandoffFlow {
         if (!this.deps.claims.claimAll(held.map((pane) => ({ pane, kind: 'handoff' as const })))) {
             return unrendered({ kind: 'refused', reason: 'lane-busy' });
         }
-        if (!mark.claim()) {
+        if (mark.claim() === 'absent') {
             this.releaseAll(held);
             return unrendered({ kind: 'failed', reason: 'expired' });
         }
         try {
             return { outcome: await this.deliver(request, rendered.text, mark), rendered: { bytes: rendered.bytes, omitted: rendered.omitted, withheld: rendered.withheld } };
         } finally {
-            if (mark.settle()) {
+            if (mark.settle() === 'present') {
                 this.releaseAll(held);
             }
         }
@@ -172,7 +172,7 @@ export class HandoffFlow {
         return this.deps.render({ handoff: request.id, at: this.deps.now(), lane, cursor, facts: found.facts, note: request.note, refresh });
     }
 
-    private async deliver(request: HandoffRequestRow, text: string, mark: DeliveryMark): Promise<HandoffOutcome> {
+    private async deliver(request: HandoffRequestRow, text: string, mark: DeliveryTracker): Promise<HandoffOutcome> {
         const first = await this.resolve(request);
         if (first.kind !== 'ready') {
             return first;
@@ -182,7 +182,7 @@ export class HandoffFlow {
         if (held.kind !== 'ready') {
             return { kind: 'refused', reason: 'status-not-ready' };
         }
-        if (!mark.startTyping()) {
+        if (mark.startTyping() === 'absent') {
             return { kind: 'failed', reason: 'expired' };
         }
         return this.deps.sender.send(held, text);

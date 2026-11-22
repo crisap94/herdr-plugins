@@ -4,7 +4,7 @@ import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { parseUsd, type Usd } from '#src/recap/domain/usd.ts';
 import { coverDocument } from './judge-context.ts';
@@ -14,9 +14,9 @@ import { measureState, plus } from './judge-coverage.ts';
 import type { Carrying, Share } from './judge-coverage.ts';
 import { readBack } from './judge.ts';
 import type { JudgeDeps } from './judge.ts';
-import { withoutLedgers } from './legacy.ts';
+export { compareImported, type CompareDeps } from './legacy.ts';
 
-export { compareImported, withoutLedgers, type CompareDeps } from './legacy.ts';
+export const withoutLedgers = (document: Text): Text => textOf(document.replace(/<ledger\b[^>]*?(?:\/>|>[\s\S]*?<\/ledger>)/gu, ''));
 
 const SLACK_MS = 30 * 60_000;
 const EVIDENCE_CHARS = 250_000;
@@ -95,7 +95,7 @@ export interface TypedCompareDeps extends JudgeDeps {
 
 function evidenceOf(inputs: RunInputs, runs: readonly StoredRun[]): Text | null {
     const documents = runs.flatMap((run) => {
-        const kept = withoutLedgers(inputs.document(run.id) ?? '');
+        const kept = withoutLedgers(textOf(inputs.document(run.id) ?? ''));
         return kept === '' ? [] : [kept];
     });
     let kept = documents;

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { decode, paneSessionOf } from '#src/recap/application/decode.ts';
+import { decode, paneSessionRefOf } from '#src/recap/application/decode.ts';
 import { specsFor, GLOBAL_TOPICS, PER_PANE_TOPIC } from '#src/recap/application/watch-set.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
@@ -34,13 +34,13 @@ test('herdr names the session by id; a path names the same session by its file n
 
 test('a pane.updated frame names its pane and session when it carries one; a frame without a session names none', () => {
     const withSession = { pane: { pane_id: 'w28:p1', agent_session: { source: 'claude', agent: 'claude', kind: 'id', value: 'new-session' } } };
-    assert.deepEqual(paneSessionOf(withSession, sessionOfForKind), { pane: 'w28:p1', session: 'new-session' });
-    assert.equal(paneSessionOf({ pane: { pane_id: 'w28:p1', agent_session: null }, tokens: {} }, sessionOfForKind), null);
+    assert.deepEqual(paneSessionRefOf(withSession, sessionOfForKind), { pane: 'w28:p1', session: 'new-session' });
+    assert.equal(paneSessionRefOf({ pane: { pane_id: 'w28:p1', agent_session: null }, tokens: {} }, sessionOfForKind), null);
 });
 
 test('a session of a kind this does not know is not guessed at: no session is named', () => {
-    assert.equal(paneSessionOf({ pane: { pane_id: 'w28:p1', agent_session: { kind: 'uuid', value: 'x-1' } } }, sessionOfForKind), null);
-    assert.equal(paneSessionOf({ pane: { pane_id: 'w28:p1' }, agent_session: { value: 'no-kind' } }, sessionOfForKind), null);
+    assert.equal(paneSessionRefOf({ pane: { pane_id: 'w28:p1', agent_session: { kind: 'uuid', value: 'x-1' } } }, sessionOfForKind), null);
+    assert.equal(paneSessionRefOf({ pane: { pane_id: 'w28:p1' }, agent_session: { value: 'no-kind' } }, sessionOfForKind), null);
 });
 
 test('unknown events are counted, not mapped', () => {

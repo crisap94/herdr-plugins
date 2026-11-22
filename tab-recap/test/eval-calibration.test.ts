@@ -7,7 +7,8 @@ import { judgeInstructions, JUDGE_INSTRUCTIONS } from '#src/adapters/job/prompts
 import { agreementOf, kappaOf, trusted } from '#src/recap/application/eval-stats.ts';
 import { ANCHORS_PER_CHECK, anchorsOf, withText } from '#src/recap/application/judge-anchors.ts';
 import { runEval } from '#src/recap/application/eval-run.ts';
-import { parseEval } from '#src/recap/application/eval-options.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { parseEvalRequest } from '#src/recap/application/eval-options.ts';
 import type { Harness } from '#src/ports/harness.ts';
 import type { Pair, Verdict } from '#src/ports/verdicts.ts';
 import { optionsOf, rig, seed } from '#test/eval-rig.ts';
@@ -97,7 +98,7 @@ test('`--check S-done` asks only about items of that section, and another check 
 });
 
 const why = (...argv: string[]): string => {
-    const parsed = parseEval(argv);
+    const parsed = parseEvalRequest(argv.map(textOf));
     return parsed.kind === 'usage' ? parsed.why : '';
 };
 
