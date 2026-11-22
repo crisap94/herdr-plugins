@@ -1,39 +1,54 @@
+import type { Count } from '#src/contract/kernel.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import type { InputAgent, InputFact, InputLedger } from '#src/ports/recap-input.ts';
 import type { Fact, Section, TaskId } from '#src/recap/domain/fact.ts';
 import { SECTION_IDS } from '#src/recap/domain/fact.ts';
+import { brand, type Brand } from '#src/recap/domain/brand.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 import { positiveCount } from '#src/recap/domain/writer-view.ts';
 import type { HiddenCounts, PositiveCount, WriterView } from '#src/recap/domain/writer-view.ts';
+
+const textOf = brand<string, 'Text'>;
+const countOf = brand<number, 'Count'>;
+
+export type Several = Brand<boolean, 'Several'>;
+
+export const severalOf = brand<boolean, 'Several'>;
 
 export const CLOSED_SHOWN_MS = 2 * 3_600_000;
 
 export interface TaskFacts {
-    readonly key: string;
+    readonly key: Text;
     readonly open: readonly Fact[];
     readonly closed: readonly Fact[];
 }
 
-export function taskFactsOf(ledger: Pick<Ledger, 'openOf' | 'recentlyClosed'>, task: TaskId, at: number): TaskFacts {
-    return { key: task.key, open: ledger.openOf(task), closed: ledger.recentlyClosed(task, at - CLOSED_SHOWN_MS) };
+export function taskFactsOf(ledger: Pick<Ledger, 'openOf' | 'recentlyClosed'>, task: TaskId, at: Instant): TaskFacts {
+    return { key: textOf(task.key), open: ledger.openOf(task), closed: ledger.recentlyClosed(task, at - CLOSED_SHOWN_MS) };
 }
 
 export interface Numbering {
     readonly ledgers: readonly InputLedger[];
-    readonly byId: ReadonlyMap<string, Fact>;
-    readonly taskOf: ReadonlyMap<string, string>;
-    readonly shown: ReadonlyMap<string, ReadonlyMap<string, Fact>>;
+    readonly byId: ReadonlyMap<Text, Fact>;
+    readonly taskOf: ReadonlyMap<Text, Text>;
+    readonly shown: ReadonlyMap<Text, ReadonlyMap<Text, Fact>>;
 }
 
-const agentIdOf = (fact: Fact, agents: readonly InputAgent[]): string | null =>
-    fact.agent === null ? null : (agents.find((agent) => agent.label !== '' && agent.label === fact.agent)?.id ?? null);
+const agentIdOf = (fact: Fact, agents: readonly InputAgent[]): Text | null => {
+    const id = fact.agent === null ? null : (agents.find((agent) => agent.label !== '' && agent.label === fact.agent)?.id ?? null);
+    return id === null ? null : textOf(id);
+};
 
 interface ViewedFacts {
     readonly shown: readonly Fact[];
     readonly hidden: HiddenCounts;
 }
 
-export function writerFacts(open: readonly Fact[], view: WriterView, now: number): ViewedFacts {
-    const sorted = open.toSorted((a, b) => a.lastAt - b.lastAt);
+const oldestFirst = (a: Fact, b: Fact): Count => countOf(a.lastAt - b.lastAt);
+
+export function writerFacts(open: readonly Fact[], view: WriterView, now: Instant): ViewedFacts {
+    const sorted = open.toSorted(oldestFirst);
     if (view.kind === 'full') {
         return { shown: sorted, hidden: new Map() };
     }
@@ -54,17 +69,17 @@ export function writerFacts(open: readonly Fact[], view: WriterView, now: number
     return { shown: sorted.filter((fact) => shown.has(fact)), hidden };
 }
 
-export function numbered(tasks: readonly TaskFacts[], agents: readonly InputAgent[], several: boolean, view: WriterView, now: number): Numbering {
+export function numbered(tasks: readonly TaskFacts[], agents: readonly InputAgent[], several: Several, view: WriterView, now: Instant): Numbering {
     let next = 0;
-    const byId = new Map<string, Fact>();
-    const taskOf = new Map<string, string>();
-    const shown = new Map<string, Map<string, Fact>>();
+    const byId = new Map<Text, Fact>();
+    const taskOf = new Map<Text, Text>();
+    const shown = new Map<Text, Map<Text, Fact>>();
     const ledgers = tasks.map((task): InputLedger => {
-        const mine = new Map<string, Fact>();
+        const mine = new Map<Text, Fact>();
         shown.set(task.key, mine);
         const viewed = writerFacts(task.open, view, now);
         const facts = [...viewed.shown, ...task.closed].map((fact): InputFact => {
-            const id = `f${(next += 1)}`;
+            const id = textOf(`f${(next += 1)}`);
             byId.set(id, fact);
             mine.set(id, fact);
             taskOf.set(id, task.key);

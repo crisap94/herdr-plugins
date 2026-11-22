@@ -10,7 +10,7 @@ import { touchedFiles } from '@stateforge-labs/session-ledger/unstable/recap/app
 import { FRESH, inputOf, SEEN_BEFORE } from '@stateforge-labs/session-ledger/unstable/recap/application/recap-input.ts';
 import { CONTEXT_CHARS, reconcileRequest } from '@stateforge-labs/session-ledger/unstable/recap/application/reconcile.ts';
 import { candidatesOf } from '@stateforge-labs/session-ledger/unstable/recap/application/writer-candidates.ts';
-import { numbered } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-input.ts';
+import { numbered, severalOf } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-input.ts';
 import { FULL_WRITER_VIEW, positiveCount } from '@stateforge-labs/session-ledger/unstable/recap/domain/writer-view.ts';
 import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
@@ -104,7 +104,7 @@ test('the section headings map to section ids in English and Spanish, and unknow
 });
 
 test('the ground of a recap names each task and extracting over it returns an outcome', async () => {
-    const numbering = numbered([], [], false, FULL_WRITER_VIEW, NOW);
+    const numbering = numbered([], [], severalOf(false), FULL_WRITER_VIEW, NOW);
     const ground = groundOf({
         tab: text('tab-1'), tasks: [{ id: 'task-1', name: 'CI', lanes: [] }], built: { input, numbering }, entries: [],
         ledger: { openOf: () => [], recentlyClosed: () => [], allOf: () => [] } as never, now: NOW, language: text('en'),

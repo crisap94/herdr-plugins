@@ -2,7 +2,7 @@ import type { Count } from '#src/contract/kernel.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { brand, type Brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { clipHead, clipTurn } from './writer-clip.ts';
 import { localTime } from './local-time.ts';
 import { element, leaf } from './xml.ts';
@@ -48,7 +48,7 @@ function burstOf(tools: readonly Entry[]): Piece {
 function turnOf(entry: Entry, clock: TurnClock): Piece {
     const role = entry.role === 'user' ? 'user' : 'agent';
     const kept = clipTurn(role, textOf(entry.text));
-    const attrs = { role, at: entry.at === undefined ? null : localTime(entry.at, clock.now, clock.zone), queued: entry.queued === true ? 'yes' : null, clipped: kept.clipped ? 'middle' : null };
+    const attrs = { role, at: entry.at === undefined ? null : localTime(instant(entry.at), clock.now, clock.zone), queued: entry.queued === true ? 'yes' : null, clipped: kept.clipped ? 'middle' : null };
     return { markup: textOf(leaf('turn', attrs, kept.text)), entries: [entry], opens: brand<boolean, 'OpensTurn'>(role === 'user' && entry.queued !== true) };
 }
 

@@ -6,6 +6,7 @@ import { stubId } from './enumerate-input.ts';
 import type { Stub } from './triggers.ts';
 import { localTime } from './local-time.ts';
 import { brand } from '#src/recap/domain/brand.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { objectIn, tidy } from './recap-shape.ts';
 
 const WHY_WORDS = 24;
@@ -35,7 +36,7 @@ const sayings = (entries: readonly Entry[]): string => entries.map((entry) => `$
 
 function resolveAt(label: unknown, ground: AnswerGround): number | null {
     const { now, zone } = ground.clock;
-    return typeof label === 'string' ? (ground.entries.findLast((entry) => entry.at !== undefined && localTime(entry.at, now, zone) === label.trim())?.at ?? null) : null;
+    return typeof label === 'string' ? (ground.entries.findLast((entry) => entry.at !== undefined && localTime(instant(entry.at), instant(now), brand<string, 'Text'>(zone)) === label.trim())?.at ?? null) : null;
 }
 
 function headOf(quote: string): string {
@@ -49,7 +50,7 @@ function headOf(quote: string): string {
 
 function anchorOf(fields: Fields, ground: AnswerGround, said: string): { readonly anchor: string; readonly stub: string | null } | null {
     const named = typeof fields['stub'] === 'string' ? fields['stub'] : null;
-    const stub = ground.stubs.find((_, at) => stubId(at) === named);
+    const stub = ground.stubs.find((_, at) => stubId(brand<number, 'Count'>(at)) === named);
     const quote = typeof fields['anchor'] === 'string' ? headOf(fields['anchor']) : '';
     if (quote !== '' && quotedIn(quote, said)) {
         return { anchor: quote, stub: stub === undefined ? null : named };
@@ -67,7 +68,7 @@ function candidateOf(fields: Fields, ground: AnswerGround, said: string): { read
 }
 
 const showing = (candidates: readonly InputCandidate[], stubs: readonly Stub[]): readonly string[] =>
-    stubs.flatMap((stub, at) => (candidates.some((one) => quotedIn(stub.anchor, one.anchor) || quotedIn(one.anchor, stub.anchor)) ? [stubId(at)] : []));
+    stubs.flatMap((stub, at) => (candidates.some((one) => quotedIn(stub.anchor, one.anchor) || quotedIn(one.anchor, stub.anchor)) ? [stubId(brand<number, 'Count'>(at))] : []));
 
 const listOf = (value: unknown): readonly unknown[] => (Array.isArray(value) ? (value as unknown[]) : []);
 

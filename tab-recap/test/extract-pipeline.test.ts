@@ -1,10 +1,12 @@
+import { instant } from '#src/recap/domain/time.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Entry } from '#src/ports/transcripts.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import { extractPiped } from '#src/recap/application/extract-pipeline.ts';
 import type { Extracted, Ground } from '#src/recap/application/extract-job.ts';
-import { numbered } from '#src/recap/application/ledger-input.ts';
+import { numbered, severalOf } from '#src/recap/application/ledger-input.ts';
 import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
 import { writerContext } from '#src/recap/application/writer-context.ts';
 import { foldedOf } from '#src/recap/domain/gates/words.ts';
@@ -18,11 +20,11 @@ import { requestOf } from '#test/support.ts';
 
 const NOW = START + 3_600_000;
 const open = factOf('next', 'Review the migration test');
-const numbering = numbered([{ key: 't1', open: [open], closed: [] }], [], false, { kind: 'full' }, 0);
+const numbering = numbered([{ key: brand<string, 'Text'>('t1'), open: [open], closed: [] }], [], severalOf(false), { kind: 'full' }, instant(0));
 const ground: Ground = {
     gates: LEDGER_GATES, now: NOW, facts: new Map(numbering.ledgers.flatMap((ledger) => ledger.facts.map((each) => [each.id, each] as const))),
     resolving: { tasks: ['t1'], agents: [], taskOf: numbering.taskOf, turns: [], clock: { now: NOW, zone: 'UTC' } },
-    grounds: [{ key: 't1', tab: 'w1:t1', shown: numbering.shown.get('t1') ?? new Map(), open: [open], closedLately: [], source: foldedOf('Add retries to the uploader Added a retry with backoff in src/upload.ts. git commit -m "uploader: retry"'), language: 'en', agents: [] }],
+    grounds: [{ key: 't1', tab: 'w1:t1', shown: numbering.shown.get(brand<string, 'Text'>('t1')) ?? new Map(), open: [open], closedLately: [], source: foldedOf('Add retries to the uploader Added a retry with backoff in src/upload.ts. git commit -m "uploader: retry"'), language: 'en', agents: [] }],
 };
 const SMALL: readonly Entry[] = [
     { role: 'user', text: 'Add retries to the uploader', at: START },

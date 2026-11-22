@@ -18,7 +18,7 @@ test('groundOf and judge refuse an add that repeats an open fact hidden by prune
     const ledger = new MemoryLedger().seed(hidden, shown);
     const task = { id: 't1', name: '', lanes: [] };
     const view = prunedWriterView(keepNewestOf(1), nextHoursOf(24));
-    const built = await inputOf([], { tab: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(NOW), tasks: [task], facts: [{ key: 't1', open: [hidden, shown], closed: [] }], writerView: view });
+    const built = await inputOf([], { tab: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(NOW), tasks: [task], facts: [{ key: brand<string, 'Text'>('t1'), open: [hidden, shown], closed: [] }], writerView: view });
     assert.deepEqual(built.input.ledgers[0]?.facts.map((fact) => fact.text), ['Keep the release checklist current']);
     const ground = groundOf({ tab: brand<string, 'Text'>('w1:t1'), tasks: [task], built, entries: [], ledger, now: brand<number, 'Instant'>(NOW), language: brand<string, 'Text'>('en') });
     const operation: Operation = { op: 'add', section: 'done', text: hidden.text, why: null, ref: null, at: null, agent: null, anchor: null };

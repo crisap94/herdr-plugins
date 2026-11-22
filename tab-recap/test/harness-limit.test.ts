@@ -1,3 +1,4 @@
+import { brand } from '#src/recap/domain/brand.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { HarnessBrief } from '#src/adapters/job/brief.ts';
@@ -62,5 +63,5 @@ test('the recap writer shrinks its context until the call fits the harness limit
     const tight = limited(1);
     const shrunk = await new RecapWriter(tight.harness, SETTINGS).write(request);
     assert.equal(isUnknown(shrunk), false);
-    assert.deepEqual(tight.calls[0], { instructions: instructions(request), input: writerContext(request, 0) });
+    assert.deepEqual(tight.calls[0], { instructions: instructions(request), input: writerContext(request, brand<number, 'Count'>(0)) });
 });

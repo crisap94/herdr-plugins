@@ -49,5 +49,5 @@ export function askBackFor(found: Findings): readonly Question[] {
     const bare = READBACK.filter((question) => !found.candidates.some((one) => question.sections.includes(one.section))).map((question) => question.text);
     const changed = unspoken(mentionedIn(found.said, found.open), found.candidates).slice(0, MAX_FACT_QUESTIONS)
         .map((fact) => `What changed about the open fact "${fact.text}"?`);
-    return [...bare, ...changed].map((text, at) => ({ id: `q${at + 1}`, text }));
+    return [...bare, ...changed].map((text, at) => ({ id: brand<string, 'Text'>(`q${at + 1}`), text: brand<string, 'Text'>(text) }));
 }

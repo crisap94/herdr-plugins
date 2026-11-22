@@ -1,3 +1,4 @@
+import { brand } from '#src/recap/domain/brand.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { InputFact } from '#src/ports/recap-input.ts';
@@ -69,7 +70,7 @@ for (const [name, request] of Object.entries(FIXTURES)) {
 }
 
 dtdTest('DTD: the document is valid at any budget, even one that drops every turn', () => {
-    for (const budget of [0, 50, 400, 2000, TRANSCRIPT_BUDGET]) {
+    for (const budget of [0, 50, 400, 2000, TRANSCRIPT_BUDGET].map(brand<number, 'Count'>)) {
         const verdict = validate(writerContext(FIXTURES['hostile content: tags, entities, CDATA ends, escapes, controls, lookalike markup'] ?? oneAgent, budget));
         assert.ok(verdict.valid, `${budget}: ${verdict.output}`);
     }
@@ -141,7 +142,7 @@ test('a burst lists at most four calls, newest, counts the rest and leaves plain
 
 test('over budget the oldest turns go whole, the newest stay, and the omitted turns are counted', () => {
     const entries = Array.from({ length: 30 }, (_, i) => agent(`turn ${i} ${'x'.repeat(300)}`, '03:00'));
-    const document = writerContext(requestOf({ entries }), 3000);
+    const document = writerContext(requestOf({ entries }), brand<number, 'Count'>(3000));
     assert.ok(document.includes('turn 29 ') && !document.includes('turn 0 '));
     const kept = document.match(/<turn /g)?.length ?? 0;
     assert.ok(kept > 0 && kept < 30);
