@@ -11,4 +11,9 @@ export function readJsonl(path: Text): readonly unknown[] {
 
 export const appendJsonl = (path: FsPath, record: Row): void => { appendFileSync(path, `${JSON.stringify(record)}\n`); };
 
-export const doneKeys = (path: Text, key: Text): ReadonlySet<Text> => new Set(readJsonl(path).map((record) => must(parseText(String(Reflect.get(Object(record), key))))));
+export const doneKeys = (path: Text, key: Text): ReadonlySet<Text> => new Set(readJsonl(path).map((record) => {
+    if (record === null || record === undefined) {
+        throw new TypeError(`cannot read '${key}' of ${String(record)}`);
+    }
+    return must(parseText(String(Reflect.get(Object(record), key))));
+}));
