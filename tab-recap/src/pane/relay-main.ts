@@ -1,20 +1,9 @@
-import { spawnSync } from 'node:child_process';
 import { createConnection } from 'node:net';
-import { fileURLToPath } from 'node:url';
 import { LEAVE } from '../wire/view/paint.ts';
 import { cookedExecve, relayEnvOf } from './relay-env.ts';
 import { runRelay } from './relay.ts';
-import { viewSwitchOf } from './view-switch.ts';
 
 const PLUGIN_ROOT = new URL('../../', import.meta.url);
-
-if (viewSwitchOf(process.env) === 'off') {
-    const column = fileURLToPath(new URL('src/column/launch.mjs', PLUGIN_ROOT));
-    if (typeof process.execve === 'function') {
-        process.execve(process.execPath, [process.execPath, column], process.env);
-    }
-    process.exit(spawnSync(process.execPath, [column], { stdio: 'inherit', env: process.env }).status ?? 1);
-}
 
 if (process.stdin.isTTY) {
     process.stdin.setRawMode(true);

@@ -54,14 +54,6 @@ test('the manifest offers the action and the popup pane; the CLI knows the comma
     assert.match(readFileSync(new URL('../bin/tab-recap.ts', import.meta.url), 'utf8'), /^    compact,$/m);
 });
 
-test('`s` opens the settings from the column and the modal: a short-lived `configure`, delayed only inside a popup', () => {
-    const column = readFileSync(new URL('../src/column/main.ts', import.meta.url), 'utf8');
-    assert.match(column, /^    s: openSettings,$/m);
-    assert.match(column, /\[COMMAND_LAUNCHER, 'configure'\][\s\S]*TAB_RECAP_OPEN_DELAY_MS: delay/);
-    assert.match(column, /const delay = mode === 'modal' \? '400' : '0';/);
-    assert.match(readFileSync(new URL('../bin/tab-recap.ts', import.meta.url), 'utf8'), /TAB_RECAP_OPEN_DELAY_MS/);
-});
-
 test('the command launcher the column starts for s and c exists (it once pointed one folder too deep)', async () => {
     const { COMMAND_LAUNCHER } = await import('#src/column/command.ts');
     assert.ok(existsSync(COMMAND_LAUNCHER), COMMAND_LAUNCHER);

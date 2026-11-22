@@ -81,9 +81,9 @@ test('a pane shows the refusal and stays until SIGTERM, then leaves quietly', as
     }
 });
 
-const LAUNCHERS = ['bin/tab-recap.mjs', 'src/column/launch.mjs', 'src/setup/launch.mjs', 'src/compact/launch.mjs', 'src/daemon/launch.mjs'];
+const LAUNCHERS = ['bin/tab-recap.mjs', 'src/setup/launch.mjs', 'src/compact/launch.mjs', 'src/daemon/launch.mjs'];
 
-test('the five launchers share one shape: plain JavaScript, no static import of a .ts, one launch() call', () => {
+test('the four launchers share one shape: plain JavaScript, no static import of a .ts, one launch() call', () => {
     for (const file of LAUNCHERS) {
         const source = readFileSync(join(ROOT, file), 'utf8');
         assert.doesNotMatch(source, /^\s*import\b[^\n]*\.ts['"]/m, `${file} imports no TypeScript statically`);
