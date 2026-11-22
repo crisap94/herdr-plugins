@@ -5,6 +5,10 @@ import { curatorInput } from '#src/recap/application/curator-input.ts';
 import { curationOf } from '#src/recap/domain/curation.ts';
 import { facts, NOW } from '#test/fakes/curated-facts.ts';
 import { dtdTest, validate } from '#test/xmllint.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+import { instant } from '#src/recap/domain/time.ts';
+
+const text = brand<string, 'Text'>;
 
 const open = new Set(['f1', 'f2', 'f3']);
 
@@ -79,8 +83,8 @@ test('a too-long paragraph is refused after the merge refusals, and the clean me
 
 
 dtdTest('the curator document validates against its DTD: every state, a closed fact, text that needs escaping, an empty ledger', () => {
-    const clock = { now: NOW, zone: 'UTC' };
-    for (const material of [{ name: '', language: 'en', rubric: RUBRIC.items, facts, clock }, { name: 'Docs "&" more', language: 'es', rubric: RUBRIC.items, facts: [], clock }, { name: '', language: 'en', rubric: RUBRIC.items, facts: facts.slice(0, 1), clock }]) {
+    const clock = { now: instant(NOW), zone: text('UTC') };
+    for (const material of [{ name: text(''), language: text('en'), rubric: text(RUBRIC.items), facts, clock }, { name: text('Docs "&" more'), language: text('es'), rubric: text(RUBRIC.items), facts: [], clock }, { name: text(''), language: text('en'), rubric: text(RUBRIC.items), facts: facts.slice(0, 1), clock }]) {
         const { document } = curatorInput(material);
         const verdict = validate(document, 'curator-input.dtd');
         assert.ok(verdict.valid, `${verdict.output}\n${document}`);
@@ -89,7 +93,7 @@ dtdTest('the curator document validates against its DTD: every state, a closed f
 });
 
 test('the document names facts f1…fn in the order given, with their times, whys and closes', () => {
-    const { document, facts: named } = curatorInput({ name: '', language: 'en', rubric: RUBRIC.items, facts, clock: { now: NOW, zone: 'UTC' } });
+    const { document, facts: named } = curatorInput({ name: text(''), language: text('en'), rubric: text(RUBRIC.items), facts, clock: { now: instant(NOW), zone: text('UTC') } });
     assert.deepEqual([...named.keys()], ['f1', 'f2', 'f3', 'f4', 'f5']);
     assert.match(document, /<fact id="f4" section="decisions" state="open" first="16:00" last="16:00" why="an import guard cannot stop &lt;sibling&gt; modules">Keep the guard/u);
     assert.match(document, /first="16:10" last="16:10" closed="wrong" closedat="16:15"/u);

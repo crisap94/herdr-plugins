@@ -29,6 +29,8 @@ import { NO_REPOS } from '#test/support.ts';
 import { closureOf } from '#test/support/closure.ts';
 import { writer } from '#test/fakes/golden-writer.ts';
 import { fact } from './fakes/fact-at.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 
 const AT = Date.parse('2026-10-10T12:00:00Z');
 const MINUTE = 60_000;
@@ -168,7 +170,7 @@ test('the restore path runs on the engine\'s store and a scope and followed sess
             store: { records: scratch.store.records, ledger: scratch.store.ledger },
             models: { summarizer: () => summarizer },
             environment: { clock: { now: (): Instant => instant(clock.now) }, repos: NO_REPOS, mint: mintFactId, log: () => undefined },
-            settings: { language: (): string => 'en', writerView: () => FULL_WRITER_VIEW },
+            settings: { language: (): Text => brand<string, 'Text'>('en'), writerView: () => FULL_WRITER_VIEW },
         });
         assert.equal(restoreTextOf(engine.restore(scope, session)), '', 'nothing is restored before the first run');
         for (const turn of [0, 1, 2]) {

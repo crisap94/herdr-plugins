@@ -5,7 +5,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { clipHead, clipTurn } from './writer-clip.ts';
 import { localTime } from './local-time.ts';
-import { element, leaf } from './xml.ts';
+import { element, leaf, type Attributes } from './xml.ts';
 
 const count = brand<number, 'Count'>;
 const textOf = brand<string, 'Text'>;
@@ -35,20 +35,20 @@ interface Piece {
 
 function callOf(call: Entry): Text {
     const kept = clipHead(textOf(call.text), CALL_CHARS);
-    const attrs = { kind: call.kind ?? 'other', what: call.what };
+    const attrs: Attributes = { kind: call.kind ?? 'other', what: call.what === undefined ? undefined : textOf(call.what) };
     return textOf(kept.text === '' ? element('call', attrs) : leaf('call', attrs, kept.text));
 }
 
 function burstOf(tools: readonly Entry[]): Piece {
     const calls = tools.filter((entry) => entry.kind !== 'read');
     const reads = tools.length - calls.length;
-    return { markup: textOf(element('tools', { reads: reads === 0 ? null : reads }, calls.map(callOf).join(''))), entries: tools, opens: brand<boolean, 'OpensTurn'>(false) };
+    return { markup: textOf(element('tools', { reads: reads === 0 ? null : count(reads) }, textOf(calls.map(callOf).join('')))), entries: tools, opens: brand<boolean, 'OpensTurn'>(false) };
 }
 
 function turnOf(entry: Entry, clock: TurnClock): Piece {
     const role = entry.role === 'user' ? 'user' : 'agent';
     const kept = clipTurn(role, textOf(entry.text));
-    const attrs = { role, at: entry.at === undefined ? null : localTime(instant(entry.at), clock.now, clock.zone), queued: entry.queued === true ? 'yes' : null, clipped: kept.clipped ? 'middle' : null };
+    const attrs: Attributes = { role, at: entry.at === undefined ? null : localTime(instant(entry.at), clock.now, clock.zone), queued: entry.queued === true ? 'yes' : null, clipped: kept.clipped ? 'middle' : null };
     return { markup: textOf(leaf('turn', attrs, kept.text)), entries: [entry], opens: brand<boolean, 'OpensTurn'>(role === 'user' && entry.queued !== true) };
 }
 

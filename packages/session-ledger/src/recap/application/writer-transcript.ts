@@ -5,7 +5,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { clipTurn } from './writer-clip.ts';
 import { localTime } from './local-time.ts';
-import { element, leaf } from './xml.ts';
+import { element, leaf, type Attributes } from './xml.ts';
 
 const textOf = brand<string, 'Text'>;
 const count = brand<number, 'Count'>;
@@ -28,8 +28,8 @@ interface Item {
 }
 
 function callOf(call: Entry): Text {
-    const attrs = { kind: call.kind ?? 'other', what: call.what };
-    return textOf(call.text === '' ? element('call', attrs) : leaf('call', attrs, call.text));
+    const attrs: Attributes = { kind: call.kind ?? 'other', what: call.what === undefined ? undefined : textOf(call.what) };
+    return textOf(call.text === '' ? element('call', attrs) : leaf('call', attrs, textOf(call.text)));
 }
 
 function burst(tools: readonly Entry[]): Item | null {
@@ -39,14 +39,14 @@ function burst(tools: readonly Entry[]): Item | null {
         return null;
     }
     const shown = calls.slice(-CALLS_SHOWN);
-    const attrs = { reads: reads === 0 ? null : reads, more: calls.length > shown.length ? calls.length - shown.length : null };
-    return { markup: textOf(element('tools', attrs, shown.map(callOf).join(''))), turn: isTurn(false), at: undefined };
+    const attrs: Attributes = { reads: reads === 0 ? null : count(reads), more: calls.length > shown.length ? count(calls.length - shown.length) : null };
+    return { markup: textOf(element('tools', attrs, textOf(shown.map(callOf).join('')))), turn: isTurn(false), at: undefined };
 }
 
 function turn(entry: Entry, clock: Clock): Item {
     const role = entry.role === 'user' ? 'user' : 'agent';
     const kept = clipTurn(role, textOf(entry.text));
-    const attrs = { role, at: entry.at === undefined ? null : localTime(instant(entry.at), clock.now, clock.zone), queued: entry.queued === true ? 'yes' : null, clipped: kept.clipped ? 'middle' : null };
+    const attrs: Attributes = { role, at: entry.at === undefined ? null : localTime(instant(entry.at), clock.now, clock.zone), queued: entry.queued === true ? 'yes' : null, clipped: kept.clipped ? 'middle' : null };
     return { markup: textOf(leaf('turn', attrs, kept.text)), turn: isTurn(true), at: entry.at === undefined ? undefined : instant(entry.at) };
 }
 

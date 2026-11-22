@@ -28,6 +28,8 @@ import { silentClosures } from '#test/fakes/silent-closures.ts';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { NO_REPOS } from '#test/support.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 
 const said: Record<string, string> = { old: 'migrate victoria', new: 'write the docs' };
 
@@ -52,7 +54,7 @@ async function recapOnce(store: Store, lane: Lane, at: number, ops: readonly Rec
         write: (request: RecapRequest): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: JSON.stringify({ ops }), costUsd: 0 }); },
     };
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ claude: transcripts }),
-        records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(at) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined,
+        records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(at) }, summarizer: (): Summarizer => summarizer, language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined,
     });
     await job.refreshNow(lane.tab, [lane]);
     return requests;

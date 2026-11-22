@@ -34,7 +34,7 @@ const count = brand<number, 'Count'>;
 const usd = brand<number, 'Usd'>;
 const turnsOf = (lanes: readonly InputTranscript[]): readonly AgentTurns[] => lanes.map((one) => ({ agent: text(one.agent), entries: one.entries }));
 
-const costing = (done: Extracted, extra: Usd): Extracted => ({ ...done, cost: done.cost + extra });
+const costing = (done: Extracted, extra: Usd): Extracted => ({ ...done, cost: usd(done.cost + extra) });
 
 const withCloseEvidence = (base: Ground, parts: PipelineParts): Ground => (parts.closeEvidence === 'on' ? { ...base, gates: [...base.gates, closeEvidenceGate] } : base);
 

@@ -24,14 +24,14 @@ import { brand, type Brand } from '#src/recap/domain/brand.ts';
 import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { restoreTextOf } from '#src/recap/application/restore-text.ts';
 import { must } from '#src/protocol/result.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
 
 type EngineLog = Parameters<typeof pluginEngine>[0]['environment']['log'];
 type EngineRepos = Parameters<typeof pluginEngine>[0]['environment']['repos'];
-type RecapLanguage = Brand<string, 'RecapLanguage'>;
 type KeepInput = Brand<boolean, 'KeepInput'>;
 
-function parseRecapLanguage(): RecapLanguage {
-    return brand<string, 'RecapLanguage'>(loadConfig().recapLanguage);
+function parseRecapLanguage(): Text {
+    return must(parseText(loadConfig().recapLanguage));
 }
 
 function parseKeepInput(): KeepInput {

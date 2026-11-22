@@ -1,3 +1,6 @@
+import type { Usd } from '#src/contract/kernel.ts';
+import { brand, type Brand } from '#src/recap/domain/brand.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { InputFact } from '#src/ports/recap-input.ts';
 import type { Correction, RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
@@ -11,26 +14,34 @@ import { forTask, keptOf, refusedIn, retryFor } from './ops-gating.ts';
 import type { Judged, TaskGround } from './ops-gating.ts';
 import type { JobContract } from '#src/recap/domain/backend.ts';
 import { batch } from './job-kit/batch.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
 
 const ATTEMPTS = 2;
 
-export const OLD_CONTRACT = 'custom writer must answer operations (see README)';
+const textOf = brand<string, 'Text'>;
+const usd = brand<number, 'Usd'>;
+const canRetry = brand<boolean, 'RetryLeft'>;
 
-export type Extracted =
-    | { readonly kind: 'ops'; readonly tasks: readonly TaskOps[]; readonly cost: number; readonly stats: GateStats }
-    | { readonly kind: 'failed'; readonly error: string; readonly cost: number };
+type RetryLeft = Brand<boolean, 'RetryLeft'>;
+
+export const OLD_CONTRACT = textOf('custom writer must answer operations (see README)');
+
+export interface OpsExtracted { readonly kind: 'ops'; readonly tasks: readonly TaskOps[]; readonly cost: Usd; readonly stats: GateStats }
+
+export interface FailedExtraction { readonly kind: 'failed'; readonly error: Text; readonly cost: Usd }
+
+export type Extracted = OpsExtracted | FailedExtraction;
 
 export interface Ground {
     readonly resolving: Resolving;
     readonly grounds: readonly TaskGround[];
     readonly gates: readonly Gate[];
-    readonly now: number;
-    readonly facts: ReadonlyMap<string, InputFact>;
+    readonly now: Instant;
+    readonly facts: ReadonlyMap<Text, InputFact>;
     readonly targeted?: boolean;
 }
 
-const OLD_HINT = 'you answered a recap; answer operations on the ledger only: {"ops":[{"op":"add",…},{"op":"update",…},{"op":"close",…}]}';
+const OLD_HINT = textOf('you answered a recap; answer operations on the ledger only: {"ops":[{"op":"add",…},{"op":"update",…},{"op":"close",…}]}');
 
 const gatesFor = (ground: Ground, contract: JobContract): readonly Gate[] => (contract === 'free-text' ? ground.gates.filter((gate) => gate.id !== 'G11') : ground.gates);
 
@@ -43,35 +54,41 @@ interface Outcome {
     readonly stats: GateStats;
 }
 
-type Follow = { readonly correction: string } | { readonly retry: Correction; readonly keep: readonly Tasked[] };
+interface CorrectionFollow { readonly correction: Text }
+
+interface RetryFollow { readonly retry: Correction; readonly keep: readonly Tasked[] }
+
+type Follow = CorrectionFollow | RetryFollow;
+
+type Followed = Follow | undefined;
 
 type Round =
     | ({ readonly kind: 'done' } & Outcome)
     | { readonly kind: 'retry'; readonly follow: Follow; readonly stats: GateStats; readonly fallback: Outcome | null }
-    | { readonly kind: 'failed'; readonly error: string };
+    | { readonly kind: 'failed'; readonly error: Text };
 
 interface Turn {
     readonly contract: JobContract;
-    readonly retryLeft: boolean;
+    readonly retryLeft: RetryLeft;
     readonly stats: GateStats;
     readonly keep: readonly Tasked[];
 }
 
-function followOf(each: readonly Judged[], ground: Ground, problems: readonly string[]): Follow {
+function followOf(each: readonly Judged[], ground: Ground, problems: readonly Text[]): Follow {
     if (ground.targeted === false) {
         const lines = each.map((one) => correctionOf(one.given, one.refused)).filter((line) => line !== '');
-        return { correction: [...lines, ...problems.map((problem) => `shape: ${problem}`)].join('\n') };
+        return { correction: textOf([...lines, ...problems.map((problem) => `shape: ${problem}`)].join('\n')) };
     }
     return { retry: retryFor(each, { tasks: ground.grounds, facts: ground.facts }, problems), keep: keptOf(each, ground.grounds) };
 }
 
-function round(text: string, ground: Ground, turn: Turn): Round {
+function round(text: Text, ground: Ground, turn: Turn): Round {
     const answer = parseAnswer(text, ground.resolving);
     if (answer.kind === 'old-shape' && turn.contract === 'free-text') {
         return { kind: 'failed', error: OLD_CONTRACT };
     }
     if (answer.kind !== 'ops') {
-        return { kind: 'retry', follow: { correction: answer.kind === 'old-shape' ? OLD_HINT : answer.why }, stats: turn.stats, fallback: null };
+        return { kind: 'retry', follow: { correction: answer.kind === 'old-shape' ? OLD_HINT : textOf(answer.why) }, stats: turn.stats, fallback: null };
     }
     const each = judged(ground, [...turn.keep, ...answer.ops], turn.contract);
     const final: Outcome = {
@@ -80,32 +97,32 @@ function round(text: string, ground: Ground, turn: Turn): Round {
     };
     if (turn.retryLeft && (refusedIn(each) > 0 || answer.problems.length > 0)) {
         const counted = each.reduce((all, one) => addStats(all, one.gated), turn.stats);
-        return { kind: 'retry', follow: followOf(each, ground, answer.problems), stats: counted, fallback: final };
+        return { kind: 'retry', follow: followOf(each, ground, answer.problems.map(textOf)), stats: counted, fallback: final };
     }
     return { kind: 'done', ...final };
 }
 
-const settled = (fallback: Outcome, cost: number): Extracted => ({ kind: 'ops', tasks: fallback.tasks, cost, stats: fallback.stats });
+const settled = (fallback: Outcome, cost: Usd): Extracted => ({ kind: 'ops', tasks: fallback.tasks, cost, stats: fallback.stats });
 
-const asked = (request: RecapRequest, follow: Follow | undefined): RecapRequest =>
+const asked = (request: RecapRequest, follow: Followed): RecapRequest =>
     follow === undefined ? request : { ...request, ...('retry' in follow ? { retry: follow.retry } : { correction: follow.correction }) };
 
-const keepOf = (follow: Follow | undefined): readonly Tasked[] => (follow !== undefined && 'retry' in follow ? follow.keep : []);
+const keepOf = (follow: Followed): readonly Tasked[] => (follow !== undefined && 'retry' in follow ? follow.keep : []);
 
-const whyOf = (follow: Follow | undefined): string => (follow !== undefined && 'correction' in follow ? follow.correction : 'unknown');
+const whyOf = (follow: Followed): Text => (follow !== undefined && 'correction' in follow ? follow.correction : textOf('unknown'));
 
 export async function extract(summarizer: Summarizer, request: RecapRequest, ground: Ground): Promise<Extracted> {
-    let cost = 0;
+    let cost = usd(0);
     let stats = NO_STATS;
-    let follow: Follow | undefined;
+    let follow: Followed;
     let fallback: Outcome | null = null;
     for (let attempt = 0; attempt < ATTEMPTS; attempt += 1) {
         const written = await summarizer.write(asked(request, follow));
         if (isUnknown(written)) {
-            return fallback === null ? { kind: 'failed', error: saying(written.why), cost } : settled(fallback, cost);
+            return fallback === null ? { kind: 'failed', error: textOf(saying(written.why)), cost } : settled(fallback, cost);
         }
-        cost += written.costUsd;
-        const next = round(written.text, ground, { contract: summarizer.contract, retryLeft: attempt < ATTEMPTS - 1, stats, keep: keepOf(follow) });
+        cost = usd(cost + written.costUsd);
+        const next = round(textOf(written.text), ground, { contract: summarizer.contract, retryLeft: canRetry(attempt < ATTEMPTS - 1), stats, keep: keepOf(follow) });
         if (next.kind === 'failed') {
             return { kind: 'failed', error: next.error, cost };
         }
@@ -116,5 +133,5 @@ export async function extract(summarizer: Summarizer, request: RecapRequest, gro
         follow = next.follow;
         fallback = next.fallback ?? fallback;
     }
-    return fallback === null ? { kind: 'failed', error: `the writer's answer was not usable (${whyOf(follow)}); the ledger is unchanged`, cost } : settled(fallback, cost);
+    return fallback === null ? { kind: 'failed', error: textOf(`the writer's answer was not usable (${whyOf(follow)}); the ledger is unchanged`), cost } : settled(fallback, cost);
 }

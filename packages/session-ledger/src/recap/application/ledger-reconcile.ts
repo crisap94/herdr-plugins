@@ -17,12 +17,15 @@ import type { Text } from '#src/recap/domain/text.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import type { Result } from '#src/protocol/result.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import { answerTextOf } from './recap-shape.ts';
 import { reconcileInput } from './curator-input.ts';
 import { batch } from './job-kit/batch.ts';
 import { reconcileRepair } from './job-kit/repair.ts';
 import type { RepairMode } from './job-kit/repair.ts';
 import type { Judged, TaskGround } from './ops-gating.ts';
+
+const textOf = brand<string, 'Text'>;
 
 export interface ReconcileParts {
     readonly writer: Curators;
@@ -92,7 +95,7 @@ export async function reconcileTask(parts: ReconcileParts, task: ReconcileTask):
     if (open.length === 0 || task.tail.length === 0) {
         return;
     }
-    const input = reconcileInput({ name: task.name, language: parts.language, rubric: parts.rubric, open, tail: task.tail, clock });
+    const input = reconcileInput({ name: textOf(task.name), language: textOf(parts.language), rubric: textOf(parts.rubric), open, tail: task.tail, clock: { now: instant(clock.now), zone: textOf(clock.zone) } });
     const answered = await writer.write(input.document, 'reconcile');
     if (isUnknown(answered)) {
         parts.log(`${where}: ${writer.backend} gave none to reconcile (${saying(answered.why)})`);
