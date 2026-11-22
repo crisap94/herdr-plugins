@@ -1,5 +1,5 @@
 import type { AgentKind, CompactionId, DecisionId, PaneId, TabId } from '#src/recap/domain/ids.ts';
-import type { Duration, Instant, Milliseconds } from '#src/recap/domain/time.ts';
+import type { Duration, Instant } from '#src/recap/domain/time.ts';
 import type { ExchangeName, RequestId } from '#src/protocol/primitives.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import type { CoverageOutcome, LaneStatusAtDecision, SkipGate } from '#src/recap/domain/autocompact.ts';
@@ -15,10 +15,7 @@ import type { ActiveStage, BriefOrigin, EndStage, Stage } from './compaction-rec
 import type { Count } from '#src/recap/domain/count.ts';
 import type { Probability } from '#src/recap/domain/probability.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import type { Effort } from '#src/recap/domain/effort.ts';
 import type { Noul } from './decider.ts';
-import type { AnswerMode, CostBasis, ConfinementCell, StructuredSupport, ToolSupport } from './harness.ts';
-import type { JudgeTask } from './judge.ts';
 
 export interface Ask {
     readonly exchange: ExchangeName;
@@ -223,36 +220,6 @@ export type DecidedResult = Decided | Unknown;
 export interface Decider {
     readonly label: Text;
     ask(state: Text, questions: ReadonlyMap<Text, Noul>): Promise<DecidedResult>;
-}
-
-export interface HarnessCall {
-    readonly instructions: string;
-    readonly input: string;
-    readonly answer?: AnswerMode;
-}
-
-export interface HarnessSettings {
-    readonly model: string;
-    readonly effort: Effort;
-    readonly timeoutMs?: Milliseconds;
-}
-
-export type Ran = { readonly kind: 'ran'; readonly text: string; readonly costUsd: number; readonly costBasis?: CostBasis; readonly confinement?: readonly ConfinementCell[] } | Unknown;
-
-export interface Harness<Id extends string = string> {
-    readonly id: Id;
-    label(settings: HarnessSettings): string;
-    readonly limit: number | null;
-    readonly structured?: StructuredSupport;
-    readonly tools?: ToolSupport;
-    run(call: HarnessCall, settings: HarnessSettings): Promise<Ran>;
-}
-
-export type Said = { readonly kind: 'said'; readonly text: string; readonly costUsd: number } | Unknown;
-
-export interface Judge {
-    readonly label: string;
-    ask(task: JudgeTask, document: string): Promise<Said>;
 }
 
 export interface LaneTokens {

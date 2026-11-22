@@ -1,33 +1,33 @@
-import type { CompactionBriefs, Briefed } from '#src/ports/compaction-briefs.ts';
-import type { Harness, HarnessSettings } from '#src/ports/harness.ts';
+import type { BriefWriter, BriefWritten } from '#src/ports/compaction-briefs.ts';
+import type { HarnessAsk, HarnessChoice, HarnessPort } from '#src/ports/harness.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { BRIEF_INSTRUCTIONS } from './prompts/brief-instructions.ts';
 import { leaf } from '#src/recap/application/xml.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import { unfencedText } from './prompts/recap-prompt.ts';
 
-export class HarnessBrief implements CompactionBriefs {
-    readonly backend: string;
-    readonly job: string;
-    private readonly harness: Harness;
-    private readonly settings: HarnessSettings;
+export class HarnessBrief implements BriefWriter {
+    readonly backend: Text;
+    readonly job: Text;
+    private readonly harness: HarnessPort;
+    private readonly settings: HarnessChoice;
 
-    constructor(harness: Harness, settings: HarnessSettings) {
+    constructor(harness: HarnessPort, settings: HarnessChoice) {
         this.harness = harness;
         this.settings = settings;
         this.backend = harness.label(settings);
-        this.job = [harness.id, settings.model, settings.effort === 'default' ? '' : settings.effort].filter((part) => part !== '').join(' · ');
+        this.job = must(parseText([harness.id, settings.model, settings.effort === 'default' ? '' : settings.effort].filter((part) => part !== '').join(' · ')));
     }
 
-    async write(source: string, correction?: string): Promise<Briefed> {
-        const document = correction === undefined ? source : `${source}\n${leaf('correction', {}, must(parseText(correction)))}`;
-        const call = { instructions: BRIEF_INSTRUCTIONS, input: document };
+    async write(source: Text, correction?: Text): Promise<BriefWritten> {
+        const document = correction === undefined ? source : textOf(`${source}\n${leaf('correction', {}, correction)}`);
+        const call: HarnessAsk = { instructions: textOf(BRIEF_INSTRUCTIONS), input: document };
         if (this.harness.limit !== null && Buffer.byteLength(document) + Buffer.byteLength(BRIEF_INSTRUCTIONS) > this.harness.limit) {
             return unknown({ why: 'unreadable', detail: causeOf(must(parseText(`the document is too long for ${this.harness.id}`))) });
         }
         const ran = await this.harness.run(call, this.settings);
-        return isUnknown(ran) ? ran : { kind: 'briefed', text: unfencedText(must(parseText(ran.text))) };
+        return isUnknown(ran) ? ran : { kind: 'briefed', text: unfencedText(ran.text) };
     }
 }

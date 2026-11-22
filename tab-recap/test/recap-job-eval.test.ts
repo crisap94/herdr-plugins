@@ -10,7 +10,7 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
-import { memoryStore } from '#test/db/support.ts';
+import { memoryStore, runsOf } from '#test/db/support.ts';
 import { NO_REPOS } from '#test/support.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '#src/recap/domain/brand.ts';
@@ -37,9 +37,9 @@ async function recapWith(keepInput: (() => KeepInput) | undefined): Promise<Retu
     });
     job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 20); });
-    const runs = store.inputs.runs({ tab: null, since: null, limit: 5, withInput: false });
+    const runs = runsOf(store.inputs, { tab: null, since: null, limit: 5, withInput: false });
     const [run] = runs;
-    if (run !== undefined && run.hasInput) {
+    if (run !== undefined && run.input === 'present') {
         assert.match(store.inputs.document(run.id) ?? '', /^<recap_input version="2">[\s\S]*migrate victoria[\s\S]*<\/recap_input>$/, 'the document as the writer saw it, without a correction');
         assert.doesNotMatch(store.inputs.document(run.id) ?? '', /<correction>/);
     }
@@ -49,13 +49,13 @@ async function recapWith(keepInput: (() => KeepInput) | undefined): Promise<Retu
 test('a run stores the writer\'s document and its gate counts (the narrator item was refused, retried and dropped)', async () => {
     const [run] = await recapWith(undefined);
     assert.ok(run !== undefined);
-    assert.equal(run.hasInput, true);
+    assert.equal(run.input, 'present');
     assert.deepEqual(run.gateStats, { refused: { G1: 2 }, flagged: {}, dropped: 1 });
 });
 
 test('with the retention at 0 the input is not stored, the counts still are', async () => {
     const [run] = await recapWith(() => brand<boolean, 'KeepInput'>(false));
     assert.ok(run !== undefined);
-    assert.equal(run.hasInput, false);
+    assert.equal(run.input, 'absent');
     assert.equal(run.gateStats?.dropped, 1);
 });

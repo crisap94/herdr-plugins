@@ -1,8 +1,6 @@
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
-export type { Briefed, CompactionBriefs } from './twins/legacy.ts';
-
 export interface BriefText {
     readonly kind: 'briefed';
     readonly text: Text;

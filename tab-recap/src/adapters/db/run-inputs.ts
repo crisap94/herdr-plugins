@@ -1,10 +1,11 @@
 import type { Database } from 'bun:sqlite';
-import { gunzipSync } from 'node:zlib';
+import { gunzipSync, gzipSync } from 'node:zlib';
 import { and, desc, eq, gte, inArray, isNotNull, lt, sql } from 'drizzle-orm';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import type { RunId } from '#src/recap/domain/run-ids.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import type { GateStats } from '#src/recap/domain/gates/index.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { parseGateTally, parseRunEntry, parseRunRecord, type GateTally, type ItemsMode, type RunEntry, type RunFilter, type RunInputReader, type RunRecord } from '#src/ports/run-inputs.ts';
 import { run as runs, runInput } from './drizzle/index.ts';
@@ -15,6 +16,20 @@ import { idOf, typeIdOf } from './typeid.ts';
 const SECTION_ORDER = sql.raw("CASE f.section WHEN 'goal' THEN 0 WHEN 'now' THEN 1 WHEN 'needs' THEN 2 WHEN 'done' THEN 3 WHEN 'decisions' THEN 4 WHEN 'next' THEN 5 WHEN 'links' THEN 6 ELSE 7 END");
 
 type EntryPrefix = '' | 'state/';
+
+export const statsText = (stats: GateStats | null): Text | null => (stats === null ? null : textOf(JSON.stringify(stats)));
+
+export class RunInputRows {
+    private readonly orm: Orm;
+
+    constructor(db: Database) {
+        this.orm = ormOf(db);
+    }
+
+    put(run: Uint8Array, document: Text): void {
+        this.orm.insert(runInput).values({ runId: run, document: gzipSync(document), bytes: Buffer.byteLength(document) }).run();
+    }
+}
 
 export class RunInputStore implements RunInputReader {
     private readonly orm: Orm;

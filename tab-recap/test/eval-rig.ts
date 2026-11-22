@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { parseEvalRequest } from '#src/recap/application/eval-options.ts';
 import type { EvalRequest } from '#src/recap/application/eval-options.ts';
 import type { EvalDeps } from '#src/recap/application/eval-run.ts';
-import type { Judge, JudgeTask } from '#src/ports/judge.ts';
+import type { JudgePort, JudgeTask } from '#src/ports/judge.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { gateName } from '#src/recap/domain/gates/gatekeeper.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
@@ -33,13 +33,13 @@ export interface Rig {
     readonly asked: string[];
 }
 
-export function rig(parts: { readonly judge?: Judge | null; readonly lines?: readonly string[] } = {}): Rig {
+export function rig(parts: { readonly judge?: JudgePort | null; readonly lines?: readonly string[] } = {}): Rig {
     const store = memoryStore();
     const [out, err, asked]: [string[], string[], string[]] = [[], [], []];
     const lines = Array.from(parts.lines ?? []);
     const deps: EvalDeps = {
         inputs: store.inputs, verdicts: store.verdicts, now: (): number => NOW, rubric: 'RUBRIC', style: plain,
-        judge: (): Judge | null => (parts.judge === undefined ? scripted({ score: SCORE, readback: ANSWERS, grade: GRADES }) : parts.judge),
+        judge: (): JudgePort | null => (parts.judge === undefined ? scripted({ score: SCORE, readback: ANSWERS, grade: GRADES }) : parts.judge),
         out: (line): void => { out.push(line); }, err: (line): void => { err.push(line); },
         ask: (prompt): Promise<string | null> => { asked.push(prompt); return Promise.resolve(lines.shift() ?? null); },
     };
@@ -48,8 +48,8 @@ export function rig(parts: { readonly judge?: Judge | null; readonly lines?: rea
 
 const GATE_STATS: GateStats = { refused: { [gateName('G1')]: brand<number, 'Count'>(1) }, flagged: { [gateName('G8')]: brand<number, 'Count'>(2) }, dropped: brand<number, 'Count'>(0) };
 
-export function scripted(answers: Readonly<Partial<Record<JudgeTask, string>>>): Judge {
-    return { label: 'claude · sonnet · medium', ask: (task) => Promise.resolve({ kind: 'said', text: answers[task] ?? '', costUsd: 0 }) };
+export function scripted(answers: Readonly<Partial<Record<JudgeTask, string>>>): JudgePort {
+    return { label: textOf('claude · sonnet · medium'), ask: (task) => Promise.resolve({ kind: 'said', text: textOf(answers[task] ?? ''), costUsd: usdOf(0) }) };
 }
 
 export function seed(store: Rig['store'], count: number, over: { readonly input?: boolean; readonly gate?: boolean; readonly tab?: string; readonly first?: number } = {}): void {
@@ -68,3 +68,8 @@ export const optionsOf = (...argv: string[]): EvalRequest => {
     return parsed.options;
 };
 
+
+export const judgeOf = (label: string, answer: (task: JudgeTask, document: string) => string): JudgePort => ({
+    label: textOf(label),
+    ask: (task, document) => Promise.resolve({ kind: 'said', text: textOf(answer(task, document)), costUsd: usdOf(0) }),
+});

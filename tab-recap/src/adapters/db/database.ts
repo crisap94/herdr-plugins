@@ -7,8 +7,8 @@ import type { Boundaries } from '#src/ports/boundaries.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { GuardedLedger, GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import type { CompactionQueue, Requests } from '#src/ports/requests.ts';
-import type { RunInputs } from '#src/ports/run-inputs.ts';
-import type { Verdicts } from '#src/ports/verdicts.ts';
+import type { RunInputReader } from '#src/ports/run-inputs.ts';
+import type { VerdictStore } from '#src/ports/verdicts.ts';
 import type { SessionSource } from '#src/ports/session-source.ts';
 import type { Stories } from '#src/ports/stories.ts';
 import type { RetentionPort, TabRetirement } from '#src/ports/retention.ts';
@@ -34,8 +34,8 @@ import { MIGRATIONS } from './schema/index.ts';
 import { RecapRecordsRepository } from './recap-records.ts';
 import { RequestsRepository } from './requests.ts';
 import type { AskLedger } from '#src/ports/ask-ledger.ts';
-import { RunInputsRepository } from './run-inputs/legacy.ts';
-import { VerdictsRepository } from './verdicts/legacy.ts';
+import { RunInputStore } from './run-inputs.ts';
+import { VerdictRowStore } from './verdicts.ts';
 import { SessionSourceRepository } from './session-source/legacy.ts';
 import { StoriesRepository } from './stories.ts';
 import { RetentionRepository } from './retention.ts';
@@ -62,8 +62,8 @@ export interface Store {
     readonly autocompact: AutocompactRecords;
     readonly decisions: DecisionLedger;
     readonly autocompactBriefs: AutocompactBriefs;
-    readonly inputs: RunInputs;
-    readonly verdicts: Verdicts;
+    readonly inputs: RunInputReader;
+    readonly verdicts: VerdictStore;
     readonly stories: Stories;
     readonly session: SessionSource;
     readonly boundaries: Boundaries;
@@ -89,7 +89,7 @@ export function storeOver(db: Database, options: StoreSettings = {}): Store {
     return {
         kind: 'ready', db, records: new RecapRecordsRepository(db), ledger, views: new TabViewsRepository(db, options.daemonVersion ?? null),
         visibility: new ColumnVisibilityRepository(db), requests: new RequestsRepository(db, options.now), handoffs: new HandoffAnswerRepository(db, options.now), compactions: new CompactionRecordsRepository(db), asks: new AskLedgerRepository(db, options.log), autocompact: new AutocompactRecordsRepository(db), decisions: new DecisionLedgerRepository(db), autocompactBriefs: new AutocompactBriefsRepository(db),
-        inputs: new RunInputsRepository(db), verdicts: new VerdictsRepository(db),
+        inputs: new RunInputStore(db), verdicts: new VerdictRowStore(db),
         stories: new StoriesRepository(db, ledger), session: new SessionSourceRepository(db),
         boundaries: new BoundaryRepository(db), retention: new RetentionRepository(db),
         closedLanes: new ClosedLanesRepository(db, options.closedDays ?? DEFAULT_CLOSED_LANE_DAYS),

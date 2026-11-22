@@ -11,8 +11,8 @@ import { InputRetention } from '#src/recap/application/input-retention.ts';
 import { gateName } from '#src/recap/domain/gates/gatekeeper.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import type { Pair, Verdict } from '#src/ports/verdicts.ts';
-import { cursor, memoryStore, recordOps, type RunInput } from './support.ts';
+import type { PairRecord } from '#src/ports/verdicts.ts';
+import { cursor, memoryStore, recordOps, runIdOf, runsOf, verdictOf, type RunInput } from './support.ts';
 import { oneTask, withFacts } from '#test/support.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
@@ -31,9 +31,9 @@ test('a run keeps its input document (inflated equal, bytes = uncompressed lengt
     const store = memoryStore();
     const document = '<recap_input version="1">é — ✓ </recap_input>'.repeat(40);
     recordOps(store, run(1000, { input: textOf(document), gateStats: STATS }));
-    const [stored] = store.inputs.runs(QUERY);
+    const [stored] = runsOf(store.inputs, QUERY);
     assert.ok(stored !== undefined);
-    assert.deepEqual([stored.tab, stored.at, stored.hasInput, stored.gateStats], ['w1:t1', 1000, true, STATS]);
+    assert.deepEqual([stored.tab, stored.at, stored.input, stored.gateStats], ['w1:t1', 1000, 'present', STATS]);
     assert.equal(store.inputs.document(stored.id), document);
     const row = store.db.prepare('SELECT document, bytes FROM run_input').get() as { document: Uint8Array; bytes: number };
     assert.equal(row.bytes, Buffer.byteLength(document));
@@ -45,9 +45,9 @@ test('a run without an input or counts is listed (not as judgeable) and a failed
     const store = memoryStore();
     recordOps(store, run(1000));
     store.records.failRun({ tab: tabId('w1:t1'), at: instant(2000), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: textOf('boom'), lanes: [cursor('w1:p1')] });
-    const listed = store.inputs.runs(QUERY);
-    assert.deepEqual(listed.map((r) => [r.at, r.hasInput, r.gateStats]), [[1000, false, null]]);
-    assert.deepEqual(store.inputs.runs({ ...QUERY, withInput: true }), []);
+    const listed = runsOf(store.inputs, QUERY);
+    assert.deepEqual(listed.map((r) => [r.at, r.input, r.gateStats]), [[1000, 'absent', null]]);
+    assert.deepEqual(runsOf(store.inputs, { ...QUERY, withInput: true }), []);
 });
 
 test('runs come newest first, by tab and by time, with a limit; the items carry their keys in the recap\'s order', () => {
@@ -55,17 +55,17 @@ test('runs come newest first, by tab and by time, with a limit; the items carry 
     recordOps(store, run(1000, { input: textOf('<a/>') }));
     recordOps(store, run(2000, { input: textOf('<b/>') }));
     recordOps(store, run(3000, { tab: tabId('w1:t2'), input: textOf('<c/>'), lanes: [cursor('w1:p2')] }));
-    assert.deepEqual(store.inputs.runs(QUERY).map((r) => r.at), [3000, 2000, 1000]);
-    assert.deepEqual(store.inputs.runs({ ...QUERY, tab: 'w1:t1' }).map((r) => r.at), [2000, 1000]);
-    assert.deepEqual(store.inputs.runs({ ...QUERY, since: 2000 }).map((r) => r.at), [3000, 2000]);
-    assert.deepEqual(store.inputs.runs({ ...QUERY, limit: 1 }).map((r) => r.at), [3000]);
-    const [newest] = store.inputs.runs({ ...QUERY, tab: 'w1:t1' });
+    assert.deepEqual(runsOf(store.inputs, QUERY).map((r) => r.at), [3000, 2000, 1000]);
+    assert.deepEqual(runsOf(store.inputs, { ...QUERY, tab: 'w1:t1' }).map((r) => r.at), [2000, 1000]);
+    assert.deepEqual(runsOf(store.inputs, { ...QUERY, since: 2000 }).map((r) => r.at), [3000, 2000]);
+    assert.deepEqual(runsOf(store.inputs, { ...QUERY, limit: 1 }).map((r) => r.at), [3000]);
+    const [newest] = runsOf(store.inputs, { ...QUERY, tab: 'w1:t1' });
     assert.ok(newest !== undefined);
     assert.deepEqual(store.inputs.itemsOf(newest.id, 'added').map((item) => [item.key, item.text]), [
         ['t1/goal/0', 'Ship retries'], ['t1/now/0', 'Review !256.'], ['t1/done/0', 'Merged !250.'], ['t1/done/1', 'Tagged 1.9.0.'], ['t1/links/0', '!256'],
     ]);
-    assert.deepEqual(store.inputs.itemsOf('run_nonsense', 'added'), []);
-    assert.equal(store.inputs.document('run_nonsense'), null);
+    assert.deepEqual(store.inputs.itemsOf(runIdOf('run_nonsense'), 'added'), []);
+    assert.equal(store.inputs.document(runIdOf('run_nonsense')), null);
 });
 
 test('gate counts since a time, newest first, only for runs that have them', () => {
@@ -74,7 +74,7 @@ test('gate counts since a time, newest first, only for runs that have them', () 
     recordOps(store, run(2000, { gateStats: STATS }));
     recordOps(store, run(3000, { gateStats: { refused: {}, flagged: {}, dropped: count(0) } }));
     assert.deepEqual(store.inputs.gateCounts(null).map((entry) => entry.at), [3000, 2000]);
-    assert.deepEqual(store.inputs.gateCounts(2500).map((entry) => entry.at), [3000]);
+    assert.deepEqual(store.inputs.gateCounts(instant(2500)).map((entry) => entry.at), [3000]);
 });
 
 test('retention: the daily upkeep deletes a 15-day-old input and keeps the run, and keeps a 13-day-old one; it runs once a day; 0 keeps none', () => {
@@ -89,7 +89,7 @@ test('retention: the daily upkeep deletes a 15-day-old input and keeps the run, 
     const days = { value: 14 };
     const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock: { now: (): ReturnType<typeof instant> => instant(clock) }, days: (): number => days.value, briefRetention: (): BriefRetention => ({ kind: 'days', value: brand<number, 'RetentionDays'>(14) }), log: (line: string): void => { lines.push(line); } });
     assert.equal(retention.tick(), 1);
-    assert.deepEqual(store.inputs.runs(QUERY).map((r) => [r.at, r.hasInput]), [[now - 13 * DAY, true], [now - 15 * DAY, false]], 'the run stays, its input is gone');
+    assert.deepEqual(runsOf(store.inputs, QUERY).map((r) => [r.at, r.input === 'present']), [[now - 13 * DAY, true], [now - 15 * DAY, false]], 'the run stays, its input is gone');
     assert.equal(store.db.prepare('SELECT COUNT(*) AS count FROM autocompact_brief').get()?.['count'], 0, 'the checked brief is past its retention');
     assert.match(lines.join(), /deleted 1 stored run input older than 14 days/);
     clock += 3_600_000;
@@ -97,17 +97,17 @@ test('retention: the daily upkeep deletes a 15-day-old input and keeps the run, 
     assert.equal(retention.tick(), 0, 'once a day');
     clock += DAY;
     assert.equal(retention.tick(), 1, 'zero days keeps none');
-    assert.deepEqual(store.inputs.runs({ ...QUERY, withInput: true }), []);
+    assert.deepEqual(runsOf(store.inputs, { ...QUERY, withInput: true }), []);
 });
 
-const byCheck = (a: Pair, b: Pair): number => a.check.localeCompare(b.check);
+const byCheck = (a: PairRecord, b: PairRecord): number => a.check.localeCompare(b.check);
 
-const verdict = (over: Partial<Verdict>): Verdict => ({ run: 'run_x', item: 't1/done/0', check: 'I3', pass: true, critique: null, judge: 'claude · sonnet · medium', at: 1, source: 'judge', ...over });
+const verdict = (over: Partial<Parameters<typeof verdictOf>[0]>): ReturnType<typeof verdictOf> => verdictOf({ run: runIdOf('run_x'), item: 't1/done/0', check: 'I3', pass: true, critique: null, judge: 'claude · sonnet · medium', at: 1, source: 'judge', ...over });
 
 test('verdicts round-trip, one transaction; operator labels are found; pairs join judge and operator on the same item and check, newest of each', () => {
     const store = memoryStore();
     recordOps(store, run(1000, { input: textOf('<a/>') }));
-    const [stored] = store.inputs.runs(QUERY);
+    const [stored] = runsOf(store.inputs, QUERY);
     assert.ok(stored !== undefined);
     const id = stored.id;
     store.verdicts.add([
@@ -122,8 +122,8 @@ test('verdicts round-trip, one transaction; operator labels are found; pairs joi
     assert.equal(store.verdicts.ofRun(id).length, 7);
     assert.deepEqual(store.verdicts.ofRun(id).find((v) => v.critique !== null), { ...verdict({ run: id, check: 'I3', pass: false, critique: 'names nothing', at: 2 }) });
     assert.deepEqual([...store.verdicts.labelled()].toSorted(), [`${id}|t1/done/0`, `${id}|t1/done/1`]);
-    assert.deepEqual(store.verdicts.pairs().toSorted(byCheck), [{ check: 'I1', judge: true, operator: true }, { check: 'I3', judge: false, operator: false }]);
-    assert.throws(() => { store.verdicts.add([verdict({ run: 'nonsense' })]); }, /not a run id/);
+    assert.deepEqual(store.verdicts.pairs().toSorted(byCheck), [{ check: 'I1', judge: 'pass', operator: 'pass' }, { check: 'I3', judge: 'fail', operator: 'fail' }]);
+    assert.throws(() => { store.verdicts.add([verdict({ run: runIdOf('nonsense') })]); }, /not a run id/);
     assert.equal(store.verdicts.ofRun(id).length, 7, 'a failed batch writes nothing');
 });
 

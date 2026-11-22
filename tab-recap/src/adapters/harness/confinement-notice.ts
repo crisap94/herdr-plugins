@@ -1,9 +1,8 @@
-import type { Harness, LogLine } from '#src/ports/harness.ts';
+import type { BackendHarness, LogLine } from '#src/ports/harness.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
-import type { BackendId } from '#src/recap/domain/backend.ts';
 import { confinementNotice } from '#src/recap/domain/confinement-notice.ts';
 
-export const noticing = <Id extends BackendId>(harness: Harness<Id>, log: LogLine | undefined): Harness<Id> =>
+export const noticing = (harness: BackendHarness, log: LogLine | undefined): BackendHarness =>
     log === undefined
         ? harness
         : {

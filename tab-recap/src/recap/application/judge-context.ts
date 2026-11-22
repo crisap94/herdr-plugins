@@ -1,4 +1,5 @@
-import type { RunItem } from '#src/ports/run-inputs.ts';
+import type { ItemsMode, RunEntry, RunInputReader, RunItem } from '#src/ports/run-inputs.ts';
+import type { RunId } from '#src/recap/domain/run-ids.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
@@ -11,6 +12,10 @@ interface CoverParts { readonly input: Text; readonly keyfacts: readonly Text[] 
 interface GradingParts { readonly input: Text; readonly keyfacts: readonly Text[]; readonly answers: readonly Text[] }
 
 const NEST = '\n';
+
+const itemOf = (entry: RunEntry): RunItem => ({ key: entry.key, section: entry.section, text: entry.text, fact: entry.fact, born: entry.birth === 'born', anchor: entry.anchor });
+
+export const itemsOf = (inputs: Pick<RunInputReader, 'itemsOf'>, run: RunId, mode: ItemsMode): readonly RunItem[] => inputs.itemsOf(run, mode).map(itemOf);
 
 
 function recapOf(items: readonly RunItem[]): Text {

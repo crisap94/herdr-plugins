@@ -9,8 +9,6 @@ import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { elapsed, instant, type Instant } from '#src/recap/domain/time.ts';
 import { parseTokenAmount } from '#src/recap/domain/token-amount.ts';
 
-export { deciderPortOf } from './legacy.ts';
-
 export function unfencedText(markdown: Text): Text {
     const trimmed = markdown.trim();
     const lines = trimmed.split('\n');

@@ -2,6 +2,7 @@ import type { Database } from 'bun:sqlite';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import type { RunFacts } from '#src/ports/recap-records.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
 import { countOf, type Count } from '#src/recap/domain/count.ts';
 import { paneId, tabId, type TabId } from '#src/recap/domain/ids.ts';
@@ -11,7 +12,7 @@ import { chapter as chapters, run as runs, runRead as reads, runTask as runTasks
 import { ormOf, type Orm } from '../orm.ts';
 import { blob } from '../rows.ts';
 import { ids } from '../uuid7.ts';
-import { RunInputRows, statsText } from '../run-inputs/legacy.ts';
+import { RunInputRows, statsText } from '../run-inputs.ts';
 import type { TranscriptMove, TranscriptStore } from '../transcripts.ts';
 
 export const microsOf = (usd: Usd): Count => countOf(Math.round(usd * 1e6));
@@ -52,7 +53,7 @@ export class RunRows {
         return id;
     }
 
-    insertInput(run: Uint8Array, document: string): void {
+    insertInput(run: Uint8Array, document: Text): void {
         this.inputs.put(run, document);
     }
 

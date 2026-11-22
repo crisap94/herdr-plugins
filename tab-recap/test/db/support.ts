@@ -16,6 +16,13 @@ import type { TaskOps } from '@stateforge-labs/session-ledger/unstable/recap/dom
 import { agentKind, paneId } from '#src/recap/domain/ids.ts';
 import { sourcePathOf, cursorOf } from '#src/ports/transcripts.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { countOf } from '#src/recap/domain/count.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+import { uncheckedTabId } from '#src/recap/domain/ids.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import type { RunId } from '#src/recap/domain/run-ids.ts';
+import type { RunFilter, RunInputReader, RunRecord } from '#src/ports/run-inputs.ts';
+import type { VerdictRecord } from '#src/ports/verdicts.ts';
 
 export function openFixture(path: string = MEMORY): Database {
     const db = new Database(path);
@@ -75,3 +82,26 @@ export function must<T>(value: T | null | undefined): T {
     }
     return value;
 }
+
+export interface RunQuery {
+    readonly tab: string | null;
+    readonly since: number | null;
+    readonly limit: number;
+    readonly withInput: boolean;
+}
+
+export const filterOf = (query: RunQuery): RunFilter => ({
+    tab: query.tab === null ? null : uncheckedTabId(query.tab),
+    since: query.since === null ? null : instant(query.since),
+    limit: countOf(query.limit),
+    input: query.withInput ? 'with-input' : 'any',
+});
+
+export const runsOf = (inputs: RunInputReader, query: RunQuery): readonly RunRecord[] => inputs.runs(filterOf(query));
+
+export const runIdOf = (value: string): RunId => brand<string, 'RunId'>(value);
+
+export const verdictOf = (over: { readonly run: RunId; readonly item: string | null; readonly check: string; readonly pass: boolean; readonly critique?: string | null; readonly judge: string; readonly at: number; readonly source: 'judge' | 'operator' }): VerdictRecord => ({
+    run: over.run, item: over.item === null ? null : textOf(over.item), check: textOf(over.check), pass: over.pass ? 'pass' : 'fail',
+    critique: over.critique === undefined || over.critique === null ? null : textOf(over.critique), judge: textOf(over.judge), at: instant(over.at), source: over.source,
+});

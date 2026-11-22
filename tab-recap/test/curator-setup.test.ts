@@ -12,11 +12,12 @@ import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import type { JobSetting } from '#src/recap/domain/job.ts';
 import { HarnessCurator } from '#src/adapters/job/curator.ts';
-import type { Harness, HarnessCall, HarnessSettings, Ran, StructuredSupport } from '#src/ports/harness.ts';
+import type { HarnessAsk, HarnessChoice, HarnessPort, HarnessRun, StructuredSupport } from '#src/ports/harness.ts';
+import { parseUsd } from '#src/recap/domain/usd.ts';
 import { CURATE_DEFAULT } from '#src/recap/domain/job.ts';
 import { setupLines } from '#src/recap/render/setup.ts';
 import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 
 const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
 const raw = { locale: undefined, recapLanguage: undefined };
@@ -141,12 +142,12 @@ test('the curator answer: TAB_RECAP_CURATE_ANSWER set to schema (trimmed, any ca
     assert.deepEqual(curateJobOf(() => undefined), CURATE_DEFAULT);
 });
 
-function recordingHarness(structured: StructuredSupport | undefined): { readonly harness: Harness; readonly calls: HarnessCall[] } {
-    const calls: HarnessCall[] = [];
-    const ran: Ran = { kind: 'ran', text: 'ok', costUsd: 0 };
-    const harness: Harness = {
-        id: 'fake',
-        label: () => 'fake',
+function recordingHarness(structured: StructuredSupport | undefined): { readonly harness: HarnessPort; readonly calls: HarnessAsk[] } {
+    const calls: HarnessAsk[] = [];
+    const ran: HarnessRun = { kind: 'ran', text: textOf('ok'), costUsd: must(parseUsd(0)) };
+    const harness: HarnessPort = {
+        id: textOf('fake'),
+        label: () => textOf('fake'),
         limit: null,
         ...(structured === undefined ? {} : { structured }),
         run: (call) => {
@@ -157,7 +158,7 @@ function recordingHarness(structured: StructuredSupport | undefined): { readonly
     return { harness, calls };
 }
 
-const settings: HarnessSettings = { model: 'm', effort: 'low' };
+const settings: HarnessChoice = { model: textOf('m'), effort: 'low' };
 
 test('the curator asks for a schema answer only when it was asked for and the harness supports schema, in the mode it was given', async () => {
     const schema = recordingHarness('schema');

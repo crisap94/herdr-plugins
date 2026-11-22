@@ -1,4 +1,4 @@
-import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
+import type { BriefWriter } from '#src/ports/compaction-briefs.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
 import { FORBIDDEN, FORBIDDEN_PHRASE_PATTERN as PHRASES, FORBIDDEN_WORD_PATTERN as WORDS } from '#src/recap/domain/forbidden-words.ts';
@@ -63,7 +63,7 @@ export function vetted(answer: Text, own: Text = EMPTY): Vetted {
 }
 
 export interface BriefDeskDeps {
-    readonly writer: () => CompactionBriefs | null;
+    readonly writer: () => BriefWriter | null;
     log(line: Text): void;
 }
 

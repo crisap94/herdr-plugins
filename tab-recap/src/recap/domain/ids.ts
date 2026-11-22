@@ -1,4 +1,5 @@
 import { ok, type Result } from '#src/protocol/result.ts';
+import type { BackendId } from './backend.ts';
 import type { TabId } from './timing-ids.ts';
 import type { Text } from './text.ts';
 import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
@@ -71,6 +72,12 @@ export function parseSessionPath(input: unknown): Result<SessionPath, ParseFailu
     }
     return ok(brand<string, 'SessionPath'>(text.value));
 }
+
+export type BackendText = Brand<BackendId, 'Text'>;
+
+export const uncheckedMilliseconds = brand<number, 'Milliseconds'>;
+
+export const uncheckedBackendText = brand<BackendId, 'Text'>;
 
 export const uncheckedTabId = brand<string, 'TabId'>;
 

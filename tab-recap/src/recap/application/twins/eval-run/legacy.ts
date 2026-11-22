@@ -1,8 +1,9 @@
-import type { Judge } from '#src/ports/judge.ts';
-import type { RunInputs, RunQuery } from '#src/ports/run-inputs.ts';
-import type { Verdicts } from '#src/ports/verdicts.ts';
+import type { JudgePort } from '#src/ports/judge.ts';
+import type { RunFilter, RunInputReader } from '#src/ports/run-inputs.ts';
+import type { VerdictStore } from '#src/ports/verdicts.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { countOf, parseCount } from '#src/recap/domain/count.ts';
+import { uncheckedTabId } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { agreeLines, candidateLines, gateLines, reportLines } from '#src/recap/render/eval.ts';
@@ -21,10 +22,10 @@ const DAY_MS = 86_400_000;
 const LABEL_RUNS = 200;
 
 export interface EvalDeps {
-    readonly inputs: RunInputs;
-    readonly verdicts: Verdicts;
+    readonly inputs: RunInputReader;
+    readonly verdicts: VerdictStore;
     readonly now: () => number;
-    readonly judge: () => Judge | null;
+    readonly judge: () => JudgePort | null;
     readonly rubric: string;
     readonly style: Style;
     out(line: string): void;
@@ -32,8 +33,8 @@ export interface EvalDeps {
     ask(prompt: string): Promise<string | null>;
 }
 
-const queryOf = (options: EvalRequest, deps: EvalDeps, limit: number, withInput: boolean): RunQuery =>
-    ({ tab: options.tab, since: options.since === null ? null : deps.now() - options.since * DAY_MS, limit, withInput });
+const queryOf = (options: EvalRequest, deps: EvalDeps, limit: number, withInput: boolean): RunFilter =>
+    ({ tab: options.tab === null ? null : uncheckedTabId(options.tab), since: options.since === null ? null : instant(deps.now() - options.since * DAY_MS), limit: countOf(limit), input: withInput ? 'with-input' : 'any' });
 
 async function sample(options: EvalRequest, deps: EvalDeps): Promise<number> {
     const judge = deps.judge();
@@ -42,8 +43,8 @@ async function sample(options: EvalRequest, deps: EvalDeps): Promise<number> {
         return 1;
     }
     const runs = deps.inputs.runs(queryOf(options, deps, options.count, true));
-    const missing = deps.inputs.runs(queryOf(options, deps, 1000, false)).filter((run) => !run.hasInput).length;
-    const judging: JudgeDeps = { judge, inputs: deps.inputs, verdicts: deps.verdicts, rubric: must(parseText(deps.rubric)), now: deps.now };
+    const missing = deps.inputs.runs(queryOf(options, deps, 1000, false)).filter((run) => run.input === 'absent').length;
+    const judging: JudgeDeps = { judge, inputs: deps.inputs, verdicts: deps.verdicts, rubric: must(parseText(deps.rubric)), now: () => instant(deps.now()) };
     let done = 0;
     const results = await judgeRuns(judging, runs, () => { done += 1; deps.err(`judged ${done}/${runs.length}`); });
     const report = reportOf(judge.label, results);
@@ -71,7 +72,7 @@ async function labelOne(candidate: Candidate, position: string, deps: EvalDeps, 
 async function label(options: EvalRequest, deps: EvalDeps): Promise<number> {
     const runs = deps.inputs.runs(queryOf(options, deps, LABEL_RUNS, false));
     const check = options.check;
-    const labelled = new Set([...deps.verdicts.labelled(options.check)].map((key) => must(parseText(key))));
+    const labelled = new Set(deps.verdicts.labelled(options.check));
     const items = candidatesOf(runs, deps.inputs, labelled, must(parseCount(options.count)), check);
     if (items.length === 0) {
         deps.out(options.check === null ? 'no unlabelled items in the period' : `no items in the period that ${options.check} has not been asked about`);
@@ -100,7 +101,7 @@ export async function runEval(options: EvalRequest, deps: EvalDeps): Promise<num
             return 0;
         }
         case 'gates': {
-            const report = gateReportOf(deps.inputs.gateCounts(options.since === null ? null : deps.now() - options.since * DAY_MS));
+            const report = gateReportOf(deps.inputs.gateCounts(options.since === null ? null : instant(deps.now() - options.since * DAY_MS)));
             deps.out(options.json === 'present' ? JSON.stringify(report) : gateLines(report, deps.style).join('\n'));
             return 0;
         }

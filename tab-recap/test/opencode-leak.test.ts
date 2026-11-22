@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
-import { LibraryHarness } from '#src/adapters/harness/library.ts';
+import { choice, fakeOutput, fakeRuntime, libraryHarness } from '#test/fakes/harness-runtime.ts';
 import { RecapWriter } from '#src/adapters/job/writer.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { requestOf } from '#test/support.ts';
@@ -9,7 +8,7 @@ import { textOf } from '#src/recap/domain/text.ts';
 
 const request = requestOf({ entries: [{ role: 'user', text: textOf('hi') }] });
 
-const opencode = (runtime: ReturnType<typeof fakeRuntime>): RecapWriter => new RecapWriter(new LibraryHarness(runtime, 'opencode', 100), { model: '', effort: 'default' });
+const opencode = (runtime: ReturnType<typeof fakeRuntime>): RecapWriter => new RecapWriter(libraryHarness(runtime, 'opencode', 100), choice('', 'default'));
 
 test('a timed-out opencode run is Unknown timeout and the plugin leaves the session cleanup to the library: one headless run, nothing else', async () => {
     const runtime = fakeRuntime({ scripts: { opencode: [{ kind: 'timeout', message: 'slow', timeoutMs: 100 }] } });

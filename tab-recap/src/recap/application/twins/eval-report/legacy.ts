@@ -1,4 +1,4 @@
-import type { StoredRun } from '#src/ports/run-inputs.ts';
+import type { RunRecord, StoredRun } from '#src/ports/run-inputs.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import type { Grade } from '../../judge-answer.ts';
@@ -21,6 +21,8 @@ export interface Failure {
 }
 
 interface CheckVerdict { readonly check: string; readonly pass: boolean }
+
+const storedRunOf = (run: RunRecord): StoredRun => ({ id: run.id, tab: run.tab, at: run.at, language: run.language, backend: run.backend, hasInput: run.input === 'present', gateStats: run.gateStats });
 
 export type RunLine =
     | {
@@ -76,7 +78,7 @@ function failuresOf(results: readonly RunResult[]): readonly Failure[] {
         const text = new Map(result.items.map((item) => [item.key, item.text]));
         return result.verdicts.flatMap((verdict) => {
             const line = verdict.item === null ? undefined : text.get(verdict.item);
-            return verdict.pass || verdict.item === null || line === undefined || !(ITEM_CHECKS.includes(verdict.check) || verdict.check.startsWith('S-'))
+            return verdict.pass === 'pass' || verdict.item === null || line === undefined || !(ITEM_CHECKS.includes(verdict.check) || verdict.check.startsWith('S-'))
                 ? []
                 : [{ run: result.run.id, key: verdict.item, text: line, check: verdict.check, critique: verdict.critique ?? '' }];
         });
@@ -85,8 +87,8 @@ function failuresOf(results: readonly RunResult[]): readonly Failure[] {
 
 const lineOf = (result: RunResult): RunLine =>
     result.kind === 'judged'
-        ? { kind: 'judged', run: result.run, coverage: result.coverage, filler: result.filler, added: result.added, stateSize: result.stateSize, readback: result.readback, note: result.note }
-        : { kind: 'not-judged', run: result.run, why: result.why };
+        ? { kind: 'judged', run: storedRunOf(result.run), coverage: result.coverage, filler: result.filler, added: result.added, stateSize: result.stateSize, readback: result.readback, note: result.note }
+        : { kind: 'not-judged', run: storedRunOf(result.run), why: result.why };
 
 const NONE: Share = { passed: must(parseCount(0)), total: must(parseCount(0)) };
 
@@ -114,7 +116,7 @@ function anchoredFailures(results: readonly RunResult[]): readonly Failure[] {
             return [];
         }
         const anchored = new Map(result.items.filter((item) => item.anchor !== null).map((item) => [item.key, item.text]));
-        return result.verdicts.flatMap((verdict) => (verdict.check === 'I4' && !verdict.pass && verdict.item !== null && anchored.has(verdict.item)
+        return result.verdicts.flatMap((verdict) => (verdict.check === 'I4' && verdict.pass === 'fail' && verdict.item !== null && anchored.has(verdict.item)
             ? [{ run: result.run.id, key: verdict.item, text: anchored.get(verdict.item) ?? '', check: 'I4', critique: verdict.critique ?? '' }]
             : []));
     });
@@ -123,7 +125,7 @@ function anchoredFailures(results: readonly RunResult[]): readonly Failure[] {
 export function reportOf(judge: string, results: readonly RunResult[]): EvalReport {
     return {
         judge,
-        rates: ratesOf(results.flatMap((result) => (result.kind === 'judged' ? result.verdicts : []))),
+        rates: ratesOf(results.flatMap((result) => (result.kind === 'judged' ? result.verdicts : [])).map((verdict): CheckVerdict => ({ check: verdict.check, pass: verdict.pass === 'pass' }))),
         failures: failuresOf(results),
         judgeVsAnchor: anchoredFailures(results),
         totals: totalsOf(results),

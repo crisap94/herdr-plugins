@@ -1,8 +1,8 @@
+import { choice, customHarness } from '#test/fakes/harness-runtime.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { CustomHarness } from '#src/adapters/harness/custom.ts';
 import { RecapWriter } from '#src/adapters/job/writer.ts';
 import { extract, OLD_CONTRACT } from '#src/recap/application/extract-job.ts';
 import type { Extracted, Ground } from '#src/recap/application/extract-job.ts';
@@ -25,7 +25,7 @@ async function through(script: string): Promise<Extracted> {
     try {
         const file = join(dir, 'writer.mjs');
         writeFileSync(file, `import { readFileSync } from 'node:fs';\nconst document = readFileSync(0, 'utf8');\n${script}`);
-        const writer = new RecapWriter(new CustomHarness(`${process.execPath} ${file}`, dir, 20_000), { model: '', effort: 'default' });
+        const writer = new RecapWriter(customHarness(`${process.execPath} ${file}`, dir, 20_000), choice('', 'default'));
         return await extract(writer, requestOf({ entries: [{ role: 'user', text: textOf('go') }] }), ground);
     } finally {
         rmSync(dir, { recursive: true, force: true });

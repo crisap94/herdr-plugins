@@ -1,8 +1,8 @@
+import { choice, customHarness } from '#test/fakes/harness-runtime.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { RUBRIC } from '#src/adapters/job/prompts/rubric.ts';
 import { HarnessCurator } from '#src/adapters/job/curator.ts';
-import { CustomHarness } from '#src/adapters/harness/custom.ts';
 import type { Curated, Curators } from '#src/ports/curators.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { unknown, exitCodeOf } from '#src/ports/unknowable.ts';
@@ -153,10 +153,10 @@ test('a story answer that is a JSON array is refused and nothing is stored', asy
     assert.equal(stories.read('w1:t1', 't1'), null);
 });
 
-const settings = { model: '', effort: 'medium' } as const;
+const settings = choice('', 'medium');
 
 test('the curator is a job on a harness: its instructions follow the document', async () => {
-    const echo = new CustomHarness('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
+    const echo = customHarness('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
     const written = await new HarnessCurator(echo, settings).write(must(parseText('<curator_input version="1"/>')));
     assert.ok(written.kind === 'curated' && written.text.startsWith('<curator_input') && written.text.includes('"op":"close"') && written.text.includes('at most 120 words'));
 });

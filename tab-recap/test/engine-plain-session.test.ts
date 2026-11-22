@@ -1,4 +1,4 @@
-import { storeRead } from '#test/db/support.ts';
+import { runsOf as storedRunsOf, storeRead } from '#test/db/support.ts';
 import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -68,7 +68,7 @@ function grow(host: PlainHost, lines: readonly string[]): void {
     host.clock.now = Math.max(host.clock.now + 1, ...lines.flatMap((line) => (Number.isNaN(timeOf(line)) ? [] : [timeOf(line)])));
 }
 
-const runsOf = (host: PlainHost): number => host.store.inputs.runs({ tab: String(host.scope), since: null, limit: 100, withInput: false }).length;
+const runsOf = (host: PlainHost): number => storedRunsOf(host.store.inputs, { tab: String(host.scope), since: null, limit: 100, withInput: false }).length;
 
 test('the engine follows a plain Claude session with no herdr: runs per turn, facts in the ledger, the compaction seen, history as facts', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'tab-recap-plain-'));

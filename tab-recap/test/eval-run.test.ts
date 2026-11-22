@@ -2,8 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { runEval } from '#src/recap/application/eval-run.ts';
 import { DEFAULT_SAMPLE } from '#src/recap/application/eval-options.ts';
-import type { Judge, JudgeTask } from '#src/ports/judge.ts';
-import { ANSWERS, GRADES, optionsOf, rig, scripted, SCORE, seed } from '#test/eval-rig.ts';
+import type { JudgeTask } from '#src/ports/judge.ts';
+import { ANSWERS, GRADES, judgeOf, optionsOf, rig, scripted, SCORE, seed } from '#test/eval-rig.ts';
+import { runsOf } from '#test/db/support.ts';
 
 test('`eval` with no option judges the newest 20 runs that have a stored input, prints each check\'s pass rate, the failing items with their critique, and each run\'s coverage, no-filler and read-back, and stores the verdicts', async () => {
     const { store, deps, out } = rig();
@@ -22,7 +23,7 @@ test('`eval` with no option judges the newest 20 runs that have a stored input, 
     assert.equal((report.match(/coverage 100% \(1\/1\) \[added 0% \(0\/1\)\] · no-filler \d+% \(1\/\d+\) \[added 0% \(0\/3\)\] · read-back 6\/6/g) ?? []).length, 20, 'every run reports its state numbers with the added ones beside them');
     assert.match(report, /coverage 100% \(20\/20\) \[added 0% \(0\/20\)\]/, 'and the totals line adds them up');
     assert.match(report, /judge vs anchor \(0\)/);
-    assert.equal(store.inputs.runs({ tab: null, since: null, limit: 100, withInput: true }).filter((run) => store.verdicts.ofRun(run.id).length > 0).length, 20);
+    assert.equal(runsOf(store.inputs, { tab: null, since: null, limit: 100, withInput: true }).filter((run) => store.verdicts.ofRun(run.id).length > 0).length, 20);
 });
 
 test('`eval --sample 2 --tab` and `--since` narrow the runs; `--json` prints the report as JSON', async () => {
@@ -51,7 +52,7 @@ test('an unparsable answer is a run reported as not judged and the eval goes on;
         const rest: Readonly<Record<JudgeTask, string>> = { score: '', readback: ANSWERS, grade: GRADES, cover: '' };
         return task === 'score' ? (answers.shift() ?? SCORE) : rest[task];
     };
-    const flaky: Judge = { label: 'x', ask: (task) => Promise.resolve({ kind: 'said', text: text(task), costUsd: 0 }) };
+    const flaky = judgeOf('x', text);
     const { store, deps, out } = rig({ judge: flaky });
     seed(store, 2);
     assert.equal(await runEval(optionsOf(), deps), 0);

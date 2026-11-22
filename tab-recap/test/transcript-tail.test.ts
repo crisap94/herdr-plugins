@@ -1,7 +1,7 @@
+import { choice, customHarness } from '#test/fakes/harness-runtime.ts';
 import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
-import { CustomHarness } from '#src/adapters/harness/custom.ts';
 import { HarnessEnumerator } from '#src/adapters/job/enumerator.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import { UNREAD, cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
@@ -41,8 +41,8 @@ test('the lanes\' newest turns are read from the start of what each reader keeps
 });
 
 test('the enumeration is a job on a harness: its instructions follow the document', async () => {
-    const echo = new CustomHarness('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
-    const enumerator = new HarnessEnumerator(echo, { model: '', effort: 'low' });
+    const echo = customHarness('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
+    const enumerator = new HarnessEnumerator(echo, choice('', 'low'));
     assert.equal(enumerator.job, 'custom · low');
     const written = await enumerator.write(must(parseText('<enumerate_input version="1"/>')));
     assert.ok(written.kind === 'enumerated' && written.text.startsWith('<enumerate_input') && written.text.includes('Copy, never paraphrase.'));
