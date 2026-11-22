@@ -1,0 +1,16 @@
+import type { DecisionDraft } from '#src/ports/autocompact-records.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import type { Usd } from '#src/recap/domain/usd.ts';
+
+const WORDS: Readonly<Record<string, string>> = { closes_request: 'closes', announces_continuation: 'continues', asks_detailed_choice: 'choice', needs_verbatim: 'verbatim', changes_subject: 'subject', stuck: 'stuck' };
+
+export type Effect = 'record-only' | 'may-act';
+
+export const moneyOf = (usd: Usd): Text => must(parseText(usd === 0 ? '$0' : `$${usd.toFixed(5)}`));
+
+export function lineOf(made: DecisionDraft, effect: Effect): Text {
+    const figures = [...made.answers].map(([id, value]) => `${WORDS[id] ?? id} ${value.toFixed(2)}`);
+    const tag = [made.gate === 'ceiling' ? 'ceiling' : null, made.mode, effect === 'record-only' ? 'record-only' : null].filter((part) => part !== null).join(', ');
+    return must(parseText(`autocompact ${made.pane}: ${[`${made.share} %`, ...figures].join(' · ')} → ${made.verdict} (${tag})${made.why === null ? '' : `: ${made.why}`}`));
+}

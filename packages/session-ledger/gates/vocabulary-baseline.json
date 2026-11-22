@@ -9,9 +9,13 @@
   "src/facade/follow-set.ts": 22,
   "src/facade/plugs.ts": 24,
   "src/facade/translate.ts": 31,
+  "src/ports/autocompact-records.ts": 32,
   "src/ports/legacy.ts": 19,
   "src/ports/recap-records.ts": 1,
   "src/recap/application/anchor-source.ts": 2,
+  "src/recap/application/autocompact-gates.ts": 9,
+  "src/recap/application/autocompact-line.ts": 1,
+  "src/recap/application/autocompact.ts": 46,
   "src/recap/application/boundaries.ts": 8,
   "src/recap/application/correction-input.ts": 8,
   "src/recap/application/cursor-carry.ts": 1,
@@ -32,5 +36,6 @@
   "src/recap/application/writer-context.ts": 18,
   "src/recap/application/xml.ts": 2,
   "src/recap/domain/lane-shape.ts": 1,
-  "src/recap/domain/legacy.ts": 35
+  "src/recap/domain/legacy.ts": 35,
+  "src/recap/domain/timing-ids.ts": 4
 }

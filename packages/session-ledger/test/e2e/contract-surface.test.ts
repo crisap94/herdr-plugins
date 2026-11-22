@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import ts from 'typescript';
 import * as root from '@stateforge-labs/session-ledger';
+import * as timing from '@stateforge-labs/session-ledger/compaction-timing';
 import { notFound } from '@stateforge-labs/session-ledger/testkit';
 
 const packageRoot = join(dirname(new URL(import.meta.url).pathname), '..', '..');
@@ -29,6 +30,8 @@ const EIGHTEEN = [
     'sectionOf',
     'unknown',
 ];
+
+const TIMING_VALUES = ['QUESTIONS', 'SWEEP_EVERY', 'continuationNote', 'gateOf', 'policyFrom', 'tuningFrom', 'verdictOf'];
 
 function compilerOptions(): ts.CompilerOptions {
     const configPath = join(packageRoot, 'tsconfig.json');
@@ -113,4 +116,19 @@ test('ok, err, instant, unknown, isUnknown and UNREAD keep the shapes of main', 
     assert.equal(root.isUnknown(failed), true);
     assert.equal(root.isUnknown(root.ok(1)), false);
     assert.deepEqual(root.UNREAD, { cursor: 0, tail: null });
+});
+
+test('the value exports of compaction-timing are the seven that exist', () => {
+    assert.deepEqual(Object.keys(timing).toSorted(), TIMING_VALUES);
+});
+
+test('the compaction-timing values keep the behaviour they had in the plugin', () => {
+    assert.equal(timing.SWEEP_EVERY, 5);
+    assert.deepEqual([...timing.QUESTIONS.keys()].toSorted(), ['announces_continuation', 'asks_detailed_choice', 'changes_subject', 'closes_request', 'needs_verbatim', 'stuck']);
+    assert.equal(timing.verdictOf({ announces_continuation: 0.1, asks_detailed_choice: 0.1, needs_verbatim: 0.1, stuck: 0.1, closes_request: 0.9, changes_subject: 0.1 }), 'compact');
+    assert.equal(timing.verdictOf({}), 'wait');
+    assert.equal(timing.policyFrom(() => undefined).mode, 'shadow');
+    assert.equal(timing.tuningFrom(() => undefined).style, 'balanced');
+    assert.equal(typeof timing.gateOf, 'function');
+    assert.equal(timing.continuationNote({ kind: 'none' }, []), null);
 });
