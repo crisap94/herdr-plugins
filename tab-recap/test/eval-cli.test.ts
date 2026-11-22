@@ -1,10 +1,11 @@
 import { test } from 'node:test';
+import type { Directory } from '#src/recap/domain/directory.ts';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { stateStore } from '#src/adapters/db/database.ts';
+import { databaseFile, openStoreAt } from '#src/adapters/db/database.ts';
 import { cursor, recordOps } from '#test/db/support.ts';
 import { oneTask, withFacts } from '#test/support.ts';
 import { BUN_CACHE_OFF } from './support/bun-env.ts';
@@ -18,7 +19,7 @@ const entry = join(import.meta.dirname, '..', 'bin', 'tab-recap.ts');
 function run(args: readonly string[], input = ''): { status: number | null; stdout: string; stderr: string; state: string; done: () => void } {
     const root = mkdtempSync(join(tmpdir(), 'tab-recap-eval-'));
     const state = join(root, 'state');
-    const owner = stateStore(state);
+    const owner = openStoreAt(databaseFile(state as Directory));
     if (owner.kind === 'ready') {
         owner.close();
     }
@@ -32,7 +33,7 @@ function run(args: readonly string[], input = ''): { status: number | null; stdo
 function seeded(): ReturnType<typeof run> {
     const root = mkdtempSync(join(tmpdir(), 'tab-recap-eval-'));
     const state = join(root, 'state');
-    const store = stateStore(state);
+    const store = openStoreAt(databaseFile(state as Directory));
     assert.ok(store.kind === 'ready');
     recordOps(store, { tab: tabId('w1:t1'), at: instant(Date.now()), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], ...withFacts(oneTask('', { goal: textOf('Ship retries'), now: [], needs: [], done: [textOf('Merged !256.')], decisions: [], next: [], links: [], rules: [] })), input: textOf('<recap_input version="1"/>') });
     store.close();
@@ -65,7 +66,7 @@ test('with no harness for the judge, `eval` says so on stderr and exits 1 withou
         const ran = against(fixture.state, ['eval']);
         assert.equal(ran.status, 1, ran.stderr);
         assert.match(ran.stderr, /no harness is available for the judge job/);
-        const store = stateStore(fixture.state);
+        const store = openStoreAt(databaseFile(fixture.state as Directory));
         assert.ok(store.kind === 'ready');
         assert.equal(store.db.prepare('SELECT COUNT(*) AS n FROM verdict').get()?.['n'], 0);
         store.close();
@@ -95,7 +96,7 @@ test('`eval --label` reads its answers from scripted stdin and stores them as op
         assert.match(ran.stdout, /"Ship retries"/);
         assert.match(ran.stdout, /"Merged !256\."/);
         assert.match(ran.stdout, /2 of 2 items answered/);
-        const store = stateStore(fixture.state);
+        const store = openStoreAt(databaseFile(fixture.state as Directory));
         assert.ok(store.kind === 'ready');
         const rows = store.db.prepare("SELECT item_key, check_id, pass, critique, source FROM verdict WHERE source = 'operator' AND pass = 0").all().map((row) => Object.assign({}, row));
         assert.deepEqual(rows, [{ item_key: 't1/done/0', check_id: 'I3', pass: 0, critique: 'no file named', source: 'operator' }]);

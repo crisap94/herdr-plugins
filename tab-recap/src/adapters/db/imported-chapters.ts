@@ -8,8 +8,6 @@ import { parseImportedChapterItem, type ImportedChapterRecord } from '#src/ports
 import { connectReadOnly } from './connection.ts';
 import { all, blob, whole } from './rows.ts';
 
-export { importedChapters } from './legacy.ts';
-
 const SECTION_ORDER = "CASE i.section WHEN 'goal' THEN 0 WHEN 'now' THEN 1 WHEN 'needs' THEN 2 WHEN 'done' THEN 3 WHEN 'decisions' THEN 4 WHEN 'next' THEN 5 WHEN 'links' THEN 6 ELSE 7 END";
 
 const FACT_KEY = "'state/' || t.key || '/' || i.section || '/' || i.position";

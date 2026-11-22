@@ -1,10 +1,11 @@
 import { test } from 'node:test';
+import type { Directory } from '#src/recap/domain/directory.ts';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { stateStore } from '#src/adapters/db/database.ts';
+import { databaseFile, openStoreAt } from '#src/adapters/db/database.ts';
 import { codeVersion } from '#src/adapters/os/plugin-version.ts';
 import { BUN_CACHE_OFF } from './support/bun-env.ts';
 
@@ -81,12 +82,12 @@ test('a source that is a label rather than a lane is refused source-unavailable 
     withRun(['handoff', '--from', 'my agent', '--to', 'w1:p2'], (ran) => {
         assert.equal(ran.status, 1, ran.stderr);
         assert.match(ran.stderr, /tab-recap does not know the source lane/);
-        const store = stateStore(ran.state);
+        const store = openStoreAt(databaseFile(ran.state as Directory));
         assert.equal(store.kind, 'ready');
         assert.deepEqual(store.requests.takeHandoffs(), []);
         store.close();
     }, (state) => {
-        const owner = stateStore(state);
+        const owner = openStoreAt(databaseFile(state as Directory));
         if (owner.kind === 'ready') {
             owner.close();
         }

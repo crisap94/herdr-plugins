@@ -1,3 +1,4 @@
+import { instant } from '#src/recap/domain/time.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { HandoffAnswers } from '#src/ports/handoff-answers.ts';
@@ -12,7 +13,7 @@ interface Subject {
 }
 
 const subjects: readonly Subject[] = [
-    { name: 'SQLite', make: (clock) => memoryStore({ now: () => clock.now }).handoffs },
+    { name: 'SQLite', make: (clock) => memoryStore({ now: () => instant(clock.now) }).handoffs },
     { name: 'in-memory double', make: (clock) => new MemoryHandoffAnswers(() => clock.now) },
 ];
 

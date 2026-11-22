@@ -5,8 +5,7 @@ import { Database } from 'bun:sqlite';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { BUSY_PRAGMA, MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
-import { storeWith } from '#src/adapters/db/legacy.ts';
-import type { Store, StoreOptions } from '#src/adapters/db/database.ts';
+import { storeOver, type Store, type StoreSettings } from '#src/adapters/db/database.ts';
 import { opsOfSections } from '#src/adapters/db/import/sections-to-ops.ts';
 import type { LaneCursor, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
@@ -25,12 +24,12 @@ export function openFixture(path: string = MEMORY): Database {
     return db;
 }
 
-export function memoryStore(options: StoreOptions = {}): Store {
+export function memoryStore(options: StoreSettings = {}): Store {
     const opened = openDatabase(MEMORY);
     if (opened.kind !== 'ready') {
         throw new Error('a fresh in-memory database is never newer');
     }
-    return storeWith(opened.db, options);
+    return storeOver(opened.db, options);
 }
 
 export const shapeOf = (db: Database): string[] => (db.prepare("SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { type: string; name: string; tbl_name: string; sql: string }[])

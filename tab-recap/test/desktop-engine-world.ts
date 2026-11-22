@@ -1,7 +1,8 @@
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
+import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { openStore, type Store } from '#src/adapters/db/database.ts';
+import { openStoreAt, type Store } from '#src/adapters/db/database.ts';
 import { desktopFrontend } from '#src/adapters/desktop/frontend.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseSocketPath } from '#src/adapters/herdr-core/sdk-core.ts';
@@ -44,7 +45,7 @@ export async function startWorld(): Promise<World> {
     const root = mkdtempSync(join(tmpdir(), 'desktop-engine-'));
     process.env['TAB_RECAP_STATE'] = root;
     delete process.env['TAB_RECAP_API'];
-    const opened = openStore(join(root, 'tab-recap.db'));
+    const opened = openStoreAt(join(root, 'tab-recap.db') as FsPath);
     if (opened.kind !== 'ready') { throw new Error('store'); }
     const wrapped = desktopFrontend(DEAD_SOCKET).wrap(opened, () => undefined, () => Promise.resolve());
     const path = join(root, 'gui', 'api.json');

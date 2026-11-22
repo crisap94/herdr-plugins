@@ -1,15 +1,16 @@
 import { test } from 'node:test';
+import type { Directory } from '#src/recap/domain/directory.ts';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { stateStore } from '#src/adapters/db/database.ts';
+import { databaseFile, openStoreAt } from '#src/adapters/db/database.ts';
 
 const ENTRY = join(import.meta.dirname, '..', 'bin', 'tab-recap-desktop.ts');
 
 function withStore(home: string): void {
-    const owner = stateStore(home);
+    const owner = openStoreAt(databaseFile(home as Directory));
     if (owner.kind === 'ready') {
         owner.close();
     }

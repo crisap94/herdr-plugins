@@ -1,5 +1,5 @@
 import type { Store } from '#src/adapters/db/database.ts';
-import { stateStore } from '#src/adapters/db/database.ts';
+import { databaseFile, openStoreAt } from '#src/adapters/db/database.ts';
 import { importFilesAt } from '#src/adapters/db/import/import-files.ts';
 import { LegacyStoreFiles } from '#src/adapters/db/import/legacy-files.ts';
 import { codeVersion } from '#src/adapters/os/plugin-version.ts';
@@ -7,7 +7,7 @@ import { must } from '#src/protocol/result.ts';
 import type { Notifier } from '#src/ports/notifier.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { loadConfig, messagesOf } from './config.ts';
 import { parseLine, type Line } from './slots.ts';
@@ -21,8 +21,9 @@ async function refuse(notifier: Notifier, log: (line: Line) => void, why: Line):
 }
 
 export async function openStateAt(root: Directory, notifier: Notifier, log: (line: Line) => void): Promise<Store | null> {
+    const version = codeVersion();
     const say = parseLineSink.bind(undefined, log);
-    const store = stateStore(root, { daemonVersion: codeVersion(), log: say, closedDays: loadConfig().closedLaneDays });
+    const store = openStoreAt(databaseFile(root), { daemonVersion: version === null ? null : textOf(version), log: say, closedDays: loadConfig().closedLaneDays });
     if (store.kind === 'newer-db') {
         store.db.close();
         return refuse(notifier, log, parseLine(`tab-recap: ${messagesOf().database.newer(store.backup)}`));

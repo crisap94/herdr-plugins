@@ -1,9 +1,10 @@
 import { test } from 'node:test';
+import type { Directory } from '#src/recap/domain/directory.ts';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { stateStore } from '#src/adapters/db/database.ts';
+import { databaseFile, openStoreAt } from '#src/adapters/db/database.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
@@ -36,7 +37,7 @@ function withEnv(days: string | undefined, body: (state: string) => void): void 
 function protectedAfter(days: string | undefined, closedDaysAgo: number): readonly string[] {
     let found: readonly string[] = [];
     withEnv(days, (state) => {
-        const owner = stateStore(state);
+        const owner = openStoreAt(databaseFile(state as Directory));
         if (owner.kind !== 'ready') {
             assert.fail('the owner creates a fresh store');
         }

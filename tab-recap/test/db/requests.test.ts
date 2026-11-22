@@ -1,9 +1,10 @@
 import { storeRead } from '#test/db/support.ts';
+import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { openStore } from '#src/adapters/db/database.ts';
+import { openStoreAt } from '#src/adapters/db/database.ts';
 import { cursor, memoryStore, scratchDir } from './support.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
@@ -33,7 +34,7 @@ test('a column asks while the daemon writes: two connections to one file lose no
     const dir = scratchDir('wal');
     try {
         const path = join(dir, 'tab-recap.db');
-        const [daemon, column] = [openStore(path), openStore(path)];
+        const [daemon, column] = [openStoreAt(path as FsPath), openStoreAt(path as FsPath)];
         if (daemon.kind !== 'ready' || column.kind !== 'ready') {
             throw new Error('both open');
         }

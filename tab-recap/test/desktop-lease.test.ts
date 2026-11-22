@@ -1,9 +1,10 @@
 import { test } from 'node:test';
+import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { openStore } from '#src/adapters/db/database.ts';
+import { openStoreAt } from '#src/adapters/db/database.ts';
 import { DesktopBus } from '#src/adapters/desktop/bus.ts';
 import { DesktopReads } from '#src/adapters/desktop/expanded.ts';
 import { OpenLeases } from '#src/adapters/desktop/lease.ts';
@@ -28,7 +29,7 @@ test('the bus counts, rings and resets', () => {
 test('watched() honours the lease next to the open marker, and the lease expires', () => {
     const root = mkdtempSync(join(tmpdir(), 'desktop-lease-'));
     const dir = must(parseDirectory(join(root, 'gui')));
-    const opened = openStore(join(root, 'tab-recap.db'));
+    const opened = openStoreAt(join(root, 'tab-recap.db') as FsPath);
     if (opened.kind !== 'ready') { throw new Error('store'); }
     let at = 1_000_000;
     const now = (): ReturnType<typeof instant> => instant(at);

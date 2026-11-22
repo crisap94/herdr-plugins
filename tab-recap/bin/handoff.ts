@@ -1,5 +1,5 @@
 import { setTimeout as sleep } from 'node:timers/promises';
-import { databasePath } from '#src/adapters/db/database.ts';
+import { databaseFile } from '#src/adapters/db/database.ts';
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import { openPrintStore } from '#src/adapters/db/print-store.ts';
 import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
@@ -9,7 +9,7 @@ import { SystemClock } from '#src/adapters/os/system-clock.ts';
 import { modalTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { codeVersion } from '#src/adapters/os/plugin-version.ts';
-import { loadConfig, messagesOf, stateDir } from '#src/daemon/config.ts';
+import { loadConfig, messagesOf, stateDir, stateDirectory } from '#src/daemon/config.ts';
 import type { HandoffPrinter } from '#src/ports/handoff-print.ts';
 import { requestNoteOf } from '#src/recap/application/compact-start.ts';
 import { EditCounts } from '#src/recap/application/edit-counts.ts';
@@ -147,7 +147,7 @@ function printerOf(): HandoffPrinter {
     const transcripts = modalTranscriptRegistry();
     const fleet = new HerdrFleet(stateDir());
     return new PrintedHandoffs({
-        openStore: () => openPrintStore(databasePath(stateDir()), loadConfig().closedLaneDays),
+        openStore: () => openPrintStore(databaseFile(stateDirectory()), loadConfig().closedLaneDays),
         transcripts,
         worksite: { reader: new GitWorksiteReader(), repo: new GitLaneRepo(new SystemClock()), edits: new EditCounts(transcripts) },
         tokens: fleet,
@@ -161,7 +161,7 @@ function printerOf(): HandoffPrinter {
 
 function listerOf(): (tab: TabId) => ClosedListing {
     return (tab) => {
-        const store = openPrintStore(databasePath(stateDir()), loadConfig().closedLaneDays);
+        const store = openPrintStore(databaseFile(stateDirectory()), loadConfig().closedLaneDays);
         try {
             return listClosedLanes(store.closures, tab, instant(Date.now()));
         } finally {

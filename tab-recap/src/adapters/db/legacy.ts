@@ -1,5 +1,3 @@
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import type { Database } from 'bun:sqlite';
 import type { Ask, AskIdentity, AskKey, AskLedger, NewAsk, Requester } from '#src/ports/ask-ledger.ts';
 import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
@@ -7,21 +5,15 @@ import type { AnswerTally, AutocompactRecords, CoverageAmendment, Decision, Deci
 import type { Boundaries, BoundaryBreak, Break } from '#src/ports/boundaries.ts';
 import type { ActiveStage, BeginCompaction, CompactionEnd, CompactionRecord, CompactionRecords, CompactionRow, StageFacts } from '#src/ports/compaction-records.ts';
 import type { HandoffAnswerRow, HandoffAnswers } from '#src/ports/handoff-answers.ts';
-import type { ImportedChapter } from '#src/ports/imported-recaps.ts';
-import type { CheckAnchors } from '#src/ports/judge.ts';
 import type { ExchangeName, RequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
-import { anchorsOf, withText } from '#src/recap/application/judge-anchors.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import type { CheckedFact } from '#src/recap/domain/autocompact.ts';
-import type { Fact } from '#src/recap/domain/fact.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseFactIndex } from '#src/recap/domain/fact-index.ts';
-import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import type { StoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { agentKind, paneId, parseCompactionId, parseDecisionId, parsePaneId, parseTabId, tabId, type CompactionId, type DecisionId, type HandoffId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import { parseProbability, type Probability } from '#src/recap/domain/probability.ts';
-import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { duration, instant, type Instant } from '#src/recap/domain/time.ts';
 import type { Usd } from '#src/recap/domain/usd.ts';
@@ -31,15 +23,8 @@ import { DecisionBriefsRepository } from './autocompact-briefs.ts';
 import { DecisionLedgerRepository } from './autocompact-records.ts';
 import { BoundaryLogRepository } from './boundary-read.ts';
 import { CompactionLogRepository } from './compaction-records.ts';
-import { importedChaptersAt } from './imported-chapters.ts';
-import { factsOfTabAt } from './imported.ts';
-import { connectReadOnly } from './connection.ts';
-import { openStoreAt, storeOver, type Store, type StoreSettings } from './database.ts';
 import { HandoffAnswerRepository } from './handoff-answers.ts';
-import type { NewerDatabase } from './open.ts';
 import { RequestsStore } from './requests.ts';
-import { RunInputsRepository } from './run-inputs/legacy.ts';
-import { VerdictsRepository } from './verdicts/legacy.ts';
 
 const textOf = (raw: string | null | undefined): Text | null => (raw === null || raw === undefined ? null : must(parseText(raw)));
 const countOf = (raw: number | null | undefined): Count | null => (raw === null || raw === undefined ? null : must(parseCount(raw)));
@@ -180,54 +165,6 @@ export class HandoffAnswersRepository implements HandoffAnswers {
     answerHandoff(id: HandoffId, outcome: StoredHandoffOutcome): void { this.store.answerHandoff(id, outcome); }
     handoffAnswer(id: HandoffId): HandoffAnswerRow | null { return this.store.handoffAnswer(id); }
     prune(before: number): void { this.store.prune(instant(before)); }
-}
-
-export interface StoreOptions {
-    readonly daemonVersion?: string | null;
-    readonly now?: () => number;
-    readonly log?: (line: string) => void;
-    readonly closedDays?: ClosedLaneDays;
-}
-
-const settingsOf = (options: StoreOptions): StoreSettings => {
-    const { now, daemonVersion, ...rest } = options;
-    return { ...rest, ...(daemonVersion === undefined ? {} : { daemonVersion: textOf(daemonVersion) }), ...(now === undefined ? {} : { now: (): Instant => instant(now()) }) };
-};
-
-export const storeWith = (db: Database, options: StoreOptions = {}): Store => storeOver(db, settingsOf(options));
-
-export const databasePath = (stateDir: string): FsPath => must(parseFsPath(join(stateDir, 'tab-recap.db')));
-
-export function openStore(path: string, options: StoreOptions = {}): Store | NewerDatabase {
-    return openStoreAt(must(parseFsPath(path)), settingsOf(options));
-}
-
-export const stateStore = (stateDir: string, options: StoreOptions = {}): Store | NewerDatabase => openStore(databasePath(stateDir), options);
-
-export function operatorAnchors(path: string): CheckAnchors {
-    if (!existsSync(path)) {
-        return new Map();
-    }
-    const db = connectReadOnly(path);
-    try {
-        return anchorsOf(withText(new VerdictsRepository(db).disagreements(), new RunInputsRepository(db)));
-    } catch {
-        return new Map();
-    } finally {
-        db.close();
-    }
-}
-
-export function importedChapters(path: string, tab: string): readonly ImportedChapter[] | null {
-    const file = parseFsPath(path);
-    const id = parseTabId(tab);
-    return file.kind === 'err' || id.kind === 'err' ? null : importedChaptersAt(file.value, id.value);
-}
-
-export function factsOfTab(path: string, tab: string): readonly Fact[] | null {
-    const file = parseFsPath(path);
-    const id = parseTabId(tab);
-    return file.kind === 'err' || id.kind === 'err' ? null : factsOfTabAt(file.value, id.value);
 }
 
 export class RequestsRepository implements Requests, CompactionQueue {

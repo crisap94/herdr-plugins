@@ -1,14 +1,16 @@
 import { test } from 'node:test';
+import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { Database } from 'bun:sqlite';
 import { openDatabase } from '#src/adapters/db/open.ts';
-import { openStore } from '#src/adapters/db/database.ts';
+import { openStoreAt } from '#src/adapters/db/database.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { TabViewsRepository } from '#src/adapters/db/tab-views/legacy.ts';
 import type { TabLane, TabView } from '#src/ports/tab-views.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { memoryStore, must, openFixture, scratchDir } from './support.ts';
 
@@ -100,8 +102,8 @@ test('a view carries the version of the daemon that wrote it; one written by no 
     const dir = scratchDir('version');
     try {
         const path = join(dir, 'tab-recap.db');
-        const daemon = openStore(path, { daemonVersion: '1.6.0' });
-        const other = openStore(path);
+        const daemon = openStoreAt(path as FsPath, { daemonVersion: '1.6.0' as Text });
+        const other = openStoreAt(path as FsPath);
         if (daemon.kind !== 'ready' || other.kind !== 'ready') {
             throw new Error('both open');
         }

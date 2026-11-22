@@ -1,10 +1,11 @@
 import { test } from 'node:test';
+import type { Directory } from '#src/recap/domain/directory.ts';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { stateStore } from '#src/adapters/db/database.ts';
+import { databaseFile, openStoreAt } from '#src/adapters/db/database.ts';
 import { apply, modelBackends, settingIds, settingsOf } from '../bin/desktop-settings-model.ts';
 import { changes, draftFrom, FIELDS, initial, ROWS } from '#src/recap/application/setup-keys.ts';
 import type { Draft } from '#src/recap/application/setup-keys.ts';
@@ -64,7 +65,7 @@ function desktop(args: string[], home: string): { status: number | null; out: st
 function inFolder(run: (home: string) => void): void {
     const home = mkdtempSync(join(tmpdir(), 'tab-recap-settings-'));
     try {
-        const owner = stateStore(home);
+        const owner = openStoreAt(databaseFile(home as Directory));
         if (owner.kind === 'ready') {
             owner.close();
         }
