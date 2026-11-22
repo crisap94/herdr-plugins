@@ -20,6 +20,7 @@ import { FULL_WRITER_VIEW, keepNewestOf, nextHoursOf, prunedWriterView, type Hid
 import type { Debounce } from '#src/recap/domain/debounce.ts';
 import { PACING_TURN, type Pacing } from '#src/recap/domain/pacing.ts';
 import type { EnginePlugs as LegacyPlugs, RestoreFacts as LegacyRestoreFacts } from '#src/recap/application/engine.ts';
+import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
 import { curate } from './curate.ts';
 import { followedOf } from './translate.ts';
 
@@ -32,6 +33,7 @@ export interface FacadePlugs extends Omit<LegacyPlugs, 'ran'> {
     on?(event: sl.LedgerEvent): void;
     restore?: RestoreHooks;
     curate?(scope: sl.ScopeId): Promise<void>;
+    afterRun?(scope: sl.ScopeId, event: RunEvent): Promise<void>;
 }
 
 const isLedgerFactId = (id: FactId): id is FactId & sl.FactId => id !== '';
@@ -214,6 +216,7 @@ const pluginPacing = (pacing: sl.Pacing): Pacing => (pacing.kind === 'turn' ? PA
 export const legacyPlugsOf = (plugs: sl.EnginePlugs): FacadePlugs => {
     const { settings } = plugs;
     const readers = new SessionRegistry(plugs.source.sessions);
+    const curation = curate(plugs, { ledger: pluginLedger(plugs.store.facts), readers });
     return {
         source: { transcripts: readers },
         store: { records: pluginRecords(plugs.store.records), ledger: pluginLedger(plugs.store.facts) },
@@ -235,7 +238,8 @@ export const legacyPlugsOf = (plugs: sl.EnginePlugs): FacadePlugs => {
             ...(settings.pacing === undefined ? {} : { pacing: () => pluginPacing(settings.pacing?.() ?? { kind: 'turn' }) }),
             ...(settings.visible === undefined ? {} : { visible: (id: TabId) => settings.visible?.(must(parseScopeId(String(id)))) ?? 'shown' }),
         },
-        curate: curate(plugs, { ledger: pluginLedger(plugs.store.facts), readers }),
+        curate: curation.request,
+        afterRun: curation.afterRun,
         restore: {
             bytes: () => settings.restoreBytes?.(),
             render: (facts: LegacyRestoreFacts) => settings.restoreText?.({

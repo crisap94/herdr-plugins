@@ -5,6 +5,7 @@
   "./unstable/facade/follow-set.ts createFollowSet",
   "./unstable/facade/followed-by.ts followedBy",
   "./unstable/facade/plugs.ts legacyPlugsOf",
+  "./unstable/facade/reconcile-bridge.ts reconcilingOver",
   "./unstable/facade/session-started.ts sessionStarted",
   "./unstable/facade/translate.ts tabOf",
   "./unstable/facade/translate.ts followedOf",

@@ -8,6 +8,7 @@ import {
     type FollowedSession,
     type HarnessKind,
     type LedgerEvent,
+    type PositiveCount,
     type SettingsPlugs,
     type RecapRequest,
     type StoryChange,
@@ -18,7 +19,7 @@ import { storiesOf, writerOf, type WrittenAnswer } from './world-fakes.ts';
 import { gateOf, runnerOf, type Behaviour } from './behaviour.ts';
 import { curatorOf, type CuratedAnswer, type CuratorCall } from './scripted-curator.ts';
 import { clockOf, idsOf, sessionsOf, workplacesOf, type LocatedAnswer, type ManualClock, type Probes } from './world-ports.ts';
-import { byteCount, text } from './values.ts';
+import { byteCount, positiveCount, text } from './values.ts';
 
 export type { CuratedAnswer, CuratorCall } from './scripted-curator.ts';
 export type { WrittenAnswer } from './world-fakes.ts';
@@ -59,6 +60,7 @@ export interface EngineWorld {
     setCurator(next: Behaviour<CuratedAnswer> | null): void;
     setCuratorBy(next: ((call: CuratorCall) => Behaviour<CuratedAnswer>) | null): void;
     setStoryRepair(next: StoryRepair): void;
+    setReconcileEvery(next: number | null): void;
     setOn(next: (event: LedgerEvent) => void): void;
     setRestoreBytes(bytes: number): void;
     setLanguage(next: string): void;
@@ -116,9 +118,11 @@ const scriptOf = (options: WorldOptions): Script => {
     };
 };
 
-type Controls = Pick<EngineWorld, 'setLocate' | 'setDebounce' | 'setPacing' | 'setVisible' | 'setRead' | 'setReadBySource' | 'setWriter' | 'setCurator' | 'setCuratorBy' | 'setStoryRepair' | 'setOn' | 'setRestoreBytes' | 'setLanguage' | 'setNoReader' | 'setCarry' | 'setKeepInput'>;
+type Mutable<Shape> = { -readonly [Key in keyof Shape]: Shape[Key] };
 
-const controlsOf = (script: Script): Controls => ({
+type Controls = Pick<EngineWorld, 'setLocate' | 'setDebounce' | 'setPacing' | 'setVisible' | 'setRead' | 'setReadBySource' | 'setWriter' | 'setCurator' | 'setCuratorBy' | 'setStoryRepair' | 'setReconcileEvery' | 'setOn' | 'setRestoreBytes' | 'setLanguage' | 'setNoReader' | 'setCarry' | 'setKeepInput'>;
+
+const controlsOf = (script: Script, settings: Mutable<SettingsPlugs>): Controls => ({
     setLocate: (next: (session: FollowedSession) => Behaviour<LocatedAnswer>) => {
         script.locate = next;
     },
@@ -148,6 +152,14 @@ const controlsOf = (script: Script): Controls => ({
     },
     setStoryRepair: (next: StoryRepair) => {
         script.storyRepair = next;
+    },
+    setReconcileEvery: (next: number | null): void => {
+        if (next === null) {
+            delete settings.reconcileEvery;
+        } else {
+            const every = positiveCount(next);
+            settings.reconcileEvery = (): PositiveCount => every;
+        }
     },
     setOn: (next: (event: LedgerEvent) => void) => {
         script.on = next;
@@ -202,6 +214,7 @@ export function createEngineWorld(options: WorldOptions = {}): EngineWorld {
     const probes: Probes = { located: [], reads: [], positions: [], curated: [], budgets: [], writers: [], repos: [] };
     const workplaces = workplacesOf(probes);
 
+    const settings = settingsOf(script);
     const plugs: EnginePlugs = {
         source: { sessions: sessionsOf(run, (session) => script.locate(session), (source) => script.chunk(source), probes, { noReader: () => script.noReader, carry: (from, to, at) => script.carry(from, to, at) }) },
         store: { records: store.records, facts: store.facts, stories: storiesOf(changes) },
@@ -214,7 +227,7 @@ export function createEngineWorld(options: WorldOptions = {}): EngineWorld {
                 lines.push(line);
             },
         },
-        settings: settingsOf(script),
+        settings,
         on: (event: LedgerEvent) => {
             emitted.push(event);
             script.on(event);
@@ -240,7 +253,7 @@ export function createEngineWorld(options: WorldOptions = {}): EngineWorld {
         budgets: () => [...probes.budgets],
         writerResolutions: () => probes.writers.length,
         repoCalls: () => [...probes.repos],
-        ...controlsOf(script),
+        ...controlsOf(script, settings),
         settle: settleWorld,
     };
 }
