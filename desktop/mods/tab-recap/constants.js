@@ -1,7 +1,12 @@
 export const MOD = "tab-recap";
 export const ROLES = { chip: "chip", strip: "strip", fleet: "fleet", brief: "brief", compact: "compact" };
 export const DEFAULT_ROLE = ROLES.fleet;
-export const SCENES = { fleet: "fleet", brief: "brief" };
+export const SCENES = { fleet: "fleet", brief: "brief", settings: "settings" };
+export const SETTINGS_STATE = { loading: "loading", ready: "ready", failed: "failed" };
+export const CONTROL = { toggle: "toggle", select: "select", number: "number", text: "text" };
+export const SWITCH_VALUES = ["on", "off"];
+export const MODEL_PREFIX = "model.";
+export const AUTO_LOCALE = "auto";
 export const VIEWS = ["brief", "story", "timeline", "session"];
 export const WINDOW = { key: MOD, kind: "window", width: 780, height: 620 };
 
@@ -21,7 +26,7 @@ export const DOC_VERSIONS = [1, 2];
 export const NEWER = "newer";
 
 export const KEYS = {
-  down: "j", up: "k", open: "enter", search: "/", compact: "c", refresh: "r", back: "escape",
+  down: "down", up: "up", open: "enter", search: "/", compact: "c", refresh: "r", back: "escape",
   views: ["1", "2", "3", "4"],
   blocked: ["control", "alt", "platform"],
 };
@@ -29,7 +34,7 @@ export const ACTION = {
   down: "down", up: "up", open: "open", search: "search", compact: "compact", refresh: "refresh", back: "back", view: "view",
 };
 export const FOOTER = [
-  { keys: [KEYS.down, KEYS.up], label: "move" },
+  { keys: ["\u2191", "\u2193"], label: "move" },
   { keys: ["Enter"], label: "open" },
   { keys: [KEYS.search], label: "search" },
   { keys: ["1-4"], label: "views" },
@@ -38,20 +43,20 @@ export const FOOTER = [
   { keys: ["Esc"], label: "back" },
 ];
 
-export const COMMANDS = { ensure: "ensure", refresh: "refresh", stop: "stop", start: "start" };
+export const COMMANDS = { ensure: "ensure", refresh: "refresh", stop: "stop", start: "start", settings: "settings", set: "set" };
 export const SYSTEM = { printenv: "printenv", touch: "touch", rm: "rm", rmForce: "-f", opener: "xdg-open" };
-export const ENV = { bin: "TAB_RECAP_BIN", state: "TAB_RECAP_STATE" };
+export const ENV = { bin: "TAB_RECAP_BIN", state: "TAB_RECAP_STATE", lang: "LANG" };
 export const DEFAULT_BIN = "tab-recap-desktop";
 export const DEFAULT_STATE = ".local/state/herdr/plugins/tab-recap/desktop";
 export const PATHS = { gui: "gui", index: "index.json", api: "api.json", marker: "open.", icons: "mods/tab-recap/icons/", extension: ".json" };
 export const SAFE_TAB = /^[A-Za-z0-9%@_][\w.:%@-]*$/;
 export const WEB_URL = /^https?:\/\//;
 export const URL_IN_TEXT = /\s*https?:\/\/\S+/g;
-export const SHARED = { rows: "tab-recap.rows", notified: "tab-recap.notified", popup: "tab-recap.popup" };
+export const SHARED = { rows: "tab-recap.rows", notified: "tab-recap.notified", popup: "tab-recap.popup", lang: "tab-recap.lang" };
 export const STORAGE = { seen: "tab-recap.seen" };
 
 export const MS = { second: 1000, minute: 60000, hour: 3600000, day: 86400000 };
-export const INTERVAL = { focus: 400, poll: 15000, marker: 20000, refreshMax: 8000, stageFresh: 600000, firstLook: 86400000, tick: 30000, copied: 2000, debounce: 500 };
+export const INTERVAL = { focus: 400, poll: 15000, marker: 20000, refreshMax: 8000, stageFresh: 600000, firstLook: 86400000, tick: 30000, copied: 2000, saved: 2500, debounce: 500 };
 export const HINT_DEFAULT = 40;
 export const NOTE_MAX = 280;
 export const BIN_COUNT = 32;
@@ -70,8 +75,10 @@ export const TINT = { pill: "29", need: "0f", needBorder: "8c", banner: "1a", ba
 export const FALLBACK_ZONE = "UTC";
 export const CLOCK_PAD = 2;
 export const CLOCK_FILL = "0";
-export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-export const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+export const LANGS = ["en", "es"];
+export const DEFAULT_LANG = "en";
+export const AUTO_LANG = "auto";
+export const SYSTEM_LANG_PREFIX = { es: "es" };
 export const DOC = { needs: "needs", decisions: "decisions", now: "now", done: "done", next: "next", links: "links", compacted: "compacted", switched: "switched" };
 export const SECTION_TOKEN = { needs: "blocked", decisions: "violet", done: "done", progress: "working" };
 export const NOTIFIED_KEEP = 50;
@@ -93,6 +100,7 @@ export const GUIDE = { loading: "loading", ready: "ready", error: "error", compa
 export const MESSAGE_LIMIT = 3000;
 export const DETAIL_MAX = 90;
 export const ELLIPSIS = "\u2026";
+export const NAME = { max: 48, minCut: 24, markup: /[`*#>]/g, sentence: /^(.+?[.!?])(\s|$)/ };
 export const NOT_FOUND = { [ERR.unknownTab]: REASON.unknownTab, [ERR.unknownPane]: REASON.unknownPane };
 export const FENCE = "`";
 export const QUERY = { pane: "pane", note: "note", from: "from", to: "to" };

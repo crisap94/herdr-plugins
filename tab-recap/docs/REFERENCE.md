@@ -562,6 +562,8 @@ tab-recap-desktop stop            # stops it and keeps it off until start
 tab-recap-desktop status          # daemon and state folder
 tab-recap-desktop refresh <tab>   # ask for a new recap of a tab
 tab-recap-desktop doc <tab>       # the same document the mod reads, on stdout
+tab-recap-desktop settings         # the options of `tab-recap configure` as JSON: id, kind, value, choices, lock
+tab-recap-desktop settings set <id>=<value> ...   # save them through the same writer as the configure pane
 ```
 
 The state folder is `$TAB_RECAP_STATE`, else `desktop/` under the plugin's state folder

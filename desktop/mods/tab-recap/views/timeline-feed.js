@@ -28,6 +28,6 @@ export function feedView(c, f, older) {
   const range = f.bin ? ` in ${day(f.bin.t0, c.model.zone)} ${clock(f.bin.t0, c.model.zone)}${TEXT.rangeJoin}${clock(f.bin.t1, c.model.zone)}` : "";
   const summary = `${TEXT.events(out.count, range)}${older ? TEXT.older48(older) : ""}`;
   const rows = out.rows.length ? out.rows.map((r, i) => row(c, r, i)) : [div().px(SIZE.gapMd).py(SIZE.dayPad).text_color(t.dim).child(TEXT.noEvents)];
-  return v_flex().gap(SIZE.gapSm).child(div().text_size(SIZE.hint).text_color(t.dim).child(summary))
-    .child(v_flex().id("feed").max_h(SIZE.feedMax).overflow_y_scrollbar().rounded(SIZE.radius).border(SIZE.border).border_color(t.border).bg(t.raised).children(rows));
+  return v_flex().flex_1().min_h(0).gap(SIZE.gapSm).child(div().text_size(SIZE.hint).text_color(t.dim).child(summary))
+    .child(v_flex().id("feed").flex_1().min_h(0).overflow_y_scrollbar().rounded(SIZE.radius).border(SIZE.border).border_color(t.border).bg(t.raised).children(rows));
 }

@@ -40,30 +40,41 @@ test('the first row in urgency order is selected, with the accent edge and the s
     assert.deepEqual(colors(second, 'border_color'), [DARK['surface']]);
 });
 
-test('j and k move the selection and stop at both ends', async () => {
+test('the arrow keys move the selection and stop at both ends', async () => {
     const view = await mount({ role: 'fleet' });
     const selected = (): string => idsOf(view.render(), 'row-').find((id) => colors(byId(view.render(), id), 'border_color')[0] === DARK['accent']) ?? '';
-    press(view.render(), 'k', view.cx);
+    press(view.render(), 'up', view.cx);
     assert.equal(selected(), ROWS[0]);
-    press(view.render(), 'j', view.cx);
+    press(view.render(), 'down', view.cx);
     assert.equal(selected(), ROWS[1]);
-    press(view.render(), 'j', view.cx);
-    press(view.render(), 'j', view.cx);
-    press(view.render(), 'j', view.cx);
+    press(view.render(), 'down', view.cx);
+    press(view.render(), 'down', view.cx);
+    press(view.render(), 'down', view.cx);
     assert.equal(selected(), ROWS[3]);
-    press(view.render(), 'k', view.cx);
+    press(view.render(), 'up', view.cx);
     assert.equal(selected(), ROWS[2]);
+});
+
+test('Enter opens the selected tab in the detail view, and Escape comes back', async () => {
+    const view = await mount({ role: 'fleet' });
+    press(view.render(), 'down', view.cx);
+    press(view.render(), 'enter', view.cx);
+    await settle();
+    assert.ok(hasId(view.render(), 'back'));
+    assert.ok(!hasId(view.render(), 'fleet-list'));
+    press(view.render(), 'escape', view.cx);
+    assert.ok(hasId(view.render(), 'fleet-list'));
 });
 
 test('modifier chords do not move the selection', async () => {
     const view = await mount({ role: 'fleet' });
-    press(view.render(), 'j', view.cx, { control: true });
+    press(view.render(), 'down', view.cx, { control: true });
     assert.deepEqual(colors(byId(view.render(), ROWS[0] ?? ''), 'border_color'), [DARK['accent']]);
 });
 
 test('Enter opens the selected tab as a brief, Esc returns to the fleet, a second Esc closes the window', async () => {
     const view = await mount({ role: 'fleet', overlay: 'win-1' });
-    press(view.render(), 'j', view.cx);
+    press(view.render(), 'down', view.cx);
     press(view.render(), 'enter', view.cx);
     await settle();
     assert.ok(hasId(view.render(), 'back'));
@@ -163,15 +174,22 @@ test('the meter turns amber at the hint and flips only from the hint upward', as
     assert.doesNotMatch(text(byId(tree, 'row-w1:t2')), /compact\?/);
 });
 
-test('a live tab without an index row still shows, named by the live tab and described by its agent title', async () => {
+test('a live tab without an index row still shows, named by its agent title', async () => {
     live([{ id: 'w1:t9', name: 'scratch', status: 'working' }, { id: 'w1:t1', name: 'shop', status: 'blocked' }]);
     world.agents = [{ tab: 'w1:t9', title: 'fixing lint', address: 'w1:p9', status: 'working' }];
     const view = await mount({ role: 'fleet' });
     const tree = view.render();
     assert.deepEqual(idsOf(tree, 'row-'), ['row-w1:t1', 'row-w1:t9']);
-    assert.match(text(byId(tree, 'row-w1:t9')), /scratch/);
     assert.match(text(byId(tree, 'row-w1:t9')), /fixing lint/);
+    assert.doesNotMatch(text(byId(tree, 'row-w1:t9')), /scratch/);
     assert.match(text(byId(tree, 'row-w1:t9')), /no recap yet/);
+});
+
+test('a live tab with neither an index row nor an agent title is named by its label', async () => {
+    live([{ id: 'w1:t9', name: 'scratch', status: 'working' }, { id: 'w1:t1', name: 'shop', status: 'blocked' }]);
+    world.agents = [];
+    const view = await mount({ role: 'fleet' });
+    assert.match(text(byId(view.render(), 'row-w1:t9')), /scratch/);
 });
 
 test('a row whose tab is no longer open is dropped', async () => {

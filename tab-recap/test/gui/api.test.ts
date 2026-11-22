@@ -208,7 +208,7 @@ test('with the API up the commands use it and exec nothing', async () => {
     await commands.clearMarker(SHOP);
     await commands.refreshTab(SHOP);
     assert.deepEqual(api.calls.filter((call) => call.path !== '/v1/health').map((call) => `${call.method} ${call.path}`), [`PUT ${OPEN_PATH}`, `DELETE ${OPEN_PATH}`, 'POST /v1/tabs/w1%3At1/refresh']);
-    assert.deepEqual(world.execLog.filter((call) => call.command !== 'printenv'), []);
+    assert.deepEqual(world.execLog.filter((call) => call.command !== 'printenv' && call.argv[0] !== 'settings'), []);
 });
 
 test('a brief uses the lease and refresh through the API', async () => {
@@ -220,14 +220,14 @@ test('a brief uses the lease and refresh through the API', async () => {
     await until(() => api.count('/v1/tabs/w1%3At1/refresh') === 1);
     press(view.render(), 'escape', view.cx);
     await until(() => api.calls.some((call) => call.method === 'DELETE'));
-    assert.deepEqual(world.execLog.filter((call) => ['touch', 'rm', 'tab-recap-desktop'].includes(call.command) && call.argv[0] !== 'ensure'), []);
+    assert.deepEqual(world.execLog.filter((call) => ['touch', 'rm', 'tab-recap-desktop'].includes(call.command) && call.argv[0] !== 'ensure' && call.argv[0] !== 'settings'), []);
 });
 
 test('with the API down the commands exec as before', async () => {
     await commands.touchMarker(SHOP);
     await commands.clearMarker(SHOP);
     await commands.refreshTab(SHOP);
-    const used = world.execLog.filter((call) => call.command !== 'printenv').map((call) => call.command);
+    const used = world.execLog.filter((call) => call.command !== 'printenv' && call.argv[0] !== 'settings').map((call) => call.command);
     assert.deepEqual(used, ['touch', 'rm', 'tab-recap-desktop']);
 });
 

@@ -2,6 +2,7 @@ import { View, div } from "gpui-kit";
 import { props } from "herdr";
 import { DEFAULT_ROLE, ROLES } from "./constants.js";
 import { TEXT } from "./text.js";
+import { loadLanguage } from "./settings.js";
 import Chip from "./roles/chip.js";
 import Popover from "./roles/popover.js";
 import Strip from "./roles/strip.js";
@@ -16,6 +17,7 @@ export default class TabRecap extends View {
     const Role = BUILDERS[this.name];
     this.role = Role ? new Role() : null;
     this.role?.init?.(given, cx);
+    loadLanguage().then((changed) => { if (changed) { this.role?.onLanguage?.(cx); cx.notify(); } });
   }
 
   async close(cx) {

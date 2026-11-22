@@ -1,11 +1,11 @@
-import { CLOCK_FILL, CLOCK_PAD, MONTHS, MS, UNIT, WEEKDAYS } from "./constants.js";
+import { CLOCK_FILL, CLOCK_PAD, MS, UNIT } from "./constants.js";
 import { TEXT } from "./text.js";
 
 const pad = (n) => String(n).padStart(CLOCK_PAD, CLOCK_FILL);
 
 export const clock = (ms) => `${pad(new Date(ms).getHours())}:${pad(new Date(ms).getMinutes())}`;
-export const day = (ms) => `${MONTHS[new Date(ms).getMonth()]} ${new Date(ms).getDate()}`;
-export const weekday = (ms) => WEEKDAYS[new Date(ms).getDay()];
+export const day = (ms) => `${TEXT.months[new Date(ms).getMonth()]} ${new Date(ms).getDate()}`;
+export const weekday = (ms) => TEXT.weekdays[new Date(ms).getDay()];
 export const hourOf = (ms) => new Date(ms).getHours();
 export const minuteOf = (ms) => new Date(ms).getMinutes();
 
