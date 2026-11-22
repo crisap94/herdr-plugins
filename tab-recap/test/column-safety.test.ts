@@ -111,17 +111,19 @@ function replyFor(method: string, snapshot: unknown): unknown {
 
 const PONG = { protocol: PROTOCOL, version: 'test' };
 
-async function fakeHerdr(snapshot: unknown): Promise<{ server: Server; path: string; calls: string[]; done: () => void }> {
+async function fakeHerdr(snapshot: unknown): Promise<{ server: Server; path: string; calls: string[]; params: unknown[]; done: () => void }> {
     const dir = mkdtempSync(join(tmpdir(), 'recap-herdr-'));
     const path = join(dir, 'herdr.sock');
     const calls: string[] = [];
+    const params: unknown[] = [];
     const server = createServer((socket) => {
         socket.setEncoding('utf8');
         socket.on('data', (chunk: string) => {
             for (const line of chunk.split('\n').filter((entry) => entry !== '')) {
-                const request = JSON.parse(line) as { id: string; method: string };
+                const request = JSON.parse(line) as { id: string; method: string; params?: unknown };
                 if (request.method !== 'ping') {
                     calls.push(request.method);
+                    params.push(request.params);
                 }
                 const result = request.method === 'ping' ? PONG : replyFor(request.method, snapshot);
                 socket.write(`${JSON.stringify({ id: request.id, result })}\n`);
@@ -129,7 +131,7 @@ async function fakeHerdr(snapshot: unknown): Promise<{ server: Server; path: str
         });
     });
     await new Promise<void>((resolve) => { server.listen(path, resolve); });
-    return { server, path, calls, done: (): void => { server.close(); rmSync(dir, { recursive: true }); } };
+    return { server, path, calls, params, done: (): void => { server.close(); rmSync(dir, { recursive: true }); } };
 }
 
 test('HerdrFleet refuses to close or resize a pane that hosts an agent — and still closes a column', async () => {
@@ -206,5 +208,25 @@ test('HerdrFleet.closeEvery: herdr unreachable is an Unknown, not a throw', asyn
         resetHerdrClients();
         if (before === undefined) { delete process.env['HERDR_SOCKET_PATH']; } else { process.env['HERDR_SOCKET_PATH'] = before; }
         resetHerdrClients();
+    }
+});
+
+test('HerdrFleet resizes a column pane by the fraction the layout asks for', async () => {
+    const snapshot = { panes: [pane('w1:p2', 'tab-recap', { label: 'Recap' })], agents: [] };
+    const herdr = await fakeHerdr(snapshot);
+    const before = process.env['HERDR_SOCKET_PATH'];
+    process.env['HERDR_SOCKET_PATH'] = herdr.path;
+    resetHerdrClients();
+    try {
+        const fleet = new HerdrFleet(textOf('/state'));
+        assert.deepEqual(await fleet.resize(paneId('w1:p2'), 'left', uncheckedRatio(0.125)), { kind: 'done' });
+        const at = herdr.calls.indexOf('pane.resize');
+        assert.ok(at >= 0, `herdr was asked to resize: ${herdr.calls.join()}`);
+        assert.deepEqual(herdr.params[at], { pane_id: 'w1:p2', direction: 'left', amount: 0.125 });
+    } finally {
+        resetHerdrClients();
+        if (before === undefined) { delete process.env['HERDR_SOCKET_PATH']; } else { process.env['HERDR_SOCKET_PATH'] = before; }
+        resetHerdrClients();
+        herdr.done();
     }
 });

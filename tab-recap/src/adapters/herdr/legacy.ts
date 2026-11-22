@@ -13,7 +13,7 @@ import { must } from '#src/protocol/result.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import type { Probability } from '#src/recap/domain/probability.ts';
-import { countOf, parseCount, type Count } from '#src/recap/domain/count.ts';
+import { countOf, type Count } from '#src/recap/domain/count.ts';
 import { uncheckedPaneId, uncheckedRatio, uncheckedTokenName, uncheckedTokenValue } from '#src/recap/domain/ids.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
 import type { Reconciliation } from '#src/recap/domain/fold.ts';
@@ -171,10 +171,7 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, HarnessDirec
     }
 
     async resize(pane: PaneId, direction: ResizeDirection, amount: Probability): Promise<Done> {
-        const count = parseCount(amount);
-        return count.kind === 'ok'
-            ? this.ports.resize(pane, direction, count.value)
-            : unknown({ why: 'unreadable', detail: causeOf(must(parseText(`resize amount ${amount} is not a count`))) });
+        return this.ports.resize(pane, direction, amount);
     }
 
     async close(pane: PaneId): Promise<Done> {
