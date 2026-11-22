@@ -1,3 +1,6 @@
+import { must } from '#src/protocol/result.ts';
+import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 import { observe } from '#src/recap/domain/fold.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import { emptyBoard, watchSet } from '#src/recap/domain/board.ts';
@@ -64,14 +67,14 @@ export class Informer {
     private stream: FrameStream | null = null;
     private pendingResync: ReturnType<typeof setTimeout> | null = null;
     private pendingRetry: ReturnType<typeof setTimeout> | null = null;
-    private failures = 0;
-    private ticks = 0;
-    private lastLife: number;
+    private failures: Count = must(parseCount(0));
+    private ticks: Count = must(parseCount(0));
+    private lastLife: Instant;
     private readonly retry: Retry;
 
     constructor(source: FleetSource, clock: Clock, policy: Policy, hooks: InformerHooks, retry: Retry = DEFAULT_RETRY) {
         this.retry = retry;
-        this.lastLife = Number(clock.now());
+        this.lastLife = clock.now();
         this.source = source;
         this.clock = clock;
         this.policy = policy;
@@ -93,7 +96,7 @@ export class Informer {
         if (isUnknown(snap)) {
             return snap;
         }
-        this.lastLife = Number(this.clock.now());
+        this.lastLife = this.clock.now();
         return { ...snap, seen: { ...snap.seen, at: requested } };
     }
 
@@ -118,7 +121,7 @@ export class Informer {
             this.retrySoon();
             return;
         }
-        this.failures = 0;
+        this.failures = must(parseCount(0));
         this.retire();
         this.stream = opened.stream;
         void this.pump(opened.stream);
@@ -142,7 +145,7 @@ export class Informer {
             return;
         }
         const delay = Math.min(this.retry.retryMaxMs, this.retry.retryBaseMs * 2 ** this.failures);
-        this.failures += 1;
+        this.failures = must(parseCount(this.failures + 1));
         this.pendingRetry = setTimeout(() => {
             this.pendingRetry = null;
             void this.enterSubscription();
@@ -164,10 +167,10 @@ export class Informer {
     }
 
     tick(): void {
-        this.ticks += 1;
+        this.ticks = must(parseCount(this.ticks + 1));
         if (this.silentFor() > (this.retry.watchdogMs ?? WATCHDOG_MS)) {
             this.hooks.onBlind({ at: 'subscribe', saying: `no frame and no snapshot from herdr for ${Math.round(this.silentFor() / 60_000)} min: subscribing afresh` });
-            this.lastLife = Number(this.clock.now());
+            this.lastLife = this.clock.now();
             void this.enterSubscription();
         } else if (this.ticks % RESUBSCRIBE_EVERY === 0) {
             void this.enterSubscription();
@@ -177,7 +180,7 @@ export class Informer {
     }
 
     private silentFor(): number {
-        return Number(this.clock.now()) - this.lastLife;
+        return this.clock.now() - this.lastLife;
     }
 
     private retire(): void {
@@ -187,7 +190,7 @@ export class Informer {
 
     private async pump(stream: FrameStream): Promise<void> {
         for await (const frame of stream.frames()) {
-            this.lastLife = Number(this.clock.now());
+            this.lastLife = this.clock.now();
             if (frame.event.replaceAll('.', '_') === 'pane_updated') {
                 this.paneUpdated(frame.data);
                 continue;

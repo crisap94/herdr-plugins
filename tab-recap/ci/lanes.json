@@ -550,6 +550,7 @@
       "test/handoff-sender.test.ts",
       "test/handoff-target.test.ts",
       "test/handoff-text.test.ts",
+      "test/judge-answer.test.ts",
       "test/judge-input.test.ts",
       "test/lane-claims.test.ts",
       "test/lane-events.test.ts",

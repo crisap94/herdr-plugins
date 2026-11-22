@@ -35,21 +35,19 @@ interface ReadBackResult { readonly grades: readonly Grade[] | null; readonly no
 export async function readBack(deps: JudgeDeps, parts: ReadBackParts): Promise<ReadBackResult> {
     const asked = await deps.judge.ask('readback', readbackDocument(parts.items));
     if (isUnknown(asked)) {
-        return { grades: null, note: textOf(`read-back: ${saying(asked.why)}`), costUsd: 0 };
+        return { grades: null, note: must(parseText(`read-back: ${saying(asked.why)}`)), costUsd: 0 };
     }
-    const answers = parseAnswers(textOf(asked.text));
+    const answers = parseAnswers(must(parseText(asked.text)));
     if (answers.kind === 'unusable') {
-        return { grades: null, note: textOf(`read-back: ${answers.why}`), costUsd: asked.costUsd };
+        return { grades: null, note: must(parseText(`read-back: ${answers.why}`)), costUsd: asked.costUsd };
     }
     const graded = await deps.judge.ask('grade', gradingDocument({ input: parts.input, keyfacts: parts.keyfacts, answers: answers.value }));
     if (isUnknown(graded)) {
-        return { grades: null, note: textOf(`read-back grading: ${saying(graded.why)}`), costUsd: asked.costUsd };
+        return { grades: null, note: must(parseText(`read-back grading: ${saying(graded.why)}`)), costUsd: asked.costUsd };
     }
-    const grades = parseGrades(textOf(graded.text));
-    return { grades: grades.kind === 'ok' ? grades.value : null, note: grades.kind === 'ok' ? null : textOf(`read-back grading: ${grades.why}`), costUsd: asked.costUsd + graded.costUsd };
+    const grades = parseGrades(must(parseText(graded.text)));
+    return { grades: grades.kind === 'ok' ? grades.value : null, note: grades.kind === 'ok' ? null : must(parseText(`read-back grading: ${grades.why}`)), costUsd: asked.costUsd + graded.costUsd };
 }
-
-const textOf = (value: string): Text => must(parseText(value));
 
 const critique = (line: Text): Text | null => (line === '' ? null : line);
 
@@ -62,21 +60,21 @@ export async function judgeRun(deps: JudgeDeps, run: StoredRun): Promise<RunResu
     const items = deps.inputs.itemsOf(run.id, 'added');
     const state = deps.inputs.itemsOf(run.id, 'state');
     if (input === null) {
-        return notJudged(run, textOf('its input is no longer stored'));
+        return notJudged(run, must(parseText('its input is no longer stored')));
     }
     if (items.length === 0) {
-        return notJudged(run, textOf('it wrote no items'));
+        return notJudged(run, must(parseText('it wrote no items')));
     }
-    const asked = await deps.judge.ask('score', scoringDocument({ rubric: deps.rubric, input: textOf(input), items, state }));
+    const asked = await deps.judge.ask('score', scoringDocument({ rubric: deps.rubric, input: must(parseText(input)), items, state }));
     if (isUnknown(asked)) {
-        return notJudged(run, textOf(saying(asked.why)));
+        return notJudged(run, must(parseText(saying(asked.why))));
     }
-    const scored = parseScore(textOf(asked.text), new Map(items.map((item): [Text, Text] => [textOf(item.key), textOf(item.section)])), new Map(state.map((item): [Text, Text] => [textOf(item.key), textOf(item.section)])));
+    const scored = parseScore(must(parseText(asked.text)), new Map(items.map((item): [Text, Text] => [must(parseText(item.key)), must(parseText(item.section))])), new Map(state.map((item): [Text, Text] => [must(parseText(item.key)), must(parseText(item.section))])));
     if (scored.kind === 'unusable') {
         return notJudged(run, scored.why, asked.costUsd);
     }
     const measured = measureState(state, scored.value);
-    const back = await readBack(deps, { items: state, input: textOf(input), keyfacts: scored.value.keyfacts });
+    const back = await readBack(deps, { items: state, input: must(parseText(input)), keyfacts: scored.value.keyfacts });
     const rows: readonly Row[] = [
         ...scored.value.verdicts.map((verdict): Row => ({ item: verdict.item, check: verdict.check, pass: verdict.pass === 'pass', critique: critique(verdict.critique) })),
         ...measured.rows,

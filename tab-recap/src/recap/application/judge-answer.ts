@@ -5,9 +5,7 @@ import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 import { objectIn } from '@stateforge-labs/session-ledger/unstable/recap/application/recap-shape.ts';
 
-const textOf = (value: string): Text => must(parseText(value));
-
-export const ITEM_CHECKS: readonly Text[] = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7'].map(textOf);
+export const ITEM_CHECKS: readonly Text[] = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7'].map((check) => must(parseText(check)));
 
 export interface ItemVerdict {
     readonly item: Text;
@@ -43,26 +41,27 @@ const FIELD_NAMES: readonly FieldName[] = ['verdicts', 'keyfacts', 'coverage', '
 
 type Fields = Readonly<Partial<Record<FieldName, Node>>>;
 
-type Node =
-    | { readonly kind: 'text'; readonly text: Text }
-    | { readonly kind: 'count'; readonly count: Count }
-    | { readonly kind: 'flag'; readonly outcome: Outcome }
-    | { readonly kind: 'list'; readonly items: readonly Node[] }
-    | { readonly kind: 'object'; readonly fields: Fields }
-    | { readonly kind: 'other' };
+interface TextNode { readonly kind: 'text'; readonly text: Text }
 
-const OTHER: Node = { kind: 'other' };
+interface CountNode { readonly kind: 'count'; readonly count: Count }
 
-const isObject = (input: unknown): input is object => typeof input === 'object' && input !== null && !Array.isArray(input);
+interface FlagNode { readonly kind: 'flag'; readonly outcome: Outcome }
 
-function nodeOf(input: unknown): Node {
-    const parsed = parseNode(input);
-    return parsed.kind === 'ok' ? parsed.value : OTHER;
-}
+interface ListNode { readonly kind: 'list'; readonly items: readonly Node[] }
 
-function parseNode(input: unknown): Result<Node, ParseFailure> {
+interface ObjectNode { readonly kind: 'object'; readonly fields: Fields }
+
+interface OtherNode { readonly kind: 'other' }
+
+type Node = TextNode | CountNode | FlagNode | ListNode | ObjectNode | OtherNode;
+
+const OTHER: OtherNode = { kind: 'other' };
+
+const nodeOrOther = (parsed: Result<Node, ParseFailure>): Node => (parsed.kind === 'ok' ? parsed.value : OTHER);
+
+export function parseNode(input: unknown): Result<Node, ParseFailure> {
     if (typeof input === 'string') {
-        return ok({ kind: 'text', text: textOf(input) });
+        return ok({ kind: 'text', text: must(parseText(input)) });
     }
     if (typeof input === 'number') {
         const count = parseCount(input);
@@ -72,13 +71,13 @@ function parseNode(input: unknown): Result<Node, ParseFailure> {
         return ok({ kind: 'flag', outcome: input ? 'pass' : 'fail' });
     }
     if (Array.isArray(input)) {
-        return ok({ kind: 'list', items: input.map(nodeOf) });
+        return ok({ kind: 'list', items: input.map((item): Node => nodeOrOther(parseNode(item))) });
     }
-    if (isObject(input)) {
+    if (typeof input === 'object' && input !== null) {
         const fields: Partial<Record<FieldName, Node>> = {};
         for (const name of FIELD_NAMES) {
             const value: unknown = Reflect.get(input, name);
-            fields[name] = nodeOf(value);
+            fields[name] = nodeOrOther(parseNode(value));
         }
         return ok({ kind: 'object', fields });
     }
@@ -87,10 +86,10 @@ function parseNode(input: unknown): Result<Node, ParseFailure> {
 
 function fieldsOf(text: Text): Fields | Text {
     try {
-        const found = nodeOf(objectIn(text));
-        return found.kind === 'object' ? found.fields : textOf('the answer holds no JSON object');
+        const found = nodeOrOther(parseNode(objectIn(text)));
+        return found.kind === 'object' ? found.fields : must(parseText('the answer holds no JSON object'));
     } catch {
-        return textOf('the answer is not valid JSON');
+        return must(parseText('the answer is not valid JSON'));
     }
 }
 
@@ -98,13 +97,13 @@ const itemsIn = (node: Node | undefined): readonly Node[] => (node?.kind === 'li
 
 const entries = (node: Node | undefined): readonly Fields[] => itemsIn(node).flatMap((entry): Fields[] => (entry.kind === 'object' ? [entry.fields] : []));
 
-const lineOf = (node: Node | undefined): Text => textOf(node?.kind === 'text' ? node.text.replace(/\s+/g, ' ').trim() : '');
+const lineOf = (node: Node | undefined): Text => must(parseText(node?.kind === 'text' ? node.text.replace(/\s+/g, ' ').trim() : ''));
 
-const checksOf = (section: Text): readonly Text[] => [...ITEM_CHECKS, textOf(`S-${section}`)];
+const checksOf = (section: Text): readonly Text[] => [...ITEM_CHECKS, must(parseText(`S-${section}`))];
 
 const passOf = (node: Node | undefined): Outcome | null => (node?.kind === 'flag' ? node.outcome : null);
 
-const NO_CRITIQUE: Text = textOf('(no critique)');
+const NO_CRITIQUE: Text = must(parseText('(no critique)'));
 
 const critiqueOf = (entry: Fields): Text => lineOf(entry.critique) || NO_CRITIQUE;
 
@@ -115,12 +114,12 @@ function verdictsOf(raw: Node | undefined, sections: ReadonlyMap<Text, Text>): r
         const check = lineOf(entry.check);
         const pass = passOf(entry.pass);
         const section = sections.get(item);
-        const pair = textOf(`${item}|${check}`);
+        const pair = must(parseText(`${item}|${check}`));
         if (section === undefined || !checksOf(section).includes(check) || pass === null || seen.has(pair)) {
             return [];
         }
         seen.add(pair);
-        return [{ item, check, pass, critique: pass === 'pass' ? textOf('') : critiqueOf(entry) }];
+        return [{ item, check, pass, critique: pass === 'pass' ? must(parseText('')) : critiqueOf(entry) }];
     });
 }
 
@@ -146,7 +145,7 @@ export function parseScore(text: Text, sections: ReadonlyMap<Text, Text>, carrie
     const verdicts = verdictsOf(fields.verdicts, sections);
     const keyfacts = factsIn(fields.keyfacts);
     if (verdicts.length === 0 || fields.keyfacts?.kind !== 'list' || fields.coverage?.kind !== 'list') {
-        return unusable(textOf('the answer has no usable verdicts, key facts and coverage'));
+        return unusable(must(parseText('the answer has no usable verdicts, key facts and coverage')));
     }
     return { kind: 'ok', value: { verdicts, keyfacts, carried: carriedBy(fields.coverage, must(parseCount(keyfacts.length)), carriers) } };
 }
@@ -163,7 +162,7 @@ export function parseCover(text: Text, carriers: ReadonlyMap<Text, Text>, given:
     }
     const keyfacts = given ?? factsIn(fields.keyfacts);
     if (fields.coverage?.kind !== 'list' || keyfacts.length === 0) {
-        return unusable(textOf('the answer has no key facts and coverage'));
+        return unusable(must(parseText('the answer has no key facts and coverage')));
     }
     return { kind: 'ok', value: { keyfacts, carried: carriedBy(fields.coverage, must(parseCount(keyfacts.length)), carriers) } };
 }
@@ -176,7 +175,7 @@ export function parseAnswers(text: Text): Parsed<readonly Text[]> {
     const answers = itemsIn(fields.answers);
     return fields.answers?.kind === 'list' && answers.length === 6 && answers.every((answer) => answer.kind === 'text')
         ? { kind: 'ok', value: answers.map(lineOf) }
-        : unusable(textOf('the answer is not six strings'));
+        : unusable(must(parseText('the answer is not six strings')));
 }
 
 const QUESTIONS: readonly Count[] = [1, 2, 3, 4, 5, 6].map((question) => must(parseCount(question)));
@@ -190,9 +189,9 @@ export function parseGrades(text: Text): Parsed<readonly Grade[]> {
         const question = entry.question;
         const pass = passOf(entry.pass);
         return question?.kind === 'count' && question.count >= 1 && question.count <= 6 && pass !== null
-            ? [{ question: question.count, pass: pass === 'pass', critique: pass === 'pass' ? textOf('') : critiqueOf(entry) }]
+            ? [{ question: question.count, pass: pass === 'pass', critique: pass === 'pass' ? must(parseText('')) : critiqueOf(entry) }]
             : [];
     });
     const byQuestion = QUESTIONS.flatMap((question) => grades.find((grade) => grade.question === question) ?? []);
-    return byQuestion.length === 6 ? { kind: 'ok', value: byQuestion } : unusable(textOf('the answer does not grade all six questions'));
+    return byQuestion.length === 6 ? { kind: 'ok', value: byQuestion } : unusable(must(parseText('the answer does not grade all six questions')));
 }
