@@ -5,7 +5,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { parseAgentKind, type PaneId } from '#src/recap/domain/ids.ts';
+import { uncheckedAgentKind, type PaneId } from '#src/recap/domain/ids.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import type { HcTerminal } from './sdk-core.ts';
 import { HC_NO_TYPING } from '../desktop/constants.ts';
@@ -35,8 +35,7 @@ export class HcCoreAgents implements AgentPanes {
         if (terminal === null) {
             return unknown({ why: 'not-found', what: textOf(`agent ${pane}`) });
         }
-        const agent = parseAgentKind(terminal.app);
-        return agent.kind === 'ok' ? { kind: 'agent', agent: agent.value, status: laneStatus(textOf(terminal.status)) } : unknown({ why: 'unreadable', detail: causeOf(must(parseText(`terminal ${pane} reports no agent`))) });
+        return { kind: 'agent', agent: uncheckedAgentKind(terminal.app), status: laneStatus(textOf(terminal.status)) };
     }
 
     prompt(): Promise<Prompted> {
