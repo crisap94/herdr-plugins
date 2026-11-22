@@ -1,5 +1,6 @@
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { parsePaneId } from '#src/recap/domain/ids.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
@@ -60,8 +61,9 @@ if (process.stdin.isTTY) {
 draw();
 
 async function name(): Promise<void> {
-    const found = await new HerdrFleet(textOf(stateDir())).agents().status(pane);
-    agent = isUnknown(found) ? agent : found.agent;
+    const id = parsePaneId(pane);
+    const found = id.kind === 'ok' ? await new HerdrFleet(textOf(stateDir())).agents().status(id.value) : null;
+    agent = found === null || isUnknown(found) ? agent : found.agent;
     draw();
 }
 

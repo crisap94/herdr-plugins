@@ -1,4 +1,4 @@
-import type { Agents } from '#src/ports/agents.ts';
+import type { AgentPanes } from '#src/ports/agents.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { sessionId } from '#src/recap/domain/ids.ts';
@@ -41,7 +41,7 @@ interface Observed {
 type Latest = { readonly kind: 'prompt'; readonly text: string | null } | { readonly kind: 'unreadable' };
 
 export interface ConfirmationDeps {
-    readonly agents: Pick<Agents, 'status'>;
+    readonly agents: Pick<AgentPanes, 'status'>;
     readonly transcripts: TranscriptRegistry;
     readonly session: CurrentSession;
     readonly pause: (ms: number) => Promise<void>;
@@ -110,7 +110,7 @@ export class HandoffConfirmation {
             }
         }
         if (evidence.status) {
-            const state = await this.deps.agents.status(String(lane.pane));
+            const state = await this.deps.agents.status(lane.pane);
             if (state.kind === 'agent' && state.status === 'working') {
                 return { lane: current, confirmed: true };
             }

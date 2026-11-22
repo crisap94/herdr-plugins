@@ -6,11 +6,12 @@ import { Compaction } from '#src/recap/application/compaction.ts';
 import type { CompactionDeps } from '#src/recap/application/compaction.ts';
 import type { Coverage } from '#src/recap/application/brief-coverage.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
-import type { AgentState, Agents } from '#src/ports/agents.ts';
+import type { AgentLookup, AgentPanes } from '#src/ports/agents.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { compactionDeps, compacted, typingFleet } from '#test/fakes/compaction-fleet.ts';
 import type { Fleet } from '#test/fakes/compaction-fleet.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
 
 interface Hostile {
     readonly world: Fleet;
@@ -23,13 +24,13 @@ interface Hostile {
 interface Steps {
     readonly closesIn?: 'writer' | 'coverage';
     readonly coverage?: Coverage;
-    readonly statuses?: readonly AgentState[];
+    readonly statuses?: readonly AgentLookup[];
     readonly lanes?: boolean;
 }
 
 const MISSING: Coverage = { ok: false, missing: ['the goal'], missingFacts: [{ index: 0, fact: { section: 'goal', text: 'Ship it', why: null }, parts: [] }], answers: {}, unknown: null };
 const PASSING: Coverage = { ok: true, missing: [], missingFacts: [], answers: {}, unknown: null };
-const IDLE: AgentState = { kind: 'agent', agent: 'claude', status: 'idle' };
+const IDLE: AgentLookup = { kind: 'agent', agent: agentKind('claude'), status: 'idle' };
 const AUTO: CompactRequest = { tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto', answer: 'r1' };
 
 function hostile(steps: Steps = {}): Hostile {
@@ -38,7 +39,7 @@ function hostile(steps: Steps = {}): Hostile {
     const logs: string[] = [];
     const board = { listed: true };
     const states = [...(steps.statuses ?? [])];
-    const agents: Agents = { ...world.agents, status: () => Promise.resolve(states.shift() ?? IDLE) };
+    const agents: AgentPanes = { ...world.agents, status: () => Promise.resolve(states.shift() ?? IDLE) };
     const base = compactionDeps({ ...world, agents }, 'focused', 'w1:p1', [[compacted]]);
     const deps: CompactionDeps = {
         ...base,

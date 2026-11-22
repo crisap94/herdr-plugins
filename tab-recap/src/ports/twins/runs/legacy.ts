@@ -13,17 +13,6 @@ import type { Placed, Split } from '#src/recap/domain/layout.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 import type { RunItem } from '../../run-inputs.ts';
 
-export type AgentState = { readonly kind: 'agent'; readonly agent: string; readonly status: LaneStatus } | Unknown;
-
-export interface PromptWait {
-    readonly until: readonly string[];
-    readonly timeoutMs: number;
-}
-
-export interface PromptBehavior {
-    readonly acceptsStall: boolean;
-}
-
 export interface TabLayout {
     readonly kind: 'layout';
     readonly width: number;

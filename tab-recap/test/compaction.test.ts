@@ -15,14 +15,14 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
 import type { Mark } from '#src/ports/transcripts.ts';
-import type { Agents, AgentState, LineBehavior, PromptBehavior, PromptWait, Prompted } from '#src/ports/agents.ts';
+import type { AgentPanes, AgentLookup, LineBehavior, PromptStance, PromptWaitFor, Prompted } from '#src/ports/agents.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
 import { memoryStore } from './db/support.ts';
 import { lineBreakRefusal } from './fakes/typed-line.ts';
 import { oneTask } from './support.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId, agentKind } from '#src/recap/domain/ids.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { CompactRequests } from '#src/recap/application/compact-requests.ts';
@@ -42,9 +42,9 @@ const queuingPlans: CompactionPlans = {
     },
 };
 
-interface Typed { readonly pane: string; readonly text: string; readonly pieces?: readonly string[]; readonly wait?: PromptWait | undefined; readonly lineBehavior?: LineBehavior; readonly promptBehavior?: PromptBehavior; readonly typed?: boolean }
+interface Typed { readonly pane: string; readonly text: string; readonly pieces?: readonly string[]; readonly wait?: PromptWaitFor | undefined; readonly lineBehavior?: LineBehavior; readonly promptBehavior?: PromptStance; readonly typed?: boolean }
 
-function fleet(statuses: Record<string, string>, blocked: readonly string[] = []): { agents: Agents; typed: Typed[]; toasts: string[]; events: string[]; store: ReturnType<typeof memoryStore>; settling: LaneSettling; settledAfter: string[]; laneEvents: string[]; answered: string[]; claims: LaneClaims; refreshFails: boolean; lease: { acquire: (pane: string) => Promise<'taken' | 'busy' | 'unavailable'>; release: (pane: string) => Promise<void> } | undefined } {
+function fleet(statuses: Record<string, string>, blocked: readonly string[] = []): { agents: AgentPanes; typed: Typed[]; toasts: string[]; events: string[]; store: ReturnType<typeof memoryStore>; settling: LaneSettling; settledAfter: string[]; laneEvents: string[]; answered: string[]; claims: LaneClaims; refreshFails: boolean; lease: { acquire: (pane: string) => Promise<'taken' | 'busy' | 'unavailable'>; release: (pane: string) => Promise<void> } | undefined } {
     const typed: Typed[] = [];
     const toasts: string[] = [];
     const events: string[] = [];
@@ -52,8 +52,8 @@ function fleet(statuses: Record<string, string>, blocked: readonly string[] = []
     const store = memoryStore();
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
     const settling: LaneSettling = { settled: (pane) => { settledAfter.push(`${pane}: after ${events.join(',')}`); return Promise.resolve({ kind: 'settled', status: 'done' }); } };
-    const agents: Agents = {
-        status: (pane): Promise<AgentState> => Promise.resolve(statuses[pane] === undefined ? unknown({ why: 'not-found', what: textOf(pane) }) : { kind: 'agent', agent: 'x', status: statuses[pane] as 'idle' }),
+    const agents: AgentPanes = {
+        status: (pane): Promise<AgentLookup> => Promise.resolve(statuses[pane] === undefined ? unknown({ why: 'not-found', what: textOf(pane) }) : { kind: 'agent', agent: agentKind('x'), status: statuses[pane] as 'idle' }),
         prompt: (pane, text, wait, behavior): Promise<Prompted> => {
             events.push(`prompt ${pane}`);
             typed.push({ pane, text, wait, promptBehavior: behavior });
@@ -351,7 +351,7 @@ test('the record: a claude compaction with a written brief walks briefing → co
     const world = fleet({ 'w1:p1': 'idle' });
     const seen: string[] = [];
     const briefing = { documents: [] as string[], answer: 'We kept SQLite.' };
-    const looking: Agents = { ...world.agents, typeLine: (pane, line, behavior) => { seen.push(`typing: ${records(world)[0]?.stage}`); return world.agents.typeLine(pane, line, behavior); } };
+    const looking: AgentPanes = { ...world.agents, typeLine: (pane, line, behavior) => { seen.push(`typing: ${records(world)[0]?.stage}`); return world.agents.typeLine(pane, line, behavior); } };
     const flowing = flow({ ...world, agents: looking }, 'focused', 'w1:p1', { ...briefing, get answer() { seen.push(`writing: ${records(world)[0]?.stage}`); return briefing.answer; } }, [[{ ...compacted, tokensBefore: countOf(900), tokensAfter: countOf(100), tookMs: duration(4000) }]]);
     await flowing.run({ tab: 'w1:t1', pane: null, note: null });
     assert.deepEqual([...new Set(seen)], ['writing: briefing', 'typing: compacting']);
@@ -370,7 +370,7 @@ test('the record: the template says why it was used; with no brief job it is a t
 test('the record: codex passes through restoring; the end comes after the restore message was answered', async () => {
     const world = fleet({ 'w1:p2': 'idle' });
     const seen: string[] = [];
-    const looking: Agents = {
+    const looking: AgentPanes = {
         ...world.agents,
         typeLine: (pane, line, behavior) => { seen.push(`${line.pieces.map(String).join('').slice(0, 12)}: ${records(world)[0]?.stage}`); return world.agents.typeLine(pane, line, behavior); },
         prompt: (pane, text, wait, behavior) => { seen.push(`${text.split('\n')[0]?.slice(0, 12)}: ${records(world)[0]?.stage}`); return world.agents.prompt(pane, text, wait, behavior); },
@@ -401,7 +401,7 @@ test('the record: failing twice is failed (with the reason), nothing in the reco
 test('the record: an agent that turns busy while the brief is written is skipped, and nothing is typed', async () => {
     const world = fleet({ 'w1:p1': 'idle' });
     const asked: string[] = [];
-    const agents: Agents = { ...world.agents, status: () => { asked.push('status'); return Promise.resolve({ kind: 'agent', agent: 'claude', status: asked.length > 1 ? 'working' : 'idle' }); } };
+    const agents: AgentPanes = { ...world.agents, status: () => { asked.push('status'); return Promise.resolve({ kind: 'agent', agent: agentKind('claude'), status: asked.length > 1 ? 'working' : 'idle' }); } };
     await flow({ ...world, agents }, 'focused', 'w1:p1', { documents: [], answer: 'We kept SQLite.' }).run({ tab: 'w1:t1', pane: null, note: null });
     assert.deepEqual(world.typed, []);
     assert.deepEqual(records(world).map((r) => [r.stage, r.why]), [['skipped', 'working']]);
@@ -616,7 +616,7 @@ test('an automatic request the coverage check stops is answered failed-skipped',
 test('a working claude whose plan queues is typed behind its turn: no refusal, the record is queued as it is typed, and two toasts in all', async () => {
     const world = fleet({ 'w1:p1': 'working' });
     const queuedAtTyping: boolean[] = [];
-    const agents: Agents = { ...world.agents, typeLine: (pane, line, behavior) => { queuedAtTyping.push(records(world)[0]?.queued === true); return world.agents.typeLine(pane, line, behavior); } };
+    const agents: AgentPanes = { ...world.agents, typeLine: (pane, line, behavior) => { queuedAtTyping.push(records(world)[0]?.queued === true); return world.agents.typeLine(pane, line, behavior); } };
     await flow({ ...queuing(world, { t: NOW }), agents }).run({ tab: 'w1:t1', pane: null, note: null });
     assert.deepEqual(world.typed.map((each) => each.pane), ['w1:p1']);
     assert.deepEqual(queuedAtTyping, [true]);
@@ -628,9 +628,9 @@ test('a working claude whose plan queues is typed behind its turn: no refusal, t
 test('a claude that starts working while its brief is written is typed queued, not refused', async () => {
     const world = fleet({ 'w1:p1': 'idle' });
     const asked: string[] = [];
-    const agents: Agents = { ...world.agents, status: () => { asked.push('status'); return Promise.resolve({ kind: 'agent', agent: 'claude', status: asked.length > 1 ? 'working' : 'idle' }); } };
+    const agents: AgentPanes = { ...world.agents, status: () => { asked.push('status'); return Promise.resolve({ kind: 'agent', agent: agentKind('claude'), status: asked.length > 1 ? 'working' : 'idle' }); } };
     const queuedAtTyping: boolean[] = [];
-    const typing: Agents = { ...agents, typeLine: (pane, line, behavior) => { queuedAtTyping.push(records(world)[0]?.queued === true); return world.agents.typeLine(pane, line, behavior); } };
+    const typing: AgentPanes = { ...agents, typeLine: (pane, line, behavior) => { queuedAtTyping.push(records(world)[0]?.queued === true); return world.agents.typeLine(pane, line, behavior); } };
     await flow({ ...queuing(world, { t: NOW }), agents: typing }, 'focused', 'w1:p1', { documents: [], answer: 'We kept SQLite.' }).run({ tab: 'w1:t1', pane: null, note: null });
     assert.deepEqual(world.typed.map((each) => each.pane), ['w1:p1']);
     assert.deepEqual(queuedAtTyping, [true]);
@@ -648,7 +648,7 @@ test('a blocked claude is refused at the request whatever its plan says: nothing
 test('a claude that turns blocked while its brief is written is refused again before typing, whatever its plan says', async () => {
     const world = fleet({ 'w1:p1': 'idle' });
     const asked: string[] = [];
-    const agents: Agents = { ...world.agents, status: () => { asked.push('status'); return Promise.resolve({ kind: 'agent', agent: 'claude', status: asked.length > 1 ? 'blocked' : 'idle' }); } };
+    const agents: AgentPanes = { ...world.agents, status: () => { asked.push('status'); return Promise.resolve({ kind: 'agent', agent: agentKind('claude'), status: asked.length > 1 ? 'blocked' : 'idle' }); } };
     await flow({ ...queuing(world, { t: NOW }), agents }, 'focused', 'w1:p1', { documents: [], answer: 'We kept SQLite.' }).run({ tab: 'w1:t1', pane: null, note: null });
     assert.deepEqual(world.typed, []);
     assert.deepEqual(records(world).map((r) => [r.stage, r.why]), [['skipped', en.badge.blocked]]);
@@ -684,7 +684,7 @@ test('a failed mark after a queued compaction: the retry is typed once, and the 
     const clock = { t: NOW };
     const queuedAtTyping: boolean[] = [];
     const base = queuing(world, clock, [], () => []);
-    const agents: Agents = { ...world.agents, typeLine: (pane, line, behavior) => { queuedAtTyping.push(records(world)[0]?.queued === true); return world.agents.typeLine(pane, line, behavior); } };
+    const agents: AgentPanes = { ...world.agents, typeLine: (pane, line, behavior) => { queuedAtTyping.push(records(world)[0]?.queued === true); return world.agents.typeLine(pane, line, behavior); } };
     const marks = (): Promise<readonly Mark[]> => Promise.resolve(world.typed.length >= 2 ? [{ kind: 'compacted', at: instant(clock.t) }] : [{ kind: 'compaction-failed', at: instant(NOW + 5000) }]);
     await flow({ ...base, agents, marks }).run({ tab: 'w1:t1', pane: null, note: null });
     assert.equal(world.typed.length, 2, 'typed for the retry');

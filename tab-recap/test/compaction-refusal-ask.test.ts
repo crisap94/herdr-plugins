@@ -11,7 +11,7 @@ import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Agents, AgentState } from '#src/ports/agents.ts';
+import type { AgentPanes, AgentLookup } from '#src/ports/agents.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { unknown } from '#src/ports/unknowable.ts';
@@ -19,7 +19,7 @@ import { causeOf } from './fakes/cause.ts';
 import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { memoryStore } from './db/support.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId, agentKind } from '#src/recap/domain/ids.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { textOf } from '#src/recap/domain/text.ts';
@@ -40,7 +40,7 @@ interface World {
     readonly typed: string[];
 }
 
-function world(states: readonly AgentState[], answerOn: boolean, claims: LaneClaims = new LaneClaims()): World {
+function world(states: readonly AgentLookup[], answerOn: boolean, claims: LaneClaims = new LaneClaims()): World {
     let reads = 0;
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
@@ -50,8 +50,8 @@ function world(states: readonly AgentState[], answerOn: boolean, claims: LaneCla
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
     const handler = new CompactRequests({ enabled: (): boolean => true, board, requests: { requestCompact: (): void => undefined }, asks, tokens, now: (): number => NOW, log: (): void => undefined });
     asks.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: NOW, ref: null });
-    const agents: Agents = {
-        status: (): Promise<AgentState> => {
+    const agents: AgentPanes = {
+        status: (): Promise<AgentLookup> => {
             const state = states[Math.min(reads, states.length - 1)] ?? states[0];
             reads += 1;
             return Promise.resolve(state ?? unknown({ why: 'not-found', what: textOf('w1:p1') }));
@@ -92,9 +92,9 @@ function world(states: readonly AgentState[], answerOn: boolean, claims: LaneCla
     return { compaction: new Compaction(deps), asks, tokens, store, claims, toasts, typed };
 }
 
-const REFUSALS: readonly (readonly [string, AgentState, string])[] = [
-    ['a busy agent is refused failed-busy', { kind: 'agent', agent: 'claude', status: 'working' }, 'failed-busy'],
-    ['a blocked agent is refused failed-skipped', { kind: 'agent', agent: 'claude', status: 'blocked' }, 'failed-skipped'],
+const REFUSALS: readonly (readonly [string, AgentLookup, string])[] = [
+    ['a busy agent is refused failed-busy', { kind: 'agent', agent: agentKind('claude'), status: 'working' }, 'failed-busy'],
+    ['a blocked agent is refused failed-skipped', { kind: 'agent', agent: agentKind('claude'), status: 'blocked' }, 'failed-skipped'],
     ['an agent whose state cannot be read is refused failed-error, never a slug of the reason', unknown({ why: 'unreadable', detail: causeOf('agent cannot compact right now') }), 'failed-error'],
 ];
 
@@ -109,7 +109,7 @@ for (const [name, state, expected] of REFUSALS) {
 }
 
 test('an agent that turns busy while the brief is written is refused failed-busy, after running', async () => {
-    const run = world([{ kind: 'agent', agent: 'claude', status: 'idle' }, { kind: 'agent', agent: 'claude', status: 'working' }], true);
+    const run = world([{ kind: 'agent', agent: agentKind('claude'), status: 'idle' }, { kind: 'agent', agent: agentKind('claude'), status: 'working' }], true);
     await run.compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r7' });
     await flush();
     assert.deepEqual(run.tokens.reports.map((report) => report.tokens), [{ 'tab-recap-compact': 'r7:running' }, { 'tab-recap-compact': 'r7:failed-busy' }]);
@@ -117,7 +117,7 @@ test('an agent that turns busy while the brief is written is refused failed-busy
 });
 
 test('a refused request records its compaction as the ask\'s ref, so the ask names the compaction that answered it', async () => {
-    const run = world([{ kind: 'agent', agent: 'claude', status: 'working' }], false);
+    const run = world([{ kind: 'agent', agent: agentKind('claude'), status: 'working' }], false);
     await run.compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r7' });
     assert.equal(run.store.db.prepare('SELECT id FROM compaction').all().length, 1);
     assert.match(run.asks.unfinished()[0]?.ref ?? '', /^cmp_/);
@@ -126,7 +126,7 @@ test('a refused request records its compaction as the ask\'s ref, so the ask nam
 test('a request for a lane a handoff holds is answered failed-lane-busy at once, types nothing, and the handoff keeps the lane', async () => {
     const claims = new LaneClaims();
     claims.claim('w1:p1', 'handoff');
-    const run = world([{ kind: 'agent', agent: 'claude', status: 'idle' }], true, claims);
+    const run = world([{ kind: 'agent', agent: agentKind('claude'), status: 'idle' }], true, claims);
     await run.compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r7' });
     await flush();
     assert.deepEqual(run.tokens.reports.map((report) => report.tokens), [{ 'tab-recap-compact': 'r7:failed-lane-busy' }]);
@@ -138,7 +138,7 @@ test('a request for a lane a handoff holds is answered failed-lane-busy at once,
 test('the lane-busy refusal is recorded as a failed compaction with why "lane busy", and shows the failed toast', async () => {
     const claims = new LaneClaims();
     claims.claim('w1:p1', 'handoff');
-    const run = world([{ kind: 'agent', agent: 'claude', status: 'idle' }], true, claims);
+    const run = world([{ kind: 'agent', agent: agentKind('claude'), status: 'idle' }], true, claims);
     await run.compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r7' });
     await flush();
     assert.deepEqual(run.store.db.prepare('SELECT stage, why FROM compaction').all().map((row) => Object.values(row)), [['failed', 'lane busy']]);

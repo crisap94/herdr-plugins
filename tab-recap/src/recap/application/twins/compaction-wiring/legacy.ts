@@ -2,7 +2,7 @@ import type { Messages } from '#src/i18n/index.ts';
 import type { GuardedLedger, GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import type { CompactTarget } from '#src/recap/domain/compaction.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { Agents } from '#src/ports/agents.ts';
+import type { AgentPanes } from '#src/ports/agents.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
 import type { NotifierPort } from '#src/ports/notifier.ts';
 import type { Boundaries } from '#src/ports/boundaries.ts';
@@ -30,7 +30,7 @@ interface OldBriefPort extends Omit<BriefPort, 'job'> { job(): string | null }
 
 export interface CompactionDeps {
     readonly compactionPlans: CompactionPlans;
-    readonly agents: Agents;
+    readonly agents: AgentPanes;
     readonly notifier: NotifierPort;
     readonly records: Pick<GuardedRecapRecords, 'readRecap'>;
     readonly ledger: Pick<GuardedLedger, 'historyOf'>;

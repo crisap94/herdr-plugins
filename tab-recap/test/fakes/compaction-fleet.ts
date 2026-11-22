@@ -10,7 +10,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import type { Mark } from '#src/ports/transcripts.ts';
-import type { Agents, AgentState, LineBehavior, PromptBehavior, PromptWait, Prompted } from '#src/ports/agents.ts';
+import type { AgentPanes, AgentLookup, LineBehavior, PromptStance, PromptWaitFor, Prompted } from '#src/ports/agents.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
@@ -18,15 +18,15 @@ import { memoryStore } from '#test/db/support.ts';
 import { lineBreakRefusal } from '#test/fakes/typed-line.ts';
 import { oneTask } from '#test/support.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId, agentKind } from '#src/recap/domain/ids.ts';
 
 export const lane = (pane: string, agent: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent });
 export const CLAUDE_CODEX_GEMINI = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'gemini')];
 
-export interface Typed { readonly pane: string; readonly text: string; readonly pieces?: readonly string[]; readonly wait?: PromptWait | undefined; readonly lineBehavior?: LineBehavior; readonly promptBehavior?: PromptBehavior; readonly typed?: boolean }
+export interface Typed { readonly pane: string; readonly text: string; readonly pieces?: readonly string[]; readonly wait?: PromptWaitFor | undefined; readonly lineBehavior?: LineBehavior; readonly promptBehavior?: PromptStance; readonly typed?: boolean }
 
 export interface Fleet {
-    readonly agents: Agents;
+    readonly agents: AgentPanes;
     readonly typed: Typed[];
     readonly toasts: string[];
     readonly events: string[];
@@ -48,8 +48,8 @@ export function typingFleet(statuses: Record<string, string>, blocked: readonly 
     const store = memoryStore();
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
     const settling: LaneSettling = { settled: (pane) => { settledAfter.push(`${pane}: after ${events.join(',')}`); return Promise.resolve({ kind: 'settled', status: 'done' }); } };
-    const agents: Agents = {
-        status: (pane): Promise<AgentState> => Promise.resolve(statuses[pane] === undefined ? unknown({ why: 'not-found', what: textOf(pane) }) : { kind: 'agent', agent: 'x', status: statuses[pane] as 'idle' }),
+    const agents: AgentPanes = {
+        status: (pane): Promise<AgentLookup> => Promise.resolve(statuses[pane] === undefined ? unknown({ why: 'not-found', what: textOf(pane) }) : { kind: 'agent', agent: agentKind('x'), status: statuses[pane] as 'idle' }),
         prompt: (pane, text, wait, behavior): Promise<Prompted> => {
             events.push(`prompt ${pane}`);
             typed.push({ pane, text, wait, promptBehavior: behavior });

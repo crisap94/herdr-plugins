@@ -7,7 +7,7 @@ import type { CoverageOutcome, LaneStatusAtDecision, SkipGate } from '#src/recap
 import type { Usd } from '#src/recap/domain/usd.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
-import type { AgentState, ClosedAll, LayoutResult, NewHandoffRequest, PromptBehavior, PromptWait } from './twins/runs/legacy.ts';
+import type { ClosedAll, LayoutResult, NewHandoffRequest } from './twins/runs/legacy.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 import type { Done, OpenResult, ResizeDirection } from './columns.ts';
 import type { LineBehavior, Prompted } from './agents.ts';
@@ -21,13 +21,6 @@ import type { Effort } from '#src/recap/domain/effort.ts';
 import type { Noul } from './decider.ts';
 import type { AnswerMode, CostBasis, ConfinementCell, StructuredSupport, ToolSupport } from './harness.ts';
 import type { JudgeTask } from './judge.ts';
-
-export interface Agents {
-    status(pane: string): Promise<AgentState>;
-    prompt(pane: string, text: string, wait: PromptWait | undefined, behavior: PromptBehavior): Promise<Prompted>;
-    typeLine(pane: PaneId, line: CompactionLine, behavior: LineBehavior): Promise<Prompted>;
-    askNote(tab: string, pane: string | null): Promise<Done>;
-}
 
 export interface Ask {
     readonly exchange: ExchangeName;

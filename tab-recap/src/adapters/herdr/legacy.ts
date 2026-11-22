@@ -1,6 +1,5 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import type { DecodedFrame } from '@stateforge-labs/herdr-sdk';
-import type { Agents, AgentState, LineBehavior, PromptBehavior, PromptWait, Prompted, PromptStance, PromptWaitFor } from '#src/ports/agents.ts';
 import type { ClosedAll, Columns, Done, LayoutResult, OpenResult, ResizeDirection } from '#src/ports/columns.ts';
 import type { HarnessDirectory, HarnessList } from '#src/ports/harnesses.ts';
 import type { ModalHost, SetupOpened } from '#src/ports/modal.ts';
@@ -66,65 +65,12 @@ export function layoutOf(layout: Json): LayoutResult {
 
 const legacyFrameOf = (frame: DecodedFrame): Frame => ({ event: frame.event, data: 'data' in frame ? parseJson(frame.data) : {} });
 
-const paneOf = (pane: string): PaneId | null => {
-    const found = parsePaneId(pane);
-    return found.kind === 'ok' ? found.value : null;
-};
-
-const tabOf = (tab: string): TabId | null => {
-    const found = parseTabId(tab);
-    return found.kind === 'ok' ? found.value : null;
-};
-
 export async function readPaneSession(pane: string): Promise<string | null | Unknown> {
     try {
         const info = parseJson(await usePlugin((client) => client.call('pane.get', { pane_id: pane })))['pane'];
         return typeof info === 'object' && info !== null ? sessionOf(parseJson(info), sessionOfForKind) : null;
     } catch (error) {
         return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
-    }
-}
-
-export class HerdrAgents implements Agents {
-    private readonly panes: HerdrAgentPanes;
-
-    constructor(wire: Wire, plugin: PluginRef, pause: Pause = (wait) => sleep(Number(wait))) {
-        this.panes = new HerdrAgentPanes(wire, plugin, pause);
-    }
-
-    async status(pane: string): Promise<AgentState> {
-        const id = paneOf(pane);
-        return id === null ? unknown({ why: 'not-found', what: textOf(`agent ${pane}`) }) : this.panes.status(id);
-    }
-
-    async prompt(pane: string, text: string, wait: PromptWait | undefined, behavior: PromptBehavior): Promise<Prompted> {
-        const id = paneOf(pane);
-        const body = parseText(text);
-        if (id === null) {
-            return unknown({ why: 'not-found', what: textOf(`agent ${pane}`) });
-        }
-        if (body.kind !== 'ok') {
-            return unknown({ why: 'unreadable', detail: causeOf(must(parseText('prompt text is empty'))) });
-        }
-        const stance: PromptStance = { stall: behavior.acceptsStall ? 'accepts-stall' : 'refuses-stall' };
-        const waitFor: PromptWaitFor | undefined = wait === undefined
-            ? undefined
-            : { until: wait.until.flatMap((item) => { const found = parseText(item); return found.kind === 'ok' ? [found.value] : []; }), timeout: must(parseMilliseconds(wait.timeoutMs)) };
-        return this.panes.prompt(id, body.value, waitFor, stance);
-    }
-
-    async typeLine(pane: string, line: CompactionLine, behavior: LineBehavior): Promise<Prompted> {
-        const id = paneOf(pane);
-        return id === null ? unknown({ why: 'not-found', what: textOf(`agent ${pane}`) }) : this.panes.typeLine(id, line, behavior);
-    }
-
-    async askNote(tab: string, pane: string | null): Promise<Done> {
-        const tabIdentity = tabOf(tab);
-        const paneIdentity = pane === null ? null : paneOf(pane);
-        if (tabIdentity === null || (pane !== null && paneIdentity === null)) {
-            return unknown({ why: 'not-found', what: textOf(`tab ${tab}`) });
-        }
-        return this.panes.askNote(tabIdentity, paneIdentity);
     }
 }
 
@@ -137,8 +83,8 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, HarnessDirec
         this.ports = new HerdrFleetPorts(stateDir);
     }
 
-    agents(): HerdrAgents {
-        return new HerdrAgents(herdrWire, { id: must(parseText(PLUGIN_ID)), stateDir: this.stateDir });
+    agents(): HerdrAgentPanes {
+        return new HerdrAgentPanes(herdrWire, { id: must(parseText(PLUGIN_ID)), stateDir: this.stateDir });
     }
 
     async snapshot(): Promise<SnapshotResult> {

@@ -1,5 +1,5 @@
 import { handoffPlans } from '#src/adapters/capability/handoff-plans.ts';
-import type { AgentState, Agents, Prompted, PromptBehavior, PromptWait } from '#src/ports/agents.ts';
+import type { AgentLookup, AgentPanes, Prompted, PromptStance, PromptWaitFor } from '#src/ports/agents.ts';
 import type { Located, PromptResult, Transcripts, ChunkResult } from '#src/ports/transcripts.ts';
 import { unknown, type Unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './cause.ts';
@@ -28,8 +28,8 @@ export interface Faults {
 export interface Sent {
     readonly pane: string;
     readonly text: string;
-    readonly wait: PromptWait | undefined;
-    readonly behavior: PromptBehavior;
+    readonly wait: PromptWaitFor | undefined;
+    readonly behavior: PromptStance;
 }
 
 export interface World {
@@ -39,7 +39,7 @@ export interface World {
     located: boolean;
     latest: string | null;
     unreadable: boolean;
-    agentState: AgentState;
+    agentState: AgentLookup;
     sendReply: Prompted;
     faults: Faults;
     pauses: number[];
@@ -59,7 +59,7 @@ export function worldOf(over: Partial<World> = {}): World {
         located: true,
         latest: null,
         unreadable: false,
-        agentState: { kind: 'agent', agent: 'claude', status: 'idle' },
+        agentState: { kind: 'agent', agent: agentKind('claude'), status: 'idle' },
         sendReply: { kind: 'sent' },
         faults: {},
         pauses: [],
@@ -108,16 +108,16 @@ export function sessionOf(world: World): CurrentSession {
     };
 }
 
-export function agentsOf(world: World): Pick<Agents, 'prompt' | 'status'> {
+export function agentsOf(world: World): Pick<AgentPanes, 'prompt' | 'status'> {
     return {
-        status: async (): Promise<AgentState> => {
+        status: async (): Promise<AgentLookup> => {
             world.statusReads += 1;
             if (world.faults.status) {
                 throw new Error('status failed');
             }
             return world.agentState;
         },
-        prompt: async (pane: string, text: string, wait: PromptWait | undefined, behavior: PromptBehavior): Promise<Prompted> => {
+        prompt: async (pane: string, text: string, wait: PromptWaitFor | undefined, behavior: PromptStance): Promise<Prompted> => {
             world.sent.push({ pane, text, wait, behavior });
             if (world.faults.prompt) {
                 throw new Error('send failed');

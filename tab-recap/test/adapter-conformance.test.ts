@@ -368,7 +368,7 @@ const HANDOFF_PINS = {
 function handoffRows(kind: RegisteredKind, pin: HandoffPin): void {
     const deliveryOf = (over: Partial<World> = {}): World => worldOf({ agent: kind, locatedBy: pin.locatedBy, ...over });
     const flowOf = (world: World, typing: LeaseSpy, over: Partial<FlowWorld> = {}): ReturnType<typeof handoffHarness> => handoffHarness({ targetAgent: kind, ...over }, senderOf(world, typing.port));
-    const working = { kind: 'agent', agent: kind, status: 'working' } as const;
+    const working = { kind: 'agent', agent: agentKind(kind), status: 'working' } as const;
 
     test(`${kind} handoff: the plan is one prompt with either evidence, no retry, its settle time and its locating key`, () => {
         assert.deepEqual(handoffPlans.forKind(kind), {
@@ -384,7 +384,7 @@ function handoffRows(kind: RegisteredKind, pin: HandoffPin): void {
         assert.deepEqual(await h.flow.run(request()), { kind: 'delivered' });
         assert.deepEqual(typing.acquired, [['w1:p2', 0]]);
         assert.deepEqual(typing.released, ['w1:p2']);
-        assert.deepEqual(world.sent, [{ pane: 'w1:p2', text: TEXT, wait: undefined, behavior: { acceptsStall: false } }]);
+        assert.deepEqual(world.sent, [{ pane: 'w1:p2', text: TEXT, wait: undefined, behavior: { stall: 'refuses-stall' } }]);
         assert.deepEqual(h.pauses, [pin.settleMs]);
         assert.deepEqual(world.pauses, [HANDOFF_OBSERVE_MS]);
     });

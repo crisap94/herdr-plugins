@@ -73,7 +73,7 @@ export class Compactor {
     private async gateOf(lane: Lane, point: ClosePoint): Promise<Gate> {
         const { compaction, badge } = this.deps.messages();
         const agent = lane.agent;
-        const state = await this.deps.agents.status(String(lane.pane));
+        const state = await this.deps.agents.status(lane.pane);
         if (isUnknown(state)) {
             if (state.why.why === 'not-found') return { kind: 'refused', refusal: laneClosedRefusal(point) };
             const why = must(parseText(saying(state.why)));

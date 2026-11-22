@@ -9,6 +9,7 @@ import { duration } from '#src/recap/domain/time.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { confirmationOf, laneWith, planWith, readyOf, worldOf } from './fakes/handoff-delivery.ts';
 import type { World } from './fakes/handoff-delivery.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
 
 const TEXT = 'Handoff of the parser refactor.\n\nNext steps:\n  - finish the lexer\n  - run the suite';
 const FAILED: HandoffOutcome = { kind: 'failed', reason: 'unconfirmed' };
@@ -95,7 +96,7 @@ test('the status evidence alone confirms when the plan declares status', async (
     const world = worldOf({ latest: 'older', agentState: unknown({ why: 'timeout', after: duration(1000) }) });
     world.onPause = (count: number): void => {
         if (count === 2) {
-            world.agentState = { kind: 'agent', agent: 'claude', status: 'working' };
+            world.agentState = { kind: 'agent', agent: agentKind('claude'), status: 'working' };
         }
     };
     assert.deepEqual(await run(world, 'status', laneWith()), DELIVERED);
@@ -129,7 +130,7 @@ test('a shared directory confirms on working status at a later observation', asy
     const world = worldOf({ latest: 'older' });
     world.onPause = (count: number): void => {
         if (count === 2) {
-            world.agentState = { kind: 'agent', agent: 'claude', status: 'working' };
+            world.agentState = { kind: 'agent', agent: agentKind('claude'), status: 'working' };
         }
     };
     assert.deepEqual(await run(world, 'either', laneWith(), false), DELIVERED);

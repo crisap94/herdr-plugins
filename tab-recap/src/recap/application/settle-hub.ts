@@ -1,6 +1,8 @@
-import type { Agents } from '#src/ports/agents.ts';
+import type { AgentPanes } from '#src/ports/agents.ts';
 import type { LaneSettling, Settled } from '#src/ports/lane-settling.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
+import { isUnknown, unknown } from '#src/ports/unknowable.ts';
+import { parsePaneId } from '#src/recap/domain/ids.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { READY } from '#src/recap/domain/status.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 
@@ -8,7 +10,7 @@ const SETTLE_MS = 4000;
 const POLL_MS = 2000;
 
 export interface SettleHubDeps {
-    readonly agents: Pick<Agents, 'status'>;
+    readonly agents: Pick<AgentPanes, 'status'>;
     listening(): boolean;
     pause(ms: number): Promise<void>;
     now(): number;
@@ -75,14 +77,16 @@ export class SettleHub implements LaneSettling {
     }
 
     private async once(pane: string): Promise<Settled> {
-        const state = await this.deps.agents.status(pane);
+        const id = parsePaneId(pane);
+        const state = id.kind === 'ok' ? await this.deps.agents.status(id.value) : unknown({ why: 'not-found', what: textOf(`agent ${pane}`) });
         return !isUnknown(state) && READY.has(state.status) ? { kind: 'settled', status: state.status } : { kind: 'timeout' };
     }
 
     private async polled(pane: string, timeoutMs: number): Promise<Settled> {
         await this.deps.pause(SETTLE_MS);
         for (let waited = SETTLE_MS; waited < timeoutMs; waited += POLL_MS) {
-            const state = await this.deps.agents.status(pane);
+            const id = parsePaneId(pane);
+            const state = id.kind === 'ok' ? await this.deps.agents.status(id.value) : unknown({ why: 'not-found', what: textOf(`agent ${pane}`) });
             if (isUnknown(state) || READY.has(state.status)) {
                 return { kind: 'settled', status: isUnknown(state) ? 'unknown' : state.status };
             }

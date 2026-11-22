@@ -1,5 +1,5 @@
 import { knownOr, type GuardedLedger, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
-import type { AgentState } from '#src/ports/agents.ts';
+import type { AgentLookup } from '#src/ports/agents.ts';
 import type { PaneTokens } from '#src/ports/pane-tokens.ts';
 import type { HandoffPrinter, PrintRequest, PrintResult } from '#src/ports/handoff-print.ts';
 import type { ClosureReader, ClosureRuns } from '#src/ports/closed-lanes.ts';
@@ -34,7 +34,7 @@ export interface PrintStore {
 }
 
 interface TargetStatus {
-    status(pane: string): Promise<AgentState>;
+    status(pane: PaneId): Promise<AgentLookup>;
 }
 
 export interface PrintDeps {
@@ -157,7 +157,7 @@ export class PrintedHandoffs implements HandoffPrinter {
         if (to === null) {
             return null;
         }
-        const state = await this.deps.target.status(String(to));
+        const state = await this.deps.target.status(to);
         return state.kind === 'agent' ? `target ${String(to)}: ${state.status}` : null;
     }
 }
