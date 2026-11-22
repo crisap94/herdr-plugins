@@ -1,3 +1,4 @@
+import { must } from '#src/protocol/result.ts';
 import type { Curated, Curators } from '#src/ports/curators.ts';
 import type { CurationRun } from '#src/ports/stories.ts';
 import type { Result } from '#src/protocol/result.ts';
@@ -54,6 +55,6 @@ export async function storyAnswerOf(deps: ReconcilingDeps, round: StoryRound): P
         return round.first;
     }
     const where = `curator ${round.run.task.tab} ${round.run.task.key}`;
-    deps.log(`${where}: story repair — ${checked.refused.length} refused`);
+    deps.log(must(parseText(`${where}: story repair — ${checked.refused.length} refused`)));
     return acceptedOf(round, await round.writer.write(storyRepair(round.sent.value, said.value, checked)));
 }

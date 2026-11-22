@@ -18,6 +18,7 @@ const TAIL_BYTES = 256 * 1024;
 const note = brand<string, 'Text'>;
 
 const count = brand<number, 'Count'>;
+const tabOf = brand<string, 'TabId'>;
 
 export interface CurateBridge {
     readonly ledger: CheckedLedger;
@@ -83,13 +84,13 @@ export const reconcilingOver = (plugs: EnginePlugs, bridge: CurateBridge, storie
         get rubric(): Text { return settings.rubric?.() ?? note(''); },
         tail: tailOf(bridge.readers),
         repair: () => settings.storyRepair?.() ?? 'off',
-        every: () => settings.reconcileEvery?.() ?? RECONCILE_EVERY,
+        every: (): Count => count(settings.reconcileEvery?.() ?? RECONCILE_EVERY),
         log: (line: Text): void => { log(line); },
     };
     const reconciling = new Reconciling(deps);
     return {
-        task: async (round: Round, lanes: readonly LaneCursor[], why: CurateWhy): Promise<Reconciled> => ((await reconciling.task(round.scope, round.task, lanes, why)) ? 'reconciled' : 'unchanged'),
+        task: async (round: Round, lanes: readonly LaneCursor[], why: CurateWhy): Promise<Reconciled> => ((await reconciling.task(tabOf(round.scope), { id: note(round.task.id), name: note(round.task.name), lanes: round.task.lanes.map(note) }, lanes, why)) ? 'reconciled' : 'unchanged'),
         due: (event: RunEvent): Owing => (reconciling.due(event) ? 'due' : 'waiting'),
-        settle: (scope: ScopeId): void => { reconciling.settle(scope); },
+        settle: (scope: ScopeId): void => { reconciling.settle(tabOf(scope)); },
     };
 };

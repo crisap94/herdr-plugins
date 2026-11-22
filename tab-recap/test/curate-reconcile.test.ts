@@ -19,7 +19,11 @@ import { MemoryStories } from '#test/fakes/memory-stories.ts';
 import { oneTask } from '#test/support.ts';
 import { dtdTest, validate } from '#test/xmllint.ts';
 import { brand } from '#src/recap/domain/brand.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+import type { Count } from '#src/recap/domain/count.ts';
+
+const [textOf, countOf, tabOf, boundaryOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Count'>, brand<string, 'TabId'>, brand<boolean, 'Boundary'>, brand<number, 'Instant'>];
 
 const NOW = Date.parse('2026-10-07T16:30:00Z');
 const MIN = 60_000;
@@ -54,8 +58,8 @@ function setup(answers: readonly Curated[], over: { every?: number; tail?: reado
     const writer: Curators = { backend: 'fake/test', write: (document, mode): Promise<Curated> => { calls.push({ document, mode }); return Promise.resolve(queue.shift() ?? unknown({ why: 'failed', code: 1, detail: causeOf('no more answers') })); } };
     const mode = over.repair;
     const curate = new Curate({
-        records: store.records, ledger, stories, writer: (): Curators => writer, clock: (): number => clock.now, zone: (): string => 'UTC', language: (): string => 'en', rubric: RUBRIC.items,
-        tail: (): Promise<readonly Entry[]> => Promise.resolve(over.tail ?? TAIL), every: (): number => over.every ?? RECONCILE_EVERY, ...(mode === undefined ? {} : { repair: (): RepairMode => mode }), log: (line): void => { logs.push(line); },
+        records: store.records, ledger, stories, writer: (): Curators => writer, clock: (): Instant => instantOf(clock.now), zone: (): Text => textOf('UTC'), language: (): Text => textOf('en'), rubric: textOf(RUBRIC.items),
+        tail: (): Promise<readonly Entry[]> => Promise.resolve(over.tail ?? TAIL), every: (): Count => over.every === undefined ? RECONCILE_EVERY : countOf(over.every), ...(mode === undefined ? {} : { repair: (): RepairMode => mode }), log: (line): void => { logs.push(line); },
     });
     return { curate, ledger, calls, logs, clock };
 }
@@ -140,21 +144,21 @@ test('the same fact is changed once per answer, and a fact merged into is left a
 test('when: every N turns, at once after a boundary, and at an open only when turns came since; never twice in five minutes', async () => {
     const quiet = said({ ops: [] });
     const { curate, calls, clock } = setup([quiet, quiet, quiet, quiet, quiet, quiet], { every: 3 });
-    await curate.afterRun({ tab: 'w1:t1', turns: 2, boundary: false });
+    await curate.afterRun({ tab: tabOf('w1:t1'), turns: countOf(2), boundary: boundaryOf(false) });
     assert.equal(calls.length, 0, 'two turns of three');
-    await curate.afterRun({ tab: 'w1:t1', turns: 1, boundary: false });
+    await curate.afterRun({ tab: tabOf('w1:t1'), turns: countOf(1), boundary: boundaryOf(false) });
     assert.equal(calls.length, 1, 'the third');
     clock.now += CURATE_GAP_MS - 1;
-    await curate.afterRun({ tab: 'w1:t1', turns: 5, boundary: true });
+    await curate.afterRun({ tab: tabOf('w1:t1'), turns: countOf(5), boundary: boundaryOf(true) });
     assert.equal(calls.length, 1, 'a boundary inside the five minutes waits for them');
     clock.now += 1;
-    await curate.afterRun({ tab: 'w1:t1', turns: 0, boundary: true });
+    await curate.afterRun({ tab: tabOf('w1:t1'), turns: countOf(0), boundary: boundaryOf(true) });
     assert.equal(calls.length, 2, 'the first run after a boundary reconciles');
     clock.now += CURATE_GAP_MS;
     await curate.run('w1:t1');
     assert.equal(calls.filter((call) => call.mode === 'reconcile').length, 2, 'an open with no new turn does not reconcile again');
     assert.equal(calls.filter((call) => call.mode === 'story').length + calls.filter((call) => call.mode === undefined).length, 1, 'but tells the story as before');
-    await curate.afterRun({ tab: 'w1:t1', turns: 1, boundary: false });
+    await curate.afterRun({ tab: tabOf('w1:t1'), turns: countOf(1), boundary: boundaryOf(false) });
     clock.now += CURATE_GAP_MS;
     await curate.run('w1:t1');
     assert.equal(calls.filter((call) => call.mode === 'reconcile').length, 3, 'an open after a new turn does');

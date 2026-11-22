@@ -25,6 +25,8 @@ import { keepNewestOf, nextHoursOf, prunedWriterView } from '#src/recap/domain/w
 import { NO_REPOS, oneTask, requestOf } from '#test/support.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 
+const [textOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Instant'>];
+
 const T1 = { tab: 'w1:t1', key: 't1' };
 
 function setup(answers: readonly (Curated)[], over: { readonly ledger?: MemoryLedger; readonly repair?: RepairMode } = {}):{ curate: Curate; ledger: MemoryLedger; stories: MemoryStories; store: ReturnType<typeof memoryStore>; logs: string[]; calls: string[]; clock: { now: number } } {
@@ -35,7 +37,7 @@ function setup(answers: readonly (Curated)[], over: { readonly ledger?: MemoryLe
     const [logs, calls, clock, queue] = [[] as string[], [] as string[], { now: NOW }, [...answers]];
     const writer: Curators = { backend: 'fake/test', write: (document) => { calls.push(document); return Promise.resolve(queue.shift() ?? unknown({ why: 'failed', code: 1, detail: causeOf('no more answers') })); } };
     const mode = over.repair;
-    const deps: CurateDeps = { records: store.records, ledger, stories, writer: () => writer, clock: () => clock.now, zone: () => 'UTC', language: () => 'en', rubric: RUBRIC.items, ...(mode === undefined ? {} : { repair: (): RepairMode => mode }), log: (line) => { logs.push(line); } };
+    const deps: CurateDeps = { records: store.records, ledger, stories, writer: () => writer, clock: () => instantOf(clock.now), zone: () => textOf('UTC'), language: () => textOf('en'), rubric: textOf(RUBRIC.items), ...(mode === undefined ? {} : { repair: (): RepairMode => mode }), log: (line) => { logs.push(line); } };
     const curate = new Curate(deps);
     return { curate, ledger, stories, store, logs, calls, clock };
 }
@@ -114,7 +116,7 @@ test('a curator that is off, silent or failing leaves everything as it was, and 
     assert.match(down.logs[0] ?? '', /fake\/test gave none/u);
     assert.equal(down.stories.read('w1:t1', 't1'), null);
     const off = setup([]);
-    const quiet: CurateDeps = { records: off.store.records, ledger: off.ledger, stories: off.stories, writer: () => null, clock: () => NOW, zone: () => 'UTC', language: () => 'en', rubric: RUBRIC.items, log: () => undefined };
+    const quiet: CurateDeps = { records: off.store.records, ledger: off.ledger, stories: off.stories, writer: () => null, clock: () => instantOf(NOW), zone: () => textOf('UTC'), language: () => textOf('en'), rubric: textOf(RUBRIC.items), log: () => undefined };
     await new Curate(quiet).run('w1:t1');
     assert.equal(off.calls.length, 0);
     const empty = setup([answer({ story: 'never' })], { ledger: new MemoryLedger() });

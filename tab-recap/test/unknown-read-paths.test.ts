@@ -19,6 +19,9 @@ import { closedDaysOf } from './fakes/closed-days.ts';
 import { claudeReader, depsOf } from './fakes/handoff-pipeline-world.ts';
 import { registryWith } from './fakes/transcript-registry.ts';
 import { oneTask, withFacts } from './support.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+
+const [textOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Instant'>];
 
 const NOW = Date.parse('2026-10-11T10:00:00Z');
 const TAB = tabId('w1:t1');
@@ -70,10 +73,10 @@ function curatorOf(store: ReturnType<typeof memoryStore>, ledger: GuardedLedger,
         ledger,
         stories,
         writer: () => writer,
-        clock: () => NOW,
-        zone: () => 'UTC',
-        language: () => 'en',
-        rubric: '',
+        clock: () => instantOf(NOW),
+        zone: () => textOf('UTC'),
+        language: () => textOf('en'),
+        rubric: textOf(''),
         tail: () => Promise.resolve([]),
         log: (line) => { probe.logs.push(line); },
     };

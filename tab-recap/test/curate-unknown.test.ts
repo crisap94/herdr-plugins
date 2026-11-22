@@ -10,6 +10,9 @@ import { tabId } from '#src/recap/domain/ids.ts';
 import { causeOf } from './fakes/cause.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { MemoryStories } from '#test/fakes/memory-stories.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+
+const [textOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Instant'>];
 
 const TAB = tabId('w1:t1');
 const LOCKED = unknown({ why: 'unreadable', detail: causeOf('locked') });
@@ -40,10 +43,10 @@ function curatorOf(recap: TabRecap | Unknown, facts: 'known' | 'unknown', seen: 
         ledger,
         stories: { read: (tab, task) => { seen.storyReads += 1; return stories.read(tab, task); }, keep: (run, change) => stories.keep(run, change) },
         writer: () => { seen.writers += 1; return null; },
-        clock: () => 0,
-        zone: () => 'UTC',
-        language: () => 'en',
-        rubric: '',
+        clock: () => instantOf(0),
+        zone: () => textOf('UTC'),
+        language: () => textOf('en'),
+        rubric: textOf(''),
         log: () => undefined,
     };
     return new CurateTasks(deps);
