@@ -5,10 +5,9 @@ import { unknown } from '#src/ports/unknowable.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { agentKind } from '#src/recap/domain/ids.ts';
 import { countOf, type Count } from '#src/recap/domain/count.ts';
-import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
-import { must } from '#src/protocol/result.ts';
+import { fsPathOf, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
-import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
+import { type Text, textOf } from '#src/recap/domain/text.ts';
 import { parseFilledTextOrNull, parseLine, readJsonlFrom, parseRowOrEmpty, parseRowsOrEmpty, tailSpan, parseUnreadable, type SupportedReading } from '../jsonl.ts';
 import type { Row } from '../jsonl.ts';
 import { toolEntryOf } from '../tool-calls.ts';
@@ -37,7 +36,7 @@ function messageEntry(payload: Row, at: Instant | undefined): Entry | null {
 function toolEntries(payload: Row, at: Instant | undefined): readonly Entry[] {
     const raw = payload['arguments'] ?? payload['input'];
     const input = typeof raw === 'string' ? (parseLine(textOf(raw)) ?? {}) : parseRowOrEmpty(raw);
-    const name = must(parseText(parseFilledTextOrNull(payload['name']) ?? 'tool'));
+    const name = textOf(parseFilledTextOrNull(payload['name']) ?? 'tool');
     return codexCallsOf(name, parseCodexToolCall(name, raw), input).map((call) => toolEntryOf(call, at ?? null));
 }
 
@@ -65,7 +64,7 @@ export class CodexTranscripts implements Transcripts {
     private readonly root: FsPath;
     private readonly readTail: typeof tailSpan;
 
-    constructor(root: FsPath = must(parseFsPath(codexRolloutRoot())), readTail: typeof tailSpan = tailSpan) {
+    constructor(root: FsPath = fsPathOf(codexRolloutRoot()), readTail: typeof tailSpan = tailSpan) {
         this.root = root;
         this.readTail = readTail;
     }
@@ -76,7 +75,7 @@ export class CodexTranscripts implements Transcripts {
 
     private readInFlight(source: SourcePath, budget: Count): Promise<InFlightResult> {
         try {
-            const path = must(parseFsPath(source));
+            const path = fsPathOf(source);
             let bytes = countOf(Math.max(budget, CODEX_IN_FLIGHT_INITIAL_BYTES));
             let tail = this.readTail(path, bytes);
             let answer = codexInFlightOf(tail.lines, tail.truncated);
@@ -101,7 +100,7 @@ export class CodexTranscripts implements Transcripts {
 
     latestPrompt(source: SourcePath, budget: Count): Promise<PromptResult> {
         try {
-            return Promise.resolve({ kind: 'prompt', text: extractCodexOf(tailSpan(must(parseFsPath(source)), budget).lines).lastPrompt });
+            return Promise.resolve({ kind: 'prompt', text: extractCodexOf(tailSpan(fsPathOf(source), budget).lines).lastPrompt });
         } catch (error) {
             return Promise.resolve(parseUnreadable(error));
         }
@@ -109,7 +108,7 @@ export class CodexTranscripts implements Transcripts {
 
     observed(source: SourcePath, budget: Count): Promise<ObservedResult> {
         try {
-            return Promise.resolve({ kind: 'observed', observed: codexObservedOf(tailSpan(must(parseFsPath(source)), budget).lines) });
+            return Promise.resolve({ kind: 'observed', observed: codexObservedOf(tailSpan(fsPathOf(source), budget).lines) });
         } catch (error) {
             return Promise.resolve(parseUnreadable(error));
         }
@@ -117,7 +116,7 @@ export class CodexTranscripts implements Transcripts {
 
     read(source: SourcePath, was: Position, budget: Count): Promise<ChunkResult> {
         try {
-            const { lines, position, grew, more } = readJsonlFrom(must(parseFsPath(source)), was, budget);
+            const { lines, position, grew, more } = readJsonlFrom(fsPathOf(source), was, budget);
             return Promise.resolve({ kind: 'chunk', ...extractCodexOf(lines), position, grew: grewOf(grew === 'present'), more: more === 'present' });
         } catch (error) {
             return Promise.resolve(parseUnreadable(error));

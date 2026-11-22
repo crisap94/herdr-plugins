@@ -15,7 +15,7 @@ import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { AUTO_ORDER, availableIn, enumeratorFor, judgeFor, summarizerFor, summarizerWork } from '#src/daemon/backends.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
-import { parseFsPath } from '#src/recap/domain/fs-path.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { loadConfig, stateDirectory } from '#src/daemon/config.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
@@ -121,7 +121,7 @@ async function run(file: string, reader: Transcripts, options: EvalRequest, size
 export function replayCommand(options: EvalRequest): Promise<number> {
     const readers = replayTranscriptRegistry();
     const file = options.replay ?? '';
-    const kind = replayKindOfPath(options.kind === null ? null : textOf(options.kind), must(parseFsPath(file)));
+    const kind = replayKindOfPath(options.kind === null ? null : textOf(options.kind), fsPathOf(file));
     const reader = kind === null ? undefined : readers.exact(agentKind(kind));
     if (reader === undefined) {
         console.error('tab-recap: 2 — --kind takes claude or codex');

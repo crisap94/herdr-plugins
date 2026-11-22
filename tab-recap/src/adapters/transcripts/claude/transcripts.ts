@@ -8,7 +8,7 @@ import { agentKind } from '#src/recap/domain/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
+import { fsPathOf, parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { readJsonlFrom, sameStart, tailSpan, parseUnreadable, type SupportedReading } from '../jsonl.ts';
 import { claudeObservedOf } from './context.ts';
 import { CLAUDE_SPLIT, IN_FLIGHT_MAX_BYTES, answerOf, scanFlight } from './in-flight.ts';
@@ -78,7 +78,7 @@ export class ClaudeTranscripts implements Transcripts {
     private readonly reader = new ClaudeReader();
     readonly inFlight: SupportedReading = { kind: 'supported', split: CLAUDE_SPLIT, read: (source, budget) => this.readInFlight(source, budget) };
 
-    constructor(root: FsPath = must(parseFsPath(claudeProjectsRoot()))) {
+    constructor(root: FsPath = fsPathOf(claudeProjectsRoot())) {
         this.root = root;
     }
 
@@ -96,7 +96,7 @@ export class ClaudeTranscripts implements Transcripts {
 
     latestPrompt(source: SourcePath, budget: Count): Promise<PromptResult> {
         try {
-            return Promise.resolve(this.reader.latestPrompt(must(parseFsPath(source)), budget));
+            return Promise.resolve(this.reader.latestPrompt(fsPathOf(source), budget));
         } catch (error) {
             return Promise.resolve(parseUnreadable(error));
         }
@@ -104,7 +104,7 @@ export class ClaudeTranscripts implements Transcripts {
 
     observed(source: SourcePath, budget: Count): Promise<ObservedResult> {
         try {
-            return Promise.resolve(this.reader.observed(must(parseFsPath(source)), budget));
+            return Promise.resolve(this.reader.observed(fsPathOf(source), budget));
         } catch (error) {
             return Promise.resolve(parseUnreadable(error));
         }
@@ -112,7 +112,7 @@ export class ClaudeTranscripts implements Transcripts {
 
     private readInFlight(source: SourcePath, budget: Count): Promise<InFlightResult> {
         try {
-            return Promise.resolve(this.reader.inFlight(must(parseFsPath(source)), budget));
+            return Promise.resolve(this.reader.inFlight(fsPathOf(source), budget));
         } catch (error) {
             return Promise.resolve(parseUnreadable(error));
         }
@@ -120,7 +120,7 @@ export class ClaudeTranscripts implements Transcripts {
 
     read(source: SourcePath, was: Position, budget: Count): Promise<ChunkResult> {
         try {
-            return Promise.resolve(this.reader.read(must(parseFsPath(source)), was, budget));
+            return Promise.resolve(this.reader.read(fsPathOf(source), was, budget));
         } catch (error) {
             return Promise.resolve(parseUnreadable(error));
         }

@@ -19,8 +19,7 @@ import type { ExperimentStore, FramePoint, StoredPoint } from './store.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { countOf } from '#src/recap/domain/count.ts';
-import { parseFsPath } from '#src/recap/domain/fs-path.ts';
-import { must } from '#src/protocol/result.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 
 const TAIL_BYTES = 256 * 1024;
 const EXPERIMENT_MINIMUM = 40;
@@ -65,7 +64,7 @@ function trimmed(entries: readonly Entry[]): readonly Entry[] {
 }
 
 export function shareAt(source: Text, cursor: number, catalogue: ModelCatalogue): ShareReading | null {
-    const observed = claudeObservedOf(linesBeforeOf(must(parseFsPath(source)), countOf(cursor), countOf(TAIL_BYTES)));
+    const observed = claudeObservedOf(linesBeforeOf(fsPathOf(source), countOf(cursor), countOf(TAIL_BYTES)));
     const use = observed === null ? null : contextOf({ observed, setting: null }, claudeWindowOf(catalogue));
     return use === null ? null : { tokens: use.tokens, window: use.window, share: shareOf(use) };
 }
@@ -80,12 +79,12 @@ function gateAt(stored: StoredPoint, lines: readonly Text[], lastBreakAt: number
 
 export function pointOf(store: ExperimentStore, catalogue: ModelCatalogue, stored: FramePoint, stratum: Text): Point | null {
     try {
-        const lines = linesBeforeOf(must(parseFsPath(stored.source)), countOf(stored.cursor), countOf(TAIL_BYTES));
+        const lines = linesBeforeOf(fsPathOf(stored.source), countOf(stored.cursor), countOf(TAIL_BYTES));
         const recent = trimmed(extractClaudeOf(lines).entries);
         const history = store.factsAt(stored);
         const used = shareAt(stored.source, stored.cursor, catalogue);
         const lastBreakAt = store.lastBreakAt(stored.tab, stored.at);
-        const after = extractClaudeOf(linesAfterOf(must(parseFsPath(stored.source)), countOf(stored.cursor), countOf(TAIL_BYTES))).entries;
+        const after = extractClaudeOf(linesAfterOf(fsPathOf(stored.source), countOf(stored.cursor), countOf(TAIL_BYTES))).entries;
         const { blob: _blob, ...plain } = stored;
         return {
             ...plain, stratum, share: used?.share ?? null, tokens: used?.tokens ?? null, window: used?.window ?? null, lastBreakAt, ...gateAt(stored, lines, lastBreakAt, used?.share ?? 0),

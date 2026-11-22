@@ -6,7 +6,7 @@ import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import { cursorOf } from '#src/ports/transcripts.ts';
 import { unknown, type Unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
@@ -20,7 +20,7 @@ export interface SupportedReading {
 export type Unreadable = Unknown;
 
 export function parseUnreadable(error: unknown): Unreadable {
-    return unknown({ why: 'unreadable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
+    return unknown({ why: 'unreadable', detail: causeOf(textOf(error instanceof Error ? error.message : String(error))) });
 }
 
 export interface Row {
