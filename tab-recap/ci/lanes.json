@@ -195,6 +195,7 @@
       "src/recap/domain/task-name.ts",
       "src/recap/domain/telemetry-tags.ts",
       "src/recap/domain/text-collapse.ts",
+      "src/recap/domain/timing-ids.ts",
       "src/recap/domain/token-amount.ts",
       "src/recap/domain/token-registry.ts",
       "src/recap/domain/twins/curation/legacy.ts",

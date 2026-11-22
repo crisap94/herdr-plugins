@@ -1,1 +1,23 @@
-[]
+[
+  {
+    "class": "callback",
+    "file": "src/daemon/autocompact.ts",
+    "function": "activeFor",
+    "parameter": null,
+    "reason": "callback: activeFor of the compaction-timing contract (packages/session-ledger/src/compaction-timing/contract.ts, session-ledger, frozen) returns boolean"
+  },
+  {
+    "class": "callback",
+    "file": "src/daemon/autocompact.ts",
+    "function": "automaticInProgress",
+    "parameter": null,
+    "reason": "callback: automaticInProgress of the compaction-timing contract (packages/session-ledger/src/compaction-timing/contract.ts, session-ledger, frozen) returns boolean"
+  },
+  {
+    "class": "callback",
+    "file": "src/daemon/autocompact.ts",
+    "function": "lastBreakAt",
+    "parameter": null,
+    "reason": "callback: lastBreakAt of the compaction-timing contract (packages/session-ledger/src/compaction-timing/contract.ts, session-ledger, frozen) returns number | null"
+  }
+]

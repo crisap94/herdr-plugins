@@ -19,6 +19,7 @@
   "src/recap/domain/retention.ts",
   "src/recap/domain/run-ids.ts",
   "src/recap/domain/task-name.ts",
+  "src/recap/domain/timing-ids.ts",
   "src/recap/domain/token-amount.ts",
   "src/recap/domain/type-id.ts",
   "src/recap/domain/usd.ts",

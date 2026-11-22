@@ -1,17 +1,13 @@
 import { ok, type Result } from '#src/protocol/result.ts';
+import type { TabId } from './timing-ids.ts';
 import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import { parseNonEmptyText, parseText } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { parseNonEmptyText } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 
-export type PaneId = Brand<string, 'PaneId'>;
-export type TabId = Brand<string, 'TabId'>;
 export type HandoffId = Brand<string, 'HandoffId'>;
 export type WorkspaceId = Brand<string, 'WorkspaceId'>;
 export type SessionId = Brand<string, 'SessionId'>;
 export type SessionPath = Brand<string, 'SessionPath'>;
-export type AgentKind = Brand<string, 'AgentKind'>;
-export type DecisionId = Brand<string, 'DecisionId'>;
-export type CompactionId = Brand<string, 'CompactionId'>;
 export interface AgentSessionId {
     readonly kind: 'id';
     readonly value: SessionId;
@@ -24,6 +20,7 @@ export interface AgentSessionPath {
 
 export type AgentSession = AgentSessionId | AgentSessionPath;
 
+export type { AgentKind, CompactionId, DecisionId, PaneId, TabId } from './timing-ids.ts';
 export class NotAnIdentifierError extends Error {
     override readonly name = 'NotAnIdentifierError';
 }
@@ -50,22 +47,6 @@ export function parseHandoffId(raw: unknown): HandoffId | null {
     return isHandoffTypeId(raw) ? raw : null;
 }
 
-export function parsePaneId(input: unknown): Result<PaneId, ParseFailure> {
-    const text = parseNonEmptyText(input);
-    if (text.kind === 'err') {
-        return text;
-    }
-    return ok(brand<string, 'PaneId'>(text.value));
-}
-
-export function parseTabId(input: unknown): Result<TabId, ParseFailure> {
-    const text = parseNonEmptyText(input);
-    if (text.kind === 'err') {
-        return text;
-    }
-    return ok(brand<string, 'TabId'>(text.value));
-}
-
 export function parseWorkspaceId(input: unknown): Result<WorkspaceId, ParseFailure> {
     const text = parseNonEmptyText(input);
     if (text.kind === 'err') {
@@ -90,28 +71,5 @@ export function parseSessionPath(input: unknown): Result<SessionPath, ParseFailu
     return ok(brand<string, 'SessionPath'>(text.value));
 }
 
-export function parseAgentKind(input: unknown): Result<AgentKind, ParseFailure> {
-    const text = parseNonEmptyText(input);
-    if (text.kind === 'err') {
-        return text;
-    }
-    return ok(brand<string, 'AgentKind'>(text.value));
-}
-
-export function parseDecisionId(input: unknown): Result<DecisionId, ParseFailure> {
-    const text = parseText(input);
-    if (text.kind === 'err') {
-        return text;
-    }
-    return ok(brand<string, 'DecisionId'>(text.value));
-}
-
-export function parseCompactionId(input: unknown): Result<CompactionId, ParseFailure> {
-    const text = parseText(input);
-    if (text.kind === 'err') {
-        return text;
-    }
-    return ok(brand<string, 'CompactionId'>(text.value));
-}
-
+export { parseAgentKind, parseCompactionId, parseDecisionId, parsePaneId, parseTabId } from './timing-ids.ts';
 export { agentKind, handoffId, paneId, sessionId, sessionIdFromAgentValue, sessionPath, sessionPathFromAgentValue, tabId, workspaceId } from './legacy.ts';
