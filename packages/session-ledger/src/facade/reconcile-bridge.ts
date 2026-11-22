@@ -4,6 +4,7 @@ import type { ScopeId } from '#src/contract/ids.ts';
 import type { Count, Instant, Text } from '#src/contract/kernel.ts';
 import type { Curator } from '#src/contract/models.ts';
 import type { RecapTask } from '#src/contract/records.ts';
+import type { Curators } from '#src/ports/curators.ts';
 import type { CheckedLedger, Ledger } from '#src/ports/ledger.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import type { Stories as LedgerStories } from '#src/ports/stories.ts';
@@ -71,13 +72,16 @@ const plainLedger = (ledger: CheckedLedger, log: (line: Text) => void): Ledger =
     };
 };
 
+const curatorsOf = (curator: Curator | null): Curators | null =>
+    curator === null ? null : { backend: note(curator.backend), write: (document, mode) => curator.write(document, mode) };
+
 export const reconcilingOver = (plugs: EnginePlugs, bridge: CurateBridge, stories: LedgerStories): Reconcile => {
     const { environment, settings, models } = plugs;
     const log = (line: Text): void => { environment.log(line); };
     const deps: ReconcilingDeps = {
         ledger: plainLedger(bridge.ledger, log),
         stories,
-        writer: () => models.curator?.() ?? null,
+        writer: (): Curators | null => curatorsOf(models.curator?.() ?? null),
         clock: () => environment.clock.now(),
         zone: (): Text => note(Intl.DateTimeFormat().resolvedOptions().timeZone),
         language: () => settings.language(),

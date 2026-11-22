@@ -23,6 +23,8 @@ import { writer } from '#test/fakes/golden-writer.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { must } from '#src/protocol/result.ts';
 
 const THIS_FILE = 'test/engine-plain-session.test.ts';
 const HERDR_SIDE = ['src/adapters/herdr/', 'src/adapters/herdr-core/', 'src/transport/', 'src/daemon/', 'src/column/', 'src/setup/', 'src/compact/'];
@@ -50,7 +52,7 @@ function plainHost(records: string, store: Store): PlainHost {
     const clock = { now: 1 };
     const { summarizer } = writer();
     const engine = createEngine({
-        source: { transcripts: new TranscriptRegistry({ [reader.agent]: reader }, null, (kind): string => capabilityWording('history-unavailable', kind)) },
+        source: { transcripts: new TranscriptRegistry({ [reader.agent]: reader }, null, (kind): string => capabilityWording('history-unavailable', must(parseText(kind)))) },
         store: { records: checkedRecords(store.records), ledger: checkedLedger(store.ledger) },
         models: { summarizer: () => summarizer },
         environment: { clock: { now: (): Instant => instant(clock.now) }, repos: NO_REPOS, mint: mintFactId, log: () => undefined },

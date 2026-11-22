@@ -26,6 +26,7 @@ import { RecapWriter } from '#src/adapters/job/writer.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import { requestOf } from '#test/support.ts';
 import type { Milliseconds } from '#src/recap/domain/time.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 
 const call = { instructions: 'do', input: 'in' };
 const settings = { model: '', effort: 'low' } as const;
@@ -236,14 +237,14 @@ test('the library harness declares structured support from its capability: claud
 test('the curator over claude: a schema answer reaches the job as the run output, with the schema for the mode', async () => {
     const runtime = scripted('claude', { text: '', output: { ops: [{ op: 'close', id: 'f1', why: 'merged', into: 'f2' }], story: 'the story' } });
     const harness = new LibraryHarness(runtime, 'claude', 1000, undefined, true);
-    const curated = await new HarnessCurator(harness, settings, 'schema').write('doc', 'story');
+    const curated = await new HarnessCurator(harness, settings, 'schema').write(must(parseText('doc')), 'story');
     assert.deepEqual(curated, { kind: 'curated', text: '{"ops":[{"op":"close","id":"f1","why":"merged","into":"f2"}],"story":"the story"}' });
     assert.deepEqual(firstCall(runtime).request.outputSchema, ANSWER_SCHEMAS.story);
 });
 
 test('the curator over opencode with a schema answer: the call falls back to text, one run without an outputSchema', async () => {
     const runtime = scripted('opencode', { text: '{"ops":[]}' });
-    const curated = await new HarnessCurator(new LibraryHarness(runtime, 'opencode', 1000), settings, 'schema').write('doc', 'reconcile');
+    const curated = await new HarnessCurator(new LibraryHarness(runtime, 'opencode', 1000), settings, 'schema').write(must(parseText('doc')), 'reconcile');
     assert.deepEqual(curated, { kind: 'curated', text: '{"ops":[]}' });
     assert.equal(runtime.calls.length, 1);
     assert.equal(Object.hasOwn(firstCall(runtime).request, 'outputSchema'), false);
@@ -251,7 +252,7 @@ test('the curator over opencode with a schema answer: the call falls back to tex
 
 test('the curator over opencode with a text answer: the run never carries an outputSchema', async () => {
     const runtime = scripted('opencode', { text: 'plain' });
-    await new HarnessCurator(new LibraryHarness(runtime, 'opencode', 1000), settings, 'text').write('doc', 'story');
+    await new HarnessCurator(new LibraryHarness(runtime, 'opencode', 1000), settings, 'text').write(must(parseText('doc')), 'story');
     assert.equal(Object.hasOwn(firstCall(runtime).request, 'outputSchema'), false);
 });
 

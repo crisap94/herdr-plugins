@@ -31,6 +31,7 @@ import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import { BACKEND_IDS, MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import type { BackendId } from '#src/recap/domain/backend.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 
 type Kind = BackendId | 'gemini';
 import { COMPACTABLE } from '#src/recap/domain/compaction.ts';
@@ -256,7 +257,7 @@ for (const row of ROWS) {
         const capability = row.reader.inFlight;
         if (capability.kind !== 'supported') throw new Error(`${row.kind} must support in-flight work`);
         const { split } = capability;
-        if (split.kind === 'foreground-only') assert.ok(splitReason(split.why, row.kind).includes(row.kind), `${row.kind} names its foreground-only split`);
+        if (split.kind === 'foreground-only') assert.ok(splitReason(split.why, must(parseText(row.kind))).includes(row.kind), `${row.kind} names its foreground-only split`);
         const found = await capability.read(sourceOf(await row.reader.locate(row.recorded)), BUDGET);
         assert.deepEqual(found, { kind: 'in-flight', count: 0, background: [] });
     });

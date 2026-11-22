@@ -18,8 +18,8 @@ const NOW = 1_700_000_000_000;
 const candidate = (text: string, flagged: boolean): InputCandidate => ({ section: 'next', text, why: null, ref: null, at: null, anchor: text, agent: 'claude', flagged });
 
 const silentEnumerator = (): Enumerators => ({
-    backend: 'fake',
-    job: 'enumerate',
+    backend: textOf('fake'),
+    job: textOf('enumerate'),
     write: async (): Promise<Enumerated> => ({ kind: 'unknown', why: { why: 'not-found', what: 'model' } }),
 });
 

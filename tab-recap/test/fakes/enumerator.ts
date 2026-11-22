@@ -1,5 +1,7 @@
 import type { Enumerated, Enumerators } from '#src/ports/enumerators.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 
 export type Reply = string | ((document: string, call: number) => string);
 
@@ -8,7 +10,7 @@ export const FAIL = 'fail';
 export function scripted(replies: readonly Reply[]): { readonly enumerator: Enumerators; readonly documents: string[] } {
     const documents: string[] = [];
     const enumerator: Enumerators = {
-        backend: 'fake/enumerator', job: 'fake · low',
+        backend: must(parseText('fake/enumerator')), job: must(parseText('fake · low')),
         write: (document): Promise<Enumerated> => {
             documents.push(document);
             const reply = replies[Math.min(documents.length - 1, replies.length - 1)] ?? '{"candidates":[]}';

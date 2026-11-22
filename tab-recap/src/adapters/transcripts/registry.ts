@@ -12,6 +12,8 @@ import type { HistoryWhy, InFlightWhy } from '#src/ports/capability-reasons.ts';
 import { capabilityWording } from '#src/ports/capability-reasons.ts';
 import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 
 export { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 export { readerKindOf, replayKindOf } from './legacy.ts';
@@ -36,10 +38,11 @@ function readersOf(readers: ReaderSet): Readonly<Record<string, Transcripts>> {
 }
 
 function unavailableReason(kind: string): string {
+    const subject = must(parseText(kind));
     const registered = registeredKindOf(kind);
-    if (registered === null) return capabilityWording('history-unavailable', kind);
+    if (registered === null) return capabilityWording('history-unavailable', subject);
     const capability = READERS[registered];
-    return capability.kind === 'unsupported' ? capabilityWording(capability.why, kind) : capabilityWording('history-unavailable', kind);
+    return capability.kind === 'unsupported' ? capabilityWording(capability.why, subject) : capabilityWording('history-unavailable', subject);
 }
 
 export function daemonTranscriptRegistry(screens: Screens, wants: ScreenWants): TranscriptRegistry {

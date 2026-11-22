@@ -10,6 +10,8 @@ import type { Directory } from '#src/recap/domain/directory.ts';
 import type { SessionId } from '#src/recap/domain/ids.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import { IN_FLIGHT_CAPABILITIES } from './registry.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 
 const TAIL_BYTES = 512 * 1024;
 
@@ -34,17 +36,18 @@ export class TranscriptInFlight implements InFlight {
 
     async read(lane: Lane): Promise<InFlightReading> {
         const agent = String(lane.agent);
+        const subject = must(parseText(agent));
         const registered = registeredKindOf(agent);
         if (registered !== null) {
             const capability = IN_FLIGHT_CAPABILITIES[registered];
-            if (capability.kind === 'unsupported') return { kind: 'unknown', why: capabilityWording(capability.why, agent) };
+            if (capability.kind === 'unsupported') return { kind: 'unknown', why: capabilityWording(capability.why, subject) };
         }
         const exact = this.transcripts.exact(agent);
         const reader = exact ?? this.transcripts.readerFor(agent);
-        if (reader === undefined) return { kind: 'unknown', why: inFlightReason('unregistered-reader', agent) };
+        if (reader === undefined) return { kind: 'unknown', why: inFlightReason('unregistered-reader', subject) };
         const located = await reader.locate(lane);
-        if (isUnknown(located)) return exact === undefined ? { kind: 'unknown', why: inFlightReason('unregistered-reader', agent) } : unlocated(lane, registered, located);
-        if (reader.inFlight.kind === 'unsupported') return { kind: 'unknown', why: inFlightReason(reader.inFlight.why, agent) };
+        if (isUnknown(located)) return exact === undefined ? { kind: 'unknown', why: inFlightReason('unregistered-reader', subject) } : unlocated(lane, registered, located);
+        if (reader.inFlight.kind === 'unsupported') return { kind: 'unknown', why: inFlightReason(reader.inFlight.why, subject) };
         const found = await reader.inFlight.read(located.source, TAIL_BYTES);
         return isUnknown(found) ? { kind: 'unknown', why: saying(found.why) } : { kind: 'count', count: found.count, background: found.background };
     }

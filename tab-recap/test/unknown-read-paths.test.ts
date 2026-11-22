@@ -20,6 +20,8 @@ import { claudeReader, depsOf } from './fakes/handoff-pipeline-world.ts';
 import { registryWith } from './fakes/transcript-registry.ts';
 import { oneTask, withFacts } from './support.ts';
 import { brand } from '#src/recap/domain/brand.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 
 const [textOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Instant'>];
 
@@ -55,7 +57,7 @@ function ledgerOf(store: ReturnType<typeof memoryStore>, over: Partial<GuardedLe
 
 function curatorOf(store: ReturnType<typeof memoryStore>, ledger: GuardedLedger, probe: Probe): CurateTasks {
     const writer: Curators = {
-        backend: 'fake/test',
+        backend: must(parseText('fake/test')),
         write: () => {
             probe.writes += 1;
             return Promise.resolve({ kind: 'curated', text: '{"story":"Written anyway."}' });

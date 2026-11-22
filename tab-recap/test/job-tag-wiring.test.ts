@@ -15,6 +15,7 @@ import type { Config } from '#src/daemon/config.ts';
 import type { RecapInput } from '#src/ports/recap-input.ts';
 import type { JobTag } from '#src/recap/domain/job-tag.ts';
 import { documentOf } from './fakes/decider-fixtures.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 
 interface Site {
     readonly name: string;
@@ -28,10 +29,10 @@ const WRITE: Site = { name: 'summarizerFor', tag: 'recap-writer', call: (config,
 
 const SITES: readonly Site[] = [
     WRITE,
-    { name: 'enumeratorFor', tag: 'recap-writer', call: (config, available, work, runtime) => enumeratorFor(config, available, work, runtime)?.write('document') ?? Promise.resolve(null) },
+    { name: 'enumeratorFor', tag: 'recap-writer', call: (config, available, work, runtime) => enumeratorFor(config, available, work, runtime)?.write(must(parseText('document'))) ?? Promise.resolve(null) },
     { name: 'briefFor', tag: 'compaction-brief', call: (config, available, work, runtime) => briefFor(config, available, work, runtime)?.write('document') ?? Promise.resolve(null) },
     { name: 'judgeFor', tag: 'judge', call: (config, available, work, runtime) => judgeFor(config, available, work, runtime)?.ask('score', 'document') ?? Promise.resolve(null) },
-    { name: 'curatorFor', tag: 'curator', call: (config, available, work, runtime) => curatorFor(config, available, work, runtime)?.write('document') ?? Promise.resolve(null) },
+    { name: 'curatorFor', tag: 'curator', call: (config, available, work, runtime) => curatorFor(config, available, work, runtime)?.write(must(parseText('document'))) ?? Promise.resolve(null) },
     { name: 'deciderFor', tag: 'decider', call: (config, available, work, runtime) => deciderFor(config, available, work, runtime)?.ask(documentOf({}), new Map()) ?? Promise.resolve(null) },
     { name: 'coverageDeciderFor', tag: 'coverage-check', call: (config, available, work, runtime) => coverageDeciderFor(config, available, work, runtime)?.ask(documentOf({}), new Map()) ?? Promise.resolve(null) },
 ];

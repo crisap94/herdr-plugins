@@ -13,6 +13,7 @@ import type { Harness, HarnessCall, HarnessSettings, Ran, StructuredSupport } fr
 import { CURATE_DEFAULT, curateJobOf } from '#src/recap/domain/job.ts';
 import { setupView } from '#src/recap/render/setup.ts';
 import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 
 const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
 const raw = { locale: undefined, recapLanguage: undefined };
@@ -53,7 +54,7 @@ async function curatorLimit(limit: string | undefined): Promise<unknown> {
             process.env['TAB_RECAP_CURATE_TIMEOUT_MS'] = limit;
         }
         const runtime = fakeRuntime({ scripts: { claude: [fakeOutput({ text: 'ok' }), fakeOutput({ text: 'ok' })] } });
-        await curatorFor(loadConfig(), ['claude'], must(parseDirectory('work')), runtime)?.write('document');
+        await curatorFor(loadConfig(), ['claude'], must(parseDirectory('work')), runtime)?.write(must(parseText('document')));
         const request = runtime.calls[0]?.request;
         return request === undefined ? undefined : { has: 'timeoutMs' in request, value: request.timeoutMs };
     } finally {
@@ -157,14 +158,14 @@ const settings: HarnessSettings = { model: 'm', effort: 'low' };
 
 test('the curator asks for a schema answer only when it was asked for and the harness supports schema, in the mode it was given', async () => {
     const schema = recordingHarness('schema');
-    await new HarnessCurator(schema.harness, settings, 'schema').write('document', 'reconcile');
+    await new HarnessCurator(schema.harness, settings, 'schema').write(must(parseText('document')), 'reconcile');
     assert.deepEqual(schema.calls[0]?.answer, { kind: 'schema', schema: 'reconcile' });
     const unsupported = recordingHarness(undefined);
-    await new HarnessCurator(unsupported.harness, settings, 'schema').write('document');
+    await new HarnessCurator(unsupported.harness, settings, 'schema').write(must(parseText('document')));
     assert.equal(unsupported.calls.length, 1);
     assert.equal('answer' in (unsupported.calls[0] ?? {}), false);
     const text = recordingHarness('schema');
-    await new HarnessCurator(text.harness, settings, 'text').write('document');
+    await new HarnessCurator(text.harness, settings, 'text').write(must(parseText('document')));
     assert.equal(text.calls.length, 1);
     assert.equal('answer' in (text.calls[0] ?? {}), false);
 });
