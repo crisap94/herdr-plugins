@@ -96,7 +96,7 @@ export function sessionOf(data: JsonObject, identity: SessionOf): SessionId | nu
     for (const info of [nestedAt(data, 'agent_session'), nestedAt(nestedAt(data, 'pane'), 'agent_session')]) {
         const session = agentSessionOf(info);
         if (session !== null) {
-            return identity(agent ?? textAt(info, 'agent') ?? '', session);
+            return identity(agent ?? textAt(info, 'agent') ?? textOf(''), session);
         }
     }
     return null;

@@ -56,12 +56,6 @@ export interface HandoffPrinter {
     renderForPrint(request: PrintRequest): Promise<PrintResult>;
 }
 
-export type HarnessesResult = { readonly kind: 'available'; readonly ids: readonly string[] } | Unknown;
-
-export interface Harnesses {
-    available(): Promise<HarnessesResult>;
-}
-
 export interface ImportedChapter {
     readonly n: number;
     readonly at: number;
@@ -85,12 +79,6 @@ export interface LaneSettling {
 
 export interface ModelCatalogue {
     windowOf(model: string): number | null;
-}
-
-export type Notified = { readonly kind: 'shown' } | Unknown;
-
-export interface Notifier {
-    notify(title: string, body: string): Promise<Notified>;
 }
 
 export interface RunResult {

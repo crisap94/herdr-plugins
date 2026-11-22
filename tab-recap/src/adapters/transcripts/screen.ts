@@ -8,7 +8,7 @@ import { parsePaneId, type AgentKind, agentKind } from '#src/recap/domain/ids.ts
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { SCREEN_PREFIX } from '#src/ports/screens.ts';
-import type { Screens } from '#src/ports/screens.ts';
+import type { ScreenReader } from '#src/ports/screens.ts';
 import type { ChunkResult, InFlightCapability, Located, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { sourcePathOf, cursorOf, grewOf } from '#src/ports/transcripts.ts';
@@ -24,10 +24,10 @@ const hashOf = (text: Text): Text => must(parseText(createHash('sha1').update(te
 export class ScreenTranscripts implements Transcripts {
     readonly agent = agentKind(SCREEN_READER_ID);
     readonly inFlight: InFlightCapability = { kind: 'unsupported', why: 'screen' };
-    private readonly screens: Screens;
+    private readonly screens: ScreenReader;
     private readonly wants: ScreenWants;
 
-    constructor(screens: Screens, wants: ScreenWants) {
+    constructor(screens: ScreenReader, wants: ScreenWants) {
         this.screens = screens;
         this.wants = wants;
     }

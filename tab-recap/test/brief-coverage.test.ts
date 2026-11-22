@@ -294,7 +294,7 @@ test('a ceiling lane whose brief still misses a fact sends its appended line thr
         calls.push({ method, params });
         return Promise.resolve({});
     };
-    const adapter = new HerdrAgents(wire, { id: 'tab-recap', stateDir: '/s' }, () => Promise.resolve());
+    const adapter = new HerdrAgents(wire, { id: textOf('tab-recap'), stateDir: textOf('/s') }, () => Promise.resolve());
     const { world, compaction } = flow([MISSING]);
     world.harness.typeLine = (pane, line, behavior): Promise<Prompted> => adapter.typeLine(pane, line, behavior);
     decided(world, 'ceiling');

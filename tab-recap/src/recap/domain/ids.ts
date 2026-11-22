@@ -78,6 +78,8 @@ export const uncheckedRatio = brand<number, 'Probability'>;
 
 export const uncheckedPaneId = brand<string, 'PaneId'>;
 
+export const uncheckedWorkspaceId = brand<string, 'WorkspaceId'>;
+
 export { parseAgentKind, parseCompactionId, parseDecisionId, parsePaneId, parseTabId } from './timing-ids.ts';
 export { agentKind, paneId, tabId, workspaceId } from './legacy.ts';
 

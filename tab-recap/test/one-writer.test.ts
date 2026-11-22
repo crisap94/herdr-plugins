@@ -13,7 +13,8 @@ import { RecordingTokens } from './fakes/lane-tokens.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import type { Done } from '#src/ports/columns.ts';
-import type { WorkspacesResult } from '#src/ports/workspace-tokens.ts';
+import type { WorkspaceList, WorkspaceTokenMap } from '#src/ports/workspace-tokens.ts';
+import { uncheckedWorkspaceId, type WorkspaceId } from '#src/recap/domain/ids.ts';
 import type { LaneFacts } from '#src/recap/domain/lane-tokens.ts';
 
 test('the four writers write only tab-recap\'s names, on panes and on workspaces; a foreign name is refused by the adapter\'s rule', async () => {
@@ -24,8 +25,8 @@ test('the four writers write only tab-recap\'s names, on panes and on workspaces
     const events = new EventStream({
         tokens: paneWrites,
         workspaces: {
-            reportWorkspace: async (workspace: string, tokens: Readonly<Record<string, string | null>>): Promise<Done> => { spaces.push(...Object.keys(tokens).map((name) => `${workspace}:${name}`)); return { kind: 'done' }; },
-            workspaces: async (): Promise<WorkspacesResult> => ({ kind: 'workspaces', ids: ['w1'] }),
+            reportWorkspace: async (workspace: WorkspaceId, tokens: WorkspaceTokenMap): Promise<Done> => { spaces.push(...[...tokens.keys()].map((name) => `${workspace}:${name}`)); return { kind: 'done' }; },
+            workspaces: async (): Promise<WorkspaceList> => ({ kind: 'workspaces', ids: [uncheckedWorkspaceId('w1')] }),
         },
         enabled: (): boolean => true, startedAt: 1, log: (): void => undefined,
     });

@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { usePlugin } from './client.ts';
-import { list, str } from './json.ts';
+import { parseJsonList, parseJsonText } from './json.ts';
 import { parseJsonObject, type JsonObject } from './json-object.ts';
 import { PLUGIN_ID } from './fleet.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
@@ -29,7 +29,7 @@ const herdrWire: PluginListWire = async () => {
 const onDisk: LauncherPresence = (path) => (existsSync(path) ? 'present' : 'absent');
 
 function entryOf(plugins: readonly JsonObject[], id: Text): JsonObject | null {
-    const ours = plugins.filter((plugin) => str(plugin['plugin_id']) === id);
+    const ours = plugins.filter((plugin) => parseJsonText(plugin['plugin_id']) === id);
     return ours.find((plugin) => plugin['enabled'] === true) ?? ours[0] ?? null;
 }
 
@@ -51,12 +51,12 @@ export class HerdrActiveInstalls implements ActiveInstalls {
         } catch (error) {
             return unanswered(must(parseText(error instanceof Error ? error.message : String(error))));
         }
-        const entry = entryOf(list(answer['plugins']), this.id);
+        const entry = entryOf(parseJsonList(answer['plugins']), this.id);
         if (entry === null) {
             return unanswered(must(parseText(`herdr lists no plugin ${this.id}`)));
         }
-        const root = parseFsPath(str(entry['plugin_root']));
-        const version = str(entry['version']);
+        const root = parseFsPath(parseJsonText(entry['plugin_root']));
+        const version = parseJsonText(entry['version']);
         if (root.kind !== 'ok' || !SEMVER.test(version)) {
             return unanswered(must(parseText(`herdr gave no root or version for ${this.id}`)));
         }

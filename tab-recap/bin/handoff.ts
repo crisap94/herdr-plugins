@@ -23,6 +23,7 @@ import { instant } from '#src/recap/domain/time.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { closedOf, listingOf, paneOf, problem, sourceProblem, targetProblem } from './handoff-closed.ts';
 import type { HandoffProblem, HandoffValues, ListingArguments } from './handoff-closed.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 export type { HandoffProblem, HandoffValues } from './handoff-closed.ts';
 
@@ -145,7 +146,7 @@ function deliverDeps(): DeliverDeps {
 
 function printerOf(): HandoffPrinter {
     const transcripts = modalTranscriptRegistry();
-    const fleet = new HerdrFleet(stateDir());
+    const fleet = new HerdrFleet(textOf(stateDir()));
     return new PrintedHandoffs({
         openStore: () => openPrintStore(databaseFile(stateDirectory()), loadConfig().closedLaneDays),
         transcripts,

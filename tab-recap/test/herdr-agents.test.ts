@@ -5,6 +5,7 @@ import { HerdrAgents } from '#src/adapters/herdr/agents.ts';
 import type { Wire } from '#src/adapters/herdr/agents.ts';
 import { compactionLine, parseCompactionPiece } from '#src/recap/domain/compaction-plan.ts';
 import { duration } from '#src/recap/domain/time.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 function agents(fail: string | null = null): { agents: HerdrAgents; calls: { method: string; params: unknown }[] } {
     const calls: { method: string; params: unknown }[] = [];
@@ -12,7 +13,7 @@ function agents(fail: string | null = null): { agents: HerdrAgents; calls: { met
         calls.push({ method, params });
         return method === fail ? Promise.reject(new Error('refused')) : Promise.resolve({});
     };
-    return { agents: new HerdrAgents(wire, { id: 'tab-recap', stateDir: '/s' }), calls };
+    return { agents: new HerdrAgents(wire, { id: textOf('tab-recap'), stateDir: textOf('/s') }), calls };
 }
 
 const stalledWire: Wire = () => Promise.reject(Object.assign(new Error('stalled'), { code: 'agent_prompt_stalled' }));
@@ -48,20 +49,20 @@ test('prompt counts a stalled prompt as sent: the text went in, the agent just r
         calls.push({ method, params });
         return Promise.reject(Object.assign(new Error('agent prompt produced no observed working or blocked state within 5000 ms; current status is done'), { code: 'agent_prompt_stalled' }));
     };
-    const fake = new HerdrAgents(wire, { id: 'tab-recap', stateDir: '/s' });
+    const fake = new HerdrAgents(wire, { id: textOf('tab-recap'), stateDir: textOf('/s') });
     assert.deepEqual(await fake.prompt('w1:p2', '/compact', { until: ['idle', 'done'], timeoutMs: 1000 }, { acceptsStall: true }), { kind: 'sent' });
     assert.equal(calls.length, 1);
 });
 
 test('prompt does not count a stalled prompt as sent when the plan rejects stalls', async () => {
-    const fake = new HerdrAgents(stalledWire, { id: 'tab-recap', stateDir: '/s' });
+    const fake = new HerdrAgents(stalledWire, { id: textOf('tab-recap'), stateDir: textOf('/s') });
     assert.equal((await fake.prompt('w1:p2', 'restore', undefined, { acceptsStall: false })).kind, 'unknown');
 });
 
 test('typeLine waits a moment before Enter: an agent\'s slash-command popup swallows an Enter that comes at once', async () => {
     const order: string[] = [];
     const wire: Wire = (method) => { order.push(method); return Promise.resolve({}); };
-    const fake = new HerdrAgents(wire, { id: 'tab-recap', stateDir: '/s' }, (ms) => { order.push(`pause ${ms}`); return Promise.resolve(); });
+    const fake = new HerdrAgents(wire, { id: textOf('tab-recap'), stateDir: textOf('/s') }, (ms) => { order.push(`pause ${ms}`); return Promise.resolve(); });
     await fake.typeLine('w1:p2', compactionLine(must(parseCompactionPiece('/compact'))), { enterDelay: duration(300) });
     assert.deepEqual(order, ['pane.send_text', 'pause 300', 'pane.send_keys']);
 });

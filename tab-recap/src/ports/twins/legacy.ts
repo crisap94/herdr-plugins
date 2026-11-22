@@ -1,5 +1,4 @@
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
-import type { AgentSession, SessionId } from '#src/recap/domain/ids.ts';
 import type { CheckedFact } from '#src/recap/domain/autocompact.ts';
 import type { BoundaryKind, Trigger } from '#src/recap/domain/boundary.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
@@ -135,10 +134,6 @@ export interface RunInputs {
     prune(before: number): number;
 }
 
-export type SessionOf = (kind: string, agentSession: AgentSession) => SessionId | null;
-
-export type WorkspacesResult = { readonly kind: 'workspaces'; readonly ids: readonly string[] } | Unknown;
-
 export interface LaneWeb {
     readonly base: string;
     readonly forge: Forge;
@@ -188,14 +183,6 @@ export type UncommittedResult = ({ readonly kind: 'paths' } & UncommittedPaths) 
 export interface WorksiteReader {
     lastCommit(directory: string): Promise<LastCommitResult>;
     uncommitted(directory: string): Promise<UncommittedResult>;
-}
-
-export type ScreenResult =
-    | { readonly kind: 'screen'; readonly text: string; readonly revision: number; readonly truncated: boolean }
-    | Unknown;
-
-export interface Screens {
-    readScreen(pane: string, lines: number): Promise<ScreenResult>;
 }
 
 export interface CompactionTokens {

@@ -41,7 +41,7 @@ const TINY: RecapRequest = {
 };
 
 const tab = process.env['TAB_RECAP_TAB'] ?? '';
-const fleet = new HerdrFleet(stateDir());
+const fleet = new HerdrFleet(textOf(stateDir()));
 const get = configGetter();
 const config = loadConfig();
 

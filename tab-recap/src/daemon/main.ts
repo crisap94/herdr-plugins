@@ -72,6 +72,7 @@ import type { HandoffRequests } from '#src/recap/domain/handoff-requests.ts';
 import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import { wireWorktrees, type Worktrees } from './worktrees.ts';
 import { ASK_KEEP_MS, CHECKPOINT_EVERY, EVENT_STOP_MS, FLUSH_STOP_MS, INTENT_MS, REQUEST_POLL_MS, RESYNC_MS, RETENTION_EVERY } from './timing.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 type ExitCode = 0 | 1;
 
@@ -191,7 +192,7 @@ async function boot(root: Directory, pidfile: Pidfile): Promise<Wired | ExitCode
     }
     pidfile.claim(process.pid, codeVersion());
     pidfile.beat();
-    const frontend = frontendFor(() => new HerdrFleet(root));
+    const frontend = frontendFor(() => new HerdrFleet(textOf(root)));
     const opened = await openState(root, frontend.fleet, log);
     if (opened === null) {
         pidfile.release(process.pid);

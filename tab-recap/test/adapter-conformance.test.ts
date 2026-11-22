@@ -51,7 +51,7 @@ import { duration, instant } from '#src/recap/domain/time.ts';
 import type { DeciderPort } from '#src/ports/decider.ts';
 import type { Harness } from '#src/ports/harness.ts';
 import type { Summarizer, Written } from '#src/ports/summarizer.ts';
-import type { ScreenResult, Screens } from '#src/ports/screens.ts';
+import type { ScreenOutcome, ScreenReader } from '#src/ports/screens.ts';
 import { UNREAD, sourcePathOf } from '#src/ports/transcripts.ts';
 import type { Chunk, ChunkResult, Located, Mark, Transcripts } from '#src/ports/transcripts.ts';
 import { NO_REPOS } from '#test/support.ts';
@@ -144,7 +144,7 @@ function rows(): Row[] {
         compactable: true,
     });
 
-    const screens: Screens = { readScreen: (pane): Promise<ScreenResult> => Promise.resolve({ kind: 'screen', text: pane === 'w1:p8' ? '' : 'I fixed the parser and the tests pass.', revision: 1, truncated: false }) };
+    const screens: ScreenReader = { readScreen: (pane): Promise<ScreenOutcome> => Promise.resolve({ kind: 'screen', text: textOf(pane === 'w1:p8' ? '' : 'I fixed the parser and the tests pass.'), revision: countOf(1), truncated: 'absent' }) };
     out.push({
         kind: 'gemini', reader: new ScreenTranscripts(screens, (agent) => agent === 'gemini'),
         empty: lane('gemini', { pane: 'w1:p8' }), recorded: lane('gemini', { pane: 'w1:p3' }), unplaced: lane('zed'),
@@ -292,7 +292,7 @@ test('gemini history and compaction lookups refuse with their established wordin
 });
 
 test('unavailable reasons name the kind for the modal and the daemon registries alike', () => {
-    const screens: Screens = { readScreen: (): Promise<ScreenResult> => Promise.resolve({ kind: 'screen', text: '', revision: 1, truncated: false }) };
+    const screens: ScreenReader = { readScreen: (): Promise<ScreenOutcome> => Promise.resolve({ kind: 'screen', text: textOf(''), revision: countOf(1), truncated: 'absent' }) };
     const daemon = daemonTranscriptRegistry(screens, () => true);
     assert.equal(modalTranscriptRegistry().unavailableReason(agentKind('gemini')), 'no reader for gemini');
     assert.equal(modalTranscriptRegistry().unavailableReason(agentKind('zed')), 'no reader for zed');

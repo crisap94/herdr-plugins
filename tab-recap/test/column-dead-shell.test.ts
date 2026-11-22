@@ -15,6 +15,7 @@ import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 type Raw = Record<string, unknown>;
 
@@ -126,7 +127,7 @@ test('HerdrFleet.closeEvery closes Recap shells too, never an agent pane or a re
     process.env['HERDR_SOCKET_PATH'] = path;
     resetHerdrClients();
     try {
-        assert.deepEqual(await new HerdrFleet('/state').closeEvery(), { kind: 'closed', closed: 2, failed: 0 });
+        assert.deepEqual(await new HerdrFleet(textOf('/state')).closeEvery(), { kind: 'closed', closed: 2, failed: 0 });
         assert.deepEqual(closed, ['w1:p2', 'w1:p3']);
     } finally {
         resetHerdrClients();

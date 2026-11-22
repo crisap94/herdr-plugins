@@ -2,88 +2,67 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import type { DecodedFrame } from '@stateforge-labs/herdr-sdk';
 import type { Agents, AgentState, LineBehavior, PromptBehavior, PromptWait, Prompted, PromptStance, PromptWaitFor } from '#src/ports/agents.ts';
 import type { ClosedAll, Columns, Done, LayoutResult, OpenResult, ResizeDirection } from '#src/ports/columns.ts';
-import type { Harnesses, HarnessesResult } from '#src/ports/harnesses.ts';
+import type { HarnessDirectory, HarnessList } from '#src/ports/harnesses.ts';
 import type { ModalHost, SetupOpened } from '#src/ports/modal.ts';
-import type { Notified, Notifier } from '#src/ports/notifier.ts';
-import type { ScreenResult, Screens } from '#src/ports/screens.ts';
+import type { Notice, NotifierPort } from '#src/ports/notifier.ts';
+import type { ScreenOutcome, ScreenReader } from '#src/ports/screens.ts';
 import type { Frame, FleetSource, SnapshotResult, StreamResult, Topic } from '#src/ports/fleet-source.ts';
-import type { LaneTokens } from '#src/ports/lane-tokens.ts';
+import type { LaneTokenMap, LaneTokens } from '#src/ports/lane-tokens.ts';
+import { uncheckedTokenName, uncheckedTokenValue } from '#src/protocol/primitives.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
-import type { WorkspaceTokens, WorkspacesResult } from '#src/ports/workspace-tokens.ts';
+import type { WorkspaceList, WorkspaceTokenMap, WorkspaceTokenReporter } from '#src/ports/workspace-tokens.ts';
 import { unknown, type Unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { countOf, parseCount } from '#src/recap/domain/count.ts';
+import { countOf, parseCount, type Count } from '#src/recap/domain/count.ts';
 import { uncheckedPaneId, uncheckedRatio } from '#src/recap/domain/ids.ts';
 import type { CompactionLine } from '#src/recap/domain/compaction-plan.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
 import type { Reconciliation } from '#src/recap/domain/fold.ts';
-import { parsePaneId, parseTabId, tabId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
-import type { Placed, Rect, Split } from '#src/recap/domain/layout.ts';
+import { agentKind, parsePaneId, parseTabId, tabId, type PaneId, type TabId, type WorkspaceId } from '#src/recap/domain/ids.ts';
+import type { Placed, Split } from '#src/recap/domain/layout.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
-import { parseMilliseconds } from '#src/recap/domain/time.ts';
-import { PANE_WRITABLE, WORKSPACE_WRITABLE } from '#src/recap/domain/lane-tokens.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
+import { parseMilliseconds, type Milliseconds } from '#src/recap/domain/time.ts';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { paneTokenMapOf, seenFrom, sessionOf } from '#src/recap/application/decode.ts';
 import { agentPanesIn, columnsIn, deadColumnsIn } from './column-panes.ts';
-import { HerdrAgentPanes, herdrWire, type Wire } from './agents.ts';
+import { HerdrAgentPanes, herdrWire, type Pause, type PluginRef, type Wire } from './agents.ts';
 import { usePlugin } from './client.ts';
 import { HerdrFleetPorts, PLUGIN_ID, pumpFrames } from './fleet.ts';
 import { subscribeTopics } from './subscriptions.ts';
 import { sessionOfForKind } from './session-registry.ts';
-import { refusalOf } from './token-refusal.ts';
-import type { Json } from './json-object.ts';
-
-export function parseJson(value: unknown): Json {
-    return typeof value === 'object' && value !== null ? { ...value } : {};
-}
-
-export function list(value: unknown): readonly Json[] {
-    return Array.isArray(value) ? value.filter((item): item is Json => typeof item === 'object' && item !== null) : [];
-}
-
-export function str(value: unknown): string {
-    return typeof value === 'string' ? value : '';
-}
-
-export function rectOf(value: unknown): Rect {
-    const r = parseJson(value);
-    const n = (key: string): number => (typeof r[key] === 'number' ? r[key] : 0);
-    return { x: countOf(n('x')), y: countOf(n('y')), width: countOf(n('width')), height: countOf(n('height')) };
-}
+import { parseJson, parseJsonList, parseJsonRect, parseJsonText, type Json } from './json-object.ts';
 
 export function reconciliationOf(snapshot: Json): Reconciliation {
-    const panes = list(snapshot['panes']);
-    const agents = agentPanesIn(panes, list(snapshot['agents']));
-    const lanes = list(snapshot['agents']).map((agent) => seenFrom(agent, sessionOfForKind)).filter((lane): lane is SeenLane => lane !== null);
-    const widths = new Map(list(snapshot['layouts']).map((layout) => [str(layout['tab_id']), rectOf(layout['area']).width]));
-    const focused = str(snapshot['focused_tab_id']);
-    const tabs = Array.isArray(snapshot['tabs']) ? { tabs: list(snapshot['tabs']).map((tab) => str(tab['tab_id'])).filter((tab) => tab !== '').map((tab) => tabId(tab)) } : {};
-    return { focusedTab: focused === '' ? null : focused, lanes, panes: panes.map((pane) => str(pane['pane_id'])), columns: columnsIn(panes, agents), dead: deadColumnsIn(panes, agents), widths, ...tabs };
+    const panes = parseJsonList(snapshot['panes']);
+    const agents = agentPanesIn(panes, parseJsonList(snapshot['agents']));
+    const lanes = parseJsonList(snapshot['agents']).map((agent) => seenFrom(agent, sessionOfForKind)).filter((lane): lane is SeenLane => lane !== null);
+    const widths = new Map(parseJsonList(snapshot['layouts']).map((layout) => [parseJsonText(layout['tab_id']), parseJsonRect(layout['area']).width]));
+    const focused = parseJsonText(snapshot['focused_tab_id']);
+    const tabs = Array.isArray(snapshot['tabs']) ? { tabs: parseJsonList(snapshot['tabs']).map((tab) => parseJsonText(tab['tab_id'])).filter((tab) => tab !== '').map((tab) => tabId(tab)) } : {};
+    return { focusedTab: focused === '' ? null : focused, lanes, panes: panes.map((pane) => parseJsonText(pane['pane_id'])), columns: columnsIn(panes, agents), dead: deadColumnsIn(panes, agents), widths, ...tabs };
 }
 
-export function paneTokensOf(snapshot: Json): ReadonlyMap<string, TokenMap> {
-    return new Map(list(snapshot['panes']).flatMap((pane) => {
+export function paneTokensOf(snapshot: Json): ReadonlyMap<PaneId, TokenMap> {
+    return new Map(parseJsonList(snapshot['panes']).flatMap((pane) => {
         const found = paneTokenMapOf(pane);
         return found === null ? [] : [[found.pane, Object.fromEntries(found.tokens)] as const];
     }));
 }
 
 export function layoutOf(layout: Json): LayoutResult {
-    const panes: Placed[] = list(layout['panes']).map((pane) => ({ paneId: uncheckedPaneId(str(pane['pane_id'])), rect: rectOf(pane['rect']) }));
-    const splits: Split[] = list(layout['splits']).map((split) => ({
-        direction: textOf(str(split['direction'])),
+    const panes: Placed[] = parseJsonList(layout['panes']).map((pane) => ({ paneId: uncheckedPaneId(parseJsonText(pane['pane_id'])), rect: parseJsonRect(pane['rect']) }));
+    const splits: Split[] = parseJsonList(layout['splits']).map((split) => ({
+        direction: textOf(parseJsonText(split['direction'])),
         ratio: uncheckedRatio(typeof split['ratio'] === 'number' ? split['ratio'] : 0.5),
-        rect: rectOf(split['rect']),
+        rect: parseJsonRect(split['rect']),
     }));
-    const area = rectOf(layout['area']);
-    const focused = str(layout['focused_pane_id']);
+    const area = parseJsonRect(layout['area']);
+    const focused = parseJsonText(layout['focused_pane_id']);
     return { kind: 'layout', width: area.width, height: area.height, focused: focused === '' ? null : focused, panes, splits };
 }
-
-const detail = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
 const legacyFrameOf = (frame: DecodedFrame): Frame => ({ event: frame.event, data: 'data' in frame ? parseJson(frame.data) : {} });
 
@@ -102,15 +81,15 @@ export async function readPaneSession(pane: string): Promise<string | null | Unk
         const info = parseJson(await usePlugin((client) => client.call('pane.get', { pane_id: pane })))['pane'];
         return typeof info === 'object' && info !== null ? sessionOf(parseJson(info), sessionOfForKind) : null;
     } catch (error) {
-        return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
+        return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
     }
 }
 
 export class HerdrAgents implements Agents {
     private readonly panes: HerdrAgentPanes;
 
-    constructor(wire: Wire, plugin: { readonly id: string; readonly stateDir: string }, pause: (ms: number) => Promise<void> = sleep) {
-        this.panes = new HerdrAgentPanes(wire, { id: must(parseText(plugin.id)), stateDir: must(parseText(plugin.stateDir)) }, (wait) => pause(Number(wait)));
+    constructor(wire: Wire, plugin: PluginRef, pause: Pause = (wait) => sleep(Number(wait))) {
+        this.panes = new HerdrAgentPanes(wire, plugin, pause);
     }
 
     async status(pane: string): Promise<AgentState> {
@@ -149,26 +128,26 @@ export class HerdrAgents implements Agents {
     }
 }
 
-export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, Notifier, Screens, LaneTokens, PaneTokens, WorkspaceTokens {
-    private readonly stateDir: string;
+export class HerdrFleet implements FleetSource, Columns, ModalHost, HarnessDirectory, NotifierPort, ScreenReader, LaneTokens, PaneTokens, WorkspaceTokenReporter {
+    private readonly stateDir: Text;
     private readonly ports: HerdrFleetPorts;
 
-    constructor(stateDir: string) {
+    constructor(stateDir: Text) {
         this.stateDir = stateDir;
-        this.ports = new HerdrFleetPorts(must(parseText(stateDir)));
+        this.ports = new HerdrFleetPorts(stateDir);
     }
 
     agents(): HerdrAgents {
-        return new HerdrAgents(herdrWire, { id: PLUGIN_ID, stateDir: this.stateDir });
+        return new HerdrAgents(herdrWire, { id: must(parseText(PLUGIN_ID)), stateDir: this.stateDir });
     }
 
     async snapshot(): Promise<SnapshotResult> {
         try {
             const snap = await this.ports.rawSnapshot();
-            const focused = str(snap['focused_tab_id']);
+            const focused = parseJsonText(snap['focused_tab_id']);
             return { kind: 'snapshot', seen: reconciliationOf(snap), focusedTab: focused === '' ? null : focused, paneTokens: paneTokensOf(snap) };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
         }
     }
 
@@ -179,21 +158,21 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
             pumpFrames(live, queue, legacyFrameOf);
             return { kind: 'stream', stream: { frames: (): AsyncIterable<Frame> => queue, close: (): void => { live.close(); queue.end(); } } };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
         }
     }
 
     async layout(tab: TabId): Promise<LayoutResult> {
         try {
-            const layout = list((await this.ports.rawSnapshot())['layouts']).find((candidate) => candidate['tab_id'] === String(tab));
+            const layout = parseJsonList((await this.ports.rawSnapshot())['layouts']).find((candidate) => candidate['tab_id'] === String(tab));
             return layout === undefined ? unknown({ why: 'not-found', what: textOf(`the layout of ${tab}`) }) : layoutOf(layout);
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
         }
     }
 
-    async open(tab: TabId, target: string, shape: Shape): Promise<OpenResult> {
-        return this.ports.open(tab, must(parseText(target)), shape);
+    async open(tab: TabId, target: Text, shape: Shape): Promise<OpenResult> {
+        return this.ports.open(tab, target, shape);
     }
 
     async show(tab: TabId): Promise<Done> {
@@ -204,53 +183,47 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, Harnesses, N
         return this.ports.setup(tab);
     }
 
-    async available(): Promise<HarnessesResult> {
+    async available(): Promise<HarnessList> {
         try {
-            const ids = list(parseJson(await usePlugin((client) => client.call('integration.list', {})))['integrations'])
+            const ids = parseJsonList(parseJson(await usePlugin((client) => client.call('integration.list', {})))['integrations'])
                 .filter((entry) => entry['available'] === true)
-                .map((entry) => str(entry['target']));
+                .map((entry) => agentKind(parseJsonText(entry['target'])));
             return { kind: 'available', ids };
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
         }
     }
 
-    async readScreen(pane: string, lines: number): Promise<ScreenResult> {
+    async readScreen(pane: PaneId, lines: Count): Promise<ScreenOutcome> {
         try {
             const fields = parseJson(parseJson(await usePlugin((client) => client.call('pane.read', { pane_id: pane, source: 'recent_unwrapped', lines, format: 'text' })))['read']);
             return typeof fields['text'] === 'string'
-                ? { kind: 'screen', text: fields['text'], revision: typeof fields['revision'] === 'number' ? fields['revision'] : 0, truncated: fields['truncated'] === true }
+                ? { kind: 'screen', text: textOf(fields['text']), revision: countOf(typeof fields['revision'] === 'number' ? fields['revision'] : 0), truncated: fields['truncated'] === true ? 'present' : 'absent' }
                 : unknown({ why: 'unreadable', detail: causeOf(must(parseText(`pane.read of ${pane} returned no text`))) });
         } catch (error) {
-            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
         }
     }
 
     async report(pane: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done> {
-        const refused = refusalOf(tokens, PANE_WRITABLE);
-        return refused ?? this.ports.call(() => usePlugin((client) => client.call('pane.report_metadata', { pane_id: pane, source: PLUGIN_ID, tokens, ttl_ms: ttlMs })));
+        const named: LaneTokenMap = new Map(Object.entries(tokens).map(([name, value]) => [uncheckedTokenName(name), value === null ? null : uncheckedTokenValue(value)]));
+        return this.ports.report(uncheckedPaneId(pane), named, must(parseMilliseconds(ttlMs)));
     }
 
     async read(pane: PaneId): Promise<PaneTokensResult> {
         return this.ports.read(pane);
     }
 
-    async reportWorkspace(workspace: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done> {
-        const refused = refusalOf(tokens, WORKSPACE_WRITABLE);
-        return refused ?? this.ports.call(() => usePlugin((client) => client.call('workspace.report_metadata', { workspace_id: workspace, source: PLUGIN_ID, tokens, ttl_ms: ttlMs })));
+    async reportWorkspace(workspace: WorkspaceId, tokens: WorkspaceTokenMap, ttlMs: Milliseconds): Promise<Done> {
+        return this.ports.reportWorkspace(workspace, tokens, ttlMs);
     }
 
-    async workspaces(): Promise<WorkspacesResult> {
-        try {
-            const found = list(parseJson(await usePlugin((client) => client.call('workspace.list', {})))['workspaces']);
-            return { kind: 'workspaces', ids: found.map((entry) => str(entry['workspace_id'])).filter((id) => id !== '') };
-        } catch (error) {
-            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(detail(error)))) });
-        }
+    async workspaces(): Promise<WorkspaceList> {
+        return this.ports.workspaces();
     }
 
-    async notify(title: string, body: string): Promise<Notified> {
-        return this.ports.notify(must(parseText(title)), must(parseText(body)));
+    async notify(title: Text, body: Text): Promise<Notice> {
+        return this.ports.notify(title, body);
     }
 
     async resize(pane: PaneId, direction: ResizeDirection, amount: number): Promise<Done> {

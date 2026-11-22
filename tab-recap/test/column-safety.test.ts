@@ -19,6 +19,7 @@ import type { Intent } from '#src/recap/domain/intent.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const pane = (id: string, title: string, extra: Record<string, unknown> = {}): Record<string, unknown> =>
     ({ pane_id: id, tab_id: 'w1:t1', terminal_title_stripped: title, agent: null, label: null, ...extra });
@@ -141,7 +142,7 @@ test('HerdrFleet refuses to close or resize a pane that hosts an agent — and s
     process.env['HERDR_SOCKET_PATH'] = herdr.path;
     resetHerdrClients();
     try {
-        const fleet = new HerdrFleet('/state');
+        const fleet = new HerdrFleet(textOf('/state'));
         for (const target of ['w1:p1', 'w1:p3']) {
             const closed = await fleet.close(paneId(target));
             assert.ok(isUnknown(closed) && closed.why.why === 'failed', `close ${target} refused`);
@@ -163,7 +164,7 @@ test('HerdrFleet refuses when it cannot check: herdr unreachable means no close'
     const before = process.env['HERDR_SOCKET_PATH'];
     process.env['HERDR_SOCKET_PATH'] = join(tmpdir(), 'no-such-herdr.sock');
     try {
-        const closed = await new HerdrFleet('/state').close(paneId('w1:p1'));
+        const closed = await new HerdrFleet(textOf('/state')).close(paneId('w1:p1'));
         assert.ok(isUnknown(closed));
     } finally {
         resetHerdrClients();
@@ -185,7 +186,7 @@ test('HerdrFleet.closeEvery: ONE look at herdr, then a close for each of OUR col
     process.env['HERDR_SOCKET_PATH'] = herdr.path;
     resetHerdrClients();
     try {
-        const result = await new HerdrFleet('/state').closeEvery();
+        const result = await new HerdrFleet(textOf('/state')).closeEvery();
         assert.deepEqual(result, { kind: 'closed', closed: 4, failed: 0 });
         assert.deepEqual(herdr.calls, ['session.snapshot', 'pane.close', 'pane.close', 'pane.close', 'pane.close'], 'one snapshot for the whole batch');
     } finally {
@@ -200,7 +201,7 @@ test('HerdrFleet.closeEvery: herdr unreachable is an Unknown, not a throw', asyn
     const before = process.env['HERDR_SOCKET_PATH'];
     process.env['HERDR_SOCKET_PATH'] = join(tmpdir(), 'no-such-herdr-either.sock');
     try {
-        assert.ok(isUnknown(await new HerdrFleet('/state').closeEvery()));
+        assert.ok(isUnknown(await new HerdrFleet(textOf('/state')).closeEvery()));
     } finally {
         resetHerdrClients();
         if (before === undefined) { delete process.env['HERDR_SOCKET_PATH']; } else { process.env['HERDR_SOCKET_PATH'] = before; }

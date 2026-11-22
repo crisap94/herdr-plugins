@@ -7,15 +7,16 @@ import { join } from 'node:path';
 import { onPath, PathHarnesses } from '#src/adapters/harness/on-path.ts';
 import { Backends, intersect, pick } from '#src/daemon/backends.ts';
 import { backendOf, modelsOf } from '#src/daemon/config.ts';
-import type { HarnessesResult } from '#src/ports/harnesses.ts';
+import type { HarnessList } from '#src/ports/harnesses.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import { causeOf } from './fakes/cause.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
-const found = (...ids: string[]): HarnessesResult => ({ kind: 'available', ids });
+const found = (...ids: string[]): HarnessList => ({ kind: 'available', ids: ids.map((id) => agentKind(id)) });
 const get = (values: Record<string, string>) => (key: string): string | undefined => values[key];
 const down = unknown({ why: 'unreachable', detail: causeOf('no socket') });
 
@@ -74,8 +75,8 @@ test('Backends: picks from the cache, says so when nothing is available, and toa
         let ids: string[] = [];
         const toasts: string[] = [];
         const lines: string[] = [];
-        const herdr = { available: (): Promise<HarnessesResult> => Promise.resolve(found(...ids)) };
-        const path = { available: (): Promise<HarnessesResult> => Promise.resolve(found(...ids)) };
+        const herdr = { available: (): Promise<HarnessList> => Promise.resolve(found(...ids)) };
+        const path = { available: (): Promise<HarnessList> => Promise.resolve(found(...ids)) };
         const notifier = { notify: (title: string, body: string): Promise<{ kind: 'shown' }> => { toasts.push(`${title}: ${body}`); return Promise.resolve({ kind: 'shown' }); } };
         const backends = new Backends(must(parseDirectory(dir)), { herdr, path }, notifier, (line) => { lines.push(line); }, fakeRuntime({ scripts: {} }));
         await backends.refresh();

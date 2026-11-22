@@ -4,7 +4,11 @@ import { countOf } from '#src/recap/domain/count.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { EVENT_TOKEN, EVENT_TTL_MS, eventValue, seqOf } from '#src/recap/domain/event-token.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
-import type { WorkspaceTokens } from '#src/ports/workspace-tokens.ts';
+import type { WorkspaceTokenMap, WorkspaceTokenReporter } from '#src/ports/workspace-tokens.ts';
+import { parseTokenName, parseTokenValue } from '#src/protocol/primitives.ts';
+import { must } from '#src/protocol/result.ts';
+import { uncheckedWorkspaceId } from '#src/recap/domain/ids.ts';
+import { parseMilliseconds } from '#src/recap/domain/time.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 
 export interface LaneEvents {
@@ -14,7 +18,7 @@ export interface LaneEvents {
 
 export interface EventDeps {
     readonly tokens: LaneTokens;
-    readonly workspaces: WorkspaceTokens;
+    readonly workspaces: WorkspaceTokenReporter;
     readonly enabled: () => boolean;
     readonly startedAt: number;
     readonly log: (line: string) => void;
@@ -25,6 +29,8 @@ type DaemonKind = 'daemon-started' | 'daemon-stopping';
 interface Counter { readonly base: number; n: number; at: number }
 interface Carried { readonly target: Target; readonly id: string }
 const KEEP_MS = 3_600_000;
+const EVENT_NAME = must(parseTokenName(EVENT_TOKEN));
+const WORKSPACE_TTL = must(parseMilliseconds(EVENT_TTL_MS));
 
 export class EventStream implements LaneEvents {
     private readonly deps: EventDeps;
@@ -84,7 +90,7 @@ export class EventStream implements LaneEvents {
 
     private async write(target: Target, id: string, kind: EventKind, seq: string, detail: string | null): Promise<void> {
         const value = eventValue(textOf(seq), kind, detail === null ? null : textOf(detail));
-        const done = target === 'pane' ? await this.deps.tokens.report(id, { [EVENT_TOKEN]: value }, EVENT_TTL_MS) : await this.deps.workspaces.reportWorkspace(id, { [EVENT_TOKEN]: value }, EVENT_TTL_MS);
+        const done = target === 'pane' ? await this.deps.tokens.report(id, { [EVENT_TOKEN]: value }, EVENT_TTL_MS) : await this.deps.workspaces.reportWorkspace(uncheckedWorkspaceId(id), new Map([[EVENT_NAME, must(parseTokenValue(value))]]), WORKSPACE_TTL);
         if (isUnknown(done)) {
             this.deps.log(`event ${kind} on ${id}: not written (${saying(done.why)})`);
         }
@@ -101,8 +107,8 @@ export class EventStream implements LaneEvents {
     }
 
     private async clear(target: Target, id: string): Promise<void> {
-        const tokens = { [EVENT_TOKEN]: null };
-        const done = target === 'pane' ? await this.deps.tokens.report(id, tokens, EVENT_TTL_MS) : await this.deps.workspaces.reportWorkspace(id, tokens, EVENT_TTL_MS);
+        const cleared: WorkspaceTokenMap = new Map([[EVENT_NAME, null]]);
+        const done = target === 'pane' ? await this.deps.tokens.report(id, { [EVENT_TOKEN]: null }, EVENT_TTL_MS) : await this.deps.workspaces.reportWorkspace(uncheckedWorkspaceId(id), cleared, WORKSPACE_TTL);
         if (isUnknown(done)) {
             this.deps.log(`event token on ${id}: not cleared (${saying(done.why)})`);
         }

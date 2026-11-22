@@ -4,9 +4,6 @@ import type { Milliseconds } from '#src/recap/domain/time.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 import type { Done } from './columns.ts';
 
-export type { WorkspacesResult } from './twins/legacy.ts';
-export type { WorkspaceTokens } from './legacy.ts';
-
 export type WorkspaceTokenMap = ReadonlyMap<TokenName, TokenValue | null>;
 
 export type WorkspaceList = { readonly kind: 'workspaces'; readonly ids: readonly WorkspaceId[] } | Unknown;

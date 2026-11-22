@@ -9,8 +9,8 @@ import type { Decider, DeciderPort } from '#src/ports/decider.ts';
 import type { Curators } from '#src/ports/curators.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { CheckAnchor, Judge } from '#src/ports/judge.ts';
-import type { Harnesses, HarnessesResult } from '#src/ports/harnesses.ts';
-import type { Notifier } from '#src/ports/notifier.ts';
+import type { HarnessDirectory, HarnessList } from '#src/ports/harnesses.ts';
+import type { NotifierPort } from '#src/ports/notifier.ts';
 import type { Summarizer, Written } from '#src/ports/summarizer.ts';
 import { isUnknown, saying, unknown } from '#src/ports/unknowable.ts';
 import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
@@ -41,7 +41,7 @@ export function summarizerWorkIn(root: Directory): Directory {
     return must(parseDirectory(join(root, 'summarizer')));
 }
 
-export function intersect(fromHerdr: HarnessesResult, fromPath: HarnessesResult): HarnessesResult {
+export function intersect(fromHerdr: HarnessList, fromPath: HarnessList): HarnessList {
     if (isUnknown(fromPath)) {
         return fromHerdr;
     }
@@ -86,8 +86,8 @@ export function curatorFor(config: Config, available: Available, work: Directory
 }
 
 interface HarnessSources {
-    readonly herdr: Harnesses;
-    readonly path: Harnesses;
+    readonly herdr: HarnessDirectory;
+    readonly path: HarnessDirectory;
 }
 
 export class Backends {
@@ -96,10 +96,10 @@ export class Backends {
     private readonly work: Directory;
     private readonly runtime: HarnessRuntime;
     private readonly sources: HarnessSources;
-    private readonly notifier: Notifier;
+    private readonly notifier: NotifierPort;
     private readonly log: LogLine;
 
-    constructor(root: Directory, sources: HarnessSources, notifier: Notifier, log: LogLine, runtime: HarnessRuntime) {
+    constructor(root: Directory, sources: HarnessSources, notifier: NotifierPort, log: LogLine, runtime: HarnessRuntime) {
         this.work = summarizerWorkIn(root);
         this.runtime = runtime;
         this.sources = sources;
@@ -113,7 +113,7 @@ export class Backends {
             this.log(must(parseText(`harness lookup failed: ${saying(found.why)}`)));
             return;
         }
-        this.available = BACKEND_IDS.filter((known) => found.ids.includes(known));
+        this.available = BACKEND_IDS.filter((known) => found.ids.some((id) => id === known));
         await this.warnWhenNone();
     }
 
@@ -123,7 +123,7 @@ export class Backends {
         }
         this.warning = 'warned';
         this.log(must(parseText(`no backend: ${NONE}`)));
-        await this.notifier.notify('Tab Recap', `No recap writer found — ${NONE}`);
+        await this.notifier.notify(textOf('Tab Recap'), textOf(`No recap writer found — ${NONE}`));
     }
 
     brief(): CompactionBriefs | null {

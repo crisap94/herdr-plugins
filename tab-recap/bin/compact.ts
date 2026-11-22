@@ -9,6 +9,7 @@ import { isUnknown, saying, unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import { parseText } from '#src/recap/domain/text.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const OK = 0;
 const FAILED = 1;
@@ -31,7 +32,7 @@ export async function compactCommand(tab: string, pane: string | null, note: str
     const started = await startCompact(tab, pane, text, setting, {
         askNote: async (asked, shown) => {
             await sleep(Number(process.env['TAB_RECAP_COMPACT_DELAY_MS'] ?? 0) || 0);
-            return new HerdrFleet(stateDir()).agents().askNote(asked, shown);
+            return new HerdrFleet(textOf(stateDir())).agents().askNote(asked, shown);
         },
         queue: queueCompaction,
     });

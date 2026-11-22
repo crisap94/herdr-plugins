@@ -4,6 +4,7 @@ import type { IntentSink, Launch } from '../view/intents.ts';
 import type { CompactStart } from '#src/recap/application/compact-start.ts';
 import type { Done } from '#src/ports/columns.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 export const defaultOn: Mode = 'on';
 
@@ -53,7 +54,7 @@ const compactFor = async (context: ViewContext): Promise<CompactStart> => {
     const herdr = await import('#src/adapters/herdr/fleet.ts');
     return {
         askNote(tab: TabId, pane: PaneId | null): Promise<Done> {
-            return new herdr.HerdrFleet(context.root).agents().askNote(tab, pane);
+            return new herdr.HerdrFleet(textOf(context.root)).agents().askNote(tab, pane);
         },
         queue(request): Done {
             context.store.requests.requestCompact(request);
@@ -68,7 +69,7 @@ const intentsFor = async (context: ViewContext): Promise<IntentSink> => {
     const config = await import('../config.ts');
     return intents.runIntent({
         observe: context.observe,
-        show: (tab: TabId): Promise<Done> => new herdr.HerdrFleet(context.root).show(tab),
+        show: (tab: TabId): Promise<Done> => new herdr.HerdrFleet(textOf(context.root)).show(tab),
         compact: await compactFor(context),
         compactNote: () => config.loadConfig().compactNote,
         launch: await launcherFor(context),
