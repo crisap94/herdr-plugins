@@ -23,8 +23,7 @@ test('a score keeps only verdicts for known items and checks, once each, and car
         coverage: [{ keyfact: 0, item: 'a/0' }, { keyfact: 0, item: 'a/1' }, { keyfact: 1.5, item: 'a/1' }, { keyfact: -1, item: 'a/1' }, { keyfact: 2, item: 'nope' }, { keyfact: 5, item: 'a/1' }],
     });
     const scored = parseScore(t(answer), SECTIONS);
-    assert.equal(scored.kind, 'ok');
-    if (scored.kind !== 'ok') return;
+    assert.ok(scored.kind === 'ok');
     assert.deepEqual(scored.value.verdicts.map((verdict) => [verdict.item, verdict.check, verdict.pass, verdict.critique]), [
         ['a/0', 'I1', 'pass', ''],
         ['a/1', 'S-done', 'fail', 'too vague'],
@@ -43,11 +42,9 @@ test('a score with no verdicts, or without key facts and coverage lists, is unus
 test('a cover answer takes the given key facts over its own and needs a coverage list', () => {
     const answer = t(JSON.stringify({ keyfacts: ['own'], coverage: [{ keyfact: 1, item: 'a/1' }, { keyfact: 0, item: 'x' }] }));
     const covered = parseCover(answer, SECTIONS, [t('given one'), t('given two')]);
-    assert.equal(covered.kind, 'ok');
-    if (covered.kind === 'ok') {
-        assert.deepEqual(covered.value.keyfacts, ['given one', 'given two']);
-        assert.deepEqual([...covered.value.carried].map(([at, item]) => [Number(at), item]), [[1, 'a/1'], [0, null]]);
-    }
+    assert.ok(covered.kind === 'ok');
+    assert.deepEqual(covered.value.keyfacts, ['given one', 'given two']);
+    assert.deepEqual([...covered.value.carried].map(([at, item]) => [Number(at), item]), [[1, 'a/1'], [0, null]]);
     assert.deepEqual(parseCover(t(JSON.stringify({ keyfacts: ['own'] })), SECTIONS, null), { kind: 'unusable', why: 'the answer has no key facts and coverage' });
 });
 
@@ -61,9 +58,7 @@ test('read-back answers are exactly six strings, whitespace collapsed', () => {
 test('grades need all six whole questions from 1 to 6 with a boolean pass, the first grade per question wins', () => {
     const grades = [1, 2, 3, 4, 5, 6].map((question) => ({ question, pass: question % 2 === 0, critique: 'c' }));
     const parsed = parseGrades(t(JSON.stringify({ grades: [{ question: 1, pass: true }, ...grades, { question: 0, pass: true }, { question: 7, pass: true }, { question: 2.5, pass: true }] })));
-    assert.equal(parsed.kind, 'ok');
-    if (parsed.kind === 'ok') {
-        assert.deepEqual(parsed.value.map((grade) => [Number(grade.question), grade.pass, grade.critique]), [[1, true, ''], [2, true, ''], [3, false, 'c'], [4, true, ''], [5, false, 'c'], [6, true, '']]);
-    }
+    assert.ok(parsed.kind === 'ok');
+    assert.deepEqual(parsed.value.map((grade) => [Number(grade.question), grade.pass, grade.critique]), [[1, true, ''], [2, true, ''], [3, false, 'c'], [4, true, ''], [5, false, 'c'], [6, true, '']]);
     assert.deepEqual(parseGrades(t(JSON.stringify({ grades: grades.slice(1) }))), { kind: 'unusable', why: 'the answer does not grade all six questions' });
 });
