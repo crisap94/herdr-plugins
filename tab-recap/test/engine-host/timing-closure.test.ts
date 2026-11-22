@@ -44,6 +44,7 @@ const ENGINE: readonly string[] = engineOf(JSON.parse(readFileSync(ENGINE_FILES_
 const KNOWN: readonly Edge[] = [
     { from: 'src/adapters/job/decider.ts', to: 'src/adapters/job/legacy.ts', kind: 're-export' },
     { from: 'src/adapters/job/decider.ts', to: 'src/ports/harness.ts', kind: 'import' },
+    { from: 'src/adapters/job/decider.ts', to: 'src/recap/domain/token-amount.ts', kind: 'import' },
     { from: 'src/daemon/autocompact-sweep.ts', to: 'src/recap/domain/board.ts', kind: 'import' },
     { from: 'src/daemon/autocompact-sweep.ts', to: 'src/recap/domain/lane.ts', kind: 'import' },
     { from: 'src/daemon/autocompact-sweep.ts', to: 'src/recap/domain/status.ts', kind: 'import' },
@@ -51,6 +52,7 @@ const KNOWN: readonly Edge[] = [
     { from: 'src/ports/autocompact-records.ts', to: 'src/recap/domain/ids.ts', kind: 'import' },
     { from: 'src/ports/autocompact-records.ts', to: 'src/recap/domain/ids.ts', kind: 'import' },
     { from: 'src/ports/decider.ts', to: 'src/ports/legacy.ts', kind: 're-export' },
+    { from: 'src/ports/decider.ts', to: 'src/recap/domain/token-amount.ts', kind: 'import' },
     { from: 'src/recap/application/autocompact-gates.ts', to: 'src/ports/compaction-records.ts', kind: 'import' },
     { from: 'src/recap/application/autocompact-gates.ts', to: 'src/ports/requests.ts', kind: 'import' },
     { from: 'src/recap/application/autocompact-gates.ts', to: 'src/recap/application/lane-claims.ts', kind: 'import' },

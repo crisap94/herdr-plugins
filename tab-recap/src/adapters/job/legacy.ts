@@ -1,10 +1,10 @@
-import type { Decider, DecidedResult, Noul } from '#src/ports/decider.ts';
+import type { DeciderPort } from '#src/ports/decider.ts';
 import type { Harness, HarnessChoice, HarnessPort, HarnessSettings, HarnessRun, Ran } from '#src/ports/harness.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { instant, parseMilliseconds } from '#src/recap/domain/time.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { instant, parseMilliseconds, type Instant } from '#src/recap/domain/time.ts';
 import { parseUsd } from '#src/recap/domain/usd.ts';
 import { HarnessPortDecider } from './decider.ts';
 
@@ -27,16 +27,6 @@ const portOf = (harness: Harness): HarnessPort => ({
     },
 });
 
-export class HarnessDecider implements Decider {
-    readonly label: Text;
-    private readonly inner: HarnessPortDecider;
-
-    constructor(harness: Harness, settings: HarnessSettings, now: () => number = Date.now) {
-        this.inner = new HarnessPortDecider(portOf(harness), choiceOf(settings), () => instant(now()));
-        this.label = this.inner.label;
-    }
-
-    ask(state: Text, questions: ReadonlyMap<Text, Noul>): Promise<DecidedResult> {
-        return this.inner.ask(state, questions);
-    }
+export function deciderPortOf(harness: Harness, settings: HarnessSettings, now: () => Instant = (): Instant => instant(Date.now())): DeciderPort {
+    return new HarnessPortDecider(portOf(harness), choiceOf(settings), now);
 }

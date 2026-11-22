@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HarnessDecider } from '#src/adapters/job/decider.ts';
-import type { Noul } from '#src/ports/decider.ts';
+import { deciderPortOf } from '#src/adapters/job/decider.ts';
+import type { DeciderPort, Noul } from '#src/ports/decider.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import type { Harness, HarnessCall, Ran } from '#src/ports/harness.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Text } from '#src/recap/domain/text.ts';
@@ -12,14 +13,14 @@ const questions: ReadonlyMap<Text, Noul> = new Map<Text, Noul>([
     [textOf('stuck'), noulOf('same step failing?', 'retries', 'progress')],
 ]);
 
-function decider(reply: Ran | string, limit: number | null = null): { decider: HarnessDecider; calls: HarnessCall[] } {
+function decider(reply: Ran | string, limit: number | null = null): { decider: DeciderPort; calls: HarnessCall[] } {
     const calls: HarnessCall[] = [];
     const harness: Harness = {
         id: 'fake', limit, label: (settings) => `fake/${settings.model || 'default'}`,
         run: (call): Promise<Ran> => { calls.push(call); return Promise.resolve(typeof reply === 'string' ? { kind: 'ran', text: reply, costUsd: 0.0004 } : reply); },
     };
     let tick = 0;
-    return { decider: new HarnessDecider(harness, { model: 'haiku', effort: 'low' }, () => (tick += 2200)), calls };
+    return { decider: deciderPortOf(harness, { model: 'haiku', effort: 'low' }, () => instant((tick += 2200))), calls };
 }
 
 test('harness decider: one call, the state as JSON input, every question listed; the probabilities come back with the harness cost', async () => {
