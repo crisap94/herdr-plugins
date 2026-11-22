@@ -252,6 +252,7 @@
       "test/compaction-refusal-ask.test.ts",
       "test/compaction.test.ts",
       "test/context-hint.test.ts",
+      "test/continuation-note-plain.test.ts",
       "test/continuation-note.test.ts",
       "test/coordination-names.test.ts",
       "test/count-parsers.test.ts",

@@ -4,10 +4,11 @@ import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { TRANSCRIPT_BUDGET, writerContext } from '#src/recap/application/writer-context.ts';
+import { unfencedText } from '../decider.ts';
 import { instructions } from './recap-instructions.ts';
 
 export { argvPrompt, fitBytes, fittedCall, message, prompt, unfenced } from './legacy.ts';
-export { instructions };
+export { instructions, unfencedText };
 
 export function messageText(request: RecapRequest): Text {
     return must(parseText(writerContext(request)));
@@ -15,15 +16,6 @@ export function messageText(request: RecapRequest): Text {
 
 export function promptText(request: RecapRequest): Text {
     return must(parseText(`${messageText(request)}\n\n${instructions(request)}`));
-}
-
-export function unfencedText(markdown: Text): Text {
-    const trimmed = markdown.trim();
-    const lines = trimmed.split('\n');
-    if (lines.length >= 2 && (lines[0] ?? '').startsWith('```') && (lines.at(-1) ?? '') === '```') {
-        return must(parseText(lines.slice(1, -1).join('\n').trim()));
-    }
-    return must(parseText(trimmed));
 }
 
 export const ARGV_BYTES: Count = must(parseCount(120_000));
