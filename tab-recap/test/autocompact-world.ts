@@ -9,9 +9,10 @@ import { tabId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { policyOf } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
-import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
-import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
-import type { Decider, DecidedResult } from '#src/ports/decider.ts';
+import { tuningFrom } from '#src/recap/domain/autocompact-style.ts';
+import type { CompactTuning } from '#src/recap/domain/autocompact-style.ts';
+import type { DecidedAnswersResult, DeciderPort, DecidedResult } from '#src/ports/decider.ts';
+import { parseTokenAmount } from '#src/recap/domain/token-amount.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
 import { memoryStore } from './db/support.ts';
 import { unknown } from '#src/ports/unknowable.ts';
@@ -31,23 +32,25 @@ const KEY = must(parseSessionKey('w1:p1'));
 const candidate = (harness: string): Candidate => ({ scope: SCOPE, key: KEY, harness: must(parseHarnessKind(harness)), ready: true });
 const laneOf = (from: Candidate, status: string): Lane => laneFrom({ paneId: from.key, tabId: from.scope, workspaceId: 'w1', agent: from.harness, status });
 export const lane = (agent = 'claude', status = 'idle'): Lane => laneOf(candidate(agent), status);
+export const tuningOfKeys = (keys: Readonly<Record<string, string>>): CompactTuning => tuningFrom((key) => { const value = keys[key]; return value === undefined ? undefined : textOf(value); });
+const typed = (decided: DecidedResult): DecidedAnswersResult => (decided.kind === 'decided' ? { ...decided, tokens: must(parseTokenAmount(decided.tokens)) } : decided);
 export const SAFE = { closes_request: 0.95, announces_continuation: 0.05, asks_detailed_choice: 0.02, needs_verbatim: 0.10, changes_subject: 0.03, stuck: 0.01 };
 
 export interface World { breakAt: number | null; readonly service: Autocompact; readonly claims: LaneClaims; readonly queued: Set<string>;readonly events: string[]; awaiting: string | null; lateAwaiting: string | null; awaitingUnknown: boolean; known: boolean; gate: Promise<void> | null; byPane: Record<string, number>; readonly store: ReturnType<typeof memoryStore>; readonly requests: CompactRequest[]; readonly logs: string[]; readonly asked: number[]; readonly refreshed: string[]; readonly flushed: string[]; readonly reads: number[]; readonly clock: { at: number }; idleHold: IdleHold; policy: AutocompactPolicy; inFlight: number | 'unknown'; background: readonly BackgroundItem[]; share: number; decide: () => DecidedResult }
 
-export function world(over: Partial<AutocompactPolicy> = {}, recap = true, startedAt = 0, tuning: Partial<AutocompactTuning> = {}): World {
+export function world(over: Partial<AutocompactPolicy> = {}, recap = true, startedAt = 0, tuning: Partial<CompactTuning> = {}): World {
     const store = memoryStore();
     store.db.prepare('INSERT INTO tab (id, first_seen, last_seen) VALUES (?, 1, 1)').run(SCOPE);
     const [requests, logs, asked, refreshed, reads, events] = [[] as CompactRequest[], [] as string[], [] as number[], [] as string[], [] as number[], [] as string[]];
     const flushed: string[] = [];
     const clock = { at: NOW };
-    const state = { breakAt: null as number | null, policy: { ...policyOf(() => undefined), mode: 'on' as const, ...over }, tuning: { ...tuningOf(() => undefined), ...tuning }, inFlight: 0 as number | 'unknown', background: [] as readonly BackgroundItem[], awaiting: null as string | null, lateAwaiting: null as string | null, awaitingReads: 0, awaitingUnknown: false, known: true, gate: null as Promise<void> | null, byPane: {} as Record<string, number>, share: 62, idleHold: 'on' as IdleHold, decide: (): DecidedResult => decidedOf(SAFE, { tokens: 700, costUsd: 0.00003, tookMs: 550 }) };
-    const decider: Decider = { label: textOf('fake · m'), ask: async (_state, questions) => { asked.push(questions.size); if (state.gate !== null) await state.gate; return state.decide(); } };
+    const state = { breakAt: null as number | null, policy: { ...policyOf(() => undefined), mode: 'on' as const, ...over }, tuning: { ...tuningFrom(() => undefined), ...tuning }, inFlight: 0 as number | 'unknown', background: [] as readonly BackgroundItem[], awaiting: null as string | null, lateAwaiting: null as string | null, awaitingReads: 0, awaitingUnknown: false, known: true, gate: null as Promise<void> | null, byPane: {} as Record<string, number>, share: 62, idleHold: 'on' as IdleHold, decide: (): DecidedResult => decidedOf(SAFE, { tokens: 700, costUsd: 0.00003, tookMs: 550 }) };
+    const decider: DeciderPort = { label: textOf('fake · m'), ask: async (_state, questions) => { asked.push(questions.size); if (state.gate !== null) await state.gate; return typed(state.decide()); } };
     const claims = new LaneClaims();
     const queued = new Set<string>();
     const deps: AutocompactDeps = {
         policy: () => state.policy, tuning: () => state.tuning, decider: () => decider, contexts: { of: (pane) => (state.known ? { tokens: (state.byPane[pane] ?? state.share) * 10_000, window: 1_000_000, source: 'observed' } : null) }, inFlight: () => { reads.push(1); return Promise.resolve(state.inFlight === 'unknown' ? unreadable(flightReason('test')) : observedFrom(runningCount(state.inFlight), state.background, flightReason(`${state.inFlight} running`))); },
-        recent: () => Promise.resolve([{ role: 'user', text: 'publish it' }, { role: 'agent', text: 'Published.' }]), ledger: store.ledger, boundaries: { lastBreakAt: (tab: string, pane: string) => state.breakAt ?? store.boundaries.lastBreakAt(tabId(tab), pane) }, compactions: store.compactions, decisions: store.autocompact,
+        recent: () => Promise.resolve([{ role: 'user', text: 'publish it' }, { role: 'agent', text: 'Published.' }]), ledger: store.ledger, boundaries: { lastBreakAt: (tab: string, pane: string) => state.breakAt ?? store.boundaries.lastBreakAt(tabId(tab), pane) }, compactions: store.compactions, decisions: store.decisions,
         requests: { requestCompact: (request) => { requests.push(request); } }, claims, queue: { compactQueued: (_tab, pane) => queued.has(pane) }, hasRecap: () => (recap ? 'recapped' : 'unrecapped'), refresh: (tab) => { refreshed.push(tab); return Promise.resolve('refreshed'); }, flush: (tab, why): Promise<void> => { flushed.push(`${String(tab)} ${why} asked ${asked.length}`); return Promise.resolve(); },
         lanes: () => [lane()], idleHold: () => state.idleHold, now: () => instant(clock.at), log: (line) => { logs.push(line); }, startedAt: instant(startedAt),
         awaiting: () => { state.awaitingReads += 1; return Promise.resolve(awaitingOf(state)); },

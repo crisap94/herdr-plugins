@@ -1,7 +1,7 @@
-import type { LastDecision, DecisionMode } from '#src/ports/autocompact-records.ts';
+import type { LastDecisionRow, DecisionMode } from '#src/ports/autocompact-records.ts';
 import type { AutocompactPolicy, Gate } from '#src/recap/domain/autocompact.ts';
 import { must } from '#src/protocol/result.ts';
-import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
+import type { CompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import { READY } from '#src/recap/domain/status.ts';
@@ -28,7 +28,7 @@ export interface Stop {
 }
 
 export interface Marks {
-    readonly last: LastDecision | null;
+    readonly last: LastDecisionRow | null;
     readonly lastBreakAt: Instant | null;
     readonly lastDecisionAt: Instant | null;
 }
@@ -52,13 +52,13 @@ export function busyDetailOf(busy: Busy): BusyDetail | null {
     return busy.kind === 'busy' ? busy.detail : null;
 }
 
-export function idleMsOf(tuning: AutocompactTuning): Milliseconds | null {
+export function idleMsOf(tuning: CompactTuning): Milliseconds | null {
     return tuning.recheckIdleMs === null ? null : must(parseMilliseconds(tuning.recheckIdleMs));
 }
 
 export interface BackoffFacts {
     readonly policy: AutocompactPolicy;
-    readonly last: LastDecision | null;
+    readonly last: LastDecisionRow | null;
     readonly now: Instant;
     readonly tokens: Count;
     readonly window: Count;

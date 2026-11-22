@@ -157,3 +157,8 @@ test('a re-export of legacy.ts is the only edge E14 stubs may keep', () => {
         [],
     );
 });
+
+test('no timing file imports a name from a legacy.ts: every edge into one is a re-export', () => {
+    const imports = TIMING.flatMap(edgesOf).filter((edge) => edge.kind === 'import' && edge.to.endsWith('/legacy.ts'));
+    assert.deepEqual(imports, []);
+});

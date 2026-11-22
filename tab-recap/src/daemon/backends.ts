@@ -5,7 +5,7 @@ import { HarnessCurator } from '#src/adapters/job/curator.ts';
 import { HarnessEnumerator } from '#src/adapters/job/enumerator.ts';
 import { RecapWriter } from '#src/adapters/job/writer.ts';
 import type { CompactionBriefs } from '#src/ports/compaction-briefs.ts';
-import type { Decider } from '#src/ports/decider.ts';
+import type { Decider, DeciderPort } from '#src/ports/decider.ts';
 import type { Curators } from '#src/ports/curators.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { CheckAnchor, Judge } from '#src/ports/judge.ts';
@@ -15,7 +15,7 @@ import type { Summarizer, Written } from '#src/ports/summarizer.ts';
 import { isUnknown, saying, unknown } from '#src/ports/unknowable.ts';
 import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
 import type { LogLine } from '#src/ports/harness.ts';
-import { coverageDeciderFor, deciderFor } from './deciders.ts';
+import { coverageDeciderFor, deciderPortFor } from './deciders.ts';
 import { loadConfig } from './config.ts';
 import { MAKERS } from './harness-makers.ts';
 import { BACKEND_IDS, enumeratesJob, installableHarnessSentence, pick, type BackendId } from '#src/recap/domain/backend.ts';
@@ -130,8 +130,8 @@ export class Backends {
         return briefFor(loadConfig(), this.available, this.work, this.runtime, this.log);
     }
 
-    decider(): Decider | null {
-        return deciderFor(loadConfig(), this.available, this.work, this.runtime, this.log);
+    decider(): DeciderPort | null {
+        return deciderPortFor(loadConfig(), this.available, this.work, this.runtime, this.log);
     }
 
     coverageDecider(): Decider | null {

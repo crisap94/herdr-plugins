@@ -47,7 +47,7 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { InFlightReason } from '#src/ports/autocompact-reasons.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
-import type { Decider } from '#src/ports/decider.ts';
+import type { DeciderPort } from '#src/ports/decider.ts';
 import type { Harness } from '#src/ports/harness.ts';
 import type { Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { ScreenResult, Screens } from '#src/ports/screens.ts';
@@ -177,7 +177,7 @@ const sourceOf = (found: Located): string => {
 async function skipOf(readers: TranscriptRegistry, placed: Lane, kind: Kind): Promise<{ readonly gate: string; readonly detail: string | null } | undefined> {
     const store = memoryStore();
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
-    const decider: Decider = { label: textOf('fake'), ask: () => Promise.reject(new Error('the decider is not reached when the in-flight gate stops the lane')) };
+    const decider: DeciderPort = { label: textOf('fake'), ask: () => Promise.reject(new Error('the decider is not reached when the in-flight gate stops the lane')) };
     const env = (key: string): string | undefined => (key === 'TAB_RECAP_AUTOCOMPACT_KINDS' ? kind : undefined);
     const config = { autocompact: { ...policyOf(env), mode: 'on' }, tuning: tuningOf(() => undefined) } as unknown as Config;
     const service: Autocompact = wireAutocompact({

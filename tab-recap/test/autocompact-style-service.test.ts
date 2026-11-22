@@ -7,17 +7,16 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { policyOf } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactMode } from '#src/recap/domain/autocompact.ts';
-import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
 import type { DecidedResult } from '#src/ports/decider.ts';
 import type { DecisionMode } from '#src/ports/autocompact-records.ts';
-import { NOW, lane, rows, world } from './autocompact-world.ts';
+import { NOW, lane, rows, tuningOfKeys, world } from './autocompact-world.ts';
 import type { World } from './autocompact-world.ts';
 import { decidedOf } from './fakes/decider-fixtures.ts';
 
 const env = (keys: Readonly<Record<string, string>>) => (key: string): string | undefined => keys[key];
 
 function styled(keys: Readonly<Record<string, string>>, mode: AutocompactMode = 'on'): World {
-    return world({ ...policyOf(env(keys)), mode }, true, 0, tuningOf(env(keys)));
+    return world({ ...policyOf(env(keys)), mode }, true, 0, tuningOfKeys(keys));
 }
 
 const answer = (closes: number, rest = 0.15): DecidedResult => (decidedOf({ closes_request: closes, announces_continuation: rest, asks_detailed_choice: rest, needs_verbatim: rest, changes_subject: rest, stuck: rest }));

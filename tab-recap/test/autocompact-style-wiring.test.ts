@@ -21,10 +21,10 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import { policyOf } from '#src/recap/domain/autocompact.ts';
 import { tuningOf } from '#src/recap/domain/autocompact-style.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Decider, DecidedResult } from '#src/ports/decider.ts';
+import type { DecidedAnswersResult, DecidedResult, Decider, DeciderPort } from '#src/ports/decider.ts';
 import type { InFlightResult, Located, Transcripts } from '#src/ports/transcripts.ts';
 import { memoryStore } from './db/support.ts';
-import { decidedOf, textOf } from './fakes/decider-fixtures.ts';
+import { decidedAnswersOf, decidedOf, textOf } from './fakes/decider-fixtures.ts';
 
 const env = (keys: Readonly<Record<string, string>>) => (key: string): string | undefined => keys[key];
 
@@ -49,9 +49,9 @@ function inertTranscripts(): Transcripts {
 async function decisionUnder(keys: Readonly<Record<string, string>>, closes: number): Promise<string | undefined> {
     const store = memoryStore();
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
-    const decider: Decider = {
+    const decider: DeciderPort = {
         label: textOf('fake'),
-        ask: (_state, questions): Promise<DecidedResult> => Promise.resolve(decidedOf(Object.fromEntries([...questions.keys()].map((id) => [id, id === 'closes_request' ? closes : 0.15])))),
+        ask: (_state, questions): Promise<DecidedAnswersResult> => Promise.resolve(decidedAnswersOf(Object.fromEntries([...questions.keys()].map((id) => [id, id === 'closes_request' ? closes : 0.15])))),
     };
     const transcripts: Transcripts = {
         agent: 'claude',
@@ -86,7 +86,7 @@ test('the daemon wiring hands the configured style to the service: a close of 0.
 
 test('the daemon wiring reads the safe key: warnings of 0.42 wait under eager\'s 0.40 and compact once the key sets 0.44', async () => {
     const warned = { closes_request: 0.95, announces_continuation: 0.42, asks_detailed_choice: 0.02, needs_verbatim: 0.10, changes_subject: 0.03, stuck: 0.01 };
-    const decider: Decider = { label: textOf('fake'), ask: () => Promise.resolve(decidedOf(warned)) };
+    const decider: DeciderPort = { label: textOf('fake'), ask: () => Promise.resolve(decidedAnswersOf(warned)) };
     const verdictWith = async (keys: Readonly<Record<string, string>>): Promise<string | undefined> => {
         const store = memoryStore();
         store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();

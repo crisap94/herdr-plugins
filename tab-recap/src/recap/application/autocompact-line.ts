@@ -1,4 +1,4 @@
-import type { Decision } from '#src/ports/autocompact-records.ts';
+import type { DecisionDraft } from '#src/ports/autocompact-records.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { Usd } from '#src/recap/domain/usd.ts';
@@ -9,8 +9,8 @@ export type Effect = 'record-only' | 'may-act';
 
 export const moneyOf = (usd: Usd): Text => must(parseText(usd === 0 ? '$0' : `$${usd.toFixed(5)}`));
 
-export function lineOf(made: Decision, effect: Effect): Text {
-    const figures = Object.entries(made.answers).map(([id, value]) => `${WORDS[id] ?? id} ${value.toFixed(2)}`);
+export function lineOf(made: DecisionDraft, effect: Effect): Text {
+    const figures = [...made.answers].map(([id, value]) => `${WORDS[id] ?? id} ${value.toFixed(2)}`);
     const tag = [made.gate === 'ceiling' ? 'ceiling' : null, made.mode, effect === 'record-only' ? 'record-only' : null].filter((part) => part !== null).join(', ');
     return must(parseText(`autocompact ${made.pane}: ${[`${made.share} %`, ...figures].join(' · ')} → ${made.verdict} (${tag})${made.why === null ? '' : `: ${made.why}`}`));
 }
