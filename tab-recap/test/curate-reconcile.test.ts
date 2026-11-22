@@ -22,6 +22,8 @@ import { brand } from '#src/recap/domain/brand.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Count } from '#src/recap/domain/count.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 
 const [textOf, countOf, tabOf, boundaryOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Count'>, brand<string, 'TabId'>, brand<boolean, 'Boundary'>, brand<number, 'Instant'>];
 
@@ -55,7 +57,7 @@ function setup(answers: readonly Curated[], over: { every?: number; tail?: reado
     const store = memoryStore();
     seed(store, { ...blankRecap('w1:t1'), at: 5, lanes: [cursor('w1:p1')], tasks: oneTask('## Goal\n- x') });
     const [logs, calls, clock, queue]: [string[], Rig['calls'], { now: number }, Curated[]] = [[], [], { now: NOW }, [...answers]];
-    const writer: Curators = { backend: 'fake/test', write: (document, mode): Promise<Curated> => { calls.push({ document, mode }); return Promise.resolve(queue.shift() ?? unknown({ why: 'failed', code: 1, detail: causeOf('no more answers') })); } };
+    const writer: Curators = { backend: must(parseText('fake/test')), write: (document, mode): Promise<Curated> => { calls.push({ document, mode }); return Promise.resolve(queue.shift() ?? unknown({ why: 'failed', code: 1, detail: causeOf('no more answers') })); } };
     const mode = over.repair;
     const curate = new Curate({
         records: store.records, ledger, stories, writer: (): Curators => writer, clock: (): Instant => instantOf(clock.now), zone: (): Text => textOf('UTC'), language: (): Text => textOf('en'), rubric: textOf(RUBRIC.items),
@@ -186,9 +188,9 @@ dtdTest('the reconcile document is valid against the DTD, holds only the open fa
 test('the curator harness reconciles with its own instructions, and tells the story with the old ones', async () => {
     const echo = new CustomHarness('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
     const curator = new HarnessCurator(echo, { model: '', effort: 'medium' });
-    const reconciled = await curator.write('<curator_input version="1" mode="reconcile"/>', 'reconcile');
+    const reconciled = await curator.write(must(parseText('<curator_input version="1" mode="reconcile"/>')), 'reconcile');
     assert.ok(reconciled.kind === 'curated' && reconciled.text.includes('Never add a fact.') && reconciled.text.includes('is NOT wrong') && !reconciled.text.includes('at most 120 words'));
-    const told = await curator.write('<curator_input version="1"/>');
+    const told = await curator.write(must(parseText('<curator_input version="1"/>')));
     assert.ok(told.kind === 'curated' && told.text.includes('at most 120 words') && !told.text.includes('Never add a fact.'));
 });
 

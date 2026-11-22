@@ -30,7 +30,7 @@ test('an answer that is not an object with candidates is refused whole', () => {
     assert.equal(answeredBy(textOf('{"skip":[]}'), ground), null);
 });
 
-const writer = (said: Curated, asked: string[]): Curators => ({ backend: 'fake/test', write: (document) => { asked.push(document); return Promise.resolve(said); } });
+const writer = (said: Curated, asked: string[]): Curators => ({ backend: textOf('fake/test'), write: (document) => { asked.push(document); return Promise.resolve(said); } });
 
 const depsOf = (over: Partial<ReconcilingDeps>, logs: string[]): ReconcilingDeps => ({
     ledger: { openOf: () => [], recentlyClosed: () => [], allOf: () => [], keysOf: () => [], historyOf: () => [] },

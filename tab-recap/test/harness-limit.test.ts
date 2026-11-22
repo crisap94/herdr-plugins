@@ -15,6 +15,8 @@ import { TRANSCRIPT_BUDGET, writerContext } from '#src/recap/application/writer-
 import { requestOf } from '#test/support.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { documentOf, textOf, noulOf } from './fakes/decider-fixtures.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 
 const SETTINGS = { model: '', effort: 'low' } as const;
 const QUESTIONS: ReadonlyMap<Text, Noul> = new Map<Text, Noul>([[textOf('stuck'), noulOf('same step failing?', 'retries', 'progress')]]);
@@ -34,10 +36,10 @@ test('a brief, curation, enumeration or decision longer than the harness limit i
     const briefed = await new HarnessBrief(brief.harness, SETTINGS).write('<compaction_input version="1"/>');
     assert.ok(isUnknown(briefed) && briefed.why.why === 'unreadable');
     const curated = limited(1);
-    const curate = await new HarnessCurator(curated.harness, SETTINGS).write('<curator_input version="1"/>', 'reconcile');
+    const curate = await new HarnessCurator(curated.harness, SETTINGS).write(must(parseText('<curator_input version="1"/>')), 'reconcile');
     assert.ok(isUnknown(curate));
     const enumerated = limited(1);
-    const enumerate = await new HarnessEnumerator(enumerated.harness, SETTINGS).write('<enumerate_input version="1"/>');
+    const enumerate = await new HarnessEnumerator(enumerated.harness, SETTINGS).write(must(parseText('<enumerate_input version="1"/>')));
     assert.ok(isUnknown(enumerate));
     const decided = limited(1);
     const decision = await deciderPortOf(decided.harness, SETTINGS, () => instant(0)).ask(documentOf({ goal: 'merge' }), QUESTIONS);
@@ -50,7 +52,7 @@ test('a document within the harness limit runs once; a null limit never refuses'
     const briefed = await new HarnessBrief(fits.harness, SETTINGS).write('<compaction_input version="1"/>');
     assert.equal(isUnknown(briefed), false);
     const unlimited = limited(null);
-    const curated = await new HarnessCurator(unlimited.harness, SETTINGS).write('<curator_input version="1"/>');
+    const curated = await new HarnessCurator(unlimited.harness, SETTINGS).write(must(parseText('<curator_input version="1"/>')));
     assert.equal(isUnknown(curated), false);
     assert.deepEqual([fits.calls.length, unlimited.calls.length], [1, 1]);
 });

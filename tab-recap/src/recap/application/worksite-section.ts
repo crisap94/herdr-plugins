@@ -8,6 +8,8 @@ import { FILES_SHOWN } from '#src/recap/domain/session-facts.ts';
 import type { WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 import type { EditCounts } from './edit-counts.ts';
 import { HANDOFF_PATHS_SHOWN } from './handoff-limits.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseDirectory } from '#src/recap/domain/directory.ts';
 
 export interface WorksiteInput {
     readonly directory: string | null;
@@ -33,7 +35,7 @@ export async function worksiteOf(deps: WorksiteDeps, input: WorksiteInput): Prom
     const [commit, uncommitted, repo, edits] = await Promise.all([
         deps.reader.lastCommit(directory),
         deps.reader.uncommitted(directory),
-        deps.repo.repoOf(directory),
+        deps.repo.repoOf(must(parseDirectory(directory))),
         deps.edits.of(input.cursor === null ? [] : [input.cursor]),
     ]);
     if (isGone(commit, uncommitted)) {

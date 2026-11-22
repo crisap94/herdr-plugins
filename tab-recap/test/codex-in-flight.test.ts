@@ -8,6 +8,8 @@ import { codexInFlight } from '#src/adapters/transcripts/codex/in-flight.ts';
 import type { InFlightResult } from '#src/ports/transcripts.ts';
 import { splitReason } from '#src/ports/capability-reasons.ts';
 import { tailOf } from '#src/adapters/transcripts/jsonl.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { must } from '#src/protocol/result.ts';
 
 const fixture = (name: string): readonly string[] => readFileSync(join(import.meta.dirname, 'fixtures', 'codex-inflight', name), 'utf8').trim().split('\n');
 const result = (name: string): InFlightResult => codexInFlight(fixture(name), false);
@@ -16,7 +18,7 @@ test('codex: all its in-flight work is foreground, and the capability says so by
     const { split } = new CodexTranscripts(tmpdir()).inFlight;
     if (split.kind !== 'foreground-only') throw new Error('codex cannot tell its background work apart, so it must declare foreground-only');
     assert.equal(split.why, 'codex-cells');
-    assert.equal(splitReason(split.why, 'codex'), 'codex cannot tell background work that survives a compaction');
+    assert.equal(splitReason(split.why, must(parseText('codex'))), 'codex cannot tell background work that survives a compaction');
     assert.deepEqual(codexInFlight(fixture('open-call.jsonl'), false), { kind: 'in-flight', count: 1, background: [] }, 'the work is counted as foreground, not listed');
 });
 

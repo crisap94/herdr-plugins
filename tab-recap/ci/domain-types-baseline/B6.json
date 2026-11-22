@@ -62,11 +62,9 @@
     "container": 1
   },
   "src/adapters/job/curator.ts": {
-    "parameter": 1,
     "container": 1
   },
   "src/adapters/job/enumerator.ts": {
-    "parameter": 1,
     "container": 1
   },
   "src/adapters/job/judge.ts": {

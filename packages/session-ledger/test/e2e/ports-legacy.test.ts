@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { capabilityWording, inFlightReason, splitReason } from '@stateforge-labs/session-ledger/unstable/ports/capability-reasons.ts';
+import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import { blankRecap, hasRecap } from '@stateforge-labs/session-ledger/unstable/ports/recap-records.ts';
 import { TranscriptRegistry } from '@stateforge-labs/session-ledger/unstable/ports/transcript-registry.ts';
 import { isScreenSource, SCREEN_PREFIX } from '@stateforge-labs/session-ledger/unstable/ports/transcript-source.ts';
@@ -16,9 +17,9 @@ const readerOf = (agent: string): Transcripts => ({
 });
 
 test('the capability reasons word each missing capability for its agent', () => {
-    assert.equal(capabilityWording('history-unavailable', 'codex'), 'no reader for codex');
-    assert.equal(splitReason('codex-cells', 'codex'), 'codex cannot tell background work that survives a compaction');
-    assert.equal(inFlightReason('screen', 'claude'), 'screen transcripts do not contain in-flight work');
+    assert.equal(capabilityWording('history-unavailable', textOf('codex')), 'no reader for codex');
+    assert.equal(splitReason('codex-cells', textOf('codex')), 'codex cannot tell background work that survives a compaction');
+    assert.equal(inFlightReason('screen', textOf('claude')), 'screen transcripts do not contain in-flight work');
 });
 
 test('a blank recap holds no recap until a task has markdown', () => {

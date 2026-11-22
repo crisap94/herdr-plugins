@@ -12,48 +12,15 @@ import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import type { FailureCause } from '#src/recap/domain/failure-cause.ts';
 import type { Duration } from '#src/recap/domain/time.ts';
 import type { HiddenCounts } from '#src/recap/domain/writer-view.ts';
-import type { CompactionWhy, ContextWindowWhy, HistoryWhy, InFlightWhy, SplitWhy } from './capability-reasons.ts';
-import type { CuratorMode } from './curators.ts';
+import type { InFlightWhy } from './capability-reasons.ts';
 import type { Applied } from './ledger.ts';
 import type { RunFacts } from './recap-records.ts';
 import type { BackgroundSplit, CallKind, ChunkResult, ObservedResult } from './transcripts.ts';
 import type { Unknown } from './unknowable.ts';
 
-type CapabilityWhy = HistoryWhy | InFlightWhy | SplitWhy | ContextWindowWhy | CompactionWhy;
-
-const WORDING: Readonly<Record<CapabilityWhy, (agent: string) => string>> = {
-    'history-unavailable': (agent) => `no reader for ${agent}`,
-    'unregistered-reader': (agent) => `no transcript reader for ${agent}`,
-    screen: () => 'screen transcripts do not contain in-flight work',
-    'windowed-reader': () => 'windowed replay does not expose in-flight work',
-    'in-flight-unavailable': (agent) => `no transcript reader for ${agent}`,
-    'claude-background-lost': (agent) => `${agent} background work does not survive a compaction on this version`,
-    'codex-cells': (agent) => `${agent} cannot tell background work that survives a compaction`,
-    'opencode-parts': (agent) => `${agent} cannot tell background work that survives a compaction`,
-    'context-window-unavailable': () => 'context window is unavailable',
-    'compaction-unavailable': (agent) => `no compaction plan is registered for ${agent}`,
-};
-
-export const capabilityWording = (why: CapabilityWhy, agent: string): string => WORDING[why](agent);
-
-export const splitReason = (why: SplitWhy, agent: string): string => capabilityWording(why, agent);
-
-export const inFlightReason = (why: InFlightWhy, agent: string): string => capabilityWording(why, agent);
-
 export type Curated = { readonly kind: 'curated'; readonly text: string } | Unknown;
 
-export interface Curators {
-    readonly backend: string;
-    write(document: string, mode?: CuratorMode): Promise<Curated>;
-}
-
 export type Enumerated = { readonly kind: 'enumerated'; readonly text: string; readonly costUsd: number } | Unknown;
-
-export interface Enumerators {
-    readonly backend: string;
-    readonly job: string;
-    write(document: string): Promise<Enumerated>;
-}
 
 export type Forge = 'gitlab' | 'github';
 
@@ -63,10 +30,6 @@ export type RepoResult =
     | { readonly kind: 'repo'; readonly root: string; readonly branch: string | null; readonly web: WebBase | null }
     | { readonly kind: 'no-repo' }
     | Unknown;
-
-export interface LaneRepo {
-    repoOf(cwd: string): Promise<RepoResult>;
-}
 
 export interface HistoryFact { readonly section: string; readonly text: string; readonly why: string | null; readonly state: 'open' | 'closed'; readonly closedWhy: string | null; readonly closedAt: number | null; readonly firstAt: number; readonly lastAt: number; }
 

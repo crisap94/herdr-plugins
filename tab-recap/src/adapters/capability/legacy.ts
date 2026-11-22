@@ -78,7 +78,7 @@ export function claudeWindowOf(catalogue: ModelCatalogue): WindowOf {
 export const compactionPlans: CompactionPlans = {
     forKind(rawKind: string, guidance: string): CompactionPlanResult {
         const kind = okOrNull(parseAgentKind(rawKind));
-        return kind === null ? unsupported(capabilityWording('compaction-unavailable', rawKind)) : compactionPlanner.forKind(kind, must(parseText(guidance)));
+        return kind === null ? unsupported(capabilityWording('compaction-unavailable', must(parseText(rawKind)))) : compactionPlanner.forKind(kind, must(parseText(guidance)));
     },
 };
 

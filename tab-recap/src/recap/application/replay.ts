@@ -79,7 +79,7 @@ const noPrompt = (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', 
 
 const endOf = (window: readonly Entry[] | undefined, from: Instant): Instant => instant(Math.max(from + 1, window?.findLast((entry) => entry.at !== undefined)?.at ?? from + 1));
 
-const unavailable = (kind: string): Text => must(parseText(capabilityWording('history-unavailable', kind)));
+const unavailable = (kind: string): Text => capabilityWording('history-unavailable', must(parseText(kind)));
 
 function windowed(base: Transcripts, file: SessionPath, windows: readonly (readonly Entry[])[], at: Position): Transcripts {
     const read = (): Promise<ChunkResult> => Promise.resolve({

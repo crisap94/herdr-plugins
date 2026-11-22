@@ -24,6 +24,7 @@ import { factOf } from './fakes/facts.ts';
 import { keepNewestOf, nextHoursOf, prunedWriterView } from '#src/recap/domain/writer-view.ts';
 import { NO_REPOS, oneTask, requestOf } from '#test/support.ts';
 import { brand } from '#src/recap/domain/brand.ts';
+import { must } from '#src/protocol/result.ts';
 
 const [textOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Instant'>];
 
@@ -35,7 +36,7 @@ function setup(answers: readonly (Curated)[], over: { readonly ledger?: MemoryLe
     const store = memoryStore();
     seed(store, { ...blankRecap('w1:t1'), at: 5, lanes: [cursor('w1:p1')], tasks: oneTask('## Goal\n- x') });
     const [logs, calls, clock, queue] = [[] as string[], [] as string[], { now: NOW }, [...answers]];
-    const writer: Curators = { backend: 'fake/test', write: (document) => { calls.push(document); return Promise.resolve(queue.shift() ?? unknown({ why: 'failed', code: 1, detail: causeOf('no more answers') })); } };
+    const writer: Curators = { backend: must(parseText('fake/test')), write: (document) => { calls.push(document); return Promise.resolve(queue.shift() ?? unknown({ why: 'failed', code: 1, detail: causeOf('no more answers') })); } };
     const mode = over.repair;
     const deps: CurateDeps = { records: store.records, ledger, stories, writer: () => writer, clock: () => instantOf(clock.now), zone: () => textOf('UTC'), language: () => textOf('en'), rubric: textOf(RUBRIC.items), ...(mode === undefined ? {} : { repair: (): RepairMode => mode }), log: (line) => { logs.push(line); } };
     const curate = new Curate(deps);
@@ -153,7 +154,7 @@ const settings = { model: '', effort: 'medium' } as const;
 
 test('the curator is a job on a harness: its instructions follow the document', async () => {
     const echo = new CustomHarness('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
-    const written = await new HarnessCurator(echo, settings).write('<curator_input version="1"/>');
+    const written = await new HarnessCurator(echo, settings).write(must(parseText('<curator_input version="1"/>')));
     assert.ok(written.kind === 'curated' && written.text.startsWith('<curator_input') && written.text.includes('"op":"close"') && written.text.includes('at most 120 words'));
 });
 

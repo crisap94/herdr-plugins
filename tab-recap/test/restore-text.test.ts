@@ -31,6 +31,8 @@ import { writer } from '#test/fakes/golden-writer.ts';
 import { fact } from './fakes/fact-at.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
+import { parseText } from '#src/recap/domain/text.ts';
+import { must } from '#src/protocol/result.ts';
 
 const AT = Date.parse('2026-10-10T12:00:00Z');
 const MINUTE = 60_000;
@@ -166,7 +168,7 @@ test('the restore path runs on the engine\'s store and a scope and followed sess
         const clock = { now: 1 };
         const { summarizer } = writer();
         const engine = createEngine({
-            source: { transcripts: new TranscriptRegistry({ [reader.agent]: reader }, null, (kind): string => capabilityWording('history-unavailable', kind)) },
+            source: { transcripts: new TranscriptRegistry({ [reader.agent]: reader }, null, (kind): string => capabilityWording('history-unavailable', must(parseText(kind)))) },
             store: { records: scratch.store.records, ledger: scratch.store.ledger },
             models: { summarizer: () => summarizer },
             environment: { clock: { now: (): Instant => instant(clock.now) }, repos: NO_REPOS, mint: mintFactId, log: () => undefined },

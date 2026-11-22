@@ -11,6 +11,8 @@ import { causeOf } from './fakes/cause.ts';
 import { tailOf } from '#src/recap/application/transcript-tail.ts';
 import { SCREEN_READER_ID } from '#src/adapters/transcripts/screen.ts';
 import { cursor } from '#test/db/support.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 
 const reader = (agent: string, bySource: Readonly<Record<string, readonly Entry[]>>, asked: { source: string; was: Position }[] = []): Transcripts => ({
     agent,
@@ -40,6 +42,6 @@ test('the enumeration is a job on a harness: its instructions follow the documen
     const echo = new CustomHarness('bun -e "process.stdin.pipe(process.stdout)"', process.cwd(), 20_000);
     const enumerator = new HarnessEnumerator(echo, { model: '', effort: 'low' });
     assert.equal(enumerator.job, 'custom · low');
-    const written = await enumerator.write('<enumerate_input version="1"/>');
+    const written = await enumerator.write(must(parseText('<enumerate_input version="1"/>')));
     assert.ok(written.kind === 'enumerated' && written.text.startsWith('<enumerate_input') && written.text.includes('Copy, never paraphrase.'));
 });
