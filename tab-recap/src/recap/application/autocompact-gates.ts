@@ -1,8 +1,8 @@
-import type { AutocompactRecords, LastDecision } from '#src/ports/autocompact-records.ts';
+import type { DecisionLedger, LastDecisionRow } from '#src/ports/autocompact-records.ts';
 import type { CompactionView } from '#src/ports/compaction-records.ts';
 import type { CompactionQueue } from '#src/ports/requests.ts';
 import type { LaneClaims } from './lane-claims.ts';
-import type { AutocompactMode, AutocompactPercent, Gate } from '#src/recap/domain/autocompact.ts';
+import type { AutocompactMode, AutocompactPercent, Gate, GateBusy, GateSameness } from '#src/recap/domain/autocompact.ts';
 import { flightDetail } from '#src/recap/domain/in-flight.ts';
 import type { Flight } from '#src/recap/domain/in-flight.ts';
 import { must } from '#src/protocol/result.ts';
@@ -16,7 +16,7 @@ export const ASKED_FOR_MS = 5 * 60_000;
 
 export interface BusyReads {
     readonly compactions: Pick<CompactionView, 'shownFor' | 'autoInProgress'>;
-    readonly decisions: Pick<AutocompactRecords, 'unlinkedCompactSince' | 'unlinkedCompactAny'>;
+    readonly decisions: Pick<DecisionLedger, 'unlinkedCompactSince' | 'unlinkedCompactAny'>;
     readonly claims: Pick<LaneClaims, 'has'>;
     readonly queue: CompactionQueue;
 }
@@ -29,20 +29,24 @@ export type CeilingReach = 'at-ceiling' | 'below-ceiling';
 
 export function busyOf(reads: BusyReads, asked: ReadonlyMap<PaneId, Instant>, tab: TabId, pane: PaneId, now: Instant): Busy {
     const since = asked.get(pane);
-    const own = reads.compactions.shownFor(tab).some((record) => record.pane === pane && ACTIVE.has(record.stage)) || (since !== undefined && now - since < ASKED_FOR_MS) || reads.decisions.unlinkedCompactSince(tab, pane, instant(now - ASKED_FOR_MS))
+    const own = reads.compactions.shownFor(tab).some((record) => record.pane === pane && ACTIVE.has(record.stage)) || (since !== undefined && now - since < ASKED_FOR_MS) || reads.decisions.unlinkedCompactSince(tab, pane, instant(now - ASKED_FOR_MS)) === 'unlinked'
         || reads.claims.has(pane) || reads.queue.compactQueued(tab, pane);
     if (own) return { kind: 'busy', detail: 'this lane' };
-    const other = reads.compactions.autoInProgress() || reads.decisions.unlinkedCompactAny(instant(now - ASKED_FOR_MS));
+    const other = reads.compactions.autoInProgress() || reads.decisions.unlinkedCompactAny(instant(now - ASKED_FOR_MS)) === 'unlinked';
     return other ? { kind: 'busy', detail: 'another lane' } : { kind: 'free' };
 }
 
-export function unchangedOf(last: LastDecision | null, startedAt: Instant, tokens: Count, mode: AutocompactMode): Sameness {
+export const gateBusyOf = (busy: Busy): GateBusy => (busy.kind === 'busy' ? 'busy' : 'free');
+
+export const gateSamenessOf = (sameness: Sameness, recheck: Recheck): GateSameness => (sameness === 'same' && recheck !== 'due' ? 'same' : 'changed');
+
+export function unchangedOf(last: LastDecisionRow | null, startedAt: Instant, tokens: Count, mode: AutocompactMode): Sameness {
     return last !== null && last.verdict !== 'unknown' && last.at >= startedAt && last.tokens === tokens && last.mode === mode ? 'same' : 'changed';
 }
 
 const WAITING: ReadonlySet<string> = new Set(['wait', 'undecided']);
 
-export const recheckDue = (interval: Milliseconds | null, last: LastDecision | null, now: Instant): Recheck => interval !== null && last !== null && WAITING.has(last.verdict) && now - last.at >= interval ? 'due' : 'not-due';
+export const recheckDue = (interval: Milliseconds | null, last: LastDecisionRow | null, now: Instant): Recheck => interval !== null && last !== null && WAITING.has(last.verdict) && now - last.at >= interval ? 'due' : 'not-due';
 
 export interface DetailFacts {
     readonly now: Instant;

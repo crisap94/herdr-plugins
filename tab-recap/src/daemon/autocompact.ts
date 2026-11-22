@@ -7,11 +7,13 @@ import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { lanesOf } from '#src/recap/domain/board.ts';
 import { tabId, type PaneId } from '#src/recap/domain/ids.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant, parseMilliseconds } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { hasRecap } from '#src/ports/recap-records.ts';
-import type { Decider } from '#src/ports/decider.ts';
+import type { DeciderPort } from '#src/ports/decider.ts';
+import type { CompactTuning } from '#src/recap/domain/autocompact-style.ts';
+import { parseThreshold } from '#src/recap/domain/autocompact-verdict.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import { refreshVia } from './legacy.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
@@ -21,6 +23,13 @@ import { loadConfig, type Config } from './config.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { TranscriptInFlight } from '#src/adapters/transcripts/in-flight.ts';
 import { flightOf } from '#src/recap/application/in-flight.ts';
+
+const compactTuningOf = (tuning: Config['tuning']): CompactTuning => ({
+    style: tuning.style,
+    verdict: tuning.verdict,
+    coverageAtLeast: parseThreshold(tuning.coverageAtLeast),
+    recheckIdleMs: tuning.recheckIdleMs === null ? null : must(parseMilliseconds(tuning.recheckIdleMs)),
+});
 
 export async function awaitingPane(pane: PaneId): Promise<Waiting> {
     const found = await readPaneTokens(pane);
@@ -38,7 +47,7 @@ interface AutocompactParts {
     readonly recent: LaneRecent;
     readonly recaps: Pick<TabRecaps, 'refresh' | 'flush'>;
     readonly informer: Informer;
-    readonly decider: () => Decider | null;
+    readonly decider: () => DeciderPort | null;
     readonly events: LaneEvents;
     readonly claims: LaneClaims;
     log(line: Text): void;
@@ -49,8 +58,8 @@ export function wireAutocompact(parts: AutocompactParts): Autocompact {
     const flight = new TranscriptInFlight(parts.transcripts);
     const read = parts.config ?? loadConfig;
     return new Autocompact({
-        policy: () => read().autocompact, tuning: () => read().tuning, idleHold: () => read().holdIdle, decider: parts.decider, contexts: parts.contexts, inFlight: (lane) => flightOf(flight, lane), awaiting: parts.awaiting ?? awaitingPane, events: parts.events, recent: (lane) => parts.recent.of(lane), startedAt: instant(Date.now() - process.uptime() * 1000),
-        ledger: store.ledger, boundaries: store.boundaries, compactions: store.compactions, decisions: store.autocompact, requests: store.requests, claims: parts.claims, queue: store.requests,
+        policy: () => read().autocompact, tuning: (): CompactTuning => compactTuningOf(read().tuning), idleHold: () => read().holdIdle, decider: parts.decider, contexts: parts.contexts, inFlight: (lane) => flightOf(flight, lane), awaiting: parts.awaiting ?? awaitingPane, events: parts.events, recent: (lane) => parts.recent.of(lane), startedAt: instant(Date.now() - process.uptime() * 1000),
+        ledger: store.ledger, boundaries: store.boundaries, compactions: store.compactions, decisions: store.decisions, requests: store.requests, claims: parts.claims, queue: store.requests,
         hasRecap: (tab) => { const recap = knownOr(store.records.readRecap(tab), null); return recap !== null && hasRecap(recap) ? 'recapped' : 'unrecapped'; },
         refresh: refreshVia(parts.recaps, store.records),
         flush: (tab, why): Promise<void> => parts.recaps.flush(tab, why),

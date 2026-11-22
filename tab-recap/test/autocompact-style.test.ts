@@ -15,14 +15,14 @@ import { STYLE_NUMBERS, styleOf, tuningOf } from '#src/recap/domain/autocompact-
 import { THRESHOLDS, verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 import type { Thresholds } from '#src/recap/domain/autocompact-verdict.ts';
 import type { Decider, DecidedResult } from '#src/ports/decider.ts';
-import { NOW, world, lane } from './autocompact-world.ts';
+import { NOW, world, lane, tuningOfKeys } from './autocompact-world.ts';
 import type { World } from './autocompact-world.ts';
 import { decidedOf, textOf } from './fakes/decider-fixtures.ts';
 
 const env = (keys: Readonly<Record<string, string>>) => (key: string): string | undefined => keys[key];
 
 function styled(keys: Readonly<Record<string, string>>, startedAt = 0): World {
-    return world({ ...policyOf(env(keys)), mode: 'on' }, true, startedAt, tuningOf(env(keys)));
+    return world({ ...policyOf(env(keys)), mode: 'on' }, true, startedAt, tuningOfKeys(keys));
 }
 
 function waitedMinutesAgo(w: World, minutes: number): void {
