@@ -19,6 +19,8 @@ export type Pipeline = 'one' | 'enumerate' | 'enumerate+gates' | 'full';
 
 export type CloseEvidence = 'off' | 'on';
 
+export type StoryRepair = 'off' | 'once';
+
 export type Debounce = { readonly kind: 'off' } | { readonly kind: 'window'; readonly window: Duration };
 
 export type Shown = 'shown' | 'hidden';

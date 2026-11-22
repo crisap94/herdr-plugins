@@ -6,7 +6,7 @@ import type { FactStore, Records } from './records.ts';
 import type { Curator, Enumerator, Writer } from './models.ts';
 import type { Clock, Ids, Workplaces } from './environment.ts';
 import type { Brand, Instant, Text } from './kernel.ts';
-import type { Debounce, Pacing, Pipeline, Shown, WriterView } from './settings.ts';
+import type { Debounce, Pacing, Pipeline, PositiveCount, Shown, StoryRepair, WriterView } from './settings.ts';
 import type { LedgerEvent } from './events.ts';
 
 export type Attention = 'needs-you' | 'none';
@@ -77,6 +77,8 @@ export interface SettingsPlugs {
     visible?(scope: ScopeId): Shown;
     restoreBytes?(): ByteCount;
     rubric?(): Text;
+    storyRepair?(): StoryRepair;
+    reconcileEvery?(): PositiveCount;
     restoreText?(facts: RestoreFacts): RestoreText;
 }
 

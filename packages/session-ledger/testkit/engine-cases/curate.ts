@@ -4,10 +4,10 @@ import type { Case } from '../run.ts';
 import { factOf } from '../facts.ts';
 import { followed, key, scope, session } from '../ids.ts';
 import type { Behaviour, CuratedAnswer, EngineWorld } from '../world.ts';
-import { addOf, blockedOps, countOf, spoken, writtenOps } from './support.ts';
+import { addOf, blockedOps, chunkOf, countOf, spoken, writtenOps } from './support.ts';
 import { failure } from '../values.ts';
 
-const TAB = scope('one');
+export const TAB = scope('one');
 const TASK = { tab: TAB, key: key('a') };
 const WRITES: readonly string[] = ['beginRun', 'recordRun', 'failRun', 'advance', 'apply'];
 
@@ -34,13 +34,14 @@ const seedFacts = (world: EngineWorld): void => {
     world.store.seed(null, [factOf('fct_1', { task: TASK, text: 'open work', firstAt: 1, lastAt: 1 })]);
 };
 
-const seedOpen = async (world: EngineWorld, engine: Engine): Promise<void> => {
+export const seedOpen = async (world: EngineWorld, engine: Engine): Promise<void> => {
     seedFacts(world);
     engine.follow(TAB, followed(key('a'), { session: session('s1') }));
     world.setRead(spoken('hello'));
     world.setWriter(writtenOps([addOf('now', 'open work')]));
     engine.turnEnded(TAB, key('a'), 'requested');
     await world.settle();
+    world.setRead(chunkOf([]));
 };
 
 export const CUR_CASES: readonly Case<EngineWorld, Engine>[] = [
@@ -130,6 +131,7 @@ export const CUR_CASES: readonly Case<EngineWorld, Engine>[] = [
             engine.turnEnded(TAB, key('a'), 'requested');
             await world.settle();
             assert.equal(countOf(world, 'beginRun'), 1);
+            world.setRead(chunkOf([]));
             seedFacts(world);
             const facts = scopeFactsOf(world);
             world.setCurator(CURATED);
