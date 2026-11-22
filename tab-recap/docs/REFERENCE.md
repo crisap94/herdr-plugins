@@ -423,6 +423,12 @@ outage, and the ceiling still compacts.
 **Cost.** A decision is one short call, about a thousand input tokens: a fraction of a cent with `jev`, plan usage with
 a harness. Each decision stores its cost, and `tab-recap autocompact` sums the last 24 hours.
 
+### Timing events
+
+`TAB_RECAP_TIMING_EVENTS` is `off` by default and read once at daemon start. With `on`, the daemon also considers lanes when the engine establishes an accomplishment: for each candidate in that accomplishment's scope it runs one consideration, through the same path the sweep uses, so the same gates, decision rows and log lines apply. Candidates of other scopes are not considered. The sweep keeps running on its own schedule whether the key is on or off.
+
+If a consideration for the same lane is already in flight (from the sweep or an earlier event), the event does not ask again: the lane is skipped for that event and the running consideration finishes alone. With the key off or unset, an accomplishment causes no consideration.
+
 ## Models
 
 Every model call is a **job** run on one harness (`claude`, `codex`, `opencode` or your own
