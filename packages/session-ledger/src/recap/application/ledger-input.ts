@@ -3,7 +3,7 @@ import type { Ledger } from '#src/ports/ledger.ts';
 import type { InputAgent, InputFact, InputLedger } from '#src/ports/recap-input.ts';
 import type { Fact, Section, TaskId } from '#src/recap/domain/fact.ts';
 import { SECTION_IDS } from '#src/recap/domain/fact.ts';
-import { brand, type Brand } from '#src/recap/domain/brand.ts';
+import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { positiveCount } from '#src/recap/domain/writer-view.ts';
@@ -11,8 +11,11 @@ import type { HiddenCounts, PositiveCount, WriterView } from '#src/recap/domain/
 
 const textOf = brand<string, 'Text'>;
 const countOf = brand<number, 'Count'>;
+const instantOf = brand<number, 'Instant'>;
 
-export type Several = Brand<boolean, 'Several'>;
+import type { Several } from '#src/ports/recap-input.ts';
+
+export type { Several };
 
 export const severalOf = brand<boolean, 'Several'>;
 
@@ -83,7 +86,7 @@ export function numbered(tasks: readonly TaskFacts[], agents: readonly InputAgen
             byId.set(id, fact);
             mine.set(id, fact);
             taskOf.set(id, task.key);
-            return { id, section: fact.section, text: fact.text, state: fact.state, first: fact.firstAt, last: fact.lastAt, why: fact.why, ref: fact.ref, anchor: fact.anchor, agent: agentIdOf(fact, agents), closed: fact.closedWhy };
+            return { id, section: fact.section, text: textOf(fact.text), state: fact.state, first: instantOf(fact.firstAt), last: instantOf(fact.lastAt), why: fact.why === null ? null : textOf(fact.why), ref: fact.ref === null ? null : textOf(fact.ref), anchor: fact.anchor === null ? null : textOf(fact.anchor), agent: agentIdOf(fact, agents), closed: fact.closedWhy };
         });
         return { task: several ? task.key : null, facts, ...(viewed.hidden.size === 0 ? {} : { hidden: viewed.hidden }) };
     });

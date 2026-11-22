@@ -60,7 +60,7 @@ function curatorOf(store: ReturnType<typeof memoryStore>, ledger: GuardedLedger,
         backend: must(parseText('fake/test')),
         write: () => {
             probe.writes += 1;
-            return Promise.resolve({ kind: 'curated', text: '{"story":"Written anyway."}' });
+            return Promise.resolve({ kind: 'curated', text: textOf('{"story":"Written anyway."}') });
         },
     };
     const stories: Stories = {

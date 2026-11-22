@@ -28,7 +28,7 @@ function setup(replies: readonly Reply[]): { run: EnumerateRun; documents: strin
 
 const FACTS = ['Reader parses streams now', 'Queue stays bounded at 64', 'Retry uses exponential backoff', 'Writer flushes on close'];
 const firstTurnOf: Reply = (document, call) => answer([{ section: 'done', text: FACTS[call - 1] ?? 'Something else entirely', anchor: /<turn[^>]*>([^<.]{20,80})\./.exec(document)?.[1] ?? '' }]);
-const sameness = (section: 'done' | 'next', text: string, flagged = false): InputCandidate => ({ section, text, why: null, ref: null, at: null, anchor: 'a', agent: 'a1', flagged });
+const sameness = (section: 'done' | 'next', text: string, flagged = false): InputCandidate => ({ section, text: textOf(text), why: null, ref: null, at: null, anchor: textOf('a'), agent: textOf('a1'), flagged: brand<boolean, 'Flagged'>(flagged) });
 
 const TURN: readonly Entry[] = [user('Add retries to the uploader'), agent('Added a retry with backoff in src/upload.ts; the tests pass.'), shell('git commit -m "uploader: retry with backoff"', 3)];
 

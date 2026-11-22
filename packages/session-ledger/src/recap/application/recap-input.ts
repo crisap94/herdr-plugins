@@ -27,6 +27,7 @@ export interface Observed {
 }
 
 const count = brand<number, 'Count'>;
+const textOf = brand<string, 'Text'>;
 
 const idOf = (index: Count): Text => brand<string, 'Text'>(`a${index + 1}`);
 
@@ -53,15 +54,15 @@ export interface Built {
 
 export async function inputOf(seen: readonly Observed[], world: InputWorld): Promise<Built> {
     const agents: InputAgent[] = await Promise.all(seen.map(async (one, index) => ({
-        id: idOf(count(index)), kind: String(one.lane.agent), label: one.cursor.title ?? '', pane: String(one.lane.pane),
+        id: idOf(count(index)), kind: one.lane.agent, label: textOf(one.cursor.title ?? ''), pane: one.lane.pane,
         source: isScreenSource(one.cursor.transcript) ? 'screen' as const : 'transcript' as const,
         ...(await hintOf(one.lane, one.chunk?.entries ?? [], world.repos)),
     })));
     const numbering = numbered(world.facts, agents, severalOf(world.facts.length > 1), world.writerView, world.now);
     const input: RecapInput = {
-        tab: { id: world.tab, now: world.now, zone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+        tab: { id: world.tab, now: world.now, zone: textOf(Intl.DateTimeFormat().resolvedOptions().timeZone) },
         agents,
-        tasks: seen.length > 1 ? world.tasks.map(({ id, name, lanes }) => ({ id, name, lanes })) : [],
+        tasks: seen.length > 1 ? world.tasks.map(({ id, name, lanes }) => ({ id: textOf(id), name: textOf(name), lanes: lanes.map(brand<string, 'PaneId'>) })) : [],
         ledgers: numbering.ledgers,
         notes: seen.flatMap((one, index) => notesOf(one, idOf(count(index)))),
         transcripts: seen.flatMap((one, index) => (one.chunk === null ? [] : [{ agent: idOf(count(index)), entries: one.chunk.entries }])),

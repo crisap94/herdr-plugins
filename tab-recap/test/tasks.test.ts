@@ -1,3 +1,7 @@
+import { textOf } from '#src/recap/domain/text.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseDirectory } from '#src/recap/domain/directory.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
@@ -85,9 +89,9 @@ test('the document lists the current tasks only when the tab has several lanes, 
     const one = requestOf({ entries: [{ role: 'user', text: 'x' }] });
     assert.ok(!message(one).includes('<current_tasks>') && !instructions(one).includes('<ledger task='), 'one agent: no grouping');
     const many = requestOf({
-        agents: [agentOf('a1', { cwd: '/r/pay', repo: '/r/pay', branch: 'feat/v2', files: ['src/client.ts'] }), agentOf('a2', { kind: 'codex', cwd: '/tmp' })],
-        tasks: [{ id: 't1', name: 'Payments', lanes: ['w1:p1'] }],
-        ledgers: [{ task: 't1', facts: [] }],
+        agents: [agentOf('a1', { cwd: brand<string, 'Directory'>('/r/pay'), repo: brand<string, 'Directory'>('/r/pay'), branch: textOf('feat/v2'), files: [textOf('src/client.ts')] }), agentOf('a2', { kind: brand<string, 'AgentKind'>('codex'), cwd: brand<string, 'Directory'>('/tmp') })],
+        tasks: [{ id: textOf('t1'), name: textOf('Payments'), lanes: [brand<string, 'PaneId'>('w1:p1')] }],
+        ledgers: [{ task: textOf('t1'), facts: [] }],
     });
     const text = message(many);
     assert.ok(text.includes('<agent id="a1" kind="claude" label="" pane="w1:p1" repo="pay" branch="feat/v2">'), 'the repository by name; the folder only when it is not the repository');
@@ -116,11 +120,11 @@ const transcripts: Transcripts = {
     }),
 };
 
-const repos: LaneRepo = { repoOf: (cwd) => Promise.resolve(cwd === '/work/pay' ? { kind: 'repo', root: '/work/pay', branch: 'feat/v2', web: null } : { kind: 'no-repo' }) };
+const repos: LaneRepo = { repoOf: (cwd) => Promise.resolve(cwd === '/work/pay' ? { kind: 'repo', root: must(parseDirectory('/work/pay')), branch: must(parseText('feat/v2')), web: null } : { kind: 'no-repo' }) };
 
 async function run(answers: readonly string[], lanes: readonly string[], store = memoryStore()): Promise<{ store: Store; requests: RecapRequest[] }> {
     const requests: RecapRequest[] = [];
-    const summarizer: Summarizer = { backend: 'fake', contract: 'strict', write: (request): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: answers[Math.min(requests.length - 1, answers.length - 1)] ?? '', costUsd: 0 }); } };
+    const summarizer: Summarizer = { backend: textOf('fake'), contract: 'strict', write: (request): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: textOf(answers[Math.min(requests.length - 1, answers.length - 1)] ?? ''), costUsd: brand<number, 'Usd'>(0) }); } };
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, transcripts: registryWith({ [transcripts.agent]: transcripts }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), repos, clock: { now: (): ReturnType<typeof instant> => instant(1) }, summarizer: (): Summarizer => summarizer, language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined });
     job.request(tabId('w1:t1'), lanes.map((pane) => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd: pane === 'w1:p1' ? '/work/pay' : '/work/docs' })), 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 40); });

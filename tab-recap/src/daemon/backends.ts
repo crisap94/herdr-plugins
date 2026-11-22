@@ -51,7 +51,7 @@ export function intersect(fromHerdr: HarnessesResult, fromPath: HarnessesResult)
 const NONE = `a coding agent to write recaps: install ${installableHarnessSentence()} (or set TAB_RECAP_BACKEND / TAB_RECAP_CUSTOM_CMD)`;
 
 class Nothing implements Summarizer {
-    readonly backend = 'none';
+    readonly backend = must(parseText('none'));
     readonly contract = 'strict';
     write(): Promise<Written> {
         return Promise.resolve(unknown({ why: 'not-found', what: NONE }));

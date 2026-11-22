@@ -1,5 +1,5 @@
 [
-  { "export": "Forge", "origin": "packages/session-ledger/src/ports/legacy.ts" },
-  { "export": "WebBase", "origin": "packages/session-ledger/src/ports/legacy.ts" },
-  { "export": "RepoResult", "origin": "packages/session-ledger/src/ports/legacy.ts" }
+  { "export": "Forge", "origin": "packages/session-ledger/src/ports/lane-repo.ts" },
+  { "export": "WebBase", "origin": "packages/session-ledger/src/ports/lane-repo.ts" },
+  { "export": "RepoResult", "origin": "packages/session-ledger/src/ports/lane-repo.ts" }
 ]

@@ -9,7 +9,8 @@ import { clipHead, clipTurn } from '@stateforge-labs/session-ledger/unstable/rec
 import { NO_SECTIONS } from '@stateforge-labs/session-ledger/unstable/recap/domain/shape.ts';
 import { parseText, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { Entry, InputFact } from '@stateforge-labs/session-ledger/unstable/ports/legacy.ts';
+import type { Entry } from '@stateforge-labs/session-ledger/unstable/ports/legacy.ts';
+import type { InputFact } from '@stateforge-labs/session-ledger/unstable/ports/recap-input.ts';
 
 const count = brand<number, 'Count'>;
 
@@ -25,7 +26,7 @@ const textOf = (value: string): Text => {
 
 const stub = (kind: Stub['kind'], anchor: string): Stub => ({ kind, section: 'done', ref: null, anchor: textOf(anchor), at: null });
 
-const fact: InputFact = { id: 'f1', section: 'decisions', text: 'use sqlite storage', state: 'open', first: 1, last: 1, why: null, ref: null, anchor: null, agent: null, closed: null };
+const fact: InputFact = { id: textOf('f1'), section: 'decisions', text: textOf('use sqlite storage'), state: 'open', first: instant(1), last: instant(1), why: null, ref: null, anchor: null, agent: null, closed: null };
 
 test('the ask-back questions are asked only when the recap is thin or spans chunks', () => {
     assert.equal(THIN_CHARS, 2_000);

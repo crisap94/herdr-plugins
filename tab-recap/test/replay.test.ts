@@ -1,3 +1,5 @@
+import { brand } from '#src/recap/domain/brand.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -28,13 +30,13 @@ const QUOTES = ['Add a cart to the shop', 'Use SQLite for it, no server', 'also 
 function scripted(answers: readonly (readonly Record<string, unknown>[])[]): { summarizer: Summarizer; shown: string[] } {
     const shown: string[] = [];
     const summarizer: Summarizer = {
-        backend: 'fake',
+        backend: textOf('fake'),
         contract: 'strict',
         write: (request: RecapRequest): Promise<Written> => {
             shown.push(request.input.ledgers.flatMap((ledger) => ledger.facts.map((fact) => fact.text)).join('|'));
             const given = answers[Math.min(shown.length - 1, answers.length - 1)] ?? [];
             const quoted = given.map((each) => (each['op'] === 'add' && each['anchor'] === undefined ? Object.assign({}, each, { anchor: QUOTES[shown.length - 1] }) : each));
-            return Promise.resolve({ kind: 'written', text: JSON.stringify({ ops: quoted }), costUsd: 0 });
+            return Promise.resolve({ kind: 'written', text: textOf(JSON.stringify({ ops: quoted })), costUsd: brand<number, 'Usd'>(0) });
         },
     };
     return { summarizer, shown };

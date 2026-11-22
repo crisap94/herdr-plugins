@@ -11,7 +11,7 @@ const textOf = brand<string, 'Text'>;
 const NOW = Date.parse('2026-10-07T17:00:00Z');
 const at = (clock: string): Instant => instant(Date.parse(`2026-10-07T${clock}:00Z`));
 const resolving: Resolving = {
-    tasks: [textOf('t1'), textOf('t2')], agents: [agentOf('a1', { label: 'orchestrator' }), agentOf('a2')], taskOf: new Map([[textOf('f1'), textOf('t1')], [textOf('f7'), textOf('t2')]]),
+    tasks: [textOf('t1'), textOf('t2')], agents: [agentOf('a1', { label: textOf('orchestrator') }), agentOf('a2')], taskOf: new Map([[textOf('f1'), textOf('t1')], [textOf('f7'), textOf('t2')]]),
     turns: [at('16:41'), at('16:55'), instant(Date.parse('2026-10-05T09:10:00Z'))], clock: { now: instant(NOW), zone: textOf('UTC') },
 };
 const parse = (value: unknown): ReturnType<typeof parseAnswer> => parseAnswer(textOf(typeof value === 'string' ? value : JSON.stringify(value)), resolving);

@@ -1,3 +1,4 @@
+import { textOf } from '#src/recap/domain/text.ts';
 import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -47,11 +48,11 @@ function world(): World {
     const asked: RecapRequest[] = [];
     const ran: RunEvent[] = [];
     const summarizer: Summarizer = {
-        backend: 'fake',
+        backend: textOf('fake'),
         contract: 'strict',
         write: (request: RecapRequest): Promise<Written> => {
             asked.push(request);
-            return Promise.resolve({ kind: 'written', text: JSON.stringify({ ops: [{ op: 'add', section: 'goal', text: 'ship it', anchor: 'go' }] }), costUsd: 0.02 });
+            return Promise.resolve({ kind: 'written', text: textOf(JSON.stringify({ ops: [{ op: 'add', section: 'goal', text: 'ship it', anchor: 'go' }] })), costUsd: brand<number, 'Usd'>(0.02) });
         },
     };
     const plugs: EnginePlugs = {

@@ -4,8 +4,9 @@ import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseUsd } from '#src/recap/domain/usd.ts';
 import { ENUMERATE_INSTRUCTIONS } from './prompts/enumerate-instructions.ts';
-import { unfenced } from './prompts/recap-prompt.ts';
+import { unfencedText } from './prompts/recap-prompt.ts';
 
 export class HarnessEnumerator implements Enumerators {
     readonly backend: Text;
@@ -26,6 +27,6 @@ export class HarnessEnumerator implements Enumerators {
             return unknown({ why: 'unreadable', detail: causeOf(must(parseText(`the document is too long for ${this.harness.id}`))) });
         }
         const ran = await this.harness.run(call, this.settings);
-        return isUnknown(ran) ? ran : { kind: 'enumerated', text: unfenced(ran.text), costUsd: ran.costUsd };
+        return isUnknown(ran) ? ran : { kind: 'enumerated', text: unfencedText(must(parseText(ran.text))), costUsd: must(parseUsd(ran.costUsd)) };
     }
 }

@@ -75,12 +75,12 @@ test('a repair request quotes the first answer and lists what was refused', () =
 });
 
 test('a repaired answer is kept unless it is not JSON, not an object or not an answer', () => {
-    const first = { kind: 'curated', text: '{"ops":[]}' } as const;
+    const first = { kind: 'curated', text: text('{"ops":[]}') } as const;
     const reading = (answer: { readonly kind: string; readonly text?: string }): Curation => curationOf(text(answer.text ?? ''), open);
-    const good = { kind: 'curated', text: '{"story":"fixed"}' } as const;
+    const good = { kind: 'curated', text: text('{"story":"fixed"}') } as const;
     assert.equal(acceptedRepair(first, good, reading), good);
-    assert.equal(acceptedRepair(first, { kind: 'curated', text: 'prose' }, reading), first);
-    assert.equal(acceptedRepair(first, { kind: 'curated', text: '[]' }, reading), first);
+    assert.equal(acceptedRepair(first, { kind: 'curated', text: text('prose') }, reading), first);
+    assert.equal(acceptedRepair(first, { kind: 'curated', text: text('[]') }, reading), first);
     const failed = { kind: 'unknown', why: { why: 'not-found', what: text('x') } } as const;
     assert.equal(acceptedRepair(first, failed, reading), first);
 });

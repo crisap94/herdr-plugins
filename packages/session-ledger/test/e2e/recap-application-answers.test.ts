@@ -67,7 +67,7 @@ test('a task with no tail reader or no writer is not reconciled', async () => {
 
 test('a reconcile with no open fact asks nothing, and an empty answer keeps nothing', async () => {
     const [logs, asked] = [[] as string[], [] as string[]];
-    const parts = { writer: writer({ kind: 'curated', text: '{"ops":[]}' }, asked), stories: depsOf({}, logs).stories, language: textOf('en'), rubric: textOf('r'), clock: { now: instant(1), zone: textOf('UTC') }, log: (line: string): void => { logs.push(line); } };
+    const parts = { writer: writer({ kind: 'curated', text: textOf('{"ops":[]}') }, asked), stories: depsOf({}, logs).stories, language: textOf('en'), rubric: textOf('r'), clock: { now: instant(1), zone: textOf('UTC') }, log: (line: string): void => { logs.push(line); } };
     const task = { tab: tabOf('w1:t1'), key: textOf('t1'), name: textOf('goal'), facts: [], tail: entries, agents: [] };
     await reconcileTask(parts, task);
     assert.deepEqual(asked, []);

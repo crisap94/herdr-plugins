@@ -1,3 +1,4 @@
+import { textOf } from '#src/recap/domain/text.ts';
 import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -51,10 +52,10 @@ test('a board with two lanes, published with no turn ended and no refresh, makes
         read: (source: string): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: `go ${source}` }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 7, tail: null }, grew: true }),
     };
     const summarizer: Summarizer = {
-        backend: 'fake',
+        backend: textOf('fake'),
         contract: 'strict',
         write: (): Promise<Written> => {
-            return Promise.resolve({ kind: 'written', text: JSON.stringify({ ops: [{ op: 'add', section: 'goal', text: 'ship it', anchor: 'go' }] }), costUsd: 0.02 });
+            return Promise.resolve({ kind: 'written', text: textOf(JSON.stringify({ ops: [{ op: 'add', section: 'goal', text: 'ship it', anchor: 'go' }] })), costUsd: brand<number, 'Usd'>(0.02) });
         },
     };
     const plugs: PluginEnginePlugs = {

@@ -1,3 +1,5 @@
+import { textOf } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -23,9 +25,9 @@ interface Site {
     readonly call: (config: Config, available: Available, work: Directory, runtime: PolicedRuntime) => Promise<unknown>;
 }
 
-const EMPTY_INPUT: RecapInput = { tab: { id: 'tab', now: 0, zone: 'UTC' }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] };
+const EMPTY_INPUT: RecapInput = { tab: { id: textOf('tab'), now: instant(0), zone: textOf('UTC') }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] };
 
-const WRITE: Site = { name: 'summarizerFor', tag: 'recap-writer', call: (config, available, work, runtime) => summarizerFor(config, available, work, runtime).write({ input: EMPTY_INPUT, language: 'en', previousLanguage: 'en' }) };
+const WRITE: Site = { name: 'summarizerFor', tag: 'recap-writer', call: (config, available, work, runtime) => summarizerFor(config, available, work, runtime).write({ input: EMPTY_INPUT, language: textOf('en'), previousLanguage: textOf('en') }) };
 
 const SITES: readonly Site[] = [
     WRITE,

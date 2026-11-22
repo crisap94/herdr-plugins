@@ -1,3 +1,5 @@
+import { textOf } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { InputCandidate, InputFact } from '#src/ports/recap-input.ts';
@@ -9,8 +11,8 @@ import { READBACK } from '#src/recap/domain/questions.ts';
 const count = brand<number, 'Count'>;
 const asText = brand<string, 'Text'>;
 
-const candidate = (section: InputCandidate['section'], text: string, ref: string | null = null): InputCandidate => ({ section, text, why: null, ref, at: null, anchor: 'a', agent: 'a1', flagged: false });
-const fact = (id: string, text: string, over: Partial<InputFact> = {}): InputFact => ({ id, section: 'now', text, state: 'open', first: 1, last: 2, why: null, ref: null, anchor: null, agent: null, closed: null, ...over });
+const candidate = (section: InputCandidate['section'], text: string, ref: string | null = null): InputCandidate => ({ section, text: textOf(text), why: null, ref: ref === null ? null : textOf(ref), at: null, anchor: textOf('a'), agent: textOf('a1'), flagged: brand<boolean, 'Flagged'>(false) });
+const fact = (id: string, text: string, over: Partial<InputFact> = {}): InputFact => ({ id: textOf(id), section: 'now', text: textOf(text), state: 'open', first: instant(1), last: instant(2), why: null, ref: null, anchor: null, agent: null, closed: null, ...over });
 const found = (over: Partial<Parameters<typeof askBackFor>[0]> = {}): Parameters<typeof askBackFor>[0] => ({ chunks: count(1), chars: count(4_000), candidates: [], open: [], said: asText(''), ...over });
 
 test('a second look is due when the run took more than one chunk, or read at least one rate-unit and gave fewer than one candidate per 2 000 characters', () => {
@@ -36,7 +38,7 @@ test('the six read-back questions the candidates cannot answer are asked, in ord
 
 test('what changed about an open fact is asked for the facts the turns mention (by reference or by their words) that no candidate speaks of', () => {
     const open = [
-        fact('f1', 'Migration test fails on the staging database', { ref: 'test/migrate.test.ts' }),
+        fact('f1', 'Migration test fails on the staging database', { ref: textOf('test/migrate.test.ts') }),
         fact('f2', 'Review the release notes draft'),
         fact('f3', 'Wire the payments gateway'),
         fact('f4', 'Retry the uploader with backoff'),

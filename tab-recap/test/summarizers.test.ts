@@ -1,3 +1,4 @@
+import { textOf } from '#src/recap/domain/text.ts';
 import { test } from 'node:test';
 import { requestOf } from '#test/support.ts';
 import assert from 'node:assert/strict';
@@ -42,7 +43,7 @@ test('model: claude defaults to haiku and takes its own; codex and opencode send
 test('golden: the English instructions are exactly the reviewed operations-contract text', () => {
     const before = readFileSync(new URL('fixtures/instructions-en.txt', import.meta.url), 'utf8');
     assert.equal(instructions(request), before);
-    assert.equal(instructions({ ...request, previousLanguage: 'en' }), before);
+    assert.equal(instructions({ ...request, previousLanguage: textOf('en') }), before);
 });
 
 const argvOf = (line: string): string[] => splitArgv(must(parseText(line)));

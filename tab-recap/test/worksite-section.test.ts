@@ -7,6 +7,9 @@ import type { FileCount } from '#src/recap/application/edit-counts.ts';
 import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import { unknown } from '#src/ports/unknowable.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseDirectory } from '#src/recap/domain/directory.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import type { LastCommitResult, UncommittedResult } from '#src/ports/worksite-reader.ts';
 import type { WorksiteFacts, WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
@@ -15,7 +18,7 @@ import { MemoryWorksite } from './fakes/worksite-reader.ts';
 const DIR = '/work/project';
 const CURSOR: LaneCursor = { pane: 'w1:p1', agent: 'claude', transcript: 'session.jsonl', cursor: 10, tail: null, title: null, lastPrompt: null, claudeRecap: null };
 const repoAt = (result: RepoResult): LaneRepo => ({ repoOf: () => Promise.resolve(result) });
-const repo: RepoResult = { kind: 'repo', root: '/work/project', branch: 'feat/x', web: null };
+const repo: RepoResult = { kind: 'repo', root: must(parseDirectory('/work/project')), branch: must(parseText('feat/x')), web: null };
 const edits = (files: readonly FileCount[]): WorksiteDeps['edits'] & { readonly asked: (readonly LaneCursor[])[] } => {
     const asked: LaneCursor[][] = [];
     return { asked, of: (lanes) => { asked.push([...lanes]); return Promise.resolve(files); } };
@@ -39,7 +42,7 @@ test('a clean worktree gives the directory, repository, branch, last commit and 
     site.set(DIR, { commit: { hash: 'a1b2c3d', subject: 'fix rows' }, paths: [] });
     const snapshot = await worksiteOf(deps(site), input());
     assert.deepEqual(snapshot, {
-        kind: 'known', directory: DIR, repository: { root: '/work/project', branch: 'feat/x' }, lastCommit: { hash: 'a1b2c3d', subject: 'fix rows' },
+        kind: 'known', directory: DIR, repository: { root: must(parseDirectory('/work/project')), branch: must(parseText('feat/x')) }, lastCommit: { hash: 'a1b2c3d', subject: 'fix rows' },
         uncommitted: { count: 0, paths: [] }, edited: [], tokens: [],
     });
 });

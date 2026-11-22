@@ -29,7 +29,7 @@ const ops = (...list: readonly Record<string, unknown>[]): string => JSON.string
 
 function writer(answers: readonly string[], backend = 'fake', contract: 'strict' | 'free-text' = 'strict'): { summarizer: Summarizer; calls: RecapRequest[] } {
     const calls: RecapRequest[] = [];
-    const summarizer: Summarizer = { backend, contract, write: (request): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: answers[Math.min(calls.length - 1, answers.length - 1)] ?? '', costUsd: 0.5 }); } };
+    const summarizer: Summarizer = { backend: textOf(backend), contract, write: (request): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: textOf(answers[Math.min(calls.length - 1, answers.length - 1)] ?? ''), costUsd: brand<number, 'Usd'>(0.5) }); } };
     return { summarizer, calls };
 }
 
@@ -118,7 +118,7 @@ test('the replay counting wrapper preserves a custom writer contract', async () 
 
 test('a harness that fails outright is not retried', async () => {
     const calls: RecapRequest[] = [];
-    const failing: Summarizer = { backend: 'fake', contract: 'strict', write: (request): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'unknown', why: { why: 'timeout', after: 5 as never } }); } };
+    const failing: Summarizer = { backend: textOf('fake'), contract: 'strict', write: (request): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'unknown', why: { why: 'timeout', after: 5 as never } }); } };
     const done = await extract(failing, requestOf(), ground);
     assert.equal(calls.length, 1);
     assert.equal(done.kind, 'failed');

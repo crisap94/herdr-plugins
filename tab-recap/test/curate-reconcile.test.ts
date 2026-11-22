@@ -66,7 +66,7 @@ function setup(answers: readonly Curated[], over: { every?: number; tail?: reado
     return { curate, ledger, calls, logs, clock };
 }
 
-const said = (body: object): Curated => ({ kind: 'curated', text: JSON.stringify(body) });
+const said = (body: object): Curated => ({ kind: 'curated', text: textOf(JSON.stringify(body)) });
 function stateOf(ledger: MemoryLedger, id: string): readonly unknown[] {
     const found = ledger.allOf(T1).find((each) => each.id === id);
     return [found?.state, found?.closedWhy, found?.text];
@@ -85,7 +85,7 @@ test('a stale question is closed as answered, on the quote of the operator\'s re
 });
 
 test('a reconcile answer wrapped in a sentence is read: the stale question is closed as answered, as when the answer is bare JSON', async () => {
-    const { curate, ledger, logs } = setup([{ kind: 'curated', text: `Here you go: ${JSON.stringify({ ops: [ANSWERED] })} Done.` }]);
+    const { curate, ledger, logs } = setup([{ kind: 'curated', text: textOf(`Here you go: ${JSON.stringify({ ops: [ANSWERED] })} Done.`) }]);
     await curate.run('w1:t1', 'turns');
     assert.deepEqual(stateOf(ledger, 'q'), ['closed', 'answered', 'Which branch should the release ship from?']);
     assert.ok(!logs.some((line) => /reconcile refused/.test(line)), logs.join('\n'));
@@ -173,7 +173,7 @@ test('no tail, no open fact or no curator: no call; a curator that gives none is
     const empty = setup([said({ ops: [] })], { tail: [] });
     await empty.curate.run('w1:t1', 'turns');
     assert.equal(empty.calls.length, 0, 'nothing to read, nothing to ask');
-    const garbage = setup([{ kind: 'curated', text: 'sorry, no' }]);
+    const garbage = setup([{ kind: 'curated', text: textOf('sorry, no') }]);
     await garbage.curate.run('w1:t1', 'turns');
     assert.deepEqual(garbage.logs, ['curator w1:t1 t1: reconcile refused — the answer is not JSON']);
 });
@@ -232,7 +232,7 @@ test('with repair once and no repair given, the first answer kept ops are applie
 });
 
 test('with repair once and a repair that is not JSON, the first answer kept ops are applied', async () => {
-    const { curate, ledger, calls, logs } = setup([said({ ops: [ANSWERED, FIRST_UNKNOWN] }), { kind: 'curated', text: 'sorry, no' }], { repair: 'once' });
+    const { curate, ledger, calls, logs } = setup([said({ ops: [ANSWERED, FIRST_UNKNOWN] }), { kind: 'curated', text: textOf('sorry, no') }], { repair: 'once' });
     await curate.run('w1:t1', 'turns');
     assert.equal(calls.length, 2);
     assert.ok(logs.includes('curator w1:t1 t1: reconcile repair refused — the answer is not JSON'), logs.join('\n'));
