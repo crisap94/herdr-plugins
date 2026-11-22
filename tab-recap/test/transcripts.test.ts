@@ -1,8 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { extractClaude } from '#src/adapters/transcripts/claude/transcripts.ts';
-import { extractCodex } from '#src/adapters/transcripts/codex/transcripts.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { extractClaude, extractCodex } from './fakes/transcript-lines.ts';
 
 const claude = [
     { type: 'ai-title', aiTitle: 'herdr recap column' },

@@ -6,26 +6,26 @@ import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import { isReadingTool, parseToolInput, toolReads } from '#src/experiment/read-paths.ts';
 import type { TranscriptEvent } from '#src/experiment/outcomes.ts';
-import { extractClaude } from '../transcripts/claude/rows.ts';
-import { arr, obj, parse, str } from '../transcripts/jsonl.ts';
+import { extractClaudeOf } from '../transcripts/claude/rows.ts';
+import { parseFilledTextOrNull, parseLine, parseRowOrEmpty, parseRowsOrEmpty } from '../transcripts/jsonl.ts';
 
 const number = (value: unknown): Count | null => (typeof value === 'number' ? must(parseCount(value)) : null);
 
 function toolEvents(line: Text): readonly TranscriptEvent[] {
-    const row = parse(line);
+    const row = parseLine(line);
     if (row === null || row['type'] !== 'assistant' || row['isSidechain'] === true) return [];
-    return arr(obj(row['message'])['content']).filter((block) => block['type'] === 'tool_use').map((block) => {
-        const name = str(block['name']) ?? '';
-        return { kind: 'tool', reads: isReadingTool(name) ? toolReads(name, parseToolInput(obj(block['input']))) : [] };
+    return parseRowsOrEmpty(parseRowOrEmpty(row['message'])['content']).filter((block) => block['type'] === 'tool_use').map((block) => {
+        const name = parseFilledTextOrNull(block['name']) ?? '';
+        return { kind: 'tool', reads: isReadingTool(name) ? toolReads(name, parseToolInput(parseRowOrEmpty(block['input']))) : [] };
     });
 }
 
 function entryEvents(line: Text, pos: Count): readonly TranscriptEvent[] {
-    const found = extractClaude([line]);
+    const found = extractClaudeOf([line]);
     const prompts: TranscriptEvent[] = found.entries.filter((entry) => entry.role === 'user').map((entry) => ({ kind: 'prompt', text: entry.text }));
-    const metadata = obj(obj(parse(line) ?? {})['compactMetadata']);
+    const metadata = parseRowOrEmpty(parseRowOrEmpty(parseLine(line) ?? {})['compactMetadata']);
     const marks: TranscriptEvent[] = (found.marks ?? []).filter((mark) => mark.kind === 'compacted').map((mark) => {
-        const trigger = mark.trigger ?? str(metadata['trigger']);
+        const trigger = mark.trigger ?? parseFilledTextOrNull(metadata['trigger']);
         return { kind: 'boundary', pos, at: mark.at, trigger: trigger === null ? null : textOf(trigger), pre: number(metadata['preTokens']), post: number(metadata['postTokens']) };
     });
     return [...prompts, ...marks];

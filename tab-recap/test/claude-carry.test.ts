@@ -9,6 +9,7 @@ import { sameStart } from '#src/adapters/transcripts/jsonl.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
+import { fsPathOf } from './fakes/transcript-lines.ts';
 
 const row = (text: string): string => `${JSON.stringify({ type: 'user', message: { content: text } })}\n`;
 const START = row('first') + row('second');
@@ -22,7 +23,7 @@ const carried = async (old: string | null, now: string, at: Position = AT): Prom
         const to = join(dir, 'new.jsonl');
         if (old !== null) writeFileSync(from, old);
         writeFileSync(to, now);
-        return await new ClaudeTranscripts(dir).carry(located(from), located(to), at);
+        return await new ClaudeTranscripts(fsPathOf(dir)).carry(located(from), located(to), at);
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }

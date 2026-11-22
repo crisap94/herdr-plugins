@@ -3,11 +3,9 @@ import * as claude from '@stateforge-labs/harness-adapters/claude';
 import type { AgentNote, Chunk, Entry, Mark } from '#src/ports/transcripts.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
-import { namedCall, toolEntry } from '../tool-calls.ts';
+import { namedCallOf, toolEntryOf } from '../tool-calls.ts';
 import { instant, duration, type Instant } from '#src/recap/domain/time.ts';
 import { countOf } from '#src/recap/domain/count.ts';
-
-export { extractClaude } from './legacy.ts';
 
 const AWAY_SUBTYPE = claude.ClaudeSystemSubtype.enum['away_summary'];
 
@@ -62,7 +60,7 @@ function agentEntries(record: ClaudeRecord): Entry[] {
         if (block.kind === 'text' && block.text.trim() !== '') {
             entries.push({ role: 'agent', text: textOf(block.text), ...at });
         } else if (block.kind === 'tool_use') {
-            entries.push(toolEntry(namedCall('claude', block.name, block.input), atOf(record) ?? undefined));
+            entries.push(toolEntryOf(namedCallOf('claude', textOf(block.name), block.input), atOf(record)));
         }
     }
     return entries;

@@ -5,8 +5,6 @@ import { isCompaction, readRollout, tokenCounts } from '@stateforge-labs/harness
 import type { CodexRow } from '@stateforge-labs/harness-adapters/codex';
 import { instant } from '#src/recap/domain/time.ts';
 
-export { codexMarks } from './legacy.ts';
-
 const countOf = (row: CodexRow): Count | undefined => {
     const last = parseCount(tokenCounts([row])[0]?.last);
     return last.kind === 'ok' && last.value > 0 ? last.value : undefined;

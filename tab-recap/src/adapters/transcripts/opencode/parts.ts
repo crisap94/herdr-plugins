@@ -5,7 +5,7 @@ import type { AgentNote, Entry, Mark } from '#src/ports/transcripts.ts';
 import { parseInstant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import { opencodeObserved } from './context.ts';
-import { namedCall, toolEntry } from '../tool-calls.ts';
+import { namedCallOf, toolEntryOf } from '../tool-calls.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { instant, duration } from '#src/recap/domain/time.ts';
@@ -20,7 +20,7 @@ function partEntry(role: PartRole, part: OpenCodePart, at: Instant | undefined):
     if (text !== null) {
         return { role: role === 'user' ? 'user' : 'agent', text: textOf(text), ...when };
     }
-    return part.partType === 'tool' ? toolEntry(namedCall('opencode', part.tool ?? 'tool', part.input), at) : null;
+    return part.partType === 'tool' ? toolEntryOf(namedCallOf('opencode', textOf(part.tool ?? 'tool'), part.input), at ?? null) : null;
 }
 
 function markOf(message: OpenCodeMessage): Mark {

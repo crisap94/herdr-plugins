@@ -26,6 +26,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { fsPathOf } from './fakes/transcript-lines.ts';
 
 const THIS_FILE = 'test/engine-plain-session.test.ts';
 const HERDR_SIDE = ['src/adapters/herdr/', 'src/adapters/herdr-core/', 'src/transport/', 'src/daemon/', 'src/column/', 'src/setup/', 'src/compact/'];
@@ -47,7 +48,7 @@ interface PlainHost {
 }
 
 function plainHost(records: string, store: Store): PlainHost {
-    const reader = new ClaudeTranscripts(dirname(dirname(records)));
+    const reader = new ClaudeTranscripts(fsPathOf(dirname(dirname(records))));
     const scope = tabId('plain:t1');
     const session = laneFrom({ paneId: 'plain:p1', tabId: String(scope), workspaceId: 'plain', agent: reader.agent, session: basename(records, '.jsonl') });
     const clock = { now: 1 };

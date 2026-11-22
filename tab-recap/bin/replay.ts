@@ -1,7 +1,7 @@
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
 import { RUBRIC_TEXT } from '#src/adapters/job/prompts/rubric.ts';
-import { replayKindOf, replayTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
+import { replayKindOfPath, replayTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
 import { databaseFile } from '#src/adapters/db/database.ts';
 import { factsOfTabAt } from '#src/adapters/db/imported.ts';
 import { importedChaptersAt } from '#src/adapters/db/imported-chapters.ts';
@@ -15,6 +15,8 @@ import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { AUTO_ORDER, availableIn, enumeratorFor, judgeFor, summarizerFor, summarizerWork } from '#src/daemon/backends.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { loadConfig, stateDirectory } from '#src/daemon/config.ts';
 import type { Enumerators } from '#src/ports/enumerators.ts';
 import type { Judge } from '#src/ports/judge.ts';
@@ -119,7 +121,7 @@ async function run(file: string, reader: Transcripts, options: EvalRequest, size
 export function replayCommand(options: EvalRequest): Promise<number> {
     const readers = replayTranscriptRegistry();
     const file = options.replay ?? '';
-    const kind = replayKindOf(options.kind, file);
+    const kind = replayKindOfPath(options.kind === null ? null : textOf(options.kind), fsPathOf(file));
     const reader = kind === null ? undefined : readers.exact(agentKind(kind));
     if (reader === undefined) {
         console.error('tab-recap: 2 — --kind takes claude or codex');

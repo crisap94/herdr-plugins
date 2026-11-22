@@ -1,16 +1,20 @@
-import { CodexItemType, isInjectedContext, parseCodexToolCall, readRollout } from '@stateforge-labs/harness-adapters/codex';
+import { CodexItemType, codexRolloutRoot, findRolloutByCwd, isInjectedContext, parseCodexToolCall, readRollout } from '@stateforge-labs/harness-adapters/codex';
 import type { CodexRow } from '@stateforge-labs/harness-adapters/codex';
-import type { Chunk, Entry } from '#src/ports/transcripts.ts';
-import { must } from '#src/protocol/result.ts';
+import { sourcePathOf, grewOf, type Chunk, type ChunkResult, type Entry, type InFlightResult, type Located, type ObservedResult, type Position, type PromptResult, type SourcePath, type Transcripts } from '#src/ports/transcripts.ts';
+import { unknown } from '#src/ports/unknowable.ts';
+import type { Lane } from '#src/recap/domain/lane.ts';
+import { agentKind } from '#src/recap/domain/ids.ts';
+import { countOf, type Count } from '#src/recap/domain/count.ts';
+import { fsPathOf, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
-import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
-import { arr, obj, parse, str } from '../jsonl.ts';
+import { type Text, textOf } from '#src/recap/domain/text.ts';
+import { parseFilledTextOrNull, parseLine, readJsonlFrom, parseRowOrEmpty, parseRowsOrEmpty, tailSpan, parseUnreadable, type SupportedReading } from '../jsonl.ts';
 import type { Row } from '../jsonl.ts';
-import { toolEntry } from '../tool-calls.ts';
+import { toolEntryOf } from '../tool-calls.ts';
+import { codexObservedOf } from './context.ts';
+import { CODEX_IN_FLIGHT_INITIAL_BYTES, CODEX_IN_FLIGHT_MAX_BYTES, codexInFlightOf } from './in-flight.ts';
 import { marksOf } from './marks.ts';
 import { codexCallsOf } from './tool-calls.ts';
-
-export { CodexTranscripts, extractCodex } from './legacy.ts';
 
 function instantOf(row: CodexRow): Instant | undefined {
     const parsed = parseInstant(row.at);
@@ -18,11 +22,11 @@ function instantOf(row: CodexRow): Instant | undefined {
 }
 
 function messageEntry(payload: Row, at: Instant | undefined): Entry | null {
-    const role = str(payload['role']);
+    const role = parseFilledTextOrNull(payload['role']);
     if (role !== 'user' && role !== 'assistant') {
         return null;
     }
-    const text = arr(payload['content']).map((part) => str(part['text']) ?? '').join('\n');
+    const text = parseRowsOrEmpty(payload['content']).map((part) => parseFilledTextOrNull(part['text']) ?? '').join('\n');
     if (text === '' || isInjectedContext(text)) {
         return null;
     }
@@ -31,9 +35,9 @@ function messageEntry(payload: Row, at: Instant | undefined): Entry | null {
 
 function toolEntries(payload: Row, at: Instant | undefined): readonly Entry[] {
     const raw = payload['arguments'] ?? payload['input'];
-    const input = typeof raw === 'string' ? (parse(raw) ?? {}) : obj(raw);
-    const name = must(parseText(str(payload['name']) ?? 'tool'));
-    return codexCallsOf(name, parseCodexToolCall(name, raw), input).map((call) => toolEntry(call, at));
+    const input = typeof raw === 'string' ? (parseLine(textOf(raw)) ?? {}) : parseRowOrEmpty(raw);
+    const name = textOf(parseFilledTextOrNull(payload['name']) ?? 'tool');
+    return codexCallsOf(name, parseCodexToolCall(name, raw), input).map((call) => toolEntryOf(call, at ?? null));
 }
 
 function entriesOf(row: CodexRow): readonly Entry[] {
@@ -52,4 +56,70 @@ export function extractCodexOf(lines: readonly Text[]): Omit<Chunk, 'kind' | 'po
     const rows = readRollout(lines).rows;
     const entries = rows.flatMap((row) => entriesOf(row));
     return { entries, notes: [], marks: marksOf(rows), title: null, lastPrompt: entries.findLast((entry) => entry.role === 'user')?.text ?? null, claudeRecap: null };
+}
+
+export class CodexTranscripts implements Transcripts {
+    readonly agent = agentKind('codex');
+    readonly inFlight: SupportedReading = { kind: 'supported', split: { kind: 'foreground-only', why: 'codex-cells' }, read: (source, budget) => this.readInFlight(source, budget) };
+    private readonly root: FsPath;
+    private readonly readTail: typeof tailSpan;
+
+    constructor(root: FsPath = fsPathOf(codexRolloutRoot()), readTail: typeof tailSpan = tailSpan) {
+        this.root = root;
+        this.readTail = readTail;
+    }
+
+    locate(lane: Lane): Promise<Located> {
+        return Promise.resolve(this.find(lane));
+    }
+
+    private readInFlight(source: SourcePath, budget: Count): Promise<InFlightResult> {
+        try {
+            const path = fsPathOf(source);
+            let bytes = countOf(Math.max(budget, CODEX_IN_FLIGHT_INITIAL_BYTES));
+            let tail = this.readTail(path, bytes);
+            let answer = codexInFlightOf(tail.lines, tail.truncated);
+            while (tail.truncated === 'present' && answer.kind === 'unknown' && bytes < CODEX_IN_FLIGHT_MAX_BYTES) {
+                bytes = countOf(Math.min(bytes * 2, CODEX_IN_FLIGHT_MAX_BYTES));
+                tail = this.readTail(path, bytes);
+                answer = codexInFlightOf(tail.lines, tail.truncated);
+            }
+            return Promise.resolve(answer);
+        } catch (error) {
+            return Promise.resolve(parseUnreadable(error));
+        }
+    }
+
+    private find(lane: Lane): Located {
+        if (lane.cwd === null) {
+            return unknown({ why: 'not-found', what: textOf(`a cwd for ${lane.pane}`) });
+        }
+        const file = findRolloutByCwd(lane.cwd, { root: this.root });
+        return file === null ? unknown({ why: 'not-found', what: textOf(`a codex rollout started in ${lane.cwd}`) }) : { kind: 'located', source: sourcePathOf(file.path) };
+    }
+
+    latestPrompt(source: SourcePath, budget: Count): Promise<PromptResult> {
+        try {
+            return Promise.resolve({ kind: 'prompt', text: extractCodexOf(tailSpan(fsPathOf(source), budget).lines).lastPrompt });
+        } catch (error) {
+            return Promise.resolve(parseUnreadable(error));
+        }
+    }
+
+    observed(source: SourcePath, budget: Count): Promise<ObservedResult> {
+        try {
+            return Promise.resolve({ kind: 'observed', observed: codexObservedOf(tailSpan(fsPathOf(source), budget).lines) });
+        } catch (error) {
+            return Promise.resolve(parseUnreadable(error));
+        }
+    }
+
+    read(source: SourcePath, was: Position, budget: Count): Promise<ChunkResult> {
+        try {
+            const { lines, position, grew, more } = readJsonlFrom(fsPathOf(source), was, budget);
+            return Promise.resolve({ kind: 'chunk', ...extractCodexOf(lines), position, grew: grewOf(grew === 'present'), more: more === 'present' });
+        } catch (error) {
+            return Promise.resolve(parseUnreadable(error));
+        }
+    }
 }

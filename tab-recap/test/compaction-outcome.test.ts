@@ -1,13 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { extractClaude } from '#src/adapters/transcripts/claude/rows.ts';
-import { extractCodex } from '#src/adapters/transcripts/codex/transcripts.ts';
 import { queuedOutcomeOf, verdictOf } from '#src/recap/application/compaction-outcome.ts';
 import type { QueuedDeps } from '#src/recap/application/compaction-outcome.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { countOf } from '#src/recap/domain/count.ts';
+import { extractClaude, extractCodex } from './fakes/transcript-lines.ts';
 
 const row = (fields: Record<string, unknown>): string => JSON.stringify({ timestamp: '2026-10-07T10:00:05Z', ...fields });
 const AT = Date.parse('2026-10-07T10:00:05Z');

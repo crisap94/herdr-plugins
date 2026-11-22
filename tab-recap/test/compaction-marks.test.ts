@@ -3,14 +3,12 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { extractClaude } from '#src/adapters/transcripts/claude/rows.ts';
-import { codexMarks } from '#src/adapters/transcripts/codex/marks.ts';
-import { extractCodex } from '#src/adapters/transcripts/codex/transcripts.ts';
 import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcripts.ts';
 import { UNREAD } from '#src/ports/transcripts.ts';
 import { opencodeFixture } from '#test/opencode-fixture.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { duration } from '#src/recap/domain/time.ts';
+import { extractClaude, codexMarks, extractCodex, fsPathOf, sourcePathOf } from './fakes/transcript-lines.ts';
 
 const linesOf = (name: string): string[] => readFileSync(join(import.meta.dirname, 'fixtures', name), 'utf8').split('\n').filter((line) => line !== '');
 
@@ -51,8 +49,8 @@ test('opencode: the compaction answer is a mark with the message\'s tokens and h
         fixture.add({ id: 'm1', session: 'ses_new', role: 'assistant', updated: 100, data: { time: { created: 1 } }, parts: [{ type: 'text', text: 'hello' }] });
         fixture.add({ id: 'm2', session: 'ses_new', role: 'assistant', updated: 120, data: { 'summary': true, mode: 'compaction', time: { created, completed: created + 7000 }, tokens: { input: 900, output: 80, cache: { read: 100, write: 20 } } }, parts: [{ type: 'text', text: '## Goal\nRename.' }] });
         fixture.close();
-        const reader = new OpencodeTranscripts(fixture.db);
-        const chunk = await reader.read(`${fixture.db}#ses_new`, UNREAD, 1 << 20);
+        const reader = new OpencodeTranscripts(fsPathOf(fixture.db));
+        const chunk = await reader.read(sourcePathOf(`${fixture.db}#ses_new`), UNREAD, countOf(1 << 20));
         assert.ok(chunk.kind === 'chunk');
         assert.deepEqual(chunk.marks, [{ kind: 'compacted', at: created, tokensBefore: countOf(1020), tookMs: duration(7000) }]);
     } finally {

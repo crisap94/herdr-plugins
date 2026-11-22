@@ -7,8 +7,6 @@ import type { Presence } from '#src/recap/domain/presence.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { openWork, readRollout } from '@stateforge-labs/harness-adapters/codex';
 
-export { codexInFlight } from './legacy.ts';
-
 export const CODEX_IN_FLIGHT_INITIAL_BYTES = 2 * 1024 * 1024;
 export const CODEX_IN_FLIGHT_MAX_BYTES = 16 * 1024 * 1024;
 

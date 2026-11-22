@@ -35,6 +35,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { fsPathOf } from './fakes/transcript-lines.ts';
 
 const AT = Date.parse('2026-10-10T12:00:00Z');
 const MINUTE = 60_000;
@@ -164,7 +165,7 @@ test('the restore path runs on the engine\'s store and a scope and followed sess
         const records = join(dir, 'projects', '-plain', '00000000-0000-4000-8000-000000000002.jsonl');
         mkdirSync(dirname(records), { recursive: true });
         writeFileSync(records, '');
-        const reader = new ClaudeTranscripts(dirname(dirname(records)));
+        const reader = new ClaudeTranscripts(fsPathOf(dirname(dirname(records))));
         const scope = tabId('00000000-0000-4000-8000-000000000002');
         const session = laneFrom({ paneId: String(scope), tabId: String(scope), workspaceId: 'plain', agent: reader.agent, session: basename(records, '.jsonl') });
         const clock = { now: 1 };

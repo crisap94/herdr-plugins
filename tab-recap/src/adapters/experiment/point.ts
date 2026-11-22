@@ -11,14 +11,15 @@ import { flightOf, flightReason, NOT_AWAITING, observedFrom, runningCount, unrea
 import { hindsightOf } from '#src/experiment/hindsight.ts';
 import type { Hindsight } from '#src/experiment/hindsight.ts';
 import { claudeWindowOf } from '../capability/context-window.ts';
-import { extractClaude } from '../transcripts/claude/rows.ts';
-import { claudeInFlight } from '../transcripts/claude/in-flight.ts';
-import { claudeObserved } from '../transcripts/claude/context.ts';
-import { linesAfter, linesBefore } from '../transcripts/slice.ts';
+import { extractClaudeOf } from '../transcripts/claude/rows.ts';
+import { claudeInFlightOf } from '../transcripts/claude/in-flight.ts';
+import { claudeObservedOf } from '../transcripts/claude/context.ts';
+import { linesAfterOf, linesBeforeOf } from '../transcripts/slice.ts';
 import type { ExperimentStore, FramePoint, StoredPoint } from './store.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { countOf } from '#src/recap/domain/count.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 
 const TAIL_BYTES = 256 * 1024;
 const EXPERIMENT_MINIMUM = 40;
@@ -63,13 +64,13 @@ function trimmed(entries: readonly Entry[]): readonly Entry[] {
 }
 
 export function shareAt(source: Text, cursor: number, catalogue: ModelCatalogue): ShareReading | null {
-    const observed = claudeObserved(linesBefore(source, cursor, TAIL_BYTES));
+    const observed = claudeObservedOf(linesBeforeOf(fsPathOf(source), countOf(cursor), countOf(TAIL_BYTES)));
     const use = observed === null ? null : contextOf({ observed, setting: null }, claudeWindowOf(catalogue));
     return use === null ? null : { tokens: use.tokens, window: use.window, share: shareOf(use) };
 }
 
-function gateAt(stored: StoredPoint, lines: readonly string[], lastBreakAt: number | null, share: number): GateReading {
-    const flight = claudeInFlight(lines);
+function gateAt(stored: StoredPoint, lines: readonly Text[], lastBreakAt: number | null, share: number): GateReading {
+    const flight = claudeInFlightOf(lines, 'absent');
     const inFlight = flight.kind === 'in-flight' ? flight.count : 'unknown';
     const observed = flight.kind === 'in-flight' ? observedFrom(runningCount(countOf(flight.count)), flight.background, flightReason(textOf('running'))) : unreadable(flightReason(textOf('unreadable')));
     const gate = gateFrom({ kind: 'claude', kinds: KINDS_DEFAULT, shadowKinds: [], busy: 'free', flight: flightOf(observed, NOT_AWAITING), share: parseGatePercent(share), minimum: parseGatePercent(EXPERIMENT_MINIMUM), ceiling: parseGatePercent(CEILING_DEFAULT), now: instant(stored.at), lastBreakAt: lastBreakAt === null ? null : instant(lastBreakAt), lastDecisionAt: null, cooldownMs: duration(COOLDOWN_DEFAULT_MS), unchanged: 'changed' }).gate;
@@ -78,12 +79,12 @@ function gateAt(stored: StoredPoint, lines: readonly string[], lastBreakAt: numb
 
 export function pointOf(store: ExperimentStore, catalogue: ModelCatalogue, stored: FramePoint, stratum: Text): Point | null {
     try {
-        const lines = linesBefore(stored.source, stored.cursor, TAIL_BYTES);
-        const recent = trimmed(extractClaude(lines).entries);
+        const lines = linesBeforeOf(fsPathOf(stored.source), countOf(stored.cursor), countOf(TAIL_BYTES));
+        const recent = trimmed(extractClaudeOf(lines).entries);
         const history = store.factsAt(stored);
         const used = shareAt(stored.source, stored.cursor, catalogue);
         const lastBreakAt = store.lastBreakAt(stored.tab, stored.at);
-        const after = extractClaude(linesAfter(stored.source, stored.cursor, TAIL_BYTES)).entries;
+        const after = extractClaudeOf(linesAfterOf(fsPathOf(stored.source), countOf(stored.cursor), countOf(TAIL_BYTES))).entries;
         const { blob: _blob, ...plain } = stored;
         return {
             ...plain, stratum, share: used?.share ?? null, tokens: used?.tokens ?? null, window: used?.window ?? null, lastBreakAt, ...gateAt(stored, lines, lastBreakAt, used?.share ?? 0),

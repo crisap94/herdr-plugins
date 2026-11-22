@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CLAUDE_SPLIT, claudeInFlight } from '#src/adapters/transcripts/claude/in-flight.ts';
+import { CLAUDE_SPLIT } from '#src/adapters/transcripts/claude/in-flight.ts';
 import type { BackgroundSplit, InFlightResult } from '#src/ports/transcripts.ts';
 import { runningOf } from '#src/recap/domain/in-flight.ts';
+import { claudeInFlight } from './fakes/transcript-lines.ts';
 
 const FOREGROUND_ONLY: BackgroundSplit = { kind: 'foreground-only', why: 'codex-cells' };
 const counting = (lines: readonly string[], truncated = false): InFlightResult => claudeInFlight(lines, truncated, FOREGROUND_ONLY);
