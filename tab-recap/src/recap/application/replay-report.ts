@@ -1,5 +1,5 @@
 import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { jaccard } from '#src/recap/domain/gates/jaccard.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
@@ -17,7 +17,7 @@ export interface Check {
 export function checksOf(facts: readonly Fact[]): readonly Check[] {
     const open = facts.filter((fact) => fact.state === 'open');
     const decisions = facts.filter((fact) => fact.section === 'decisions');
-    const repeats = open.filter((fact, at) => open.slice(0, at).some((earlier) => earlier.section === fact.section && earlier.task.key === fact.task.key && jaccard(earlier.text, fact.text) >= 0.6));
+    const repeats = open.filter((fact, at) => open.slice(0, at).some((earlier) => earlier.section === fact.section && earlier.task.key === fact.task.key && jaccard(textOf(earlier.text), textOf(fact.text)) >= 0.6));
     return [
         { name: 'short (≤ 16 words)', passed: facts.filter((fact) => words(fact) <= 16).length, of: facts.length },
         { name: 'decisions carry a why', passed: decisions.filter((fact) => fact.why !== null && fact.why !== '(not recorded)').length, of: decisions.length },

@@ -5,10 +5,11 @@ import type { GateContext } from '@stateforge-labs/session-ledger/unstable/recap
 import { foldedOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/words.ts';
 import type { CloseOp, Operation } from '@stateforge-labs/session-ledger/unstable/recap/domain/ops.ts';
 import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import type { Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 
-const SOURCE = foldedOf('Merged !256 after both pipelines went green.\nThe release is tagged: v1.9.0');
-const context: GateContext = { now: 1, language: 'en', agents: [], shown: new Map(), open: [], closedLately: [], source: SOURCE };
+const SOURCE = textOf(foldedOf('Merged !256 after both pipelines went green.\nThe release is tagged: v1.9.0'));
+const context: GateContext = { now: instant(1), language: textOf('en'), agents: [], shown: new Map(), open: [], closedLately: [], source: SOURCE };
 const quote = (value: string): Text => brand<string, 'Text'>(value);
 const close = (why: CloseOp['why'], anchor?: string): Operation => ({ op: 'close', id: 'f3', why, ...(anchor === undefined ? {} : { anchor: quote(anchor) }) });
 

@@ -93,7 +93,7 @@ function round(text: Text, ground: Ground, turn: Turn): Round {
     const each = judged(ground, [...turn.keep, ...answer.ops], turn.contract);
     const final: Outcome = {
         tasks: each.map((one, at) => ({ task: ground.grounds[at]?.key ?? '', ops: one.kept })).filter((one) => one.ops.length > 0),
-        stats: each.reduce((all, one) => addStats(all, one.gated, one.refused.length), turn.stats),
+        stats: each.reduce((all, one) => addStats(all, one.gated, brand<number, 'Count'>(one.refused.length)), turn.stats),
     };
     if (turn.retryLeft && (refusedIn(each) > 0 || answer.problems.length > 0)) {
         const counted = each.reduce((all, one) => addStats(all, one.gated), turn.stats);

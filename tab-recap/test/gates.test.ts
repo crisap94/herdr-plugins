@@ -1,5 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { duplicate } from '#src/recap/domain/gates/duplicate.ts';
 import type { Context, Gate, GatedSection, Item } from '#src/recap/domain/gates/item-gate.ts';
 import { wrongLanguage } from '#src/recap/domain/gates/language.ts';
@@ -11,8 +13,9 @@ import { withoutWhy } from '#src/recap/domain/gates/why.ts';
 import { jaccard, tokensOf } from '#src/recap/domain/gates/words.ts';
 import { examplesOf } from '#test/rubric.ts';
 
-const item = (section: GatedSection, text: string, position = 0): Item => ({ task: 't1', section, position, text });
-const context = (extra: Partial<Context> = {}): Context => ({ language: 'en', agents: ['a1', 'a2', 'orchestrator', 'claude'], earlier: [], ...extra });
+const count = brand<number, 'Count'>;
+const item = (section: GatedSection, text: string, position = 0): Item => ({ task: textOf('t1'), section, position: count(position), text: textOf(text) });
+const context = (extra: Partial<Context> = {}): Context => ({ language: textOf('en'), agents: ['a1', 'a2', 'orchestrator', 'claude'].map(textOf), earlier: [], ...extra });
 const run = (gate: Gate, section: GatedSection, text: string, extra: Partial<Context> = {}): string => gate.check(item(section, text), context(extra))?.kind ?? 'pass';
 
 test('G1 narrator: an agent as the subject is refused (the rubric\'s I5 fail), the work as the subject passes', () => {
@@ -53,7 +56,7 @@ test('G3 decision without why: the rubric\'s S-decisions fail is refused, its pa
     assert.equal(run(withoutWhy, 'decisions', fail), 'refuse');
     assert.equal(run(withoutWhy, 'decisions', pass), 'pass');
     assert.equal(run(withoutWhy, 'decisions', 'Use SQLite because it ships with Node.'), 'pass');
-    assert.equal(run(withoutWhy, 'decisions', 'Usa SQLite porque viene con Node.', { language: 'es' }), 'pass');
+    assert.equal(run(withoutWhy, 'decisions', 'Usa SQLite porque viene con Node.', { language: textOf('es') }), 'pass');
     assert.equal(run(withoutWhy, 'decisions', 'Keep the sensor on channel 11 during the watch.'), 'refuse');
     assert.equal(run(withoutWhy, 'done', fail), 'pass', 'only decisions need a why');
 });
@@ -73,13 +76,13 @@ test('G4 link: the rubric\'s S-links fail is flagged (kept, drawn without a hype
 test('G5 language: a clear English line in a Spanish recap (and the reverse) is refused; short, mixed and other languages pass', () => {
     const english = 'The tests are failing after the merge.';
     const spanish = 'Las pruebas fallan después de la fusión.';
-    assert.equal(run(wrongLanguage, 'done', english, { language: 'es' }), 'refuse');
-    assert.equal(run(wrongLanguage, 'done', spanish, { language: 'en' }), 'refuse');
+    assert.equal(run(wrongLanguage, 'done', english, { language: textOf('es') }), 'refuse');
+    assert.equal(run(wrongLanguage, 'done', spanish, { language: textOf('en') }), 'refuse');
     assert.equal(run(wrongLanguage, 'done', english), 'pass');
-    assert.equal(run(wrongLanguage, 'done', spanish, { language: 'es' }), 'pass');
-    assert.equal(run(wrongLanguage, 'done', 'Merged !256', { language: 'es' }), 'pass', 'too short to tell');
-    assert.equal(run(wrongLanguage, 'done', english, { language: 'Português' }), 'pass');
-    assert.match(wrongLanguage.check(item('done', english), context({ language: 'es' }))?.reason ?? '', /español/);
+    assert.equal(run(wrongLanguage, 'done', spanish, { language: textOf('es') }), 'pass');
+    assert.equal(run(wrongLanguage, 'done', 'Merged !256', { language: textOf('es') }), 'pass', 'too short to tell');
+    assert.equal(run(wrongLanguage, 'done', english, { language: textOf('Português') }), 'pass');
+    assert.match(wrongLanguage.check(item('done', english), context({ language: textOf('es') }))?.reason ?? '', /español/);
 });
 
 test('G8 not specific (flag): the rubric\'s I3 fail is flagged, its pass is not; each kind of concrete thing counts', () => {

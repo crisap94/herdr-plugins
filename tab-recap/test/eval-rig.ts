@@ -3,6 +3,9 @@ import { parseEval } from '#src/recap/application/eval-options.ts';
 import type { EvalOptions } from '#src/recap/application/eval-options.ts';
 import type { EvalDeps } from '#src/recap/application/eval-run.ts';
 import type { Judge, JudgeTask } from '#src/ports/judge.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+import { gateName } from '#src/recap/domain/gates/gatekeeper.ts';
+import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import { plain } from '#src/recap/render/wrap.ts';
 import { cursor, memoryStore, recordOps } from '#test/db/support.ts';
 import { oneTask, withFacts } from '#test/support.ts';
@@ -39,6 +42,8 @@ export function rig(parts: { readonly judge?: Judge | null; readonly lines?: rea
     return { store, deps, out, err, asked };
 }
 
+const GATE_STATS: GateStats = { refused: { [gateName('G1')]: brand<number, 'Count'>(1) }, flagged: { [gateName('G8')]: brand<number, 'Count'>(2) }, dropped: brand<number, 'Count'>(0) };
+
 export function scripted(answers: Readonly<Partial<Record<JudgeTask, string>>>): Judge {
     return { label: 'claude · sonnet · medium', ask: (task) => Promise.resolve({ kind: 'said', text: answers[task] ?? '', costUsd: 0 }) };
 }
@@ -48,7 +53,7 @@ export function seed(store: Rig['store'], count: number, over: { readonly input?
         recordOps(store, {
             tab: over.tab ?? 'w1:t1', at: NOW - (over.first ?? 1) * DAY + n * 1000, cause: 'requested', backend: 'fake', language: 'en', costUsd: 0, error: null, lanes: [cursor('w1:p1')],
             ...withFacts(oneTask('', { ...SECTIONS, goal: `Ship retries ${n}` })), ...(over.input === false ? {} : { input: `<recap_input version="1">run ${n}</recap_input>` }),
-            ...(over.gate === true ? { gateStats: { refused: { G1: 1 }, flagged: { G8: 2 }, dropped: 0 } } : {}),
+            ...(over.gate === true ? { gateStats: GATE_STATS } : {}),
         });
     }
 }

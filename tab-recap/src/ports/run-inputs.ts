@@ -1,12 +1,14 @@
 import { err, ok, type Result } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { isSection, type FactId, type RunId, type Section } from '#src/recap/domain/fact.ts';
+import { gateName } from '#src/recap/domain/gates/gatekeeper.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import { parseTabId, type TabId } from '#src/recap/domain/ids.ts';
 import { parsePresence, type Presence } from '#src/recap/domain/presence.ts';
 import { parseFactId, parseRunId } from '#src/recap/domain/run-ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
+import type { GateName } from '@stateforge-labs/session-ledger/unstable/contract/kernel.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 import type { ItemsMode } from './twins/legacy.ts';
 
@@ -71,17 +73,17 @@ function anchorOf(row: Row): Result<Text | null, ParseFailure> {
 
 function statsOf(stats: Row): Result<GateStats, ParseFailure> {
     if (!isRow(stats.refused) || !isRow(stats.flagged)) return err({ kind: 'not-a-row' });
-    const refused: Record<string, number> = {};
+    const refused: Record<GateName, Count> = {};
     for (const [gate, value] of Object.entries(stats.refused)) {
         const count = parseCount(value);
         if (count.kind === 'err') return count;
-        refused[gate] = count.value;
+        refused[gateName(gate)] = count.value;
     }
-    const flagged: Record<string, number> = {};
+    const flagged: Record<GateName, Count> = {};
     for (const [gate, value] of Object.entries(stats.flagged)) {
         const count = parseCount(value);
         if (count.kind === 'err') return count;
-        flagged[gate] = count.value;
+        flagged[gateName(gate)] = count.value;
     }
     const dropped = parseCount(stats.dropped);
     if (dropped.kind === 'err') return dropped;

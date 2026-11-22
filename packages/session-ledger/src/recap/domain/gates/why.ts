@@ -1,3 +1,4 @@
+import { textOf } from '../text.ts';
 import { said } from './item-gate.ts';
 import type { Gate, Outcome } from './item-gate.ts';
 
@@ -8,6 +9,6 @@ export const withoutWhy: Gate = {
     id: 'G3',
     check: (item, context): Outcome | null => (item.section !== 'decisions' || REASON_WORDS.test(item.text) || CLAUSE.test(item.text) ? null : {
         kind: 'refuse', gate: 'G3',
-        reason: said(context.language, 'a decision needs its reason: add "because …", "so that …" or ": <why>"', 'una decisión necesita su razón: añade "porque …", "para que …" o ": <por qué>"'),
+        reason: said(context.language, textOf('a decision needs its reason: add "because …", "so that …" or ": <why>"'), textOf('una decisión necesita su razón: añade "porque …", "para que …" o ": <por qué>"')),
     }),
 };

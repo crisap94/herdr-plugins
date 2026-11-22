@@ -3,7 +3,7 @@ import type { InputCandidate, InputFact } from '#src/ports/recap-input.ts';
 import { brand, type Brand } from '#src/recap/domain/brand.ts';
 import { jaccard, tokensOf } from '#src/recap/domain/gates/jaccard.ts';
 import { READBACK } from '#src/recap/domain/questions.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 import type { Question } from './enumerate-input.ts';
 
 export type Wanted = Brand<boolean, 'Wanted'>;
@@ -32,14 +32,14 @@ function mentionedIn(said: Text, facts: readonly InputFact[]): readonly InputFac
         if (fact.ref !== null && said.includes(fact.ref)) {
             return true;
         }
-        const [own, heard] = [tokensOf(fact.text), tokensOf(said)];
+        const [own, heard] = [tokensOf(textOf(fact.text)), tokensOf(said)];
         return own.size >= 2 && [...own].filter((word) => heard.has(word)).length >= own.size * MENTIONED;
     });
 }
 
 function unspoken(facts: readonly InputFact[], candidates: readonly InputCandidate[]): readonly InputFact[] {
     return facts.filter((fact) => !candidates.some((candidate) =>
-        (fact.ref !== null && (candidate.ref === fact.ref || candidate.text.includes(fact.ref))) || jaccard(candidate.text, fact.text) >= ABOUT));
+        (fact.ref !== null && (candidate.ref === fact.ref || candidate.text.includes(fact.ref))) || jaccard(textOf(candidate.text), textOf(fact.text)) >= ABOUT));
 }
 
 export function askBackFor(found: Findings): readonly Question[] {
