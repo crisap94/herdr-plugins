@@ -5,6 +5,7 @@ import { parseText } from '../../packages/session-ledger/src/recap/domain/text.t
 import { answerTextOf } from '../../packages/session-ledger/src/recap/application/recap-shape.ts';
 import { unfenced } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
 import { readJsonl } from './runner.ts';
+import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 
 // 'today' parses the fence-stripped text as is. 'p0' first takes the JSON object
 // out of surrounding prose, the way the P0 reader in the recap pipeline does.
@@ -27,7 +28,7 @@ function bodyOf(text: string, reader: Reader): string {
 export function unparsedOf(evalName: UnparsedEval, text: string, reader: Reader): boolean {
     if (!READERS.includes(reader)) throw new Error(`unknown reader ${String(reader)}`);
     const body = bodyOf(text, reader);
-    if (evalName === 'curator-reconcile') return reconciliationOf(body, new Map(), '').refused.includes(NOT_JSON);
+    if (evalName === 'curator-reconcile') return reconciliationOf(textOf(body), new Map(), textOf('')).refused.includes(textOf(NOT_JSON));
     return curationOf(body, new Set()).refused.some((why) => why === NOT_JSON || why === NOT_OBJECT);
 }
 

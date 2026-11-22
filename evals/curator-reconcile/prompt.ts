@@ -2,13 +2,19 @@ import { readFileSync } from 'node:fs';
 import { RECONCILE_CURATOR_INSTRUCTIONS } from '../../tab-recap/src/adapters/job/prompts/curator-reconcile-instructions.ts';
 import { RUBRIC } from '../../tab-recap/src/adapters/job/prompts/rubric.ts';
 import type { Entry } from '../../packages/session-ledger/src/ports/transcripts.ts';
-import { reconcileInput } from '../../packages/session-ledger/src/recap/application/curator-input.ts';
+import { reconcileInput, type ReconcileMaterial } from '../../packages/session-ledger/src/recap/application/curator-input.ts';
 import type { TaskGround } from '../../packages/session-ledger/src/recap/application/ops-gating.ts';
 import type { Fact } from '../../packages/session-ledger/src/recap/domain/fact.ts';
 import type { Item, Prompt } from '../lib/types.ts';
 import { brand } from '../../packages/session-ledger/src/recap/domain/brand.ts';
+import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
+import type { Text } from '../../packages/session-ledger/src/recap/domain/text.ts';
 
 const textOf = brand<string, 'Text'>;
+
+export function materialOf(input: Input): ReconcileMaterial {
+    return { ...input, name: textOf(input.name), language: textOf(input.language), rubric: RUBRIC.items, clock: { now: instant(input.clock.now), zone: textOf(input.clock.zone) } };
+}
 
 export interface Spanned {
     readonly id: string;
@@ -41,7 +47,7 @@ export interface ReconcileItem extends Item<Input, Expected> {
 
 export interface Built {
     readonly document: string;
-    readonly facts: ReadonlyMap<string, Fact>;
+    readonly facts: ReadonlyMap<Text, Fact>;
     readonly tail: string;
 }
 
@@ -52,7 +58,7 @@ const cache = new Map<string, Built>();
 export function builtOf(item: ReconcileItem): Built {
     const found = cache.get(item.id);
     if (found !== undefined) return found;
-    const built = reconcileInput({ ...item.input, rubric: RUBRIC.items });
+    const built = reconcileInput(materialOf(item.input));
     cache.set(item.id, built);
     return built;
 }

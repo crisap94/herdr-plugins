@@ -5,6 +5,7 @@ import { FRESH_CASES, FRESH_PROJECTS, type FreshCase } from './dataset-source/fr
 import { PROJECTS, type Project } from './dataset-source/pools.ts';
 import { clipTurn } from '../../packages/session-ledger/src/recap/application/writer-clip.ts';
 import { FRESH_ITEMS, FRESH_SEED, sampleOf, shuffledOf } from '../lib/fresh.ts';
+import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 
 // Without --fresh this writes dataset.jsonl exactly as before. With --fresh it writes dataset-fresh.jsonl and fresh-sample.md.
 const fresh = process.argv.includes('--fresh');
@@ -55,7 +56,7 @@ const built = source.map((each, order) => {
     const summarySpans = summaryTurns.map((index) => {
         const entry = each.tail[index];
         if (entry === undefined || entry.role === 'tool') throw new Error(`${each.id}: bad summary`);
-        return clipTurn(entry.role, entry.text).text;
+        return clipTurn(entry.role, textOf(entry.text)).text;
     });
     const close = (each.close ?? []).map((one) => ({ id: idOf(one.k), why: one.why, evidence: one.evidence }));
     const update = (each.update ?? []).map((one) => ({ id: idOf(one.k), text: one.text, evidence: one.evidence }));

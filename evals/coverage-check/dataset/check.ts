@@ -4,6 +4,7 @@ import { deciderInstructions, probabilitiesOf } from '../../../tab-recap/src/ada
 import { FACTS_CHECKED, KEPT_AT_LEAST, factsOf, missingOf, questionsFor } from '../../../tab-recap/src/recap/application/brief-coverage.ts';
 import { isSection } from '../../../packages/session-ledger/src/recap/domain/fact.ts';
 import { BANK, INTRO, SETTLED } from './bank.ts';
+import { textOf } from '../../../packages/session-ledger/src/recap/domain/text.ts';
 
 
 const problems: string[] = [];
@@ -81,9 +82,9 @@ for (const [at, line] of lines.entries()) {
     const user = JSON.stringify({ brief, facts: facts.map((fact) => ({ section: fact.section, text: fact.text, why: fact.why })) });
     for (const q of asked) if (!system.includes(`- ${q}: `)) bad(`${id}: instructions lack ${q}`);
     const perfect = Object.fromEntries(asked.map((q) => [q, expected.questions[q]?.kept ? 1 : 0]));
-    const parsed = probabilitiesOf(`\`\`\`json\n${JSON.stringify(perfect)}\n\`\`\``, asked);
+    const parsed = probabilitiesOf(textOf(`\`\`\`json\n${JSON.stringify(perfect)}\n\`\`\``), asked.map((id) => textOf(id)));
     if (parsed === null) { bad(`${id}: the plugin's parser refuses a perfect answer`); continue; }
-    const missing = missingOf(parsed, facts).map(({ index, parts }) => ({ index, parts }));
+    const missing = missingOf(Object.fromEntries(parsed), facts).map(({ index, parts }) => ({ index, parts }));
     if (JSON.stringify(missing) !== JSON.stringify(expected.missing)) bad(`${id}: expected.missing differs from missingOf on a perfect answer`);
     if (expected.ok !== (missing.length === 0)) bad(`${id}: expected.ok disagrees`);
     for (const miss of expected.missing) if (facts[miss.index] === undefined) bad(`${id}: missing index ${miss.index} out of range`);

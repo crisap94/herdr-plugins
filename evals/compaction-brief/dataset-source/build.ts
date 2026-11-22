@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import { compactionInput, type CompactionMaterial } from '../../../tab-recap/src/recap/application/compaction-input.ts';
 import { factsOf } from '../../../tab-recap/src/recap/application/brief-coverage.ts';
 import { settledBefore } from '../../../packages/session-ledger/src/recap/domain/boundary.ts';
+import { instant } from '../../../packages/session-ledger/src/recap/domain/time.ts';
+import { textOf, type Text } from '../../../packages/session-ledger/src/recap/domain/text.ts';
 import { CAPS, type ListSection, type RecapSections } from '../../../packages/session-ledger/src/recap/domain/shape.ts';
 import type { HistoryFact } from '../../../packages/session-ledger/src/ports/ledger.ts';
 import type { Entry } from '../../../packages/session-ledger/src/ports/transcripts.ts';
@@ -41,15 +43,15 @@ function buildItem(spec: ItemSpec): unknown {
     const pick = <T>(values: readonly T[]): T => values[Math.floor(random() * values.length)] as T;
     const span = spec.spanMinutes * MINUTE;
     const start = NOW - span;
-    const breakAt = spec.breakShare === undefined ? null : Math.round(NOW - span * spec.breakShare);
+    const breakAt = spec.breakShare === undefined ? null : instant(Math.round(NOW - span * spec.breakShare));
     const raws: Raw[] = [];
     let order = 0;
 
     const open = (section: Section, text: string, why: string | null, asks: boolean, key: string | null, firstAt: number, lastAt: number): void => {
-        raws.push({ section, text, why, state: 'open', closedWhy: null, closedAt: null, firstAt, lastAt, key, asks, order: order++ });
+        raws.push({ section, text: textOf(text), why: why === null ? null : textOf(why), state: 'open', closedWhy: null, closedAt: null, firstAt: instant(firstAt), lastAt: instant(lastAt), key, asks, order: order++ });
     };
     const closed = (section: Section, text: string, why: string | null, closedWhy: ClosedWhy, key: string | null, firstAt: number, lastAt: number, closedAt: number): void => {
-        raws.push({ section, text, why, state: 'closed', closedWhy, closedAt, firstAt, lastAt, key, asks: false, order: order++ });
+        raws.push({ section, text: textOf(text), why: why === null ? null : textOf(why), state: 'closed', closedWhy, closedAt: instant(closedAt), firstAt: instant(firstAt), lastAt: instant(lastAt), key, asks: false, order: order++ });
     };
     const seenOften = (): readonly [number, number] => {
         const firstAt = start + between(3, Math.floor(spec.spanMinutes * 0.7)) * MINUTE;
@@ -98,11 +100,11 @@ function buildItem(spec: ItemSpec): unknown {
         const value = Array.from({ length: 7 }, () => '0123456789abcdef'[between(0, 15)]).join('');
         return /[a-f]/u.test(value) && /[0-9]/u.test(value) ? value : `${value.slice(0, 5)}a1`;
     };
-    const fill = (template: string): string => {
+    const fill = (template: string): Text => {
         const part = pick(project.parts);
-        return template
+        return textOf(template
             .replaceAll('{f}', pick(project.features)).replaceAll('{p}', part.path).replaceAll('{n}', part.name).replaceAll('{b}', pick(project.bugs))
-            .replaceAll('{c}', pick(project.commands)).replaceAll('{m}', String(project.mergeBase + between(1, 60))).replaceAll('{br}', pick(project.branches)).replaceAll('{h}', hex());
+            .replaceAll('{c}', pick(project.commands)).replaceAll('{m}', String(project.mergeBase + between(1, 60))).replaceAll('{br}', pick(project.branches)).replaceAll('{h}', hex()));
     };
     const fresh = (templates: readonly string[]): string => {
         for (let attempt = 0; attempt < 400; attempt += 1) {
@@ -157,8 +159,8 @@ function buildItem(spec: ItemSpec): unknown {
         return index;
     };
 
-    const newestOpen = (section: ListSection): string[] => sorted.filter((raw) => raw.state === 'open' && raw.section === section).slice(0, CAPS[section]).map((raw) => raw.text);
-    const current: RecapSections = { goal: project.goal, now: newestOpen('now'), needs: newestOpen('needs'), done: newestOpen('done'), decisions: newestOpen('decisions'), next: newestOpen('next'), links: newestOpen('links'), rules: newestOpen('rules') };
+    const newestOpen = (section: ListSection): Text[] => sorted.filter((raw) => raw.state === 'open' && raw.section === section).slice(0, CAPS[section]).map((raw) => raw.text);
+    const current: RecapSections = { goal: textOf(project.goal), now: newestOpen('now'), needs: newestOpen('needs'), done: newestOpen('done'), decisions: newestOpen('decisions'), next: newestOpen('next'), links: newestOpen('links'), rules: newestOpen('rules') };
 
     const recent: Entry[] = [];
     const openNext = sorted.filter((raw) => raw.state === 'open' && raw.section === 'next').map((raw) => raw.text);
@@ -166,7 +168,7 @@ function buildItem(spec: ItemSpec): unknown {
     const stepMinutes = spec.size === 'large' ? 3 : 4;
     let clock = NOW - (spec.exchanges * stepMinutes + closing + 1) * MINUTE;
     const says = (role: 'user' | 'agent', text: string): void => {
-        recent.push({ role, text, at: clock });
+        recent.push({ role, text: textOf(text), at: instant(clock) });
         clock += between(20, 55) * 1000;
     };
     for (let at = 0; at < spec.exchanges; at += 1) {
@@ -176,7 +178,7 @@ function buildItem(spec: ItemSpec): unknown {
             const kind = pick(['read', 'read', 'edit', 'shell', 'shell'] as const);
             const part = pick(project.parts);
             const command = pick(project.commands);
-            recent.push(kind === 'shell' ? { role: 'tool', kind, what: command, text: /test|eval/u.test(command) ? `${between(8, 260)} pass, 0 fail` : 'exit 0' } : { role: 'tool', kind, what: part.path, text: '' });
+            recent.push(kind === 'shell' ? { role: 'tool', kind, what: textOf(command), text: textOf(/test|eval/u.test(command) ? `${between(8, 260)} pass, 0 fail` : 'exit 0') } : { role: 'tool', kind, what: textOf(part.path), text: textOf('') });
         }
         const told = Array.from({ length: spec.size === 'small' ? 2 : between(2, 4) }, () => pick(doneFacts));
         const details = Array.from({ length: spec.size === 'large' ? between(1, 3) : between(0, 1) }, () => fill(pick(phrases.detail)));
@@ -197,7 +199,7 @@ function buildItem(spec: ItemSpec): unknown {
     says('user', phrases.later);
     for (const turn of spec.turns ?? []) {
         clock += 30 * 1000;
-        if (turn.r === 'tool') recent.push({ role: 'tool', text: turn.x, kind: turn.kind ?? 'other', ...(turn.what === undefined ? {} : { what: turn.what }) });
+        if (turn.r === 'tool') recent.push({ role: 'tool', text: textOf(turn.x), kind: turn.kind ?? 'other', ...(turn.what === undefined ? {} : { what: textOf(turn.what) }) });
         else says(turn.r, turn.x);
     }
 

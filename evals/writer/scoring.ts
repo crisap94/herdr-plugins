@@ -16,6 +16,9 @@ import type { Answer, Graded, JudgeView, Mark } from '../lib/types.ts';
 import { transcriptOf, type WriterItem } from './prompt.ts';
 import { brand } from '../../packages/session-ledger/src/recap/domain/brand.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
+import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/lane-shape.ts';
+import { countOf } from '../../packages/session-ledger/src/recap/domain/count.ts';
+import { factIdOf } from '../lib/brands.ts';
 
 const textOf = brand<string, 'Text'>;
 
@@ -28,8 +31,8 @@ export const CODE_CRITERIA: readonly string[] = ['W1', 'W1s', ...GATE_IDS.map((g
 
 function factOf(fact: InputFact, tab: string, language: string): Fact {
     return {
-        id: fact.id as FactId, task: { tab, key: TASK }, section: fact.section, text: fact.text, why: fact.why, ref: fact.ref, agent: fact.agent, anchor: fact.anchor,
-        firstAt: fact.first, lastAt: fact.last, state: fact.state, closedWhy: fact.closed, closedAt: fact.state === 'closed' ? fact.last : null, language,
+        id: factIdOf(fact.id), task: { tab: tabIdOf(tab), key: textOf(TASK) }, section: fact.section, text: fact.text, why: fact.why, ref: fact.ref, agent: fact.agent, anchor: fact.anchor,
+        firstAt: fact.first, lastAt: fact.last, state: fact.state, closedWhy: fact.closed, closedAt: fact.state === 'closed' ? fact.last : null, language: textOf(language),
     };
 }
 
@@ -75,8 +78,8 @@ export function outcomeOf(item: WriterItem, text: string, closeEvidence?: CloseE
         const judged = judge(closeEvidence === 'on' ? [...LEDGER_GATES, closeEvidenceGate] : LEDGER_GATES, given, ground, instant(now));
         const out = new Set(judged.refused.map((finding) => finding.at));
         let made = 0;
-        const folded = apply([...ground.shown.values()], judged.kept, { id: 'eval' as RunId, task: { tab: ground.tab, key: TASK }, at: now, language: item.input.language, mint: () => `eval-${(made += 1)}` as FactId });
-        found = { kind: 'ops', why: '', problems: answer.problems, given, refused: judged.refused, kept: given.filter((_op, at) => !out.has(at)), ledger: folded.ledger, ground };
+        const folded = apply([...ground.shown.values()], judged.kept, { id: 'eval' as RunId, task: { tab: tabIdOf(ground.tab), key: textOf(TASK) }, at: now, language: item.input.language, mint: () => `eval-${(made += 1)}` as FactId });
+        found = { kind: 'ops', why: '', problems: answer.problems, given, refused: judged.refused, kept: given.filter((_op, at) => !out.has(countOf(at))), ledger: folded.ledger, ground };
     }
     cache.set(key, found);
     return found;
@@ -84,7 +87,7 @@ export function outcomeOf(item: WriterItem, text: string, closeEvidence?: CloseE
 
 const idOf = (op: Operation): string | null => (op.op === 'add' ? null : op.id);
 
-const sectionOf = (outcome: Outcome, op: Operation): string | null => (op.op === 'add' ? op.section : (outcome.ground.shown.get(op.id)?.section ?? null));
+const sectionOf = (outcome: Outcome, op: Operation): string | null => (op.op === 'add' ? op.section : (outcome.ground.shown.get(textOf(op.id))?.section ?? null));
 
 const isEdit = (op: Operation): boolean => op.op === 'add' || op.op === 'update';
 
@@ -133,9 +136,9 @@ function passesOf(item: WriterItem, outcome: Outcome): Record<string, boolean> {
     passes['W12b'] = !kept.some((op) => op.op === 'close' && expected.must_stay.includes(op.id));
     const target = expected.must_rewrite;
     const updatedIds = new Set(kept.flatMap((op) => (op.op === 'update' ? [op.id] : [])));
-    passes['W13a'] = target !== null && target.ids.some((id) => updatedIds.has(id));
+    passes['W13a'] = target !== null && target.ids.some((id) => updatedIds.has(factIdOf(id)));
     const stale = target !== null && kept.some((op) => op.op === 'update' && target.ids.includes(op.id) && languageOfLine(op.text) === item.input.previousLanguage);
-    passes['W13b'] = target !== null && target.ids.every((id) => updatedIds.has(id)) && !stale;
+    passes['W13b'] = target !== null && target.ids.every((id) => updatedIds.has(factIdOf(id))) && !stale;
     return passes;
 }
 
@@ -174,7 +177,7 @@ export function view(item: WriterItem, text: string, closeEvidence?: CloseEviden
     const shown = outcome.ground.shown;
     const named = [...new Set([...expected.already_in_ledger.map((each) => each.id), ...expected.must_close.map((each) => each.id), ...expected.must_stay, ...expected.key_facts.flatMap((fact) => (fact.via_update_of === null ? [] : [fact.via_update_of]))])];
     const lines: string[] = ['Transcript (as the writer saw it):', transcriptOf(item), '', 'Ledger facts this case names:'];
-    lines.push(...(named.length === 0 ? ['none'] : named.flatMap((id) => { const fact = shown.get(id); return fact === undefined ? [] : [factLine(fact)]; })));
+    lines.push(...(named.length === 0 ? ['none'] : named.flatMap((id) => { const fact = shown.get(textOf(id)); return fact === undefined ? [] : [factLine(fact)]; })));
     lines.push('', 'Open ledger facts closest to each kept add:');
     const adds = outcome.kept.flatMap((op) => (op.op === 'add' ? [op] : []));
     if (adds.length === 0) lines.push('no kept add');

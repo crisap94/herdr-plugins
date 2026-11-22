@@ -7,12 +7,14 @@ import type { ReconcilingDeps } from '../../packages/session-ledger/src/recap/ap
 import { storyAnswerOf, type StoryReading } from '../../tab-recap/src/recap/application/job-kit/story-repair.ts';
 import type { RepairMode } from '../../packages/session-ledger/src/recap/application/job-kit/repair.ts';
 import { curationOf } from '../../tab-recap/src/recap/domain/curation.ts';
-import { parseText } from '../../packages/session-ledger/src/recap/domain/text.ts';
+import { parseText, textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import { plainOf, type ArmCounters } from '../lib/arm.ts';
 import { joinedCalled, type ArmedAnswer, type ArmRecord, type Asker, type Rounded } from '../lib/runner.ts';
 import type { Called, Item } from '../lib/types.ts';
 import { built, type StoryItem } from './prompt.ts';
 import { joins, readAnswer } from './scoring.ts';
+import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/lane-shape.ts';
+import { causeOf } from '../../packages/session-ledger/src/recap/domain/failure-cause.ts';
 
 // One job of the story eval, driven through the plugin's own storyAnswerOf.
 // The writer sends each call through the runner's asker, so both calls share the job's pool slot, backoff and call cap.
@@ -22,12 +24,12 @@ export function storyRound(mode: RepairMode): (raw: Item, ask: Asker) => Promise
         const calls: Called[] = [];
         const lines: string[] = [];
         const writer: Curators = {
-            backend: 'eval',
+            backend: textOf('eval'),
             write: async (document: string, _mode?: CuratorMode): Promise<Curated> => {
                 const done = await ask({ system: CURATOR_INSTRUCTIONS, user: document });
                 calls.push(done);
-                if (done.failure_kind !== null || done.text === null) return unknownResult({ why: 'unreachable', detail: `${done.failure_kind} ${done.failure_detail ?? ''}` });
-                return { kind: 'curated', text: done.text };
+                if (done.failure_kind !== null || done.text === null) return unknownResult({ why: 'unreachable', detail: causeOf(textOf(`${done.failure_kind} ${done.failure_detail ?? ''}`)) });
+                return { kind: 'curated', text: textOf(done.text) };
             },
         };
         const { document, facts: named } = built(item);
@@ -44,7 +46,7 @@ export function storyRound(mode: RepairMode): (raw: Item, ask: Asker) => Promise
             const read = parseText(text);
             return curationOf(read.kind === 'ok' ? answerTextOf(read.value) : text, open);
         };
-        const run: CurationRun = { task: { tab: 't', key: 'k' }, at: item.input.clock.now, language: item.input.language };
+        const run: CurationRun = { task: { tab: tabIdOf('t'), key: textOf('k') }, at: item.input.clock.now, language: textOf(item.input.language) };
         const kept = await storyAnswerOf({ repair: () => mode, log: (line: string) => { lines.push(line); } } as unknown as ReconcilingDeps, { writer, run, sent: parseText(document), first, reading });
         const final = kept.kind === 'curated' ? kept.text : first.text;
         const repairs = lines.filter((line) => line.includes(': story repair — ')).length;

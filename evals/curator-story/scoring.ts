@@ -7,6 +7,7 @@ import type { Graded, Mark } from '../lib/types.ts';
 import { openIds } from './prompt.ts';
 import type { StoryItem } from './prompt.ts';
 import { outsideOf } from './tokens.ts';
+import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 
 export const CODE_CRITERIA = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10', 'S11'] as const;
 
@@ -33,7 +34,7 @@ export function languageMark(story: string, language: string): Mark {
     let en = 0;
     let es = 0;
     for (const sentence of story.split(/(?<=[.!?])\s+/u)) {
-        const verdict = languageOfLine(sentence);
+        const verdict = languageOfLine(textOf(sentence));
         if (verdict === 'en') en += 1;
         if (verdict === 'es') es += 1;
     }

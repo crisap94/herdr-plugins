@@ -7,6 +7,7 @@ import { verdictOf } from '../../tab-recap/src/recap/domain/autocompact-verdict.
 import { SECTION_IDS, CLOSED_WHY } from '../../packages/session-ledger/src/recap/domain/fact.ts';
 import type { Entry } from '../../packages/session-ledger/src/ports/transcripts.ts';
 import type { HistoryFact } from '../../packages/session-ledger/src/ports/ledger.ts';
+import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 
 interface Evidence { readonly question: string; readonly field: keyof AutocompactState; readonly quote: string }
 interface Row {
@@ -95,7 +96,7 @@ for (const row of rows) {
         if (!fieldText(state, evidence.field).includes(evidence.quote)) fail(id, `evidence not in state.${evidence.field}: ${evidence.quote}`);
     }
     const perfect = Object.fromEntries(ids.map((questionId) => [questionId, row.expected.answers[questionId] === 'true' ? 0.95 : row.expected.answers[questionId] === 'false' ? 0.05 : 0.5]));
-    if (probabilitiesOf(`\`\`\`json\n${JSON.stringify(perfect)}\n\`\`\``, ids) === null) fail(id, 'probabilitiesOf rejects a well-formed answer');
+    if (probabilitiesOf(textOf(`\`\`\`json\n${JSON.stringify(perfect)}\n\`\`\``), ids.map((id) => textOf(id))) === null) fail(id, 'probabilitiesOf rejects a well-formed answer');
     const size = row.tags.find((tag) => tag.startsWith('size:')) ?? '';
     table.push([id.padEnd(42), size.padEnd(12), String(row.input.recent.length).padStart(4), String(row.input.history.length).padStart(4), String(state.open_work.length).padStart(3), String(state.last_reply?.length ?? 0).padStart(5), String(state.last_reply?.includes('[…]') ?? false).padEnd(5), String(Buffer.byteLength(document)).padStart(6), row.expected.verdict].join(' '));
 }

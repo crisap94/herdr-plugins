@@ -4,6 +4,7 @@ import { KEPT_AT_LEAST, missingOf } from '../../tab-recap/src/recap/application/
 import type { Config, Graded, Mark } from '../lib/types.ts';
 import { factsFor, idsFor } from './prompt.ts';
 import type { CoverageItem, ExpectedQuestion } from './prompt.ts';
+import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 
 export const PASS_MARK = KEPT_AT_LEAST;
 
@@ -39,7 +40,8 @@ export function expectedOf(item: CoverageItem, question: string): ExpectedQuesti
 }
 
 export function answersOf(item: CoverageItem, text: string): Record<string, number> | null {
-    return probabilitiesOf(text, idsFor(item));
+    const found = probabilitiesOf(textOf(text), idsFor(item).map((id) => textOf(id)));
+    return found === null ? null : Object.fromEntries(found);
 }
 
 export function verdictRight(item: CoverageItem, answers: Readonly<Record<string, number>>, mark: number): boolean {

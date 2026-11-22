@@ -2,6 +2,7 @@ import { probabilitiesOf } from '../../tab-recap/src/adapters/job/decider.ts';
 import { verdictOf, type Verdict } from '../../tab-recap/src/recap/domain/autocompact-verdict.ts';
 import type { Answer, Graded, Mark } from '../lib/types.ts';
 import { QUESTION_IDS, type DeciderItem, type Side } from './prompt.ts';
+import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 
 export const CONFIDENT = { trueBelow: 0.1, falseAbove: 0.9 } as const;
 
@@ -25,8 +26,10 @@ export function applies(item: DeciderItem): Record<string, boolean> {
 }
 
 export function decided(text: string): { readonly p: Record<string, number>; readonly v: Verdict } | null {
-    const p = probabilitiesOf(text, QUESTION_IDS);
-    return p === null ? null : { p, v: verdictOf(p) };
+    const found = probabilitiesOf(textOf(text), QUESTION_IDS.map((id) => textOf(id)));
+    if (found === null) return null;
+    const p = Object.fromEntries(found);
+    return { p, v: verdictOf(p) };
 }
 
 export function grade(item: DeciderItem, text: string): Graded {

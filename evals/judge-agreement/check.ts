@@ -6,6 +6,7 @@ import { scoringDocument } from '../../tab-recap/src/recap/application/judge-con
 import { writerContext } from '../../packages/session-ledger/src/recap/application/writer-context.ts';
 import type { RecapRequest } from '../../packages/session-ledger/src/ports/summarizer.ts';
 import type { RunItem } from '../../tab-recap/src/ports/run-inputs.ts';
+import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 
 type Mark = 'pass' | 'fail' | 'open';
 
@@ -145,7 +146,7 @@ for (const line of lines) {
         keyfacts: ['a key fact'],
         coverage: [{ keyfact: 0, item: line.input.state[0]?.key ?? null }],
     });
-    const parsed = parseScore(perfect, new Map(line.input.items.map((item) => [item.key, item.section])), new Map(line.input.state.map((item) => [item.key, item.section])));
+    const parsed = parseScore(textOf(perfect), new Map(line.input.items.map((item) => [textOf(item.key), textOf(item.section)])), new Map(line.input.state.map((item) => [textOf(item.key), textOf(item.section)])));
     if (parsed.kind !== 'ok' || parsed.value.verdicts.length !== 64) {
         say('the plugin parser does not accept the expected answer in full');
     }

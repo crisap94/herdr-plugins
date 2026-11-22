@@ -13,6 +13,9 @@ import { EVIDENCE_CHARS, reconciliationOf } from '../../packages/session-ledger/
 import { FRESH_ITEMS, FRESH_SEED, guardOf, overlapOf } from '../lib/fresh.ts';
 import { brand } from '../../packages/session-ledger/src/recap/domain/brand.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
+import type { Text } from '../../packages/session-ledger/src/recap/domain/text.ts';
+import { materialOf } from './prompt.ts';
+import { factIdOf } from '../lib/brands.ts';
 
 const textOf = brand<string, 'Text'>;
 
@@ -77,7 +80,7 @@ const rows = parseRows(readFileSync(file, 'utf8'));
 const fresh = (typeof file === 'string' ? file : file.pathname).endsWith('/dataset-fresh.jsonl');
 const tagged = rows.filter((row) => row.fresh !== undefined).length;
 const freshConfig: FreshConfig | null = fresh ? (JSON.parse(readFileSync(new URL('./config.json', import.meta.url), 'utf8')) as { fresh: FreshConfig }).fresh : null;
-const textsOf = (row: Row): string[] => [...row.input.open.flatMap((fact) => [fact.text, fact.why, fact.ref]), ...row.input.tail.map((entry) => entry.text)].filter((text): text is string => typeof text === 'string');
+const textsOf = (row: Row): Text[] => [...row.input.open.flatMap((fact) => [fact.text, fact.why, fact.ref]), ...row.input.tail.map((entry) => entry.text)].filter((text): text is Text => typeof text === 'string');
 const baseRows = fresh ? parseRows(readFileSync(new URL('./dataset.jsonl', import.meta.url), 'utf8')) : [];
 const baseTexts = baseRows.flatMap(textsOf);
 const baseNames = baseRows.map((row) => row.input.name);
@@ -103,7 +106,7 @@ for (const row of rows) {
     if (/\/home\/|\/Users\//u.test(text)) fail('a home path');
 
     const expected = row.expected;
-    const built = reconcileInput({ ...row.input, rubric: RUBRIC.items });
+    const built = reconcileInput(materialOf(row.input));
     if (!built.document.includes('<rubric>- **I7')) fail('the document has no still-true rubric');
     if (!built.document.startsWith('<curator_input version="1" mode="reconcile">')) fail('the document is not a reconcile document');
     const ids = [...built.facts.keys()];
@@ -121,7 +124,7 @@ for (const row of rows) {
     const twins = expected.duplicates.flat();
     const sorted = [...close, ...update, ...twins, ...expected.must_stay_open];
     if (new Set(sorted).size !== sorted.length) fail('an id is in two expected lists');
-    if (sorted.length !== ids.length || sorted.some((id) => !built.facts.has(id))) fail('the expected lists do not cover exactly the open facts');
+    if (sorted.length !== ids.length || sorted.some((id) => !built.facts.has(textOf(id)))) fail('the expected lists do not cover exactly the open facts');
     if (expected.duplicates.some((pair) => pair.length !== 2)) fail('a duplicate set is not a pair');
 
     if (expected.summary_turns.length !== expected.summary_spans.length) fail('summary turns and spans differ in number');
@@ -129,24 +132,24 @@ for (const row of rows) {
     expected.summary_spans.forEach((span) => { if (!built.tail.includes(span)) fail('a summary span is not in the built tail, letter for letter'); });
     if (row.plants.includes('compaction') !== (expected.summary_turns.length > 0)) fail('compaction plant and summary turns disagree');
     const real = expected.summary_spans.reduce((body, span) => body.replace(span, ''), built.tail);
-    const inReal = (quote: string): boolean => quotedIn(quote, real);
-    const inSummary = (quote: string): boolean => expected.summary_spans.some((span) => quotedIn(quote, span));
+    const inReal = (quote: string): boolean => quotedIn(textOf(quote), textOf(real));
+    const inSummary = (quote: string): boolean => expected.summary_spans.some((span) => quotedIn(textOf(quote), textOf(span)));
 
     for (const one of [...expected.must_close, ...expected.must_update]) {
         if (one.evidence.length > EVIDENCE_CHARS) fail(`evidence for ${one.id} is longer than ${EVIDENCE_CHARS}`);
         if (!inReal(one.evidence)) fail(`evidence for ${one.id} is not in a real turn of the built tail`);
     }
     for (const one of expected.must_close) {
-        const section = built.facts.get(one.id)?.section;
+        const section = built.facts.get(textOf(one.id))?.section;
         if (one.why.length === 0 || (one.why.includes('answered') && section !== 'needs')) fail(`close ${one.id}: bad why`);
     }
     for (const one of expected.lookalikes) {
-        if (!built.facts.has(one.id)) fail(`lookalike ${one.id} is not a fact`);
+        if (!built.facts.has(textOf(one.id))) fail(`lookalike ${one.id} is not a fact`);
         if (!inReal(one.span)) fail(`lookalike span for ${one.id} is not in a real turn`);
         if (close.includes(one.id)) fail(`lookalike ${one.id} is also to be closed`);
     }
     for (const one of expected.summary_claims) {
-        if (!built.facts.has(one.id)) fail(`summary claim ${one.id} is not a fact`);
+        if (!built.facts.has(textOf(one.id))) fail(`summary claim ${one.id} is not a fact`);
         if (!inSummary(one.span) || inReal(one.span)) fail(`summary claim for ${one.id} is not only in a summary`);
         if (one.span.length > EVIDENCE_CHARS) fail(`summary claim for ${one.id} is too long to be quoted`);
     }
@@ -157,8 +160,8 @@ for (const row of rows) {
 
     const ground = { key: textOf('k'), tab: textOf('t'), shown: new Map([...built.facts].map(([id, fact]) => [textOf(id), fact])), open: [...built.facts.values()], closedLately: [], source: textOf(''), language: textOf(row.input.language), agents: [textOf('claude'), textOf(row.input.name.toLowerCase())] };
     const gatedOf = (answer: object): { refused: readonly string[]; gates: number; kept: number } => {
-        const checked = reconciliationOf(JSON.stringify(answer), built.facts, built.tail);
-        const ops: Operation[] = checked.ops.map((one) => (one.op === 'close' ? { op: 'close', id: one.id, why: one.why } : { op: 'update', id: one.id, text: one.text, why: one.why }));
+        const checked = reconciliationOf(textOf(JSON.stringify(answer)), built.facts, built.tail);
+        const ops: Operation[] = checked.ops.map((one) => (one.op === 'close' ? { op: 'close', id: factIdOf(one.id), why: one.why } : { op: 'update', id: factIdOf(one.id), text: one.text, why: one.why }));
         const gated = judge(LEDGER_GATES, ops, ground, instant(row.input.clock.now));
         return { refused: checked.refused, gates: gated.refused.filter((finding) => finding.outcome === 'refuse').length, kept: gated.kept.length };
     };
@@ -169,7 +172,7 @@ for (const row of rows) {
     ] };
     const good = gatedOf(oracle);
     if (good.refused.length > 0 || good.gates > 0 || good.kept !== oracle.ops.length) fail(`the expected answer is refused: ${good.refused.join('; ')} gates=${good.gates}`);
-    const trap = { ops: expected.summary_claims.map((one) => ({ op: 'close', id: one.id, why: built.facts.get(one.id)?.section === 'needs' ? 'answered' : 'done', evidence: one.span })) };
+    const trap = { ops: expected.summary_claims.map((one) => ({ op: 'close', id: one.id, why: built.facts.get(textOf(one.id))?.section === 'needs' ? 'answered' : 'done', evidence: one.span })) };
     const bad = gatedOf(trap);
     if (bad.kept !== trap.ops.length) fail('a close quoting the summary is refused by the plugin already, so the plant shows nothing');
 
@@ -188,7 +191,7 @@ for (const row of rows) {
             const refusedNow = verdict.refused.length > 0 || verdict.gates > 0;
             if (one.expect === 'refused' && !refusedNow) fail(`trap ${at} (${one.kind}) is kept, expected refused`);
             if (one.expect === 'kept' && (refusedNow || verdict.kept !== one.ops.length)) fail(`trap ${at} (${one.kind}) is refused, expected kept`);
-            if (one.kind === 'answered-trap' && !one.ops.every((op) => op.op === 'close' && op.why === 'answered' && op.id !== undefined && built.facts.get(op.id)?.section !== 'needs')) fail(`trap ${at}: answered-trap is not an answered close of a fact outside needs`);
+            if (one.kind === 'answered-trap' && !one.ops.every((op) => op.op === 'close' && op.why === 'answered' && op.id !== undefined && built.facts.get(textOf(op.id))?.section !== 'needs')) fail(`trap ${at}: answered-trap is not an answered close of a fact outside needs`);
             if (one.kind === 'long-evidence' && !one.ops.every((op) => op.op === 'close' && (op.evidence ?? '').length > EVIDENCE_CHARS && inReal(op.evidence ?? '') && own(op.id).length > 0 && (op.evidence ?? '').includes(own(op.id)))) fail(`trap ${at}: long-evidence quote is not longer than ${EVIDENCE_CHARS}, real, or holding the expected evidence`);
             if (one.kind === 'add-bait' && !one.ops.some((op) => op.op === 'add')) fail(`trap ${at}: add-bait has no add`);
             if (one.kind === 'near-pair' && !one.ops.every((op) => op.op === 'close' && op.why === 'merged' && op.id !== undefined && op.into !== undefined && expected.must_stay_open.includes(op.id) && expected.must_stay_open.includes(op.into))) fail(`trap ${at}: near-pair is not a merged close of one open fact into another`);

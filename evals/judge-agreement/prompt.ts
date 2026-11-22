@@ -6,6 +6,8 @@ import { writerContext } from '../../packages/session-ledger/src/recap/applicati
 import type { RecapRequest } from '../../packages/session-ledger/src/ports/summarizer.ts';
 import type { RunItem } from '../../tab-recap/src/ports/run-inputs.ts';
 import type { Item, Prompt } from '../lib/types.ts';
+import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
+import type { Text } from '../../packages/session-ledger/src/recap/domain/text.ts';
 
 export type CellMark = 'pass' | 'fail' | 'open';
 
@@ -41,11 +43,11 @@ export const SYSTEM: string = judgeInstructions('score', new Map());
 
 export const writerInput = (item: JudgeItem): string => writerContext(item.input.request);
 
-export const documentOf = (item: JudgeItem): string => scoringDocument({ rubric: RUBRIC_TEXT, input: writerInput(item), items: item.input.items, state: item.input.state });
+export const documentOf = (item: JudgeItem): string => scoringDocument({ rubric: RUBRIC_TEXT, input: textOf(writerInput(item)), items: item.input.items, state: item.input.state });
 
-export const sectionsOf = (item: JudgeItem): Map<string, string> => new Map(item.input.items.map((each) => [each.key, each.section]));
+export const sectionsOf = (item: JudgeItem): Map<Text, Text> => new Map(item.input.items.map((each) => [textOf(each.key), textOf(each.section)]));
 
-export const carriersOf = (item: JudgeItem): Map<string, string> => new Map(item.input.state.map((each) => [each.key, each.section]));
+export const carriersOf = (item: JudgeItem): Map<Text, Text> => new Map(item.input.state.map((each) => [textOf(each.key), textOf(each.section)]));
 
 export function prompt(item: JudgeItem): Prompt {
     return { system: SYSTEM, user: documentOf(item) };

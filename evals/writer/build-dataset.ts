@@ -14,6 +14,10 @@ import { FRESH_ITEMS, FRESH_SEED, sampleOf } from '../lib/fresh.ts';
 import type { Planted, Scenario, SectionName } from './dataset-scenarios.ts';
 import { ANCHOR_LEADS, DECISIONS, DONE, MIX, NEEDS, NEXT, PROJECTS, RULES } from './dataset-vocabulary.ts';
 import type { Project } from './dataset-vocabulary.ts';
+import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
+import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
+import { agentKindOf, paneIdOf } from '../../packages/session-ledger/src/recap/domain/lane-shape.ts';
+import { directoryOf } from '../lib/brands.ts';
 
 const MINUTE = 60_000;
 const G2_ALIKE = 0.6;
@@ -118,10 +122,10 @@ function plantedOf(scenario: Scenario, planted: Planted, now: number, rand: () =
 
 function entriesOf(scenario: Scenario, now: number): Entry[] {
     return scenario.steps.map((step): Entry => {
-        if ('u' in step) return { role: 'user', text: step.u, at: now - step.m * MINUTE };
-        if ('a' in step) return { role: 'agent', text: step.a, at: now - step.m * MINUTE };
+        if ('u' in step) return { role: 'user', text: textOf(step.u), at: instant(now - step.m * MINUTE) };
+        if ('a' in step) return { role: 'agent', text: textOf(step.a), at: instant(now - step.m * MINUTE) };
         const [kind, what, text] = step.t;
-        return { role: 'tool', text: text ?? '', kind, what };
+        return { role: 'tool', text: textOf(text ?? ''), kind, what: textOf(what) };
     });
 }
 
@@ -141,8 +145,8 @@ function build(scenario: Scenario, position: number): unknown {
     const filler = scenario.fillerFree === true ? [] : fillerOf(scenario, scenario.facts - planted.length, now, rand, FRESH ? FRESH_PROJECTS : PROJECTS);
     const drafts = [...filler, ...planted].toSorted((a, b) => a.first - b.first);
     const facts: InputFact[] = drafts.map((draft, index) => ({
-        id: `f${index + 1}`, section: draft.section, text: draft.text, state: draft.closed === null ? 'open' : 'closed', first: draft.first, last: draft.last,
-        why: draft.why, ref: draft.ref, anchor: draft.anchor, agent: draft.agent, closed: draft.closed,
+        id: textOf(`f${index + 1}`), section: draft.section, text: textOf(draft.text), state: draft.closed === null ? 'open' : 'closed', first: instant(draft.first), last: instant(draft.last),
+        why: draft.why === null ? null : textOf(draft.why), ref: draft.ref === null ? null : textOf(draft.ref), anchor: textOf(draft.anchor), agent: draft.agent === null ? null : textOf(draft.agent), closed: draft.closed,
     }));
     const idOf = (key: string): string => {
         const index = drafts.findIndex((draft) => draft.key === key);
@@ -154,16 +158,16 @@ function build(scenario: Scenario, position: number): unknown {
     const repo = `/work/${scenario.project}`;
     const tab = `w${(position % 8) + 1}${String.fromCharCode(65 + (position % 26))}`;
     const input: RecapInput = {
-        tab: { id: `${tab}:t${(position % 4) + 1}`, now, zone },
-        agents: [{ id: 'a1', kind: scenario.agent.kind, label: scenario.agent.label, pane: `${tab}:p1`, source: 'transcript', cwd: repo, repo, branch: scenario.agent.branch, files: [] }],
+        tab: { id: textOf(`${tab}:t${(position % 4) + 1}`), now: instant(now), zone: textOf(zone) },
+        agents: [{ id: textOf('a1'), kind: agentKindOf(scenario.agent.kind), label: textOf(scenario.agent.label), pane: paneIdOf(`${tab}:p1`), source: 'transcript', cwd: directoryOf(repo), repo: directoryOf(repo), branch: scenario.agent.branch === null ? null : textOf(scenario.agent.branch), files: [] }],
         tasks: [],
         ledgers: [{ task: null, facts }],
         notes: [],
-        transcripts: [{ agent: 'a1', entries }],
+        transcripts: [{ agent: textOf('a1'), entries }],
     };
     const language = scenario.language ?? 'en';
-    const request: RecapRequest = { input, language, previousLanguage: scenario.previousLanguage ?? language };
-    const label = (at: number): string => localTime(at, now, zone);
+    const request: RecapRequest = { input, language: textOf(language), previousLanguage: textOf(scenario.previousLanguage ?? language) };
+    const label = (at: number): string => localTime(instant(at), instant(now), textOf(zone));
     const keyFacts = scenario.key.map((fact, index) => {
         const found = turnOf(entries, fact.span, scenario.id);
         return {
@@ -186,7 +190,7 @@ function build(scenario: Scenario, position: number): unknown {
     const expected = {
         quiet: scenario.key.length === 0,
         key_facts: keyFacts,
-        already_in_ledger: (scenario.known ?? []).map((each) => ({ id: idOf(each.fact), span: each.span, naive_add: each.naive, g2_refuses_naive_add: jaccard(factOf(each.fact).text, each.naive) >= G2_ALIKE })),
+        already_in_ledger: (scenario.known ?? []).map((each) => ({ id: idOf(each.fact), span: each.span, naive_add: each.naive, g2_refuses_naive_add: jaccard(factOf(each.fact).text, textOf(each.naive)) >= G2_ALIKE })),
         must_close: mustClose,
         must_stay: (scenario.stay ?? []).map(idOf),
         must_rewrite: scenario.rewriteTo === undefined ? null : { to: scenario.rewriteTo, ids: open.filter((fact) => fact.section !== 'links').map((fact) => fact.id) },
