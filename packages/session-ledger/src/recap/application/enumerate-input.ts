@@ -10,6 +10,7 @@ import { element, leaf } from './xml.ts';
 
 const textOf = brand<string, 'Text'>;
 
+const count = brand<number, 'Count'>;
 const NEST = '\n';
 
 export interface Question {
@@ -42,23 +43,23 @@ export const stubId = (at: Count): Text => textOf(`g${at + 1}`);
 
 const SECTION_LINES = [...SECTIONS.map((section) => [section.id, section.hint] as const), ['rules', 'standing constraints the operator stated and still wants kept'] as const];
 
-const skeleton = (): Text => textOf(element('sections', {}, SECTION_LINES.map(([id, hint]) => `${NEST}${leaf('section', { id }, hint)}`).join('') + NEST));
+const skeleton = (): Text => textOf(element('sections', {}, textOf(SECTION_LINES.map(([id, hint]) => `${NEST}${leaf('section', { id }, textOf(hint))}`).join('') + NEST)));
 
 function triggersOf(material: EnumerateMaterial): Text {
     const { tab, stubs } = material;
-    const rows = stubs.map((stub, at) => `${NEST}${leaf('trigger', { id: stubId(brand<number, 'Count'>(at)), kind: stub.kind, section: stub.section, ref: stub.ref, at: stub.at === null ? null : localTime(stub.at, tab.now, tab.zone) }, stub.anchor)}`);
-    return textOf(rows.length === 0 ? '' : `${NEST}${element('triggers', {}, rows.join('') + NEST)}`);
+    const rows = stubs.map((stub, at) => `${NEST}${leaf('trigger', { id: stubId(count(at)), kind: stub.kind, section: stub.section, ref: stub.ref === null ? null : textOf(stub.ref), at: stub.at === null ? null : localTime(stub.at, tab.now, tab.zone) }, textOf(stub.anchor))}`);
+    return textOf(rows.length === 0 ? '' : `${NEST}${element('triggers', {}, textOf(rows.join('') + NEST))}`);
 }
 
 function questionsOf(questions: readonly Question[]): Text {
-    return textOf(questions.length === 0 ? '' : `${NEST}${element('questions', {}, questions.map((one) => `${NEST}${leaf('question', { id: one.id }, one.text)}`).join('') + NEST)}`);
+    return textOf(questions.length === 0 ? '' : `${NEST}${element('questions', {}, textOf(questions.map((one) => `${NEST}${leaf('question', { id: one.id }, textOf(one.text))}`).join('') + NEST))}`);
 }
 
 export function enumerateInput(material: EnumerateMaterial): Text {
     const { tab, chunk, position } = material;
     const body = [
         `${NEST}${element('tab', { id: tab.id, now: isoSecond(tab.now), zone: tab.zone })}`, `${NEST}${skeleton()}`, triggersOf(material), questionsOf(material.questions),
-        `${NEST}${element('chunk', { agent: material.agent, index: position.index, of: position.of }, chunk.markup)}${NEST}`,
+        `${NEST}${element('chunk', { agent: material.agent, index: count(position.index), of: count(position.of) }, chunk.markup)}${NEST}`,
     ].join('');
-    return textOf(element('enumerate_input', { version: 1, language: material.language }, body));
+    return textOf(element('enumerate_input', { version: count(1), language: material.language }, textOf(body)));
 }

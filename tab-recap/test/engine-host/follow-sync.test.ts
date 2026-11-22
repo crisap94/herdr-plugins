@@ -17,6 +17,9 @@ import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { FULL_WRITER_VIEW } from '#src/recap/domain/writer-view.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+import type { KeepInput } from '#src/recap/application/recap-job.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 
 const TAB = 'w1:t1';
 const lanes: readonly Lane[] = [
@@ -59,7 +62,7 @@ test('a board with two lanes, published with no turn ended and no refresh, makes
         store: { records: checkedRecords(store.records), ledger: checkedLedger(store.ledger) },
         models: { summarizer: (): Summarizer => summarizer, enumerator: () => null },
         environment: { clock: { now: (): ReturnType<typeof instant> => instant(9) }, repos: NO_REPOS, mint: mintFactId, log: (): void => undefined },
-        settings: { language: (): string => 'en', writerView: () => FULL_WRITER_VIEW, keepInput: (): boolean => true },
+        settings: { language: (): Text => brand<string, 'Text'>('en'), writerView: () => FULL_WRITER_VIEW, keepInput: (): KeepInput => brand<boolean, 'KeepInput'>(true) },
     };
     const engine = pluginEngine(plugs);
     const recaps = tabRecaps(engine);

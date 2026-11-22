@@ -1,22 +1,10 @@
 {
-  "src/recap/application/curator-input.ts": {
-    "parameter": 4,
-    "return": 5,
-    "property": 10,
-    "container": 2
-  },
   "src/recap/application/enumerate-answer.ts": {
     "parameter": 8,
     "return": 6,
     "property": 8,
     "container": 8,
     "assertion": 1
-  },
-  "src/recap/application/extract-job.ts": {
-    "parameter": 8,
-    "return": 1,
-    "property": 7,
-    "container": 2
   },
   "src/recap/application/ledger-reconcile.ts": {
     "parameter": 9,
@@ -39,14 +27,6 @@
     "assertion": 4
   },
   "src/recap/application/recap-job.ts": {
-    "parameter": 4,
-    "return": 2,
-    "property": 8,
-    "container": 3
-  },
-  "src/recap/application/xml.ts": {
-    "parameter": 8,
-    "return": 7,
-    "container": 6
+    "parameter": 1
   }
 }

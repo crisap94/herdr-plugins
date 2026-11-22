@@ -103,7 +103,7 @@ export class CurateTasks {
         this.lastRun.set(key, now);
         this.running.add(key);
         try {
-            const { document, facts: named } = curatorInput({ name: task.name, language: deps.language(), rubric: deps.rubric, facts, clock: { now, zone: deps.zone() } });
+            const { document, facts: named } = curatorInput({ name: must(parseText(task.name)), language: must(parseText(deps.language())), rubric: must(parseText(deps.rubric)), facts, clock: { now, zone: must(parseText(deps.zone())) } });
             const answered = await writer.write(document);
             if (isUnknown(answered)) {
                 deps.log(`curator ${tab} ${task.id}: ${writer.backend} gave none (${saying(answered.why)})`);

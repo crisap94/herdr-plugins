@@ -12,6 +12,9 @@ import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports
 import { memoryStore } from '#test/db/support.ts';
 import { NO_REPOS } from '#test/support.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+import type { KeepInput } from '#src/recap/application/recap-job.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 
 const transcripts: Transcripts = {
     agent: 'claude',
@@ -21,14 +24,14 @@ const transcripts: Transcripts = {
     read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: 'migrate victoria' }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: 100, tail: null }, grew: true }),
 };
 
-async function recapWith(keepInput: (() => boolean) | undefined): Promise<ReturnType<ReturnType<typeof memoryStore>['inputs']['runs']>> {
+async function recapWith(keepInput: (() => KeepInput) | undefined): Promise<ReturnType<ReturnType<typeof memoryStore>['inputs']['runs']>> {
     const answer = JSON.stringify({ ops: [{ op: 'add', section: 'goal', text: 'Migrate the metrics store', anchor: 'migrate victoria' }, { op: 'add', section: 'done', text: 'claude completed the migration.', anchor: 'migrate victoria' }, { op: 'add', section: 'done', text: 'Metrics are copied to `victoria`.', anchor: 'migrate victoria' }] });
     const narrator = JSON.stringify({ ops: [{ op: 'add', section: 'done', text: 'claude completed the migration.', anchor: 'migrate victoria' }] });
     const summarizer: Summarizer = { backend: 'fake', contract: 'strict', write: (request: RecapRequest): Promise<Written> => Promise.resolve({ kind: 'written', text: request.retry === undefined ? answer : narrator, costUsd: 0 }) };
     const store = memoryStore();
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId,
         repos: NO_REPOS, transcripts: registryWith({ [transcripts.agent]: transcripts }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(5) },
-        summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined, ...(keepInput === undefined ? {} : { keepInput }),
+        summarizer: (): Summarizer => summarizer, language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined, ...(keepInput === undefined ? {} : { keepInput }),
     });
     job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 20); });
@@ -49,7 +52,7 @@ test('a run stores the writer\'s document and its gate counts (the narrator item
 });
 
 test('with the retention at 0 the input is not stored, the counts still are', async () => {
-    const [run] = await recapWith(() => false);
+    const [run] = await recapWith(() => brand<boolean, 'KeepInput'>(false));
     assert.ok(run !== undefined);
     assert.equal(run.hasInput, false);
     assert.equal(run.gateStats?.dropped, 1);

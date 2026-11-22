@@ -65,6 +65,8 @@ import { fact } from '#test/fakes/fact-at.ts';
 import { fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import { textOf } from './fakes/decider-fixtures.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 
 const runtime = fakeRuntime({ scripts: {} });
 
@@ -338,7 +340,7 @@ test('gemini refuses: not compactable, `no reader for gemini` in the recap, and 
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId,
         repos: NO_REPOS, transcripts: registryWith({}), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger),
         clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Summarizer => writer,
-        language: (): string => 'en', log: (): void => undefined,
+        language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined,
     });
     await job.refreshNow(tabId('w1:t1'), [gemini]);
     assert.match(storeRead(store.records.readRecap('w1:t1'))?.error ?? '', /w1:p5: no reader for gemini/);

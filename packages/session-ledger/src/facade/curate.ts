@@ -141,7 +141,7 @@ const curateTask = async (round: Round, marks: Marks): Promise<void> => {
     marks.running.add(key);
     try {
         const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const { document, facts: described } = curatorInput({ name: round.task.name, language: language.value, rubric: plugs.settings.rubric?.() ?? '', facts, clock: { now, zone } });
+        const { document, facts: described } = curatorInput({ name: note(round.task.name), language: note(language.value), rubric: note(plugs.settings.rubric?.() ?? ''), facts, clock: { now, zone: note(zone) } });
         const sent = parseText(document);
         if (sent.kind === 'ok') {
             await ask(round, { task, at: now, language: language.value }, { document: sent.value, named: new Map([...described].map(([id, fact]) => [note(id), fact] as const)) });

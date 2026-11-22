@@ -18,6 +18,8 @@ import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { MemoryStories } from '#test/fakes/memory-stories.ts';
 import { oneTask } from '#test/support.ts';
 import { dtdTest, validate } from '#test/xmllint.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 const NOW = Date.parse('2026-10-07T16:30:00Z');
 const MIN = 60_000;
@@ -171,7 +173,7 @@ test('no tail, no open fact or no curator: no call; a curator that gives none is
 });
 
 dtdTest('the reconcile document is valid against the DTD, holds only the open facts and the "still true" check, and the tail it quotes', () => {
-    const built = reconcileInput({ name: '', language: 'en', rubric: RUBRIC.items, open: facts.filter((each) => each.state === 'open'), tail: [...TAIL, { role: 'agent', text: 'Error: </turn> & ]]> \u001b[31mred', at: NOW }], clock: { now: NOW, zone: 'UTC' } });
+    const built = reconcileInput({ name: brand<string, 'Text'>(''), language: brand<string, 'Text'>('en'), rubric: brand<string, 'Text'>(RUBRIC.items), open: facts.filter((each) => each.state === 'open'), tail: [...TAIL, { role: 'agent', text: 'Error: </turn> & ]]> \u001b[31mred', at: NOW }], clock: { now: instant(NOW), zone: brand<string, 'Text'>('UTC') } });
     assert.deepEqual(validate(built.document, 'curator-input.dtd'), { valid: true, output: '' });
     assert.ok(built.document.includes('I7 still true') && !built.document.includes('I1 ') && !built.document.includes('Wrote migration 007'));
     assert.ok(built.tail.includes('Ship from release/2.1, not main.') && built.facts.size === 4);

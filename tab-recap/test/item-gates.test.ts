@@ -9,6 +9,7 @@ import { itemGate } from '#src/recap/domain/gates/item-gates.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
 import { factOf } from './fakes/facts.ts';
 import { requestOf } from './support.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 const NARRATOR = 'claude completed the research and wrote its report.';
 const FINE = 'The research report is written to docs/report.md.';
@@ -16,7 +17,7 @@ const add = (section: string, text: string, why?: string): Record<string, unknow
 const ops = (...list: readonly Record<string, unknown>[]): string => JSON.stringify({ ops: list });
 
 const groundOf = (over: { readonly language?: string; readonly agents?: readonly string[] } = {}): Ground => ({
-    gates: LEDGER_GATES, now: 1, facts: new Map(),
+    gates: LEDGER_GATES, now: instant(1), facts: new Map(),
     resolving: { tasks: ['t1'], agents: [], taskOf: new Map(), turns: [], clock: { now: 1, zone: 'UTC' } },
     grounds: [{ key: 't1', tab: 'w1:t1', shown: new Map(), open: [], closedLately: [], source: 'go', language: over.language ?? 'en', agents: over.agents ?? ['claude', 'a1'] }],
 });

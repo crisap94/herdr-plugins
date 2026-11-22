@@ -18,7 +18,7 @@ const review = factOf('next', 'Review the migration test');
 const shut = factOf('done', 'Merged the lint fix', { state: 'closed', closedWhy: 'done', closedAt: NOW - 3_600_000 });
 const numbering = numbered([{ key: brand<string, 'Text'>('t1'), open: [released, review], closed: [shut] }], [], severalOf(false), { kind: 'full' }, instant(0));
 const ground: Ground = {
-    gates: LEDGER_GATES, now: NOW, facts: new Map(numbering.ledgers.flatMap((ledger) => ledger.facts.map((fact) => [fact.id, fact] as const))),
+    gates: LEDGER_GATES, now: instant(NOW), facts: new Map(numbering.ledgers.flatMap((ledger) => ledger.facts.map((fact) => [brand<string, 'Text'>(fact.id), fact] as const))),
     resolving: { tasks: ['t1'], agents: [], taskOf: numbering.taskOf, turns: [], clock: { now: NOW, zone: 'UTC' } },
     grounds: [{ key: 't1', tab: 'w1:t1', shown: numbering.shown.get(brand<string, 'Text'>('t1')) ?? new Map(), open: [released, review], closedLately: [shut], source: 'go', language: 'en', agents: [] }],
 };

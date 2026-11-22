@@ -26,7 +26,7 @@ export function groundOf(world: GroundWorld): Ground {
     const source = anchorSource(built.input);
     const agents = built.input.agents.flatMap((agent) => [agent.id, agent.label, agent.kind]).filter((name) => name !== '').map((name) => name.toLowerCase());
     return {
-        gates: LEDGER_GATES, now, facts: new Map(built.input.ledgers.flatMap((ledger) => ledger.facts.map((fact) => [fact.id, fact] as const))),
+        gates: LEDGER_GATES, now, facts: new Map(built.input.ledgers.flatMap((ledger) => ledger.facts.map((fact) => [brand<string, 'Text'>(fact.id), fact] as const))),
         resolving: {
             tasks: tasks.map((task) => task.id), agents: built.input.agents, taskOf: built.numbering.taskOf,
             turns: world.entries.flatMap((entry) => (entry.at === undefined ? [] : [entry.at])), clock: { now, zone: built.input.tab.zone },

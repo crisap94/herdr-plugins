@@ -19,6 +19,9 @@ import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports
 import { pluginEngine, type PluginEnginePlugs } from '#src/engine/engine-adapter.ts';
 import { tabRecaps, type TabRecaps } from '#src/engine/tab-recaps.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+import type { KeepInput } from '#src/recap/application/recap-job.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 
 const TAB = 'w1:t1';
 const lanes: readonly Lane[] = [
@@ -65,7 +68,7 @@ function world(): World {
         store: { records: checkedRecords(store.records), ledger: checkedLedger(store.ledger) },
         models: { summarizer: (): Summarizer => summarizer, enumerator: () => null },
         environment: { clock: { now: (): ReturnType<typeof instant> => instant(9) }, repos: NO_REPOS, mint: mintFactId, log: (): void => undefined },
-        settings: { language: (): string => 'en', writerView: () => FULL_WRITER_VIEW, keepInput: (): boolean => true },
+        settings: { language: (): Text => brand<string, 'Text'>('en'), writerView: () => FULL_WRITER_VIEW, keepInput: (): KeepInput => brand<boolean, 'KeepInput'>(true) },
     };
     return { store, asked, ran, events, plugs };
 }

@@ -16,6 +16,8 @@ import { NO_REPOS } from '#test/support.ts';
 import type { Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { ChunkResult, Entry, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 
 const WINDOW_60S: Debounce = debounceOf('60000');
 
@@ -63,7 +65,7 @@ function harness(settings: Settings, causes: string[], answer?: () => Promise<Wr
     const job = new RecapJob({
         transcripts: registryWith({ claude: reader }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), repos: NO_REPOS,
         clock: { now: (): ReturnType<typeof instant> => { clockCalls += 1; return instant(Date.now()); } }, summarizer: (): Summarizer => summarizer,
-        language: (): string => 'en', log: (): void => undefined, debounce: (): Debounce => settings.debounce, writerView: (): WriterView => FULL_WRITER_VIEW, mint: mintFactId,
+        language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined, debounce: (): Debounce => settings.debounce, writerView: (): WriterView => FULL_WRITER_VIEW, mint: mintFactId,
         ran: (event): void => { causes.push(event.cause ?? 'turn-ended'); },
     });
     return { job, settings, reads, sources, callCount: (): number => calls, clockReads: (): number => clockCalls };

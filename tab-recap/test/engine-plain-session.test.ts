@@ -21,6 +21,8 @@ import { NO_REPOS } from '#test/support.ts';
 import { closureOf } from '#test/support/closure.ts';
 import { writer } from '#test/fakes/golden-writer.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 
 const THIS_FILE = 'test/engine-plain-session.test.ts';
 const HERDR_SIDE = ['src/adapters/herdr/', 'src/adapters/herdr-core/', 'src/transport/', 'src/daemon/', 'src/column/', 'src/setup/', 'src/compact/'];
@@ -52,7 +54,7 @@ function plainHost(records: string, store: Store): PlainHost {
         store: { records: checkedRecords(store.records), ledger: checkedLedger(store.ledger) },
         models: { summarizer: () => summarizer },
         environment: { clock: { now: (): Instant => instant(clock.now) }, repos: NO_REPOS, mint: mintFactId, log: () => undefined },
-        settings: { language: (): string => 'en', writerView: () => FULL_WRITER_VIEW },
+        settings: { language: (): Text => brand<string, 'Text'>('en'), writerView: () => FULL_WRITER_VIEW },
     });
     return { engine, store, scope, session, records, clock };
 }

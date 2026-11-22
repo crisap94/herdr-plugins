@@ -9,9 +9,10 @@ import type { Extracted, Ground } from '#src/recap/application/extract-job.ts';
 import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
 import { scratchDir } from '#test/db/support.ts';
 import { requestOf } from './support.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
 const ground: Ground = {
-    gates: LEDGER_GATES, now: 1, facts: new Map(),
+    gates: LEDGER_GATES, now: instant(1), facts: new Map(),
     resolving: { tasks: ['t1'], agents: [], taskOf: new Map(), turns: [], clock: { now: 1, zone: 'UTC' } },
     grounds: [{ key: 't1', tab: 'w1:t1', shown: new Map(), open: [], closedLately: [], source: 'go', language: 'en', agents: [] }],
 };

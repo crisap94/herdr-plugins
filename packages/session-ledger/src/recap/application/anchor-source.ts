@@ -7,5 +7,5 @@ import { clean } from './xml.ts';
 export function anchorSource(input: RecapInput): Text {
     const entries = input.transcripts.flatMap((lane) => lane.entries.flatMap((entry) => [entry.text, entry.what ?? '']));
     const notes = input.notes.map((note) => note.text);
-    return brand<string, 'Text'>(foldedOf(clean([...entries, ...notes].join('\n'))));
+    return brand<string, 'Text'>(foldedOf(clean(brand<string, 'Text'>([...entries, ...notes].join('\n')))));
 }

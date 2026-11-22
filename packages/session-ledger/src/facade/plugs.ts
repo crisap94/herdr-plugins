@@ -21,6 +21,7 @@ import type { Debounce } from '#src/recap/domain/debounce.ts';
 import { PACING_TURN, type Pacing } from '#src/recap/domain/pacing.ts';
 import type { EnginePlugs as LegacyPlugs, RestoreFacts as LegacyRestoreFacts } from '#src/recap/application/engine.ts';
 import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
+import type { KeepInput } from '#src/recap/application/recap-job.ts';
 import { curate } from './curate.ts';
 import { followedOf } from './translate.ts';
 
@@ -232,7 +233,7 @@ export const legacyPlugsOf = (plugs: sl.EnginePlugs): FacadePlugs => {
         settings: {
             language: () => settings.language(),
             writerView: () => pluginWriterView(settings.writerView()),
-            ...(settings.keepInput === undefined ? {} : { keepInput: () => settings.keepInput?.() === 'keep' }),
+            ...(settings.keepInput === undefined ? {} : { keepInput: (): KeepInput => brand<boolean, 'KeepInput'>(settings.keepInput?.() === 'keep') }),
             ...(settings.pipeline === undefined ? {} : { pipeline: () => settings.pipeline?.() ?? 'one' }),
             ...(settings.debounce === undefined ? {} : { debounce: () => pluginDebounce(settings.debounce?.() ?? { kind: 'off' }) }),
             ...(settings.pacing === undefined ? {} : { pacing: () => pluginPacing(settings.pacing?.() ?? { kind: 'turn' }) }),

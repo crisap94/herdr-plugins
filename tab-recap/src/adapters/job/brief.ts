@@ -22,7 +22,7 @@ export class HarnessBrief implements CompactionBriefs {
     }
 
     async write(source: string, correction?: string): Promise<Briefed> {
-        const document = correction === undefined ? source : `${source}\n${leaf('correction', {}, correction)}`;
+        const document = correction === undefined ? source : `${source}\n${leaf('correction', {}, must(parseText(correction)))}`;
         const call = { instructions: BRIEF_INSTRUCTIONS, input: document };
         if (this.harness.limit !== null && Buffer.byteLength(document) + Buffer.byteLength(BRIEF_INSTRUCTIONS) > this.harness.limit) {
             return unknown({ why: 'unreadable', detail: causeOf(must(parseText(`the document is too long for ${this.harness.id}`))) });

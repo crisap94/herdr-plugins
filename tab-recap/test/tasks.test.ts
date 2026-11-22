@@ -27,6 +27,8 @@ import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts
 import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { agentOf, firstTask, oneTask, requestOf } from '#test/support.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
+import { brand } from '#src/recap/domain/brand.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 
 const sections = (goal: string, rest: Partial<typeof NO_SECTIONS> = {}): typeof NO_SECTIONS => ({ ...NO_SECTIONS, goal, ...rest });
 const taskOf = (id: string, name: string, lanes: readonly string[], goal = id): RecapTask => ({ id, name, lanes, sections: sections(goal), markdown: `## Goal\n${goal}` });
@@ -119,7 +121,7 @@ const repos: LaneRepo = { repoOf: (cwd) => Promise.resolve(cwd === '/work/pay' ?
 async function run(answers: readonly string[], lanes: readonly string[], store = memoryStore()): Promise<{ store: Store; requests: RecapRequest[] }> {
     const requests: RecapRequest[] = [];
     const summarizer: Summarizer = { backend: 'fake', contract: 'strict', write: (request): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: answers[Math.min(requests.length - 1, answers.length - 1)] ?? '', costUsd: 0 }); } };
-    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, transcripts: registryWith({ [transcripts.agent]: transcripts }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), repos, clock: { now: (): ReturnType<typeof instant> => instant(1) }, summarizer: (): Summarizer => summarizer, language: (): string => 'en', log: (): void => undefined });
+    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, transcripts: registryWith({ [transcripts.agent]: transcripts }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), repos, clock: { now: (): ReturnType<typeof instant> => instant(1) }, summarizer: (): Summarizer => summarizer, language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined });
     job.request(tabId('w1:t1'), lanes.map((pane) => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd: pane === 'w1:p1' ? '/work/pay' : '/work/docs' })), 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 40); });
     return { store, requests };
