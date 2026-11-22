@@ -1,5 +1,5 @@
 import { opencodeModelsFile } from '@stateforge-labs/harness-adapters/opencode';
-import { CatalogueWindows } from './catalogue.ts';
+import { CatalogueWindows, candidatesOf } from './catalogue.ts';
 import { handoffPlanner } from './handoff-plans.ts';
 import { compactionPlanner } from './compaction-plans.ts';
 import { claudeWindowFor, windowOfAgent } from './context-window.ts';
@@ -40,7 +40,11 @@ export class LocalCatalogue implements ModelCatalogue {
         if (this.windows === null || text.kind === 'err') {
             return null;
         }
-        return this.windows.windowOf(text.value);
+        const catalogue = this.windows.opened();
+        if (catalogue === null) {
+            return null;
+        }
+        return candidatesOf(catalogue, text.value).map((one) => catalogue.contextWindow(one.provider, one.model)).find((found) => found !== null) ?? null;
     }
 }
 
@@ -50,8 +54,17 @@ const typedWindows = (catalogue: ModelCatalogue): ModelWindows => ({
     },
 });
 
+const keepingRawWindows = (typed: WindowOf, catalogue: ModelCatalogue): WindowOf => (observed) => {
+    const basis = typed(observed);
+    if (observed.window !== null || observed.model === null || basis?.source === 'catalogue') {
+        return basis;
+    }
+    const raw = catalogue.windowOf(observed.model);
+    return raw === null ? basis : { window: raw, source: 'catalogue', sizes: basis?.sizes ?? [] };
+};
+
 export function windowOfKind(kind: string, catalogue: ModelCatalogue): WindowOf {
-    return windowOfAgent(okOrNull(parseAgentKind(kind)), typedWindows(catalogue));
+    return keepingRawWindows(windowOfAgent(okOrNull(parseAgentKind(kind)), typedWindows(catalogue)), catalogue);
 }
 
 export function contextWindows(catalogue: ModelCatalogue): ContextWindows {
@@ -59,7 +72,7 @@ export function contextWindows(catalogue: ModelCatalogue): ContextWindows {
 }
 
 export function claudeWindowOf(catalogue: ModelCatalogue): WindowOf {
-    return claudeWindowFor(typedWindows(catalogue));
+    return keepingRawWindows(claudeWindowFor(typedWindows(catalogue)), catalogue);
 }
 
 export const compactionPlans: CompactionPlans = {
