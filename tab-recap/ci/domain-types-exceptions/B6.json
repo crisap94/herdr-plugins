@@ -103,33 +103,5 @@
     "function": "<anonymous>",
     "parameter": null,
     "reason": "callback: the harness factory of harnessArms and the JevDecider key closure in deciderOf, both fixed by the port they feed"
-  },
-  {
-    "class": "callback",
-    "file": "src/adapters/experiment/labeller.ts",
-    "function": "<anonymous>",
-    "parameter": "harness",
-    "reason": "callback: the Harness port of the experiment harness contract, frozen; the labeller pool stores and hands out Harness values"
-  },
-  {
-    "class": "callback",
-    "file": "src/adapters/experiment/labeller.ts",
-    "function": "<anonymous>",
-    "parameter": null,
-    "reason": "callback: the Harness port of the experiment harness contract, frozen; the labeller pool stores and hands out Harness values"
-  },
-  {
-    "class": "callback",
-    "file": "src/adapters/experiment/labeller.ts",
-    "function": "take",
-    "parameter": null,
-    "reason": "callback: the Harness port of the experiment harness contract, frozen; the labeller pool stores and hands out Harness values"
-  },
-  {
-    "class": "callback",
-    "file": "src/adapters/experiment/labeller.ts",
-    "function": "give",
-    "parameter": "harness",
-    "reason": "callback: the Harness port of the experiment harness contract, frozen; the labeller pool stores and hands out Harness values"
   }
 ]

@@ -775,7 +775,6 @@
       "src/adapters/experiment/files.ts",
       "src/adapters/experiment/io.ts",
       "src/adapters/experiment/labeller.ts",
-      "src/adapters/experiment/legacy.ts",
       "src/adapters/experiment/point.ts",
       "src/adapters/experiment/store.ts",
       "src/adapters/frontend.ts",

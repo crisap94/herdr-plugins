@@ -1,28 +1,27 @@
-import type { Row } from '#src/adapters/transcripts/jsonl.ts';
-import { retriedBy } from '#src/experiment/pool.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { parseMilliseconds, type Milliseconds } from '#src/recap/domain/time.ts';
+import { noticing } from '../harness/confinement-notice.ts';
+import { LIBRARY_IDS, LibraryHarness } from '../harness/library.ts';
+import type { HarnessRuntime } from '../harness/library.ts';
 import type { Harness, HarnessSettings } from '#src/ports/harness.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
+import { retried } from '#src/experiment/pool.ts';
 
 export const LABELLER: HarnessSettings = { model: 'gpt-6.1-sol', effort: 'high' };
+const TIMEOUT_MS = 15 * 60_000;
 
 export interface Labelled<T> {
     readonly answer: T | null;
-    readonly ms: Milliseconds;
-    readonly attempts: Count;
-    readonly why: Text | null;
+    readonly ms: number;
+    readonly attempts: number;
+    readonly why: string | null;
 }
 
-export class LabelRunner {
+export class Labeller {
     private readonly free: Harness[];
     private readonly waiting: ((harness: Harness) => void)[] = [];
-    private readonly log: (line: Text) => void;
+    private readonly log: (line: string) => void;
     readonly settings: HarnessSettings;
 
-    constructor(make: () => Harness, slots: Count, log: (line: Text) => void, settings: HarnessSettings = LABELLER) {
+    constructor(runtime: HarnessRuntime, slots: number, log: (line: string) => void, settings: HarnessSettings = LABELLER, make: () => Harness = (): Harness => noticing(new LibraryHarness(runtime, LIBRARY_IDS.codex, TIMEOUT_MS), log)) {
         this.free = Array.from({ length: slots }, () => make());
         this.log = log;
         this.settings = settings;
@@ -38,27 +37,23 @@ export class LabelRunner {
         if (next === undefined) this.free.push(harness); else next(harness);
     }
 
-    async ask<T>(instructions: Text, input: Row, parse: (reply: Text) => T | null, name: Text): Promise<Labelled<T>> {
+    async ask<T>(instructions: string, input: object, parse: (reply: string) => T | null, name: string): Promise<Labelled<T>> {
         const harness = await this.take();
         const began = Date.now();
         let attempts = 0;
-        let why: Text | null = null;
+        let why: string | null = null;
         try {
-            const answer = await retriedBy(async () => {
+            const answer = await retried(async () => {
                 attempts += 1;
                 const ran = await harness.run({ instructions, input: JSON.stringify(input) }, this.settings);
-                if (isUnknown(ran)) { why = must(parseText(saying(ran.why).slice(0, 160))); return null; }
-                const parsed = parse(must(parseText(ran.text)));
-                why = parsed === null ? must(parseText('the reply did not parse')) : null;
+                if (isUnknown(ran)) { why = saying(ran.why).slice(0, 160); return null; }
+                const parsed = parse(ran.text);
+                why = parsed === null ? 'the reply did not parse' : null;
                 return parsed;
-            }, (parsed) => (parsed !== null ? 'usable' : 'unusable'), {
-                onRetry: (n, wait) => { this.log(must(parseText(`${name}: attempt ${n} gave nothing (${why ?? '?'}); waiting ${Math.round(wait / 1000)} s`))); },
-            });
-            return { answer, ms: must(parseMilliseconds(Date.now() - began)), attempts: must(parseCount(attempts)), why: answer === null ? why : null };
+            }, (parsed) => parsed !== null, { onRetry: (n, wait) => { this.log(`${name}: attempt ${n} gave nothing (${why ?? '?'}); waiting ${Math.round(wait / 1000)} s`); } });
+            return { answer, ms: Date.now() - began, attempts, why: answer === null ? why : null };
         } finally {
             this.give(harness);
         }
     }
 }
-
-export { Labeller } from './legacy.ts';

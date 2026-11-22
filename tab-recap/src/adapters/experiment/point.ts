@@ -9,43 +9,29 @@ import type { Gate } from '#src/recap/domain/autocompact.ts';
 import { flightOf, flightReason, NOT_AWAITING, observedFrom, runningCount, unreadable } from '#src/recap/domain/in-flight.ts';
 import { hindsightOf } from '#src/experiment/hindsight.ts';
 import type { Hindsight } from '#src/experiment/hindsight.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import type { FsPath } from '#src/recap/domain/fs-path.ts';
-import type { Milliseconds } from '#src/recap/domain/time.ts';
-import { parseProbability, type Probability } from '#src/recap/domain/probability.ts';
-import type { Text } from '#src/recap/domain/text.ts';
 import { claudeWindowOf } from '../capability/context-window.ts';
-import { extractClaudeOf } from '../transcripts/claude/rows.ts';
-import { claudeInFlightOf } from '../transcripts/claude/in-flight.ts';
-import { claudeObservedOf } from '../transcripts/claude/context.ts';
-import { linesAfterOf, linesBeforeOf } from '../transcripts/slice.ts';
-import type { ExperimentStoreAt, FramePoint, StoredPoint } from './store.ts';
+import { extractClaude } from '../transcripts/claude/rows.ts';
+import { claudeInFlight } from '../transcripts/claude/in-flight.ts';
+import { claudeObserved } from '../transcripts/claude/context.ts';
+import { linesAfter, linesBefore } from '../transcripts/slice.ts';
+import type { ExperimentStore, StoredPoint } from './store.ts';
 
-const TAIL_BYTES = must(parseCount(256 * 1024));
+const TAIL_BYTES = 256 * 1024;
 const EXPERIMENT_MINIMUM = 40;
 const RECENT_KEPT = 60_000;
 
-export type InFlight = Count | 'unknown';
-
-export interface PointAt extends StoredPoint {
-    readonly stratum: Text;
-    readonly share: Probability | null;
-    readonly tokens: Count | null;
-    readonly window: Count | null;
-    readonly inFlight: InFlight;
-    readonly lastBreakAt: Milliseconds | null;
+export interface Point extends StoredPoint {
+    readonly stratum: string;
+    readonly share: number | null;
+    readonly tokens: number | null;
+    readonly window: number | null;
+    readonly inFlight: number | 'unknown';
+    readonly lastBreakAt: number | null;
     readonly gate: Gate;
     readonly state: AutocompactState;
     readonly recent: readonly Entry[];
     readonly history: readonly HistoryFact[];
     readonly hindsight: Hindsight;
-}
-
-export interface UsageAt {
-    readonly tokens: Count;
-    readonly window: Count;
-    readonly share: Probability | null;
 }
 
 function trimmed(entries: readonly Entry[]): readonly Entry[] {
@@ -59,47 +45,34 @@ function trimmed(entries: readonly Entry[]): readonly Entry[] {
     return kept.toReversed();
 }
 
-export function usageAt(source: FsPath, cursor: Count, catalogue: ModelCatalogue): UsageAt | null {
-    const observed = claudeObservedOf(linesBeforeOf(source, cursor, TAIL_BYTES));
+export function shareAt(source: string, cursor: number, catalogue: ModelCatalogue): { readonly tokens: number; readonly window: number; readonly share: number } | null {
+    const observed = claudeObserved(linesBefore(source, cursor, TAIL_BYTES));
     const use = observed === null ? null : contextOf({ observed, setting: null }, claudeWindowOf(catalogue));
-    if (use === null) return null;
-    const tokens = parseCount(use.tokens);
-    const window = parseCount(use.window);
-    if (tokens.kind !== 'ok' || window.kind !== 'ok') return null;
-    return { tokens: tokens.value, window: window.value, share: parseProbability(shareOf(use)) };
+    return use === null ? null : { tokens: use.tokens, window: use.window, share: shareOf(use) };
 }
 
-export interface Gated {
-    readonly inFlight: InFlight;
-    readonly gate: Gate;
-}
-
-function gateAt(stored: StoredPoint, lines: readonly Text[], lastBreakAt: Milliseconds | null, share: Probability | null): Gated {
-    const flight = claudeInFlightOf(lines, 'absent');
-    const counted = flight.kind === 'in-flight' ? parseCount(flight.count) : null;
-    const inFlight: InFlight = counted !== null && counted.kind === 'ok' ? counted.value : 'unknown';
+function gateAt(stored: StoredPoint, lines: readonly string[], lastBreakAt: number | null, share: number): { readonly inFlight: number | 'unknown'; readonly gate: Gate } {
+    const flight = claudeInFlight(lines);
+    const inFlight = flight.kind === 'in-flight' ? flight.count : 'unknown';
     const observed = flight.kind === 'in-flight' ? observedFrom(runningCount(flight.count), flight.background, flightReason('running')) : unreadable(flightReason('unreadable'));
-    const gate = gateOf({ kind: 'claude', kinds: KINDS_DEFAULT, shadowKinds: [], busy: false, flight: flightOf(observed, NOT_AWAITING), share: share ?? 0, minimum: EXPERIMENT_MINIMUM, ceiling: CEILING_DEFAULT, now: stored.at, lastBreakAt, lastDecisionAt: null, cooldownMs: COOLDOWN_DEFAULT_MS, unchanged: false }).gate;
+    const gate = gateOf({ kind: 'claude', kinds: KINDS_DEFAULT, shadowKinds: [], busy: false, flight: flightOf(observed, NOT_AWAITING), share, minimum: EXPERIMENT_MINIMUM, ceiling: CEILING_DEFAULT, now: stored.at, lastBreakAt, lastDecisionAt: null, cooldownMs: COOLDOWN_DEFAULT_MS, unchanged: false }).gate;
     return { inFlight, gate };
 }
 
-export function pointAt(store: ExperimentStoreAt, catalogue: ModelCatalogue, stored: FramePoint, stratum: Text): PointAt | null {
+export function pointOf(store: ExperimentStore, catalogue: ModelCatalogue, stored: StoredPoint & { readonly blob: Uint8Array }, stratum: string): Point | null {
     try {
-        const lines = linesBeforeOf(stored.source, stored.cursor, TAIL_BYTES);
-        const recent = trimmed(extractClaudeOf(lines).entries);
+        const lines = linesBefore(stored.source, stored.cursor, TAIL_BYTES);
+        const recent = trimmed(extractClaude(lines).entries);
         const history = store.factsAt(stored);
-        const used = usageAt(stored.source, stored.cursor, catalogue);
+        const used = shareAt(stored.source, stored.cursor, catalogue);
         const lastBreakAt = store.lastBreakAt(stored.tab, stored.at);
-        const after = extractClaudeOf(linesAfterOf(stored.source, stored.cursor, TAIL_BYTES)).entries;
+        const after = extractClaude(linesAfter(stored.source, stored.cursor, TAIL_BYTES)).entries;
         const { blob: _blob, ...plain } = stored;
         return {
-            ...plain, stratum, share: used?.share ?? null, tokens: used?.tokens ?? null, window: used?.window ?? null, lastBreakAt, ...gateAt(stored, lines, lastBreakAt, used?.share ?? null),
+            ...plain, stratum, share: used?.share ?? null, tokens: used?.tokens ?? null, window: used?.window ?? null, lastBreakAt, ...gateAt(stored, lines, lastBreakAt, used?.share ?? 0),
             state: autocompactState(recent, history), recent, history, hindsight: hindsightOf(after),
         };
     } catch {
         return null;
     }
 }
-
-export type { Point } from './legacy.ts';
-export { pointOf, shareAt } from './legacy.ts';

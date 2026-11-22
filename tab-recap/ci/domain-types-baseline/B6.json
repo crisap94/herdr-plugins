@@ -3,7 +3,42 @@
     "legacy": 10
   },
   "src/adapters/experiment/data.ts": {
+    "parameter": 2,
     "assertion": 2
+  },
+  "src/adapters/experiment/events.ts": {
+    "parameter": 5,
+    "return": 1
+  },
+  "src/adapters/experiment/files.ts": {
+    "parameter": 4,
+    "return": 1,
+    "container": 3
+  },
+  "src/adapters/experiment/io.ts": {
+    "parameter": 5,
+    "return": 1,
+    "container": 2,
+    "assertion": 1
+  },
+  "src/adapters/experiment/labeller.ts": {
+    "parameter": 9,
+    "return": 1,
+    "container": 5,
+    "property": 3
+  },
+  "src/adapters/experiment/point.ts": {
+    "parameter": 6,
+    "return": 2,
+    "container": 1,
+    "property": 10
+  },
+  "src/adapters/experiment/store.ts": {
+    "parameter": 8,
+    "return": 4,
+    "container": 5,
+    "property": 9,
+    "assertion": 1
   },
   "src/adapters/git/legacy.ts": {
     "legacy": 2
@@ -127,8 +162,5 @@
   },
   "src/adapters/transcripts/opencode/transcripts.ts": {
     "property": 1
-  },
-  "src/adapters/experiment/legacy.ts": {
-    "legacy": 27
   }
 }
