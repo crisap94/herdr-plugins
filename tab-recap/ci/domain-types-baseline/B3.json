@@ -1,32 +1,4 @@
 {
-  "src/recap/application/eval-options.ts": {
-    "parameter": 15,
-    "return": 7,
-    "container": 2,
-    "property": 18
-  },
-  "src/recap/application/eval-report.ts": {
-    "parameter": 6,
-    "return": 5,
-    "container": 1,
-    "property": 16
-  },
-  "src/recap/application/eval-run.ts": {
-    "parameter": 6,
-    "return": 1,
-    "container": 5,
-    "property": 1
-  },
-  "src/recap/application/eval-stats.ts": {
-    "parameter": 4,
-    "return": 4,
-    "property": 12
-  },
-  "src/recap/application/expanded-view.ts": {
-    "parameter": 6,
-    "return": 2,
-    "property": 3
-  },
   "src/recap/application/freshness-block.ts": {
     "container": 1,
     "property": 3
@@ -224,6 +196,21 @@
   },
   "src/recap/application/twins/edit-counts/legacy.ts": {
     "legacy": 5
+  },
+  "src/recap/application/twins/eval-options/legacy.ts": {
+    "legacy": 14
+  },
+  "src/recap/application/twins/eval-report/legacy.ts": {
+    "legacy": 28
+  },
+  "src/recap/application/twins/eval-run/legacy.ts": {
+    "legacy": 13
+  },
+  "src/recap/application/twins/eval-stats/legacy.ts": {
+    "legacy": 20
+  },
+  "src/recap/application/twins/expanded-view/legacy.ts": {
+    "legacy": 11
   },
   "src/recap/application/twins/ledgers/legacy.ts": {
     "legacy": 2
