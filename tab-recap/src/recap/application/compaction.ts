@@ -74,12 +74,12 @@ export class Compactor {
         if (isUnknown(state)) {
             if (state.why.why === 'not-found') return { kind: 'refused', refusal: laneClosedRefusal(point) };
             const why = must(parseText(saying(state.why)));
-            return { kind: 'refused', refusal: { stage: 'failed', reason: COMPACT_FAILURES.error, why, toast: must(parseText(compaction.failed(agent, why))) } };
+            return { kind: 'refused', refusal: { stage: 'failed', reason: COMPACT_FAILURES.error, why, toast: must(parseText(compaction.failed(must(parseText(agent)), why))) } };
         }
         if (READY.has(state.status)) return { kind: 'proceed', placement: 'immediate' };
         if (state.status === 'working' && this.queueing(agent) === 'queues') return { kind: 'proceed', placement: 'queued' };
         const reason = state.status === 'working' ? COMPACT_FAILURES.busy : COMPACT_FAILURES.skipped;
-        return { kind: 'refused', refusal: { stage: 'skipped', reason, why: must(parseText(badge[state.status])), toast: must(parseText(compaction.skipped(agent, state.status))) } };
+        return { kind: 'refused', refusal: { stage: 'skipped', reason, why: must(parseText(badge[state.status])), toast: must(parseText(compaction.skipped(must(parseText(agent)), must(parseText(state.status))))) } };
     }
 
     private answerOne(request: CompactAsk | null, pane: PaneId, stage: AnswerStage): void {
@@ -102,7 +102,7 @@ export class Compactor {
         this.deps.claims.join(pane, request);
         this.answerOne(request, pane, must(parseAnswerStage(COMPACT_STAGES.queued)));
         if (request.origin !== 'auto') {
-            void this.tell(must(parseText(compaction.title(agent))), must(parseText(compaction.joined(agent, request.note !== null))));
+            void this.tell(must(parseText(compaction.title(must(parseText(agent))))), must(parseText(compaction.joined(must(parseText(agent)), request.note === null ? 'absent' : 'present'))));
         }
     }
 
@@ -126,11 +126,11 @@ export class Compactor {
             trail.end(refusal.stage, { why: refusal.why }, refusal.reason);
         }
         this.logClosed(lane, refusal.closedAt);
-        if (refusal.toast !== null) await this.tell(must(parseText(this.deps.messages().compaction.title(String(lane.agent)))), must(parseText(refusal.toast)));
+        if (refusal.toast !== null) await this.tell(must(parseText(this.deps.messages().compaction.title(must(parseText(lane.agent))))), must(parseText(refusal.toast)));
     }
 
     private logClosed(lane: Lane, point: ClosePoint | undefined): void {
-        if (point !== undefined) this.deps.log(must(parseText(this.deps.messages().compaction.laneClosed(String(lane.agent), String(lane.pane), point))));
+        if (point !== undefined) this.deps.log(must(parseText(this.deps.messages().compaction.laneClosed(must(parseText(lane.agent)), must(parseText(lane.pane)), point))));
     }
 
     private endClosed(lane: Lane, trail: Trail, point: ClosePoint): void {
@@ -169,8 +169,8 @@ export class Compactor {
 
     private beginning(agent: AgentKind, placement: Placement): Text {
         const { compaction } = this.deps.messages();
-        if (placement === 'queued') return must(parseText(compaction.startedQueued(agent)));
-        return must(parseText(this.deps.brief.enabled() === 'present' ? compaction.writing(agent) : compaction.started(agent)));
+        if (placement === 'queued') return must(parseText(compaction.startedQueued(must(parseText(agent)))));
+        return must(parseText(this.deps.brief.enabled() === 'present' ? compaction.writing(must(parseText(agent))) : compaction.started(must(parseText(agent)))));
     }
 
     private async compact(lane: Lane, tab: TabId, request: CompactAsk, placement: Placement): Promise<void> {
@@ -182,7 +182,7 @@ export class Compactor {
             return;
         }
         const said = (text: Text): Text => must(parseText(auto ? compaction.auto(text) : text));
-        await this.tell(said(must(parseText(compaction.title(agent)))), said(this.beginning(agent, placement)));
+        await this.tell(said(must(parseText(compaction.title(must(parseText(agent)))))), said(this.beginning(agent, placement)));
         const material = this.briefing.materialOf(tab, pane, request.note === null ? null : must(parseText(request.note)));
         const link = this.briefing.linkedDecision(auto ? 'auto' : 'operator', tab, pane, trail.id);
         const verified = await this.briefing.verified(lane, tab, material, link);
@@ -206,7 +206,7 @@ export class Compactor {
         const unsupported = await this.sender.send(lane, { material: { ...material, sections: clean(material.sections, brief.own) }, brief: this.keptNote(brief.text, request) }, trail, gate);
         if (unsupported !== undefined) {
             const messages = this.deps.messages();
-            await this.tell(must(parseText(messages.compaction.title(String(lane.agent)))), must(parseText(messages.compaction.failed(String(lane.agent), unsupported.why))));
+            await this.tell(must(parseText(messages.compaction.title(must(parseText(lane.agent))))), must(parseText(messages.compaction.failed(must(parseText(lane.agent)), unsupported.why))));
         }
     }
 
@@ -218,7 +218,7 @@ export class Compactor {
         const { lane, checked, flow, trail, said, messages } = parts;
         if (blockedByCoverage(checked, flow) === 'absent') return 'absent';
         trail.end('skipped', { why: textOf('coverage') });
-        await this.tell(said(must(parseText(messages.title(String(lane.agent))))), must(parseText(messages.coverageMissed(String(lane.agent)))));
+        await this.tell(said(must(parseText(messages.title(must(parseText(lane.agent)))))), must(parseText(messages.coverageMissed(must(parseText(lane.agent))))));
         return 'present';
     }
 
@@ -227,11 +227,11 @@ export class Compactor {
         const pane = request.pane === null || request.pane === '' ? null : request.pane;
         if (request.origin === 'auto' && pane !== null && this.deps.listsPane(pane) === 'absent') {
             this.answer(request, pane, must(parseAnswerStage(failureStage(COMPACT_FAILURES.skipped))));
-            this.deps.log(must(parseText(compaction.laneClosed(null, pane, 'before-writer'))));
+            this.deps.log(must(parseText(compaction.laneClosed(null, must(parseText(pane)), 'before-writer'))));
             return;
         }
         if (pane !== null) this.answer(request, pane, must(parseAnswerStage(failureStage(COMPACT_FAILURES.noTarget))));
-        await this.tell(must(parseText(compaction.title(request.tab))), must(parseText(compaction.nothing)));
+        await this.tell(must(parseText(compaction.title(must(parseText(request.tab))))), must(parseText(compaction.nothing)));
     }
 
     async run(request: CompactAsk): Promise<void> {

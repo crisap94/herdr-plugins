@@ -6,10 +6,11 @@ import { breakLine as drawBreak, chaptersFact } from '#src/recap/render/timeline
 import { viewBreakOf } from '#src/view-model/column.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
+import { chaptersWordingOf } from '#src/view-model/wording.ts';
 
 const [en, es] = [messagesFor('en').chapters, messagesFor('es').chapters];
 const compacted = (over: Partial<BoundaryBreak> = {}): BoundaryBreak => ({ kind: 'compacted', at: instant(1), trigger: 'auto', tokensBefore: countOf(800_000), tokensAfter: countOf(14_000), took: duration(15_588), ...over });
-const breakLine = (found: BoundaryBreak, say: typeof en, width: number | null = null): string => drawBreak(viewBreakOf(found), say, width);
+const breakLine = (found: BoundaryBreak, say: typeof en, width: number | null = null): string => drawBreak(viewBreakOf(found), chaptersWordingOf(say), width);
 const switched: BoundaryBreak = { kind: 'switched', at: instant(1), trigger: null, tokensBefore: null, tokensAfter: null, took: null };
 
 test('golden: a compaction with its tokens and time, with its tokens only, with nothing, with a time only', () => {
@@ -48,7 +49,7 @@ test('golden: across the column, the closing rule reaches the edge; text that do
 });
 
 test('the session facts count the chapters', () => {
-    assert.equal(chaptersFact(3, en), 'chapters 3');
-    assert.equal(chaptersFact(3, es), 'capítulos 3');
-    assert.equal(`compactions 2 (800k → 14k · 39k → 3k) · ${chaptersFact(3, en)}`, 'compactions 2 (800k → 14k · 39k → 3k) · chapters 3');
+    assert.equal(chaptersFact(3, chaptersWordingOf(en)), 'chapters 3');
+    assert.equal(chaptersFact(3, chaptersWordingOf(es)), 'capítulos 3');
+    assert.equal(`compactions 2 (800k → 14k · 39k → 3k) · ${chaptersFact(3, chaptersWordingOf(en))}`, 'compactions 2 (800k → 14k · 39k → 3k) · chapters 3');
 });

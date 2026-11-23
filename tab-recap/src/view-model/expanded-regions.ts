@@ -1,6 +1,7 @@
 import { regionsOf as drawRegions, session as drawSession } from '@stateforge-labs/recap-view/unstable/expanded-regions.ts';
 import type { Draw } from '@stateforge-labs/recap-view/unstable/expanded-regions.ts';
 import type { Messages } from '#src/i18n/messages.ts';
+import { wordingOf } from './wording.ts';
 
 export type { RegionId, Regions, TaskData } from '@stateforge-labs/recap-view/unstable/expanded-regions.ts';
 export type { PluginDraw as Draw };
@@ -13,7 +14,7 @@ export interface DrawPresented extends Draw {}
 
 export function drawOf(draw: PluginDraw): DrawPresented {
     const { messages, ...rest } = draw;
-    return { ...rest, wording: messages };
+    return { ...rest, wording: wordingOf(messages) };
 }
 
 const regionDrawing =

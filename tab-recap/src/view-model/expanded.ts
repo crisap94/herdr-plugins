@@ -5,6 +5,7 @@ import { expanded as drawExpanded } from '@stateforge-labs/recap-view/unstable/e
 import type { Messages } from '#src/i18n/messages.ts';
 import type { SessionFacts } from '#src/recap/domain/session-facts.ts';
 import { maybe } from './column.ts';
+import { wordingOf } from './wording.ts';
 
 export { EXPANDED_TWO_COLUMNS, columnWidth } from '@stateforge-labs/recap-view/unstable/expanded.ts';
 export type { ExpandedTask } from '@stateforge-labs/recap-view';
@@ -37,7 +38,7 @@ export function sessionRecapOf(facts: SessionFacts): SessionRecap {
 
 export function expandedViewOf(view: PluginExpandedView): ExpandedPresented {
     const { session, messages, ...rest } = view;
-    return { ...rest, session: sessionRecapOf(session), wording: messages };
+    return { ...rest, session: sessionRecapOf(session), wording: wordingOf(messages) };
 }
 
 const expandedDrawing =

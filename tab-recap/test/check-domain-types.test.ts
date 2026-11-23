@@ -49,3 +49,10 @@ test('a session-ledger brand in a parameter and a return resolves to no finding'
     const parsed: { readonly findings: readonly unknown[] } = JSON.parse(result.stdout);
     assert.deepEqual(parsed.findings, []);
 });
+
+test('a recap-view brand in a parameter and a return resolves to no finding', () => {
+    const result = run([...probe('good-recap-view-brand'), '--json']);
+    assert.equal(result.status, 0);
+    const parsed: { readonly findings: readonly unknown[] } = JSON.parse(result.stdout);
+    assert.deepEqual(parsed.findings, []);
+});

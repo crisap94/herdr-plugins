@@ -11,7 +11,7 @@ import { badge, firstItem, footer, present, presentBar } from '@stateforge-labs/
 import { sessionLines, spanOf } from '@stateforge-labs/recap-view/unstable/session-lines.ts';
 import { clockOf, dateLines, dayOf, timelineOf } from '@stateforge-labs/recap-view/unstable/timeline.ts';
 import { breakLine, breakText, chaptersFact } from '@stateforge-labs/recap-view/unstable/timeline-breaks.ts';
-import { assertAmount, assertCount, assertMinutes, assertPercent, assertSeconds, parseCount, parsePercent } from '@stateforge-labs/recap-view/unstable/wording.ts';
+import { assertAmount, assertCount, assertMinutes, assertPercent, assertSeconds, assertWords, parseCount, parsePercent, parseWords, parseWordsOrNull } from '@stateforge-labs/recap-view/unstable/wording.ts';
 import type { TextWording } from '@stateforge-labs/recap-view/unstable/wording.ts';
 import { plain } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 
@@ -112,12 +112,20 @@ test('the brand assertions pass a number and refuse anything else', () => {
     }
 });
 
+test('the words of a wording are a string, or nothing where the wording takes nothing', () => {
+    assert.doesNotThrow(() => assertWords('idle'));
+    assert.throws(() => assertWords(2), TypeError);
+    assert.equal(parseWordsOrNull('idle'), 'idle');
+    assert.equal(parseWordsOrNull(null), null);
+    assert.throws(() => parseWordsOrNull(2), TypeError);
+});
+
 test('each view-model parser passes its carrier and refuses another', () => {
     for (const parse of [parseInstant, parseDuration, parseTokens, parseCount, parsePercent]) {
         assert.equal(parse(2), 2);
         assert.throws(() => parse('2'), TypeError);
     }
-    for (const parse of [parsePaneId, parseAgentLabel, parseAgentName, parseTitle, parseProse, parseTaskName, parseDirectory, parseFilePath, parseRepoName, parseBranchName, parseWebBase]) {
+    for (const parse of [parsePaneId, parseAgentLabel, parseAgentName, parseTitle, parseProse, parseTaskName, parseDirectory, parseFilePath, parseRepoName, parseBranchName, parseWebBase, parseWords]) {
         assert.equal(parse('a'), 'a');
         assert.throws(() => parse(2), TypeError);
     }

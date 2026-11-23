@@ -11,6 +11,7 @@ import { parseNonEmptyText, parseText, type Text } from '#src/recap/domain/text.
 import { duration, instant, type Duration, type Instant } from '#src/recap/domain/time.ts';
 import type { ExpandedStory } from '@stateforge-labs/recap-view';
 import { spansOf } from './gui-tab-spans.ts';
+import { chaptersWordingOf } from '#src/view-model/wording.ts';
 
 type Webs = readonly (Web | null | undefined)[];
 
@@ -46,7 +47,7 @@ export function factOf(fact: Fact, webs: Webs): GuiFact {
 export function breakOf(found: Break, messages: Messages): GuiBreak {
     return {
         kind: found.kind, at: instant(found.at), trigger: found.trigger, tokensBefore: orElse(parseCount(found.tokensBefore), null), tokensAfter: orElse(parseCount(found.tokensAfter), null),
-        tookMs: orElse(parseCount(found.tookMs === null ? null : Math.round(found.tookMs)), null), text: must(parseText(breakText(found, messages.chapters))),
+        tookMs: orElse(parseCount(found.tookMs === null ? null : Math.round(found.tookMs)), null), text: must(parseText(breakText(found, chaptersWordingOf(messages.chapters)))),
     };
 }
 

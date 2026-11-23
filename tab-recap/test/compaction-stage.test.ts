@@ -18,6 +18,7 @@ import { must } from '#src/protocol/result.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
 import { viewRecord } from '#test/support/tab-view-records.ts';
+import { wordingOf } from '#src/view-model/wording.ts';
 
 const base: CompactionRow = { id: must(parseCompactionId('cmp_x')), tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), stage: 'compacting', brief: 'written', writer: textOf('codex · gpt-6-luna · high'), templateWhy: null, startedAt: instant(0), stageAt: instant(0), finishedAt: null, tokensBefore: null, tokensAfter: null, took: null, retry: 'first-try', queue: 'direct', why: null, origin: 'operator' };
 const done = { finishedAt: instant(1), tokensBefore: countOf(39532), tokensAfter: countOf(3057), took: duration(15588) };
@@ -116,7 +117,7 @@ test('on the bar, the newest compaction of the tab speaks, prefixed with its age
 });
 
 const line = (patch: Partial<CompactionRow>): string => stageLine({ ...base, ...patch }, 0, { messages: en, style: coloured });
-const said = (tokensBefore: number | null, tokensAfter: number | null, tookMs: number | null): object => figuresOf({ tokensBefore: maybe(tokensBefore, parseTokens), tokensAfter: maybe(tokensAfter, parseTokens), tookMs: maybe(tookMs, parseDuration) }, en);
+const said = (tokensBefore: number | null, tokensAfter: number | null, tookMs: number | null): object => figuresOf({ tokensBefore: maybe(tokensBefore, parseTokens), tokensAfter: maybe(tokensAfter, parseTokens), tookMs: maybe(tookMs, parseDuration) }, wordingOf(en));
 
 test('the stage is coloured: yellow while it runs, green when done (the template tag gray), red when it failed, gray otherwise', () => {
     const [yellow, green, red, gray] = ['\u001B[33m', '\u001B[32m', '\u001B[31m', '\u001B[90m'];

@@ -10,6 +10,9 @@ import type { Messages } from '#src/i18n/messages.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
+import { wordingOf } from '#src/view-model/wording.ts';
+
+export { wordingOf };
 
 export interface PluginColumnView extends Omit<ColumnView<string>, 'rows' | 'daemonVersion' | 'recap' | 'wording' | 'compactions'> {
     readonly tab: TabViewRecord | null;
@@ -22,10 +25,6 @@ export interface PresentedView extends ColumnView<string> {}
 
 export function maybe<In, Out>(value: In | null, parse: (input: In) => Out): Out | null {
     return value === null ? null : parse(value);
-}
-
-export function wordingOf<Text>(wording: Wording<Text>): Wording<Text> {
-    return wording;
 }
 
 export function webOf(web: LaneWebRecord): Web {
@@ -114,7 +113,7 @@ export function stageRowOf(record: LoggedCompaction): CompactionRow {
 }
 
 export function presentedOf(view: PluginColumnView): PresentedView {
-    const mapped = columnViewOf(view, view.messages, view.style);
+    const mapped = columnViewOf(view, wordingOf(view.messages), view.style);
     return view.compactions === undefined ? mapped : { ...mapped, compactions: view.compactions.map(stageRowOf) };
 }
 

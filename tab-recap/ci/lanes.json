@@ -375,6 +375,7 @@
       "test/recap-job-window.test.ts",
       "test/recap-reads-contract.test.ts",
       "test/record-parsers.test.ts",
+      "test/relative-time.test.ts",
       "test/replay-pipeline.test.ts",
       "test/retention.test.ts",
       "test/roll-active-install.test.ts",
@@ -565,7 +566,6 @@
       "src/i18n/es.ts",
       "src/i18n/index.ts",
       "src/i18n/language.ts",
-      "src/i18n/legacy.ts",
       "src/i18n/messages.ts",
       "src/i18n/refusal.ts",
       "src/i18n/relative.ts",
@@ -585,7 +585,6 @@
       "test/i18n-golden-data.ts",
       "test/i18n-golden.test.ts",
       "test/i18n.test.ts",
-      "test/relative-time.test.ts",
       "test/text-layout.test.ts"
     ],
     "B5": [

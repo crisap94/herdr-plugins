@@ -9,14 +9,8 @@ import { HerdrFleetPorts } from '#src/adapters/herdr/fleet.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
-import { boundKeysIn, herdrConfigPathOf } from '#src/adapters/herdr/host-check.ts';
-import { bunHost } from '#src/host/bun-host.mjs';
-import { supportOf } from '#src/host/policy.mjs';
-import { codeVersion } from '#src/adapters/os/plugin-version.ts';
-import { STORED_NOTES_ID } from '#src/extensions/stored-notes.ts';
-import { AUTO_ORDER } from '#src/daemon/backends.ts';
 import type { Messages } from '#src/i18n/index.ts';
-import { BACKEND_IDS, type BackendChoice, configDirectory, settingGetter, loadSettings, messagesOf, parseSettingsFile, recapLanguageSource, stateDirectory } from '#src/daemon/config.ts';
+import { BACKEND_IDS, type BackendChoice, configDirectory, settingGetter, loadSettings, messagesOf, parseSettingsFile, stateDirectory } from '#src/daemon/config.ts';
 import { environmentName, hasModel, type EnvironmentName } from '#src/recap/domain/backend.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { duration } from '#src/recap/domain/time.ts';
@@ -29,7 +23,9 @@ import { parseArguments } from './arguments.ts';
 import { evalCommand } from './eval.ts';
 import { setValues } from './set-backend.ts';
 import { markStopping, stillStopping } from './stop-marker.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { modelSuffix, statusCommand } from './commands/status.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
+import { must } from '#src/protocol/result.ts';
 
 const OK = 0;
 const FAILED = 1;
@@ -60,7 +56,7 @@ async function launch(): Promise<number> {
         cwd: root, detached: true, stdio: ['ignore', out, out], env: { ...process.env, TAB_RECAP_STATE: stateDirectory() },
     });
     child.unref();
-    console.log(`tab-recap: ${m().cli.daemonStarted(String(child.pid ?? '?'), pidfile.logPath)}`);
+    console.log(`tab-recap: ${m().cli.daemonStarted(must(parseText(String(child.pid ?? '?'))), must(parseText(pidfile.logPath)))}`);
     return OK;
 }
 
@@ -107,29 +103,6 @@ function choiceOf(arg: string | undefined, model: string | undefined): BackendCh
     return found === undefined || (model !== undefined && (found === 'auto' || !hasModel(found))) ? null : found;
 }
 
-const modelSuffix = (model: string): string => (model === '' ? '' : `/${model}`);
-
-function status(): number {
-    const config = loadSettings();
-    const t = m().cli;
-    const running = pidfile.alive();
-    const host = bunHost();
-    const support = supportOf(host);
-    console.log([
-        t.statusVersion(codeVersion()),
-        t.statusRuntime(host.execPath, host.bunVersion),
-        ...(support.ok ? [] : [t.hostRefusal(support, host.execPath)]),
-        t.statusKeys(boundKeysIn(), herdrConfigPathOf()),
-        t.statusDaemon(running, pidfile.disabled === 'disabled', pidfile.daemonVersion()),
-        t.statusBackend(`${config.backend}${config.backend === 'auto' ? ` (${AUTO_ORDER.join(' → ')})` : modelSuffix(config.models[config.backend])}`),
-        `${t.statusLanguage} ${config.recapLanguage} (${t.statusSources[recapLanguageSource()]})`,
-        t.statusExtensions(STORED_NOTES_ID),
-        `${t.statusState} ${stateDirectory()}`,
-        `${t.statusConfig} ${join(configDirectory(), 'config.env')}`,
-    ].join('\n'));
-    return OK;
-}
-
 async function configure(): Promise<number> {
     const tab = currentTab();
     await sleep(Number(process.env['TAB_RECAP_OPEN_DELAY_MS'] ?? 0) || 0);
@@ -139,7 +112,7 @@ async function configure(): Promise<number> {
         return FAILED;
     }
     if (opened.kind === 'busy') {
-        console.error(`tab-recap: ${m().cli.setupBusy(`${join(root, 'bin', 'tab-recap.mjs')} backend`)}`);
+        console.error(`tab-recap: ${m().cli.setupBusy(must(parseText(`${join(root, 'bin', 'tab-recap.mjs')} backend`)))}`);
         return FAILED;
     }
     return OK;
@@ -165,7 +138,7 @@ function toggle(all: boolean): number {
         return FAILED;
     }
     queue.requestVisibility({ target: paneId(textOf(tab)), visibility: 'toggle' });
-    console.log(`tab-recap: ${all ? m().cli.columnsToggled : m().cli.columnToggled(tab)}`);
+    console.log(`tab-recap: ${all ? m().cli.columnsToggled : m().cli.columnToggled(must(parseText(tab)))}`);
     return OK;
 }
 
@@ -202,7 +175,7 @@ const commands: Readonly<Record<string, (arg: string | undefined) => number | Pr
     ensure: () => (pidfile.disabled === 'disabled' || pidfile.alive() !== null ? OK : launch()),
     stop,
     toggle: () => (pidfile.disabled === 'disabled' || pidfile.alive() === null ? commands['start']?.(undefined) ?? FAILED : stop()),
-    status,
+    status: () => statusCommand(pidfile, m().cli),
     column: () => toggle(false),
     columns: () => toggle(true),
     refresh: () => {
@@ -216,13 +189,13 @@ const commands: Readonly<Record<string, (arg: string | undefined) => number | Pr
             return FAILED;
         }
         queue.request(tabId(textOf(tab)));
-        console.log(`tab-recap: ${m().cli.requested(tab)}`);
+        console.log(`tab-recap: ${m().cli.requested(must(parseText(tab)))}`);
         return OK;
     },
     backend: (arg) => {
         const choice = choiceOf(arg, modelArg);
         if (choice === null) {
-            console.error(`tab-recap: 2 — ${m().cli.usageBackend(`auto|${BACKEND_IDS.join('|')}`)}`);
+            console.error(`tab-recap: 2 — ${m().cli.usageBackend(must(parseText(`auto|${BACKEND_IDS.join('|')}`)))}`);
             return USAGE;
         }
         const values = new Map<EnvironmentName, Text>([[environmentName(textOf('TAB_RECAP_BACKEND')), textOf(choice)]]);
@@ -231,7 +204,7 @@ const commands: Readonly<Record<string, (arg: string | undefined) => number | Pr
         }
         setValues(fsPathOf(join(configDirectory(), 'config.env')), values, parseSettingsFile);
         const config = loadSettings();
-        console.log(`tab-recap: ${m().cli.backendNow(`${choice}${choice === 'auto' ? '' : modelSuffix(config.models[choice])}`)}`);
+        console.log(`tab-recap: ${m().cli.backendNow(must(parseText(`${choice}${choice === 'auto' ? '' : modelSuffix(config.models[choice])}`)))}`);
         return OK;
     },
 };
@@ -242,7 +215,7 @@ const EVAL = 'eval';
 const AUTOCOMPACT = 'autocompact';
 const RAW = new Set<string | undefined>([EVAL, AUTOCOMPACT, ...Object.keys(COMMAND_TABLE)]);
 
-const usage = async (): Promise<string> => m().cli.usage([...Object.keys(commands), EVAL, AUTOCOMPACT, ...(await listedWords(settingGetter()))].join('|'));
+const usage = async (): Promise<string> => m().cli.usage(must(parseText([...Object.keys(commands), EVAL, AUTOCOMPACT, ...(await listedWords(settingGetter()))].join('|'))));
 const argv = process.argv.slice(2);
 const parsed = RAW.has(argv[0]) ? { positionals: [argv[0] ?? ''], note: undefined, handoff: null } : parseArguments(argv);
 const [name, arg, modelArg] = 'positionals' in parsed ? parsed.positionals : [];

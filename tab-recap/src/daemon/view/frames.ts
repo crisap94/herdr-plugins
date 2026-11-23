@@ -18,6 +18,7 @@ import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { footer, present, presentBar } from '#src/recap/render/present.ts';
 import type { ColumnView, Markdown } from '#src/recap/render/present.ts';
 import { coloured } from '#src/recap/render/wrap.ts';
+import { wordingOf } from '#src/view-model/wording.ts';
 import type { Style } from '#src/recap/render/wrap.ts';
 import type { Role } from '#src/wire/view/protocol.ts';
 
@@ -88,7 +89,7 @@ export function frameSource(parts: FrameParts): FrameSource {
             };
             const body = screen.role === 'modal' ? modal(view, span) : present(view, span, markdown);
             const fitted = fitScreen(body.map((line) => must(parseLine(line))), must(parseHeight(screen.rows)), must(parseCursor(screen.scroll)));
-            const shown = [...fitted.lines, footer(span, screen.role, messages, style)];
+            const shown = [...fitted.lines, footer(span, screen.role, wordingOf(messages), style)];
             return { lines: shown.map((line) => must(parseText(line))), scroll: must(parseCount(fitted.cursor)), awaiting };
         },
     };

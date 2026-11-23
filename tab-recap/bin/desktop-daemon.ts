@@ -6,6 +6,8 @@ import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { messagesOf, stateDirectory } from '#src/daemon/config.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { duration } from '#src/recap/domain/time.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 
 const OK = 0;
 const WEDGED_MS = duration(180_000);
@@ -29,7 +31,7 @@ export function startDesktopDaemon(): number {
     const out = openSync(pidfile.logPath, 'a');
     const child = spawn(process.execPath, [LAUNCHER], { cwd: root, detached: true, stdio: ['ignore', out, out], env: { ...process.env, TAB_RECAP_STATE: stateDirectory() } });
     child.unref();
-    console.log(`tab-recap: ${t.daemonStarted(String(child.pid ?? '?'), pidfile.logPath)}`);
+    console.log(`tab-recap: ${t.daemonStarted(must(parseText(String(child.pid ?? '?'))), must(parseText(pidfile.logPath)))}`);
     return OK;
 }
 

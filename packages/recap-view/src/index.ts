@@ -99,4 +99,6 @@ export type {
     Percent,
     Seconds,
     Wording,
+    Words,
+    WordsOrNull,
 } from './wording.ts';

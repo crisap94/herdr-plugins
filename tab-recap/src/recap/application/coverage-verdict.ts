@@ -4,11 +4,12 @@ import { unreachable } from '#src/recap/domain/autocompact.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { Checked, CoverageFlow } from './compaction-coverage.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
 
 export function coverageWhy(outcome: Checked['outcome'], why: Text | null, messages: Messages): Text | null {
     switch (outcome.kind) {
         case 'passed': return why;
-        case 'missed': return must(parseText(messages.compaction.coverageCeiling(outcome.facts.length)));
+        case 'missed': return must(parseText(messages.compaction.coverageCeiling(must(parseCount(outcome.facts.length)))));
         case 'unchecked': return must(parseText(messages.compaction.coverageUnchecked[outcome.reason]));
         default: return unreachable(outcome);
     }
@@ -17,7 +18,7 @@ export function coverageWhy(outcome: Checked['outcome'], why: Text | null, messa
 export function coverageLog(outcome: Checked['outcome'], messages: Messages): Text | null {
     switch (outcome.kind) {
         case 'passed': return null;
-        case 'missed': return must(parseText(messages.compaction.coverageCeiling(outcome.facts.length)));
+        case 'missed': return must(parseText(messages.compaction.coverageCeiling(must(parseCount(outcome.facts.length)))));
         case 'unchecked': return must(parseText(messages.compaction.coverageUnchecked[outcome.reason]));
         default: return unreachable(outcome);
     }

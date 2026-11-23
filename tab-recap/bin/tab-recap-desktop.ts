@@ -8,7 +8,8 @@ import { desktopDocumentCommand } from './desktop-document.ts';
 import { settingsCommand } from './desktop-settings.ts';
 import { enableDesktopDaemon, ensureDesktopDaemon, stopDesktopDaemon } from './desktop-daemon.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
+import { must } from '#src/protocol/result.ts';
 
 const OK = 0;
 const FAILED = 1;
@@ -26,7 +27,7 @@ function refresh(tab: string | undefined): number {
         return FAILED;
     }
     store.requests.request(tabId(textOf(tab)));
-    console.log(`tab-recap: ${m().cli.requested(tab)}`);
+    console.log(`tab-recap: ${m().cli.requested(must(parseText(tab)))}`);
     return OK;
 }
 
@@ -40,7 +41,7 @@ function document(tab: string | undefined): number {
 
 function status(): number {
     const pidfile = new Pidfile(fsPathOf(DESKTOP_STATE));
-    console.log(`tab-recap: ${m().cli.statusDaemon(pidfile.alive(), pidfile.disabled === 'disabled', pidfile.daemonVersion())}\n${m().cli.statusState} ${DESKTOP_STATE}`);
+    console.log(`tab-recap: ${m().cli.statusDaemon(pidfile.alive(), pidfile.disabled === 'disabled' ? 'present' : 'absent', pidfile.daemonVersion())}\n${m().cli.statusState} ${DESKTOP_STATE}`);
     return OK;
 }
 

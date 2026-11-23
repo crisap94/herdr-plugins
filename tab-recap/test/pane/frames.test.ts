@@ -28,6 +28,7 @@ import { cursor, memoryStore, storeRead } from '#test/db/support.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 import { viewRecord } from '#test/support/tab-view-records.ts';
+import { wordingOf } from '#src/view-model/wording.ts';
 
 const NOW = 1_800_000_000_000;
 const TAB = 'w1:t1';
@@ -129,9 +130,9 @@ const expectedFor = ({ role, fx, view, cols, rows, scroll, colour }: Expect): { 
         return { lines: presentBar(view, width), top: 0 };
     }
     if (role === 'modal') {
-        return windowed(expandedScreen(fx.store)(view, width), rows, scroll, footer(width, 'modal', messages, style));
+        return windowed(expandedScreen(fx.store)(view, width), rows, scroll, footer(width, 'modal', wordingOf(messages), style));
     }
-    return windowed(present(view, width, markdownDirect(fx.glow, colour)), rows, scroll, footer(width, 'column', messages, style));
+    return windowed(present(view, width, markdownDirect(fx.glow, colour)), rows, scroll, footer(width, 'column', wordingOf(messages), style));
 };
 
 for (const { role, cols, rows, scroll, colour } of cases) {
