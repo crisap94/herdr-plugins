@@ -28,7 +28,7 @@ test('a stop by the minimum, the cooldown, in flight, busy or an unknown share k
     unreadable.inFlight = 'unknown';
     await unreadable.service.consider(lane());
     const busy = world();
-    busy.store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'compacting', at: NOW });
+    busy.store.compactions.begin({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), stage: 'compacting', at: instant(NOW) });
     await busy.service.consider(lane());
     const unknownShare = world();
     unknownShare.known = false;

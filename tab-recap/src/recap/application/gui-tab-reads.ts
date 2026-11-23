@@ -1,6 +1,6 @@
 import { must } from '#src/protocol/result.ts';
 import type { Note } from '#src/ports/extension.ts';
-import type { CompactionRecord } from '#src/ports/compaction-records.ts';
+import type { CompactionRow } from '#src/ports/compaction-records.ts';
 import type { ExpandedData } from '#src/recap/application/expanded-view.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import type { GuiLocale } from '#src/recap/domain/gui-tab-parts.ts';
@@ -12,7 +12,7 @@ export interface GuiReads {
     readonly expanded: ExpandedData | null;
     readonly notes: (pane: PaneId) => readonly Note[];
     readonly warnings: readonly Text[];
-    readonly compactions: readonly CompactionRecord[];
+    readonly compactions: readonly CompactionRow[];
     readonly compactHint: Count | null;
     readonly locale: GuiLocale;
     readonly zone: Text;

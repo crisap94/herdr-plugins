@@ -1,5 +1,5 @@
 import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import type { CompactionRecords } from '#src/ports/compaction-records.ts';
+import type { CompactionLog } from '#src/ports/compaction-records.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { parsePaneId, type PaneId } from '#src/recap/domain/ids.ts';
 import type { SettleHub } from '#src/recap/application/settle-hub.ts';
@@ -14,7 +14,7 @@ export interface StatusPush {
 
 interface LaneTurnsParts {
     readonly hub: SettleHub;
-    readonly compactions: Pick<CompactionRecords, 'dismissTurn'>;
+    readonly compactions: Pick<CompactionLog, 'dismissTurn'>;
     board(): Board;
     now(): Instant;
     statused?(event: StatusEvent): void;

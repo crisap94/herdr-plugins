@@ -29,7 +29,7 @@ export const slot: SlotModule = {
                 return { version: version === null ? null : slots.parseVersion(version), launcher: own };
             },
             activity(): Activity {
-                return context.store.compactions.autoInProgress() ? 'compacting' : 'idle';
+                return context.store.compactions.autoInProgress() === 'auto-in-progress' ? 'compacting' : 'idle';
             },
             spawnWaiter: (launcher: FsPath): void => {
                 report(slots.parseLine(`roll: handing over to ${launcher}`));

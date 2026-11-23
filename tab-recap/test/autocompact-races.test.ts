@@ -1,4 +1,5 @@
-import { parseCompactionId } from '#src/recap/domain/ids.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { parseCompactionId, agentKind } from '#src/recap/domain/ids.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { must } from '#src/protocol/result.ts';
 import { test } from 'node:test';
@@ -63,7 +64,7 @@ test('a begun, linked, unfinished automatic compaction of lane 1 holds lane 2: b
     const w = world();
     w.share = 85;
     await w.service.consider(at('w1:p1'));
-    const begun = w.store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'compacting', at: NOW, origin: 'auto' });
+    const begun = w.store.compactions.begin({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), stage: 'compacting', at: instant(NOW), origin: 'auto' });
     w.store.autocompact.linkLatest(tabId('w1:t1'), paneId('w1:p1'), must(parseCompactionId(begun)));
     await w.service.consider(at('w1:p2'));
     assert.deepEqual([w.requests.map((request) => request.pane), w.store.autocompact.skips().map((skip) => [skip.pane, skip.gate, skip.detail])], [['w1:p1'], [['w1:p2', 'busy', 'another lane']]]);

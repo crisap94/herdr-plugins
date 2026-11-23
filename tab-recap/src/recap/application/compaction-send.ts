@@ -1,3 +1,4 @@
+import { countOf } from '#src/recap/domain/count.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { CompactionPlan, CompactionPlanResult, Unsupported } from '#src/recap/domain/compaction-plan.ts';
 import type { Prompted } from '#src/ports/agents.ts';
@@ -5,7 +6,7 @@ import { saying, unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
-import { parseText, type Text as Prose } from '#src/recap/domain/text.ts';
+import { parseText, type Text as Prose, textOf } from '#src/recap/domain/text.ts';
 import { duration, type Instant } from '#src/recap/domain/time.ts';
 import { figuresOf } from '#src/recap/render/compaction-stage.ts';
 import { COMPACT_FAILURES } from '#src/protocol/exchanges/compact.ts';
@@ -96,7 +97,7 @@ export class Sender {
         const deps: QueuedDeps = { settling: this.deps.settling, marks: (each) => this.deps.marks(each), pause: (ms) => this.deps.pause(ms), now: () => this.now() };
         switch (plan.confirm.kind) {
             case 'turn-end':
-                return placement === 'queued' ? queuedOutcomeOf(deps, lane, since, () => { trail.to('compacting', { queued: false }); }) : outcomeOf(deps, lane, since);
+                return placement === 'queued' ? queuedOutcomeOf(deps, lane, since, () => { trail.to('compacting', { queue: 'direct' }); }) : outcomeOf(deps, lane, since);
             case 'poll': {
                 let verdict = await confirmedOutcomeOf(deps, lane, since);
                 for (let read = 1; read < plan.confirm.reads && verdict.outcome === 'unconfirmed'; read += 1) {
@@ -122,7 +123,7 @@ export class Sender {
     private async refused(lane: Lane, trail: Trail, sent: Unsent): Promise<void> {
         const { compaction, badge } = this.deps.messages();
         const why = sent.kind === 'blocked' ? badge.blocked : saying(sent.why);
-        trail.end('failed', { why }, sent.kind === 'blocked' ? COMPACT_FAILURES.skipped : COMPACT_FAILURES.error);
+        trail.end('failed', { why: textOf(why) }, sent.kind === 'blocked' ? COMPACT_FAILURES.skipped : COMPACT_FAILURES.error);
         await this.tell(must(parseText(compaction.title(String(lane.agent)))), must(parseText(compaction.failed(String(lane.agent), why))));
     }
 
@@ -157,7 +158,7 @@ export class Sender {
         const retried = retry === 'retried';
         const { compaction } = this.deps.messages();
         const figures = { tokensBefore: verdict.tokensBefore ?? null, tokensAfter: verdict.tokensAfter ?? null, tookMs: verdict.tookMs ?? this.deps.now() - ended.began };
-        trail.end(verdict.outcome, { ...figures, retried, ...(verdict.outcome === 'failed' ? { why: compaction.stage.selfFailed } : {}) });
+        trail.end(verdict.outcome, { tokensBefore: figures.tokensBefore === null ? null : countOf(figures.tokensBefore), tokensAfter: figures.tokensAfter === null ? null : countOf(figures.tokensAfter), took: duration(figures.tookMs), retry: retried ? 'retried' : 'first-try', ...(verdict.outcome === 'failed' ? { why: textOf(compaction.stage.selfFailed) } : {}) });
         const said = figuresOf({ tokensBefore: maybe(figures.tokensBefore, parseTokens), tokensAfter: maybe(figures.tokensAfter, parseTokens), tookMs: parseDuration(figures.tookMs) }, this.deps.messages());
         await this.tell(must(parseText(compaction.title(String(lane.agent)))), must(parseText(compaction.outcome(String(lane.agent), verdict.outcome, retried, { tokens: said.tokens, took: said.took }))));
     }
@@ -168,19 +169,19 @@ export class Sender {
         if (!retry) {
             return { tried: first, retry: 'first-try' };
         }
-        trail.to('compacting', { queued: false });
+        trail.to('compacting', { queue: 'direct' });
         return { tried: await this.attempt(lane, plan, trail, 'immediate'), retry: 'retried' };
     }
 
     async send(lane: Lane, text: Text, trail: Trail, placed: Placed): Promise<Unsupported | undefined> {
         const resolved: CompactionPlanResult = this.deps.compactionPlans.forKind(lane.agent, text.brief ?? guidanceOf(text.material));
         if (resolved.kind === 'unsupported') {
-            trail.end('failed', { why: resolved.why });
+            trail.end('failed', { why: textOf(resolved.why) });
             return resolved;
         }
         const plan = resolved.plan;
         const began = this.now();
-        if (placed.placement === 'queued') trail.to('compacting', { queued: true });
+        if (placed.placement === 'queued') trail.to('compacting', { queue: 'queued' });
         const take = this.handoff(lane, plan, text);
         const { tried, retry } = await this.attemptedOnce(lane, plan, trail, placed.placement);
         const message = take();

@@ -1,7 +1,7 @@
 import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import type { Break, ColumnTask, ColumnView, CompactionRow, RecapColumn, Row, Style, Web, Wording } from '@stateforge-labs/recap-view';
 import { parseAgentName, parseBranchName, parseDirectory, parseDuration, parseFromScreen, parseInstant, parsePaneId, parseProse, parseQueued, parseRunning, parseTaskName, parseTitle, parseTokens, parseWebBase } from '@stateforge-labs/recap-view';
-import type { CompactionRecord } from '#src/ports/compaction-records.ts';
+import type { CompactionRow as LoggedCompaction } from '#src/ports/compaction-records.ts';
 import type { BoundaryBreak } from '#src/ports/boundaries.ts';
 import type { LaneCursor, TabRecap } from '#src/ports/recap-records.ts';
 import { isScreenSource } from '#src/ports/screens.ts';
@@ -15,7 +15,7 @@ export interface PluginColumnView extends Omit<ColumnView<string>, 'rows' | 'dae
     readonly tab: TabView | null;
     readonly recap: TabRecap | null;
     readonly messages: Messages;
-    readonly compactions?: readonly CompactionRecord[];
+    readonly compactions?: readonly LoggedCompaction[];
 }
 
 export interface PresentedView extends ColumnView<string> {}
@@ -71,7 +71,7 @@ export function viewBreakOf(found: BoundaryBreak): Break {
     return { kind: found.kind, at: parseInstant(found.at), trigger: found.trigger, tokensBefore: maybe(found.tokensBefore, parseTokens), tokensAfter: maybe(found.tokensAfter, parseTokens), tookMs: maybe(found.took, parseDuration) };
 }
 
-export function compactionRowOf(record: CompactionRecord): CompactionRow {
+export function compactionRowOf(record: LoggedCompaction): CompactionRow {
     return {
         pane: parsePaneId(record.pane),
         stage: record.stage,
@@ -79,10 +79,10 @@ export function compactionRowOf(record: CompactionRecord): CompactionRow {
         writer: maybe(record.writer, parseAgentName),
         why: maybe(record.why, parseProse),
         stageAt: parseInstant(record.stageAt),
-        queued: parseQueued(record.queued),
+        queued: parseQueued(record.queue === 'queued'),
         tokensBefore: maybe(record.tokensBefore, parseTokens),
         tokensAfter: maybe(record.tokensAfter, parseTokens),
-        tookMs: maybe(record.tookMs, parseDuration),
+        tookMs: maybe(record.took, parseDuration),
     };
 }
 
@@ -109,7 +109,7 @@ export function columnViewOf<Text>(view: PluginColumnView, wording: Wording<Text
     };
 }
 
-export function stageRowOf(record: CompactionRecord): CompactionRow {
+export function stageRowOf(record: LoggedCompaction): CompactionRow {
     return { ...compactionRowOf(record), agent: parseAgentName(record.agent), startedAt: parseInstant(record.startedAt) };
 }
 

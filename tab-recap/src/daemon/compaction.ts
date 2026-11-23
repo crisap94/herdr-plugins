@@ -27,7 +27,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { parseWireText, type AnswerStage, type RequestId, type WireText } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
-import type { CompactionRecords } from '#src/ports/compaction-records.ts';
+import type { CompactionLog } from '#src/ports/compaction-records.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
 import type { BoundaryLog } from '#src/ports/boundaries.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
@@ -56,7 +56,7 @@ interface CompactionTyping {
 interface CompactionParts {
     readonly fleet: Fleet;
     readonly records: GuardedRecapRecords;
-    readonly compactions: CompactionRecords;
+    readonly compactions: CompactionLog;
     readonly settling: LaneSettling;
     readonly ledger: GuardedLedger;
     readonly boundaries: BoundaryLog;

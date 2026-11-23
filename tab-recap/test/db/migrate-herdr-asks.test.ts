@@ -36,7 +36,7 @@ test('migration 13 from a v12 database: an answer id on a compaction, asks remem
         assert.throws(() => { db.exec("UPDATE compaction SET answer = 'this id is far too long to fit' WHERE origin = 'request'"); }, /CHECK/);
         const store = storeOver(db);
         assert.deepEqual(unfinishedCompactionAsks(db), [{ pane: 'w1:p1', answer: 'r7' }]);
-        store.compactions.interrupted(3, 'restarted');
+        store.compactions.interrupted(instant(3), textOf('restarted'));
         assert.deepEqual(unfinishedCompactionAsks(db), [], 'once interrupted, nothing is unfinished');
         const coordinator = must(parseToolName('coordinator'));
         const ask = { exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: instant(3), ref: null };

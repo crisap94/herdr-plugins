@@ -3,11 +3,9 @@ import type { Duration, Instant } from '#src/recap/domain/time.ts';
 import type { CoverageOutcome, LaneStatusAtDecision, SkipGate } from '#src/recap/domain/autocompact.ts';
 import type { Usd } from '#src/recap/domain/usd.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
-import type { Origin } from '#src/recap/domain/origin.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 import type { ClosedEvery, ColumnLayoutResult, Done, OpenResult, ResizeDirection } from './columns.ts';
 import type { DecisionCounts, DecisionGate, DecisionMode, DecisionVerdict, LinkedDecision, PaneKey, PassedCoverage, UncheckedCoverage } from './autocompact-records.ts';
-import type { ActiveStage, BriefOrigin, EndStage, Stage } from './compaction-records.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import type { Probability } from '#src/recap/domain/probability.ts';
 import type { Text } from '#src/recap/domain/text.ts';
@@ -103,70 +101,6 @@ export interface Columns {
     resize(pane: PaneId, direction: ResizeDirection, amount: Probability): Promise<Done>;
     close(pane: PaneId): Promise<Done>;
     closeEvery(): Promise<ClosedEvery>;
-}
-
-export interface CompactionRecord {
-    readonly id: string;
-    readonly tab: string;
-    readonly pane: string;
-    readonly agent: string;
-    readonly stage: Stage;
-    readonly brief: BriefOrigin | null;
-    readonly writer: string | null;
-    readonly templateWhy: string | null;
-    readonly startedAt: number;
-    readonly stageAt: number;
-    readonly finishedAt: number | null;
-    readonly tokensBefore: number | null;
-    readonly tokensAfter: number | null;
-    readonly tookMs: number | null;
-    readonly retried: boolean;
-    readonly queued: boolean;
-    readonly why: string | null;
-    readonly origin: Origin;
-}
-
-export interface BeginCompaction {
-    readonly tab: string;
-    readonly pane: string;
-    readonly agent: string;
-    readonly stage: Stage;
-    readonly at: number;
-    readonly writer?: string | null;
-    readonly why?: string | null;
-    readonly origin?: Origin;
-    readonly answer?: string | null;
-}
-
-export interface StageFacts {
-    readonly at: number;
-    readonly brief?: BriefOrigin | null;
-    readonly writer?: string | null;
-    readonly templateWhy?: string | null;
-    readonly queued?: boolean;
-}
-
-export interface CompactionEnd {
-    readonly stage: EndStage;
-    readonly at: number;
-    readonly tokensBefore?: number | null;
-    readonly tokensAfter?: number | null;
-    readonly tookMs?: number | null;
-    readonly retried?: boolean;
-    readonly why?: string | null;
-}
-
-export interface CompactionView {
-    shownFor(tab: string): readonly CompactionRecord[];
-    autoInProgress(): boolean;
-}
-
-export interface CompactionRecords extends CompactionView {
-    begin(start: BeginCompaction): string;
-    advance(id: string, stage: ActiveStage, facts: StageFacts): void;
-    finish(id: string, end: CompactionEnd): void;
-    dismissTurn(tab: string, pane: string, at: number): void;
-    interrupted(at: number, why: string): number;
 }
 
 export interface Decided {

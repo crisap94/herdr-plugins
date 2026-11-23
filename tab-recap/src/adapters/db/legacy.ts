@@ -1,15 +1,13 @@
 import type { Database } from 'bun:sqlite';
 import type { AnswerTally, AutocompactRecords, CoverageAmendment, Decision, DecisionCounts, LastDecision, LinkedDecision, PaneKey, Skip, StoredDecision, StoredDecisionRow } from '#src/ports/autocompact-records.ts';
-import type { ActiveStage, BeginCompaction, CompactionEnd, CompactionRecord, CompactionRecords, CompactionRow, StageFacts } from '#src/ports/compaction-records.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { agentKind, paneId, parseCompactionId, parseTabId, tabId, type CompactionId, type DecisionId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { type CompactionId, type DecisionId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import { parseProbability, type Probability } from '#src/recap/domain/probability.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { duration, instant, type Instant } from '#src/recap/domain/time.ts';
+import { type Instant } from '#src/recap/domain/time.ts';
 import type { Usd } from '#src/recap/domain/usd.ts';
 import { DecisionLedgerRepository } from './autocompact-records.ts';
-import { CompactionLogRepository } from './compaction-records.ts';
 
 const textOf = (raw: string | null | undefined): Text | null => (raw === null || raw === undefined ? null : must(parseText(raw)));
 const countOf = (raw: number | null | undefined): Count | null => (raw === null || raw === undefined ? null : must(parseCount(raw)));
@@ -52,37 +50,4 @@ export class AutocompactRecordsRepository implements AutocompactRecords {
     skips(): readonly Skip[] { return this.ledger.skips(); }
     countsFor(tab: TabId): DecisionCounts { return this.ledger.countsFor(tab); }
     costSince(at: Instant): Usd { return this.ledger.costSince(at); }
-}
-
-const compactionRecordOf = ({ took, retry, queue, ...rest }: CompactionRow): CompactionRecord => ({ ...rest, tookMs: took, retried: retry === 'retried', queued: queue === 'queued' });
-
-export class CompactionRecordsRepository implements CompactionRecords {
-    private readonly log: CompactionLogRepository;
-
-    constructor(db: Database) {
-        this.log = new CompactionLogRepository(db);
-    }
-
-    begin(start: BeginCompaction): string {
-        return this.log.begin({ ...start, tab: tabId(start.tab), pane: paneId(start.pane), agent: agentKind(start.agent), at: instant(start.at), writer: textOf(start.writer), why: textOf(start.why), answer: textOf(start.answer) });
-    }
-
-    advance(id: string, stage: ActiveStage, facts: StageFacts): void {
-        const key = parseCompactionId(id);
-        const queue = facts.queued === undefined ? {} : { queue: facts.queued ? 'queued' as const : 'direct' as const };
-        if (key.kind === 'ok') this.log.advance(key.value, stage, { at: instant(facts.at), brief: facts.brief ?? null, writer: textOf(facts.writer), templateWhy: textOf(facts.templateWhy), ...queue });
-    }
-
-    finish(id: string, end: CompactionEnd): void {
-        const key = parseCompactionId(id);
-        const took = end.tookMs === null || end.tookMs === undefined ? null : duration(end.tookMs);
-        if (key.kind === 'ok') {
-            this.log.finish(key.value, { stage: end.stage, at: instant(end.at), tokensBefore: countOf(end.tokensBefore), tokensAfter: countOf(end.tokensAfter), took, retry: end.retried === true ? 'retried' : 'first-try', why: textOf(end.why) });
-        }
-    }
-
-    dismissTurn(tab: string, pane: string, at: number): void { this.log.dismissTurn(tabId(tab), paneId(pane), instant(at)); }
-    interrupted(at: number, why: string): number { return this.log.interrupted(instant(at), must(parseText(why))); }
-    autoInProgress(): boolean { return this.log.autoInProgress() === 'auto-in-progress'; }
-    shownFor(tab: string): readonly CompactionRecord[] { const id = parseTabId(tab); return id.kind === 'ok' ? this.log.shownFor(id.value).map(compactionRecordOf) : []; }
 }

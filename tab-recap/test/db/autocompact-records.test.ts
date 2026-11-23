@@ -55,7 +55,7 @@ test('newest: a decision whose stored answers are not JSON is left out, and the 
 test('link points a decision at its compaction; a deleted compaction leaves the decision', () => {
     const store = seeded();
     const id = store.autocompact.record(decision());
-    const cmp = store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'briefing', at: 5 });
+    const cmp = store.compactions.begin({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), stage: 'briefing', at: instant(5) });
     store.autocompact.link(id, mustParsed(parseCompactionId(cmp)));
     assert.equal(store.autocompact.newest(mustParsed(parseCount(1)))[0]?.compactionId, cmp);
     store.db.exec('DELETE FROM compaction');
@@ -88,7 +88,7 @@ test('unlinkedCompactSince: a requested on-mode compact of the lane, not yet beg
     store.autocompact.markRequested(store.autocompact.record(decision({ at: instant(300), mode: 'on' })));
     assert.equal(store.autocompact.unlinkedCompactSince(tabId('w1:t1'), paneId('w1:p1'), instant(151)), true);
     assert.equal(store.autocompact.unlinkedCompactSince(tabId('w1:t1'), paneId('w1:p2'), instant(0)), false, 'another lane');
-    store.autocompact.link(old, mustParsed(parseCompactionId(store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'briefing', at: 5, origin: 'auto' }))));
+    store.autocompact.link(old, mustParsed(parseCompactionId(store.compactions.begin({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), stage: 'briefing', at: instant(5), origin: 'auto' }))));
     assert.equal(store.autocompact.unlinkedCompactSince(tabId('w1:t1'), paneId('w1:p1'), instant(151)), true, 'the newer one is still unlinked');
     assert.equal(store.autocompact.unlinkedCompactSince(tabId('w1:t1'), paneId('w1:p1'), instant(301)), false);
 });
@@ -99,7 +99,7 @@ test('countsFor: decisions, those that led to a compaction, those that waited; c
     store.autocompact.record(decision({ at: instant(200), verdict: 'wait', costUsd: mustParsed(parseUsd(0.25))}));
     store.autocompact.record(decision({ at: instant(300), verdict: 'undecided', costUsd: mustParsed(parseUsd(0))}));
     store.autocompact.record(decision({ at: instant(300), tab: tabId('w1:t2'), costUsd: mustParsed(parseUsd(1))}));
-    store.autocompact.link(first, mustParsed(parseCompactionId(store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'briefing', at: 5 }))));
+    store.autocompact.link(first, mustParsed(parseCompactionId(store.compactions.begin({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), stage: 'briefing', at: instant(5) }))));
     assert.deepEqual(store.autocompact.countsFor(mustParsed(parseTabId('w1:t1'))), { decisions: 3, compacted: 1, waited: 2 });
     assert.deepEqual(store.autocompact.countsFor(mustParsed(parseTabId('w9:t9'))), { decisions: 0, compacted: 0, waited: 0 });
     assert.equal(store.autocompact.costSince(instant(200)), 1.25);
@@ -118,7 +118,7 @@ test('linkLatest points the newest unlinked compact decision of the lane at the 
     store.autocompact.record(decision({ at: instant(100)}));
     const newer = store.autocompact.record(decision({ at: instant(200)}));
     store.autocompact.record(decision({ at: instant(300), verdict: 'wait' }));
-    const cmp = store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'briefing', at: 5, origin: 'auto' });
+    const cmp = store.compactions.begin({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), stage: 'briefing', at: instant(5), origin: 'auto' });
     assert.deepEqual(store.autocompact.linkLatest(tabId('w1:t1'), paneId('w1:p1'), mustParsed(parseCompactionId(cmp))), { id: newer, gate: 'ask' });
     assert.equal(store.autocompact.linkLatest(tabId('w1:t1'), paneId('w1:p2'), mustParsed(parseCompactionId(cmp))), null);
     store.autocompact.amend(newer, { coverage: { keeps_0: 0.2 }, outcome: { kind: 'missed', facts: [{ section: 'needs', text: brand<string, 'Text'>('fact'), why: null }] }, coverageMs: duration(12), coverageCostUsd: null, why: 'the brief still misses 1 fact(s)', block: true });
@@ -126,7 +126,7 @@ test('linkLatest points the newest unlinked compact decision of the lane at the 
     assert.deepEqual([row?.verdict, row?.gate, row?.coverage, row?.compactionId], ['wait', 'coverage', { keeps_0: 0.2 }, cmp]);
     assert.equal(row?.askedVerdict, 'compact');
     assert.deepEqual(row.coverageOutcome, { kind: 'missed', count: 1 });
-    assert.equal(store.compactions.shownFor('w1:t1')[0]?.origin, 'auto');
+    assert.equal(store.compactions.shownFor(tabId('w1:t1'))[0]?.origin, 'auto');
     store.autocompact.amend(store.autocompact.record(decision({ at: instant(400)})), { coverage: { keeps_0: 0.9 }, outcome: { kind: 'passed' }, coverageMs: duration(3), coverageCostUsd: null, why: null, block: false });
     assert.equal(store.autocompact.newest(mustParsed(parseCount(1)))[0]?.verdict, 'compact');
 });

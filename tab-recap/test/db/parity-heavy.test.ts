@@ -1,13 +1,16 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Database } from 'bun:sqlite';
-import { CompactionRecordsRepository } from '#src/adapters/db/legacy.ts';
+import { CompactionLogRepository } from '#src/adapters/db/compaction-records.ts';
 import { typeIdOf } from '#src/adapters/db/typeid.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { expectSameEffect, expectSameRows, withParity } from './parity.ts';
 import { memoryStore } from './support.ts';
 import { countOf } from '#src/recap/domain/count.ts';
-import { duration } from '#src/recap/domain/time.ts';
+import { duration, instant } from '#src/recap/domain/time.ts';
+import { agentKind, paneId, parseCompactionId, tabId } from '#src/recap/domain/ids.ts';
+import { must } from '#src/protocol/result.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const hex = (bytes: Uint8Array): string => Buffer.from(bytes).toString('hex');
 const keyOf = (n: number): Uint8Array => Uint8Array.from({ length: 16 }, () => n);
@@ -34,7 +37,7 @@ describe('parity: compaction records', () => {
                     db.prepare('INSERT INTO compaction (id, tab_id, pane, agent, stage, writer, started_at, stage_at, finished_at, why, origin, answer) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
                         .run(ids.next(), 't1', 'p1', 'claude', stage, null, 10, 10, stage === 'failed' ? 10 : null, 'x', 'auto', null);
                 },
-                builder: (db) => { new CompactionRecordsRepository(db).begin({ tab: 't1', pane: 'p1', agent: 'claude', stage, at: 10, why: 'x', origin: 'auto' }); },
+                builder: (db) => { new CompactionLogRepository(db).begin({ tab: tabId('t1'), pane: paneId('p1'), agent: agentKind('claude'), stage, at: instant(10), why: textOf('x'), origin: 'auto' }); },
                 dump: dumpOf(COMPACTION_DUMP),
             });
         });
@@ -51,11 +54,11 @@ describe('parity: compaction records', () => {
                 update.run('restoring', 30, 'template', null, null, 0, keyOf(2));
             },
             builder: (db) => {
-                const repo = new CompactionRecordsRepository(db);
-                const id = typeIdOf('compaction', keyOf(1));
-                repo.advance(id, 'compacting', { at: 20, brief: 'written', templateWhy: 'why', queued: true });
-                repo.advance(id, 'restoring', { at: 25, writer: 'w2' });
-                repo.advance(typeIdOf('compaction', keyOf(2)), 'restoring', { at: 30, brief: 'template', queued: false });
+                const repo = new CompactionLogRepository(db);
+                const id = must(parseCompactionId(typeIdOf('compaction', keyOf(1))));
+                repo.advance(id, 'compacting', { at: instant(20), brief: 'written', templateWhy: textOf('why'), queue: 'queued' });
+                repo.advance(id, 'restoring', { at: instant(25), writer: textOf('w2') });
+                repo.advance(must(parseCompactionId(typeIdOf('compaction', keyOf(2)))), 'restoring', { at: instant(30), brief: 'template', queue: 'direct' });
             },
             dump: dumpOf(COMPACTION_DUMP),
         });
@@ -71,10 +74,10 @@ describe('parity: compaction records', () => {
                 update.run('failed', 31, 31, null, null, null, 0, null, keyOf(1));
             },
             builder: (db) => {
-                const repo = new CompactionRecordsRepository(db);
-                const id = typeIdOf('compaction', keyOf(1));
-                repo.finish(id, { stage: 'compacted', at: 30, tokensBefore: countOf(100), tokensAfter: countOf(40), tookMs: duration(500), retried: true, why: 'ok' });
-                repo.finish(id, { stage: 'failed', at: 31 });
+                const repo = new CompactionLogRepository(db);
+                const id = must(parseCompactionId(typeIdOf('compaction', keyOf(1))));
+                repo.finish(id, { stage: 'compacted', at: instant(30), tokensBefore: countOf(100), tokensAfter: countOf(40), took: duration(500), retry: 'retried', why: textOf('ok') });
+                repo.finish(id, { stage: 'failed', at: instant(31) });
             },
             dump: dumpOf(COMPACTION_DUMP),
         });
@@ -86,7 +89,7 @@ describe('parity: compaction records', () => {
             raw: (db) => {
                 db.prepare('UPDATE compaction SET dismissed_at = ? WHERE tab_id = ? AND pane = ? AND finished_at < ? AND dismissed_at IS NULL').run(20, 't1', 'p1', 20);
             },
-            builder: (db) => { new CompactionRecordsRepository(db).dismissTurn('t1', 'p1', 20); },
+            builder: (db) => { new CompactionLogRepository(db).dismissTurn(tabId('t1'), paneId('p1'), instant(20)); },
             dump: dumpOf(COMPACTION_DUMP),
         });
     });
@@ -97,7 +100,7 @@ describe('parity: compaction records', () => {
             raw: (db) => {
                 db.prepare("UPDATE compaction SET stage = 'unconfirmed', stage_at = ?, finished_at = ?, why = ? WHERE finished_at IS NULL").run(40, 40, 'restart');
             },
-            builder: (db) => { new CompactionRecordsRepository(db).interrupted(40, 'restart'); },
+            builder: (db) => { new CompactionLogRepository(db).interrupted(instant(40), textOf('restart')); },
             dump: dumpOf(COMPACTION_DUMP),
         });
     });
@@ -106,7 +109,7 @@ describe('parity: compaction records', () => {
         const made = memoryStore();
         try {
             made.db.exec(`${TAB}; ${SEED_ROW(1, 'p1', 'briefing', 10, null)}; ${SEED_ROW(2, 'p1', 'compacted', 12, 15)}`);
-            assert.equal(new CompactionRecordsRepository(made.db).interrupted(40, 'restart'), 1);
+            assert.equal(new CompactionLogRepository(made.db).interrupted(instant(40), textOf('restart')), 1);
         } finally {
             made.db.close();
         }
@@ -116,10 +119,10 @@ describe('parity: compaction records', () => {
         const made = memoryStore();
         try {
             made.db.exec(`${TAB}; ${SEED_AUTO(1, 'p1', 'briefing', 2, null)}; ${SEED_ROW(2, 'p2', 'briefing', 4, null)}`);
-            const repo = new CompactionRecordsRepository(made.db);
-            assert.equal(repo.autoInProgress(), true);
+            const repo = new CompactionLogRepository(made.db);
+            assert.equal(repo.autoInProgress(), 'auto-in-progress');
             made.db.exec("UPDATE compaction SET finished_at = 9, stage = 'compacted' WHERE origin = 'auto'");
-            assert.equal(repo.autoInProgress(), false);
+            assert.equal(repo.autoInProgress(), 'idle');
         } finally {
             made.db.close();
         }
@@ -127,14 +130,14 @@ describe('parity: compaction records', () => {
 
     test('shownFor returns the same latest record per pane as the old SHOWN query', () => {
         withParity(exec(COMPACTION_SEED), (parity) => {
-            const produced = new CompactionRecordsRepository(parity.raw).shownFor('t1').map((r) => ({ id: r.id, pane: r.pane, stage: r.stage }));
+            const produced = new CompactionLogRepository(parity.raw).shownFor(tabId('t1')).map((r) => ({ id: r.id, pane: r.pane, stage: r.stage }));
             expectSameRows(parity, { sql: SHOWN, params: ['t1'] }, produced, (row) => ({ id: typeIdOf('compaction', row.id as Uint8Array), pane: row.pane, stage: row.stage }));
         });
     });
 
     test('shownFor with an automatic and an operator record', () => {
         withParity(exec(COMPACTION_SEED_AUTO), (parity) => {
-            const produced = new CompactionRecordsRepository(parity.raw).shownFor('t1').map((r) => ({ id: r.id, pane: r.pane, stage: r.stage }));
+            const produced = new CompactionLogRepository(parity.raw).shownFor(tabId('t1')).map((r) => ({ id: r.id, pane: r.pane, stage: r.stage }));
             expectSameRows(parity, { sql: SHOWN, params: ['t1'] }, produced, (row) => ({ id: typeIdOf('compaction', row.id as Uint8Array), pane: row.pane, stage: row.stage }));
         });
     });

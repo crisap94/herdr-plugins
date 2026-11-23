@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { messagesFor } from '#src/i18n/index.ts';
-import type { CompactionRecord } from '#src/ports/compaction-records.ts';
+import type { CompactionRow } from '#src/ports/compaction-records.ts';
 import { recapRunningOf, type LaneCursor, type TabRecap } from '#src/ports/recap-records.ts';
 import type { TabLane } from '#src/ports/tab-views.ts';
 import type { ColumnView } from '#src/recap/render/present.ts';
@@ -9,7 +9,8 @@ import { sessionFactsOf } from '#src/recap/domain/session-facts.ts';
 import { columnTaskOf, columnViewOf, compactionRowOf, recapColumnOf, rowOf, webOf, wordingOf } from '#src/view-model/column.ts';
 import { sessionRecapOf } from '#src/view-model/expanded.ts';
 import { countOf } from '#src/recap/domain/count.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { must } from '#src/protocol/result.ts';
+import { agentKind, paneId, parseCompactionId, tabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { sourcePathOf, cursorOf } from '#src/ports/transcripts.ts';
 import { textOf } from '#src/recap/domain/text.ts';
@@ -32,9 +33,9 @@ const recap: TabRecap = {
     language: textOf('en'),
 };
 
-const record: CompactionRecord = {
-    id: 'cmp_1', tab: 't1', pane: 'p1', agent: 'claude', stage: 'compacting', brief: 'written', writer: 'claude', templateWhy: null,
-    startedAt: 10, stageAt: 20, finishedAt: null, tokensBefore: countOf(900), tokensAfter: null, tookMs: null, retried: false, queued: false, why: null, origin: 'auto',
+const record: CompactionRow = {
+    id: must(parseCompactionId('cmp_1')), tab: tabId('t1'), pane: paneId('p1'), agent: agentKind('claude'), stage: 'compacting', brief: 'written', writer: textOf('claude'), templateWhy: null,
+    startedAt: instant(10), stageAt: instant(20), finishedAt: null, tokensBefore: countOf(900), tokensAfter: null, took: null, retry: 'first-try', queue: 'direct', why: null, origin: 'auto',
 };
 
 test('rowOf: the lane fields, its state, and the harness recap from the cursor', () => {

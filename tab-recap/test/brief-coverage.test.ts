@@ -190,7 +190,7 @@ test('the covered automatic compaction is an `auto` record, and its decision poi
     const { world, compaction } = flow([MISSING, OK]);
     const id = decided(world);
     await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
-    const record = must(world.store.compactions.shownFor('w1:t1')[0]);
+    const record = must(world.store.compactions.shownFor(tabId('w1:t1'))[0]);
     assert.deepEqual([record.origin, record.stage, record.brief], ['auto', 'compacted', 'written']);
     const row = must(world.store.autocompact.newest(mustParsed(parseCount(1)))[0]);
     assert.deepEqual([row.id, row.compactionId, row.verdict, row.coverage], [id, record.id, 'compact', OK.answers]);
@@ -202,7 +202,7 @@ test('still missing after the rewrite: nothing is typed, the record is skipped w
     await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.deepEqual(world.typed, []);
     assert.equal(world.briefs.length, 2, 'one rewrite, no more');
-    const [record] = world.store.compactions.shownFor('w1:t1');
+    const [record] = world.store.compactions.shownFor(tabId('w1:t1'));
     assert.deepEqual([record?.stage, record?.why, record?.origin], ['skipped', 'coverage', 'auto']);
     const [row] = world.store.autocompact.newest(mustParsed(parseCount(1)));
     assert.deepEqual([row?.verdict, row?.gate, row?.compactionId], ['wait', 'coverage', record?.id]);
@@ -214,13 +214,13 @@ test('a decider that cannot be reached leaves the brief unchecked: no rewrite, n
     decided(world);
     await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.deepEqual([world.typed.length, world.briefs.length, world.store.autocompact.newest(mustParsed(parseCount(1)))[0]?.gate], [0, 1, 'coverage'], 'unchecked: no rewrite, and the decision waits');
-    assert.equal(world.store.compactions.shownFor('w1:t1')[0]?.stage, 'skipped');
+    assert.equal(world.store.compactions.shownFor(tabId('w1:t1'))[0]?.stage, 'skipped');
 });
 
 test('the operator\'s compaction runs no coverage and records the operator as its origin', async () => {
     const operator = flow([MISSING]);
     await operator.compaction.run({ tab: tabId('w1:t1'), pane: null, note: null });
-    assert.deepEqual([operator.world.typed.length, operator.world.briefs.length, operator.world.store.compactions.shownFor('w1:t1')[0]?.origin], [1, 1, 'operator']);
+    assert.deepEqual([operator.world.typed.length, operator.world.briefs.length, operator.world.store.compactions.shownFor(tabId('w1:t1'))[0]?.origin], [1, 1, 'operator']);
 });
 
 test('an automatic compaction with no decider fails closed: nothing typed, the decision waits for coverage with the reason', async () => {
@@ -228,7 +228,7 @@ test('an automatic compaction with no decider fails closed: nothing typed, the d
     decided(unchecked.world);
     await unchecked.compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.deepEqual([unchecked.world.typed.length, unchecked.world.briefs.length], [0, 1]);
-    assert.equal(unchecked.world.store.compactions.shownFor('w1:t1')[0]?.stage, 'skipped');
+    assert.equal(unchecked.world.store.compactions.shownFor(tabId('w1:t1'))[0]?.stage, 'skipped');
     const [row] = unchecked.world.store.autocompact.newest(mustParsed(parseCount(1)));
     assert.deepEqual([row?.verdict, row?.gate, row?.why, row?.coverage], ['wait', 'coverage', 'no decider is set up', null]);
 });
@@ -245,7 +245,7 @@ test('an automatic compaction whose brief is the template (no brief written) fai
 test('the operator\'s template compaction is typed as before, unchecked, with the operator as origin', async () => {
     const operator = flow([MISSING], true, { why: 'the brief job is off' });
     await operator.compaction.run({ tab: tabId('w1:t1'), pane: null, note: null });
-    assert.deepEqual([operator.world.typed.length, operator.world.store.compactions.shownFor('w1:t1')[0]?.origin], [1, 'operator']);
+    assert.deepEqual([operator.world.typed.length, operator.world.store.compactions.shownFor(tabId('w1:t1'))[0]?.origin], [1, 'operator']);
 });
 
 const UNCHECKED: Coverage = { ok: false, missing: [], missingFacts: [], answers: {}, unknown: 'timed out after 10000 ms' };
@@ -308,7 +308,7 @@ test('a ceiling lane whose brief still misses a fact sends its appended line thr
         { method: 'pane.send_text', params: { pane_id: 'w1:p1', text: 'second brief. Facts not carried into the brief (1 missed; 0 left out): (1) decisions: Keep SQLite' } },
         { method: 'pane.send_keys', params: { pane_id: 'w1:p1', keys: ['enter'] } },
     ]);
-    assert.equal(world.store.compactions.shownFor('w1:t1')[0]?.stage, 'compacted');
+    assert.equal(world.store.compactions.shownFor(tabId('w1:t1'))[0]?.stage, 'compacted');
 });
 
 test('the appended block is one line whatever the facts hold: line breaks and runs of spaces collapse, and the order is kept', () => {

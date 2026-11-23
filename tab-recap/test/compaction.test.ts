@@ -348,7 +348,7 @@ test('the outcome is awaited on herdr\'s push for the lane, after the command is
     assert.deepEqual(codex.settledAfter, [afterRestore, afterRestore], 'both waits follow the restore message: its answer\'s working → done must not pass for the operator\'s next turn');
 });
 
-const records = (world: ReturnType<typeof fleet>): ReturnType<typeof world.store.compactions.shownFor> => world.store.compactions.shownFor('w1:t1');
+const records = (world: ReturnType<typeof fleet>): ReturnType<typeof world.store.compactions.shownFor> => world.store.compactions.shownFor(tabId('w1:t1'));
 
 test('the record: a claude compaction with a written brief walks briefing → compacting → compacted and keeps what each step knew', async () => {
     const world = fleet({ 'w1:p1': 'idle' });
@@ -358,13 +358,13 @@ test('the record: a claude compaction with a written brief walks briefing → co
     const flowing = flow({ ...world, agents: looking }, 'focused', 'w1:p1', { ...briefing, get answer() { seen.push(`writing: ${records(world)[0]?.stage}`); return briefing.answer; } }, [[{ ...compacted, tokensBefore: countOf(900), tokensAfter: countOf(100), tookMs: duration(4000) }]]);
     await flowing.run({ tab: tabId('w1:t1'), pane: null, note: null });
     assert.deepEqual([...new Set(seen)], ['writing: briefing', 'typing: compacting']);
-    assert.deepEqual(records(world).map((r) => [r.stage, r.agent, r.pane, r.brief, r.writer, r.templateWhy, r.tokensBefore, r.tokensAfter, r.tookMs, r.retried, r.finishedAt === NOW]), [['compacted', 'claude', 'w1:p1', 'written', 'codex · gpt-6-luna · high', null, 900, 100, 4000, false, true]]);
+    assert.deepEqual(records(world).map((r) => [r.stage, r.agent, r.pane, r.brief, r.writer, r.templateWhy, r.tokensBefore, r.tokensAfter, r.took, r.retry === 'retried', r.finishedAt === NOW]), [['compacted', 'claude', 'w1:p1', 'written', 'codex · gpt-6-luna · high', null, 900, 100, 4000, false, true]]);
 });
 
 test('the record: the template says why it was used; with no brief job it is a template with no reason; a retry is recorded', async () => {
     const world = fleet({ 'w1:p1': 'idle' });
     await flow(world, 'focused', 'w1:p1', { documents: [], answer: null }, [[failed], [failed, compacted]]).run({ tab: tabId('w1:t1'), pane: null, note: null });
-    assert.deepEqual(records(world).map((r) => [r.stage, r.brief, r.templateWhy, r.retried]), [['compacted', 'template', 'the answer is empty', true]]);
+    assert.deepEqual(records(world).map((r) => [r.stage, r.brief, r.templateWhy, r.retry === 'retried']), [['compacted', 'template', 'the answer is empty', true]]);
     const plain = fleet({ 'w1:p1': 'idle' });
     await flow(plain, 'focused', 'w1:p1', null, [[compacted]]).run({ tab: tabId('w1:t1'), pane: null, note: null });
     assert.deepEqual(records(plain).map((r) => [r.brief, r.writer, r.templateWhy]), [['template', null, null]]);
@@ -395,7 +395,7 @@ test('the record: busy is skipped, with the reason; a refused typing is failed, 
 test('the record: failing twice is failed (with the reason), nothing in the records is unconfirmed', async () => {
     const twice = fleet({ 'w1:p1': 'idle' });
     await flow(twice, 'focused', 'w1:p1', null, [[failed]]).run({ tab: tabId('w1:t1'), pane: null, note: null });
-    assert.deepEqual(records(twice).map((r) => [r.stage, r.retried, r.why]), [['failed', true, 'its own summary failed, twice']]);
+    assert.deepEqual(records(twice).map((r) => [r.stage, r.retry === 'retried', r.why]), [['failed', true, 'its own summary failed, twice']]);
     const unsure = fleet({ 'w1:p1': 'idle' });
     await flow(unsure).run({ tab: tabId('w1:t1'), pane: null, note: null });
     assert.deepEqual(records(unsure).map((r) => [r.stage, r.why]), [['unconfirmed', null]]);
@@ -619,7 +619,7 @@ test('an automatic request the coverage check stops is answered failed-skipped',
 test('a working claude whose plan queues is typed behind its turn: no refusal, the record is queued as it is typed, and two toasts in all', async () => {
     const world = fleet({ 'w1:p1': 'working' });
     const queuedAtTyping: boolean[] = [];
-    const agents: AgentPanes = { ...world.agents, typeLine: (pane, line, behavior) => { queuedAtTyping.push(records(world)[0]?.queued === true); return world.agents.typeLine(pane, line, behavior); } };
+    const agents: AgentPanes = { ...world.agents, typeLine: (pane, line, behavior) => { queuedAtTyping.push(records(world)[0]?.queue === 'queued'); return world.agents.typeLine(pane, line, behavior); } };
     await flow({ ...queuing(world, { t: NOW }), agents }).run({ tab: tabId('w1:t1'), pane: null, note: null });
     assert.deepEqual(world.typed.map((each) => each.pane), ['w1:p1']);
     assert.deepEqual(queuedAtTyping, [true]);
@@ -633,7 +633,7 @@ test('a claude that starts working while its brief is written is typed queued, n
     const asked: string[] = [];
     const agents: AgentPanes = { ...world.agents, status: () => { asked.push('status'); return Promise.resolve({ kind: 'agent', agent: agentKind('claude'), status: asked.length > 1 ? 'working' : 'idle' }); } };
     const queuedAtTyping: boolean[] = [];
-    const typing: AgentPanes = { ...agents, typeLine: (pane, line, behavior) => { queuedAtTyping.push(records(world)[0]?.queued === true); return world.agents.typeLine(pane, line, behavior); } };
+    const typing: AgentPanes = { ...agents, typeLine: (pane, line, behavior) => { queuedAtTyping.push(records(world)[0]?.queue === 'queued'); return world.agents.typeLine(pane, line, behavior); } };
     await flow({ ...queuing(world, { t: NOW }), agents: typing }, 'focused', 'w1:p1', { documents: [], answer: 'We kept SQLite.' }).run({ tab: tabId('w1:t1'), pane: null, note: null });
     assert.deepEqual(world.typed.map((each) => each.pane), ['w1:p1']);
     assert.deepEqual(queuedAtTyping, [true]);
@@ -663,11 +663,11 @@ test('The turn ends before the compaction: the record is queued while the turn r
     const clock = { t: NOW };
     const seen: boolean[] = [];
     const base = queuing(world, clock, [{ settled: true }, { settled: true, after: 40_000 }], (at) => (at >= NOW + 40_000 ? [{ kind: 'compacted', at: instant(NOW + 40_000) }] : []));
-    const marks = (): Promise<readonly Mark[]> => { seen.push(records(world)[0]?.queued === true); return base.marks(); };
+    const marks = (): Promise<readonly Mark[]> => { seen.push(records(world)[0]?.queue === 'queued'); return base.marks(); };
     await flow({ ...base, marks }).run({ tab: tabId('w1:t1'), pane: null, note: null });
     assert.equal(world.typed.length, 1, 'typed once');
     assert.deepEqual([seen[0], seen.at(-1)], [true, false], 'queued until the turn ends, then not');
-    assert.deepEqual(records(world).map((r) => [r.stage, r.queued]), [['compacted', false]]);
+    assert.deepEqual(records(world).map((r) => [r.stage, r.queue === 'queued']), [['compacted', false]]);
     assert.equal(world.toasts.length, 2, 'one start toast, one outcome toast');
     assert.match(world.toasts[0] ?? '', /queued behind the current turn/);
     assert.match(world.toasts[1] ?? '', /claude compacted/);
@@ -687,10 +687,10 @@ test('a failed mark after a queued compaction: the retry is typed once, and the 
     const clock = { t: NOW };
     const queuedAtTyping: boolean[] = [];
     const base = queuing(world, clock, [], () => []);
-    const agents: AgentPanes = { ...world.agents, typeLine: (pane, line, behavior) => { queuedAtTyping.push(records(world)[0]?.queued === true); return world.agents.typeLine(pane, line, behavior); } };
+    const agents: AgentPanes = { ...world.agents, typeLine: (pane, line, behavior) => { queuedAtTyping.push(records(world)[0]?.queue === 'queued'); return world.agents.typeLine(pane, line, behavior); } };
     const marks = (): Promise<readonly Mark[]> => Promise.resolve(world.typed.length >= 2 ? [{ kind: 'compacted', at: instant(clock.t) }] : [{ kind: 'compaction-failed', at: instant(NOW + 5000) }]);
     await flow({ ...base, agents, marks }).run({ tab: tabId('w1:t1'), pane: null, note: null });
     assert.equal(world.typed.length, 2, 'typed for the retry');
     assert.deepEqual(queuedAtTyping, [true, false]);
-    assert.deepEqual(records(world).map((r) => [r.stage, r.retried]), [['compacted', true]]);
+    assert.deepEqual(records(world).map((r) => [r.stage, r.retry === 'retried']), [['compacted', true]]);
 });

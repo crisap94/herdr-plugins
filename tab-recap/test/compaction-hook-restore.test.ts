@@ -20,7 +20,7 @@ const TEXT = { material: { sections: NO_SECTIONS, web: null, note: must(parseTex
 const FACTS = 'open fact one';
 const isRestoreText = (text: string): text is RestoreText => typeof text === 'string';
 
-const trailOf = (): Trail => new Trail({ begin: () => 'cmp_t0', advance: () => undefined, finish: () => undefined }, must(parseCompactionId('cmp_t0')), () => instant(NOW));
+const trailOf = (): Trail => new Trail({ begin: () => must(parseCompactionId('cmp_t0')), advance: () => undefined, finish: () => undefined }, must(parseCompactionId('cmp_t0')), () => instant(NOW));
 
 const LANE: Lane = laneFrom({ paneId: 'w1:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: 'codex', session: 'sess-1' });
 

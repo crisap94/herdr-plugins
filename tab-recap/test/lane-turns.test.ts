@@ -7,7 +7,7 @@ import { Informer } from '#src/recap/application/informer.ts';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { emptyBoard, withLanes } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId, agentKind } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
@@ -32,18 +32,18 @@ function turns(): { heard: (pane: string, status: string) => void; store: Return
 
 test('a working push after the compaction ended dismisses it; the flow\'s own turn does not (it is in progress), and an idle push only wakes the waiter', async () => {
     const { heard, store, settled } = turns();
-    const id = store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'compacting', at: 10 });
+    const id = store.compactions.begin({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), stage: 'compacting', at: instant(10) });
     heard('w1:p1', 'working');
-    assert.equal(store.compactions.shownFor('w1:t1').length, 1, 'in progress: the working push of the compaction itself does not dismiss');
+    assert.equal(store.compactions.shownFor(tabId('w1:t1')).length, 1, 'in progress: the working push of the compaction itself does not dismiss');
     heard('w1:p1', 'done');
     await new Promise<void>((resolve) => { setImmediate(resolve); });
     assert.deepEqual(settled, ['done']);
-    store.compactions.finish(id, { stage: 'compacted', at: 50 });
-    assert.equal(store.compactions.shownFor('w1:t1').length, 1, 'an idle/done push is not a turn');
+    store.compactions.finish(id, { stage: 'compacted', at: instant(50) });
+    assert.equal(store.compactions.shownFor(tabId('w1:t1')).length, 1, 'an idle/done push is not a turn');
     heard('w1:p9', 'working');
-    assert.equal(store.compactions.shownFor('w1:t1').length, 1, 'a lane the board does not hold');
+    assert.equal(store.compactions.shownFor(tabId('w1:t1')).length, 1, 'a lane the board does not hold');
     heard('w1:p1', 'working');
-    assert.deepEqual(store.compactions.shownFor('w1:t1'), [], 'the agent\'s next turn');
+    assert.deepEqual(store.compactions.shownFor(tabId('w1:t1')), [], 'the agent\'s next turn');
 });
 
 test('the informer hands every status push to the daemon\'s hook, before the fold sees it', async () => {

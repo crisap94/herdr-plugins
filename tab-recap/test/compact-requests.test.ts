@@ -1,3 +1,4 @@
+import { textOf } from '#src/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { emptyBoard } from '#src/recap/domain/board.ts';
@@ -109,11 +110,11 @@ test('off: nothing is read, nothing is queued and nothing is answered; a request
 
 test('a compaction ends with its answer: the trail hears how it ended, and the answer says done or the declared reason', () => {
     const answered: string[] = [];
-    const records: Records = { begin: () => 'cmp', advance: () => undefined, finish: () => undefined };
+    const records: Records = { begin: () => must(parseCompactionId('cmp_t0')), advance: () => undefined, finish: () => undefined };
     const ended = new Trail(records, must(parseCompactionId('cmp')), () => instant(0), (end, reason) => { answered.push(finalAnswerOf(end.stage, reason)); });
     ended.end('compacted');
     const failed = new Trail(records, must(parseCompactionId('cmp')), () => instant(0), (end, reason) => { answered.push(finalAnswerOf(end.stage, reason)); });
-    failed.end('failed', { why: 'unreachable' }, COMPACT_FAILURES.busy);
+    failed.end('failed', { why: textOf('unreachable') }, COMPACT_FAILURES.busy);
     assert.deepEqual(answered, ['done', 'failed-busy']);
 });
 

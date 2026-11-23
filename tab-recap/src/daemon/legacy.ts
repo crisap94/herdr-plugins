@@ -1,10 +1,7 @@
 import type { Waiting } from '#src/recap/application/autocompact.ts';
 import { awaitingPane } from './autocompact.ts';
 import { must } from '#src/protocol/result.ts';
-import type { CompactionRecords } from '#src/ports/legacy.ts';
-import type { CompactionLog } from '#src/ports/compaction-records.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import type { CompactRequestQueue } from '#src/recap/application/compact-requests.ts';
@@ -73,10 +70,6 @@ export function parseEnv(text: string): ReadonlyMap<string, string> {
 
 export function herdrEventsPresence(): Presence {
     return herdrEventsOn() ? 'present' : 'absent';
-}
-
-export function interruptedBy(compactions: Pick<CompactionRecords, 'interrupted'>): Pick<CompactionLog, 'interrupted'> {
-    return { interrupted: (at, why) => must(parseCount(compactions.interrupted(at, why))) };
 }
 
 export function herdrEventsOn(): boolean {

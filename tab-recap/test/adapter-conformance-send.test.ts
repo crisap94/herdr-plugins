@@ -12,7 +12,7 @@ import { compacted, compactionDeps, compactionFlow, failed, lane, NOW, typingFle
 
 const TEXT = { material: { sections: NO_SECTIONS, web: null, note: must(parseText('keep the schema')) }, brief: null };
 
-const trailOf = (ends: unknown[] = []): Trail => new Trail({ begin: () => 'cmp_t0', advance: () => undefined, finish: (_id, end) => { ends.push(end); } }, must(parseCompactionId('cmp_t0')), () => instant(NOW));
+const trailOf = (ends: unknown[] = []): Trail => new Trail({ begin: () => must(parseCompactionId('cmp_t0')), advance: () => undefined, finish: (_id, end) => { ends.push(end); } }, must(parseCompactionId('cmp_t0')), () => instant(NOW));
 
 test('opencode: its own /compact is confirmed on the second look, then restored; pins today: four reads per look and a one second gap', async () => {
     const world = typingFleet({ 'w1:p4': 'idle' });

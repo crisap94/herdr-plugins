@@ -87,10 +87,10 @@ const emitTo = (events: LaneEvents, event: SafePointEvent): void => {
 
 const activityOf = (parts: AutocompactParts): Pick<CompactionActivity, 'activeFor' | 'automaticInProgress'> => {
     function activeFor(scope: ScopeId, key: SessionKey): boolean {
-        return parts.store.compactions.shownFor(tabId(scope)).some((record) => record.pane === key && ACTIVE.has(record.stage)) || parts.claims.has(paneId(key)) || parts.store.requests.compactQueued(tabId(scope), paneId(key)) === 'queued';
+        return parts.store.compactions.shownFor(tabId(scope)).some((record) => record.pane === paneId(key) && ACTIVE.has(record.stage)) || parts.claims.has(paneId(key)) || parts.store.requests.compactQueued(tabId(scope), paneId(key)) === 'queued';
     }
     function automaticInProgress(): boolean {
-        return parts.store.compactions.autoInProgress();
+        return parts.store.compactions.autoInProgress() === 'auto-in-progress';
     }
     return { activeFor, automaticInProgress };
 };

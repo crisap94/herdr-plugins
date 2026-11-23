@@ -2,7 +2,7 @@ import { join } from 'node:path';
 import type { Database } from 'bun:sqlite';
 import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
 import type { DecisionLedger } from '#src/ports/autocompact-records.ts';
-import type { CompactionRecords } from '#src/ports/compaction-records.ts';
+import type { CompactionLog } from '#src/ports/compaction-records.ts';
 import type { BoundaryLog } from '#src/ports/boundaries.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { GuardedLedger, GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
@@ -23,7 +23,8 @@ import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { DEFAULT_CLOSED_LANE_DAYS } from '#src/recap/domain/retention.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
-import { AutocompactRecordsRepository, CompactionRecordsRepository } from './legacy.ts';
+import { AutocompactRecordsRepository } from './legacy.ts';
+import { CompactionLogRepository } from './compaction-records.ts';
 import type { DecisionBriefs } from '#src/ports/autocompact-briefs.ts';
 import { ColumnVisibilityRepository } from './column-visibility.ts';
 import { LedgerRepository } from './ledger.ts';
@@ -60,7 +61,7 @@ export interface Store {
     readonly visibility: ColumnVisibility;
     readonly requests: RequestPort & CompactionAskQueue;
     readonly handoffs: HandoffAnswerStore;
-    readonly compactions: CompactionRecords;
+    readonly compactions: CompactionLog;
     readonly asks: AskBook;
     readonly autocompact: AutocompactRecords;
     readonly decisions: DecisionLedger;
@@ -91,7 +92,7 @@ export function storeOver(db: Database, options: StoreSettings = {}): Store {
     const ledger = new LedgerRepository(db);
     return {
         kind: 'ready', db, records: new RecapRecordsRepository(db), ledger, views: new TabViewsRepository(db, options.daemonVersion ?? null),
-        visibility: new ColumnVisibilityRepository(db), requests: new RequestsStore(db, options.now), handoffs: new HandoffAnswerRepository(db, options.now), compactions: new CompactionRecordsRepository(db), asks: new AskBookRepository(db, options.log), autocompact: new AutocompactRecordsRepository(db), decisions: new DecisionLedgerRepository(db), autocompactBriefs: new DecisionBriefsRepository(db),
+        visibility: new ColumnVisibilityRepository(db), requests: new RequestsStore(db, options.now), handoffs: new HandoffAnswerRepository(db, options.now), compactions: new CompactionLogRepository(db), asks: new AskBookRepository(db, options.log), autocompact: new AutocompactRecordsRepository(db), decisions: new DecisionLedgerRepository(db), autocompactBriefs: new DecisionBriefsRepository(db),
         inputs: new RunInputStore(db), verdicts: new VerdictRowStore(db),
         stories: new StoriesRepository(db, ledger), session: new SessionSourceRepository(db),
         boundaries: new BoundaryLogRepository(db), retention: new RetentionRepository(db),

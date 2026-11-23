@@ -67,7 +67,7 @@ function hostile(steps: Steps = {}): Hostile {
     return { world, calls, logs, board, compaction: new Compaction(deps) };
 }
 
-const stages = (world: Fleet): readonly (readonly [string, string | null])[] => world.store.compactions.shownFor('w1:t1').map((record) => [record.stage, record.why]);
+const stages = (world: Fleet): readonly (readonly [string, string | null])[] => world.store.compactions.shownFor(tabId('w1:t1')).map((record) => [record.stage, record.why]);
 const closedLines = (logs: readonly string[]): readonly string[] => logs.filter((line) => line.includes('closed, skipped'));
 
 test('the lane closes while the writer runs: no coverage check, no rewrite, nothing typed, skipped lane closed, no toast about a failure, one log line', async () => {
