@@ -3,7 +3,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$HERE"
 
-probes="ci/probes/domain-types"
+probes="gates/probes/domain-types"
 [ -d "$probes" ] || { echo "domain types: 3 — NOT COVERED: no probes at $probes" >&2; exit 3; }
 
 failures=0

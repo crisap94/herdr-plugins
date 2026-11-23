@@ -18,10 +18,10 @@ bun "$VERDICT" tree "$work/tree.json" "$expected" \
     && echo "  ok    the tree: every rule holds, the cruise sees the $expected .ts modules" \
     || fail "the tree breaks a module-graph rule, or the cruise sees fewer modules than find src bin"
 
-for folder in ci/probes/depcruise/*/; do
+for folder in gates/probes/depcruise/*/; do
     rule="$(basename "$folder")"
     for kind in bad good; do
-        fixture="$HERE/ci/probes/depcruise/$rule/$kind"
+        fixture="$HERE/gates/probes/depcruise/$rule/$kind"
         if [ ! -d "$fixture" ]; then fail "$rule — no $kind fixture"; continue; fi
         (cd "$fixture" && bun --bun "$DC" --config "$CFG" --output-type json src > "$work/fixture.json" 2>"$work/fixture.err")
         if [ "$kind" = bad ]; then mode=fires; else mode=silent; fi
@@ -40,7 +40,7 @@ else
     echo "  ok    the module-count guard bites when the cruise sees one .ts module fewer"
 fi
 
-bun --preload "$HERE/ci/probes/depcruise-hide-typescript.mjs" --bun "$DC" --config "$CFG" --output-type json src bin > "$work/hidden.json" 2>"$work/hidden.err"
+bun --preload "$HERE/gates/probes/depcruise-hide-typescript.mjs" --bun "$DC" --config "$CFG" --output-type json src bin > "$work/hidden.json" 2>"$work/hidden.err"
 if [ ! -s "$work/hidden.json" ]; then
     echo "  ok    the module-count guard bites when the transpiler cannot be loaded (the cruise failed outright)"
 elif bun "$VERDICT" tree "$work/hidden.json" "$expected" > /dev/null 2>&1; then
