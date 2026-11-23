@@ -1,5 +1,5 @@
-import { enabledOf } from '#src/recap/domain/board.ts';
-import type { Shape } from '#src/recap/domain/board.ts';
+import { allHiddenOf, enabledOf, seededOf } from '#src/recap/domain/board.ts';
+import type { HiddenState, Seeded, Shape } from '#src/recap/domain/board.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import type { DeadColumn } from '#src/recap/domain/dead-columns.ts';
 import type { ColumnOpenedObservation, Reconciliation, SeenColumn, SessionObservation, StatusObservation, SwitchedObservation } from '#src/recap/domain/fold.ts';
@@ -67,3 +67,9 @@ export const columnOpenedObservation = (bare: { readonly kind: 'column-opened'; 
 });
 
 export const switchedObservation = (bare: { readonly kind: 'switched'; readonly enabled: boolean }): SwitchedObservation => ({ kind: 'switched', enabled: enabledOf(bare.enabled) });
+
+export const boardSeeded = (value: boolean): Seeded => seededOf(value);
+
+export const hiddenStateOf = (bare: { readonly all: boolean; readonly hidden: readonly string[]; readonly shown: readonly string[] }): HiddenState => ({
+    all: allHiddenOf(bare.all), hidden: bare.hidden.map((tab) => textOf(tab)), shown: bare.shown.map((tab) => textOf(tab)),
+});

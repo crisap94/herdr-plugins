@@ -1,5 +1,6 @@
 import { textOf } from './text.ts';
-import { lanesOf, put, removed, tabOfColumn, tabsWithLanes, without } from './board.ts';
+import type { Count } from './count.ts';
+import { lanesOf, seededOf, put, removed, tabOfColumn, tabsWithLanes, without } from './board.ts';
 import type { Board, HiddenState, Placement, Visibility, VisibilityTarget } from './board.ts';
 import { closureOf, closuresBetween, incarnating } from './closures.ts';
 import type { ClosedLane, RestoredLane } from './closures.ts';
@@ -164,7 +165,7 @@ function goneTabs(board: Board, seen: Reconciliation, now: Instant): readonly In
 }
 
 function seenTabs(board: Board, seen: Reconciliation): Pick<Board, 'widths' | 'focused'> {
-    const widths = new Map<TabId, number>();
+    const widths = new Map<TabId, Count>();
     for (const [tab, width] of seen.widths) {
         const id = parseTabId(tab);
         if (id.kind === 'ok') {
@@ -195,7 +196,7 @@ function onReconciled(board: Board, seen: Reconciliation, now: Instant, policy: 
         opening = removed(opening, tab);
     }
     const { widths, focused } = seenTabs(board, seen);
-    const next: Board = { ...board, lanes, columns, closing, opening, widths, focused, seeded: true, persisted: null };
+    const next: Board = { ...board, lanes, columns, closing, opening, widths, focused, seeded: seededOf(true), persisted: null };
     const sameSet = lanes.size === board.lanes.size && [...lanes.keys()].every((pane) => board.lanes.has(pane));
     const closures = closuresBetween(board.lanes, lanes, board.persisted ?? [], now);
     const publishedTabs = [...new Set([...tabsWithLanes(next), ...closures.map((closed) => closed.tab)])];

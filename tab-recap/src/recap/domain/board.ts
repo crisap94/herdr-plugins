@@ -1,13 +1,45 @@
 import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import type { Lane } from './lane.ts';
 import type { PaneId, TabId } from './ids.ts';
-import type { Board } from './legacy.ts';
+import type { Count } from './count.ts';
+import type { RestoredLane } from './closures.ts';
+import type { Text } from './text.ts';
+import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 
 export type Shape = 'side' | 'bar';
 
 export type Enabled = Brand<boolean, 'Enabled'>;
 
 export const enabledOf = brand<boolean, 'Enabled'>;
+
+export type Seeded = Brand<boolean, 'Seeded'>;
+
+export const seededOf = brand<boolean, 'Seeded'>;
+
+export type AllHidden = Brand<boolean, 'AllHidden'>;
+
+export const allHiddenOf = brand<boolean, 'AllHidden'>;
+
+export interface Placement { readonly pane: PaneId; readonly shape: Shape; readonly since?: Instant; }
+
+export interface HiddenState { readonly all: AllHidden; readonly hidden: readonly Text[]; readonly shown: readonly Text[]; }
+
+export interface Board {
+    readonly lanes: ReadonlyMap<PaneId, Lane>;
+    readonly columns: ReadonlyMap<TabId, Placement>;
+    readonly closing: ReadonlyMap<PaneId, Instant>;
+    readonly opening: ReadonlySet<TabId>;
+    readonly reopens: ReadonlyMap<TabId, readonly Instant[]>;
+    readonly givenUp: ReadonlyMap<TabId, Instant>;
+    readonly widths: ReadonlyMap<TabId, Count>;
+    readonly focused: TabId | null;
+    readonly enabled: Enabled;
+    readonly seeded: Seeded;
+    readonly hidden: ReadonlySet<TabId>;
+    readonly allHidden: AllHidden;
+    readonly shown: ReadonlySet<TabId>;
+    readonly persisted: readonly RestoredLane[] | null;
+}
 
 export type Visibility = boolean | 'toggle';
 
@@ -23,10 +55,10 @@ export function emptyBoard(): Board {
         givenUp: new Map(),
         widths: new Map(),
         focused: null,
-        enabled: true,
-        seeded: false,
+        enabled: enabledOf(true),
+        seeded: seededOf(false),
         hidden: new Set(),
-        allHidden: false,
+        allHidden: allHiddenOf(false),
         shown: new Set(),
         persisted: null,
     };
@@ -85,5 +117,8 @@ export function removed<T>(set: ReadonlySet<T>, value: T): ReadonlySet<T> {
     return next;
 }
 
-export type { Board, HiddenState, Placement } from './legacy.ts';
-export { listsPane } from './legacy.ts';
+export type Listed = Brand<boolean, 'Listed'>;
+
+export const listedOf = brand<boolean, 'Listed'>;
+
+export function listsPane(board: Board, pane: PaneId): Listed { return listedOf(board.lanes.has(pane)); }

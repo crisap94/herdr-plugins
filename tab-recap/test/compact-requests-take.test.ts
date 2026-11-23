@@ -11,10 +11,10 @@ import { MemoryAskLedger } from './fakes/ask-ledger.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { paneId } from '#test/support/ids.ts';
-import { seenLane } from '#test/support/seen.ts';
+import { boardSeeded, seenLane } from '#test/support/seen.ts';
 
 const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
-const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) });
+const board = (): Board => ({ ...emptyBoard(), seeded: boardSeeded(true), lanes: new Map([[lane.pane, lane]]) });
 const flush = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
 
 function setup(): { readonly asked: CompactAsk[]; readonly tokens: RecordingTokens; readonly compact: CompactRequestQueue } {

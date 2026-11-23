@@ -1,22 +1,10 @@
 import { parseText, type Text } from './text.ts';
 import { must, type Result } from '#src/protocol/result.ts';
-import { instant, type Instant } from './time.ts';
+import { instant } from './time.ts';
 import type { ContextUse } from './compaction.ts';
 import { parseCount, type Count } from './count.ts';
 import type { Origin } from './origin.ts';
 import { RUN_CAUSES, sessionFactsFrom, type AutocompactCounts, type RunCounts, type SessionFacts } from './session-facts.ts';
-import type { Shape } from './board.ts';
-import type { RestoredLane } from './closures.ts';
-import type { PaneId, TabId } from './ids.ts';
-import type { Lane } from './lane.ts';
-
-export interface Placement { readonly pane: PaneId; readonly shape: Shape; readonly since?: number; }
-
-export interface HiddenState { readonly all: boolean; readonly hidden: readonly string[]; readonly shown: readonly string[]; }
-
-export interface Board { readonly lanes: ReadonlyMap<PaneId, Lane>; readonly columns: ReadonlyMap<TabId, Placement>; readonly closing: ReadonlyMap<PaneId, Instant>; readonly opening: ReadonlySet<TabId>; readonly reopens: ReadonlyMap<TabId, readonly Instant[]>; readonly givenUp: ReadonlyMap<TabId, Instant>; readonly widths: ReadonlyMap<TabId, number>; readonly focused: TabId | null; readonly enabled: boolean; readonly seeded: boolean; readonly hidden: ReadonlySet<TabId>; readonly allHidden: boolean; readonly shown: ReadonlySet<TabId>; readonly persisted: readonly RestoredLane[] | null; }
-
-export function listsPane(board: Board, pane: PaneId): boolean { return board.lanes.has(pane); }
 
 function okOrNull<T, E>(parsed: Result<T, E>): T | null { return parsed.kind === 'ok' ? parsed.value : null; }
 

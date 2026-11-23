@@ -13,6 +13,7 @@ import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { instant, parseInstant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import { expectSameEffect, expectSameRows, withParity } from './parity.ts';
+import { hiddenStateOf } from '#test/support/seen.ts';
 
 const noSeed = (): void => {};
 
@@ -102,7 +103,7 @@ describe('the tab row moves to Drizzle with the same effect', () => {
 
 describe('column visibility moves to Drizzle with the same effect', () => {
     test('a write replaces the previous state and keeps the rowid order', () => {
-        const state: HiddenState = { all: true, hidden: ['b', 'a'], shown: ['c'] };
+        const state: HiddenState = hiddenStateOf({ all: true, hidden: ['b', 'a'], shown: ['c'] });
         expectSameEffect({
             seed: seedVisibleOld,
             raw: (db) => { oldWriteHidden(db, state); },
@@ -112,7 +113,7 @@ describe('column visibility moves to Drizzle with the same effect', () => {
     });
 
     test('a tab named as both hidden and shown ends on the later write, at a new rowid', () => {
-        const state: HiddenState = { all: false, hidden: ['x', 'y'], shown: ['x'] };
+        const state: HiddenState = hiddenStateOf({ all: false, hidden: ['x', 'y'], shown: ['x'] });
         expectSameEffect({
             seed: seedYShown,
             raw: (db) => { oldWriteHidden(db, state); },
@@ -122,7 +123,7 @@ describe('column visibility moves to Drizzle with the same effect', () => {
     });
 
     test('an empty write clears the tabs and the blanket flag', () => {
-        const state: HiddenState = { all: false, hidden: [], shown: [] };
+        const state: HiddenState = hiddenStateOf({ all: false, hidden: [], shown: [] });
         expectSameEffect({
             seed: seedBlanketOld,
             raw: (db) => { oldWriteHidden(db, state); },

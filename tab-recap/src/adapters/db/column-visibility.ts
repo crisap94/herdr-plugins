@@ -1,6 +1,7 @@
 import type { Database } from 'bun:sqlite';
 import { eq, sql } from 'drizzle-orm';
-import type { HiddenState } from '#src/recap/domain/board.ts';
+import { allHiddenOf, type HiddenState } from '#src/recap/domain/board.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { NOTHING_HIDDEN } from '#src/ports/column-visibility.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import { columnState, tabVisibility } from './drizzle/index.ts';
@@ -23,9 +24,9 @@ export class ColumnVisibilityRepository implements ColumnVisibility {
         return guarded(() => {
             const blanket = this.orm.select({ all_hidden: columnState.allHidden }).from(columnState).where(eq(columnState.id, COLUMN_STATE_ID)).get() ?? null;
             const tabs = this.orm.select({ tab_id: tabVisibility.tabId, state: tabVisibility.state }).from(tabVisibility).orderBy(sql`rowid`).all();
-            const hidden = tabs.filter((row) => text(row, 'state') === 'hidden').map((row) => text(row, 'tab_id'));
-            const shown = tabs.filter((row) => text(row, 'state') === 'shown').map((row) => text(row, 'tab_id'));
-            return blanket === null && tabs.length === 0 ? NOTHING_HIDDEN : { all: blanket !== null && flag(blanket, 'all_hidden'), hidden, shown };
+            const hidden = tabs.filter((row) => text(row, 'state') === 'hidden').map((row) => textOf(text(row, 'tab_id')));
+            const shown = tabs.filter((row) => text(row, 'state') === 'shown').map((row) => textOf(text(row, 'tab_id')));
+            return blanket === null && tabs.length === 0 ? NOTHING_HIDDEN : { all: allHiddenOf(blanket !== null && flag(blanket, 'all_hidden')), hidden, shown };
         }, NOTHING_HIDDEN);
     }
 

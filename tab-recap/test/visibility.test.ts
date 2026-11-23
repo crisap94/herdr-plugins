@@ -10,7 +10,7 @@ import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { hiddenState, restoreHidden } from '#src/recap/domain/visibility.ts';
-import { reconciliation, seenLane, statusObservation } from '#test/support/seen.ts';
+import { hiddenStateOf, reconciliation, seenLane, statusObservation } from '#test/support/seen.ts';
 
 const lane = (pane: string, tab: string): SeenLane => (seenLane({ paneId: pane, tabId: tab, workspaceId: 'w1', agent: 'claude', status: 'idle', session: `s-${pane}` }));
 const seen = (lanes: readonly SeenLane[], columns: { tab: string; pane: string }[] = []): Observation => ({
@@ -115,7 +115,7 @@ test('with the blanket on, hiding a tab again takes it out of the shown ones', (
 });
 
 test('what was saved comes back at start: the hidden tab is not opened by the first reconcile', () => {
-    const state: HiddenState = { all: false, hidden: ['w1:t1'], shown: [] };
+    const state: HiddenState = hiddenStateOf({ all: false, hidden: ['w1:t1'], shown: [] });
     const { steps } = play([{ kind: 'hidden-restored', state }, seen([lane('w1:p1', 'w1:t1'), lane('w1:p2', 'w1:t2')])]);
     assert.deepEqual(steps[0], []);
     assert.deepEqual(steps[1]?.filter((entry) => entry.startsWith('open-column')), ['open-column w1:t2']);
@@ -132,7 +132,7 @@ test('showing a tab again forgets its give-up: the operator\'s word beats the da
 test('hiddenState / restoreHidden round-trip', () => {
     const board = play([seen([]), hide('w1:t2'), hide('w1:t1')]).board;
     const state = hiddenState(board);
-    assert.deepEqual(state, { all: false, hidden: ['w1:t1', 'w1:t2'], shown: [] });
+    assert.deepEqual(state, hiddenStateOf({ all: false, hidden: ['w1:t1', 'w1:t2'], shown: [] }));
     assert.deepEqual(hiddenState(restoreHidden(emptyBoard(), state)), state);
 });
 

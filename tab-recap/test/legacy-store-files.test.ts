@@ -4,6 +4,7 @@ import { parseLegacyHidden, parseLegacyRecapFile, parseLegacyVisibility, parseLe
 import { agentKind, paneId } from '#test/support/ids.ts';
 import { cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { hiddenStateOf } from '#test/support/seen.ts';
 
 const cursor = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t/a.jsonl'), cursor: cursorOf(42), tail: textOf('tail'), title: textOf('build'), lastPrompt: textOf('fix it'), claudeRecap: null };
 
@@ -40,8 +41,8 @@ test('a view file without cwd or daemonVersion keeps them null and fills web and
 });
 
 test('a hidden file keeps only string entries and reads all as a true flag', () => {
-    assert.deepEqual(parseLegacyHidden({ all: true, hidden: ['a', 1] }), { kind: 'ok', value: { all: true, hidden: ['a'], shown: [] } });
-    assert.deepEqual(parseLegacyHidden({ all: 'yes', shown: ['b'] }), { kind: 'ok', value: { all: false, hidden: [], shown: ['b'] } });
+    assert.deepEqual(parseLegacyHidden({ all: true, hidden: ['a', 1] }), { kind: 'ok', value: hiddenStateOf({ all: true, hidden: ['a'], shown: [] }) });
+    assert.deepEqual(parseLegacyHidden({ all: 'yes', shown: ['b'] }), { kind: 'ok', value: hiddenStateOf({ all: false, hidden: [], shown: ['b'] }) });
 });
 
 test('a visibility ask keeps a boolean or toggle request and refuses an empty target', () => {

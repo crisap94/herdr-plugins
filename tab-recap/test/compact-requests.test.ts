@@ -24,10 +24,10 @@ import type { Presence } from '#src/recap/domain/presence.ts';
 import { type Instant } from '#src/recap/domain/time.ts';
 import { uncheckedPaneId } from '#src/recap/domain/ids.ts';
 import { paneId } from '#test/support/ids.ts';
-import { seenLane } from '#test/support/seen.ts';
+import { boardSeeded, seenLane } from '#test/support/seen.ts';
 
 const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
-const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) });
+const board = (): Board => ({ ...emptyBoard(), seeded: boardSeeded(true), lanes: new Map([[lane.pane, lane]]) });
 
 const seen = (asks: MemoryAskLedger, tool: string, id: string): boolean => asks.seen(COMPACT_EXCHANGE, must(parseToolName(tool)), rid(id)) === 'seen';
 
@@ -166,7 +166,7 @@ test('a request that comes before the board exists waits for it, and is then act
     const asked: CompactAsk[] = [];
     const tokens = new RecordingTokens();
     const handler = new CompactRequestQueue({
-        enabled: (): Presence => 'present', board: (): Board => ({ ...board(), seeded }), requests: { requestCompact: (request: CompactAsk): void => { asked.push(request); } }, asks, tokens, now: (): Instant => instant(1000), log: (): void => undefined,
+        enabled: (): Presence => 'present', board: (): Board => ({ ...board(), seeded: boardSeeded(seeded) }), requests: { requestCompact: (request: CompactAsk): void => { asked.push(request); } }, asks, tokens, now: (): Instant => instant(1000), log: (): void => undefined,
     });
     handler.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r9' }));
     assert.deepEqual([asked, tokens.reports, seen(asks, 'coordinator', rid('r9'))], [[], [], false], 'not decided, not remembered, before the board');
