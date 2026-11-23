@@ -26,7 +26,7 @@ export class ColumnVisibilityRepository implements ColumnVisibility {
             const tabs = this.orm.select({ tab_id: tabVisibility.tabId, state: tabVisibility.state }).from(tabVisibility).orderBy(sql`rowid`).all();
             const hidden = tabs.filter((row) => text(row, 'state') === 'hidden').map((row) => textOf(text(row, 'tab_id')));
             const shown = tabs.filter((row) => text(row, 'state') === 'shown').map((row) => textOf(text(row, 'tab_id')));
-            return blanket === null && tabs.length === 0 ? NOTHING_HIDDEN : { all: allHiddenOf(blanket !== null && flag(blanket, 'all_hidden')), hidden, shown };
+            return blanket === null && tabs.length === 0 ? NOTHING_HIDDEN : { all: allHiddenOf(blanket !== null && flag(blanket, 'all_hidden') === 'set'), hidden, shown };
         }, NOTHING_HIDDEN);
     }
 

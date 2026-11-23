@@ -92,7 +92,7 @@ export class RecapReader {
         const cost = orm.select({ micro: sql<number>`coalesce(sum(${runs.costMicroUsd}), 0)` }).from(runs)
             .innerJoin(chapters, eq(chapters.id, runs.chapterId)).where(eq(chapters.tabId, id)).get();
         return {
-            tab: id, lanes: lanes.map(cursorOf), tasks: facts.run === null ? [] : this.tasksOf(id, facts.run, facts.language), at: facts.at, running: recapRunningOf(flag(row, 'running')),
+            tab: id, lanes: lanes.map(cursorOf), tasks: facts.run === null ? [] : this.tasksOf(id, facts.run, facts.language), at: facts.at, running: recapRunningOf(flag(row, 'running') === 'set'),
             backend: parseTextOrNull(maybeText(row, 'backend')), error: parseTextOrNull(maybeText(row, 'error')), costUsd: usdOf(whole(cost ?? {}, 'micro') / 1e6), language: facts.language,
         };
     }
