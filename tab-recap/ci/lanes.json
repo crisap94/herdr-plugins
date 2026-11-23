@@ -636,6 +636,7 @@
       "src/adapters/db/recap-records.ts",
       "src/adapters/db/requests.ts",
       "src/adapters/db/retention.ts",
+      "src/adapters/db/row-guard.ts",
       "src/adapters/db/rows.ts",
       "src/adapters/db/rows/legacy.ts",
       "src/adapters/db/run-inputs.ts",
