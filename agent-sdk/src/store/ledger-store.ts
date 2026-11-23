@@ -62,6 +62,14 @@ const guarded = <T>(read: () => T): T | Unknown => {
     }
 };
 
+const orNone = <T>(read: () => readonly T[]): readonly T[] => {
+    try {
+        return read();
+    } catch {
+        return [];
+    }
+};
+
 const rowsOf = (db: Handle, sql: string, ...params: readonly (string | number | null)[]): readonly Row[] => db.prepare(sql).all(...params);
 
 const writeFact = (db: Handle, fact: Fact): void => {
@@ -206,7 +214,9 @@ const factsOf = (db: Handle): FactStore => ({
             rowsOf(db, 'SELECT DISTINCT task_key FROM fact WHERE tab = ? ORDER BY task_key', scope).map((row) => String(row.task_key)),
         ),
     historyOf: (scope: ScopeId, key: SessionKey) =>
-        rowsOf(db, 'SELECT * FROM fact WHERE tab = ? AND task_key = ? ORDER BY last_at DESC, rowid LIMIT ?', scope, key, HISTORY_LIMIT).map(historyFactOf),
+        orNone(() =>
+            rowsOf(db, 'SELECT * FROM fact WHERE tab = ? AND task_key = ? ORDER BY last_at DESC, rowid LIMIT ?', scope, key, HISTORY_LIMIT).map(historyFactOf),
+        ),
 });
 
 export interface LedgerRows {

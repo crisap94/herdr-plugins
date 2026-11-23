@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openStore } from '@stateforge-labs/session-ledger-sqlite';
-import { runConformance, storeCases, type StoreUnderTest, type Subject } from '@stateforge-labs/session-ledger/testkit';
+import { key, runConformance, scope, storeCases, type StoreUnderTest, type Subject } from '@stateforge-labs/session-ledger/testkit';
 import { HISTORY, openLedgerStore, type LedgerStore } from '../src/store/index.ts';
 
 const folders: string[] = [];
@@ -79,4 +79,10 @@ after(() => {
     for (const folder of folders) {
         rmSync(folder, { recursive: true, force: true });
     }
+});
+
+test('the history of a store that cannot be read is empty, as in the plugin', () => {
+    const store = readyAt(temporaryFile());
+    store.close();
+    equal(store.facts.historyOf(scope('one'), key('a')).length, 0);
 });
