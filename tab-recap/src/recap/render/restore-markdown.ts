@@ -1,4 +1,5 @@
 import type { ByteBudget } from '#src/recap/domain/byte-budget.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import type { RestoreBody } from '#src/recap/domain/restore-content.ts';
 import type { FittedHandoff } from './handoff-budget.ts';
 import { fitGroups } from './handoff-budget.ts';
@@ -10,6 +11,6 @@ export function fitRestore(body: RestoreBody, budget: ByteBudget): FittedHandoff
     return fitGroups(body, budget, (shown): FittedHandoff => {
         const left = omittedTotal(shown.omitted);
         const leftOut = left === 0 ? [] : ['', left === 1 ? '1 older note left out' : `${left} older notes left out`];
-        return { kind: 'text', text: [opening, ...shown.groups.flatMap(groupLinesOf), ...leftOut].join('\n'), omitted: shown.omitted };
+        return { kind: 'text', text: textOf([opening, ...shown.groups.flatMap(groupLinesOf), ...leftOut].join('\n')), omitted: shown.omitted };
     });
 }

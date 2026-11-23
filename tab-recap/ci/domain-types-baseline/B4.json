@@ -3,13 +3,6 @@
     "legacy": 12
   },
   "src/recap/render/handoff-budget.ts": {
-    "parameter": 1,
-    "return": 2,
-    "container": 2,
-    "property": 2
-  },
-  "src/recap/render/handoff-markdown.ts": {
-    "return": 2,
-    "container": 2
+    "property": 1
   }
 }
