@@ -5,7 +5,7 @@
     "addedItems": 192,
     "repetitions": 3,
     "input": {
-        "shape": "{ request: RecapRequest, items: RunItem[], state: RunItem[] }",
+        "shape": "{ request: RecapRequest, items: DatasetRow[], state: DatasetRow[] }",
         "writerInput": "tab-recap/src/recap/application/writer-context.ts#writerContext(input.request)",
         "builder": "tab-recap/src/recap/application/judge-context.ts#scoringDocument({ rubric: RUBRIC_TEXT, input: writerContext(input.request), items: input.items, state: input.state })",
         "rubric": "tab-recap/src/adapters/job/prompts/rubric.ts#RUBRIC_TEXT",

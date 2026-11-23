@@ -3,20 +3,21 @@ import { RUBRIC_TEXT } from '#src/adapters/job/prompts/rubric.ts';
 import { coverDocument, gradingDocument, readbackDocument, scoringDocument } from '#src/recap/application/judge-context.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { dtdTest, validate } from '#test/xmllint.ts';
+import type { JudgeEntry } from '#src/ports/run-inputs.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 
 const t = (value: string): Text => must(parseText(value));
 
-const ITEMS = [{ key: 't1/goal/0', section: 'goal', text: 'Ship retries for the upload client.', fact: 'f1', born: true, anchor: null }, { key: 't1/done/0', section: 'done', text: 'Merged !256 & tagged <1.9.0> ]]> done.', fact: 'f2', born: true, anchor: null }];
+const ITEMS: readonly JudgeEntry[] = [{ key: t('t1/goal/0'), section: 'goal', text: t('Ship retries for the upload client.'), birth: 'born' }, { key: t('t1/done/0'), section: 'done', text: t('Merged !256 & tagged <1.9.0> ]]> done.'), birth: 'born' }];
 const INPUT = t('<recap_input version="1"><tab id="w1:t1"/>hostile ]]> & </recap_input>');
 const RUBRIC = t(RUBRIC_TEXT);
 
 const FIXTURES: Readonly<Record<string, string>> = {
     'scoring: the rubric file, the saved input and the items with their keys': scoringDocument({ rubric: RUBRIC, input: INPUT, items: ITEMS }),
-    'scoring: the added items and the ledger state after the run': scoringDocument({ rubric: RUBRIC, input: INPUT, items: ITEMS, state: ITEMS.map((item) => ({ ...item, key: `state/${item.key}` })) }),
+    'scoring: the added items and the ledger state after the run': scoringDocument({ rubric: RUBRIC, input: INPUT, items: ITEMS, state: ITEMS.map((item) => ({ ...item, key: t(`state/${item.key}`) })) }),
     'scoring: an empty state': scoringDocument({ rubric: RUBRIC, input: INPUT, items: ITEMS, state: [] }),
-    'cover: the key facts to use and a state': coverDocument({ input: INPUT, keyfacts: [t('A <b> & c')], state: ITEMS.map((item) => ({ ...item, key: `state/${item.key}` })) }),
+    'cover: the key facts to use and a state': coverDocument({ input: INPUT, keyfacts: [t('A <b> & c')], state: ITEMS.map((item) => ({ ...item, key: t(`state/${item.key}`) })) }),
     'cover: no key facts given': coverDocument({ input: INPUT, keyfacts: null, state: ITEMS }),
     'scoring: a run with no items': scoringDocument({ rubric: RUBRIC, input: INPUT, items: [] }),
     'read-back: the recap items alone': readbackDocument(ITEMS),

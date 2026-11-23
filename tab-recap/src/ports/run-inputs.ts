@@ -11,8 +11,6 @@ import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
 import type { GateName } from '@stateforge-labs/session-ledger/unstable/contract/kernel.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 
-export type { RunItem, StoredRun } from './twins/legacy.ts';
-
 export type ItemsMode = 'added' | 'state';
 
 export type RunBirth = 'born' | 'carried';
@@ -36,6 +34,13 @@ export interface RunEntry {
     readonly fact: FactId;
     readonly birth: RunBirth;
     readonly anchor: Text | null;
+}
+
+export interface JudgeEntry {
+    readonly key: Text;
+    readonly section: Text | Section;
+    readonly text: Text;
+    readonly birth: RunBirth;
 }
 
 export interface RunFilter {

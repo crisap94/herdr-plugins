@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { compareImported, withoutLedgers } from '#src/recap/application/compare-imported.ts';
 import { must } from '#src/protocol/result.ts';
+import { bornOf } from '#src/recap/domain/run-ids.ts';
 import { parseUsd, usdOf } from '#src/recap/domain/usd.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import type { ImportedChapterRecord } from '#src/ports/imported-recaps.ts';
@@ -53,7 +54,7 @@ function judgeOf(seen: { task: JudgeTask; document: string }[]): JudgePort {
 
 const chapter = (n: number, minutes: number, texts: readonly string[]): ImportedChapterRecord => ({
     n: countOf(n), at: instant(T0 + minutes * MIN),
-    items: texts.map((text, at) => ({ key: textOf(`state/t1/done/${at}`), section: textOf('done'), text: textOf(text), fact: textOf(`state/t1/done/${at}`), born: false, anchor: null })),
+    items: texts.map((text, at) => ({ key: textOf(`state/t1/done/${at}`), section: textOf('done'), text: textOf(text), fact: textOf(`state/t1/done/${at}`), born: bornOf(false), anchor: null })),
 });
 
 async function compareAll(): Promise<{ readonly compared: Awaited<ReturnType<typeof compareImported>>; readonly seen: { task: JudgeTask; document: string }[] }> {

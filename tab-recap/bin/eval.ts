@@ -10,6 +10,7 @@ import { availableIn, judgeWith } from '#src/daemon/backends.ts';
 import { loadSettings, messagesOf, stateDirectory } from '#src/daemon/config.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { EVAL_USAGE, parseEvalRequest } from '#src/recap/application/eval-options.ts';
 import { anchorsOf, withText } from '#src/recap/application/judge-anchors.ts';
 import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
@@ -56,11 +57,14 @@ export async function evalCommand(argv: readonly string[]): Promise<number> {
         const available = isUnknown(found) ? [] : found.ids;
         const runtime = createRuntime();
         return await runEval(parsed.options, {
-            inputs: store.inputs, verdicts: store.verdicts, now: Date.now, rubric: RUBRIC_TEXT, style: styleFor(process.stdout),
+            inputs: store.inputs, verdicts: store.verdicts, now: () => instant(Date.now()), rubric: textOf(RUBRIC_TEXT), style: styleFor(process.stdout),
             judge: () => judgeWith(loadSettings(), availableIn(available), must(parseDirectory(join(stateDirectory(), 'summarizer'))), runtime, anchorsOf(withText(store.verdicts.disagreements(), store.inputs))),
             out: (line) => { console.log(line); },
             err: (line) => { console.error(line); },
-            ask: (prompt) => operator.ask(prompt),
+            ask: async (prompt) => {
+                const line = await operator.ask(prompt);
+                return line === null ? null : textOf(line);
+            },
         });
     } finally {
         operator.close();

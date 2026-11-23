@@ -1,4 +1,4 @@
-import type { RunItem } from '#src/ports/run-inputs.ts';
+import type { JudgeEntry } from '#src/ports/run-inputs.ts';
 import type { VerdictRecord } from '#src/ports/verdicts.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
@@ -28,13 +28,13 @@ export interface Carrying {
     readonly carried: ReadonlyMap<Count, Text | null>;
 }
 
-export function measureState(state: readonly RunItem[], carrying: Carrying): Measured {
+export function measureState(state: readonly JudgeEntry[], carrying: Carrying): Measured {
     const tied = new Set([...carrying.carried.values()].flatMap((key) => key ?? []));
-    const born = new Set(state.filter((item) => item.born).map((item) => item.key));
+    const born = new Set(state.filter((item) => item.birth === 'born').map((item) => item.key));
     const facts = carrying.keyfacts.map((fact, at): Row => ({ item: textOf(`keyfact/${at}`), check: textOf('coverage'), pass: (carrying.carried.get(must(parseCount(at))) ?? null) !== null ? 'pass' : 'fail', critique: fact }));
     const lines = state.map((item): Row => ({ item: textOf(item.key), check: textOf('filler'), pass: tied.has(must(parseText(item.key))) ? 'pass' : 'fail', critique: tied.has(must(parseText(item.key))) ? null : textOf('not tied to a key fact') }));
-    const bornLines = state.filter((item) => item.born);
-    const bornFacts = carrying.keyfacts.filter((_, at) => born.has(carrying.carried.get(must(parseCount(at))) ?? ''));
+    const bornLines = state.filter((item) => item.birth === 'born');
+    const bornFacts = carrying.keyfacts.filter((_, at) => born.has(carrying.carried.get(must(parseCount(at))) ?? textOf('')));
     return {
         rows: [...facts, ...lines],
         coverage: { passed: must(parseCount(facts.filter((fact) => fact.pass === 'pass').length)), total: must(parseCount(facts.length)) },

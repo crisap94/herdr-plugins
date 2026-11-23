@@ -20,8 +20,5 @@
   "src/recap/render/handoff-markdown.ts": {
     "return": 2,
     "container": 2
-  },
-  "src/recap/render/legacy.ts": {
-    "legacy": 4
   }
 }

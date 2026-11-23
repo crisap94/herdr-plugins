@@ -1,28 +1,22 @@
-import type { ItemsMode, RunEntry, RunInputReader, RunItem } from '#src/ports/run-inputs.ts';
-import type { RunId } from '#src/recap/domain/run-ids.ts';
+import type { JudgeEntry } from '#src/ports/run-inputs.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { element, leaf } from '@stateforge-labs/session-ledger/unstable/recap/application/xml.ts';
 
-interface ScoringParts { readonly rubric: Text; readonly input: Text; readonly items: readonly RunItem[]; readonly state?: readonly RunItem[] }
+interface ScoringParts { readonly rubric: Text; readonly input: Text; readonly items: readonly JudgeEntry[]; readonly state?: readonly JudgeEntry[] }
 
-interface CoverParts { readonly input: Text; readonly keyfacts: readonly Text[] | null; readonly state: readonly RunItem[] }
+interface CoverParts { readonly input: Text; readonly keyfacts: readonly Text[] | null; readonly state: readonly JudgeEntry[] }
 
 interface GradingParts { readonly input: Text; readonly keyfacts: readonly Text[]; readonly answers: readonly Text[] }
 
 const NEST = '\n';
 
-const itemOf = (entry: RunEntry): RunItem => ({ key: entry.key, section: entry.section, text: entry.text, fact: entry.fact, born: entry.birth === 'born', anchor: entry.anchor });
-
-export const itemsOf = (inputs: Pick<RunInputReader, 'itemsOf'>, run: RunId, mode: ItemsMode): readonly RunItem[] => inputs.itemsOf(run, mode).map(itemOf);
-
-
-function recapOf(items: readonly RunItem[]): Text {
+function recapOf(items: readonly JudgeEntry[]): Text {
     return must(parseText(element('recap', {}, must(parseText(items.length === 0 ? '' : `${items.map((item) => `${NEST}${leaf('item', { key: must(parseText(item.key)), section: must(parseText(item.section)) }, must(parseText(item.text)))}`).join('')}${NEST}`)))));
 }
 
-function stateOf(items: readonly RunItem[]): Text {
+function stateOf(items: readonly JudgeEntry[]): Text {
     return must(parseText(element('state', {}, must(parseText(items.length === 0 ? '' : `${items.map((item) => `${NEST}${leaf('item', { key: must(parseText(item.key)), section: must(parseText(item.section)) }, must(parseText(item.text)))}`).join('')}${NEST}`)))));
 }
 
@@ -38,7 +32,7 @@ export function coverDocument(parts: CoverParts): Text {
     return must(parseText(element('cover_input', { version: must(parseCount(1)) }, must(parseText(`${NEST}${leaf('writer_input', {}, parts.input)}${NEST}${given}${stateOf(parts.state)}${NEST}`)))));
 }
 
-export const readbackDocument = (items: readonly RunItem[]): Text => must(parseText(element('readback_input', { version: must(parseCount(1)) }, must(parseText(`${NEST}${recapOf(items)}${NEST}`)))));
+export const readbackDocument = (items: readonly JudgeEntry[]): Text => must(parseText(element('readback_input', { version: must(parseCount(1)) }, must(parseText(`${NEST}${recapOf(items)}${NEST}`)))));
 
 export function gradingDocument(parts: GradingParts): Text {
     const facts = keyfactsOf(parts.keyfacts);

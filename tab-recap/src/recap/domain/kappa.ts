@@ -4,6 +4,10 @@ import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/reca
 
 export type Kappa = Brand<number, 'Kappa'>;
 
+export type Trusted = Brand<boolean, 'Trusted'>;
+
+export const trustedOf = brand<boolean, 'Trusted'>;
+
 export function parseKappa(input: unknown): Result<Kappa, ParseFailure> {
     if (typeof input !== 'number' || Number.isNaN(input)) {
         return err({ kind: 'not-a-number' });

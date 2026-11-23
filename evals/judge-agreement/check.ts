@@ -5,7 +5,7 @@ import { parseScore } from '../../tab-recap/src/recap/application/judge-answer.t
 import { scoringDocument } from '../../tab-recap/src/recap/application/judge-context.ts';
 import { writerContext } from '../../packages/session-ledger/src/recap/application/writer-context.ts';
 import type { RecapRequest } from '../../packages/session-ledger/src/ports/summarizer.ts';
-import type { RunItem } from '../../tab-recap/src/ports/run-inputs.ts';
+import { entryOf, type DatasetRow } from './row.ts';
 import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 
 type Mark = 'pass' | 'fail' | 'open';
@@ -26,7 +26,7 @@ interface Line {
     readonly id: string;
     readonly tags: readonly string[];
     readonly plants: readonly string[];
-    readonly input: { readonly request: RecapRequest; readonly items: readonly RunItem[]; readonly state: readonly RunItem[] };
+    readonly input: { readonly request: RecapRequest; readonly items: readonly DatasetRow[]; readonly state: readonly DatasetRow[] };
     readonly expected: { readonly items: readonly Expected[] };
 }
 
@@ -59,7 +59,7 @@ for (const line of lines) {
         problems.push(`${line.id}: ${what}`);
     };
     const document = writerContext(line.input.request);
-    const scoring = scoringDocument({ rubric: RUBRIC_TEXT, input: document, items: line.input.items, state: line.input.state });
+    const scoring = scoringDocument({ rubric: RUBRIC_TEXT, input: document, items: line.input.items.map(entryOf), state: line.input.state.map(entryOf) });
     const instructions = judgeInstructionsOf('score', new Map());
     sizes.push(`${line.id} writer_input=${document.length} judge_input=${scoring.length} instructions=${instructions.length}`);
     if (!scoring.startsWith('<judge_input version="1">') || !scoring.includes('<writer_input>') || instructions.length === 0) {

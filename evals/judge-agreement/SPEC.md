@@ -40,8 +40,8 @@ One JSON line per item, one item per mocked writer run:
 | `tags` | project, size, language, agent kind |
 | `plants` | the planted checks of the run, plus `clean` and `clean-reworded` (the `Item.plants` of `evals/lib/types.ts`) |
 | `input.request` | a `RecapRequest`: the tab, one agent, the ledger of facts open before the run, one transcript. `writerContext` turns it into the writer input |
-| `input.items` | the 8 items the run added, as `RunItem` (`key` is `t1/<section>/<position>`, as `the run-input store's itemsOf(run, 'added')` names them) |
-| `input.state` | every item open after the run, as `RunItem` (`key` is `state/t1/<section>/<position>`): the earlier facts, then the added ones |
+| `input.items` | the 8 items the run added, as `DatasetRow` (`key` is `t1/<section>/<position>`, as `the run-input store's itemsOf(run, 'added')` names them) |
+| `input.state` | every item open after the run, as `DatasetRow` (`key` is `state/t1/<section>/<position>`): the earlier facts, then the added ones |
 | `expected.items` | one entry per added item, below |
 
 Each entry of `expected.items`:

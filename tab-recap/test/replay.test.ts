@@ -29,6 +29,7 @@ import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 import { must } from '#src/protocol/result.ts';
 import { countOf, parsePositiveCount } from '#src/recap/domain/count.ts';
+import { bornOf } from '#src/recap/domain/run-ids.ts';
 import { parseSessionPath } from '#src/recap/domain/ids.ts';
 
 const FILE = join(import.meta.dirname, 'fixtures', 'replay-claude.jsonl');
@@ -150,7 +151,7 @@ test('the judge over a replay: every run of the replay is scored like a stored o
     const scratch = scratchStore();
     try {
         await replayFile({ reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, mint: mintFactId, repos: NO_REPOS, language: textOf('en'), log: () => undefined, writerView: FULL_WRITER_VIEW }, must(parseSessionPath(FILE)), tabId('replay:t1'), countOf(statSync(FILE).size), must(parsePositiveCount(1)));
-        const imported = [{ n: countOf(1), at: instant(Date.parse('2026-10-07T09:20:00Z')), items: [{ key: textOf('state/t1/goal/0'), section: textOf('goal'), text: textOf('Shop with a cart'), fact: textOf('state/t1/goal/0'), born: false, anchor: null }, { key: textOf('state/t1/done/0'), section: textOf('done'), text: textOf('Cart totals added in src/totals.ts'), fact: textOf('state/t1/done/0'), born: false, anchor: null }] }];
+        const imported = [{ n: countOf(1), at: instant(Date.parse('2026-10-07T09:20:00Z')), items: [{ key: textOf('state/t1/goal/0'), section: textOf('goal'), text: textOf('Shop with a cart'), fact: textOf('state/t1/goal/0'), born: bornOf(false), anchor: null }, { key: textOf('state/t1/done/0'), section: textOf('done'), text: textOf('Cart totals added in src/totals.ts'), fact: textOf('state/t1/done/0'), born: bornOf(false), anchor: null }] }];
         const lines = await judgedReport({ judge: lenient, store: scratch.store, rubric: 'rubric', label: 'replay:t1', imported, beside: 'w1:t9', style: styleFor(process.stdout), err: () => undefined });
         const text = lines.join('\n');
         assert.match(text, /the judge over the replay \(2 runs\)/);
