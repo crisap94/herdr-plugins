@@ -369,24 +369,55 @@ echo "unpushed" > unpushed.txt && git add -A && git commit --quiet -m "a commit 
 cd "$repo" || exit 3
 
 clean() { local script="$1"; shift; env -i PATH="$PATH" HOME="$HOME" LC_ALL=C CI_MERGE_REQUEST_LABELS="$labels" CI_MERGE_REQUEST_DESCRIPTION="$good" bash "$script" "$@" 2>&1; echo "exit $?"; }
-forwarded() {
-    local name="$1" want="$2" root forward
+direct() {
+    local name="$1" want="$2" got
     shift 2
-    root="$(clean "$HERE/$name.sh" "$@")"
-    forward="$(clean "$HERE/../tab-recap/ci/$name.sh" "$@")"
-    [ "${root##*exit }" = "$want" ] && [ "$forward" = "$root" ] \
-        || { echo "bite: tab-recap/ci/$name.sh must forward to ci/$name.sh with the same output and exit (wanted $want; ci/ gave ${root##*exit }, the forwarder ${forward##*exit })" >&2; wrong=$((wrong + 1)); }
+    got="$(clean "$HERE/$name.sh" "$@")"
+    [ "${got##*exit }" = "$want" ] || { echo "bite: ci/$name.sh must exit $want here (got ${got##*exit })" >&2; wrong=$((wrong + 1)); }
 }
 released="$(sed -nE 's/^version = "([^"]+)".*/\1/p' "$HERE/../tab-recap/herdr-plugin.toml" | head -n 1)"
 labels=changelog::internal
-forwarded check-mr 0
+direct check-mr 0
 labels=bug
-forwarded check-mr 1
-forwarded prepare-release 3
-forwarded tag-release 3
-forwarded check-release 2
-forwarded check-release 1 not-a-tag
-forwarded release-notes 2
-forwarded release-notes 0 tab-recap "$released"
+direct check-mr 1
+direct prepare-release 3
+direct tag-release 3
+direct check-release 2
+direct check-release 1 not-a-tag
+direct release-notes 2
+direct release-notes 0 tab-recap "$released"
+for name in check-mr prepare-release tag-release check-release release-notes; do
+    [ ! -e "$HERE/../tab-recap/ci/$name.sh" ] || { echo "bite: tab-recap/ci/$name.sh is a forwarder CI-4 removed; call ci/$name.sh" >&2; wrong=$((wrong + 1)); }
+done
+paths="$(bun -e 'const y = Bun.YAML.parse(require("fs").readFileSync(process.argv[1], "utf8")); const out = new Set(); const stale = []; for (const [k, j] of Object.entries(y)) { const lines = (j && typeof j === "object" && Array.isArray(j.script)) ? j.script.map(String) : []; for (const l of lines) { if (/tab-recap\/ci\/(check-mr|prepare-release|tag-release|check-release|release-notes)\.sh/.test(l)) stale.push(k); if (["merge-request-notes", "release:prepare", "release:tag", "release-notes"].includes(k)) for (const m of l.matchAll(/bash (\S+\.sh)/g)) out.add(m[1]); } } console.log([...out].sort().join(" ")); if (stale.length) console.log("stale " + stale.join(","));' "$HERE/../.gitlab-ci.yml")"
+[ "$paths" = "ci/check-mr.sh ci/check-release.sh ci/prepare-release.sh ci/release-notes.sh ci/tag-release.sh" ] || { echo "bite: the GitLab release jobs and merge-request-notes must call exactly ci/check-mr.sh, ci/prepare-release.sh, ci/tag-release.sh, ci/check-release.sh and ci/release-notes.sh (found: $paths)" >&2; wrong=$((wrong + 1)); }
+for path in $paths; do
+    [ -f "$HERE/../$path" ] || { echo "bite: $path is called by the pipeline but does not exist" >&2; wrong=$((wrong + 1)); }
+done
+runs="$(bun -e 'const y = Bun.YAML.parse(require("fs").readFileSync(process.argv[1], "utf8")); const steps = Object.values(y.jobs).flatMap((j) => j.steps ?? []).map((s) => s.run).filter((r) => typeof r === "string" && /check-release\.sh|release-notes\.sh/.test(r)); process.stdout.write(JSON.stringify(steps));' "$HERE/../.github/workflows/release.yml")"
+[ "$(bun -e 'const r = JSON.parse(process.argv[1]); process.exit(r.length === 2 && r.every((x) => !x.includes("gh release")) ? 0 : 1)' "$runs"; echo $?)" = "0" ] || { echo "bite: the GitHub workflow must have exactly two steps naming check-release.sh and release-notes.sh, and neither may create a release" >&2; wrong=$((wrong + 1)); }
+layout() {
+    local kind="$1" dir="$scratch/gh-$1" idx run out want
+    for idx in 0 1; do
+        rm -rf "$dir" && mkdir -p "$dir/ci" "$dir/demo/ci" || exit 3
+        for name in check-release release-notes; do
+            printf '#!/usr/bin/env bash\necho "root %s.sh $*"\n' "$name" > "$dir/ci/$name.sh"
+            printf '#!/usr/bin/env bash\necho "plugin %s.sh $*"\n' "$name" > "$dir/demo/ci/$name.sh"
+        done
+        [ "$kind" = old ] && rm -rf "$dir/ci"
+        run="$(bun -e 'process.stdout.write(JSON.parse(process.argv[1])[Number(process.argv[2])])' "$runs" "$idx")"
+        (cd "$dir" && env -i PATH="$PATH" TAG=demo-v1.2.3 bash -c "$run" > out.txt 2>&1)
+        if [ "$idx" = 0 ]; then
+            [ "$kind" = new ] && want="root check-release.sh demo-v1.2.3" || want="plugin check-release.sh demo-v1.2.3"
+            out="$(cat "$dir/out.txt")"
+        else
+            [ "$kind" = new ] && want="root release-notes.sh demo 1.2.3" || want="plugin release-notes.sh demo 1.2.3"
+            out="$(cat "$dir/notes.md" 2>/dev/null)"
+        fi
+        [ "$out" = "$want" ] || { echo "bite: on the $kind tag layout the GitHub workflow step $((idx + 1)) must run '$want' (got '$out')" >&2; wrong=$((wrong + 1)); }
+    done
+}
+layout new
+layout old
 
 [ "$wrong" -eq 0 ]

@@ -302,7 +302,7 @@ merge-request-notes:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
   script:
-    - bash tab-recap/ci/check-mr.sh
+    - bash ci/check-mr.sh
 
 release:prepare:
   extends: .tools
@@ -316,7 +316,7 @@ release:prepare:
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
   script:
-    - bash tab-recap/ci/prepare-release.sh
+    - bash ci/prepare-release.sh
 
 release:tag:
   extends: .tools
@@ -330,7 +330,7 @@ release:tag:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
   script:
     - git fetch --quiet --tags origin
-    - bash tab-recap/ci/tag-release.sh
+    - bash ci/tag-release.sh
 
 release-notes:
   extends: .tools
@@ -342,8 +342,8 @@ release-notes:
     - if: $CI_COMMIT_TAG =~ /^tab-recap-v/
   script:
     - git fetch --quiet origin "+refs/heads/$CI_DEFAULT_BRANCH:refs/remotes/origin/$CI_DEFAULT_BRANCH" "+refs/tags/*:refs/tags/*"
-    - bash tab-recap/ci/check-release.sh "$CI_COMMIT_TAG"
-    - bash tab-recap/ci/release-notes.sh tab-recap "${CI_COMMIT_TAG#tab-recap-v}" > notes.md
+    - bash ci/check-release.sh "$CI_COMMIT_TAG"
+    - bash ci/release-notes.sh tab-recap "${CI_COMMIT_TAG#tab-recap-v}" > notes.md
     - cat notes.md
   artifacts:
     paths: [notes.md]
