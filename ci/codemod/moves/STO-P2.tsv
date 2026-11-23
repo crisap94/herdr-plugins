@@ -1,5 +1,3 @@
-path	tab-recap/src/adapters/db/connection.ts	packages/session-ledger-sqlite/src/connection.ts
-path	tab-recap/src/adapters/db/migrate.ts	packages/session-ledger-sqlite/src/migrate.ts
 path	tab-recap/src/adapters/db/backup.ts	packages/session-ledger-sqlite/src/backup.ts
 path	tab-recap/src/adapters/db/rebuild.ts	packages/session-ledger-sqlite/src/rebuild.ts
 path	tab-recap/src/adapters/db/schema/migration.ts	packages/session-ledger-sqlite/src/migration.ts
