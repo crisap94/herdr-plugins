@@ -1,15 +1,10 @@
 import { parseText, textOf, type Text } from './text.ts';
 import { must, type Result } from '#src/protocol/result.ts';
-import type { RegisteredKind } from './registered-kinds.ts';
-import type { Flight } from './in-flight.ts';
 import { instant, type Duration, type Instant } from './time.ts';
 import type { ContextUse } from './compaction.ts';
 import { parseCount, type Count } from './count.ts';
 import type { Origin } from './origin.ts';
 import { RUN_CAUSES, sessionFactsFrom, type AutocompactCounts, type RunCounts, type SessionFacts } from './session-facts.ts';
-import type { AutocompactKinds, LaneKind } from './autocompact.ts';
-import type { AutocompactStyle } from './autocompact-style.ts';
-import type { Thresholds } from './autocompact-verdict.ts';
 import type { Shape } from './board.ts';
 import { parseByteBudget, type ByteBudget } from './byte-budget.ts';
 import type { RestoredLane } from './closures.ts';
@@ -25,16 +20,12 @@ import type { PaneId, TabId } from './ids.ts';
 import type { Lane, SeenLane } from './lane.ts';
 import { collapsedText } from './text-collapse.ts';
 
-export interface AutocompactTuning { readonly style: AutocompactStyle; readonly verdict: Thresholds; readonly coverageAtLeast: number; readonly recheckIdleMs: number | null; }
-
 export function numberIn(raw: string | undefined, min: number, max: number, whole = false): number | null {
     const text = (raw ?? '').trim().toLowerCase();
     const value = Number(text);
     const usable = text !== '' && Number.isFinite(value) && (!whole || Number.isInteger(value));
     return usable && value >= min && value <= max ? value : null;
 }
-
-export interface GateInput { readonly kind: LaneKind; readonly kinds: AutocompactKinds; readonly shadowKinds: readonly RegisteredKind[]; readonly busy: boolean; readonly flight: Flight | null; readonly share: number; readonly minimum: number; readonly ceiling: number; readonly now: number; readonly lastBreakAt: number | null; readonly lastDecisionAt: Instant | null; readonly cooldownMs: number; readonly unchanged: boolean; readonly coverageBackoff?: boolean; }
 
 export interface Placement { readonly pane: PaneId; readonly shape: Shape; readonly since?: number; }
 

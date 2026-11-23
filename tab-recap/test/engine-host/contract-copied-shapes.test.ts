@@ -27,6 +27,12 @@ const NAME_MAP: Readonly<Record<string, string>> = {
     AnswerTally: 'ReadonlyMap<Text, Probability>',
     CoverageBlock: "'blocks' | 'allows'",
     TokenAmount: "Brand<number, 'TokenAmount'>",
+    GateFacts: 'GateInput',
+    CompactTuning: 'Tuning',
+    GatePercent: 'AutocompactPercent',
+    GateBusy: "'busy' | 'free'",
+    GateSameness: "'same' | 'changed'",
+    GateCoverage: "'backing-off' | 'open'",
 };
 
 interface Row {

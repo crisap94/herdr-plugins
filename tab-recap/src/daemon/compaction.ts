@@ -7,7 +7,7 @@ import { parseProbability } from '#src/recap/domain/probability.ts';
 import { checkCoverage, probabilityRequired } from '#src/recap/application/brief-coverage.ts';
 import type { CheckedCoverage } from '#src/recap/application/brief-coverage.ts';
 import type { CheckedFact } from '#src/recap/domain/autocompact.ts';
-import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
+import type { CompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { BriefDesk } from '#src/recap/application/compaction-brief.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import type { DecisionLedger } from '#src/ports/autocompact-records.ts';
@@ -76,7 +76,7 @@ interface CompactionParts {
     log(line: Text): void;
 }
 
-export function coverageOf(decider: DeciderPort | null, tuning: () => AutocompactTuning): CoverageCheck | null {
+export function coverageOf(decider: DeciderPort | null, tuning: () => CompactTuning): CoverageCheck | null {
     return decider === null ? null : { check: (text, facts) => checkCoverage(text, facts, decider, probabilityRequired(parseProbability(tuning().coverageAtLeast))) };
 }
 
