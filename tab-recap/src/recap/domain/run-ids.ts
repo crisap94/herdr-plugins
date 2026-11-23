@@ -4,6 +4,9 @@ import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/reca
 
 export type RunId = Brand<string, 'RunId'>;
 export type FactId = Brand<string, 'FactId'>;
+export type Born = Brand<boolean, 'Born'>;
+
+export const bornOf = brand<boolean, 'Born'>;
 
 const RUN_TYPE_ID = /^run_[0-7][0-9a-hjkmnp-tv-z]{25}$/u;
 const FACT_TYPE_ID = /^fct_[0-7][0-9a-hjkmnp-tv-z]{25}$/u;

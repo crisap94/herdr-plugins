@@ -4,7 +4,7 @@ import { RUBRIC_TEXT } from '../../tab-recap/src/adapters/job/prompts/rubric.ts'
 import { scoringDocument } from '../../tab-recap/src/recap/application/judge-context.ts';
 import { writerContext } from '../../packages/session-ledger/src/recap/application/writer-context.ts';
 import type { RecapRequest } from '../../packages/session-ledger/src/ports/summarizer.ts';
-import type { RunItem } from '../../tab-recap/src/ports/run-inputs.ts';
+import { entryOf, type DatasetRow } from './row.ts';
 import type { Item, Prompt } from '../lib/types.ts';
 import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import type { Text } from '../../packages/session-ledger/src/recap/domain/text.ts';
@@ -25,8 +25,8 @@ export interface ExpectedItem {
 
 export interface Input {
     readonly request: RecapRequest;
-    readonly items: readonly RunItem[];
-    readonly state: readonly RunItem[];
+    readonly items: readonly DatasetRow[];
+    readonly state: readonly DatasetRow[];
 }
 
 export interface Expected {
@@ -43,7 +43,7 @@ export const SYSTEM: string = judgeInstructionsOf('score', new Map());
 
 export const writerInput = (item: JudgeItem): string => writerContext(item.input.request);
 
-export const documentOf = (item: JudgeItem): string => scoringDocument({ rubric: RUBRIC_TEXT, input: textOf(writerInput(item)), items: item.input.items, state: item.input.state });
+export const documentOf = (item: JudgeItem): string => scoringDocument({ rubric: RUBRIC_TEXT, input: textOf(writerInput(item)), items: item.input.items.map(entryOf), state: item.input.state.map(entryOf) });
 
 export const sectionsOf = (item: JudgeItem): Map<Text, Text> => new Map(item.input.items.map((each) => [textOf(each.key), textOf(each.section)]));
 

@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs';
 import { writerContext } from '../../packages/session-ledger/src/recap/application/writer-context.ts';
 import type { RecapRequest } from '../../packages/session-ledger/src/ports/summarizer.ts';
 import type { InputFact } from '../../packages/session-ledger/src/ports/recap-input.ts';
-import type { RunItem } from '../../tab-recap/src/ports/run-inputs.ts';
+import type { DatasetRow } from './row.ts';
 import type { Entry } from '../../packages/session-ledger/src/ports/transcripts.ts';
 import { CASES_A } from './cases-a.ts';
 import { CASES_B } from './cases-b.ts';
@@ -167,10 +167,10 @@ function anchorOf(one: Case, item: Planted): string {
     return quoteOf((source?.text ?? one.opening).split('\n')[0] ?? one.opening);
 }
 
-function stateOf(one: Case, added: readonly Keyed[], dice: Dice): readonly RunItem[] {
+function stateOf(one: Case, added: readonly Keyed[], dice: Dice): readonly DatasetRow[] {
     return SECTIONS.flatMap((section) => {
-        const earlier = one.prior.filter(([mine]) => mine === section).map(([, text], position): RunItem => ({ key: `state/${TASK}/${section}/${position}`, section, text, fact: idOf(dice), born: false, anchor: quoteOf(text) }));
-        const born = added.filter((entry) => entry.item.section === section).map((entry): RunItem => ({ key: entry.stateKey, section, text: entry.item.text, fact: '', born: true, anchor: anchorOf(one, entry.item) }));
+        const earlier = one.prior.filter(([mine]) => mine === section).map(([, text], position): DatasetRow => ({ key: `state/${TASK}/${section}/${position}`, section, text, fact: idOf(dice), born: false, anchor: quoteOf(text) }));
+        const born = added.filter((entry) => entry.item.section === section).map((entry): DatasetRow => ({ key: entry.stateKey, section, text: entry.item.text, fact: '', born: true, anchor: anchorOf(one, entry.item) }));
         return [...earlier, ...born];
     });
 }
@@ -233,7 +233,7 @@ function itemOf(one: Case): { readonly line: string; readonly chars: number } {
     const added = keyed(one);
     const state = stateOf(one, added, dice).map((item) => (item.fact === '' ? { ...item, fact: idOf(dice) } : item));
     const factOf = new Map(state.map((item) => [item.key, item.fact]));
-    const items = added.map((entry): RunItem => ({ key: entry.key, section: entry.item.section, text: entry.item.text, fact: factOf.get(entry.stateKey) ?? '', born: true, anchor: anchorOf(one, entry.item) }));
+    const items = added.map((entry): DatasetRow => ({ key: entry.key, section: entry.item.section, text: entry.item.text, fact: factOf.get(entry.stateKey) ?? '', born: true, anchor: anchorOf(one, entry.item) }));
     const chars = writerContext(request).length;
     const line = JSON.stringify({
         id: `ja-${two(one.n)}-${one.project}-${one.size}`,

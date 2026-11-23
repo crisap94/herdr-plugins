@@ -6,8 +6,8 @@ import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
-import { gradingDocument, itemsOf, readbackDocument, scoringDocument } from './judge-context.ts';
-import type { RunItem } from '#src/ports/run-inputs.ts';
+import { gradingDocument, readbackDocument, scoringDocument } from './judge-context.ts';
+import type { JudgeEntry, RunEntry } from '#src/ports/run-inputs.ts';
 import { parseAnswers, parseGrades, parseScore } from './judge-answer.ts';
 import { measureState } from './judge-coverage.ts';
 import type { Measured, Row, Share } from './judge-coverage.ts';
@@ -25,12 +25,12 @@ export type { Share } from './judge-coverage.ts';
 
 export type RunResult =
     | {
-        readonly kind: 'judged'; readonly run: RunRecord; readonly items: readonly RunItem[]; readonly verdicts: readonly VerdictRecord[]; readonly coverage: Share; readonly filler: Share;
+        readonly kind: 'judged'; readonly run: RunRecord; readonly items: readonly RunEntry[]; readonly verdicts: readonly VerdictRecord[]; readonly coverage: Share; readonly filler: Share;
         readonly added: Measured['added']; readonly stateSize: Count; readonly readback: readonly Grade[] | null; readonly note: Text | null; readonly costUsd: number;
     }
     | { readonly kind: 'not-judged'; readonly run: RunRecord; readonly why: Text; readonly costUsd: number };
 
-interface ReadBackParts { readonly items: readonly RunItem[]; readonly input: Text; readonly keyfacts: readonly Text[] }
+interface ReadBackParts { readonly items: readonly JudgeEntry[]; readonly input: Text; readonly keyfacts: readonly Text[] }
 
 interface ReadBackResult { readonly grades: readonly Grade[] | null; readonly note: Text | null; readonly costUsd: number }
 
@@ -59,8 +59,8 @@ const notJudged = (run: RunRecord, why: Text, costUsd = 0): RunResult => ({ kind
 
 export async function judgeRun(deps: JudgeDeps, run: RunRecord): Promise<RunResult> {
     const input = deps.inputs.document(run.id);
-    const items = itemsOf(deps.inputs, run.id, 'added');
-    const state = itemsOf(deps.inputs, run.id, 'state');
+    const items = deps.inputs.itemsOf(run.id, 'added');
+    const state = deps.inputs.itemsOf(run.id, 'state');
     if (input === null) {
         return notJudged(run, must(parseText('its input is no longer stored')));
     }

@@ -9,12 +9,3 @@ export interface StoredRun {
     readonly hasInput: boolean;
     readonly gateStats: GateStats | null;
 }
-
-export interface RunItem {
-    readonly key: string;
-    readonly section: string;
-    readonly text: string;
-    readonly fact: string;
-    readonly born: boolean;
-    readonly anchor: string | null;
-}

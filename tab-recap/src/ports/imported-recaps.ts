@@ -1,17 +1,24 @@
 import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { Count } from '#src/recap/domain/count.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { bornOf, type Born } from '#src/recap/domain/run-ids.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
-import type { RunItem } from './run-inputs.ts';
+
+export interface ImportedChapterItem {
+    readonly key: Text;
+    readonly section: Text;
+    readonly text: Text;
+    readonly fact: Text;
+    readonly born: Born;
+    readonly anchor: Text | null;
+}
 
 export interface ImportedChapterRecord {
     readonly n: Count;
     readonly at: Instant;
-    readonly items: readonly RunItem[];
+    readonly items: readonly ImportedChapterItem[];
 }
-
-export type ImportedChapterItem = ImportedChapterRecord['items'][number];
 
 type Row = Record<string, unknown>;
 
@@ -31,5 +38,5 @@ export function parseImportedChapterItem(input: unknown): Result<ImportedChapter
     if (typeof born !== 'boolean') return err({ kind: 'not-a-row' });
     const anchor = input.anchor === null ? ok(null) : parseText(input.anchor);
     if (anchor.kind === 'err') return anchor;
-    return ok({ key: key.value, section: section.value, text: text.value, fact: fact.value, born, anchor: anchor.value });
+    return ok({ key: key.value, section: section.value, text: text.value, fact: fact.value, born: bornOf(born), anchor: anchor.value });
 }

@@ -1,5 +1,5 @@
-import type { ImportedChapterRecord } from '#src/ports/imported-recaps.ts';
-import type { RunInputReader, RunItem, RunRecord } from '#src/ports/run-inputs.ts';
+import type { ImportedChapterItem, ImportedChapterRecord } from '#src/ports/imported-recaps.ts';
+import type { JudgeEntry, RunInputReader, RunRecord } from '#src/ports/run-inputs.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { countOf, parseCount, type Count } from '#src/recap/domain/count.ts';
@@ -7,7 +7,7 @@ import type { TabId } from '#src/recap/domain/ids.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { parseUsd, type Usd } from '#src/recap/domain/usd.ts';
-import { coverDocument, itemsOf } from './judge-context.ts';
+import { coverDocument } from './judge-context.ts';
 import { parseCover } from './judge-answer.ts';
 import type { Grade } from './judge-answer.ts';
 import { measureState, plus } from './judge-coverage.ts';
@@ -64,7 +64,7 @@ export interface Comparison {
 interface CarryParts {
     readonly input: Text;
     readonly prior: Carrying | null;
-    readonly state: readonly RunItem[];
+    readonly state: readonly JudgeEntry[];
 }
 
 interface Carried {
@@ -74,7 +74,7 @@ interface Carried {
 
 interface SideParts {
     readonly input: Text;
-    readonly state: readonly RunItem[];
+    readonly state: readonly JudgeEntry[];
     readonly found: Carrying;
 }
 
@@ -105,6 +105,8 @@ function evidenceOf(inputs: RunInputReader, runs: readonly RunRecord[]): Text | 
     return joined === '' ? null : must(parseText(joined));
 }
 
+const entryOf = (item: ImportedChapterItem): JudgeEntry => ({ key: item.key, section: item.section, text: item.text, birth: item.born ? 'born' : 'carried' });
+
 async function carrying(deps: JudgeDeps, parts: CarryParts): Promise<Carried> {
     const asked = await deps.judge.ask('cover', coverDocument({ input: parts.input, keyfacts: parts.prior?.keyfacts ?? null, state: parts.state }));
     if (isUnknown(asked)) {
@@ -127,7 +129,7 @@ async function compareChapter(deps: CompareDeps, chapter: ImportedChapterRecord,
     if (at === undefined || last === undefined || chapter.at > last.at + SLACK_MS) {
         return skip(must(parseText('the replay does not reach this chapter')));
     }
-    const state = itemsOf(deps.inputs, at.id, 'state');
+    const state = deps.inputs.itemsOf(at.id, 'state');
     const input = evidenceOf(deps.inputs, runs.filter((run) => (since === null || run.at > since) && run.at <= at.at));
     if (state.length === 0 || input === null) {
         return skip(must(parseText('the replay has no ledger state or no input there')));
@@ -136,11 +138,11 @@ async function compareChapter(deps: CompareDeps, chapter: ImportedChapterRecord,
     if (typeof own.found === 'string') {
         return skip(must(parseText(`not judged: ${own.found}`)), own.costUsd);
     }
-    const theirs = await carrying(deps, { input, prior: own.found, state: chapter.items });
+    const theirs = await carrying(deps, { input, prior: own.found, state: chapter.items.map(entryOf) });
     if (typeof theirs.found === 'string') {
         return skip(must(parseText(`not judged: ${theirs.found}`)), must(parseUsd(own.costUsd + theirs.costUsd)));
     }
-    const [replay, imported] = [await sideOf(deps, { input, state, found: own.found }), await sideOf(deps, { input, state: chapter.items, found: theirs.found })];
+    const [replay, imported] = [await sideOf(deps, { input, state, found: own.found }), await sideOf(deps, { input, state: chapter.items.map(entryOf), found: theirs.found })];
     const costUsd = must(parseUsd(own.costUsd + theirs.costUsd + replay.costUsd + imported.costUsd));
     return { result: { kind: 'compared', n: chapter.n, at: chapter.at, keyfacts: must(parseCount(own.found.keyfacts.length)), imported: imported.side, replay: replay.side }, costUsd };
 }
