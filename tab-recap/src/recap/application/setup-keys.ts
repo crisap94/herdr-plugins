@@ -5,7 +5,7 @@ import { countOf, type Count } from '#src/recap/domain/count.ts';
 import type { AgentKind } from '#src/recap/domain/ids.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 import { fieldOf, JOB_FIELDS, modelTarget, rowOf, ROWS } from './setup-state.ts';
-import type { Editing, FieldId, Setup, Stepped, TestState } from './setup-state.ts';
+import type { Editing, FieldId, LanguageChange, Setup, Stepped, TestState } from './setup-state.ts';
 
 export { changes, dirty, locksOf } from './setup-changes.ts';
 export * from './setup-state.ts';
@@ -85,8 +85,8 @@ function editKey(state: Setup, editing: Editing, key: Text): Stepped {
 }
 
 function leave(state: Setup): Stepped {
-    if (dirty(state) && !state.asked) {
-        return { state: { ...state, asked: true, note: 'unsaved' }, effects: [] };
+    if (dirty(state) === 'dirty' && state.asked === 'not-asked') {
+        return { state: { ...state, asked: 'asked', note: 'unsaved' }, effects: [] };
     }
     return { state, effects: [{ kind: 'close' }] };
 }
@@ -98,8 +98,8 @@ function save(state: Setup): Stepped {
     if (values.size === 0) {
         return { state: { ...state, note: 'nothing' }, effects: [] };
     }
-    const languageChanged = LANGUAGE_KEYS.some((key) => values.has(key));
-    return { state, effects: [{ kind: 'save', values, languageChanged }] };
+    const language: LanguageChange = LANGUAGE_KEYS.some((key) => values.has(key)) ? 'changed' : 'kept';
+    return { state, effects: [{ kind: 'save', values, language }] };
 }
 
 function startTest(state: Setup): Stepped {
@@ -136,20 +136,20 @@ const COMMANDS: Readonly<Record<string, (state: Setup) => Stepped>> = {
 
 export function step(state: Setup, key: Text): Stepped {
     if (state.editing !== null) {
-        return editKey({ ...state, asked: false }, state.editing, key);
+        return editKey({ ...state, asked: 'not-asked' }, state.editing, key);
     }
     if (QUIT.has(key)) {
         return leave(state);
     }
-    return (COMMANDS[key] ?? stay)({ ...state, asked: false, note: state.asked ? null : state.note });
+    return (COMMANDS[key] ?? stay)({ ...state, asked: 'not-asked', note: state.asked === 'asked' ? null : state.note });
 }
 
 export const withAvailable = (state: Setup, available: readonly AgentKind[]): Setup => ({ ...state, available });
 
 export const tested = (state: Setup, test: TestState): Setup => ({ ...state, test });
 
-export function saved(state: Setup, failure: Text | null, rewriting: boolean): Setup {
+export function saved(state: Setup, failure: Text | null, language: LanguageChange): Setup {
     return failure === null
-        ? { ...state, stored: state.draft, note: rewriting ? 'rewriting' : 'saved', asked: false }
+        ? { ...state, stored: state.draft, note: language === 'changed' ? 'rewriting' : 'saved', asked: 'not-asked' }
         : { ...state, note: { failed: failure } };
 }

@@ -102,19 +102,19 @@ async function runTest(effect: TestEffect): Promise<void> {
 }
 
 function save(effect: SaveEffect): void {
-    const { values, languageChanged } = effect;
+    const { values, language } = effect;
     try {
         setValues(fsPathOf(join(configDirectory(), 'config.env')), values, parseSettingsFile);
-        if (languageChanged) {
+        if (language === 'changed') {
             const store = openCliStore();
             if (store.kind !== 'ready') {
                 throw new Error(notReadyLine(store, messages()));
             }
             requestRewrites(tab === '' ? null : tabId(textOf(tab)), store);
         }
-        state = saved(state, null, languageChanged);
+        state = saved(state, null, language);
     } catch (error) {
-        state = saved(state, textOf(error instanceof Error ? error.message : String(error)), false);
+        state = saved(state, textOf(error instanceof Error ? error.message : String(error)), 'kept');
     }
 }
 

@@ -35,7 +35,7 @@ const down = (n: number): string[] => Array.from({ length: n }, () => 'j');
 
 test('the draft starts from the configuration: auto UI, recap language follows the UI', () => {
     assert.deepEqual([draft.locale, draft.recapLanguage], ['auto', 'ui']);
-    assert.equal(dirty(start()), false);
+    assert.equal(dirty(start()), 'clean');
     assert.equal(changes(start()).size, 0);
 });
 
@@ -105,13 +105,13 @@ test('s saves only what changed, and asks for a rewrite when the recap language 
     assert.equal(typed(start(), ['s']).state.note, 'nothing');
     const changed = typed(start(), [...down(3), '\r', '\u0015', 'e', 's', '\r']).state;
     const { effects } = typed(changed, ['s']);
-    assert.deepEqual(effects, [{ kind: 'save', values: new Map([['TAB_RECAP_RECAP_LANG', 'es']]), languageChanged: true }]);
-    const after = saved(changed, null, true);
-    assert.equal(dirty(after), false);
+    assert.deepEqual(effects, [{ kind: 'save', values: new Map([['TAB_RECAP_RECAP_LANG', 'es']]), language: 'changed' }]);
+    const after = saved(changed, null, 'changed');
+    assert.equal(dirty(after), 'clean');
     assert.equal(after.note, 'rewriting');
-    assert.equal(saved(changed, textOf('disk full'), false).note !== 'saved', true);
+    assert.equal(saved(changed, textOf('disk full'), 'kept').note !== 'saved', true);
     const locale = typed(start(), [...down(2), '\r', 'j', 'j', '\r', 's']).effects;
-    assert.deepEqual(locale, [{ kind: 'save', values: new Map([['TAB_RECAP_LOCALE', 'es']]), languageChanged: true }]);
+    assert.deepEqual(locale, [{ kind: 'save', values: new Map([['TAB_RECAP_LOCALE', 'es']]), language: 'changed' }]);
 });
 
 test('q: closes at once when clean; with unsaved changes asks once, then a second q discards, any other key takes it back', () => {
