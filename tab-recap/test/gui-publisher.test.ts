@@ -14,9 +14,10 @@ import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { parseNonEmptyText, parseText, textOf } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { blankRecap, type RecapRecords, type TabRecap } from '#src/ports/recap-records.ts';
-import type { TabView, TabViews } from '#src/ports/tab-views.ts';
+import type { TabViewRecord, TabViewStore } from '#src/ports/tab-views.ts';
 import { v2Problems } from '#test/gui-schema-support.ts';
 import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { viewRecord } from '#test/support/tab-view-records.ts';
 
 const wire = (document: GuiTab): unknown => JSON.parse(JSON.stringify(document));
 
@@ -25,7 +26,7 @@ const recapOf = (tab: string, overrides: Partial<TabRecap> = {}): TabRecap => ({
     tasks: [{ id: textOf('t1'), name: textOf('Login page'), lanes: [paneIdOf('p1')], markdown: textOf('# Login'), sections: { goal: textOf('Ship the login page'), now: [textOf('wiring the form')], needs: [], done: [textOf('route added')], decisions: [], next: [textOf('tests')], links: [], rules: [textOf('secret rule')] } }],
 });
 
-const viewOf = (tab: string): TabView => ({
+const viewOf = (tab: string): TabViewRecord => viewRecord({
     tab, column: null, at: 5, lanes: [
         { pane: 'p1', agent: 'claude', status: 'working', title: 'login', cwd: '/work' },
         { pane: 'p2', agent: 'codex', status: 'blocked', title: null, cwd: null },
@@ -34,8 +35,8 @@ const viewOf = (tab: string): TabView => ({
 
 const laneOf = (status: string): GuiLaneV1 => ({ pane: paneId(status), agent: agentKind('claude'), status: must(parseNonEmptyText(status)), title: null, cwd: null, lastPrompt: null, branch: null, contextPercent: null, since: null });
 
-function tabViewsOf(views: Readonly<Record<string, TabView>>): TabViews {
-    return { readTab: (tab): TabView | null => views[tab] ?? null, writeTab: (): void => undefined, tabOf: (): null => null };
+function tabViewsOf(views: Readonly<Record<string, TabViewRecord>>): TabViewStore {
+    return { readTab: (tab): TabViewRecord | null => views[tab] ?? null, writeTab: (): void => undefined, tabOf: (): null => null };
 }
 
 function recordsOf(recaps: Readonly<Record<string, TabRecap>>): RecapRecords {
@@ -113,8 +114,8 @@ test('a tab with agents but no recap yet is published with its lanes', () => {
 
 test('writing a tab view through the publishing views publishes that tab', () => {
     const seen: string[] = [];
-    const stored: TabView[] = [];
-    const inner = { ...tabViewsOf({}), writeTab: (view: TabView): void => { stored.push(view); }, liveLanes: (): never => { throw new Error('not used'); } };
+    const stored: TabViewRecord[] = [];
+    const inner = { ...tabViewsOf({}), writeTab: (view: TabViewRecord): void => { stored.push(view); }, liveLanes: (): never => { throw new Error('not used'); } };
     new PublishingViews(inner, (tab) => seen.push(tab)).writeTab(viewOf('w1:2'));
     assert.deepEqual([stored.length, seen], [1, ['w1:2']]);
 });

@@ -11,12 +11,13 @@ import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
-import type { TabView } from '#src/ports/tab-views.ts';
+import type { TabViewRecord } from '#src/ports/tab-views.ts';
 import { cursor, memoryStore, must as present, seed, storeRead } from '#test/db/support.ts';
 import { fact } from '#test/fakes/fact-at.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { GUI_DIR, NOW, world } from './herdr.ts';
 import { tabIdOf, paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { viewRecord } from '#test/support/tab-view-records.ts';
 
 export const MIN = 60_000;
 const ZONE = 'UTC';
@@ -61,7 +62,7 @@ export const FACTS: readonly FactSpec[] = [
     { id: 'u1', section: 'next', text: 'Draw the timeline', minutesAgo: 5 },
 ];
 
-const viewOf = (spec: TabSpec): TabView => ({
+const viewOf = (spec: TabSpec): TabViewRecord => viewRecord({
     tab: spec.tab, column: null, at: NOW,
     lanes: spec.lanes.map((lane) => ({
         pane: lane.pane, agent: AGENT, status: lane.status, title: lane.title ?? `lane ${lane.pane}`, cwd: null,
@@ -76,7 +77,7 @@ export function build(spec: TabSpec): Built {
     const ledger = new MemoryLedger();
     spec.facts.forEach((one) => ledger.seed(fact(one.id, one.section, one.text, NOW - one.minutesAgo * MIN, { task: { tab: tabIdOf(spec.tab), key: textOf('t1') }, why: one.why === undefined ? null : textOf(one.why) })));
     const deps: ExpandedDeps = { records: store.records, ledger, stories: store.stories, session: store.session, boundaries: store.boundaries, requests: { requestCurate: (): void => undefined }, edits: () => [] };
-    const expanded = new ExpandedModel(deps).read(spec.tab, view, NOW);
+    const expanded = new ExpandedModel(deps).read(tabId(spec.tab), view, instant(NOW));
     const recap = present(storeRead(store.records.readRecap(tabId(spec.tab))));
     const hint = spec.hint === undefined ? null : must(parseCount(spec.hint));
     const typed = guiTabOf(recap, view, instant(NOW), { ...BLANK_READS, expanded, compactHint: hint, zone: must(parseText(ZONE)) });

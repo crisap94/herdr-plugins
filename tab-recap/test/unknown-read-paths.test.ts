@@ -9,7 +9,7 @@ import type { Curators } from '#src/ports/curators.ts';
 import type { ClosedLaneList, ClosedLaneRead } from '#src/ports/closed-lanes.ts';
 import type { LastRun } from '#src/ports/recap-records.ts';
 import type { Stories } from '#src/ports/stories.ts';
-import type { TabView } from '#src/ports/tab-views.ts';
+import type { TabViewRecord } from '#src/ports/tab-views.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
 import type { TaskId } from '#src/recap/domain/fact.ts';
@@ -24,6 +24,7 @@ import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
+import { viewRecord } from '#test/support/tab-view-records.ts';
 
 const [textOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Instant'>];
 
@@ -32,7 +33,7 @@ const TAB = tabId('w1:t1');
 const T1: TaskId = { tab: TAB, key: textOf('t1') };
 const LOCKED = unknown({ why: 'unreadable', detail: causeOf('locked') });
 const SECTIONS = { goal: textOf('Ship retries'), now: [], needs: [], done: [textOf('Merged !256.')], decisions: [], next: [], links: [], rules: [] };
-const VIEW: TabView = { tab: TAB, column: null, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: '/repo' }], at: NOW };
+const VIEW: TabViewRecord = viewRecord({ tab: TAB, column: null, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: '/repo' }], at: NOW });
 
 interface Probe {
     writes: number;

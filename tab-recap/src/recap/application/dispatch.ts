@@ -16,7 +16,7 @@ import type { TabRetirement } from '#src/ports/retention.ts';
 import type { ColumnPanes } from '#src/ports/columns.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
-import type { LaneWeb, TabView, TabViews } from '#src/ports/tab-views.ts';
+import type { LaneWebRecord, TabViewRecord, TabViewStore } from '#src/ports/tab-views.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
@@ -33,11 +33,11 @@ export type Sharing = 'on' | 'off';
 
 export interface LaneDispatchDeps {
     readonly columns: ColumnPanes;
-    readonly views: TabViews;
+    readonly views: TabViewStore;
     readonly visibility: ColumnVisibility;
     readonly recaps: Pick<TabRecaps, 'turnEnded' | 'flush'>;
     readonly prompts: PaneSource<Text>;
-    readonly webs: PaneSource<LaneWeb>;
+    readonly webs: PaneSource<LaneWebRecord>;
     readonly contexts?: PaneSource<ContextUse>;
     readonly closures: ClosureRecorder;
     readonly retirements?: TabRetirement;
@@ -60,17 +60,18 @@ export type ReadPane<Found> = (pane: PaneId) => Found | null;
 
 export interface Lookups {
     readonly prompts?: ReadPane<Text>;
-    readonly webs?: ReadPane<LaneWeb>;
+    readonly webs?: ReadPane<LaneWebRecord>;
     readonly contexts?: ReadPane<ContextUse>;
 }
 
-export function viewOf(board: Board, tab: TabId, at: Instant, lookups: Lookups = {}): TabView {
+export function viewOf(board: Board, tab: TabId, at: Instant, lookups: Lookups = {}): TabViewRecord {
     const { prompts = (): null => null, webs = (): null => null, contexts = (): null => null } = lookups;
+    const column = board.columns.get(tab)?.pane;
     return {
-        tab: String(tab),
-        column: board.columns.get(tab)?.pane ?? null,
+        tab,
+        column: column === undefined ? null : textOf(column),
         lanes: lanesOf(board, tab).map((lane) => ({
-            pane: String(lane.pane), agent: String(lane.agent), status: lane.status, title: lane.title, cwd: lane.cwd, lastPrompt: prompts(lane.pane), web: webs(lane.pane), context: contexts(lane.pane), since: lane.since,
+            pane: lane.pane, agent: lane.agent, status: textOf(lane.status), title: lane.title, cwd: lane.cwd === null ? null : textOf(lane.cwd), lastPrompt: prompts(lane.pane), web: webs(lane.pane), context: contexts(lane.pane), since: lane.since,
         })),
         at,
     };

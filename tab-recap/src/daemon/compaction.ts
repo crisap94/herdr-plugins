@@ -29,7 +29,7 @@ import { must } from '#src/protocol/result.ts';
 import type { CompactionLog } from '#src/ports/compaction-records.ts';
 import type { LaneSettler } from '#src/ports/lane-settling.ts';
 import type { BoundaryLog } from '#src/ports/boundaries.ts';
-import type { LaneWeb } from '#src/ports/tab-views.ts';
+import type { LaneWebRecord } from '#src/ports/tab-views.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { refreshVia } from './refresh-status.ts';
@@ -40,7 +40,7 @@ interface CoverageCheck {
 }
 
 interface CompactionWebs {
-    of(pane: PaneId): LaneWeb | null;
+    of(pane: PaneId): LaneWebRecord | null;
 }
 
 interface CompactionAnswers {

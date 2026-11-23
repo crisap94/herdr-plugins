@@ -17,6 +17,7 @@ import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { must } from '#src/protocol/result.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
+import { viewRecord } from '#test/support/tab-view-records.ts';
 
 const base: CompactionRow = { id: must(parseCompactionId('cmp_x')), tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), stage: 'compacting', brief: 'written', writer: textOf('codex · gpt-6-luna · high'), templateWhy: null, startedAt: instant(0), stageAt: instant(0), finishedAt: null, tokensBefore: null, tokensAfter: null, took: null, retry: 'first-try', queue: 'direct', why: null, origin: 'operator' };
 const done = { finishedAt: instant(1), tokensBefore: countOf(39532), tokensAfter: countOf(3057), took: duration(15588) };
@@ -35,12 +36,12 @@ const STAGES: readonly (readonly [string, Partial<CompactionRow>, number])[] = [
 ];
 
 const column = (m: Messages, record: CompactionRow, now: number): string[] => {
-    const tab = { tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'Victoria', cwd: null, context: { tokens: countOf(600_000), window: countOf(1_000_000), source: 'catalogue' as const } }] };
+    const tab = viewRecord({ tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'Victoria', cwd: null, context: { tokens: countOf(600_000), window: countOf(1_000_000), source: 'catalogue' as const } }] });
     return present({ tab, recap: blankRecap(tabId('w1:t1')), notes: new Map(), warnings: [], now, messages: m, compactHint: 40, compactions: [record], style: plain }, 44, () => null).slice(1, 4).filter((line) => line !== '');
 };
 
 const bar = (m: Messages, record: CompactionRow, now: number): string[] => {
-    const tab = { tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: null }] };
+    const tab = viewRecord({ tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: null }] });
     return presentBar({ tab, recap: blankRecap(tabId('w1:t1')), notes: new Map(), warnings: [], now, messages: m, compactions: [record], style: plain }, 46);
 };
 
@@ -97,7 +98,7 @@ for (const [locale, m] of [['en', en], ['es', es]] as const) {
 }
 
 test('the stage replaces the hint while it is shown and the hint is back after; the bar goes back to the usual headline', () => {
-    const tab = { tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'Victoria', cwd: null, context: { tokens: countOf(600_000), window: countOf(1_000_000), source: 'catalogue' as const } }] };
+    const tab = viewRecord({ tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'Victoria', cwd: null, context: { tokens: countOf(600_000), window: countOf(1_000_000), source: 'catalogue' as const } }] });
     const view = { tab, recap: blankRecap(tabId('w1:t1')), notes: new Map(), warnings: [], now: 0, messages: en, compactHint: 40, style: plain };
     assert.match(present(view, 44, () => null).join('\n'), /compact\? 60% of 1M/);
     const shown = present({ ...view, compactions: [base] }, 44, () => null).join('\n');
@@ -107,7 +108,7 @@ test('the stage replaces the hint while it is shown and the hint is back after; 
 });
 
 test('on the bar, the newest compaction of the tab speaks, prefixed with its agent', () => {
-    const tab = { tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: null }, { pane: 'w1:p2', agent: 'codex', status: 'idle', title: null, cwd: null }] };
+    const tab = viewRecord({ tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: null }, { pane: 'w1:p2', agent: 'codex', status: 'idle', title: null, cwd: null }] });
     const older = { ...base, startedAt: instant(1), stage: 'compacted' as const, finishedAt: instant(5) };
     const newer = { ...base, pane: paneId('w1:p2'), agent: agentKind('codex'), startedAt: instant(9), stageAt: instant(9000) };
     const lines = presentBar({ tab, recap: blankRecap(tabId('w1:t1')), notes: new Map(), warnings: [], now: 12_000, messages: en, compactions: [older, newer], style: plain }, 60);

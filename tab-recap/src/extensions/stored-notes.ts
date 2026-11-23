@@ -1,11 +1,11 @@
 import { messagesFor } from '#src/i18n/index.ts';
 import type { Locale } from '#src/i18n/messages.ts';
-import type { Extension, Note, NotesResult } from '#src/ports/extension.ts';
-import type { TabLane } from '#src/ports/tab-views.ts';
+import type { ExtensionPort, PaneNote, PaneNotesResult } from '#src/ports/extension.ts';
+import type { TabLaneRecord } from '#src/ports/tab-views.ts';
 import type { PaneAlertReader } from '#src/ports/pane-alerts.ts';
 import type { PaneNoteReader, WorktreeStatusReader } from '#src/ports/worktree-status.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
-import { parsePaneId } from '#src/recap/domain/ids.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { changedOf } from '#src/recap/domain/worktree.ts';
 import type { WorktreeStatus, WorktreeSwitch } from '#src/recap/domain/worktree.ts';
 
@@ -19,28 +19,27 @@ export interface StoredNotesDeps {
     readonly gitNote: () => WorktreeSwitch;
 }
 
-export function gitNoteOf(status: WorktreeStatus, locale: Locale): Note {
+export function gitNoteOf(status: WorktreeStatus, locale: Locale): PaneNote {
     const m = messagesFor(locale);
     const ahead = status.ahead ?? 0;
     const changed = changedOf(status);
-    const details = [...(ahead === 0 ? [] : [m.git.unpushed(ahead)]), ...(changed === 0 ? [] : [m.git.changed(changed)])];
-    return { label: status.branch, at: null, details, mark: GIT_NOTE_MARK };
+    const details = [...(ahead === 0 ? [] : [textOf(m.git.unpushed(ahead))]), ...(changed === 0 ? [] : [textOf(m.git.changed(changed))])];
+    return { label: status.branch, at: null, details, mark: textOf(GIT_NOTE_MARK) };
 }
 
-class StoredNotes implements Extension {
-    readonly id = STORED_NOTES_ID;
+class StoredNotes implements ExtensionPort {
+    readonly id = textOf(STORED_NOTES_ID);
     private readonly deps: StoredNotesDeps;
 
     constructor(deps: StoredNotesDeps) {
         this.deps = deps;
     }
 
-    notes(lanes: readonly TabLane[] = [], locale: Locale = 'en'): NotesResult {
-        const byPane = new Map<string, readonly Note[]>();
+    notes(lanes: readonly TabLaneRecord[] = [], locale: Locale = 'en'): PaneNotesResult {
+        const byPane = new Map<PaneId, readonly PaneNote[]>();
         const showGit = this.deps.gitNote() === 'on';
         for (const lane of lanes) {
-            const pane = parsePaneId(lane.pane);
-            const found = pane.kind === 'ok' ? [...this.alertNotes(pane.value), ...(showGit ? this.gitNotes(pane.value, locale) : []), ...this.tokenNotes(pane.value)] : [];
+            const found = [...this.alertNotes(lane.pane), ...(showGit ? this.gitNotes(lane.pane, locale) : []), ...this.tokenNotes(lane.pane)];
             if (found.length > 0) {
                 byPane.set(lane.pane, found);
             }
@@ -48,20 +47,20 @@ class StoredNotes implements Extension {
         return { kind: 'notes', byPane };
     }
 
-    private alertNotes(pane: PaneId): readonly Note[] {
-        return this.deps.alerts.alertsOf(pane).map((alert): Note => ({ label: alert.label, at: alert.at, details: alert.details }));
+    private alertNotes(pane: PaneId): readonly PaneNote[] {
+        return this.deps.alerts.alertsOf(pane).map((alert): PaneNote => ({ label: alert.label, at: alert.at, details: alert.details }));
     }
 
-    private gitNotes(pane: PaneId, locale: Locale): readonly Note[] {
+    private gitNotes(pane: PaneId, locale: Locale): readonly PaneNote[] {
         const status = this.deps.statuses.statusOf(pane);
         return status === null ? [] : [gitNoteOf(status, locale)];
     }
 
-    private tokenNotes(pane: PaneId): readonly Note[] {
-        return this.deps.notes.notesOf(pane).map((note): Note => ({ label: note.label, at: null, details: [note.value] }));
+    private tokenNotes(pane: PaneId): readonly PaneNote[] {
+        return this.deps.notes.notesOf(pane).map((note): PaneNote => ({ label: note.label, at: null, details: [note.value] }));
     }
 }
 
-export function storedNotes(deps: StoredNotesDeps): Extension {
+export function storedNotes(deps: StoredNotesDeps): ExtensionPort {
     return new StoredNotes(deps);
 }

@@ -2,8 +2,8 @@ import { statSync } from 'node:fs';
 import { join } from 'node:path';
 import { notesByPaneOf, warningTextsOf } from '#src/extensions/load.ts';
 import { storedNotes } from '#src/extensions/stored-notes.ts';
-import type { Extension, Note } from '#src/ports/extension.ts';
-import type { TabView } from '#src/ports/tab-views.ts';
+import type { ExtensionPort, PaneNote } from '#src/ports/extension.ts';
+import type { TabViewRecord } from '#src/ports/tab-views.ts';
 import { loadSettings } from '#src/daemon/config.ts';
 import { worktreeSwitch } from '#src/daemon/worktree-switch.ts';
 import { must } from '#src/protocol/result.ts';
@@ -44,7 +44,7 @@ interface Settled {
     readonly at: Instant;
     readonly locale: GuiLocale;
     readonly hint: Count | null;
-    readonly extensions: readonly Extension[];
+    readonly extensions: readonly ExtensionPort[];
 }
 
 const nobody = (): ReturnType<ExpandedDeps['edits']> => [];
@@ -70,14 +70,14 @@ export class DesktopReads {
         this.quiet = new ExpandedModel({ ...base, requests: { requestCurate: (): void => undefined } });
     }
 
-    read(tab: TabId, view: TabView | null): GuiReads {
+    read(tab: TabId, view: TabViewRecord | null): GuiReads {
         const now = this.deps.now();
         const settled = this.settledAt(now);
         const lanes = view?.lanes;
         const git = (pane: PaneId): WorktreeStatus | null => (worktreeSwitch() === 'on' ? this.deps.store.worktrees.statusOf(pane) : null);
         const found = notesByPaneOf(settled.extensions, lanes, settled.locale);
         return {
-            expanded: this.expandedFor(tab, view, now), notes: (pane): readonly Note[] => found.get(pane) ?? [],
+            expanded: this.expandedFor(tab, view, now), notes: (pane): readonly PaneNote[] => found.get(pane) ?? [],
             warnings: warningTextsOf(settled.extensions, settled.locale), compactions: this.deps.store.compactions.shownFor(tab),
             compactHint: settled.hint, locale: settled.locale, zone: must(parseText(ZONE)), plugin: this.pluginVersion(), git,
         };
@@ -112,7 +112,7 @@ export class DesktopReads {
         }
     }
 
-    private expandedFor(tab: TabId, view: TabView | null, now: Instant): ExpandedData {
+    private expandedFor(tab: TabId, view: TabViewRecord | null, now: Instant): ExpandedData {
         const watched = this.watched(tab, now);
         const held = this.held.get(tab);
         if (held !== undefined && held.watched === watched && now - held.at < EXPANDED_EVERY_MS) {

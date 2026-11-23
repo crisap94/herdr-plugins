@@ -10,9 +10,11 @@ import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { present } from '#src/recap/render/present.ts';
-import type { Extension, Note, NotesResult } from '#src/ports/extension.ts';
-import type { TabLane } from '#src/ports/tab-views.ts';
+import type { ExtensionPort, PaneNote, PaneNotesResult } from '#src/ports/extension.ts';
+import type { TabLaneRecord } from '#src/ports/tab-views.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { reconciliation, seenLane } from '#test/support/seen.ts';
+import { laneRecord, viewRecord } from '#test/support/tab-view-records.ts';
 
 const noGlow = (): null => null;
 
@@ -34,25 +36,25 @@ test('viewOf carries each lane\'s since from the board', () => {
     assert.deepEqual(viewOf(board, tabId('w1:t1'), instant(5)).lanes.map((lane) => lane.since), [instant(0), instant(0)]);
 });
 
-const lane: TabLane = { pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: null };
-const view = (notes: Note[]): string => present({
-    tab: { tab: 'w1:t1', column: null, at: 0, lanes: [lane] }, recap: null, notes: new Map([['w1:p1', notes]]), warnings: [], now: 0, messages: en,
+const lane: TabLaneRecord = laneRecord({ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: null });
+const view = (notes: PaneNote[]): string => present({
+    tab: viewRecord({ tab: 'w1:t1', column: null, at: 0, lanes: [lane] }), recap: null, notes: new Map([[paneOf('w1:p1'), notes]]), warnings: [], now: 0, messages: en,
 }, 60, noGlow).join('\n');
 
 test('a note wears ⚑ unless it names its own mark', () => {
-    assert.match(view([{ label: 'plain', at: null, details: [] }]), /⚑ plain/);
-    const own = view([{ label: 'branch', at: null, details: ['main'], mark: '⎇' }]);
+    assert.match(view([{ label: textOf('plain'), at: null, details: [] }]), /⚑ plain/);
+    const own = view([{ label: textOf('branch'), at: null, details: [textOf('main')], mark: textOf('⎇') }]);
     assert.match(own, /⎇ branch · main/);
     assert.doesNotMatch(own, /⚑/);
 });
 
 test('notes() may take the lanes and the locale, or nothing: both shapes type-check and are called', () => {
     const received: unknown[] = [];
-    const wanting: Extension = {
-        id: 'wants',
-        notes: (lanes, locale): NotesResult => { received.push(lanes, locale); return { kind: 'notes', byPane: new Map() }; },
+    const wanting: ExtensionPort = {
+        id: textOf('wants'),
+        notes: (lanes, locale): PaneNotesResult => { received.push(lanes, locale); return { kind: 'notes', byPane: new Map() }; },
     };
-    const bare: Extension = { id: 'bare', notes: (): NotesResult => ({ kind: 'notes', byPane: new Map([['p', [{ label: 'x', at: null, details: [] }]]]) }) };
+    const bare: ExtensionPort = { id: textOf('bare'), notes: (): PaneNotesResult => ({ kind: 'notes', byPane: new Map([[paneOf('p'), [{ label: textOf('x'), at: null, details: [] }]]]) }) };
     const merged = notesByPaneOf([wanting, bare], [lane], 'es');
     assert.deepEqual(received, [[lane], 'es']);
     assert.equal(merged.get(paneOf('p'))?.length, 1);

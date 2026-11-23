@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { gitNoteOf, storedNotes, STORED_NOTES_ID } from '#src/extensions/stored-notes.ts';
-import type { NotesResult } from '#src/ports/extension.ts';
+import type { PaneNotesResult } from '#src/ports/extension.ts';
 import type { PaneAlertReader } from '#src/ports/pane-alerts.ts';
 import { parseAlertSource } from '#src/recap/domain/pane-alert.ts';
 import type { PaneAlert } from '#src/recap/domain/pane-alert.ts';
 import { paneId } from '#test/support/ids.ts';
-import type { TabLane } from '#src/ports/tab-views.ts';
+import type { TabLaneRecord } from '#src/ports/tab-views.ts';
 import type { PaneNoteReader, WorktreeStatusReader } from '#src/ports/worktree-status.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
@@ -17,13 +17,14 @@ import { parseText, textOf } from '#src/recap/domain/text.ts';
 import type { NoteToken } from '#src/recap/domain/coordination.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { WorktreeStatus, WorktreeSwitch } from '#src/recap/domain/worktree.ts';
+import { laneRecord } from '#test/support/tab-view-records.ts';
 
 const count = (n: number): Count => must(parseCount(n));
 const status = (ahead: number | null, tracked: number, untracked: number | null): WorktreeStatus => ({
     root: must(parseDirectory('/w/repo')), branch: must(parseText('main')), ahead: ahead === null ? null : count(ahead), tracked: count(tracked), untracked: untracked === null ? null : count(untracked), at: instant(1),
 });
-const lane = (pane: string): TabLane => ({ pane, agent: 'claude', status: 'idle', title: null, cwd: '/w/repo' });
-const labels = (result: NotesResult): [string, string][] =>
+const lane = (pane: string): TabLaneRecord => laneRecord({ pane, agent: 'claude', status: 'idle', title: null, cwd: '/w/repo' });
+const labels = (result: PaneNotesResult): [string, string][] =>
     result.kind === 'notes' ? [...result.byPane].map(([pane, notes]) => [pane, notes.map((note) => `${note.mark ?? '⚑'} ${note.label} ${note.details.join('|')}`).join(' ; ')]) : [];
 
 test('gitNoteOf: ⎇, en and es; clean and not ahead is just the branch; changed counts tracked and untracked', () => {
@@ -50,7 +51,7 @@ test('an alert a source raised is drawn first, with its own time and details, th
     const extension = stored({ 'w1:p1': status(0, 0, 0) }, { 'w1:p1': [{ label: textOf('note'), value: textOf('hold') }] }, mode, { 'w1:p1': [alertAt('w1:p1', 'unmerged', 5, ['feat/x', '3 unmerged'])] });
     const result = extension.notes?.([lane('w1:p1')]) ?? { kind: 'notes', byPane: new Map() };
     assert.deepEqual(labels(result), [['w1:p1', '⚑ unmerged feat/x|3 unmerged ; ⎇ main  ; ⚑ note hold']]);
-    assert.equal(result.kind === 'notes' && result.byPane.get('w1:p1')?.[0]?.at, 5);
+    assert.equal(result.kind === 'notes' && result.byPane.get(paneId('w1:p1'))?.[0]?.at, 5);
 });
 
 test('the git note and the pane\'s note tokens are drawn under their lane, git first; nothing for a lane with neither', () => {

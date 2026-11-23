@@ -4,9 +4,10 @@ import { guidanceOf, MESSAGE_LIMIT, restoreFrom, restoreOf } from '#src/recap/ap
 import type { Material } from '#src/recap/application/compaction-message.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
+import type { LaneWebRecord } from '#src/ports/tab-views.ts';
 import { must } from '#src/protocol/result.ts';
 
-const web = { base: 'https://git.example/team/app', forge: 'gitlab', branch: 'feat/cart' } as const;
+const web: LaneWebRecord = { base: textOf('https://git.example/team/app'), forge: 'gitlab', branch: textOf('feat/cart') };
 const sections = {
     ...NO_SECTIONS, goal: textOf('Ship the cart rewrite'), now: [textOf('Running the checkout tests')], needs: [textOf('Should guests keep their basket?')],
     decisions: [textOf('Use sqlite, it needs no server')], next: [textOf('Open the merge request')], rules: [textOf('Never push to main')], links: [textOf('!252'), textOf('`src/cart.ts`')],

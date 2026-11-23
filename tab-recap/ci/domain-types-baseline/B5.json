@@ -5,9 +5,6 @@
   "src/adapters/db/run-write/legacy.ts": {
     "legacy": 3
   },
-  "src/adapters/db/tab-views/legacy.ts": {
-    "legacy": 4
-  },
   "src/adapters/db/typeid/legacy.ts": {
     "legacy": 4
   }

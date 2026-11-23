@@ -9,6 +9,7 @@ import { memoryStore, seed } from '#test/db/support.ts';
 import { oneTask } from '#test/support.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { viewRecord } from '#test/support/tab-view-records.ts';
 
 const ESC = String.fromCodePoint(0x1b);
 const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
@@ -274,7 +275,7 @@ test('the key and the endpoint of the TypeSafe API are never a row or a config e
 test('a saved language change asks a rewrite of the tab it was opened from and of every tab that has a recap', () => {
     const store = memoryStore();
     for (const [tab, pane] of [['w1:t1', 'w1:p1'], ['w1:t2', 'w1:p2'], ['w1:t3', 'w1:p3']] as const) {
-        store.views.writeTab({ tab, column: null, at: 1, lanes: [{ pane, agent: 'claude', status: 'idle', title: null, cwd: null }] });
+        store.views.writeTab(viewRecord({ tab, column: null, at: 1, lanes: [{ pane, agent: 'claude', status: 'idle', title: null, cwd: null }] }));
     }
     for (const tab of ['w1:t1', 'w1:t2']) {
         seed(store, { ...blankRecap(tabId(tab)), tasks: oneTask('## Goal\n- ship', { goal: textOf('ship'), now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: instant(1) });

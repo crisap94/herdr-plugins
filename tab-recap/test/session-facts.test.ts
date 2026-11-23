@@ -6,8 +6,8 @@ import { EditCache, EditTally, countEdits } from '#src/recap/application/edit-ta
 import { must } from '#src/protocol/result.ts';
 import { instant, parseMilliseconds } from '#src/recap/domain/time.ts';
 import { TRANSCRIPT_READ_BUDGET_BYTES } from '#src/recap/application/transcript-read-budget.ts';
-import { sessionFactsOf } from '#src/recap/domain/session-facts.ts';
-import type { SessionInputs } from '#src/recap/domain/session-facts.ts';
+import { factsOfBare } from '#test/support/session-readings.ts';
+import type { BareReadings } from '#test/support/session-readings.ts';
 import { en } from '#src/i18n/en.ts';
 import type { Messages } from '#src/i18n/messages.ts';
 import { es } from '#src/i18n/es.ts';
@@ -23,12 +23,12 @@ import { countOf } from '#src/recap/domain/count.ts';
 
 const NOW = Date.parse('2026-10-07T16:30:00Z');
 const at = (clock: string, day = '2026-10-07'): number => Date.parse(`${day}T${clock}:00Z`);
-const nothing: SessionInputs = { firstSeen: null, now: NOW, runs: {}, compactions: [], lanes: [], webs: [], edits: [] };
-const lines = (input: SessionInputs, locale: Messages = en): string[] => sessionLines(sessionFactsOf(input), { now: NOW, zone: 'UTC', messages: locale }).map((line) => `${line.label} ${line.text}`);
+const nothing: BareReadings = { firstSeen: null, now: NOW, runs: {}, compactions: [], lanes: [], webs: [], edits: [] };
+const lines = (input: BareReadings, locale: Messages = en): string[] => sessionLines(factsOfBare(input), { now: NOW, zone: 'UTC', messages: locale }).map((line) => `${line.label} ${line.text}`);
 
 test('nothing known: no line at all, never a guess', () => {
     assert.deepEqual(lines(nothing), []);
-    assert.deepEqual(sessionFactsOf(nothing), { started: null, runs: null, compactions: null, agents: [], repo: null, files: [], chapters: null, autocompact: null });
+    assert.deepEqual(factsOfBare(nothing), { started: null, runs: null, compactions: null, agents: [], repo: null, files: [], chapters: null, autocompact: null });
 });
 
 test('started: the first time the tab was seen and for how long; another day says the date', () => {
@@ -53,11 +53,11 @@ test('compactions: how many, with the tokens of those that say; a count alone wh
 });
 
 test('compactions by origin: the operator\'s and autocompact\'s counted apart, zeros left out, in both languages', () => {
-    const mixed: SessionInputs = { ...nothing, compactions: [{ tokensBefore: 800_000, tokensAfter: 14_000, origin: 'operator' }, { tokensBefore: 600_000, tokensAfter: 9_000, origin: 'auto' }, { tokensBefore: null, tokensAfter: null, origin: 'operator' }, { tokensBefore: null, tokensAfter: null, origin: 'operator' }] };
+    const mixed: BareReadings = { ...nothing, compactions: [{ tokensBefore: 800_000, tokensAfter: 14_000, origin: 'operator' }, { tokensBefore: 600_000, tokensAfter: 9_000, origin: 'auto' }, { tokensBefore: null, tokensAfter: null, origin: 'operator' }, { tokensBefore: null, tokensAfter: null, origin: 'operator' }] };
     assert.deepEqual(lines(mixed), ['compactions 4 (3 by you · 1 auto) (800k → 14k · 600k → 9k)']);
     assert.deepEqual(lines({ ...nothing, compactions: [{ tokensBefore: null, tokensAfter: null, origin: 'auto' }] }), ['compactions 1 (1 auto)']);
     assert.deepEqual(lines(mixed, es), ['compactaciones 4 (3 por ti · 1 auto) (800k → 14k · 600k → 9k)']);
-    assert.deepEqual(sessionFactsOf(mixed).compactions?.byOrigin, { operator: 3, auto: 1 });
+    assert.deepEqual(factsOfBare(mixed).compactions?.byOrigin, { operator: 3, auto: 1 });
 });
 
 test('each agent\'s context share; an agent whose context is unknown has no line', () => {

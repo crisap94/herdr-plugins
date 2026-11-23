@@ -29,7 +29,7 @@ test('every historical shape imports and reads back equal to what the legacy rea
             assert.deepEqual(recapDifferenceLines(recap, storeRead(store.records.readRecap(recap.tab))), [], recap.tab);
         }
         for (const view of legacy.views()) {
-            assert.deepEqual(viewDifferenceLines({ ...view, column: view.column ?? null }, store.views.readTab(view.tab)), [], view.tab);
+            assert.deepEqual(viewDifferenceLines({ ...view, column: view.column ?? null }, store.views.readTab(tabId(view.tab))), [], view.tab);
         }
         assert.deepEqual(store.visibility.readHidden(), legacy.readHidden());
         assert.deepEqual(store.requests.takeVisibility(), [{ target: 'w1:t1', visibility: 'toggle' }, { target: 'all', visibility: 'hidden' }]);

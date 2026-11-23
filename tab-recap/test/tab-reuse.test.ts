@@ -21,7 +21,7 @@ import { instant } from '#src/recap/domain/time.ts';
 import type { ColumnPanes } from '#src/ports/columns.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
-import type { TabViews } from '#src/ports/tab-views.ts';
+import type { TabViewStore } from '#src/ports/tab-views.ts';
 import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { memoryStore, storeRead } from '#test/db/support.ts';
 import { closedDaysOf } from '#test/fakes/closed-days.ts';
@@ -85,7 +85,7 @@ function folded(observations: readonly Observation[]): { readonly board: Board; 
 async function dispatched(store: Store, intents: readonly Intent[]): Promise<readonly string[]> {
     const lines: string[] = [];
     const dispatch = new LaneDispatch({
-        columns: {} as ColumnPanes, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() },
+        columns: {} as ColumnPanes, views: {} as TabViewStore, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() },
         prompts: { of: (): null => null, refresh: (): Promise<Presence> => Promise.resolve('absent') }, webs: { of: (): null => null, refresh: (): Promise<Presence> => Promise.resolve('absent') },
         log: (line): void => { lines.push(String(line)); }, board: (): Board => emptyBoard(), sizing: (): Sizing => SIZING, feedback: (): void => undefined,
         ...silentClosures, closures: store.closedLanes, closedDays: (): ClosedLaneDays => closedDaysOf('14'), retirements: store.retention,

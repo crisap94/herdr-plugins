@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import type { TabViewRecord } from '#src/ports/tab-views.ts';
 import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
@@ -12,6 +13,7 @@ import { instant } from '#src/recap/domain/time.ts';
 import { tabId, agentKind, paneId } from '#test/support/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
+import { viewRecord } from '#test/support/tab-view-records.ts';
 
 const noGlow = (): null => null;
 
@@ -38,10 +40,10 @@ test('two agents, one tab: a header per agent, then ONE recap for the tab', () =
         backend: textOf('claude/haiku'),
     };
     const text = present({
-        tab: { tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [
+        tab: viewRecord({ tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [
             { pane: 'w1:p1', agent: 'claude', status: 'blocked', title: null, cwd: null },
             { pane: 'w1:p2', agent: 'codex', status: 'working', title: 'codex', cwd: null },
-        ] },
+        ] }),
         recap,
         notes: new Map([['w1:p1', [{ label: 'idle', at: 0, details: ['main', '2 unmerged', 'dirty'] }]]]),
         warnings: [],
@@ -67,7 +69,7 @@ test('the bar: one row — each lane as a dot, then what needs you (or what is h
     const { firstItem } = await import('#src/recap/render/present.ts');
     const markdown = '## Goal\n- migrate\n\n## Now\n- running **CI** on !940\n\n## Waiting on you\n- approve the `prod` deploy\n';
     assert.equal(firstItem(markdown, 'now'), 'running CI on !940');
-    const tab = { tab: 'w1:t1', column: null, at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'blocked', title: null, cwd: null }] };
+    const tab = viewRecord({ tab: 'w1:t1', column: null, at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'blocked', title: null, cwd: null }] });
     const lines = presentBar({ tab, recap: { ...blankRecap(tabId('w1:t1')), tasks: oneTask(markdown) }, notes: new Map(), warnings: [], now: 0, messages: en }, 30);
     assert.equal(lines.length, 1, 'one row: the bar is small');
     assert.match(lines[0] ?? '', /📝/);
@@ -78,7 +80,7 @@ test('the bar: one row — each lane as a dot, then what needs you (or what is h
 });
 
 test('a warning is shown red above the lanes, then a blank line; none shows nothing', () => {
-    const tab = { tab: 'w1:t1', column: null, at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'x', cwd: null }] };
+    const tab = viewRecord({ tab: 'w1:t1', column: null, at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'x', cwd: null }] });
     const warned = present({ tab, recap: null, notes: new Map(), warnings: ['something is silent'], now: 0, messages: en }, 40, noGlow);
     assert.match(warned[0] ?? '', /something is silent/);
     assert.equal(warned[1], '');
@@ -86,8 +88,8 @@ test('a warning is shown red above the lanes, then a blank line; none shows noth
     assert.doesNotMatch(calm.join('\n'), /silent/);
 });
 
-const tabOf = (status: string, title: string | null): { tab: string; column: null; at: number; lanes: { pane: string; agent: string; status: string; title: string | null; cwd: string | null }[] } =>
-    ({ tab: 'w1:t1', column: null, at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status, title, cwd: null }] });
+const tabOf = (status: string, title: string | null): TabViewRecord =>
+    (viewRecord({ tab: 'w1:t1', column: null, at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status, title, cwd: null }] }));
 
 test('es: the column speaks Spanish — badge, recap meta, ago, notes, empty states', () => {
     const recap = { ...blankRecap(tabId('w1:t1')), tasks: oneTask('## Objetivo\n- migrar'), at: instant(0), backend: textOf('claude/haiku'), language: textOf('es') };
@@ -219,7 +221,7 @@ test('a lane header shows the live prompt; the recap\'s last prompt only when th
     const recap = { ...blankRecap(tabId('w1:t1')), lanes: [{ pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('t'), cursor: cursorOf(1), tail: null, title: textOf('x'), lastPrompt: textOf('what the last recap saw'), claudeRecap: null }] };
     const draw = (lastPrompt: string | null | undefined): string => {
         const lane = { pane: 'w1:p1', agent: 'claude', status: 'working', title: 'x', cwd: null, ...(lastPrompt === undefined ? {} : { lastPrompt }) };
-        return present({ tab: { tab: 'w1:t1', column: null, at: 0, lanes: [lane] }, recap, notes: new Map(), warnings: [], now: 0, messages: en }, 60, noGlow).join('\n');
+        return present({ tab: viewRecord({ tab: 'w1:t1', column: null, at: 0, lanes: [lane] }), recap, notes: new Map(), warnings: [], now: 0, messages: en }, 60, noGlow).join('\n');
     };
     assert.match(draw('what was just typed'), /› what was just typed/);
     assert.doesNotMatch(draw('what was just typed'), /last recap saw/);

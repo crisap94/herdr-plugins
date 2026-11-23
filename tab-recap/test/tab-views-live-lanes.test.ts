@@ -2,23 +2,24 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
-import { TabViewsRepository } from '#src/adapters/db/tab-views/legacy.ts';
-import type { LiveLanes, TabLane, TabView, TabViews } from '#src/ports/tab-views.ts';
+import { TabViewRowStore } from '#src/adapters/db/tab-views.ts';
+import type { LiveLanes, TabLaneRecord, TabViewRecord, TabViewStore } from '#src/ports/tab-views.ts';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { MemoryTabViews } from './fakes/tab-views-memory.ts';
+import { laneRecord, viewRecord } from '#test/support/tab-view-records.ts';
 
-type Harness = Pick<TabViews, 'writeTab'> & LiveLanes;
+type Harness = Pick<TabViewStore, 'writeTab'> & LiveLanes;
 
-const lane = (pane: string, over: Partial<TabLane> = {}): TabLane => ({ pane, agent: 'claude', status: 'idle', title: null, cwd: null, ...over });
-const view = (tab: string, lanes: readonly TabLane[]): TabView => ({ tab, column: null, at: 1, lanes });
+const lane = (pane: string, over: Record<string, unknown> = {}): TabLaneRecord => laneRecord({ pane, agent: 'claude', status: 'idle', title: null, cwd: null, ...over });
+const view = (tab: string, lanes: readonly TabLaneRecord[]): TabViewRecord => viewRecord({ tab, column: null, at: 1, lanes });
 
 function sqlite(): Harness {
     const opened = openDatabase(MEMORY);
     if (opened.kind !== 'ready') {
         throw new Error('a fresh in-memory database is never newer');
     }
-    return new TabViewsRepository(opened.db);
+    return new TabViewRowStore(opened.db);
 }
 
 function memory(): Harness {

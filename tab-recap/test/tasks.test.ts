@@ -25,7 +25,7 @@ import { present, presentBar } from '#src/recap/render/present.ts';
 import { groupsOf } from '#src/recap/render/groups.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import type { TabRecap } from '#src/ports/recap-records.ts';
-import type { TabLane, TabView } from '#src/ports/tab-views.ts';
+import type { TabLaneRecord, TabViewRecord } from '#src/ports/tab-views.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
@@ -36,6 +36,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import { cursorOf, sourcePathOf, grewOf } from '#src/ports/transcripts.ts';
 import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 import { seenLane } from '#test/support/seen.ts';
+import { laneRecord, viewRecord } from '#test/support/tab-view-records.ts';
 
 const sections = (goal: string, rest: Partial<typeof NO_SECTIONS> = {}): typeof NO_SECTIONS => ({ ...NO_SECTIONS, goal: textOf(goal), ...rest });
 const taskOf = (id: string, name: string, lanes: readonly string[], goal = id): RecapTask => ({ id: textOf(id), name: textOf(name), lanes: lanes.map((lane) => paneIdOf(lane)), sections: sections(goal), markdown: textOf(`## Goal\n${goal}`) });
@@ -168,8 +169,8 @@ test('the second run: the grouping is kept and goes back to the writer; an add n
     assert.deepEqual(recap?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal, task.sections?.done]), [['t1', 'Payments', ['w1:p1'], '', []], ['t2', 'Docs', ['w1:p2'], 'b', ['wrote the intro']]]);
 });
 
-const lane = (pane: string, agent: string, status = 'idle'): TabLane => ({ pane, agent, status, title: null, cwd: null });
-const tab = (lanes: readonly TabLane[]): TabView => ({ tab: 'w1:t1', column: null, at: 0, lanes });
+const lane = (pane: string, agent: string, status = 'idle'): TabLaneRecord => laneRecord({ pane, agent, status, title: null, cwd: null });
+const tab = (lanes: readonly TabLaneRecord[]): TabViewRecord => (viewRecord({ tab: 'w1:t1', column: null, at: 0, lanes }));
 const strip = (lines: readonly string[]): string => lines.join('\n').replace(new RegExp(`${String.fromCodePoint(0x1b)}\\[[0-9;]*m`, 'g'), '');
 const LANES = [lane('w1:p1', 'claude', 'blocked'), lane('w1:p2', 'codex', 'working'), lane('w1:p3', 'opencode')];
 

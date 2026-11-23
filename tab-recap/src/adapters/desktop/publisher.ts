@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
-import type { TabView, TabViews } from '#src/ports/tab-views.ts';
+import type { TabViewRecord, TabViewStore } from '#src/ports/tab-views.ts';
 import { BLANK_READS, type GuiReads } from '#src/recap/application/gui-tab-reads.ts';
 import { guiIndexRow } from '#src/recap/application/gui-index-build.ts';
 import { guiTabOf } from '#src/recap/application/gui-tab-build.ts';
@@ -23,9 +23,9 @@ const limit = must(parseCount(GUI_TAB_LIMIT));
 export interface GuiPublisherDeps {
     readonly dir: Directory;
     readonly records: GuardedRecapRecords;
-    readonly views: TabViews;
+    readonly views: TabViewStore;
     readonly now: () => Instant;
-    readonly reads?: (tab: TabId, view: TabView | null) => GuiReads;
+    readonly reads?: (tab: TabId, view: TabViewRecord | null) => GuiReads;
     readonly log: (line: NonEmptyText) => void;
     readonly bus?: DesktopBus;
 }

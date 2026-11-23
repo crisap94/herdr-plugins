@@ -1,19 +1,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { notesByPaneOf, warningTextsOf } from '#src/extensions/load.ts';
-import type { Extension, Note, NotesResult } from '#src/ports/extension.ts';
+import type { ExtensionPort, PaneNote, PaneNotesResult } from '#src/ports/extension.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { paneId } from '#test/support/ids.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 
-const note = (label: string): Note => ({ label, at: null, details: [] });
+const note = (label: string): PaneNote => ({ label: textOf(label), at: null, details: [] });
 
 test('notes merge per pane in order; an unknown reading and a silent extension add none', () => {
-    const extensions: Extension[] = [
-        { id: 'a', notes: (): NotesResult => ({ kind: 'notes', byPane: new Map([['p1', [note('one')]]]) }) },
-        { id: 'b', notes: (): NotesResult => unknown({ why: 'not-found', what: textOf('b') }) },
-        { id: 'c' },
-        { id: 'd', notes: (): NotesResult => ({ kind: 'notes', byPane: new Map([['p1', [note('two')]], ['p2', [note('three')]]]) }) },
+    const extensions: ExtensionPort[] = [
+        { id: textOf('a'), notes: (): PaneNotesResult => ({ kind: 'notes', byPane: new Map([[paneId('p1'), [note('one')]]]) }) },
+        { id: textOf('b'), notes: (): PaneNotesResult => unknown({ why: 'not-found', what: textOf('b') }) },
+        { id: textOf('c') },
+        { id: textOf('d'), notes: (): PaneNotesResult => ({ kind: 'notes', byPane: new Map([[paneId('p1'), [note('two')]], [paneId('p2'), [note('three')]]]) }) },
     ];
     const merged = notesByPaneOf(extensions);
     assert.deepEqual(merged.get(paneId('p1'))?.map((n) => n.label), ['one', 'two']);
@@ -21,5 +21,5 @@ test('notes merge per pane in order; an unknown reading and a silent extension a
 });
 
 test('warnings: only the non-null ones', () => {
-    assert.deepEqual(warningTextsOf([{ id: 'a', warning: (): string => 'w' }, { id: 'b', warning: (): null => null }, { id: 'c' }], 'en'), ['w']);
+    assert.deepEqual(warningTextsOf([{ id: textOf('a'), warning: (): Text => textOf('w') }, { id: textOf('b'), warning: (): null => null }, { id: textOf('c') }], 'en'), ['w']);
 });

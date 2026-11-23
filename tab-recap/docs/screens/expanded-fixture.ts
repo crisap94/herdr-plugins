@@ -2,7 +2,8 @@
 import { en } from '#src/i18n/en.ts';
 import type { BoundaryBreak } from '#src/ports/boundaries.ts';
 import type { Fact, FactId } from '#src/recap/domain/fact.ts';
-import { sessionFactsOf } from '#src/recap/domain/session-facts.ts';
+import type { LaneWebRecord } from '#src/ports/tab-views.ts';
+import { sessionFactsFrom } from '#src/recap/domain/session-facts.ts';
 import { expanded } from '#src/recap/render/expanded.ts';
 import { parseCurating, parseInstant, parseProse, parseTaskName } from '@stateforge-labs/recap-view';
 import { viewBreakOf, webOf } from '#src/view-model/column.ts';
@@ -14,7 +15,7 @@ import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/l
 const NOW = 1_760_000_000_000;
 const MIN = 60_000;
 const ago = (minutes: number): number => NOW - minutes * MIN;
-const SHOP = { base: 'https://git.example/team/shop', forge: 'gitlab', branch: 'feat/payments-v2' } as const;
+const SHOP: LaneWebRecord = { base: textOf('https://git.example/team/shop'), forge: 'gitlab', branch: textOf('feat/payments-v2') };
 
 function fact(id: string, section: Fact['section'], text: string, at: number, more: Partial<Fact> = {}): Fact {
     return { id: id as FactId, task: { tab: tabIdOf('w1:t1'), key: textOf('t1') }, section, text: textOf(text), why: null, ref: null, agent: null, anchor: null, firstAt: instant(at), lastAt: instant(at), state: 'open', closedWhy: null, closedAt: null, language: textOf('en'), ...more };
@@ -44,11 +45,11 @@ const BREAKS: readonly BoundaryBreak[] = [
 export function expandedLines(width: number): readonly string[] {
     return expanded({
         tasks: [{ name: parseTaskName(''), facts: FACTS, story: { text: parseProse('Checkout is moving to the v2 payments API behind a flag. The mapping is merged; the canary waits on one answer about gift cards.'), at: parseInstant(ago(10)) }, curating: parseCurating(false) }],
-        session: sessionFactsOf({
-            firstSeen: ago(430), now: NOW, runs: { 'turn-ended': 31, focused: 4, requested: 2 },
-            compactions: [{ tokensBefore: 812_000, tokensAfter: 14_000, origin: 'operator' }],
-            lanes: [{ agent: 'claude', label: 'Checkout migration', context: { tokens: countOf(120_000), window: countOf(1_000_000), source: 'catalogue' } }, { agent: 'codex', label: null, context: { tokens: countOf(61_000), window: countOf(258_400), source: 'agent' } }],
-            webs: [SHOP], edits: [{ path: 'src/payments/v2/client.ts', count: 9 }, { path: 'src/payments/v2/map.ts', count: 4 }], chapters: 3,
+        session: sessionFactsFrom({
+            firstSeen: instant(ago(430)), now: instant(NOW), runs: { 'turn-ended': countOf(31), focused: countOf(4), requested: countOf(2) },
+            compactions: [{ tokensBefore: countOf(812_000), tokensAfter: countOf(14_000), origin: 'operator' }],
+            lanes: [{ agent: textOf('claude'), label: textOf('Checkout migration'), context: { tokens: countOf(120_000), window: countOf(1_000_000), source: 'catalogue' } }, { agent: textOf('codex'), label: null, context: { tokens: countOf(61_000), window: countOf(258_400), source: 'agent' } }],
+            webs: [{ base: SHOP.base, branch: SHOP.branch }], edits: [{ path: textOf('src/payments/v2/client.ts'), count: countOf(9) }, { path: textOf('src/payments/v2/map.ts'), count: countOf(4) }], chapters: countOf(3),
         }),
         width, messages: en, now: NOW, zone: 'UTC', webs: [webOf(SHOP)], breaks: BREAKS.map(viewBreakOf),
     });

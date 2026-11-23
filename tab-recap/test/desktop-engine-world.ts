@@ -13,6 +13,7 @@ import { tabId } from '#test/support/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 import { paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { viewRecord } from '#test/support/tab-view-records.ts';
 
 export const OTHER_TAB = 'w2:t9';
 export const OTHER_PANE = 'w2:p9';
@@ -56,7 +57,7 @@ export async function startWorld(): Promise<World> {
 
 export function seedRun(world: World, at: number, ops: readonly Operation[]): void {
     recordOps(world.wrapped, { tab: tabId(TAB), at: instant(at), cause: 'requested', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor(PANE)], tasks: [{ id: textOf('t1'), name: textOf('Login'), lanes: [paneIdOf(PANE)] }], ops: [{ task: textOf('t1'), ops }] });
-    world.wrapped.views.writeTab({ tab: TAB, column: null, at, lanes: [{ pane: PANE, agent: 'claude', status: 'idle', title: 'login', cwd: '/repo' }] });
+    world.wrapped.views.writeTab(viewRecord({ tab: TAB, column: null, at, lanes: [{ pane: PANE, agent: 'claude', status: 'idle', title: 'login', cwd: '/repo' }] }));
 }
 
 export async function api(world: World, method: string, path: string, token: string | null = world.token): Promise<Answer> {
@@ -70,5 +71,5 @@ export async function seqOf(world: World): Promise<number> {
 
 export function seedOther(world: World, ops: readonly Operation[]): void {
     recordOps(world.wrapped, { tab: tabId(OTHER_TAB), at: instant(Date.now() - 30_000), cause: 'requested', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor(OTHER_PANE)], tasks: [{ id: textOf('t9'), name: textOf('Other'), lanes: [paneIdOf(OTHER_PANE)] }], ops: [{ task: textOf('t9'), ops }] });
-    world.wrapped.views.writeTab({ tab: OTHER_TAB, column: null, at: Date.now(), lanes: [{ pane: OTHER_PANE, agent: 'claude', status: 'idle', title: 'other', cwd: '/repo' }] });
+    world.wrapped.views.writeTab(viewRecord({ tab: OTHER_TAB, column: null, at: Date.now(), lanes: [{ pane: OTHER_PANE, agent: 'claude', status: 'idle', title: 'other', cwd: '/repo' }] }));
 }

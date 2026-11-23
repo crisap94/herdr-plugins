@@ -1,7 +1,7 @@
 import { textOf } from '#src/recap/domain/text.ts';
 import type { HandoffAnswerRecord, HandoffAnswerStore } from '#src/ports/handoff-answers.ts';
 import type { HandoffAsker } from '#src/ports/requests.ts';
-import type { TabViews } from '#src/ports/tab-views.ts';
+import type { TabViewStore } from '#src/ports/tab-views.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
 import { parseHandoffOutcome, type HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
@@ -31,7 +31,7 @@ export interface DaemonReading {
 }
 
 export interface HandoffStore {
-    readonly views: Pick<TabViews, 'tabOf'>;
+    readonly views: Pick<TabViewStore, 'tabOf'>;
     readonly requests: HandoffAsker;
     readonly handoffs: Pick<HandoffAnswerStore, 'handoffAnswer'>;
     close(): void;

@@ -4,7 +4,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { stripVTControlCharacters } from 'node:util';
 import type { BoundaryBreak } from '#src/ports/boundaries.ts';
-import { sessionFactsOf } from '#src/recap/domain/session-facts.ts';
+import { factsOfBare } from '#test/support/session-readings.ts';
 import { expanded } from '#src/recap/render/expanded.ts';
 import type { ExpandedView } from '#src/recap/render/expanded.ts';
 import { visibleLength } from '#src/recap/render/wrap.ts';
@@ -25,7 +25,7 @@ const BREAKS: readonly BoundaryBreak[] = [
 
 const withBreaks = (width: number, locale: 'en' | 'es'): ExpandedView => sampleView(width, locale, {
     breaks: BREAKS.map(viewBreakOf),
-    session: sessionFactsOf({
+    session: factsOfBare({
         firstSeen: at('09:12'), now: NOW, runs: { 'turn-ended': 36, focused: 3, requested: 2 },
         compactions: [{ tokensBefore: 800_000, tokensAfter: 14_000, origin: 'operator' }, { tokensBefore: 39_000, tokensAfter: countOf(3000), origin: 'auto' }],
         lanes: [{ agent: 'claude', label: 'orchestrator', context: { tokens: countOf(340_000), window: countOf(1_000_000), source: 'table' } }],
@@ -64,9 +64,9 @@ test('each break is a line between the facts around it, in time order; a day cha
 test('the session facts count the chapters on the compactions line; with no compaction the count stands alone; one chapter says nothing', () => {
     assert.ok(expanded(withBreaks(120, 'en')).some((line) => line.includes('compactions 2 (1 by you · 1 auto) (800k → 14k · 39k → 3k) · chapters 4')));
     assert.ok(expanded(withBreaks(120, 'es')).some((line) => line.includes('compactaciones 2 (1 por ti · 1 auto) (800k → 14k · 39k → 3k) · capítulos 4')));
-    const alone = sessionFactsOf({ firstSeen: null, now: NOW, runs: {}, compactions: [], lanes: [], webs: [], edits: [], chapters: 2 });
+    const alone = factsOfBare({ firstSeen: null, now: NOW, runs: {}, compactions: [], lanes: [], webs: [], edits: [], chapters: 2 });
     assert.deepEqual(expanded(sampleView(120, 'en', { session: alone })).filter((line) => line.includes('chapters')), ['chapters 2']);
-    assert.equal(sessionFactsOf({ firstSeen: null, now: NOW, runs: {}, compactions: [], lanes: [], webs: [], edits: [], chapters: 1 }).chapters, null);
+    assert.equal(factsOfBare({ firstSeen: null, now: NOW, runs: {}, compactions: [], lanes: [], webs: [], edits: [], chapters: 1 }).chapters, null);
 });
 
 test('a view with no breaks draws exactly what it drew before', () => {

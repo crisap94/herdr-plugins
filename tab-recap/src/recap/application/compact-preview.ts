@@ -1,5 +1,5 @@
 import { knownOr, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
-import type { TabViews } from '#src/ports/tab-views.ts';
+import type { TabViewStore } from '#src/ports/tab-views.ts';
 import { NO, YES, type Flag } from '#src/recap/domain/gui-tab-parts.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
@@ -17,7 +17,7 @@ export type CompactPreview =
 
 export interface CompactPreviewDeps {
     readonly records: Pick<GuardedRecapRecords, 'readRecap'>;
-    readonly views: Pick<TabViews, 'readTab'>;
+    readonly views: Pick<TabViewStore, 'readTab'>;
 }
 
 const refused = (reason: CompactRefusal): CompactPreview => ({ kind: 'refused', reason });

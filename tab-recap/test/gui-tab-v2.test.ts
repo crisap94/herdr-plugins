@@ -13,7 +13,7 @@ import type { GuiFactRow } from '#src/recap/domain/gui-tab-parts.ts';
 import { parseNonEmptyText, parseText, textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
-import type { TabView } from '#src/ports/tab-views.ts';
+import type { TabViewRecord } from '#src/ports/tab-views.ts';
 import { cursor, memoryStore, must as present, seed, storeRead } from '#test/db/support.ts';
 import { fact } from '#test/fakes/fact-at.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
@@ -22,14 +22,15 @@ import { v2Problems } from '#test/gui-schema-support.ts';
 import { parseCurating, parseTaskName } from '@stateforge-labs/recap-view';
 import { tabId } from '#test/support/ids.ts';
 import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { viewRecord } from '#test/support/tab-view-records.ts';
 
 const MIN = 60_000;
 
 const crowdedRow = (at: number): GuiFactRow => ({ kind: 'fact', fact: must(parseNonEmptyText(`f${at}`)), at: instant(at), clock: must(parseText('00:00 '.repeat(20))), day: null, closed: null });
 
-const view: TabView = {
+const view: TabViewRecord = viewRecord({
     tab: 'w1:t1', column: null, at: NOW, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'orchestrator', cwd: null, context: { tokens: countOf(100_000), window: countOf(200_000), source: 'agent' }, web: { base: 'https://git.example/acme/shop', forge: 'gitlab', branch: 'main' } }],
-};
+});
 
 function fixture(): { document: GuiTab; expanded: ReturnType<ExpandedModel['read']> } {
     const store = memoryStore();
@@ -40,7 +41,7 @@ function fixture(): { document: GuiTab; expanded: ReturnType<ExpandedModel['read
         .seed(fact('w1', 'now', 'Running the tests', NOW - 20 * MIN))
         .seed(fact('x1', 'done', 'Shipped the schema', NOW - 10 * MIN));
     const deps: ExpandedDeps = { records: store.records, ledger, stories: store.stories, session: store.session, boundaries: store.boundaries, requests: { requestCurate: (): void => undefined }, edits: () => [] };
-    const expanded = new ExpandedModel(deps).read('w1:t1', view, NOW);
+    const expanded = new ExpandedModel(deps).read(tabId('w1:t1'), view, instant(NOW));
     const recap = present(storeRead(store.records.readRecap(tabId('w1:t1'))));
     const document = guiTabOf(recap, view, instant(NOW), { ...BLANK_READS, expanded, zone: must(parseText('UTC')) });
     return { document, expanded };

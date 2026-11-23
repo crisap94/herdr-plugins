@@ -1,7 +1,9 @@
 import { describe, test } from 'node:test';
 import type { Database } from 'bun:sqlite';
-import { TabViewsRepository } from '#src/adapters/db/tab-views/legacy.ts';
+import { TabViewRowStore } from '#src/adapters/db/tab-views.ts';
+import { viewRecord } from '#test/support/tab-view-records.ts';
 import { expectSameEffect } from './parity.ts';
+import { tabId, paneId } from '#test/support/ids.ts';
 
 const exec = (sql: string) => (db: Database): void => { db.exec(sql); };
 const dump = (db: Database): unknown => ({ tab: db.prepare('SELECT id, column_pane, view_at, daemon_version FROM tab ORDER BY id').all(), lanes: db.prepare('SELECT * FROM lane ORDER BY tab_id, position').all() });
@@ -20,13 +22,13 @@ describe('parity: tab views', () => {
                     .run('t1', 'p2', 1, 'codex', 'idle', null, null, null, null, null, null, null, null, null, null);
             },
             builder: (db) => {
-                new TabViewsRepository(db).writeTab({
+                new TabViewRowStore(db).writeTab(viewRecord({
                     tab: 't1', column: 'c1', at: 50, daemonVersion: '1.0',
                     lanes: [
                         { pane: 'p1', agent: 'claude', status: 'working', title: 'T', cwd: '/w', lastPrompt: null, web: { base: 'https://x', forge: 'gitlab', branch: 'main' }, context: { tokens: 10, window: 100, source: 'agent' }, since: 7 },
                         { pane: 'p2', agent: 'codex', status: 'idle', title: null, cwd: null, lastPrompt: null, web: null, context: null },
                     ],
-                } as never);
+                }));
             },
             dump,
         });
@@ -37,10 +39,10 @@ describe('parity: tab views', () => {
             seed: exec(`${SEED}; UPDATE tab SET view_at = 5, column_pane = 'c'; INSERT INTO lane (tab_id, pane, position, agent, status, since) VALUES ('t1', 'b', 1, 'x', 's', 3)`),
             raw: () => undefined,
             builder: (db) => {
-                const repo = new TabViewsRepository(db);
-                const view = repo.readTab('t1');
+                const repo = new TabViewRowStore(db);
+                const view = repo.readTab(tabId('t1'));
                 const panes = view?.lanes.map((lane) => lane.pane);
-                if (JSON.stringify(panes) !== '["old","b"]' || repo.tabOf('b') !== 't1' || repo.tabOf('zz') !== null || repo.readTab('nope') !== null) {
+                if (JSON.stringify(panes) !== '["old","b"]' || repo.tabOf(paneId('b')) !== 't1' || repo.tabOf(paneId('zz')) !== null || repo.readTab(tabId('nope')) !== null) {
                     throw new Error('reads differ');
                 }
             },

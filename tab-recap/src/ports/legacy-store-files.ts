@@ -2,21 +2,37 @@ import { err, ok, type Result } from '#src/protocol/result.ts';
 import { allHiddenOf, type HiddenState } from '#src/recap/domain/board.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
-import { parseTextOrNull, textOf } from '#src/recap/domain/text.ts';
+import { parseTextOrNull, textOf, type Text } from '#src/recap/domain/text.ts';
 import { recapRunningOf, type LaneCursor, type TabRecap } from '#src/ports/recap-records.ts';
 import { cursorOf as positionOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import type { VisibilityRequest } from '#src/ports/requests.ts';
-import type { TabLane, TabView } from '#src/ports/tab-views.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 type Row = Record<string, unknown>;
 
 export type LegacyRecapFile = Row;
-export type LegacyViewFile = Row;
+export interface LegacyViewLane {
+    readonly pane: Text;
+    readonly agent: Text;
+    readonly status: Text;
+    readonly title: Text | null;
+    readonly cwd: Text | null;
+    readonly lastPrompt: Text | null;
+    readonly web: null;
+    readonly context: null;
+}
+
+export interface LegacyViewFile {
+    readonly tab: Text;
+    readonly column: Text | null;
+    readonly lanes: readonly LegacyViewLane[];
+    readonly at: Instant;
+    readonly daemonVersion: Text | null;
+}
 export type LegacyHidden = Row;
 export type LegacyVisibility = Row;
 
@@ -73,17 +89,17 @@ const cursorOf = (input: Row): Result<LaneCursor, ParseFailure> => {
     });
 };
 
-const laneOf = (input: Row): Result<TabLane, ParseFailure> => {
+const laneOf = (input: Row): Result<LegacyViewLane, ParseFailure> => {
     if (typeof input.pane !== 'string') return err({ kind: 'not-a-string' });
     if (typeof input.agent !== 'string') return err({ kind: 'not-a-string' });
     if (typeof input.status !== 'string') return err({ kind: 'not-a-string' });
     return ok({
-        pane: input.pane,
-        agent: input.agent,
-        status: input.status,
-        title: typeof input.title === 'string' ? input.title : null,
-        cwd: typeof input.cwd === 'string' ? input.cwd : null,
-        lastPrompt: typeof input.lastPrompt === 'string' ? input.lastPrompt : null,
+        pane: textOf(input.pane),
+        agent: textOf(input.agent),
+        status: textOf(input.status),
+        title: parseTextOrNull(input.title),
+        cwd: parseTextOrNull(input.cwd),
+        lastPrompt: parseTextOrNull(input.lastPrompt),
         web: null,
         context: null,
     });
@@ -101,10 +117,10 @@ const cursorsOf = (stored: Row): Result<LaneCursor[], ParseFailure> => {
     return ok(lanes);
 };
 
-const viewLanesOf = (input: Row): Result<TabLane[], ParseFailure> => {
+const viewLanesOf = (input: Row): Result<LegacyViewLane[], ParseFailure> => {
     const laneItems = input.lanes ?? [];
     if (!Array.isArray(laneItems)) return err({ kind: 'not-a-row' });
-    const lanes: TabLane[] = [];
+    const lanes: LegacyViewLane[] = [];
     for (const item of laneItems) {
         if (!isRow(item)) return err({ kind: 'not-a-row' });
         const lane = laneOf(item);
@@ -133,17 +149,17 @@ export function parseLegacyRecapFile(input: unknown): Result<TabRecap, ParseFail
     return ok({ tab: tabId(textOf(input.tab)), lanes: lanes.value, tasks: tasksOf(input), costUsd: usdOf(costUsd), ...recapMetaOf(input) });
 }
 
-export function parseLegacyViewFile(input: unknown): Result<TabView, ParseFailure> {
+export function parseLegacyViewFile(input: unknown): Result<LegacyViewFile, ParseFailure> {
     if (!isRow(input)) return err({ kind: 'not-a-row' });
     if (typeof input.tab !== 'string') return err({ kind: 'not-a-string' });
     const lanes = viewLanesOf(input);
     if (lanes.kind === 'err') return lanes;
     return ok({
-        tab: input.tab,
-        column: typeof input.column === 'string' ? input.column : null,
+        tab: textOf(input.tab),
+        column: parseTextOrNull(input.column),
         lanes: lanes.value,
-        at: typeof input.at === 'number' ? input.at : 0,
-        daemonVersion: typeof input.daemonVersion === 'string' ? input.daemonVersion : null,
+        at: instant(typeof input.at === 'number' ? input.at : 0),
+        daemonVersion: parseTextOrNull(input.daemonVersion),
     });
 }
 

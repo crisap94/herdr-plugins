@@ -2,19 +2,20 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import type { RecordedRun } from '#src/ports/recap-records.ts';
-import type { TabLane, TabViews } from '#src/ports/tab-views.ts';
+import type { TabLaneRecord, TabViewStore } from '#src/ports/tab-views.ts';
 import { memoryStore } from './db/support.ts';
 import { MemoryRunHistory } from './fakes/run-history.ts';
 import { MemoryTabViews } from './fakes/tab-views-memory.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { tabId } from '#test/support/ids.ts';
+import { tabId, paneId } from '#test/support/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
+import { laneRecord, viewRecord } from '#test/support/tab-view-records.ts';
 
 interface Subject {
     readonly name: string;
     readonly runs: () => Pick<GuardedRecapRecords, 'recordRun' | 'failRun' | 'lastRunOf'>;
-    readonly views: () => Pick<TabViews, 'writeTab' | 'tabOf'>;
+    readonly views: () => Pick<TabViewStore, 'writeTab' | 'tabOf'>;
 }
 
 const subjects: readonly Subject[] = [
@@ -23,7 +24,7 @@ const subjects: readonly Subject[] = [
 ];
 
 const run = (tab: string, at: number, cause: 'turn-ended' | 'focused' | 'requested' | 'imported'): RecordedRun => ({ tab: tabId(tab), at: instant(at), cause, backend: null, language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [], tasks: [], changed: [], refused: [] });
-const lane = (pane: string): TabLane => ({ pane, agent: 'claude', status: 'idle', title: null, cwd: null });
+const lane = (pane: string): TabLaneRecord => laneRecord({ pane, agent: 'claude', status: 'idle', title: null, cwd: null });
 
 for (const { name, runs, views } of subjects) {
     test(`${name}: the last good run is the time and cause of the latest run that did not fail`, () => {
@@ -46,12 +47,12 @@ for (const { name, runs, views } of subjects) {
 
     test(`${name}: a pane maps to the tab its view lists, and a pane that a later view drops maps to none`, () => {
         const tabs = views();
-        assert.equal(tabs.tabOf('w1:p1'), null, 'an unknown pane');
-        tabs.writeTab({ tab: 'w1:t1', column: null, lanes: [lane('w1:p1')], at: 1 });
-        tabs.writeTab({ tab: 'w1:t2', column: null, lanes: [lane('w1:p2')], at: 1 });
-        assert.equal(tabs.tabOf('w1:p1'), 'w1:t1');
-        assert.equal(tabs.tabOf('w1:p2'), 'w1:t2');
-        tabs.writeTab({ tab: 'w1:t1', column: null, lanes: [], at: 2 });
-        assert.equal(tabs.tabOf('w1:p1'), null, 'a pane the view no longer lists');
+        assert.equal(tabs.tabOf(paneId('w1:p1')), null, 'an unknown pane');
+        tabs.writeTab(viewRecord({ tab: 'w1:t1', column: null, lanes: [lane('w1:p1')], at: 1 }));
+        tabs.writeTab(viewRecord({ tab: 'w1:t2', column: null, lanes: [lane('w1:p2')], at: 1 }));
+        assert.equal(tabs.tabOf(paneId('w1:p1')), 'w1:t1');
+        assert.equal(tabs.tabOf(paneId('w1:p2')), 'w1:t2');
+        tabs.writeTab(viewRecord({ tab: 'w1:t1', column: null, lanes: [], at: 2 }));
+        assert.equal(tabs.tabOf(paneId('w1:p1')), null, 'a pane the view no longer lists');
     });
 }
