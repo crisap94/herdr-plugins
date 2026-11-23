@@ -1,6 +1,7 @@
 import type { SettingGet } from '#src/daemon/settings.ts';
 import { BACKEND_IDS, hasModel } from '#src/recap/domain/backend.ts';
 import type { BackendId } from '#src/recap/domain/backend.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 import { entriesOf } from '#src/recap/application/setup-changes.ts';
 import { CHOICES, TEXTS } from '#src/recap/application/setup-fields.ts';
@@ -88,7 +89,7 @@ function viewOf(draft: Draft, locks: Locks, id: string): SettingView | undefined
         return undefined;
     }
     const choice = CHOICES[field];
-    const options = choice === undefined ? [] : Array.from({ length: choice.size }, (_, at) => entryOf(choice.keep(draft, at), field)?.[2] ?? '');
+    const options = choice === undefined ? [] : Array.from({ length: choice.size }, (_, at) => entryOf(choice.keep(draft, countOf(at)), field)?.[2] ?? '');
     const kind = kindOf(field, choice !== undefined);
     return { id, env: entry[1], kind, value: entry[2], options, locked: locks[field] !== undefined };
 }
@@ -106,8 +107,8 @@ function withValue(draft: Draft, id: string, value: string): Draft | undefined {
         return undefined;
     }
     if (choice !== undefined) {
-        const at = Array.from({ length: choice.size }, (_, index) => entryOf(choice.keep(draft, index), field)?.[2]).indexOf(value);
-        return at < 0 ? undefined : choice.keep(draft, at);
+        const at = Array.from({ length: choice.size }, (_, index) => entryOf(choice.keep(draft, countOf(index)), field)?.[2]).indexOf(value);
+        return at < 0 ? undefined : choice.keep(draft, countOf(at));
     }
     return TEXTS[field]?.keep(draft, textOf(value));
 }

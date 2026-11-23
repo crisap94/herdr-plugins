@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { uncheckedAgentKind } from '#src/recap/domain/ids.ts';
 import { environmentName } from '#src/recap/domain/backend.ts';
 import assert from 'node:assert/strict';
 import { changes, dirty, draftFrom, initial, locksOf, modelTarget, saved, step, tested, withAvailable } from '#src/recap/application/setup-keys.ts';
@@ -27,7 +28,7 @@ function typed(state: Setup, keys: readonly string[]): { state: Setup; effects: 
     return { state: now, effects };
 }
 
-const start = (locks: Locks = {}): Setup => withAvailable(initial(draft, locks), ['claude', 'codex']);
+const start = (locks: Locks = {}): Setup => withAvailable(initial(draft, locks), [uncheckedAgentKind('claude'), uncheckedAgentKind('codex')]);
 const down = (n: number): string[] => Array.from({ length: n }, () => 'j');
 
 test('the draft starts from the configuration: auto UI, recap language follows the UI', () => {
@@ -56,11 +57,11 @@ test('model: edits the model of the harness in force; with auto that is the firs
     const edited = typed(start(), ['l', '\r', '\u0015', 'g', 'p', 't', '-', '6', '\r']).state;
     assert.equal(edited.draft.models.codex, 'gpt-6');
     assert.deepEqual([...changes(edited)], [['TAB_RECAP_MODEL_CODEX', 'gpt-6']]);
-    const auto = withAvailable(initial({ ...draft, backend: 'auto' }, {}), ['opencode', 'codex']);
+    const auto = withAvailable(initial({ ...draft, backend: 'auto' }, {}), [uncheckedAgentKind('opencode'), uncheckedAgentKind('codex')]);
     assert.equal(modelTarget(auto.draft, auto.available), 'codex');
     const none = withAvailable(initial({ ...draft, backend: 'auto' }, {}), []);
     assert.equal(typed(none, ['l', '\r']).state.note, 'no-agent');
-    assert.equal(modelTarget({ ...draft, backend: 'custom' }, ['claude']), null);
+    assert.equal(modelTarget({ ...draft, backend: 'custom' }, [uncheckedAgentKind('claude')]), null);
 });
 
 test('text rows: backspace and ctrl-u; typing ‘q’, ‘s’ or ‘t’ is text while editing, not a command', () => {

@@ -1,7 +1,9 @@
 import { changes, dirty } from './setup-changes.ts';
 import { CHOICES, TEXTS } from './setup-fields.ts';
 import { environmentName } from '#src/recap/domain/backend.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { countOf, type Count } from '#src/recap/domain/count.ts';
+import type { AgentKind } from '#src/recap/domain/ids.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 import { fieldOf, JOB_FIELDS, modelTarget, rowOf, ROWS } from './setup-state.ts';
 import type { Editing, FieldId, Setup, Stepped, TestState } from './setup-state.ts';
 
@@ -31,52 +33,50 @@ function enter(state: Setup): Setup {
     return { ...state, note: null, editing: { kind: 'text', buffer: TEXTS[field]?.read(draft) ?? draft.recapLanguage } };
 }
 
-function confirmText(state: Setup, buffer: string): Setup {
+function confirmText(state: Setup, buffer: Text): Setup {
     const { draft } = state;
     const row = fieldOf(state);
     const done = { ...state, editing: null, note: null };
     const text = TEXTS[row];
     if (text !== undefined) {
-        return { ...done, draft: text.keep(draft, textOf(buffer)) };
+        return { ...done, draft: text.keep(draft, buffer) };
     }
     const target = modelTarget(draft, state.available);
     return target === null ? done : { ...done, draft: { ...draft, models: { ...draft.models, [target]: textOf(buffer.trim()) } } };
 }
 
-function confirmChoice(state: Setup, at: number): Setup {
+function confirmChoice(state: Setup, at: Count): Setup {
     const done = { ...state, editing: null, note: null };
     const choice = CHOICES[fieldOf(state)];
     return choice === undefined ? done : { ...done, draft: choice.keep(state.draft, at) };
 }
 
-const isPrintable = (key: string): boolean => !key.startsWith(ESC) && Array.from(key).every((char) => (char.codePointAt(0) ?? 0) >= 0x20 && char !== '\u007f');
+const choiceCount = (field: FieldId): Count => CHOICES[field]?.size ?? countOf(0);
 
-const choiceCount = (field: FieldId): number => CHOICES[field]?.size ?? 0;
-
-function editChoice(state: Setup, at: number, key: string): Setup {
+function editChoice(state: Setup, at: Count, key: Text): Setup {
     if (key === '\r') {
         return confirmChoice(state, at);
     }
     const size = choiceCount(fieldOf(state));
     const by = (UP.has(key) ? -1 : 0) + (DOWN.has(key) ? 1 : 0);
-    return by === 0 ? state : { ...state, editing: { kind: 'choice', at: (at + by + size) % size } };
+    return by === 0 ? state : { ...state, editing: { kind: 'choice', at: countOf((at + by + size) % size) } };
 }
 
-function editText(state: Setup, buffer: string, key: string): Setup {
-    const typed = (text: string): Setup => ({ ...state, editing: { kind: 'text', buffer: text }, note: null });
+function editText(state: Setup, buffer: Text, key: Text): Setup {
+    const typed = (text: Text): Setup => ({ ...state, editing: { kind: 'text', buffer: text }, note: null });
     if (key === '\r') {
         return confirmText(state, buffer);
     }
     if (key === '\u007f' || key === '\b') {
-        return typed(Array.from(buffer).slice(0, -1).join(''));
+        return typed(textOf(Array.from(buffer).slice(0, -1).join('')));
     }
     if (key === '\u0015') {
-        return typed('');
+        return typed(textOf(''));
     }
-    return isPrintable(key) ? typed(buffer + key) : state;
+    return !key.startsWith(ESC) && Array.from(key).every((char) => (char.codePointAt(0) ?? 0) >= 0x20 && char !== '\u007f') ? typed(textOf(buffer + key)) : state;
 }
 
-function editKey(state: Setup, editing: Editing, key: string): Stepped {
+function editKey(state: Setup, editing: Editing, key: Text): Stepped {
     if (key === ESC || key === '\u0003') {
         return { state: { ...state, editing: null, note: null }, effects: [] };
     }
@@ -109,13 +109,15 @@ function startTest(state: Setup): Stepped {
     return { state: { ...state, test: { kind: 'running' } }, effects: [{ kind: 'test', draft: state.draft, available: state.available ?? [] }] };
 }
 
-function move(state: Setup, by: number): Setup {
-    return { ...state, row: Math.min(ROWS.length - 1, Math.max(0, state.row + by)), note: null };
+type Direction = -1 | 1;
+
+function move(state: Setup, by: Direction): Setup {
+    return { ...state, row: countOf(Math.min(ROWS.length - 1, Math.max(0, state.row + by))), note: null };
 }
 
-function across(state: Setup, by: number): Setup {
+function across(state: Setup, by: Direction): Setup {
     const parts = JOB_FIELDS[rowOf(state)]?.length ?? 0;
-    return parts === 0 ? state : { ...state, part: Math.min(parts - 1, Math.max(0, state.part + by)), note: null };
+    return parts === 0 ? state : { ...state, part: countOf(Math.min(parts - 1, Math.max(0, state.part + by))), note: null };
 }
 
 const QUIT = new Set(['q', ESC, '\u0003']);
@@ -134,7 +136,7 @@ const COMMANDS: Readonly<Record<string, (state: Setup) => Stepped>> = {
 
 export function step(state: Setup, key: string): Stepped {
     if (state.editing !== null) {
-        return editKey({ ...state, asked: false }, state.editing, key);
+        return editKey({ ...state, asked: false }, state.editing, textOf(key));
     }
     if (QUIT.has(key)) {
         return leave(state);
@@ -142,12 +144,12 @@ export function step(state: Setup, key: string): Stepped {
     return (COMMANDS[key] ?? stay)({ ...state, asked: false, note: state.asked ? null : state.note });
 }
 
-export const withAvailable = (state: Setup, available: readonly string[]): Setup => ({ ...state, available });
+export const withAvailable = (state: Setup, available: readonly AgentKind[]): Setup => ({ ...state, available });
 
 export const tested = (state: Setup, test: TestState): Setup => ({ ...state, test });
 
 export function saved(state: Setup, failure: string | null, rewriting: boolean): Setup {
     return failure === null
         ? { ...state, stored: state.draft, note: rewriting ? 'rewriting' : 'saved', asked: false }
-        : { ...state, note: { failed: failure } };
+        : { ...state, note: { failed: textOf(failure) } };
 }

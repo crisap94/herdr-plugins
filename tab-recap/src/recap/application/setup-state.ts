@@ -17,11 +17,15 @@ import { telemetryTagsOf } from '#src/recap/domain/telemetry-tags.ts';
 import type { TelemetryTags } from '#src/recap/domain/telemetry-tags.ts';
 import { compactNoteOf } from '#src/recap/domain/compact-note.ts';
 import type { CompactNote } from '#src/recap/domain/compact-note.ts';
+import { countOf, type Count } from '#src/recap/domain/count.ts';
+import type { AgentKind } from '#src/recap/domain/ids.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 
 export type RowId = 'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'telemetryTags' | 'compactTarget' | 'compactNote' | 'compactHint' | 'contextWindow' | 'autocompact' | 'autocompactAt' | 'autocompactStyle' | 'autocompactMissed' | 'autocompactJob' | 'herdrEvents';
 export const ROWS: readonly RowId[] = ['recapJob', 'compactJob', 'locale', 'recapLanguage', 'screenAgents', 'gitNote', 'compactTarget', 'compactNote', 'compactHint', 'contextWindow', 'judgeJob', 'curatorJob', 'autocompact', 'autocompactAt', 'autocompactStyle', 'autocompactMissed', 'autocompactJob', 'herdrEvents', 'telemetryTags'];
-export type FieldId = Exclude<RowId, 'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'autocompactJob'> | 'harness' | 'model' | 'effort' | 'compactBy' | 'compactModel' | 'compactEffort' | 'judgeBy' | 'judgeModel' | 'judgeEffort' | 'curateBy' | 'curateModel' | 'curateEffort' | 'decideBy' | 'decideModel' | 'decideEffort';
+type JobRow = 'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'autocompactJob';
+type PlainRow = Exclude<RowId, JobRow>;
+export type FieldId = PlainRow | 'harness' | 'model' | 'effort' | 'compactBy' | 'compactModel' | 'compactEffort' | 'judgeBy' | 'judgeModel' | 'judgeEffort' | 'curateBy' | 'curateModel' | 'curateEffort' | 'decideBy' | 'decideModel' | 'decideEffort';
 export const JOB_FIELDS: Readonly<Partial<Record<RowId, readonly FieldId[]>>> = {
     recapJob: ['harness', 'model', 'effort'],
     compactJob: ['compactBy', 'compactModel', 'compactEffort'],
@@ -29,7 +33,8 @@ export const JOB_FIELDS: Readonly<Partial<Record<RowId, readonly FieldId[]>>> = 
     curatorJob: ['curateBy', 'curateModel', 'curateEffort'],
     autocompactJob: ['decideBy', 'decideModel', 'decideEffort'],
 };
-export const FIELDS: readonly FieldId[] = ROWS.flatMap((row) => JOB_FIELDS[row] ?? [row as FieldId]);
+const isPlainRow = (row: RowId): row is PlainRow => JOB_FIELDS[row] === undefined;
+export const FIELDS: readonly FieldId[] = ROWS.flatMap((row) => JOB_FIELDS[row] ?? (isPlainRow(row) ? [row] : []));
 export const JOB_BY_OPTIONS: readonly JobBy[] = JOB_BY_CHOICES;
 export const DECIDER_BY_OPTIONS: readonly DeciderBy[] = DECIDER_BY_CHOICES;
 export const MODE_CHOICES: readonly AutocompactMode[] = ['off', 'shadow', 'on'];
@@ -74,13 +79,13 @@ export type TestState =
     | { readonly kind: 'ok'; readonly seconds: number; readonly costUsd: number }
     | { readonly kind: 'failed'; readonly why: string };
 
-interface TextEdit { readonly kind: 'text'; readonly buffer: string }
+interface TextEdit { readonly kind: 'text'; readonly buffer: Text }
 
-interface ChoiceEdit { readonly kind: 'choice'; readonly at: number }
+interface ChoiceEdit { readonly kind: 'choice'; readonly at: Count }
 
 export type Editing = TextEdit | ChoiceEdit;
 
-interface FailedNote { readonly failed: string }
+interface FailedNote { readonly failed: Text }
 
 export type Note = 'locked' | 'unsaved' | 'saved' | 'rewriting' | 'nothing' | 'no-agent' | FailedNote;
 
@@ -88,9 +93,9 @@ export interface Setup {
     readonly draft: Draft;
     readonly stored: Draft;
     readonly locks: Locks;
-    readonly available: readonly string[] | null;
-    readonly row: number;
-    readonly part: number;
+    readonly available: readonly AgentKind[] | null;
+    readonly row: Count;
+    readonly part: Count;
     readonly editing: Editing | null;
     readonly test: TestState;
     readonly note: Note | null;
@@ -99,7 +104,7 @@ export interface Setup {
 
 export type Effect =
     | { readonly kind: 'save'; readonly values: ReadonlyMap<EnvironmentName, Text>; readonly languageChanged: boolean }
-    | { readonly kind: 'test'; readonly draft: Draft; readonly available: readonly string[] }
+    | { readonly kind: 'test'; readonly draft: Draft; readonly available: readonly AgentKind[] }
     | { readonly kind: 'close' };
 
 export interface Stepped {
@@ -149,17 +154,17 @@ export function draftFrom(config: Pick<Draft, 'backend' | 'models'>, raw: RawSet
 }
 
 export function initial(draft: Draft, locks: Locks): Setup {
-    return { draft, stored: draft, locks, available: null, row: 0, part: 0, editing: null, test: { kind: 'idle' }, note: null, asked: false };
+    return { draft, stored: draft, locks, available: null, row: countOf(0), part: countOf(0), editing: null, test: { kind: 'idle' }, note: null, asked: false };
 }
 
 export const rowOf = (state: Setup): RowId => ROWS[state.row] ?? 'recapJob';
 
 export const fieldOf = (state: Setup): FieldId => {
     const row = rowOf(state);
-    return JOB_FIELDS[row]?.[state.part] ?? (row as FieldId);
+    return isPlainRow(row) ? row : (JOB_FIELDS[row]?.[state.part] ?? 'harness');
 };
 
-export function modelTarget(draft: Draft, available: readonly string[] | null): BackendId | null {
+export function modelTarget(draft: Draft, available: readonly AgentKind[] | null): BackendId | null {
     const backend = pick(draft.backend, (available ?? []).map((name) => textOf(name)));
     return backend === null || !hasModel(backend) ? null : backend;
 }

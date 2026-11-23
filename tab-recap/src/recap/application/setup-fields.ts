@@ -5,12 +5,13 @@ import { screenSetting } from '#src/recap/domain/policy.ts';
 import { COMPACT_NOTE_CHOICES } from '#src/recap/domain/compact-note.ts';
 import { DECIDER_BY_OPTIONS, EFFORT_CHOICES, HARNESS_CHOICES, JOB_BY_OPTIONS, LOCALE_CHOICES, MODE_CHOICES, STYLE_CHOICES, SWITCH_CHOICES, MISSED_CHOICES } from './setup-state.ts';
 import type { Draft, FieldId } from './setup-state.ts';
+import { countOf, type Count } from '#src/recap/domain/count.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 
 export interface ChoiceField {
-    readonly size: number;
-    readonly at: (draft: Draft) => number;
-    readonly keep: (draft: Draft, at: number) => Draft;
+    readonly size: Count;
+    readonly at: (draft: Draft) => Count;
+    readonly keep: (draft: Draft, at: Count) => Draft;
 }
 
 export interface TextField {
@@ -19,7 +20,7 @@ export interface TextField {
 }
 
 function choice<T>(options: readonly T[], read: (draft: Draft) => T, write: (draft: Draft, value: T) => Draft): ChoiceField {
-    return { size: options.length, at: (draft) => options.indexOf(read(draft)), keep: (draft, at) => { const value = options[at]; return value === undefined ? draft : write(draft, value); } };
+    return { size: countOf(options.length), at: (draft) => countOf(options.indexOf(read(draft))), keep: (draft, at) => { const value = options[at]; return value === undefined ? draft : write(draft, value); } };
 }
 
 export const CHOICES: Readonly<Partial<Record<FieldId, ChoiceField>>> = {

@@ -1,4 +1,5 @@
 import { catalogFor } from '#src/i18n/index.ts';
+import { uncheckedAgentKind } from '#src/recap/domain/ids.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { test } from 'node:test';
 import { curateJobOf } from './fakes/settings-readers.ts';
@@ -23,7 +24,7 @@ const models = { claude: textOf(''), codex: textOf('gpt-6-luna'), opencode: text
 const raw = { locale: undefined, recapLanguage: undefined };
 const draft = draftFrom({ backend: 'codex', models }, raw);
 const given = (key: string): string | undefined => ({ TAB_RECAP_CURATE_BY: ' Codex ', TAB_RECAP_CURATE_MODEL: ' gpt-6-luna ', TAB_RECAP_CURATE_EFFORT: 'HIGH' })[key];
-const start = (locks = {}): Setup => withAvailable(initial(draft, locks), ['claude', 'codex']);
+const start = (locks = {}): Setup => withAvailable(initial(draft, locks), [uncheckedAgentKind('claude'), uncheckedAgentKind('codex')]);
 const down = (n: number): string[] => Array.from({ length: n }, () => 'j');
 const typed = (state: Setup, keys: readonly string[]): Setup => keys.reduce((now, key) => step(now, key).state, state);
 

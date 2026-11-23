@@ -19,7 +19,7 @@ import type { ColumnView } from '#src/recap/render/present.ts';
 import { catalogFor } from '#src/i18n/index.ts';
 import { setupLines } from '#src/recap/render/setup.ts';
 import { expandedLines } from './expanded-fixture.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId, uncheckedAgentKind } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { textOf, parseTextOrNull } from '#src/recap/domain/text.ts';
 import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
@@ -178,7 +178,7 @@ function columnView(fixture: Fixture): ColumnView {
 function setupState(locale: 'en' | 'es'): Setup {
     const models = { claude: textOf('haiku'), codex: textOf(''), opencode: textOf(''), custom: textOf('') };
     const draft = draftFrom({ backend: 'claude', models }, { locale: textOf(locale), recapLanguage: textOf('ui') });
-    return withAvailable(initial(draft, {}), ['claude', 'codex', 'opencode']);
+    return withAvailable(initial(draft, {}), ['claude', 'codex', 'opencode'].map(uncheckedAgentKind));
 }
 
 const noMarkdown = (): null => null;
