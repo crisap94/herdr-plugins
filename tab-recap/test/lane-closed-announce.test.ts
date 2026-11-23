@@ -10,7 +10,8 @@ import type { ClosedLane, RestoredLane } from '#src/recap/domain/closures.ts';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { LaneFacts } from '#src/recap/domain/lane-tokens.ts';
+import type { LaneTokenFacts } from '#src/recap/domain/lane-tokens.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
 import { silentClosures } from './fakes/silent-closures.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -77,7 +78,7 @@ test('a closure seen by dispatch and by the token publisher announces lane-close
     const board: { current: Board } = { current: { ...emptyBoard(), lanes: new Map([[lane.pane, lane]]) } };
     let now = 0;
     const publisher = new LaneTokenPublisher({
-        tokens: new RecordingTokens(), enabled: (): boolean => true, board: (): Board => board.current, facts: (): LaneFacts => ({ share: null, recapAt: null, needs: 0 }),
+        tokens: new RecordingTokens(), enabled: (): boolean => true, board: (): Board => board.current, facts: (): LaneTokenFacts => ({ share: null, recapAt: null, needs: countOf(0) }),
         now: (): number => now, log: noop, events: port,
     });
     publisher.tick();

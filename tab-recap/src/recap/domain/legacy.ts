@@ -84,8 +84,6 @@ export interface SwitchedObservation { readonly kind: 'switched'; readonly enabl
 
 function okOrNull<T, E>(parsed: Result<T, E>): T | null { return parsed.kind === 'ok' ? parsed.value : null; }
 
-export * from './twins/values/legacy.ts';
-
 export { parseMerge, type Merge } from './twins/curation/legacy.ts';
 
 interface SessionCompactionInput { readonly tokensBefore: number | null; readonly tokensAfter: number | null; readonly origin: Origin; }

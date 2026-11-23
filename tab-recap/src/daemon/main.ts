@@ -63,7 +63,7 @@ import { EventStream } from '#src/recap/application/lane-events.ts';
 import { PaneTypingLease } from '#src/recap/application/typing-lease.ts';
 import { LaneTokenPublisher } from '#src/recap/application/lane-tokens.ts';
 import { factsOf } from '#src/recap/application/lane-facts.ts';
-import type { LaneFacts } from '#src/recap/domain/lane-tokens.ts';
+import type { LaneTokenFacts } from '#src/recap/domain/lane-tokens.ts';
 import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
 import { duration, instant, type Instant } from '#src/recap/domain/time.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
@@ -129,7 +129,7 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
     const hub = new SettleHub({ agents: fleet.agents(), listening: listeningIn(box), pause: sleep, now: nowInstant });
     const webs = new LaneWebs(repos);
     const contexts = new LaneContexts(transcripts, agentWindows(new CatalogueWindows()), systemCompactLimits(), () => loadSettings().compaction.window);
-    const laneTokens = new LaneTokenPublisher({ tokens: fleet, enabled: herdrEventsOn, board, facts: (lane): LaneFacts => factsOf(lane, { contexts, records: store.records, ledger: store.ledger }), capability: capabilityNow, now: nowInstant, log, events });
+    const laneTokens = new LaneTokenPublisher({ tokens: fleet, enabled: herdrEventsOn, board, facts: (lane): LaneTokenFacts => factsOf(lane, { contexts, records: store.records, ledger: store.ledger }), capability: capabilityNow, now: nowInstant, log, events });
 
     const dispatch = dispatchFor(box, { fleet, store, recaps, transcripts, webs, contexts, events, sharing: (): Sharing => (herdrEventsOn() ? 'on' : 'off') }, log);
     const turns = laneTurns({ hub, compactions: store.compactions, board: (): Board => box.informer?.current ?? emptyBoard(), now: nowInstant, statused: statusTaps.emit });

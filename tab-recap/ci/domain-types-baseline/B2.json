@@ -7,8 +7,5 @@
   },
   "src/recap/domain/twins/lane/legacy.ts": {
     "legacy": 8
-  },
-  "src/recap/domain/twins/values/legacy.ts": {
-    "legacy": 18
   }
 }

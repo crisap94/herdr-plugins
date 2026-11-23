@@ -5,7 +5,8 @@ import type { Presence } from '#src/recap/domain/presence.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import type { CompactRequestQueue } from '#src/recap/application/compact-requests.ts';
-import { parseWireText, type WireText } from '#src/protocol/primitives.ts';
+import { parseWireText, type OptIn, type TokenValue, type WireText } from '#src/protocol/primitives.ts';
+import type { Setting } from '#src/protocol/capability.ts';
 import { herdrEventsFrom } from '#src/recap/domain/herdr-events.ts';
 import { capabilityOf } from '#src/recap/domain/lane-tokens.ts';
 import { notesOf } from '#src/recap/domain/coordination.ts';
@@ -32,11 +33,11 @@ export function awaitingNow(pane: string): Promise<Waiting> {
     return awaitingPane(paneId(textOf(pane)));
 }
 
-function switchOn(setting: string): boolean {
-    return setting === handoff.optIn ? loadSettings().handoffRequests === 'on' : herdrEventsFrom(settingReader()(environmentName(textOf(setting)))) === 'on';
+function switchOn(setting: OptIn): Setting {
+    return (setting === handoff.optIn ? loadSettings().handoffRequests === 'on' : herdrEventsFrom(settingReader()(environmentName(textOf(setting)))) === 'on') ? 'on' : 'off';
 }
 
-export function capabilityNow(): string {
+export function capabilityNow(): TokenValue {
     return capabilityOf(switchOn);
 }
 

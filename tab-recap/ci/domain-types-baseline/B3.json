@@ -81,9 +81,9 @@
   },
   "src/recap/application/lane-tokens.ts": {
     "parameter": 8,
-    "return": 3,
-    "container": 6,
-    "property": 4
+    "return": 2,
+    "container": 2,
+    "property": 3
   },
   "src/recap/application/lane-webs.ts": {
     "return": 1
