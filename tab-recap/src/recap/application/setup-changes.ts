@@ -1,11 +1,11 @@
 import { knownOr, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
-import { BACKEND_IDS, environmentName, LEGACY_MODEL_KEYS, type EnvironmentName, type EnvironmentReader } from '#src/recap/domain/backend.ts';
+import { BACKEND_IDS, environmentName, LEGACY_MODEL_KEYS, type EnvironmentName } from '#src/recap/domain/backend.ts';
 import { blankRecap, hasRecap } from '#src/ports/recap-records.ts';
 import type { RequestPort } from '#src/ports/requests.ts';
 import type { LiveLanes } from '#src/ports/tab-views.ts';
 import { tabId, type TabId } from '#src/recap/domain/ids.ts';
 import type { DeciderBy, JobBy } from '#src/recap/domain/job.ts';
-import type { Draft, DraftState, FieldId, Locks, Setup } from './setup-state.ts';
+import type { Draft, DraftState, EnvironmentReader, FieldId, Locks, Setup } from './setup-state.ts';
 import { FIELDS } from './setup-state.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 

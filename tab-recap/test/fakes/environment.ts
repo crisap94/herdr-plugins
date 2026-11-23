@@ -1,4 +1,4 @@
-import type { EnvironmentReader } from '#src/recap/domain/backend.ts';
+import type { EnvironmentReader } from '#src/recap/application/setup-state.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
 export const readerOf = (record: Readonly<Record<string, string | undefined>>): EnvironmentReader => (key) => {

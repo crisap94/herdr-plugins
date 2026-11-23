@@ -73,6 +73,7 @@ export interface Draft {
 }
 
 export type Locks = Readonly<Partial<Record<FieldId, EnvironmentName>>>;
+export type EnvironmentReader = (key: EnvironmentName) => Text | undefined;
 
 export type TestState =
     | { readonly kind: 'idle' }
