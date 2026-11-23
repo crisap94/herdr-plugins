@@ -1,5 +1,6 @@
 import { must } from '#src/protocol/result.ts';
 import type { Count } from '#src/recap/domain/count.ts';
+import type { Pid } from '#src/recap/domain/pid.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { AutocompactSettingsMessages, Catalog, ChaptersMessages } from './messages.ts';
@@ -14,9 +15,11 @@ type Loose<T> = T extends (...args: infer A) => infer R
           ? boolean
           : T extends readonly (infer E)[]
             ? readonly Loose<E>[]
-            : T extends object
-              ? LooseObject<T>
-              : T;
+            : T extends Pid
+              ? Pid
+              : T extends object
+                ? LooseObject<T>
+                : T;
 
 type LooseObject<T> = { readonly [K in keyof T]: Loose<T[K]> };
 
