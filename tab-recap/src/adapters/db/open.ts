@@ -1,9 +1,11 @@
-import { existsSync, mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
 import type { Database } from 'bun:sqlite';
-import { backUp, backupsOf } from './backup.ts';
-import { closeDatabase, connect, connectReadOnly, MEMORY } from './connection.ts';
-import { latestVersion, migrate, versionOf } from './migrate.ts';
+import {
+    openDatabase as openRawDatabase,
+    openForRole as openRawForRole,
+    type NewerDatabase as RawNewerDatabase,
+    type Opened as RawOpened,
+    type StaleDatabase as RawStaleDatabase,
+} from '@stateforge-labs/session-ledger-sqlite/unstable/open.ts';
 import { MIGRATIONS } from './schema/index.ts';
 import type { Migration } from './schema/migration.ts';
 import { must } from '#src/protocol/result.ts';
@@ -34,65 +36,29 @@ export interface ReadyDatabase {
 
 export type Opened = ReadyDatabase | NewerDatabase;
 
-function createFresh(db: Database, path: FsPath): void {
-    db.exec('PRAGMA auto_vacuum = INCREMENTAL');
-    if (path !== MEMORY) {
-        db.exec('PRAGMA journal_mode = WAL');
-    }
+function newerOf(newer: RawNewerDatabase): NewerDatabase {
+    return {
+        kind: 'newer-db',
+        db: newer.db,
+        found: countOf(newer.found),
+        known: countOf(newer.known),
+        backup: newer.backup === null ? null : fsPathOf(newer.backup),
+    };
 }
 
-function newestBackupOf(path: FsPath): FsPath | null {
-    const [newest] = backupsOf(path);
-    return newest === undefined ? null : fsPathOf(newest);
+function openedOf(raw: RawOpened): Opened {
+    return raw.kind === 'ready' ? { kind: 'ready', db: raw.db } : newerOf(raw);
 }
 
-function newerThan(path: FsPath, known: Count): NewerDatabase | null {
-    const db = connectReadOnly(path);
-    const found = versionOf(db);
-    if (found <= known) {
-        db.close();
-        return null;
-    }
-    return { kind: 'newer-db', db, found: countOf(found), known, backup: newestBackupOf(path) };
-}
-
-function openReader(path: FsPath, migrations: readonly Migration[]): Opened | StaleDatabase {
-    const known = latestVersion(migrations);
-    if (!existsSync(path)) {
-        return { kind: 'stale-store', found: must(parseCount(0)), known: must(parseCount(known)), close: () => undefined };
-    }
-    const probe = connectReadOnly(path);
-    const found = versionOf(probe);
-    if (found > known) {
-        return { kind: 'newer-db', db: probe, found: countOf(found), known: countOf(known), backup: newestBackupOf(path) };
-    }
-    if (found < known) {
-        return { kind: 'stale-store', found: must(parseCount(found)), known: must(parseCount(known)), close: () => { probe.close(); } };
-    }
-    probe.close();
-    return { kind: 'ready', db: connect(path) };
+function staleOf(stale: RawStaleDatabase): StaleDatabase {
+    return { kind: 'stale-store', found: must(parseCount(stale.found)), known: must(parseCount(stale.known)), close: stale.close };
 }
 
 export function openForRole(path: FsPath, migrations: readonly Migration[], role: Role): Opened | StaleDatabase {
-    return role === 'reader' ? openReader(path, migrations) : openDatabase(path, migrations);
+    const raw = openRawForRole(path, migrations, role);
+    return raw.kind === 'stale-store' ? staleOf(raw) : openedOf(raw);
 }
 
 export function openDatabase(path: string, migrations: readonly Migration[] = MIGRATIONS): Opened {
-    const known = latestVersion(migrations);
-    if (path !== MEMORY) {
-        mkdirSync(dirname(path), { recursive: true });
-    }
-    const db = connect(path);
-    const current = versionOf(db);
-    if (current > known) {
-        closeDatabase(db);
-        return newerThan(fsPathOf(path), countOf(known)) ?? { kind: 'ready', db: connect(path) };
-    }
-    if (current === 0) {
-        createFresh(db, fsPathOf(path));
-    } else if (current < known && path !== MEMORY) {
-        backUp(db, path, current);
-    }
-    migrate(db, migrations);
-    return { kind: 'ready', db };
+    return openedOf(openRawDatabase(path, migrations));
 }
