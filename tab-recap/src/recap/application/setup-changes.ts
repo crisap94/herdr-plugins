@@ -1,5 +1,5 @@
 import { knownOr, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
-import { BACKEND_IDS, environmentName, LEGACY_MODEL_KEYS, type EnvironmentName } from '#src/recap/domain/backend.ts';
+import { BACKEND_IDS, environmentName, LEGACY_MODEL_KEYS, type EnvironmentName, type EnvironmentReader } from '#src/recap/domain/backend.ts';
 import { blankRecap, hasRecap } from '#src/ports/recap-records.ts';
 import type { RequestPort } from '#src/ports/requests.ts';
 import type { LiveLanes } from '#src/ports/tab-views.ts';
@@ -41,10 +41,10 @@ const LOCK_KEYS: Readonly<Record<FieldId, readonly EnvironmentName[]>> = {
     herdrEvents: [environmentName(textOf('TAB_RECAP_HERDR_EVENTS'))],
 };
 
-export function locksOf(env: Readonly<Record<string, string | undefined>>): Locks {
+export function locksOf(read: EnvironmentReader): Locks {
     const locks: Partial<Record<FieldId, EnvironmentName>> = {};
     for (const row of FIELDS) {
-        const found = LOCK_KEYS[row].find((key) => (env[key] ?? '') !== '');
+        const found = LOCK_KEYS[row].find((key) => (read(key) ?? '') !== '');
         if (found !== undefined) {
             locks[row] = found;
         }

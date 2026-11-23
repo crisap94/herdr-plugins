@@ -19,6 +19,7 @@ import { CURATE_DEFAULT } from '#src/recap/domain/job.ts';
 import { setupLines } from '#src/recap/render/setup.ts';
 import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
+import { readerOf } from '#test/fakes/environment.ts';
 
 const models = { claude: textOf(''), codex: textOf('gpt-6-luna'), opencode: textOf(''), custom: textOf('') };
 const raw = { locale: undefined, recapLanguage: undefined };
@@ -93,7 +94,7 @@ test('the curator row is the last, a job row: each part is edited and saved unde
 });
 
 test('a curator part an environment variable sets is read-only and says which', () => {
-    assert.deepEqual(locksOf({ TAB_RECAP_CURATE_BY: 'off', TAB_RECAP_CURATE_MODEL: 'x', TAB_RECAP_CURATE_EFFORT: 'low' }), { curateBy: 'TAB_RECAP_CURATE_BY', curateModel: 'TAB_RECAP_CURATE_MODEL', curateEffort: 'TAB_RECAP_CURATE_EFFORT' });
+    assert.deepEqual(locksOf(readerOf({ TAB_RECAP_CURATE_BY: 'off', TAB_RECAP_CURATE_MODEL: 'x', TAB_RECAP_CURATE_EFFORT: 'low' })), { curateBy: 'TAB_RECAP_CURATE_BY', curateModel: 'TAB_RECAP_CURATE_MODEL', curateEffort: 'TAB_RECAP_CURATE_EFFORT' });
     assert.equal(typed(start({ curateModel: 'TAB_RECAP_CURATE_MODEL' }), [...down(11), 'l', '\r']).note, 'locked');
     assert.equal(typed(start({ curateModel: 'TAB_RECAP_CURATE_MODEL' }), [...down(11), 'l', 'l', '\r']).editing?.kind, 'choice', 'only the locked part');
 });

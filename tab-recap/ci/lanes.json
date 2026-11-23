@@ -1117,6 +1117,7 @@
       "test/fakes/curated-facts.ts",
       "test/fakes/decider-fixtures.ts",
       "test/fakes/enumerator.ts",
+      "test/fakes/environment.ts",
       "test/fakes/expanded-fixture.ts",
       "test/fakes/fact-at.ts",
       "test/fakes/facts.ts",

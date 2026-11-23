@@ -14,6 +14,7 @@ import type { Done } from '#src/ports/columns.ts';
 import type { CompactAsk } from '#src/ports/requests.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
+import { readerOf } from '#test/fakes/environment.ts';
 
 const TAB = 'w1:t1';
 const PANE = 'w1:p2';
@@ -103,6 +104,6 @@ test('the modal writes TAB_RECAP_COMPACT_NOTE when its row changes, and a locked
     const draft: Draft = draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined });
     const state = initial({ ...draft, compactNote: 'skip' }, {});
     assert.deepEqual([...changes({ ...state, stored: draft })], [['TAB_RECAP_COMPACT_NOTE', 'skip']]);
-    assert.deepEqual(locksOf({ TAB_RECAP_COMPACT_NOTE: 'skip' }), { compactNote: 'TAB_RECAP_COMPACT_NOTE' });
+    assert.deepEqual(locksOf(readerOf({ TAB_RECAP_COMPACT_NOTE: 'skip' })), { compactNote: 'TAB_RECAP_COMPACT_NOTE' });
     assert.equal(changes({ ...state, stored: draft, locks: { compactNote: environmentName(textOf('TAB_RECAP_COMPACT_NOTE')) } }).size, 0);
 });

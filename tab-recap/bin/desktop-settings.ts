@@ -23,7 +23,7 @@ interface Loaded {
 
 function load(): Loaded {
     const config = loadSettings();
-    return { draft: draftFrom(config, rawSettingsFrom(settingGetter())), locks: locksOf(process.env) };
+    return { draft: draftFrom(config, rawSettingsFrom(settingGetter())), locks: locksOf(environmentReader) };
 }
 
 function report(loaded: Loaded, extra: Readonly<Record<string, unknown>>): void {

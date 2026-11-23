@@ -11,6 +11,7 @@ import { changes, draftFrom, initial, locksOf, step, withAvailable } from '#src/
 import type { Draft, Locks, Setup } from '#src/recap/application/setup-keys.ts';
 import { setupLines } from '#src/recap/render/setup.ts';
 import type { AutocompactStyle } from '#src/recap/domain/autocompact-style.ts';
+import { readerOf } from '#test/fakes/environment.ts';
 
 const models = { claude: textOf(''), codex: textOf('gpt-6-luna'), opencode: textOf(''), custom: textOf('') };
 const draft: Draft = draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined });
@@ -35,7 +36,7 @@ test('a locked row is never written: the row names its variable and a change is 
     const attempted = typed(locked, [...down(14), '\r', 'j', '\r']);
     assert.equal(typed(locked, [...down(14), '\r']).note, 'locked');
     assert.deepEqual([...changes(attempted)], [], 'a locked row produces no change');
-    assert.deepEqual(locksOf({ TAB_RECAP_AUTOCOMPACT_STYLE: 'gentle' }), { autocompactStyle: 'TAB_RECAP_AUTOCOMPACT_STYLE' });
+    assert.deepEqual(locksOf(readerOf({ TAB_RECAP_AUTOCOMPACT_STYLE: 'gentle' })), { autocompactStyle: 'TAB_RECAP_AUTOCOMPACT_STYLE' });
 });
 
 test('the file\'s value: gentle and eager are read as they are; anything else is balanced', () => {
