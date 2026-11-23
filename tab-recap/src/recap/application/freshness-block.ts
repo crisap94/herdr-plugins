@@ -1,5 +1,5 @@
 import { isUnknownRead, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf, type Count } from '#src/recap/domain/count.ts';
 import { isScreenSource } from '#src/ports/screens.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import { isUnknown, type Unknown } from '#src/ports/unknowable.ts';
@@ -9,13 +9,14 @@ import { newerPromptsOf, type Freshness, type RefreshStatus } from '#src/recap/d
 import type { LaneStatus } from '#src/recap/domain/status.ts';
 import type { ClosedView } from './closed-view.ts';
 import { TRANSCRIPT_READ_BUDGET_BYTES } from './transcript-read-budget.ts';
-import { agentKind, tabId } from '#src/recap/domain/ids.ts';
+import type { AgentKind, TabId } from '#src/recap/domain/ids.ts';
+import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
 export interface FreshnessInput {
-    readonly tab: string;
-    readonly agent: string;
-    readonly source: string | null;
+    readonly tab: TabId;
+    readonly agent: AgentKind;
+    readonly source: FsPath | null;
     readonly cursor: LaneCursor | null;
     readonly status: LaneStatus;
     readonly refresh: RefreshStatus;
@@ -31,17 +32,17 @@ export interface FreshnessDeps {
 
 function positionOf(input: FreshnessInput): Position {
     const cursor = input.cursor;
-    return cursor !== null && input.source !== null && cursor.transcript === input.source ? { cursor: cursorOf(cursor.cursor), tail: cursor.tail === null ? null : textOf(cursor.tail) } : UNREAD;
+    return cursor !== null && input.source !== null && cursor.transcript === sourcePathOf(input.source) ? { cursor: cursorOf(cursor.cursor), tail: cursor.tail === null ? null : textOf(cursor.tail) } : UNREAD;
 }
 
-async function newerPromptCount(transcripts: TranscriptRegistry, input: FreshnessInput): Promise<number | null> {
+async function newerPromptCount(transcripts: TranscriptRegistry, input: FreshnessInput): Promise<Count | null> {
     const source = input.source;
-    const reader = source === null || isScreenSource(sourcePathOf(source)) ? undefined : transcripts.readerFor(agentKind(textOf(input.agent)));
+    const reader = source === null || isScreenSource(sourcePathOf(source)) ? undefined : transcripts.readerFor(input.agent);
     if (source === null || reader === undefined) {
         return null;
     }
     const chunk = await reader.read(sourcePathOf(source), positionOf(input), TRANSCRIPT_READ_BUDGET_BYTES);
-    return isUnknown(chunk) ? null : chunk.entries.filter((entry) => entry.role === 'user').length;
+    return isUnknown(chunk) ? null : countOf(chunk.entries.filter((entry) => entry.role === 'user').length);
 }
 
 export function closedFreshnessOf(view: ClosedView): FreshnessOutcome {
@@ -52,7 +53,7 @@ export function closedFreshnessOf(view: ClosedView): FreshnessOutcome {
 }
 
 export async function freshnessOf(deps: FreshnessDeps, input: FreshnessInput): Promise<FreshnessOutcome> {
-    const lastRun = deps.records.lastRunOf(tabId(textOf(input.tab)));
+    const lastRun = deps.records.lastRunOf(input.tab);
     if (lastRun === null) {
         return { kind: 'ledger-empty' };
     }
@@ -61,5 +62,5 @@ export async function freshnessOf(deps: FreshnessDeps, input: FreshnessInput): P
         return { kind: 'ledger-unreadable' };
     }
     const count = await newerPromptCount(deps.transcripts, input);
-    return { kind: 'fresh', freshness: { lastRun, status: input.status, newerPrompts: newerPromptsOf(count === null ? null : countOf(count)), refresh: input.refresh } };
+    return { kind: 'fresh', freshness: { lastRun, status: input.status, newerPrompts: newerPromptsOf(count), refresh: input.refresh } };
 }

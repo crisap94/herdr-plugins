@@ -26,7 +26,7 @@ const draft = draftFrom({ backend: 'codex', models }, raw);
 const given = (key: string): string | undefined => ({ TAB_RECAP_CURATE_BY: ' Codex ', TAB_RECAP_CURATE_MODEL: ' gpt-6-luna ', TAB_RECAP_CURATE_EFFORT: 'HIGH' })[key];
 const start = (locks = {}): Setup => withAvailable(initial(draft, locks), [uncheckedAgentKind('claude'), uncheckedAgentKind('codex')]);
 const down = (n: number): string[] => Array.from({ length: n }, () => 'j');
-const typed = (state: Setup, keys: readonly string[]): Setup => keys.reduce((now, key) => step(now, key).state, state);
+const typed = (state: Setup, keys: readonly string[]): Setup => keys.reduce((now, key) => step(now, textOf(key)).state, state);
 
 test('the curator job: as the recap writer, no model of its own and medium effort until set', () => {
     assert.deepEqual(CURATE_DEFAULT, { by: 'recap', model: '', effort: 'medium' });

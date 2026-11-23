@@ -10,16 +10,20 @@ import { paneId, tabId } from '#test/support/ids.ts';
 import { NOW } from './fakes/handoff-flow-harness.ts';
 import { HANDOFF_POLL_MS, HANDOFF_WAIT_MS, HANDOFF_WAIT_REFRESH_MS } from '#src/recap/application/handoff-limits.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
+import { parsePid } from '#src/recap/domain/pid.ts';
 import { must } from '#src/protocol/result.ts';
 
 const SOURCE = paneId('w1:p1');
 const TARGET = paneId('w1:p2');
-const RUNNING: DaemonReading = { pid: 4242, version: '2.4.0' };
+const PID = must(parsePid(4242));
+const ONE = must(parsePid(1));
+const V24 = textOf('2.4.0');
+const RUNNING: DaemonReading = { pid: PID, version: V24 };
 const TABS = { 'w1:p1': 'w1:t1' };
 
 function request(over: Partial<DeliverRequest> = {}): DeliverRequest {
-    return { from: SOURCE, to: TARGET, note: null, refresh: false, closed: null, ...over };
+    return { from: SOURCE, to: TARGET, note: null, refresh: 'as-is', closed: null, ...over };
 }
 
 interface Daemon {
@@ -36,7 +40,7 @@ interface Setup {
     elapsed(): number;
 }
 
-function setup(options: { tabs?: Record<string, string>; daemon?: DaemonReading; cli?: string | null; onSleep?: (daemon: Daemon) => void } = {}): Setup {
+function setup(options: { tabs?: Record<string, string>; daemon?: DaemonReading; cli?: Text | null; onSleep?: (daemon: Daemon) => void } = {}): Setup {
     const requests = new MemoryRequests(() => NOW);
     const answers = new MemoryHandoffAnswers(() => NOW);
     const sleeps: number[] = [];
@@ -44,7 +48,7 @@ function setup(options: { tabs?: Record<string, string>; daemon?: DaemonReading;
     let now = NOW;
     const deps: DeliverDeps = {
         pacing: {
-            now: () => now,
+            now: () => instant(now),
             sleep: async (ms) => {
                 sleeps.push(ms);
                 now += ms;
@@ -52,7 +56,7 @@ function setup(options: { tabs?: Record<string, string>; daemon?: DaemonReading;
             },
         },
         daemon: () => options.daemon ?? RUNNING,
-        cliVersion: options.cli === undefined ? '2.4.0' : options.cli,
+        cliVersion: options.cli === undefined ? V24 : options.cli,
         openStore: () => {
             log.opened += 1;
             return { views: { tabOf: (pane) => { const tab = options.tabs?.[pane]; return tab === undefined ? null : tabId(tab); } }, requests, handoffs: answers, close: () => { log.closed += 1; } };
@@ -68,18 +72,18 @@ test('handing a lane to itself is refused before the daemon or the store is touc
 });
 
 test('no running daemon is refused daemon-not-running and nothing is opened or queued', async () => {
-    const s = setup({ daemon: { pid: null, version: '2.4.0' } });
+    const s = setup({ daemon: { pid: null, version: V24 } });
     assert.deepEqual(await deliverHandoff(request(), s.deps), { kind: 'refused', reason: 'daemon-not-running' });
     assert.equal(s.log.opened, 0);
     assert.deepEqual(s.requests.takeHandoffs(), []);
 });
 
 test('a daemon whose recorded version differs from the CLI, or where either version is unknown, is refused daemon-outdated and nothing is queued', async () => {
-    const cases: readonly { daemon: DaemonReading; cli: string | null }[] = [
-        { daemon: { pid: 1, version: '2.3.0' }, cli: '2.4.0' },
-        { daemon: { pid: 1, version: null }, cli: '2.4.0' },
-        { daemon: { pid: 1, version: '2.4.0' }, cli: null },
-        { daemon: { pid: 1, version: null }, cli: null },
+    const cases: readonly { daemon: DaemonReading; cli: Text | null }[] = [
+        { daemon: { pid: ONE, version: textOf('2.3.0') }, cli: V24 },
+        { daemon: { pid: ONE, version: null }, cli: V24 },
+        { daemon: { pid: ONE, version: V24 }, cli: null },
+        { daemon: { pid: ONE, version: null }, cli: null },
     ];
     for (const { daemon, cli } of cases) {
         const s = setup({ daemon, cli });
@@ -128,7 +132,7 @@ test('no answer within the wait polls every poll interval, withdraws the request
 
 test('--refresh waits the daemon deadline on the same poll', async () => {
     const s = setup({ tabs: TABS });
-    assert.deepEqual(await deliverHandoff(request({ refresh: true }), s.deps), { kind: 'failed', reason: 'not-answered-withdrawn' });
+    assert.deepEqual(await deliverHandoff(request({ refresh: 'refresh-first' }), s.deps), { kind: 'failed', reason: 'not-answered-withdrawn' });
     assert.equal(s.sleeps.length, HANDOFF_WAIT_REFRESH_MS / HANDOFF_POLL_MS);
     assert.ok(s.sleeps.every((ms) => ms === HANDOFF_POLL_MS));
     assert.equal(s.elapsed(), HANDOFF_WAIT_REFRESH_MS);

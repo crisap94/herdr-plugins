@@ -6,9 +6,12 @@ import { deliverHandoff, type DaemonReading, type DeliverDeps } from '#src/recap
 import type { HandoffAskRecord } from '#src/ports/requests.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { must } from '#src/protocol/result.ts';
+import { parsePid } from '#src/recap/domain/pid.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { NOW } from './fakes/handoff-flow-harness.ts';
 
-const RUNNING: DaemonReading = { pid: 4242, version: '2.4.0' };
+const RUNNING: DaemonReading = { pid: must(parsePid(4242)), version: textOf('2.4.0') };
 const PANE = paneId('w1:p1');
 const CLOSED_AT = instant(NOW - 60_000);
 
@@ -19,17 +22,17 @@ test('a closed source whose pane id is the target pane is queued as a closed req
     let now = NOW;
     const deps: DeliverDeps = {
         pacing: {
-            now: () => now,
+            now: () => instant(now),
             sleep: async (ms) => {
                 now += ms;
                 taken.push(...requests.takeHandoffs());
             },
         },
         daemon: () => RUNNING,
-        cliVersion: '2.4.0',
+        cliVersion: textOf('2.4.0'),
         openStore: () => ({ views: { tabOf: () => null }, requests, handoffs: answers, close: () => undefined }),
     };
-    const outcome = await deliverHandoff({ from: PANE, to: PANE, note: null, refresh: false, closed: { tab: tabId('w1:t1'), pane: PANE, closedAt: CLOSED_AT } }, deps);
+    const outcome = await deliverHandoff({ from: PANE, to: PANE, note: null, refresh: 'as-is', closed: { tab: tabId('w1:t1'), pane: PANE, closedAt: CLOSED_AT } }, deps);
     assert.notEqual(outcome.kind, 'refused');
     assert.equal(taken.length, 1);
     assert.deepEqual(taken.map((row) => [row.source, row.tab]), [[{ kind: 'closed', closedAt: CLOSED_AT }, 'w1:t1']]);

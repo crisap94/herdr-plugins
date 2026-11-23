@@ -6,12 +6,12 @@ import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { tabId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
-import { instant, type Duration } from '#src/recap/domain/time.ts';
+import { instant, type Duration, type Instant } from '#src/recap/domain/time.ts';
 import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import type { LaneClaims } from './lane-claims.ts';
 import type { HandoffRender, HandoffRenderResult, RenderMetrics } from './handoff-render.ts';
 import type { HandoffSender } from './handoff-sender.ts';
-import { isLaneOfTab, resolveSource, unfoundOutcome } from './handoff-source.ts';
+import { listingOf, resolveSource, unfoundOutcome } from './handoff-source.ts';
 import type { FoundSource, SourceDeps, SourceResolution } from './handoff-source.ts';
 import { closedLaneOf } from './closed-lane-source.ts';
 import type { ClosedSourceDeps } from './closed-lane-source.ts';
@@ -39,7 +39,7 @@ export interface HandoffFlowDeps {
     readonly render: HandoffRender;
     readonly sender: Pick<HandoffSender, 'send'>;
     readonly pause: (span: Duration) => Promise<void>;
-    readonly now: () => number;
+    readonly now: () => Instant;
     readonly log: (line: Text) => void;
 }
 
@@ -115,7 +115,7 @@ export class HandoffFlow {
 
     private async early(request: HandoffAskRecord): Promise<Ready | HandoffOutcome> {
         const lanes = this.deps.lanes();
-        if (request.source.kind === 'live' && !isLaneOfTab(lanes, { tab: request.tab, pane: request.pane })) {
+        if (request.source.kind === 'live' && listingOf(lanes, { tab: request.tab, pane: request.pane }) === 'unlisted') {
             return { kind: 'refused', reason: 'source-unavailable' };
         }
         const target = await this.resolve(request);
@@ -171,10 +171,10 @@ export class HandoffFlow {
             return { kind: 'refused', reason: 'source-unavailable' };
         }
         const cursor = knownOr(this.deps.records.readRecap(tabId(textOf(String(request.tab)))), null)?.lanes.find((candidate) => candidate.pane === String(request.pane)) ?? null;
-        return this.deps.render({ handoff: request.id, at: this.deps.now(), lane, cursor, facts: found.facts, note: request.note, refresh });
+        return this.deps.render({ handoff: request.id, at: this.deps.now(), lane: { ...lane, cwd: lane.cwd === null ? null : textOf(lane.cwd) }, cursor, facts: found.facts, note: request.note, refresh });
     }
 
-    private async deliver(request: HandoffAskRecord, text: string, mark: DeliveryTracker): Promise<HandoffOutcome> {
+    private async deliver(request: HandoffAskRecord, text: Text, mark: DeliveryTracker): Promise<HandoffOutcome> {
         const first = await this.resolve(request);
         if (first.kind !== 'ready') {
             return first;

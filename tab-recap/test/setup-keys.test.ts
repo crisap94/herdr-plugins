@@ -11,6 +11,8 @@ import { memoryStore, seed } from '#test/db/support.ts';
 import { oneTask } from '#test/support.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { usdOf } from '#src/recap/domain/usd.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 import { viewRecord } from '#test/support/tab-view-records.ts';
 
 const ESC = String.fromCodePoint(0x1b);
@@ -21,7 +23,7 @@ function typed(state: Setup, keys: readonly string[]): { state: Setup; effects: 
     const effects: Effect[] = [];
     let now = state;
     for (const key of keys) {
-        const stepped = step(now, key);
+        const stepped = step(now, textOf(key));
         now = stepped.state;
         effects.push(...stepped.effects);
     }
@@ -96,7 +98,7 @@ test('t starts one test with the draft; a second t while it runs does nothing; t
     assert.deepEqual(first.effects.map((effect) => effect.kind), ['test']);
     assert.equal(first.state.test.kind, 'running');
     assert.equal(typed(first.state, ['t']).effects.length, 0);
-    assert.equal(tested(first.state, { kind: 'ok', seconds: 2, costUsd: 0 }).test.kind, 'ok');
+    assert.equal(tested(first.state, { kind: 'ok', seconds: countOf(2), costUsd: usdOf(0) }).test.kind, 'ok');
 });
 
 test('s saves only what changed, and asks for a rewrite when the recap language moves', () => {
@@ -107,7 +109,7 @@ test('s saves only what changed, and asks for a rewrite when the recap language 
     const after = saved(changed, null, true);
     assert.equal(dirty(after), false);
     assert.equal(after.note, 'rewriting');
-    assert.equal(saved(changed, 'disk full', false).note !== 'saved', true);
+    assert.equal(saved(changed, textOf('disk full'), false).note !== 'saved', true);
     const locale = typed(start(), [...down(2), '\r', 'j', 'j', '\r', 's']).effects;
     assert.deepEqual(locale, [{ kind: 'save', values: new Map([['TAB_RECAP_LOCALE', 'es']]), languageChanged: true }]);
 });

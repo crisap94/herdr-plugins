@@ -60,7 +60,7 @@ const fitOf = (groups: readonly HandoffGroup[], more: Partial<HandoffFit> = {}):
     freshnessText: BLOCKS.freshnessText,
     worksiteText: null,
     groups,
-    withheld: 0,
+    withheld: bytesCount(0),
     ...more,
 });
 
@@ -130,7 +130,7 @@ const randomFit = (random: () => number): HandoffFit => {
         const capped = id === 'done' || id === 'links' || id === 'closed' ? below(3) : 0;
         return groupOf(id, entries, bytesCount(capped));
     });
-    return fitOf(groups, { note: random() < 0.5 ? cleanHandoffText(asText('focus on the parser')) : null, withheld: below(5) });
+    return fitOf(groups, { note: random() < 0.5 ? cleanHandoffText(asText('focus on the parser')) : null, withheld: bytesCount(below(5)) });
 };
 
 const survivorsOf = (fit: HandoffFit, text: string, ids: readonly HandoffGroupId[]): readonly HandoffEntry[] =>
@@ -275,7 +275,7 @@ test('nothing omitted means no omitted line', () => {
 });
 
 test('a withheld count alone is an omitted line that names only the counts', () => {
-    const text = textOf(fitOf([groupOf('goal', [entryOf('g1', 'goal', AT)])], { withheld: 3 }));
+    const text = textOf(fitOf([groupOf('goal', [entryOf('g1', 'goal', AT)])], { withheld: bytesCount(3) }));
     assert.ok(text.includes('\n\n3 facts omitted (done 0, links 0, closed 0, now 0, next 0, withheld 3)'));
 });
 

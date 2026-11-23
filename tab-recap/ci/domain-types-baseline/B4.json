@@ -1,8 +1,5 @@
 {
   "src/i18n/legacy.ts": {
     "legacy": 12
-  },
-  "src/recap/render/handoff-budget.ts": {
-    "property": 1
   }
 }

@@ -2,10 +2,9 @@ import { textOf } from '#src/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { ClosedListing } from '#src/recap/application/handoff-listing.ts';
-import { handoffReport, type HandoffArguments, type HandoffWiring } from '../bin/handoff.ts';
+import { handoffReport, type DeliverArguments, type HandoffArguments, type HandoffWiring } from '../bin/handoff.ts';
 import { messagesOf } from '#src/daemon/config.ts';
 import type { PrintAsk, PrintAnswer } from '#src/ports/handoff-print.ts';
-import type { DeliverRequest } from '#src/recap/application/handoff-request.ts';
 import { HANDOFF_OUTCOME_ROWS, type HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { handoffOutcomeOf } from './fakes/handoff-outcome-readers.ts';
 import { paneId } from '#test/support/ids.ts';
@@ -17,12 +16,12 @@ const PRINT: HandoffArguments = { mode: 'print', from: FROM, to: null, note: 'ke
 
 interface Recorded {
     readonly value: HandoffWiring;
-    readonly delivered: DeliverRequest[];
+    readonly delivered: DeliverArguments[];
     readonly printed: PrintAsk[];
 }
 
 function wiring(outcome: HandoffOutcome, printResult: PrintAnswer = { kind: 'text', text: textOf('the handoff'), info: null }): Recorded {
-    const delivered: DeliverRequest[] = [];
+    const delivered: DeliverArguments[] = [];
     const printed: PrintAsk[] = [];
     const value: HandoffWiring = {
         printer: {
@@ -32,7 +31,7 @@ function wiring(outcome: HandoffOutcome, printResult: PrintAnswer = { kind: 'tex
             },
         },
         list: (): ClosedListing => ({ kind: 'listed', records: [] }),
-        deliver: async (request: DeliverRequest): Promise<HandoffOutcome> => {
+        deliver: async (request: DeliverArguments): Promise<HandoffOutcome> => {
             delivered.push(request);
             return outcome;
         },

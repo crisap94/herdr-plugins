@@ -2,21 +2,22 @@ import type { Clock } from '#src/ports/clock.ts';
 import type { ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { RetentionPort } from '#src/ports/retention.ts';
 import { must } from '#src/protocol/result.ts';
-import { countOf, parseCount } from '#src/recap/domain/count.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import { cutoffAt } from '#src/recap/domain/retention.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 
 export interface SweepDeps {
     readonly retention: RetentionPort;
     readonly closures: ClosureSweep;
     readonly clock: Clock;
-    days(): number;
-    log(line: string): void;
+    days(): Count;
+    log(line: Text): void;
 }
 
 export function removeExpiredTabs(deps: SweepDeps, now: Instant): Count {
-    const cutoff = cutoffAt(now, countOf(deps.days()));
+    const cutoff = cutoffAt(now, deps.days());
     if (cutoff === null) {
         return must(parseCount(0));
     }
@@ -26,9 +27,9 @@ export function removeExpiredTabs(deps: SweepDeps, now: Instant): Count {
             const closures = deps.closures.countOf(tab);
             const taken = deps.retention.remove(tab);
             gone += 1;
-            deps.log(`retention: removed ${tab} (${taken.runs} runs, ${taken.facts} facts, ${taken.chapters} chapters, ${taken.boundaries} boundaries, ${taken.compactions} compactions, ${closures} closures)`);
+            deps.log(textOf(`retention: removed ${tab} (${taken.runs} runs, ${taken.facts} facts, ${taken.chapters} chapters, ${taken.boundaries} boundaries, ${taken.compactions} compactions, ${closures} closures)`));
         } catch (error) {
-            deps.log(`retention: could not remove ${tab}: ${error instanceof Error ? error.message : String(error)}`);
+            deps.log(textOf(`retention: could not remove ${tab}: ${error instanceof Error ? error.message : String(error)}`));
         }
     }
     return must(parseCount(gone));
@@ -41,10 +42,10 @@ export function pruneClosures(deps: SweepDeps, now: Instant): Count {
             const count = deps.closures.pruneTab(tab, now);
             pruned += count;
             if (count > 0) {
-                deps.log(`retention: pruned ${count} closed lanes of ${tab}`);
+                deps.log(textOf(`retention: pruned ${count} closed lanes of ${tab}`));
             }
         } catch (error) {
-            deps.log(`retention: could not prune closed lanes of ${tab}: ${error instanceof Error ? error.message : String(error)}`);
+            deps.log(textOf(`retention: could not prune closed lanes of ${tab}: ${error instanceof Error ? error.message : String(error)}`));
         }
     }
     return must(parseCount(pruned));

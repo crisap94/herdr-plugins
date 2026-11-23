@@ -60,11 +60,11 @@ export function ranLine(done: Replayed, jobs: { readonly view: WriterView; reado
 }
 
 function printMechanical(done: Replayed, file: string, beside: string | null, ran: string): void {
-    console.log(`${ran}\n${reportOf(`replay of ${file}: ${done.turns} turns`, done.facts)}\n\nthe ledger after the replay:\n${ledgerText(done.facts, Intl.DateTimeFormat().resolvedOptions().timeZone)}`);
+    console.log(`${ran}\n${reportOf(textOf(`replay of ${file}: ${done.turns} turns`), done.facts)}\n\nthe ledger after the replay:\n${ledgerText(done.facts, textOf(Intl.DateTimeFormat().resolvedOptions().timeZone))}`);
     if (beside !== null) {
         const besideId = parseTabId(beside);
         const imported = besideId.kind === 'ok' ? factsOfTabAt(databaseFile(stateDirectory()), besideId.value) : null;
-        console.log(`\n${imported === null ? `the imported facts of ${beside}: none (no ledger in the database yet)` : reportOf(`the imported facts of ${beside}`, imported)}`);
+        console.log(`\n${imported === null ? `the imported facts of ${beside}: none (no ledger in the database yet)` : reportOf(textOf(`the imported facts of ${beside}`), imported)}`);
     }
 }
 
@@ -110,7 +110,7 @@ async function run(file: string, reader: Transcripts, options: EvalRequest, size
             return 0;
         }
         const imported = importedBeside(options.compareImported);
-        console.log(`\n${(await judgedReport({ judge, store: scratch.store, rubric: RUBRIC_TEXT, label, imported, beside: options.compareImported, style: styleFor(process.stdout), err: (line) => { console.error(line); } })).join('\n')}`);
+        console.log(`\n${(await judgedReport({ judge, store: scratch.store, rubric: textOf(RUBRIC_TEXT), label: textOf(label), imported, beside: options.compareImported === null ? null : textOf(options.compareImported), style: styleFor(process.stdout), err: (line) => { console.error(line); } })).join('\n')}`);
         return 0;
     } catch (error) {
         console.error(`tab-recap: 1 — ${error instanceof Error ? error.message : String(error)}`);

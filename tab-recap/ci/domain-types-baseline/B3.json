@@ -1,73 +1,11 @@
 {
-  "src/recap/application/freshness-block.ts": {
-    "container": 1,
-    "property": 3
-  },
-  "src/recap/application/handoff-confirmation.ts": {
-    "parameter": 3,
-    "return": 1,
-    "property": 5
-  },
-  "src/recap/application/handoff-flow.ts": {
-    "return": 1,
-    "parameter": 1
-  },
-  "src/recap/application/handoff-pipeline.ts": {
-    "container": 1
-  },
-  "src/recap/application/handoff-print.ts": {
-    "return": 1
-  },
-  "src/recap/application/handoff-render.ts": {
-    "property": 7
-  },
-  "src/recap/application/handoff-request.ts": {
-    "parameter": 2,
-    "return": 1,
-    "property": 5
-  },
-  "src/recap/application/handoff-sender.ts": {
-    "parameter": 2
-  },
-  "src/recap/application/handoff-source.ts": {
-    "return": 1,
-    "property": 2
-  },
   "src/recap/application/handoff-target.ts": {
-    "return": 2,
-    "container": 1,
     "property": 2
-  },
-  "src/recap/application/input-retention.ts": {
-    "return": 3,
-    "property": 1
   },
   "src/recap/application/judge-answer.ts": {
     "property": 1
   },
-  "src/recap/application/judge.ts": {
-    "parameter": 1,
-    "property": 3
-  },
   "src/recap/application/lane-claims.ts": {
-    "return": 3
-  },
-  "src/recap/application/replay-judge.ts": {
-    "parameter": 1,
-    "container": 1,
-    "property": 3
-  },
-  "src/recap/application/replay-report.ts": {
-    "parameter": 5,
-    "return": 6,
-    "property": 3
-  },
-  "src/recap/application/retention.ts": {
-    "parameter": 1,
-    "return": 1
-  },
-  "src/recap/application/screen-text.ts": {
-    "parameter": 4,
     "return": 3
   },
   "src/recap/application/setup-changes.ts": {
@@ -75,16 +13,12 @@
     "return": 1
   },
   "src/recap/application/setup-keys.ts": {
-    "parameter": 3
+    "parameter": 1
   },
   "src/recap/application/setup-state.ts": {
-    "property": 5
+    "property": 2
   },
   "src/recap/application/transcript-tail.ts": {
     "return": 1
-  },
-  "src/recap/application/worksite-section.ts": {
-    "return": 1,
-    "property": 1
   }
 }

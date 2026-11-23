@@ -46,7 +46,7 @@ function depsOf(parts: Parts = {}): SourceDeps {
         lanes: parts.lanes ?? board,
         records: parts.records ?? readingOf(parts.recap === undefined ? recapWith(task('t1', ['w1:p1'])) : parts.recap),
         ledger: new MemoryLedger().seed(...(parts.facts ?? [])),
-        now: NOW,
+        now: instant(NOW),
     };
 }
 

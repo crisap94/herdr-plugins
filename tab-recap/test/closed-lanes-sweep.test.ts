@@ -7,7 +7,7 @@ import type { RemovedCounts, RetentionPort } from '#src/ports/retention.ts';
 import { tabId } from '#test/support/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import type { Count } from '#src/recap/domain/count.ts';
+import { countOf, type Count } from '#src/recap/domain/count.ts';
 import { countFrom } from './fakes/closed-values.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 
@@ -47,7 +47,7 @@ function fakeClosures(options: { readonly protectedNow?: readonly TabId[]; reado
 }
 
 function deps(retention: RetentionPort, closures: ClosureSweep, days: number, lines: string[]): SweepDeps {
-    return { retention, closures, clock: { now: (): Instant => NOW }, days: () => days, log: (line) => { lines.push(line); } };
+    return { retention, closures, clock: { now: (): Instant => NOW }, days: () => countOf(days), log: (line) => { lines.push(line); } };
 }
 
 test('KEEP_DAYS=0 removes no tab but still prunes expired closures', () => {

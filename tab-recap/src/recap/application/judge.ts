@@ -6,6 +6,7 @@ import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
+import { usdOf, type Usd } from '#src/recap/domain/usd.ts';
 import { gradingDocument, readbackDocument, scoringDocument } from './judge-context.ts';
 import type { JudgeEntry, RunEntry } from '#src/ports/run-inputs.ts';
 import { parseAnswers, parseGrades, parseScore } from './judge-answer.ts';
@@ -26,18 +27,18 @@ export type { Share } from './judge-coverage.ts';
 export type RunResult =
     | {
         readonly kind: 'judged'; readonly run: RunRecord; readonly items: readonly RunEntry[]; readonly verdicts: readonly VerdictRecord[]; readonly coverage: Share; readonly filler: Share;
-        readonly added: Measured['added']; readonly stateSize: Count; readonly readback: readonly Grade[] | null; readonly note: Text | null; readonly costUsd: number;
+        readonly added: Measured['added']; readonly stateSize: Count; readonly readback: readonly Grade[] | null; readonly note: Text | null; readonly costUsd: Usd;
     }
-    | { readonly kind: 'not-judged'; readonly run: RunRecord; readonly why: Text; readonly costUsd: number };
+    | { readonly kind: 'not-judged'; readonly run: RunRecord; readonly why: Text; readonly costUsd: Usd };
 
 interface ReadBackParts { readonly items: readonly JudgeEntry[]; readonly input: Text; readonly keyfacts: readonly Text[] }
 
-interface ReadBackResult { readonly grades: readonly Grade[] | null; readonly note: Text | null; readonly costUsd: number }
+interface ReadBackResult { readonly grades: readonly Grade[] | null; readonly note: Text | null; readonly costUsd: Usd }
 
 export async function readBack(deps: JudgeDeps, parts: ReadBackParts): Promise<ReadBackResult> {
     const asked = await deps.judge.ask('readback', readbackDocument(parts.items));
     if (isUnknown(asked)) {
-        return { grades: null, note: must(parseText(`read-back: ${saying(asked.why)}`)), costUsd: 0 };
+        return { grades: null, note: must(parseText(`read-back: ${saying(asked.why)}`)), costUsd: usdOf(0) };
     }
     const answers = parseAnswers(asked.text);
     if (answers.kind === 'unusable') {
@@ -48,14 +49,14 @@ export async function readBack(deps: JudgeDeps, parts: ReadBackParts): Promise<R
         return { grades: null, note: must(parseText(`read-back grading: ${saying(graded.why)}`)), costUsd: asked.costUsd };
     }
     const grades = parseGrades(graded.text);
-    return { grades: grades.kind === 'ok' ? grades.value : null, note: grades.kind === 'ok' ? null : must(parseText(`read-back grading: ${grades.why}`)), costUsd: asked.costUsd + graded.costUsd };
+    return { grades: grades.kind === 'ok' ? grades.value : null, note: grades.kind === 'ok' ? null : must(parseText(`read-back grading: ${grades.why}`)), costUsd: usdOf(asked.costUsd + graded.costUsd) };
 }
 
 const critique = (line: Text): Text | null => (line === '' ? null : line);
 
 const verdictOf = (deps: JudgeDeps, run: RunRecord, row: Row): VerdictRecord => ({ run: run.id, item: row.item, check: row.check, pass: row.pass, critique: row.critique, judge: deps.judge.label, at: deps.now(), source: 'judge' });
 
-const notJudged = (run: RunRecord, why: Text, costUsd = 0): RunResult => ({ kind: 'not-judged', run, why, costUsd });
+const notJudged = (run: RunRecord, why: Text, costUsd: Usd = usdOf(0)): RunResult => ({ kind: 'not-judged', run, why, costUsd });
 
 export async function judgeRun(deps: JudgeDeps, run: RunRecord): Promise<RunResult> {
     const input = deps.inputs.document(run.id);
@@ -86,7 +87,7 @@ export async function judgeRun(deps: JudgeDeps, run: RunRecord): Promise<RunResu
     deps.verdicts.add(verdicts);
     return {
         kind: 'judged', run, items, verdicts, coverage: measured.coverage, filler: measured.filler, added: measured.added, stateSize: must(parseCount(state.length)),
-        readback: back.grades, note: back.note, costUsd: asked.costUsd + back.costUsd,
+        readback: back.grades, note: back.note, costUsd: usdOf(asked.costUsd + back.costUsd),
     };
 }
 

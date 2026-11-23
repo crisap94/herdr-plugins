@@ -24,6 +24,7 @@ import type { LaneStatus } from '#src/recap/domain/status.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
 import { MemoryLedger } from './memory-ledger.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 import { seenLane } from '#test/support/seen.ts';
 
@@ -72,7 +73,7 @@ export function worldOf(over: Partial<FlowWorld> = {}): FlowWorld {
     return {
         sourceStatus: 'idle', targetStatus: 'idle', targetAgent: 'claude', targetPresent: true, targetKeyKnown: true, peer: false,
         recap: SOURCE_LISTED(), facts: [], awaiting: CLEAR, flight: IDLE_FLIGHT, refreshed: 'refreshed', refreshThrows: false,
-        renderResult: { kind: 'text', text: TEXT, bytes: TEXT.length, omitted: 0, withheld: 0 }, renderThrows: false, sendOutcome: { kind: 'delivered' }, sendThrows: false, pauseThrows: false, recapThrows: false,
+        renderResult: { kind: 'text', text: textOf(TEXT), bytes: countOf(TEXT.length), omitted: countOf(0), withheld: countOf(0) }, renderThrows: false, sendOutcome: { kind: 'delivered' }, sendThrows: false, pauseThrows: false, recapThrows: false,
         onRefresh: (): void => undefined, onPause: (): void => undefined,
         ...over,
     };
@@ -150,7 +151,7 @@ export function harness(over: Partial<FlowWorld> = {}, sender: Pick<HandoffSende
                 throw new Error('clock failed');
             }
         },
-        now: () => NOW,
+        now: () => instant(NOW),
         log: (line) => { logs.push(line); },
     };
     return { flow: new HandoffFlow(deps), world, claims, calls, pauses, sent, renders, logs, flushes };

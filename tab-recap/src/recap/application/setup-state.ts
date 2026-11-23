@@ -19,6 +19,7 @@ import { compactNoteOf } from '#src/recap/domain/compact-note.ts';
 import type { CompactNote } from '#src/recap/domain/compact-note.ts';
 import { countOf, type Count } from '#src/recap/domain/count.ts';
 import type { AgentKind } from '#src/recap/domain/ids.ts';
+import type { Usd } from '#src/recap/domain/usd.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 
 export type RowId = 'recapJob' | 'compactJob' | 'judgeJob' | 'curatorJob' | 'locale' | 'recapLanguage' | 'screenAgents' | 'gitNote' | 'telemetryTags' | 'compactTarget' | 'compactNote' | 'compactHint' | 'contextWindow' | 'autocompact' | 'autocompactAt' | 'autocompactStyle' | 'autocompactMissed' | 'autocompactJob' | 'herdrEvents';
@@ -76,8 +77,8 @@ export type Locks = Readonly<Partial<Record<FieldId, EnvironmentName>>>;
 export type TestState =
     | { readonly kind: 'idle' }
     | { readonly kind: 'running' }
-    | { readonly kind: 'ok'; readonly seconds: number; readonly costUsd: number }
-    | { readonly kind: 'failed'; readonly why: string };
+    | { readonly kind: 'ok'; readonly seconds: Count; readonly costUsd: Usd }
+    | { readonly kind: 'failed'; readonly why: Text };
 
 interface TextEdit { readonly kind: 'text'; readonly buffer: Text }
 
@@ -102,10 +103,23 @@ export interface Setup {
     readonly asked: boolean;
 }
 
-export type Effect =
-    | { readonly kind: 'save'; readonly values: ReadonlyMap<EnvironmentName, Text>; readonly languageChanged: boolean }
-    | { readonly kind: 'test'; readonly draft: Draft; readonly available: readonly AgentKind[] }
-    | { readonly kind: 'close' };
+export interface SaveEffect {
+    readonly kind: 'save';
+    readonly values: ReadonlyMap<EnvironmentName, Text>;
+    readonly languageChanged: boolean;
+}
+
+export interface TestEffect {
+    readonly kind: 'test';
+    readonly draft: Draft;
+    readonly available: readonly AgentKind[];
+}
+
+export interface CloseEffect {
+    readonly kind: 'close';
+}
+
+export type Effect = SaveEffect | TestEffect | CloseEffect;
 
 export interface Stepped {
     readonly state: Setup;

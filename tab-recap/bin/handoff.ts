@@ -24,18 +24,20 @@ import { instant } from '#src/recap/domain/time.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { closedOf, listingOf, paneOf, problem, sourceProblem, targetProblem } from './handoff-closed.ts';
 import type { HandoffProblem, HandoffValues, ListingArguments } from './handoff-closed.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 
 export type { HandoffProblem, HandoffValues } from './handoff-closed.ts';
 
+export type DeliverArguments = Omit<DeliverRequest, 'refresh'> & { readonly refresh: boolean };
+
 export type HandoffArguments =
     | { readonly mode: 'print'; readonly from: PaneId; readonly to: PaneId | null; readonly note: string | null; readonly closed: ClosedLaneIdentity | null }
-    | ({ readonly mode: 'deliver' } & DeliverRequest)
+    | ({ readonly mode: 'deliver' } & DeliverArguments)
     | ListingArguments;
 
 export interface HandoffWiring {
     readonly printer: HandoffPrintService;
-    readonly deliver: (request: DeliverRequest) => Promise<HandoffOutcome>;
+    readonly deliver: (request: DeliverArguments) => Promise<HandoffOutcome>;
     readonly list: (tab: TabId) => ClosedListing;
 }
 
@@ -100,7 +102,7 @@ function printOf(values: HandoffValues, from: PaneId, note: string | null, close
     return to === null ? problem('--to needs a pane id') : { mode: 'print', from, to, note, closed };
 }
 
-function deliverOf(values: HandoffValues, from: PaneId, note: string | null, closed: ClosedLaneIdentity | null): HandoffArguments | HandoffProblem {
+function deliverOf(values: HandoffValues, from: PaneId, note: Text | null, closed: ClosedLaneIdentity | null): HandoffArguments | HandoffProblem {
     const raw = values.to?.[0];
     if (raw === undefined) {
         return problem('--to is required unless --print');
@@ -131,10 +133,11 @@ export function handoffArgumentsOf(values: HandoffValues, positionals: readonly 
 
 function deliverDeps(): DeliverDeps {
     const pidfile = new Pidfile(fsPathOf(stateDirectory()));
+    const version = codeVersion();
     return {
-        pacing: { now: Date.now, sleep },
+        pacing: { now: () => instant(Date.now()), sleep },
         daemon: () => ({ pid: pidfile.alive(), version: pidfile.daemonVersion() }),
-        cliVersion: codeVersion(),
+        cliVersion: version === null ? null : textOf(version),
         openStore: () => {
             const store = openCliStore();
             if (store.kind !== 'ready') {
@@ -155,7 +158,7 @@ function printerOf(): HandoffPrintService {
         tokens: fleet,
         target: { status: (pane) => fleet.agents().status(pane) },
         closedDays: loadSettings().closedLaneDays,
-        now: () => Date.now(),
+        now: () => instant(Date.now()),
         flush: () => Promise.resolve(),
         log: (line) => { console.error(`tab-recap: ${line}`); },
     });
@@ -175,7 +178,7 @@ function listerOf(): (tab: TabId) => ClosedListing {
 export function productionWiring(): HandoffWiring {
     return {
         printer: printerOf(),
-        deliver: (request) => deliverHandoff(request, deliverDeps()),
+        deliver: (request) => deliverHandoff({ ...request, refresh: request.refresh ? 'refresh-first' : 'as-is' }, deliverDeps()),
         list: listerOf(),
     };
 }

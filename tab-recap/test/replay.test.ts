@@ -84,10 +84,10 @@ test('a 6-turn transcript: 6 extractor runs on the scratch ledger, each shown wh
             assert.deepEqual(shown.map((each) => each.split('|').filter((line) => line !== '').length), [0, 1, 2, 3, 4, 5], 'each run is shown the facts the earlier ones added');
             assert.deepEqual(done.facts.map((fact) => [fact.section, fact.state, fact.closedWhy]), [['goal', 'open', null], ['decisions', 'open', null], ['done', 'open', null], ['done', 'open', null], ['needs', 'closed', 'answered'], ['done', 'open', null]]);
             assert.ok(done.facts.every((fact) => fact.firstAt >= Date.parse('2026-10-07T09:00:00Z')), 'facts carry the times of the transcript, not the time of the replay');
-            const report = reportOf('replay', done.facts);
+            const report = reportOf(textOf('replay'), done.facts);
             assert.match(report, /^replay: 6 facts, 5 open, 1 closed/);
             assert.match(report, /decisions carry a why +100%/);
-            assert.match(ledgerText(done.facts, 'UTC'), /needs +answered +09:\d\d–09:\d\d +Should guests keep their basket\?/);
+            assert.match(ledgerText(done.facts, textOf('UTC')), /needs +answered +09:\d\d–09:\d\d +Should guests keep their basket\?/);
         } finally {
             scratch.dispose();
         }
@@ -119,7 +119,7 @@ test('checks: short lines, decisions with a why (the "(not recorded)" gap does n
     ];
     const byName = Object.fromEntries(checksOf(facts).map((check) => [check.name, [check.passed, check.of]]));
     assert.deepEqual(byName, { 'short (≤ 16 words)': [4, 5], 'decisions carry a why': [1, 2], 'no open repeats': [4, 5] });
-    assert.match(reportOf('x', []), /^x: 0 facts, 0 open, 0 closed/);
+    assert.match(reportOf(textOf('x'), []), /^x: 0 facts, 0 open, 0 closed/);
 });
 
 test('the store a replay writes to is a real store: the same repositories, the full schema', () => {
@@ -152,7 +152,7 @@ test('the judge over a replay: every run of the replay is scored like a stored o
     try {
         await replayFile({ reader: new ClaudeTranscripts(), summarizer: () => summarizer, records: scratch.store.records, ledger: scratch.store.ledger, mint: mintFactId, repos: NO_REPOS, language: textOf('en'), log: () => undefined, writerView: FULL_WRITER_VIEW }, must(parseSessionPath(FILE)), tabId('replay:t1'), countOf(statSync(FILE).size), must(parsePositiveCount(1)));
         const imported = [{ n: countOf(1), at: instant(Date.parse('2026-10-07T09:20:00Z')), items: [{ key: textOf('state/t1/goal/0'), section: textOf('goal'), text: textOf('Shop with a cart'), fact: textOf('state/t1/goal/0'), born: bornOf(false), anchor: null }, { key: textOf('state/t1/done/0'), section: textOf('done'), text: textOf('Cart totals added in src/totals.ts'), fact: textOf('state/t1/done/0'), born: bornOf(false), anchor: null }] }];
-        const lines = await judgedReport({ judge: lenient, store: scratch.store, rubric: 'rubric', label: 'replay:t1', imported, beside: 'w1:t9', style: styleFor(process.stdout), err: () => undefined });
+        const lines = await judgedReport({ judge: lenient, store: scratch.store, rubric: textOf('rubric'), label: textOf('replay:t1'), imported, beside: textOf('w1:t9'), style: styleFor(process.stdout), err: () => undefined });
         const text = lines.join('\n');
         assert.match(text, /the judge over the replay \(2 runs\)/);
         assert.match(text, /the last good 1\.x recap of each chapter of w1:t9 against the replay's ledger state at the same time/);

@@ -10,7 +10,8 @@ import { resolveClosedLane } from './closed-lane-source.ts';
 import type { ClosedSourceDeps } from './closed-lane-source.ts';
 import type { ClosedView } from './closed-view.ts';
 import { saying, type Unknown } from '#src/ports/unknowable.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 
 export interface SourceRequest {
     readonly tab: TabId;
@@ -23,7 +24,7 @@ export interface SourceDeps {
     readonly lanes: readonly SourceLane[];
     readonly records: Pick<GuardedRecapRecords, 'readRecap'>;
     readonly ledger: Pick<GuardedLedger, 'openOf' | 'recentlyClosed'>;
-    readonly now: number;
+    readonly now: Instant;
 }
 
 interface FoundFacts {
@@ -48,7 +49,7 @@ export type UnfoundSource =
     | { readonly kind: 'unlisted' }
     | { readonly kind: 'source-unavailable' }
     | { readonly kind: 'task-ambiguous' }
-    | { readonly kind: 'unknown'; readonly why: string };
+    | { readonly kind: 'unknown'; readonly why: Text };
 
 export type SourceResolution = FoundSource | UnfoundSource;
 
@@ -80,14 +81,16 @@ export type SourceKind = keyof SourceInputs;
 
 export type SourceResolver<K extends SourceKind> = (source: SourceInputs[K]['request'], deps: SourceInputs[K]['deps']) => SourceResolution;
 
-export function isLaneOfTab(lanes: readonly SourceLane[], source: SourceRequest): boolean {
-    return lanes.some((lane) => lane.pane === source.pane && lane.tab === source.tab);
+export type LaneListing = 'listed' | 'unlisted';
+
+export function listingOf(lanes: readonly SourceLane[], source: SourceRequest): LaneListing {
+    return lanes.some((lane) => lane.pane === source.pane && lane.tab === source.tab) ? 'listed' : 'unlisted';
 }
 
-const unknownOf = (read: Unknown): SourceResolution => ({ kind: 'unknown', why: read.why.why === 'unreadable' ? read.why.detail : saying(read.why) });
+const unknownOf = (read: Unknown): SourceResolution => ({ kind: 'unknown', why: textOf(read.why.why === 'unreadable' ? read.why.detail : saying(read.why)) });
 
 const liveResolver: SourceResolver<'live'> = (source, deps): SourceResolution => {
-    if (!isLaneOfTab(deps.lanes, source)) {
+    if (listingOf(deps.lanes, source) === 'unlisted') {
         return { kind: 'source-unavailable' };
     }
     try {
@@ -114,7 +117,7 @@ const liveResolver: SourceResolver<'live'> = (source, deps): SourceResolution =>
         }
         return { kind: 'found', source: 'live', task, facts: [...open, ...closed] };
     } catch (error) {
-        return { kind: 'unknown', why: failureCauseOf(parseThrown(error)) };
+        return { kind: 'unknown', why: textOf(failureCauseOf(parseThrown(error))) };
     }
 };
 

@@ -11,10 +11,11 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { SCREEN_PREFIX } from '#src/ports/screens.ts';
 import { textOf } from '#src/recap/domain/text.ts';
-import { agentKind, paneId } from '#test/support/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 
-const TAB = 'w1:t1';
+const TAB = tabId('w1:t1');
 const LAST: LastRun = { at: instant(1_000), cause: 'turn-ended' };
 const records = (last: LastRun | null): Pick<RecapRecords, 'lastRunOf'> => ({ lastRunOf: () => last });
 
@@ -42,7 +43,7 @@ const agent = (text: string): Entry => ({ role: 'agent', text: textOf(text) });
 const tool = (text: string): Entry => ({ role: 'tool', text: textOf(text), kind: 'edit' });
 
 const input = (overrides: Partial<FreshnessInput> = {}): FreshnessInput => ({
-    tab: TAB, agent: 'claude', source: 'session-a.jsonl', cursor: null, status: 'idle', refresh: 'not-requested', ...overrides,
+    tab: TAB, agent: agentKind('claude'), source: fsPathOf('session-a.jsonl'), cursor: null, status: 'idle', refresh: 'not-requested', ...overrides,
 });
 
 const cursorAt = (transcript: string, cursor: number, tail: string | null = null): LaneCursor => ({
@@ -89,9 +90,9 @@ test('newer prompts: a transcript that cannot be read is unknown, and the lane i
 test('newer prompts: a source with no reader, no source or a screen source is unknown, and nothing is read', async () => {
     const asked: Asked[] = [];
     const transcripts = registryWith({ claude: reader([user('x')], asked) });
-    const noReader = await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts }, input({ agent: 'zed' }));
+    const noReader = await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts }, input({ agent: agentKind('zed') }));
     const noSource = await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts }, input({ source: null }));
-    const screen = await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts }, input({ source: `${SCREEN_PREFIX}w1:p1` }));
+    const screen = await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts }, input({ source: fsPathOf(`${SCREEN_PREFIX}w1:p1`) }));
     for (const outcome of [noReader, noSource, screen]) {
         assert.equal(outcome.kind, 'fresh');
         assert.deepEqual(outcome.freshness.newerPrompts, { kind: 'unknown' });
@@ -111,7 +112,7 @@ test('the cursor applies only while the stored transcript equals the source', as
 
 test('the located source is the one read, so the daemon and the CLI share one function', async () => {
     const asked: Asked[] = [];
-    await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts: registryWith({ claude: reader([], asked) }) }, input({ source: 'located.jsonl' }));
+    await freshnessOf({ unreported: () => undefined, records: records(LAST), transcripts: registryWith({ claude: reader([], asked) }) }, input({ source: fsPathOf('located.jsonl') }));
     assert.deepEqual(asked.map((call) => call.source), ['located.jsonl']);
 });
 

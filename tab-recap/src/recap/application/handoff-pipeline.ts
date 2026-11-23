@@ -19,12 +19,13 @@ import type { HandoffLog } from './handoff-mirror.ts';
 import { worksiteOf } from './worksite-section.ts';
 import type { WorksiteDeps } from './worksite-section.ts';
 import { countOf } from '#src/recap/domain/count.ts';
+import type { FsPath } from '#src/recap/domain/fs-path.ts';
 
 export interface HandoffPipelineDeps {
     readonly records: FreshnessDeps['records'];
     readonly transcripts: FreshnessDeps['transcripts'];
     readonly log: HandoffLog;
-    readonly locate: (lane: HandoffLane) => Promise<string | null>;
+    readonly locate: (lane: HandoffLane) => Promise<FsPath | null>;
     readonly worksite: WorksiteDeps;
     readonly tokens: PaneTokens;
 }
@@ -40,7 +41,7 @@ export function renderHandoff(deps: HandoffPipelineDeps): HandoffRender {
     return async (input: HandoffRenderInput): Promise<HandoffRenderResult> => {
         const { lane, cursor, closed } = input;
         const freshness = closed === undefined
-            ? await freshnessOf({ records: deps.records, transcripts: deps.transcripts, unreported: (failure) => deps.log(must(parseText(`handoff ${String(lane.tab)}: ledger unreadable, ${saying(failure.why)}`))) }, { tab: String(lane.tab), agent: String(lane.agent), source: await deps.locate(lane), cursor, status: lane.status, refresh: input.refresh })
+            ? await freshnessOf({ records: deps.records, transcripts: deps.transcripts, unreported: (failure) => deps.log(must(parseText(`handoff ${String(lane.tab)}: ledger unreadable, ${saying(failure.why)}`))) }, { tab: lane.tab, agent: lane.agent, source: await deps.locate(lane), cursor, status: lane.status, refresh: input.refresh })
             : closedFreshnessOf(closed);
         if (freshness.kind === 'ledger-empty') {
             return { kind: 'refused', reason: 'ledger-empty' };
@@ -67,6 +68,6 @@ export function renderHandoff(deps: HandoffPipelineDeps): HandoffRender {
         if (fitted.kind === 'too-large') {
             return { kind: 'refused', reason: 'too-large' };
         }
-        return { kind: 'text', text: fitted.text, bytes: new TextEncoder().encode(fitted.text).byteLength, omitted: omittedTotal(fitted.omitted), withheld: fitted.omitted.withheld };
+        return { kind: 'text', text: fitted.text, bytes: countOf(new TextEncoder().encode(fitted.text).byteLength), omitted: omittedTotal(fitted.omitted), withheld: fitted.omitted.withheld };
     };
 }

@@ -20,7 +20,7 @@ const down = (n: number): string[] => Array.from({ length: n }, () => 'j');
 const readStyle = (autocompactStyle: string | undefined): AutocompactStyle => draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, autocompactStyle: autocompactStyle === undefined ? undefined : textOf(autocompactStyle) }).autocompactStyle;
 
 function typed(state: Setup, keys: readonly string[]): Setup {
-    return keys.reduce((now, key) => step(now, key).state, state);
+    return keys.reduce((now, key) => step(now, textOf(key)).state, state);
 }
 
 test('the row starts at balanced, and choosing eager writes TAB_RECAP_AUTOCOMPACT_STYLE only', () => {
