@@ -14,6 +14,7 @@ import type { HarnessDirectory, HarnessList } from '#src/ports/harnesses.ts';
 import type { NotifierPort } from '#src/ports/notifier.ts';
 import type { Summarizer, Written } from '#src/ports/summarizer.ts';
 import { isUnknown, saying, unknown } from '#src/ports/unknowable.ts';
+import { RuntimeLoadError } from '#src/adapters/harness/library.ts';
 import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
 import type { LogLine } from '#src/ports/harness.ts';
 import { coverageDeciderFor, deciderFor } from './deciders.ts';
@@ -22,7 +23,7 @@ import { MAKERS } from './harness-makers.ts';
 import { BACKEND_IDS, enumeratesJob, installableHarnessSentence, pick, type BackendId } from '#src/recap/domain/backend.ts';
 import { placementFor } from '#src/recap/domain/job.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 import type { Settings } from './config.ts';
 import { jobTagFor } from './harness-makers.ts';
@@ -54,8 +55,12 @@ const NONE = `a coding agent to write recaps: install ${installableHarnessSenten
 class Nothing implements Summarizer {
     readonly backend = must(parseText('none'));
     readonly contract = 'strict';
+    private readonly what: Text;
+    constructor(what: Text = textOf(NONE)) {
+        this.what = what;
+    }
     write(): Promise<Written> {
-        return Promise.resolve(unknown({ why: 'not-found', what: textOf(NONE) }));
+        return Promise.resolve(unknown({ why: 'not-found', what: this.what }));
     }
 }
 
@@ -97,6 +102,7 @@ export class Backends {
     private readonly sources: HarnessSources;
     private readonly notifier: NotifierPort;
     private readonly log: LogLine;
+    private readonly reported = new Set<Text>();
 
     constructor(root: Directory, sources: HarnessSources, notifier: NotifierPort, log: LogLine, runtime: HarnessRuntime) {
         this.work = summarizerWorkIn(root);
@@ -125,27 +131,43 @@ export class Backends {
         await this.notifier.notify(textOf('Tab Recap'), textOf(`No recap writer found — ${NONE}`));
     }
 
+    private whenLoaded<Built>(build: () => Built, otherwise: (reason: Text) => Built): Built {
+        try {
+            return build();
+        } catch (error) {
+            if (!(error instanceof RuntimeLoadError)) {
+                throw error;
+            }
+            const reason = must(parseText(`harness runtime did not load: ${error.message}`));
+            if (!this.reported.has(reason)) {
+                this.reported.add(reason);
+                this.log(reason);
+            }
+            return otherwise(reason);
+        }
+    }
+
     brief(): BriefWriter | null {
-        return briefFor(loadSettings(), this.available, this.work, this.runtime, this.log);
+        return this.whenLoaded(() => briefFor(loadSettings(), this.available, this.work, this.runtime, this.log), () => null);
     }
 
     decider(): DeciderPort | null {
-        return deciderFor(loadSettings(), this.available, this.work, this.runtime, this.log);
+        return this.whenLoaded(() => deciderFor(loadSettings(), this.available, this.work, this.runtime, this.log), () => null);
     }
 
     coverageDecider(): DeciderPort | null {
-        return coverageDeciderFor(loadSettings(), this.available, this.work, this.runtime, this.log);
+        return this.whenLoaded(() => coverageDeciderFor(loadSettings(), this.available, this.work, this.runtime, this.log), () => null);
     }
 
     curator(): Curators | null {
-        return curatorFor(loadSettings(), this.available, this.work, this.runtime, this.log);
+        return this.whenLoaded(() => curatorFor(loadSettings(), this.available, this.work, this.runtime, this.log), () => null);
     }
 
     summarizer(): Summarizer {
-        return summarizerFor(loadSettings(), this.available, this.work, this.runtime, this.log);
+        return this.whenLoaded(() => summarizerFor(loadSettings(), this.available, this.work, this.runtime, this.log), (reason) => new Nothing(reason));
     }
 
     enumerator(): Enumerators | null {
-        return enumeratorFor(loadSettings(), this.available, this.work, this.runtime, this.log);
+        return this.whenLoaded(() => enumeratorFor(loadSettings(), this.available, this.work, this.runtime, this.log), () => null);
     }
 }
