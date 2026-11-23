@@ -347,6 +347,7 @@
       "test/job-tag-wiring.test.ts",
       "test/job-tag.test.ts",
       "test/job-telemetry.test.ts",
+      "test/jsonl-adopted.test.ts",
       "test/judge-config.test.ts",
       "test/judge-prompt-golden.test.ts",
       "test/judge-state.test.ts",

@@ -1,13 +1,18 @@
+import { fitBytes, unfenced } from '@stateforge-labs/harness-adapters/text';
+
 import type { HarnessAsk } from '#src/ports/harness.ts';
 import type { RecapRequest } from '#src/ports/summarizer.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { TRANSCRIPT_BUDGET, writerContext } from '#src/recap/application/writer-context.ts';
-import { unfencedText } from '../decider.ts';
 import { instructions } from './recap-instructions.ts';
 
-export { instructions, unfencedText };
+export { instructions };
+
+export function unfencedText(markdown: Text): Text {
+    return must(parseText(unfenced(markdown)));
+}
 
 export function messageText(request: RecapRequest): Text {
     return must(parseText(writerContext(request)));
@@ -20,29 +25,7 @@ export function promptText(request: RecapRequest): Text {
 export const ARGV_BYTES: Count = must(parseCount(120_000));
 
 export function fitText(text: Text, max: Count): Text {
-    if (Buffer.byteLength(text) <= max) {
-        return text;
-    }
-    const lines = text.split('\n');
-    let used = 0;
-    let from = lines.length;
-    while (from > 0) {
-        const need = Buffer.byteLength(lines[from - 1] ?? '') + (used > 0 ? 1 : 0);
-        if (used + need > max) {
-            break;
-        }
-        used += need;
-        from -= 1;
-    }
-    const kept = lines.slice(from).join('\n');
-    if (kept !== '') {
-        return must(parseText(kept));
-    }
-    const chars = Array.from(lines.at(-1) ?? '');
-    while (chars.length > 0 && Buffer.byteLength(chars.join('')) > max) {
-        chars.splice(0, Math.max(1, Math.ceil(chars.length / 20)));
-    }
-    return must(parseText(chars.join('')));
+    return must(parseText(fitBytes(text, max)));
 }
 
 export function fittedAsk(request: RecapRequest, limit: Count): HarnessAsk {

@@ -1,5 +1,7 @@
 import { closeSync, openSync, readSync, statSync } from 'node:fs';
 
+import { parseRow as parseJsonlRow, readLines as readJsonlLines, tailOf } from '@stateforge-labs/harness-adapters/jsonl';
+
 import type { BackgroundSplit, InFlightResult, Position, SourcePath } from '#src/ports/transcripts.ts';
 import { err, must, ok, type Result } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
@@ -53,30 +55,12 @@ const isObjectValue = (value: unknown): value is Row => typeof value === 'object
 const isRecord = (value: unknown): value is Row => isObjectValue(value) && !Array.isArray(value);
 
 export function readLines(path: FsPath, from: Count, budget: Count): LineSpan {
-    const fd = openSync(path, 'r');
-    try {
-        const buffer = Buffer.alloc(budget);
-        const read = readSync(fd, buffer, 0, budget, from);
-        const lastNewline = buffer.subarray(0, read).lastIndexOf(0x0a);
-        if (lastNewline < 0) {
-            return { lines: [], end: from };
-        }
-        return {
-            lines: buffer.subarray(0, lastNewline).toString('utf8').split('\n').map((line) => must(parseText(line))),
-            end: must(parseCount(from + lastNewline + 1)),
-        };
-    } finally {
-        closeSync(fd);
-    }
+    const span = readJsonlLines(path, from, budget);
+    return { lines: span.lines.map((line) => must(parseText(line))), end: must(parseCount(span.end)) };
 }
 
 export function parseLine(line: Text): Row | null {
-    try {
-        const value: unknown = JSON.parse(line);
-        return isObjectValue(value) ? value : null;
-    } catch {
-        return null;
-    }
+    return parseJsonlRow(line);
 }
 
 export function parseRow(input: unknown): Result<Row, ParseFailure> {
@@ -143,8 +127,8 @@ export function toolBriefOf(name: Text, input: Row): Text {
 }
 
 export function tailSpan(path: FsPath, budget: Count): Tail {
-    const size = statSync(path).size;
-    return { lines: readLines(path, must(parseCount(Math.max(0, size - budget))), budget).lines, truncated: size > budget ? 'present' : 'absent' };
+    const tail = tailOf(path, budget);
+    return { lines: tail.lines.map((line) => must(parseText(line))), truncated: tail.truncated ? 'present' : 'absent' };
 }
 
 function forwardSpan(path: FsPath, from: Count, size: Count, budget: Count): LineSpan {
