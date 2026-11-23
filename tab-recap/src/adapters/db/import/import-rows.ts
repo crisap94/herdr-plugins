@@ -79,7 +79,7 @@ export class RowsWriter {
         if (file.at !== null || file.error !== null || file.costUsd > 0) {
             const facts = { tab: file.tab, at, cause: 'imported', backend: file.backend, language: file.language, costUsd: file.costUsd } as const;
             const failed = file.at === null;
-            const run = this.runs.insertRun(facts, failed ? (file.error ?? '') : null);
+            const run = this.runs.insertRun(facts, failed ? (file.error ?? textOf('')) : null);
             this.tasks(run, file, failed ? [] : file.tasks);
         }
         this.state.run(file.running ? 1 : 0, file.backend, file.error, file.tab);

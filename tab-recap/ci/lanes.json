@@ -645,7 +645,6 @@
       "src/adapters/db/rows/legacy.ts",
       "src/adapters/db/run-inputs.ts",
       "src/adapters/db/run-write.ts",
-      "src/adapters/db/run-write/legacy.ts",
       "src/adapters/db/schema/001-history.ts",
       "src/adapters/db/schema/001-initial.ts",
       "src/adapters/db/schema/001-live.ts",
