@@ -1,5 +1,5 @@
 import { parseUsd } from '#src/recap/domain/usd.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { parseCount, countOf } from '#src/recap/domain/count.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { must as mustParsed } from '#src/protocol/result.ts';
 import { parseCompactionId, agentKind } from '#src/recap/domain/ids.ts';
@@ -14,7 +14,7 @@ import type { World } from './autocompact-world.ts';
 
 const laneAt = (pane: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
 const waitAt = (w: World, at: number, mode: 'shadow' | 'on'): void => {
-    w.store.autocompact.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(at), mode, share: 12, tokens: mustParsed(parseCount(120_000)), window: mustParsed(parseCount(1_000_000)), gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: mustParsed(parseUsd(0)), tookMs: null, why: null });
+    w.store.decisions.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(at), mode, share: countOf(12), tokens: mustParsed(parseCount(120_000)), window: mustParsed(parseCount(1_000_000)), gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: mustParsed(parseUsd(0)), tookMs: null, why: null });
 };
 
 test('unchanged: the same tokens and mode as the last decision, made by this process, is skipped without a model; new tokens are asked', async () => {
@@ -22,7 +22,7 @@ test('unchanged: the same tokens and mode as the last decision, made by this pro
     same.share = 12;
     waitAt(same, NOW - 20 * 60_000, 'on');
     await same.service.consider(lane());
-    assert.deepEqual([same.asked.length, same.store.autocompact.skips().map((skip) => skip.gate)], [0, ['unchanged']]);
+    assert.deepEqual([same.asked.length, same.store.decisions.skips().map((skip) => skip.gate)], [0, ['unchanged']]);
     const changed = world({}, true, NOW - 3_600_000);
     changed.share = 13;
     waitAt(changed, NOW - 20 * 60_000, 'on');
@@ -48,9 +48,9 @@ test('busy across lanes: two lanes over the ceiling in on make one request; the 
     w.share = 85;
     await w.service.consider(laneAt('w1:p1'));
     await w.service.consider(laneAt('w1:p2'));
-    assert.deepEqual([w.requests.map((request) => request.pane), w.store.autocompact.skips().map((skip) => [skip.pane, skip.gate, skip.detail])], [['w1:p1'], [['w1:p2', 'busy', 'another lane']]]);
+    assert.deepEqual([w.requests.map((request) => request.pane), w.store.decisions.skips().map((skip) => [skip.pane, skip.gate, skip.detail])], [['w1:p1'], [['w1:p2', 'busy', 'another lane']]]);
     const first = w.store.compactions.begin({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), stage: 'compacting', at: instant(NOW), origin: 'auto' });
-    w.store.autocompact.linkLatest(tabId('w1:t1'), paneId('w1:p1'), must(parseCompactionId(first)));
+    w.store.decisions.linkLatest(tabId('w1:t1'), paneId('w1:p1'), must(parseCompactionId(first)));
     w.store.compactions.finish(first, { stage: 'compacted', at: instant(NOW + 1000) });
     w.clock.at += 60_000;
     await w.service.consider(laneAt('w1:p2'));

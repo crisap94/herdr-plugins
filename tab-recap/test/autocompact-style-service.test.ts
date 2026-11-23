@@ -1,13 +1,13 @@
 import { parseUsd } from '#src/recap/domain/usd.ts';
 import { policyOf } from './fakes/settings-readers.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { parseCount, countOf } from '#src/recap/domain/count.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { AutocompactMode } from '#src/recap/domain/autocompact.ts';
-import type { DecidedResult } from '#src/ports/decider.ts';
+import type { DecidedAnswersResult } from '#src/ports/decider.ts';
 import type { DecisionMode } from '#src/ports/autocompact-records.ts';
 import { NOW, lane, rows, tuningOfKeys, world } from './autocompact-world.ts';
 import type { World } from './autocompact-world.ts';
@@ -19,17 +19,17 @@ function styled(keys: Readonly<Record<string, string>>, mode: AutocompactMode = 
     return world({ ...policyOf(env(keys)), mode }, true, 0, tuningOfKeys(keys));
 }
 
-const answer = (closes: number, rest = 0.15): DecidedResult => (decidedOf({ closes_request: closes, announces_continuation: rest, asks_detailed_choice: rest, needs_verbatim: rest, changes_subject: rest, stuck: rest }));
+const answer = (closes: number, rest = 0.15): DecidedAnswersResult => (decidedOf({ closes_request: closes, announces_continuation: rest, asks_detailed_choice: rest, needs_verbatim: rest, changes_subject: rest, stuck: rest }));
 
 function decidedMinutesAgo(w: World, minutes: number, verdict: 'wait' | 'undecided' | 'compact', mode: DecisionMode = 'on'): void {
-    w.store.autocompact.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - minutes * 60_000), mode, share: 12, tokens: must(parseCount(120_000)), window: must(parseCount(1_000_000)), gate: 'ask', verdict, askedVerdict: verdict, answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null });
+    w.store.decisions.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - minutes * 60_000), mode, share: countOf(12), tokens: must(parseCount(120_000)), window: must(parseCount(1_000_000)), gate: 'ask', verdict, askedVerdict: verdict, answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null });
 }
 
 test('the decider\'s answers become the verdict under the style: a close of 0.65 compacts under eager and is undecided under balanced and gentle', async () => {
     const outcomes: Array<[string, string | undefined, number]> = [];
     for (const style of ['eager', 'balanced', 'gentle']) {
         const w = styled({ TAB_RECAP_AUTOCOMPACT_STYLE: style });
-        w.decide = (): DecidedResult => answer(0.65);
+        w.decide = (): DecidedAnswersResult => answer(0.65);
         w.share = 62;
         await w.service.consider(lane());
         outcomes.push([style, rows(w)[0]?.verdict, w.requests.length]);
@@ -42,7 +42,7 @@ test('the decider\'s answers under gentle: a warning of 0.25 is a wait, and unde
     const verdicts: Array<string | undefined> = [];
     for (const style of ['gentle', 'balanced', 'eager']) {
         const w = styled({ TAB_RECAP_AUTOCOMPACT_STYLE: style });
-        w.decide = (): DecidedResult => (decidedOf(warned));
+        w.decide = (): DecidedAnswersResult => (decidedOf(warned));
         w.share = 62;
         await w.service.consider(lane());
         verdicts.push(rows(w)[0]?.verdict);

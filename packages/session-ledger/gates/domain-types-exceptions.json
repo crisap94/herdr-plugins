@@ -44,34 +44,6 @@
   {
     "class": "contract",
     "file": "src/compaction-timing/contract.ts",
-    "symbol": "CoverageAmendment",
-    "field": "block",
-    "reason": "EC 2.5, copied shape: block of CoverageAmendment keeps the plain type of CoverageAmendment in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/compaction-timing/contract.ts",
-    "symbol": "CoverageAmendment",
-    "field": "coverage",
-    "reason": "EC 2.5, copied shape: coverage of CoverageAmendment keeps the plain type of CoverageAmendment in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/compaction-timing/contract.ts",
-    "symbol": "CoverageAmendment",
-    "field": "why",
-    "reason": "EC 2.5, copied shape: why of CoverageAmendment keeps the plain type of CoverageAmendment in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/compaction-timing/contract.ts",
-    "symbol": "Decided",
-    "field": "tokens",
-    "reason": "EC 2.5, copied shape: tokens of Decided keeps the plain type of Decided in tab-recap/src/ports/decider.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/compaction-timing/contract.ts",
     "symbol": "Decider",
     "field": "label",
     "reason": "EC 2.5, written from the earlier 3.2.1 listing as approved: label of Decider in Decider keeps the plain type of that text; ENG-5 types it"
@@ -80,78 +52,8 @@
     "class": "contract",
     "file": "src/compaction-timing/contract.ts",
     "symbol": "Decision",
-    "field": "answers",
-    "reason": "EC 2.5, copied shape: answers of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/compaction-timing/contract.ts",
-    "symbol": "Decision",
-    "field": "coverage",
-    "reason": "EC 2.5, copied shape: coverage of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/compaction-timing/contract.ts",
-    "symbol": "Decision",
     "field": "coverageOutcome",
-    "reason": "EC 2.5, copied shape: coverageOutcome of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/compaction-timing/contract.ts",
-    "symbol": "Decision",
-    "field": "decider",
-    "reason": "EC 2.5, copied shape: decider of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/compaction-timing/contract.ts",
-    "symbol": "Decision",
-    "field": "share",
-    "reason": "EC 2.5, copied shape: share of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/compaction-timing/contract.ts",
-    "symbol": "Decision",
-    "field": "tokens",
-    "reason": "EC 2.5, copied shape: tokens of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/compaction-timing/contract.ts",
-    "symbol": "Decision",
-    "field": "why",
-    "reason": "EC 2.5, copied shape: why of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/compaction-timing/contract.ts",
-    "symbol": "Decision",
-    "field": "window",
-    "reason": "EC 2.5, copied shape: window of Decision keeps the plain type of Decision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/compaction-timing/contract.ts",
-    "symbol": "LastDecision",
-    "field": "tokens",
-    "reason": "EC 2.5, copied shape: tokens of LastDecision keeps the plain type of LastDecision in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/compaction-timing/contract.ts",
-    "symbol": "Skip",
-    "field": "detail",
-    "reason": "EC 2.5, copied shape: detail of Skip keeps the plain type of Skip in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
-  },
-  {
-    "class": "contract",
-    "file": "src/compaction-timing/contract.ts",
-    "symbol": "Skip",
-    "field": "share",
-    "reason": "EC 2.5, copied shape: share of Skip keeps the plain type of Skip in tab-recap/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
+    "reason": "EC 2.5, copied shape: coverageOutcome of Decision keeps the inline outcome union of Decision in packages/session-ledger/src/ports/autocompact-records.ts, held equal by gates/copied-shapes/compaction-timing.json; ENG-5 types it"
   },
   {
     "class": "contract",

@@ -13,7 +13,7 @@ import type {
     Text,
     Unknown,
 } from './engine-port.ts';
-import type { AgentKind, AutocompactPercent, DecisionId, Duration, Instant, PaneId, Probability, TabId, Usd } from '../contract/kernel.ts';
+import type { AgentKind, AutocompactPercent, Count, DecisionId, Duration, Instant, PaneId, Probability, TabId, Usd } from '../contract/kernel.ts';
 
 export type { Awaiting, BackgroundItem, ContextUse, WindowSource } from './engine-port.ts';
 
@@ -92,19 +92,23 @@ export interface LinkedDecision {
     readonly gate: DecisionGate;
 }
 
+export type AnswerTally = ReadonlyMap<Text, Probability>;
+export type CoverageBlock = 'blocks' | 'allows';
+export type TokenAmount = Brand<number, 'TokenAmount'>;
+
 export interface Skip {
     readonly tab: TabId;
     readonly pane: PaneId;
     readonly agent: AgentKind;
     readonly at: Instant;
     readonly gate: SkipGate;
-    readonly share: number | null;
-    readonly detail: string | null;
+    readonly share: Count | null;
+    readonly detail: Text | null;
 }
 
 export interface LastDecision {
     readonly at: Instant;
-    readonly tokens: number;
+    readonly tokens: Count;
     readonly mode: DecisionMode;
     readonly verdict: Verdict;
     readonly gate: DecisionGate;
@@ -116,18 +120,18 @@ export interface Decision {
     readonly agent: AgentKind;
     readonly at: Instant;
     readonly mode: DecisionMode;
-    readonly share: number;
-    readonly tokens: number;
-    readonly window: number;
+    readonly share: Count;
+    readonly tokens: Count;
+    readonly window: Count;
     readonly gate: DecisionGate;
     readonly verdict: Verdict;
     readonly askedVerdict: Verdict | null;
-    readonly answers: Readonly<Record<string, number>>;
-    readonly coverage: Readonly<Record<string, number>> | null;
-    readonly decider: string | null;
+    readonly answers: AnswerTally;
+    readonly coverage: AnswerTally | null;
+    readonly decider: Text | null;
     readonly costUsd: Usd;
     readonly tookMs: Duration | null;
-    readonly why: string | null;
+    readonly why: Text | null;
     readonly laneStatus: LaneStatusAtDecision | null;
     readonly coverageOutcome: CoverageOutcome | null;
     readonly coverageMs: Duration | null;
@@ -135,12 +139,12 @@ export interface Decision {
 }
 
 export interface CoverageAmendment {
-    readonly coverage: Readonly<Record<string, number>> | null;
+    readonly coverage: AnswerTally | null;
     readonly outcome: CoverageOutcome;
     readonly coverageMs: Duration;
     readonly coverageCostUsd: Usd | null;
-    readonly why: string | null;
-    readonly block: boolean;
+    readonly why: Text | null;
+    readonly block: CoverageBlock;
 }
 
 export interface QuestionCriteria {
@@ -156,7 +160,7 @@ export interface Question {
 export interface Decided {
     readonly kind: 'decided';
     readonly answers: ReadonlyMap<Text, Probability>;
-    readonly tokens: number;
+    readonly tokens: TokenAmount;
     readonly costUsd: Usd;
     readonly tookMs: Duration;
     readonly model: Text;

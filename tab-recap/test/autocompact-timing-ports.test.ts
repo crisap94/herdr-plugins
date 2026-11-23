@@ -14,7 +14,7 @@ import type { DeciderPort } from '#src/ports/decider.ts';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
 import { memoryStore } from './db/support.ts';
-import { decidedAnswersOf, textOf } from './fakes/decider-fixtures.ts';
+import { decidedOf, textOf } from './fakes/decider-fixtures.ts';
 import { SAFE, candidateFor } from './autocompact-world.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
@@ -43,7 +43,7 @@ function scripted(claims: LaneClaims): Scripted {
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
     const events: string[] = [];
     const flushed: string[] = [];
-    const decider: DeciderPort = { label: textOf('fake'), ask: () => Promise.resolve(decidedAnswersOf(SAFE)) };
+    const decider: DeciderPort = { label: textOf('fake'), ask: () => Promise.resolve(decidedOf(SAFE)) };
     const service = wireAutocompact({
         config: (): Settings => ({ autocompact: { ...policyOf(() => undefined), mode: 'on' }, tuning: tuningOf(() => undefined) }) as unknown as Settings,
         awaiting: () => Promise.resolve({ kind: 'clear' }), store, claims,
@@ -81,7 +81,7 @@ test('wireAutocompact: the stored row keeps the status of the lane the candidate
     for (const status of statuses) {
         const world = scripted(new LaneClaims());
         await world.service.consider(candidateFor(laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status })));
-        stored.push(world.store.autocompact.newest(must(parseCount(1)))[0]?.laneStatus ?? null);
+        stored.push(world.store.decisions.newest(must(parseCount(1)))[0]?.laneStatus ?? null);
     }
     assert.deepEqual(stored, ['idle', 'done']);
 });

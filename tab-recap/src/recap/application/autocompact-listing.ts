@@ -1,5 +1,5 @@
 import { parseArgs } from 'node:util';
-import type { Skip, StoredDecision } from '#src/ports/autocompact-records.ts';
+import type { SkipRow, StoredDecisionRow } from '#src/ports/autocompact-records.ts';
 import type { AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { moneyOf } from './autocompact-line.ts';
@@ -50,13 +50,13 @@ function stampOf(ms: Instant | null, zone: Text): Text {
 
 const instantOf = (result: Result<Instant, ParseFailure>): Instant | null => (result.kind === 'ok' ? result.value : null);
 
-function rowOf(found: StoredDecision, zone: Text): ListingRow {
+function rowOf(found: StoredDecisionRow, zone: Text): ListingRow {
     const verdict = found.askedVerdict !== null && found.askedVerdict !== found.verdict ? `${found.verdict} (asked ${found.askedVerdict})` : found.verdict;
     const cells = [found.tab, found.pane, found.laneStatus ?? '—', `${found.share} %`, verdict, found.gate, found.decider ?? '—', moneyOf(found.costUsd)].map((line) => must(parseText(line)));
     return { cells: [stampOf(instantOf(parseInstant(found.at)), zone), ...cells] };
 }
 
-function skippedRow(found: Skip, zone: Text): ListingRow {
+function skippedRow(found: SkipRow, zone: Text): ListingRow {
     const cells = [found.tab, found.pane, found.share === null ? '—' : `${found.share} %`, found.gate, found.detail ?? '—'].map((line) => must(parseText(line)));
     return { cells: [stampOf(instantOf(parseInstant(found.at)), zone), ...cells] };
 }
@@ -91,7 +91,7 @@ export interface Spend {
     readonly costUsd: Usd;
 }
 
-export function listingOf(decisions: readonly StoredDecision[], spent: Spend, now: Instant, zone: Text, skips: readonly Skip[] = []): readonly Text[] {
+export function listingOf(decisions: readonly StoredDecisionRow[], spent: Spend, now: Instant, zone: Text, skips: readonly SkipRow[] = []): readonly Text[] {
     const inDay = decisions.filter((found) => found.at >= now - DAY_MS).length;
     const dayRecap = must(parseText(`last 24 h: ${inDay} decision${inDay === 1 ? '' : 's'}, ${moneyOf(spent.costUsd)}`));
     const header = ['no autocompact decisions yet'].map((line) => must(parseText(line)));

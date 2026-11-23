@@ -1,14 +1,15 @@
 import { parseUsd } from '#src/recap/domain/usd.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { countOf, parseCount } from '#src/recap/domain/count.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { must as mustParsed } from '#src/protocol/result.ts';
-import { parseCompactionId, parseDecisionId, parseTabId, agentKind } from '#src/recap/domain/ids.ts';
+import { uncheckedRatio, parseCompactionId, parseDecisionId, parseTabId, agentKind } from '#src/recap/domain/ids.ts';
 import { instant, duration } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import type { Database } from 'bun:sqlite';
-import { AutocompactRecordsRepository } from '#src/adapters/db/legacy.ts';
+import { DecisionLedgerRepository } from '#src/adapters/db/autocompact-records.ts';
 import { typeIdOf } from '#src/adapters/db/typeid.ts';
 import { expectSameEffect, withParity } from './parity.ts';
 import { memoryStore } from './support.ts';
@@ -40,7 +41,7 @@ describe('parity: autocompact records', () => {
                 db.prepare("DELETE FROM autocompact_skip WHERE tab_id = 't1' AND pane = 'p1'").run();
             },
             builder: (db) => {
-                new AutocompactRecordsRepository(db).record({ tab: tabId('t1'), pane: paneId('p1'), agent: agentKind('claude'), at: instant(10), mode: 'on', share: 60, tokens: mustParsed(parseCount(600000)), window: mustParsed(parseCount(1000000)), gate: 'ask', verdict: 'compact', answers: {}, coverage: null, decider: null, costUsd: mustParsed(parseUsd(0.5)), tookMs: null, why: null, askedVerdict: null, laneStatus: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null });
+                new DecisionLedgerRepository(db).record({ tab: tabId('t1'), pane: paneId('p1'), agent: agentKind('claude'), at: instant(10), mode: 'on', share: countOf(60), tokens: mustParsed(parseCount(600000)), window: mustParsed(parseCount(1000000)), gate: 'ask', verdict: 'compact', answers: new Map(), coverage: null, decider: null, costUsd: mustParsed(parseUsd(0.5)), tookMs: null, why: null, askedVerdict: null, laneStatus: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null });
             },
             dump: dumpBoth,
         });
@@ -54,7 +55,7 @@ describe('parity: autocompact records', () => {
                 db.prepare('UPDATE autocompact_decision SET compaction_id = ? WHERE id = ?').run(keyOf(9), keyOf(1));
             },
             builder: (db) => {
-                const repo = new AutocompactRecordsRepository(db);
+                const repo = new DecisionLedgerRepository(db);
                 const decision = typeIdOf('decision', keyOf(1));
                 repo.markRequested(must(parseDecisionId(decision)));
                 repo.link(must(parseDecisionId(decision)), must(parseCompactionId(typeIdOf('compaction', keyOf(9)))));
@@ -70,7 +71,7 @@ describe('parity: autocompact records', () => {
                 db.prepare("INSERT INTO autocompact_skip (tab_id, pane, agent, at, gate, share, detail) VALUES ('t1', 'p2', 'claude', 7, 'in-flight', 60, 'y') ON CONFLICT (tab_id, pane) DO UPDATE SET agent = excluded.agent, at = excluded.at, gate = excluded.gate, share = excluded.share, detail = excluded.detail").run();
             },
             builder: (db) => {
-                new AutocompactRecordsRepository(db).skip({ tab: tabId('t1'), pane: paneId('p2'), agent: agentKind('claude'), at: instant(7), gate: 'in-flight', share: 60, detail: 'y' });
+                new DecisionLedgerRepository(db).skip({ tab: tabId('t1'), pane: paneId('p2'), agent: agentKind('claude'), at: instant(7), gate: 'in-flight', share: countOf(60), detail: textOf('y') });
             },
             dump: dumpBoth,
         });
@@ -82,7 +83,7 @@ describe('parity: autocompact records', () => {
             raw: (db) => {
                 db.prepare("DELETE FROM autocompact_skip WHERE NOT (tab_id = 't1' AND pane = 'p2')").run();
             },
-            builder: (db) => { new AutocompactRecordsRepository(db).pruneSkips([{ tab: tabId('t1'), pane: paneId('p2')}]); },
+            builder: (db) => { new DecisionLedgerRepository(db).pruneSkips([{ tab: tabId('t1'), pane: paneId('p2')}]); },
             dump: dumpBoth,
         });
     });
@@ -91,7 +92,7 @@ describe('parity: autocompact records', () => {
         const made = memoryStore();
         try {
             made.db.exec(SEED_DECISIONS);
-            const repo = new AutocompactRecordsRepository(made.db);
+            const repo = new DecisionLedgerRepository(made.db);
             assert.equal(repo.lastDecisionAt(tabId('t1'), paneId('p1')), 4);
             assert.equal(repo.lastDecisionAt(tabId('t1'), paneId('p9')), null);
             assert.deepEqual(repo.countsFor(must(parseTabId('t1'))), { decisions: 3, compacted: 0, waited: 1 });
@@ -108,7 +109,7 @@ describe('parity: autocompact records', () => {
                 db.prepare(AMEND_SQL).run('{"a":1}', 'missed', null, 0, 42, 250000, 1, 1, 'new', 'new', 'new', keyOf(1));
             },
             builder: (db) => {
-                new AutocompactRecordsRepository(db).amend(must(parseDecisionId(typeIdOf('decision', keyOf(1)))), { coverage: { a: 1 }, outcome: { kind: 'missed', facts: [] }, coverageMs: duration(42), coverageCostUsd: mustParsed(parseUsd(0.25)), why: 'new', block: true });
+                new DecisionLedgerRepository(db).amend(must(parseDecisionId(typeIdOf('decision', keyOf(1)))), { coverage: new Map([[textOf('a'), uncheckedRatio(1)]]), outcome: { kind: 'missed', facts: [] }, coverageMs: duration(42), coverageCostUsd: mustParsed(parseUsd(0.25)), why: textOf('new'), block: 'blocks' });
             },
             dump: dumpCoverage,
         });
@@ -121,7 +122,7 @@ describe('parity: autocompact records', () => {
                 db.prepare(AMEND_SQL).run(null, 'unchecked', 'no-brief', null, 0, null, 0, 0, null, null, null, keyOf(1));
             },
             builder: (db) => {
-                new AutocompactRecordsRepository(db).amend(must(parseDecisionId(typeIdOf('decision', keyOf(1)))), { coverage: null, outcome: { kind: 'unchecked', reason: 'no-brief' }, coverageMs: duration(0), coverageCostUsd: null, why: null, block: false });
+                new DecisionLedgerRepository(db).amend(must(parseDecisionId(typeIdOf('decision', keyOf(1)))), { coverage: null, outcome: { kind: 'unchecked', reason: 'no-brief' }, coverageMs: duration(0), coverageCostUsd: null, why: null, block: 'allows' });
             },
             dump: dumpCoverage,
         });
@@ -129,7 +130,7 @@ describe('parity: autocompact records', () => {
 
     test('lastDecision returns the newest decision of one pane', () => {
         withParity(exec(SEED_DECISIONS), (parity) => {
-            const produced = new AutocompactRecordsRepository(parity.raw).lastDecision(tabId('t1'), paneId('p1'));
+            const produced = new DecisionLedgerRepository(parity.raw).lastDecision(tabId('t1'), paneId('p1'));
             assert.deepEqual(produced, { at: 4, tokens: 600000, mode: 'on', verdict: 'wait', gate: 'ask' });
         });
     });

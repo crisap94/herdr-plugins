@@ -20,7 +20,7 @@ export function autocompactCommand(argv: readonly string[]): number {
     try {
         const now = instant(Date.now());
         const since = instant(now - 86_400_000);
-        const lines = listingOf(store.autocompact.newest(must(parseCount(LISTED))), { since, costUsd: store.autocompact.costSince(since) }, now, textOf(Intl.DateTimeFormat().resolvedOptions().timeZone), store.autocompact.skips());
+        const lines = listingOf(store.decisions.newest(must(parseCount(LISTED))), { since, costUsd: store.decisions.costSince(since) }, now, textOf(Intl.DateTimeFormat().resolvedOptions().timeZone), store.decisions.skips());
         const config = loadSettings();
         console.log([styleLine(config.autocompact, config.tuning, messagesOf().autocompactSettings), '', ...lines].join('\n'));
         return 0;

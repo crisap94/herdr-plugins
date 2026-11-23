@@ -27,10 +27,10 @@ test('idle and done Claude lanes with open transcript work are held by the in-fl
     w.inFlight = 2;
     for (const status of ['idle', 'done']) {
         await w.service.consider(lane('claude', status));
-        const skip = w.store.autocompact.skips().find((each) => each.agent === 'claude');
+        const skip = w.store.decisions.skips().find((each) => each.agent === 'claude');
         assert.deepEqual([skip?.gate, skip?.detail], ['in-flight', '2 running']);
         assert.deepEqual(w.requests, []);
-        w.store.autocompact.pruneSkips([]);
+        w.store.decisions.pruneSkips([]);
     }
     assert.deepEqual(rows(w), []);
 });
@@ -39,7 +39,7 @@ test('a shadow kind with open transcript work remains held by the in-flight gate
     const w = world({ mode: 'on', shadowKinds: ['codex'] });
     w.inFlight = 1;
     await w.service.consider(lane('codex', 'idle'));
-    const skip = w.store.autocompact.skips().find((each) => each.agent === 'codex');
+    const skip = w.store.decisions.skips().find((each) => each.agent === 'codex');
     assert.deepEqual([skip?.gate, skip?.detail], ['in-flight', '1 running']);
     assert.deepEqual(rows(w), []);
     assert.deepEqual(w.requests, []);

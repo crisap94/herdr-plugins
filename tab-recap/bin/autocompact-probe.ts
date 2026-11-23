@@ -3,7 +3,7 @@ import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import { deciderOf, isArm } from '#src/adapters/experiment/arms.ts';
 import { readPoints } from '#src/adapters/experiment/data.ts';
 import { appendJsonl, doneKeys, readJsonl } from '#src/adapters/experiment/io.ts';
-import type { Decider, DecidedResult, Noul } from '#src/ports/decider.ts';
+import type { DeciderPort, DecidedAnswersResult, Noul } from '#src/ports/decider.ts';
 import { saying } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
@@ -37,9 +37,9 @@ export function jobsOf(dir: string): readonly Job[] {
     ];
 }
 
-const usable = (answer: DecidedResult): boolean => answer.kind === 'decided';
+const usable = (answer: DecidedAnswersResult): boolean => answer.kind === 'decided';
 
-async function ask(decider: Decider, job: Job, log: (line: string) => void): Promise<{ answer: DecidedResult; attempts: number }> {
+async function ask(decider: DeciderPort, job: Job, log: (line: string) => void): Promise<{ answer: DecidedAnswersResult; attempts: number }> {
     let attempts = 0;
     const answer = await retriedBy(() => { attempts += 1; return decider.ask(job.state, job.questions); }, (result) => (usable(result) ? 'usable' : 'unusable'), { attempts: must(parseCount(3)), baseMs: must(parseMilliseconds(10_000)), onRetry: (n, wait) => { log(`${job.key.slice(0, 12)}: attempt ${n} failed; waiting ${wait / 1000} s`); } });
     return { answer, attempts };
@@ -61,7 +61,7 @@ async function main(): Promise<void> {
     const deciders = Array.from({ length: CONCURRENCY }, () => deciderOf(arm, runtime));
     let finished = 0;
     await pooledBy(todo, must(parseCount(CONCURRENCY)), async (job, _index, lane) => {
-        const { answer, attempts } = await ask(deciders[lane] as Decider, job, log);
+        const { answer, attempts } = await ask(deciders[lane] as DeciderPort, job, log);
         if (answer.kind === 'decided') appendJsonl(asFsPath(file), { key: job.key, kind: job.kind, answers: answer.answers, tokens: answer.tokens, costUsd: answer.costUsd, tookMs: answer.tookMs, model: answer.model, attempts });
         else appendJsonl(asFsPath(file), { key: job.key, kind: job.kind, unknown: saying(answer.why), attempts });
         finished += 1;

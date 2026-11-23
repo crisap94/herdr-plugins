@@ -13,7 +13,7 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { DecidedResult } from '#src/ports/decider.ts';
+import type { DecidedAnswersResult } from '#src/ports/decider.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { NOW, SAFE, lane, rows, world } from './autocompact-world.ts';
 import { decidedOf } from './fakes/decider-fixtures.ts';
@@ -21,15 +21,15 @@ import { decidedOf } from './fakes/decider-fixtures.ts';
 const at = (pane: string, status = 'idle', agent = 'claude'): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, status });
 const boardOf = (lanes: readonly Lane[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((found) => [found.pane, found])) });
 const settle = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
-const SAFE_DECISION: DecidedResult = decidedOf(SAFE);
+const SAFE_DECISION: DecidedAnswersResult = decidedOf(SAFE);
 
 test('an unknown verdict is not unchanged: after the cooldown, with the same tokens, the lane is asked again', async () => {
     const w = world({ cooldownMs: brand<number, 'Milliseconds'>(600_000) });
-    w.decide = (): DecidedResult => unknown({ why: 'timeout', after: 10_000 as never });
+    w.decide = (): DecidedAnswersResult => unknown({ why: 'timeout', after: 10_000 as never });
     await w.service.consider(lane());
     assert.deepEqual(rows(w).map((row) => row.verdict), ['unknown']);
     w.clock.at += 11 * 60_000;
-    w.decide = (): DecidedResult => SAFE_DECISION;
+    w.decide = (): DecidedAnswersResult => SAFE_DECISION;
     await w.service.consider(lane());
     assert.deepEqual([w.asked.length, rows(w).map((row) => row.verdict)], [2, ['compact', 'unknown']]);
 });
@@ -46,7 +46,7 @@ test('two lanes considered at once, the decider held: both are asked, one reques
     held.release();
     await Promise.all([first, second]);
     assert.deepEqual(w.requests.map((request) => request.pane), ['w1:p1']);
-    assert.deepEqual(w.store.autocompact.skips().map((skip) => [skip.pane, skip.gate, skip.detail]), [['w1:p2', 'busy', 'another lane; decider $0.00003 discarded']]);
+    assert.deepEqual(w.store.decisions.skips().map((skip) => [skip.pane, skip.gate, skip.detail]), [['w1:p2', 'busy', 'another lane; decider $0.00003 discarded']]);
     assert.deepEqual(rows(w).map((row) => row.pane), ['w1:p1'], 'the second lane records no decision');
     assert.ok(w.logs.includes('autocompact w1:p2: 62 % → skip busy (another lane; decider $0.00003 discarded)'), 'the log shows what the dropped decision cost');
 });
@@ -65,9 +65,9 @@ test('a begun, linked, unfinished automatic compaction of lane 1 holds lane 2: b
     w.share = 85;
     await w.service.consider(at('w1:p1'));
     const begun = w.store.compactions.begin({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), stage: 'compacting', at: instant(NOW), origin: 'auto' });
-    w.store.autocompact.linkLatest(tabId('w1:t1'), paneId('w1:p1'), must(parseCompactionId(begun)));
+    w.store.decisions.linkLatest(tabId('w1:t1'), paneId('w1:p1'), must(parseCompactionId(begun)));
     await w.service.consider(at('w1:p2'));
-    assert.deepEqual([w.requests.map((request) => request.pane), w.store.autocompact.skips().map((skip) => [skip.pane, skip.gate, skip.detail])], [['w1:p1'], [['w1:p2', 'busy', 'another lane']]]);
+    assert.deepEqual([w.requests.map((request) => request.pane), w.store.decisions.skips().map((skip) => [skip.pane, skip.gate, skip.detail])], [['w1:p1'], [['w1:p2', 'busy', 'another lane']]]);
 });
 
 test('a sweep over five lanes in shadow decides four (the 82 % one a ceiling, the 5 % one below the minimum); a lane at 30 % is decided at the next sweep once the minimum drops from 40 to 10', async () => {
@@ -78,12 +78,12 @@ test('a sweep over five lanes in shadow decides four (the 82 % one a ceiling, th
     await sweep.sweep();
     assert.deepEqual(rows(w).map((row) => row.pane).toSorted(), ['w1:p1', 'w1:p2', 'w1:p3', 'w1:p4']);
     assert.equal(rows(w).find((row) => row.pane === 'w1:p4')?.gate, 'ceiling');
-    assert.deepEqual(w.store.autocompact.skips().map((skip) => [skip.pane, skip.gate]), [['w1:p5', 'below-minimum']]);
+    assert.deepEqual(w.store.decisions.skips().map((skip) => [skip.pane, skip.gate]), [['w1:p5', 'below-minimum']]);
     assert.equal(w.asked.length, 3, 'one decider call per eligible lane below the ceiling: 15, 45 and 60 %');
     w.policy = { ...w.policy, minimum: brand<number, 'AutocompactPercent'>(40) };
     const idle30 = at('w1:p6');
     await new AutocompactSweep({ candidates: (): readonly Candidate[] => candidatesOf(boardOf([...lanes, idle30]), (): void => undefined), autocompact: (): Considers => w.watch, log: (): void => undefined }).sweep();
-    assert.deepEqual(w.store.autocompact.skips().filter((skip) => skip.pane === 'w1:p6').map((skip) => [skip.gate, skip.detail]), [['below-minimum', 'below 40 %']]);
+    assert.deepEqual(w.store.decisions.skips().filter((skip) => skip.pane === 'w1:p6').map((skip) => [skip.gate, skip.detail]), [['below-minimum', 'below 40 %']]);
     w.policy = { ...w.policy, minimum: brand<number, 'AutocompactPercent'>(10) };
     await new AutocompactSweep({ candidates: (): readonly Candidate[] => candidatesOf(boardOf([...lanes, idle30]), (): void => undefined), autocompact: (): Considers => w.watch, log: (): void => undefined }).sweep();
     assert.equal(rows(w).find((row) => row.pane === 'w1:p6')?.verdict, 'compact', 'decided at the next sweep after the minimum dropped to 10');
@@ -94,7 +94,7 @@ test('the late check at the ceiling: an awaited reply that appears after the gat
     w.share = 92;
     w.lateAwaiting = 'reviewer';
     await w.service.consider(lane());
-    assert.deepEqual([w.store.autocompact.skips().length, rows(w)[0]?.gate, rows(w)[0]?.why, w.requests.map((request) => request.note)], [0, 'ceiling', 'ceiling-overrides-wait (awaiting reviewer)', ['Still waiting for: reviewer.']]);
+    assert.deepEqual([w.store.decisions.skips().length, rows(w)[0]?.gate, rows(w)[0]?.why, w.requests.map((request) => request.note)], [0, 'ceiling', 'ceiling-overrides-wait (awaiting reviewer)', ['Still waiting for: reviewer.']]);
 });
 
 test('the late check below the ceiling: an awaited reply that appears after the gate skips the lane at 70 %', async () => {
@@ -102,7 +102,7 @@ test('the late check below the ceiling: an awaited reply that appears after the 
     w.share = 70;
     w.lateAwaiting = 'reviewer';
     await w.service.consider(lane());
-    assert.deepEqual([w.asked.length, w.requests.length, rows(w).length, w.store.autocompact.skips().map((skip) => [skip.gate, skip.detail])], [1, 0, 0, [['in-flight', 'awaiting reviewer']]]);
+    assert.deepEqual([w.asked.length, w.requests.length, rows(w).length, w.store.decisions.skips().map((skip) => [skip.gate, skip.detail])], [1, 0, 0, [['in-flight', 'awaiting reviewer']]]);
 });
 
 test('an unknown awaiting answer at 92 % still skips the lane', async () => {
@@ -110,6 +110,6 @@ test('an unknown awaiting answer at 92 % still skips the lane', async () => {
     w.share = 92;
     w.awaitingUnknown = true;
     await w.service.consider(lane());
-    assert.deepEqual([w.asked.length, w.requests.length, w.store.autocompact.skips().map((skip) => skip.gate)], [0, 0, ['in-flight']]);
-    assert.notEqual(w.store.autocompact.skips()[0]?.detail, null);
+    assert.deepEqual([w.asked.length, w.requests.length, w.store.decisions.skips().map((skip) => skip.gate)], [0, 0, ['in-flight']]);
+    assert.notEqual(w.store.decisions.skips()[0]?.detail, null);
 });

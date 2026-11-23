@@ -1,6 +1,7 @@
+import { textOf } from '#src/recap/domain/text.ts';
 import { parseUsd } from '#src/recap/domain/usd.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { parseCount, countOf } from '#src/recap/domain/count.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { test } from 'node:test';
@@ -12,14 +13,14 @@ import type { World } from './autocompact-world.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 
 const at = (pane: string, status: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status });
-const skipsOf = (w: World): unknown[] => w.store.autocompact.skips().map((skip) => [skip.gate, skip.share, skip.detail]);
+const skipsOf = (w: World): unknown[] => w.store.decisions.skips().map((skip) => [skip.gate, skip.share, skip.detail]);
 
 test('a stop by the minimum, the cooldown, in flight, busy or an unknown share keeps its skip with the share and the detail', async () => {
     const below = world();
     below.share = 8;
     await below.service.consider(lane());
     const cooling = world();
-    cooling.store.autocompact.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 4 * 60_000), mode: 'on', share: 60, tokens: must(parseCount(1)), window: must(parseCount(2)), gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null });
+    cooling.store.decisions.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 4 * 60_000), mode: 'on', share: countOf(60), tokens: must(parseCount(1)), window: must(parseCount(2)), gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null });
     await cooling.service.consider(lane());
     const flying = world();
     flying.inFlight = 2;
@@ -48,15 +49,15 @@ test('off records no skip and logs nothing', async () => {
     await w.service.consider(lane());
     w.known = false;
     await w.service.consider(lane());
-    assert.deepEqual([w.store.autocompact.skips().length, w.logs.length], [0, 0]);
+    assert.deepEqual([w.store.decisions.skips().length, w.logs.length], [0, 0]);
 });
 
 test('coverage backoff holds a failed coverage wait, then releases on time or more than ten-percent growth', async () => {
     const w = world({ coverageBackoff: { kind: 'window', ms: brand<number, 'Milliseconds'>(30 * 60_000) } });
-    w.store.autocompact.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 10 * 60_000), mode: 'on', share: 62, tokens: must(parseCount(620_000)), window: must(parseCount(1_000_000)), gate: 'coverage', verdict: 'wait', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null });
+    w.store.decisions.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 10 * 60_000), mode: 'on', share: countOf(62), tokens: must(parseCount(620_000)), window: must(parseCount(1_000_000)), gate: 'coverage', verdict: 'wait', askedVerdict: 'compact', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null });
     w.byPane = { 'w1:p1': 62.05 };
     await w.service.consider(lane());
-    assert.deepEqual([w.asked.length, w.store.autocompact.skips()[0]?.gate], [0, 'coverage-backoff']);
+    assert.deepEqual([w.asked.length, w.store.decisions.skips()[0]?.gate], [0, 'coverage-backoff']);
     w.byPane = { 'w1:p1': 73.0001 };
     await w.service.consider(lane());
     assert.equal(w.asked.length, 1);
@@ -70,7 +71,7 @@ test('the log names a skip only when its gate changed; a decision removes the la
     await w.service.consider(lane());
     w.share = 62;
     await w.service.consider(lane());
-    assert.equal(w.store.autocompact.skips().length, 0, 'the decision removed the skip');
+    assert.equal(w.store.decisions.skips().length, 0, 'the decision removed the skip');
     w.share = 8;
     await w.service.consider(lane());
     assert.deepEqual(w.logs.filter((line) => line.includes('skip')), ['autocompact w1:p1: 8 % → skip below-minimum (below 10 %)', 'autocompact w1:p1: 8 % → skip below-minimum (below 10 %)']);
@@ -80,20 +81,20 @@ test('prune: the skips of lanes that are not idle or done are forgotten; with au
     const w = world({ mode: 'shadow' });
     w.share = 8;
     await w.service.consider(at('w1:p1', 'idle'));
-    w.store.autocompact.skip({ tab: tabId('w1:t1'), pane: paneId('w1:p2'), agent: agentKind('claude'), at: instant(NOW), gate: 'busy', share: 62, detail: 'another lane' });
-    w.store.autocompact.skip({ tab: tabId('w1:t1'), pane: paneId('w1:p9'), agent: agentKind('claude'), at: instant(NOW), gate: 'cooldown', share: 62, detail: '5 s left' });
+    w.store.decisions.skip({ tab: tabId('w1:t1'), pane: paneId('w1:p2'), agent: agentKind('claude'), at: instant(NOW), gate: 'busy', share: countOf(62), detail: textOf('another lane') });
+    w.store.decisions.skip({ tab: tabId('w1:t1'), pane: paneId('w1:p9'), agent: agentKind('claude'), at: instant(NOW), gate: 'cooldown', share: countOf(62), detail: textOf('5 s left') });
     w.service.prune([at('w1:p1', 'idle'), at('w1:p2', 'working')]);
-    assert.deepEqual(w.store.autocompact.skips().map((skip) => skip.pane), ['w1:p1'], 'p2 is working and p9 is not in the board');
+    assert.deepEqual(w.store.decisions.skips().map((skip) => skip.pane), ['w1:p1'], 'p2 is working and p9 is not in the board');
     w.policy = { ...w.policy, mode: 'off' };
     w.service.prune([at('w1:p1', 'idle')]);
-    assert.deepEqual(w.store.autocompact.skips(), [], 'off: every skip goes');
+    assert.deepEqual(w.store.decisions.skips(), [], 'off: every skip goes');
 });
 
 const BACKOFF = { kind: 'window', ms: brand<number, 'Milliseconds'>(30 * 60_000) } as const;
 const failedWait = (w: World, when: number, tokens: number, gate: 'coverage' | 'ask' = 'coverage'): void => {
-    w.store.autocompact.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(when), mode: 'on', share: 62, tokens: must(parseCount(tokens)), window: must(parseCount(1_000_000)), gate, verdict: 'wait', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null });
+    w.store.decisions.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(when), mode: 'on', share: countOf(62), tokens: must(parseCount(tokens)), window: must(parseCount(1_000_000)), gate, verdict: 'wait', askedVerdict: 'compact', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null });
 };
-const backoffSkips = (w: World): number => w.store.autocompact.skips().filter((skip) => skip.gate === 'coverage-backoff').length;
+const backoffSkips = (w: World): number => w.store.decisions.skips().filter((skip) => skip.gate === 'coverage-backoff').length;
 
 test('coverage backoff releases once its window has passed', async () => {
     const w = world({ coverageBackoff: BACKOFF });

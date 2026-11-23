@@ -26,7 +26,7 @@ test('a lane whose compaction a request started is busy for autocompact: no seco
     w.share = 85;
     w.claims.claim('w1:p1', 'compaction');
     await w.service.consider(at('w1:p1'));
-    assert.deepEqual([w.requests.length, w.store.autocompact.skips().map((skip) => [skip.pane, skip.gate, skip.detail])], [0, [['w1:p1', 'busy', 'this lane']]]);
+    assert.deepEqual([w.requests.length, w.store.decisions.skips().map((skip) => [skip.pane, skip.gate, skip.detail])], [0, [['w1:p1', 'busy', 'this lane']]]);
 });
 
 test('a lane a handoff holds is busy for autocompact as well: no request, and the skip says this lane', async () => {
@@ -34,7 +34,7 @@ test('a lane a handoff holds is busy for autocompact as well: no request, and th
     w.share = 85;
     w.claims.claim('w1:p1', 'handoff');
     await w.service.consider(at('w1:p1'));
-    assert.deepEqual([w.requests.length, w.store.autocompact.skips().map((skip) => [skip.pane, skip.gate, skip.detail])], [0, [['w1:p1', 'busy', 'this lane']]]);
+    assert.deepEqual([w.requests.length, w.store.decisions.skips().map((skip) => [skip.pane, skip.gate, skip.detail])], [0, [['w1:p1', 'busy', 'this lane']]]);
 });
 
 test('a compaction request still queued for the lane (not yet taken) makes the lane busy as well', async () => {
@@ -42,7 +42,7 @@ test('a compaction request still queued for the lane (not yet taken) makes the l
     w.share = 85;
     w.queued.add('w1:p1');
     await w.service.consider(at('w1:p1'));
-    assert.deepEqual([w.requests.length, w.store.autocompact.skips().map((skip) => [skip.pane, skip.gate, skip.detail])], [0, [['w1:p1', 'busy', 'this lane']]]);
+    assert.deepEqual([w.requests.length, w.store.decisions.skips().map((skip) => [skip.pane, skip.gate, skip.detail])], [0, [['w1:p1', 'busy', 'this lane']]]);
 });
 
 test('the queue answers for a lane: a request for its pane, or one for the tab with no pane (the focused one); taking it clears it', () => {

@@ -10,8 +10,8 @@ import type { CheckedFact } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { BriefDesk } from '#src/recap/application/compaction-brief.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
-import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
-import type { Decider } from '#src/ports/decider.ts';
+import type { DecisionLedger } from '#src/ports/autocompact-records.ts';
+import type { DeciderPort } from '#src/ports/decider.ts';
 import type { BriefWriter } from '#src/ports/compaction-briefs.ts';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import { compactionPlanner } from '#src/adapters/capability/compaction-plans.ts';
@@ -65,8 +65,8 @@ interface CompactionParts {
     readonly informer: Informer;
     readonly briefs: () => BriefWriter | null;
     readonly recent: LaneRecent;
-    readonly coverageDecider: () => Decider | null;
-    readonly decisions: AutocompactRecords;
+    readonly coverageDecider: () => DeciderPort | null;
+    readonly decisions: DecisionLedger;
     readonly checkedBriefs: DecisionBriefs;
     readonly answers: CompactionAnswers;
     readonly asks: AskBook;
@@ -77,7 +77,7 @@ interface CompactionParts {
     log(line: Text): void;
 }
 
-export function coverageOf(decider: Decider | null, tuning: () => AutocompactTuning): CoverageCheck | null {
+export function coverageOf(decider: DeciderPort | null, tuning: () => AutocompactTuning): CoverageCheck | null {
     return decider === null ? null : { check: (text, facts) => checkCoverage(text, facts, decider, probabilityRequired(parseProbability(tuning().coverageAtLeast))) };
 }
 

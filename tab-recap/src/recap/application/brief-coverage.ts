@@ -1,5 +1,5 @@
 import type { AnswerTally } from '#src/ports/autocompact-records.ts';
-import type { Decider, Noul } from '#src/ports/decider.ts';
+import type { DeciderPort, Noul } from '#src/ports/decider.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
@@ -76,7 +76,7 @@ export function unmetOf(answers: AnswerTally, facts: readonly CheckedFact[], kep
 export const unmetLinesOf = (missing: readonly UnmetFact[]): readonly Text[] =>
     missing.flatMap(({ fact, parts }) => parts.map((part) => must(parseText(part === 'text' ? `${fact.section}: ${fact.text}` : `the reason for the decision: ${fact.text} (${fact.why ?? ''})`))));
 
-export async function checkCoverage(brief: Text, facts: readonly CheckedFact[], decider: Decider, keptAtLeast: Probability): Promise<CheckedCoverage> {
+export async function checkCoverage(brief: Text, facts: readonly CheckedFact[], decider: DeciderPort, keptAtLeast: Probability): Promise<CheckedCoverage> {
     if (facts.length === 0) return { complete: 'present', missing: [], missingFacts: [], answers: new Map(), unknown: null };
     const asked = await decider.ask(must(parseText(JSON.stringify({ brief, facts: facts.map((fact) => ({ section: fact.section, text: fact.text, why: fact.why })) }))), questionsOf(facts));
     if (isUnknown(asked)) return { complete: 'absent', missing: [], missingFacts: [], answers: new Map(), unknown: must(parseText(saying(asked.why))) };

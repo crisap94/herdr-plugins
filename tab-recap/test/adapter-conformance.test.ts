@@ -195,7 +195,7 @@ async function skipOf(readers: TranscriptRegistry, placed: Lane, kind: Kind): Pr
         claims: new LaneClaims(), log: () => undefined,
     });
     await service.consider(candidateFor(placed));
-    const [skip] = store.autocompact.skips();
+    const [skip] = store.decisions.skips();
     return skip === undefined ? undefined : { gate: skip.gate, detail: skip.detail ?? null };
 }
 

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import type { Decider } from '#src/ports/decider.ts';
+import type { DeciderPort } from '#src/ports/decider.ts';
 import type { HarnessChoice, HarnessPort } from '#src/ports/harness.ts';
 import { loadSettings, settingReader } from '#src/daemon/config.ts';
 import { parseJevModel, parseJevUrl } from '#src/recap/domain/autocompact.ts';
@@ -32,7 +32,7 @@ const harnessArms: Readonly<Record<Exclude<ArmName, 'jev'>, { readonly make: (ru
     'luna-low': { make: (runtime) => new LibraryHarnessPort(runtime, LIBRARY_IDS.codex, TIMEOUT_MS), settings: { model: textOf('gpt-6-luna'), effort: 'low' } },
 };
 
-export function deciderOf(arm: ArmName, runtime: HarnessRuntime): Decider {
+export function deciderOf(arm: ArmName, runtime: HarnessRuntime): DeciderPort {
     if (arm === 'jev') return new JevPortDecider({ url: parseJevUrl(undefined), model: parseJevModel(undefined), key: () => jevKey(settingReader(), readKeyFile, must(parseText(process.env['HOME'] ?? homedir()))) });
     const { make, settings } = harnessArms[arm];
     return new HarnessPortDecider(make(runtime), settings);
