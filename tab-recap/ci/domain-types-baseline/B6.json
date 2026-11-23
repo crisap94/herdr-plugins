@@ -33,12 +33,6 @@
     "parameter": 1,
     "container": 2
   },
-  "src/adapters/job/prompts/recap-instructions.ts": {
-    "parameter": 3,
-    "return": 4,
-    "container": 1,
-    "property": 1
-  },
   "src/adapters/os/atomic-file.ts": {
     "parameter": 2
   },

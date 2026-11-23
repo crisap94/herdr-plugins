@@ -53,7 +53,7 @@ export function fittedAsk(request: RecapRequest, limit: Count): HarnessAsk {
         budget = must(parseCount(budget < 500 ? 0 : Math.floor(budget / 2)));
         input = writerContext(request, budget);
     }
-    return { instructions: must(parseText(rules)), input: must(parseText(input)) };
+    return { instructions: rules, input: must(parseText(input)) };
 }
 
 export function argvText(request: RecapRequest): Text {
