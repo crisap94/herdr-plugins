@@ -12,22 +12,8 @@
   "src/recap/application/judge-answer.ts": {
     "property": 1
   },
-  "src/recap/application/judge.ts": {
-    "parameter": 1,
-    "property": 3
-  },
   "src/recap/application/lane-claims.ts": {
     "return": 3
-  },
-  "src/recap/application/replay-judge.ts": {
-    "parameter": 1,
-    "container": 1,
-    "property": 3
-  },
-  "src/recap/application/replay-report.ts": {
-    "parameter": 5,
-    "return": 6,
-    "property": 3
   },
   "src/recap/application/retention.ts": {
     "parameter": 1,

@@ -1,17 +1,18 @@
 import { must } from '#src/protocol/result.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
+import { countOf, type Count } from '#src/recap/domain/count.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 import { jaccard } from '#src/recap/domain/gates/jaccard.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import { localTime } from '@stateforge-labs/session-ledger/unstable/recap/application/local-time.ts';
 
-const pct = (part: number, whole: number): string => (whole === 0 ? 'n/a' : `${Math.round((100 * part) / whole)}%`);
-const words = (fact: Fact): number => fact.text.split(/\s+/).filter((word) => word !== '').length;
+const pct = (part: Count, whole: Count): Text => textOf(whole === 0 ? 'n/a' : `${Math.round((100 * part) / whole)}%`);
+const words = (fact: Fact): Count => countOf(fact.text.split(/\s+/).filter((word) => word !== '').length);
 
 export interface Check {
-    readonly name: string;
-    readonly passed: number;
-    readonly of: number;
+    readonly name: Text;
+    readonly passed: Count;
+    readonly of: Count;
 }
 
 export function checksOf(facts: readonly Fact[]): readonly Check[] {
@@ -19,24 +20,24 @@ export function checksOf(facts: readonly Fact[]): readonly Check[] {
     const decisions = facts.filter((fact) => fact.section === 'decisions');
     const repeats = open.filter((fact, at) => open.slice(0, at).some((earlier) => earlier.section === fact.section && earlier.task.key === fact.task.key && jaccard(textOf(earlier.text), textOf(fact.text)) >= 0.6));
     return [
-        { name: 'short (≤ 16 words)', passed: facts.filter((fact) => words(fact) <= 16).length, of: facts.length },
-        { name: 'decisions carry a why', passed: decisions.filter((fact) => fact.why !== null && fact.why !== '(not recorded)').length, of: decisions.length },
-        { name: 'no open repeats', passed: open.length - repeats.length, of: open.length },
+        { name: textOf('short (≤ 16 words)'), passed: countOf(facts.filter((fact) => words(fact) <= 16).length), of: countOf(facts.length) },
+        { name: textOf('decisions carry a why'), passed: countOf(decisions.filter((fact) => fact.why !== null && fact.why !== '(not recorded)').length), of: countOf(decisions.length) },
+        { name: textOf('no open repeats'), passed: countOf(open.length - repeats.length), of: countOf(open.length) },
     ];
 }
 
-export function reportOf(title: string, facts: readonly Fact[]): string {
+export function reportOf(title: Text, facts: readonly Fact[]): Text {
     const open = facts.filter((fact) => fact.state === 'open').length;
     const lines = checksOf(facts).map((check) => `  ${check.name.padEnd(28)} ${pct(check.passed, check.of).padStart(5)}  (${check.passed}/${check.of})`);
-    return [`${title}: ${facts.length} facts, ${open} open, ${facts.length - open} closed`, ...lines].join('\n');
+    return textOf([`${title}: ${facts.length} facts, ${open} open, ${facts.length - open} closed`, ...lines].join('\n'));
 }
 
-export function ledgerText(facts: readonly Fact[], zone: string): string {
-    const at = (ms: number): string => localTime(instant(ms), instant(ms), must(parseText(zone)));
-    return facts.map((fact) => `  ${fact.section.padEnd(9)} ${fact.state === 'open' ? 'open  ' : (fact.closedWhy ?? 'closed').padEnd(6)} ${at(fact.firstAt)}–${at(fact.lastAt)}  ${fact.text}${fact.why === null ? '' : ` — ${fact.why}`}`).join('\n');
+export function ledgerText(facts: readonly Fact[], zone: Text): Text {
+    const at = (ms: Instant): Text => localTime(ms, ms, must(parseText(zone)));
+    return textOf(facts.map((fact) => `  ${fact.section.padEnd(9)} ${fact.state === 'open' ? 'open  ' : (fact.closedWhy ?? 'closed').padEnd(6)} ${at(fact.firstAt)}–${at(fact.lastAt)}  ${fact.text}${fact.why === null ? '' : ` — ${fact.why}`}`).join('\n'));
 }
 
-export const anchoredLine = (facts: readonly Fact[]): string => {
+export const anchoredLine = (facts: readonly Fact[]): Text => {
     const anchored = facts.filter((fact) => fact.anchor !== null).length;
-    return `facts with an anchor found in the input: ${anchored} of ${facts.length} (${pct(anchored, facts.length)})`;
+    return textOf(`facts with an anchor found in the input: ${anchored} of ${facts.length} (${pct(countOf(anchored), countOf(facts.length))})`);
 };
