@@ -5,7 +5,7 @@ import { countOf, type Count } from '#src/recap/domain/count.ts';
 import type { RunId } from '#src/recap/domain/run-ids.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
-import { percent, rankOf } from '../../eval-report.ts';
+import { inCheckOrder, percent } from '../../eval-report.ts';
 import { perCheck, WORST_PER_CHECK } from '../../judge-anchors.ts';
 import type { Disagreed } from '../../judge-anchors.ts';
 
@@ -48,13 +48,13 @@ export function kappaOf(pairs: readonly PairRecord[]): number | null {
 export const trusted = (agreement: Pick<Agreement, 'kappa'>): boolean => agreement.kappa !== null && agreement.kappa >= KAPPA_BAR;
 
 export function agreementOf(pairs: readonly PairRecord[], disagreed: readonly Disagreed[] = []): readonly Agreement[] {
-    const checks = [...new Set(pairs.map((pair) => pair.check))].toSorted((a, b) => rankOf(a) - rankOf(b));
+    const checks = inCheckOrder([...new Set(pairs.map((pair) => pair.check))].map((check) => ({ check }))).map((row) => row.check);
     const worst = perCheck(disagreed, WORST_PER_CHECK);
     return checks.map((check) => {
         const mine = pairs.filter((pair) => pair.check === check);
         const agreed = mine.filter((pair) => pair.judge === pair.operator).length;
         return {
-            check, items: countOf(mine.length), agreed: countOf(agreed), percent: percent(agreed, mine.length),
+            check, items: countOf(mine.length), agreed: countOf(agreed), percent: percent(countOf(agreed), countOf(mine.length)),
             falsePasses: countOf(mine.filter((pair) => pair.judge === 'pass' && pair.operator === 'fail').length),
             falseFails: countOf(mine.filter((pair) => pair.judge === 'fail' && pair.operator === 'pass').length),
             kappa: kappaOf(mine), worst: (worst.get(check) ?? []).map(reportedOf),

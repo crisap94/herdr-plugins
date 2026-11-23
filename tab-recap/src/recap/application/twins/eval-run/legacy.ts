@@ -2,9 +2,9 @@ import type { JudgePort } from '#src/ports/judge.ts';
 import type { RunFilter, RunInputReader } from '#src/ports/run-inputs.ts';
 import type { VerdictStore } from '#src/ports/verdicts.ts';
 import { must } from '#src/protocol/result.ts';
-import { countOf, parseCount } from '#src/recap/domain/count.ts';
+import { countOf, parseCount, type Count } from '#src/recap/domain/count.ts';
 import { uncheckedTabId } from '#src/recap/domain/ids.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { agreeLines, candidateText, gateLines, reportText } from '#src/recap/render/eval.ts';
 import type { Style } from '#src/recap/render/wrap.ts';
@@ -12,6 +12,7 @@ import { answerOf, candidatesOf, labelVerdicts } from '../../eval-label.ts';
 import type { Candidate } from '../../eval-label.ts';
 import type { EvalRequest } from '../../eval-request.ts';
 import { reportOf } from '../../eval-report.ts';
+import type { EvalReport } from '../../eval-report.ts';
 import { agreementOf, gateReportOf } from '../../eval-stats.ts';
 import { withText } from '../../judge-anchors.ts';
 import { judgeRuns } from '../../judge.ts';
@@ -33,6 +34,12 @@ export interface EvalDeps {
     ask(prompt: string): Promise<string | null>;
 }
 
+const reportJson = (report: EvalReport, missing: Count): Text => textOf(JSON.stringify({
+    ...report,
+    runs: report.runs.map((line) => ({ ...line, run: { id: line.run.id, tab: line.run.tab, at: line.run.at, language: line.run.language, backend: line.run.backend, hasInput: line.run.input === 'present', gateStats: line.run.gateStats } })),
+    missingInput: missing,
+}));
+
 const queryOf = (options: EvalRequest, deps: EvalDeps, limit: number, withInput: boolean): RunFilter =>
     ({ tab: options.tab === null ? null : uncheckedTabId(options.tab), since: options.since === null ? null : instant(deps.now() - options.since * DAY_MS), limit: countOf(limit), input: withInput ? 'with-input' : 'any' });
 
@@ -48,7 +55,7 @@ async function sample(options: EvalRequest, deps: EvalDeps): Promise<number> {
     let done = 0;
     const results = await judgeRuns(judging, runs, () => { done += 1; deps.err(`judged ${done}/${runs.length}`); });
     const report = reportOf(judge.label, results);
-    deps.out(options.json === 'present' ? JSON.stringify({ ...report, missingInput: missing }) : reportText(report, deps.style, must(parseCount(missing))).join('\n'));
+    deps.out(options.json === 'present' ? reportJson(report, countOf(missing)) : reportText(report, deps.style, must(parseCount(missing))).join('\n'));
     return results.length > 0 && results.every((result) => result.kind === 'not-judged') ? 1 : 0;
 }
 

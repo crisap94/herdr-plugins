@@ -96,7 +96,7 @@ test('judge vs anchor: a fact whose quote is in the input and that the judge cal
     });
     const judge = judgeOf('fake', (task) => ({ score, readback: ANSWERS, grade: GRADES, cover: '' })[task]);
     const result = await judgeRun({ judge, inputs: store.inputs, verdicts: store.verdicts, rubric: must(parseText(RUBRIC_TEXT)), now: () => instant(9000) }, run);
-    const report = reportOf('fake', [result]);
+    const report = reportOf(textOf('fake'), [result]);
     assert.deepEqual(report.judgeVsAnchor.map((each) => [each.key, each.check, each.text]), [['t1/done/0', 'I4', 'Merged !256.']]);
     assert.deepEqual(report.failures.map((each) => each.key), ['t1/done/0', 't1/done/1', 't1/done/1'], 'all three are failing items');
     assert.match(reportText(report, plain, countOf(0)).join('\n'), /judge vs anchor \(1\)[^\n]*\n[^\n]*t1\/done\/0 {2}"Merged !256\."/);
@@ -109,6 +109,6 @@ test('golden: the report of the third run shows the state numbers with the added
     const script: Readonly<Record<string, string>> = { score: SCORE, readback: ANSWERS, grade: GRADES };
     const judge = judgeOf('fake', (task) => script[task] ?? '');
     const result = await judgeRun({ judge, inputs: store.inputs, verdicts: store.verdicts, rubric: must(parseText(RUBRIC_TEXT)), now: () => instant(9000) }, run);
-    const text = reportText(reportOf('fake', [result]), plain, countOf(0)).join('\n').replace(/run_…[0-9a-z]{6}/g, 'run_…XXXXXX');
+    const text = reportText(reportOf(textOf('fake'), [result]), plain, countOf(0)).join('\n').replace(/run_…[0-9a-z]{6}/g, 'run_…XXXXXX');
     assert.equal(`${text}\n`, readFileSync(new URL('fixtures/eval-report-state.txt', import.meta.url), 'utf8'));
 });

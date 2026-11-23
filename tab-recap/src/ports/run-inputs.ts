@@ -11,8 +11,6 @@ import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
 import type { GateName } from '@stateforge-labs/session-ledger/unstable/contract/kernel.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 
-export type { StoredRun } from './twins/legacy.ts';
-
 export type ItemsMode = 'added' | 'state';
 
 export type RunBirth = 'born' | 'carried';
