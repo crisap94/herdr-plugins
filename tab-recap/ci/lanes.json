@@ -393,6 +393,7 @@
       "test/text-collapse.test.ts",
       "test/timing-typed-twins.test.ts",
       "test/type-id.test.ts",
+      "test/typing-lease-upstream.test.ts",
       "test/typing-lease.test.ts",
       "test/unknown-read-paths.test.ts",
       "test/version.test.ts",
