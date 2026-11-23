@@ -47,7 +47,6 @@ export type SettingsFile = ReadonlyMap<EnvironmentName, Text>;
 
 export { BACKEND_IDS } from '#src/recap/domain/backend.ts';
 export type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
-export { parseEnv } from './legacy.ts';
 export type { CompactionSettings, Glow, Models, SettingGet, SettingReader, Settings } from './settings.ts';
 
 const defaults = xdgPaths(homedir());

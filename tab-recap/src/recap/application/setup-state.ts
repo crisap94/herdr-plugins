@@ -10,7 +10,7 @@ import type { AutocompactStyle } from '#src/recap/domain/autocompact-style.ts';
 import { compactSettingOf, curateSettingOf, DECIDER_BY_CHOICES, deciderSettingOf, JOB_BY_CHOICES, judgeSettingOf } from '#src/recap/domain/job.ts';
 import type { DeciderBy, DeciderSetting, JobBy, JobSetting } from '#src/recap/domain/job.ts';
 import { screenSetting } from '#src/recap/domain/policy.ts';
-import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
+import type { BackendChoice, BackendId, EnvironmentName } from '#src/recap/domain/backend.ts';
 import { herdrEventsFrom } from '#src/recap/domain/herdr-events.ts';
 import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
 import { telemetryTagsOf } from '#src/recap/domain/telemetry-tags.ts';
@@ -98,7 +98,7 @@ export interface Setup {
 }
 
 export type Effect =
-    | { readonly kind: 'save'; readonly values: ReadonlyMap<string, string>; readonly languageChanged: boolean }
+    | { readonly kind: 'save'; readonly values: ReadonlyMap<EnvironmentName, Text>; readonly languageChanged: boolean }
     | { readonly kind: 'test'; readonly draft: Draft; readonly available: readonly string[] }
     | { readonly kind: 'close' };
 

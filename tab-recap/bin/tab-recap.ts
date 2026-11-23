@@ -17,8 +17,9 @@ import { STORED_NOTES_ID } from '#src/extensions/stored-notes.ts';
 import { AUTO_ORDER } from '#src/daemon/backends.ts';
 import type { BackendChoice } from '#src/daemon/config.ts';
 import type { Messages } from '#src/i18n/index.ts';
-import { BACKEND_IDS, configDirectory, settingGetter, loadSettings, messagesOf, parseEnv, recapLanguageSource, stateDirectory } from '#src/daemon/config.ts';
-import { hasModel } from '#src/recap/domain/backend.ts';
+import { BACKEND_IDS, configDirectory, settingGetter, loadSettings, messagesOf, parseSettingsFile, recapLanguageSource, stateDirectory } from '#src/daemon/config.ts';
+import { environmentName, hasModel, type EnvironmentName } from '#src/recap/domain/backend.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { USAGE_EXIT } from '#src/recap/domain/handoff-outcome.ts';
 import { autocompactCommand } from './autocompact.ts';
 import { compactCommand } from './compact.ts';
@@ -28,7 +29,7 @@ import { parseArguments } from './arguments.ts';
 import { evalCommand } from './eval.ts';
 import { setValues } from './set-backend.ts';
 import { markStopping, stillStopping } from './stop-marker.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 
 const OK = 0;
 const FAILED = 1;
@@ -225,11 +226,11 @@ const commands: Readonly<Record<string, (arg: string | undefined) => number | Pr
             console.error(`tab-recap: 2 — ${m().cli.usageBackend(`auto|${BACKEND_IDS.join('|')}`)}`);
             return USAGE;
         }
-        const values = new Map<string, string>([['TAB_RECAP_BACKEND', choice]]);
+        const values = new Map<EnvironmentName, Text>([[environmentName(textOf('TAB_RECAP_BACKEND')), textOf(choice)]]);
         if (modelArg !== undefined && choice !== 'auto') {
-            values.set(`TAB_RECAP_MODEL_${choice.toUpperCase()}`, modelArg);
+            values.set(environmentName(textOf(`TAB_RECAP_MODEL_${choice.toUpperCase()}`)), textOf(modelArg));
         }
-        setValues(join(configDirectory(), 'config.env'), values, parseEnv);
+        setValues(fsPathOf(join(configDirectory(), 'config.env')), values, parseSettingsFile);
         const config = loadSettings();
         console.log(`tab-recap: ${m().cli.backendNow(`${choice}${choice === 'auto' ? '' : modelSuffix(config.models[choice])}`)}`);
         return OK;

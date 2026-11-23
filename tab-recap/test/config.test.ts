@@ -5,17 +5,18 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { environmentName } from '#src/recap/domain/backend.ts';
+import { must } from '#src/protocol/result.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
-import { loadSettings, recapLanguageSource, settingReader, parseEnv } from '#src/daemon/config.ts';
+import { loadSettings, recapLanguageSource, settingReader, parseSettingsFile } from '#src/daemon/config.ts';
 
 const isolatedConfigDir = mkdtempSync(join(tmpdir(), 'recap-config-isolated-'));
 process.env['HERDR_PLUGIN_CONFIG_DIR'] = isolatedConfigDir;
 after(() => { rmSync(isolatedConfigDir, { recursive: true, force: true }); });
 
 test('config.env: comments, blanks and quotes', () => {
-    const values = parseEnv('# a comment\n\nTAB_RECAP_BACKEND=codex\nTAB_RECAP_MODEL="gpt-5-mini"\nnot a pair\n');
-    assert.equal(values.get('TAB_RECAP_BACKEND'), 'codex');
-    assert.equal(values.get('TAB_RECAP_MODEL'), 'gpt-5-mini');
+    const values = must(parseSettingsFile('# a comment\n\nTAB_RECAP_BACKEND=codex\nTAB_RECAP_MODEL="gpt-5-mini"\nnot a pair\n'));
+    assert.equal(values.get(environmentName(textOf('TAB_RECAP_BACKEND'))), 'codex');
+    assert.equal(values.get(environmentName(textOf('TAB_RECAP_MODEL'))), 'gpt-5-mini');
     assert.equal(values.size, 2);
 });
 

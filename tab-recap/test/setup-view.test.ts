@@ -2,12 +2,15 @@ import { catalogFor } from '#src/i18n/index.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { must } from '#src/protocol/result.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setValues } from '#src/adapters/os/config/file.ts';
-import { parseEnv } from '#src/daemon/config.ts';
+import { parseSettingsFile } from '#src/daemon/config.ts';
+import { environmentName } from '#src/recap/domain/backend.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { draftFrom, initial, step, tested, withAvailable } from '#src/recap/application/setup-keys.ts';
@@ -91,11 +94,11 @@ test('config-file: a save changes only its keys and keeps every comment and othe
     try {
         const path = join(dir, 'config.env');
         writeFileSync(path, '# my notes\nTAB_RECAP_BACKEND=codex\n\nTAB_RECAP_CODEX_MODEL=gpt-6-luna   # legacy\nTAB_RECAP_GLOW=450\n');
-        setValues(path, new Map([['TAB_RECAP_GLOW', '600'], ['TAB_RECAP_RECAP_LANG', 'es']]), parseEnv);
+        setValues(fsPathOf(path), new Map([[environmentName(textOf('TAB_RECAP_GLOW')), textOf('600')], [environmentName(textOf('TAB_RECAP_RECAP_LANG')), textOf('es')]]), parseSettingsFile);
         const text = readFileSync(path, 'utf8');
         assert.equal(text, '# my notes\nTAB_RECAP_BACKEND=codex\n\nTAB_RECAP_CODEX_MODEL=gpt-6-luna   # legacy\nTAB_RECAP_GLOW=600\nTAB_RECAP_RECAP_LANG=es\n');
-        assert.equal(parseEnv(text).get('TAB_RECAP_GLOW'), '600');
-        setValues(join(dir, 'new', 'config.env'), new Map([['A', '1']]), parseEnv);
+        assert.equal(must(parseSettingsFile(text)).get(environmentName(textOf('TAB_RECAP_GLOW'))), '600');
+        setValues(fsPathOf(join(dir, 'new', 'config.env')), new Map([[environmentName(textOf('A')), textOf('1')]]), parseSettingsFile);
         assert.equal(readFileSync(join(dir, 'new', 'config.env'), 'utf8'), 'A=1\n');
     } finally {
         rmSync(dir, { recursive: true });

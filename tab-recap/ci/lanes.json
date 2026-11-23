@@ -886,7 +886,6 @@
       "src/daemon/lane-turns.ts",
       "src/daemon/launch-desktop.mjs",
       "src/daemon/launch.mjs",
-      "src/daemon/legacy.ts",
       "src/daemon/main.ts",
       "src/daemon/refresh-status.ts",
       "src/daemon/restored-lanes.ts",

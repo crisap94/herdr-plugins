@@ -1,9 +1,6 @@
 {
-  "src/daemon/legacy.ts": {
-    "legacy": 2
-  },
   "src/setup/main.ts": {
-    "parameter": 2,
-    "container": 3
+    "container": 2,
+    "parameter": 2
   }
 }

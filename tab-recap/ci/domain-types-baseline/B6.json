@@ -42,10 +42,6 @@
   "src/adapters/os/atomic-file.ts": {
     "parameter": 2
   },
-  "src/adapters/os/config/file.ts": {
-    "parameter": 2,
-    "container": 2
-  },
   "src/adapters/os/config/paths-xdg.ts": {
     "parameter": 1
   },
