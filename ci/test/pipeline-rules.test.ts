@@ -277,10 +277,11 @@ test('the lane-scope and domain-baseline rules carry their exists: guards', () =
     ]);
 });
 
+const laneMapAndBaselineGone: Present = (path) => !path.startsWith('tab-recap/ci/domain-types-baseline/') && path !== 'tab-recap/ci/lanes.json';
+
 test('path rules 11: with the baseline folder and lane map gone, domain-baseline and lane-scope switch themselves off', () => {
-    const present: Present = (path) => !path.startsWith('tab-recap/ci/domain-types-baseline/') && path !== 'tab-recap/ci/lanes.json';
     assert.deepEqual(
-        checked({ ...MERGE_REQUEST, CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: 'lane/B3-example' }, ['tab-recap/src/daemon/main.ts'], present),
+        checked({ ...MERGE_REQUEST, CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: 'lane/B3-example' }, ['tab-recap/src/daemon/main.ts'], laneMapAndBaselineGone),
         sorted(PLUGIN_JOBS, ['merge-request-notes', 'track-scope']),
     );
 });
