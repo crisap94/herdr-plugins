@@ -69,7 +69,7 @@ const SPANISH_FACTS = [spanish('f1', 'Respuesta entregada al operador'), spanish
 test('after a language change the writer is told the ids of the open facts still in the old language', () => {
     const request = { ...requestOf({ ledgers: [{ task: null, facts: SPANISH_FACTS }], language: textOf('en'), previousLanguage: textOf('es') }), notInLanguage: SPANISH_FACTS };
     const lines = instructions(request).split('\n');
-    assert.ok(lines.includes('Some open facts in <ledger> are still in Spanish: update every open fact that is not in English, rewritten in English with the same meaning, even when nothing else changed. These open facts are not in English: f1, f2, f3.'));
+    assert.ok(lines.includes('Some open facts in <ledger> are still in Spanish: update every open fact that is not in English, rewritten in English with the same meaning, even when nothing else changed. These open facts are not in English: f1, f2, f3. Rewrite each of these facts as a faithful translation of its own text: keep every number, name, path, identifier, status, condition and reason, and do not add, drop or merge a claim.'));
     assert.ok(!lines.some((line) => line.startsWith('The facts in <ledger> are in')));
 });
 
@@ -85,4 +85,32 @@ test('a correction round keeps its language line without the ids', () => {
     const request = { ...requestOf({ ledgers: [{ task: null, facts: SPANISH_FACTS }], language: textOf('en'), previousLanguage: textOf('es') }), notInLanguage: SPANISH_FACTS, retry: retryOf(false) };
     assert.doesNotMatch(instructions(request), /These open facts are not in/);
     assert.match(instructions(request), /The facts in <ledger> are in Spanish: update every open fact that is still relevant, rewritten in English\./);
+});
+
+const IDS_F1 = 'Some open facts in <ledger> are still in {previous}: update every open fact that is not in {language}, rewritten in {language} with the same meaning, even when nothing else changed. These open facts are not in {language}: {ids}. Rewrite each of these facts as a faithful translation of its own text: keep every number, name, path, identifier, status, condition and reason, and do not add, drop or merge a claim.';
+
+const FIDELITY = ' Rewrite each of these facts as a faithful translation of its own text: keep every number, name, path, identifier, status, condition and reason, and do not add, drop or merge a claim.';
+
+test('the id line is the IDS-F1 arm of the language-switch eval with its slots filled in', () => {
+    const expected = 'Some open facts in <ledger> are still in Spanish: update every open fact that is not in English, rewritten in English with the same meaning, even when nothing else changed. These open facts are not in English: f1, f2, f3. Rewrite each of these facts as a faithful translation of its own text: keep every number, name, path, identifier, status, condition and reason, and do not add, drop or merge a claim.';
+    assert.equal(IDS_F1.replaceAll('{previous}', 'Spanish').replaceAll('{language}', 'English').replace('{ids}', 'f1, f2, f3'), expected);
+    const request = { ...requestOf({ ledgers: [{ task: null, facts: SPANISH_FACTS }], language: textOf('en'), previousLanguage: textOf('es') }), notInLanguage: SPANISH_FACTS };
+    const line = instructions(request).split('\n').find((candidate) => candidate.startsWith('Some open facts in <ledger>'));
+    assert.equal(line, expected);
+});
+
+test('the faithful translation sentence comes once, directly after the list of ids', () => {
+    const english: InputFact = { ...spanish('f7', 'Tests are green on the branch'), section: 'next' };
+    const request = { ...requestOf({ ledgers: [{ task: null, facts: [english] }], language: textOf('es'), previousLanguage: textOf('en') }), notInLanguage: [english] };
+    const text = instructions(request);
+    assert.equal(text.split(FIDELITY).length, 2);
+    assert.ok(text.includes(`These open facts are not in Spanish: f7.${FIDELITY}\n`));
+});
+
+test('without ids the faithful translation sentence is never sent', () => {
+    const switching = requestOf({ ledgers: [{ task: null, facts: SPANISH_FACTS }], language: textOf('en'), previousLanguage: textOf('es') });
+    const retry = { ...switching, notInLanguage: SPANISH_FACTS, retry: retryOf(false) };
+    for (const request of [switching, { ...switching, notInLanguage: [] }, requestOf({ language: textOf('en'), previousLanguage: textOf('en') }), retry]) {
+        assert.doesNotMatch(instructions(request), /faithful translation/);
+    }
 });

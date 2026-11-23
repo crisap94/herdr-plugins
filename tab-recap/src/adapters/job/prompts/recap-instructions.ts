@@ -17,7 +17,7 @@ function languageLines(request: Pick<RecapRequest, 'language' | 'previousLanguag
     const carried = previous === language ? [] : [
         ids.length === 0
             ? `The facts in <ledger> are in ${languageNameOf(previous)}: update every open fact that is still relevant, rewritten in ${languageNameOf(language)}.`
-            : `Some open facts in <ledger> are still in ${languageNameOf(previous)}: update every open fact that is not in ${languageNameOf(language)}, rewritten in ${languageNameOf(language)} with the same meaning, even when nothing else changed. These open facts are not in ${languageNameOf(language)}: ${ids.join(', ')}.`,
+            : `Some open facts in <ledger> are still in ${languageNameOf(previous)}: update every open fact that is not in ${languageNameOf(language)}, rewritten in ${languageNameOf(language)} with the same meaning, even when nothing else changed. These open facts are not in ${languageNameOf(language)}: ${ids.join(', ')}. Rewrite each of these facts as a faithful translation of its own text: keep every number, name, path, identifier, status, condition and reason, and do not add, drop or merge a claim.`,
     ];
     return [textOf(own), ...carried.map(textOf), textOf('')];
 }
