@@ -58,11 +58,6 @@
     "container": 3,
     "property": 7
   },
-  "src/recap/application/lane-tokens.ts": {
-    "parameter": 4,
-    "return": 1,
-    "property": 3
-  },
   "src/recap/application/replay-judge.ts": {
     "parameter": 1,
     "container": 1,

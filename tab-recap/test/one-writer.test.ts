@@ -36,7 +36,7 @@ test('the four writers write only tab-recap\'s names, on panes and on workspaces
         },
         enabled: (): Presence => 'present', startedAt: 1, log: (): void => undefined,
     });
-    const publisher = new LaneTokenPublisher({ tokens: paneWrites, enabled: (): Presence => 'present', board: (): Board => board, facts: (): LaneTokenFacts => ({ share: countOf(40), recapAt: instant(1), needs: countOf(2) }), now: (): number => 0, log: (): void => undefined, events });
+    const publisher = new LaneTokenPublisher({ tokens: paneWrites, enabled: (): Presence => 'present', board: (): Board => board, facts: (): LaneTokenFacts => ({ share: countOf(40), recapAt: instant(1), needs: countOf(2) }), now: (): Instant => instant(0), log: (): void => undefined, events });
     publisher.tick();
     events.lane('w1:p1', 'recap-written', 'turn-ended');
     const answers = new CompactRequestQueue({ enabled: (): Presence => 'present', board: (): Board => board, requests: { requestCompact: (): void => undefined }, asks: new MemoryAskLedger(), tokens: paneWrites, now: (): Instant => instant(1000), log: (): void => undefined });

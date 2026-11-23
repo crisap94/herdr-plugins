@@ -6,10 +6,10 @@ import type { LaneTokenFacts, LaneWrite, TokenMap } from '#src/recap/domain/lane
 import { uncheckedTokenName, type PaneId } from '#src/recap/domain/ids.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
-import { instant, parseMilliseconds } from '#src/recap/domain/time.ts';
+import { instant, parseMilliseconds, type Instant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import { backoffMs } from '#src/recap/domain/backoff.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf, type Count } from '#src/recap/domain/count.ts';
 import type { LaneTokenMap, LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import type { TokenName, TokenValue } from '#src/protocol/primitives.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
@@ -29,21 +29,21 @@ export interface LaneTokenDeps {
     readonly board: () => Board;
     readonly facts: (lane: Lane) => LaneTokenFacts;
     readonly capability?: () => TokenValue;
-    readonly now: () => number;
+    readonly now: () => Instant;
     readonly log: (line: Text) => void;
     readonly events?: LaneEvents;
 }
 
 interface Failing {
-    readonly count: number;
-    readonly until: number;
+    readonly count: Count;
+    readonly until: Instant;
 }
 
 export class LaneTokenPublisher {
     private readonly deps: LaneTokenDeps;
     private readonly written = new Map<PaneId, LaneWrite>();
     private readonly failing = new Map<PaneId, Failing>();
-    private lastTick = Number.NEGATIVE_INFINITY;
+    private lastTick: Instant = instant(Number.NEGATIVE_INFINITY);
 
     constructor(deps: LaneTokenDeps) {
         this.deps = deps;
@@ -67,19 +67,19 @@ export class LaneTokenPublisher {
         }
     }
 
-    private publish(lane: Lane, now: number): void {
+    private publish(lane: Lane, now: Instant): void {
         const pane = lane.pane;
         if ((this.failing.get(pane)?.until ?? 0) > now) {
             return;
         }
         const previous = this.written.get(pane);
         const values = tokenValuesOf(this.deps.facts(lane), this.deps.capability?.() ?? CAPABILITY_VALUE);
-        const due = writeDueOf(previous ?? null, values, instant(now), TTL);
+        const due = writeDueOf(previous ?? null, values, now, TTL);
         if (due === null) {
             return;
         }
         this.announceNeeds(lane, previous?.values, due);
-        this.written.set(pane, { values: due, at: instant(now) });
+        this.written.set(pane, { values: due, at: now });
         void this.send(pane, new Map([...due, ...clearing(STATE_NAMES.filter((name) => !due.has(name)))]), now);
     }
 
@@ -96,7 +96,7 @@ export class LaneTokenPublisher {
         void this.send(pane, clearing(OWNED_NAMES), this.deps.now());
     }
 
-    private async send(pane: PaneId, tokens: LaneTokenMap, now: number): Promise<void> {
+    private async send(pane: PaneId, tokens: LaneTokenMap, now: Instant): Promise<void> {
         const done = await this.deps.tokens.report(pane, tokens, TTL);
         if (isUnknown(done)) {
             this.written.delete(pane);
@@ -106,10 +106,10 @@ export class LaneTokenPublisher {
         }
     }
 
-    private fail(pane: PaneId, now: number, why: string): void {
-        const count = (this.failing.get(pane)?.count ?? 0) + 1;
-        const wait = backoffMs(countOf(count));
-        this.failing.set(pane, { count, until: now + wait });
+    private fail(pane: PaneId, now: Instant, why: Text): void {
+        const count = countOf((this.failing.get(pane)?.count ?? 0) + 1);
+        const wait = backoffMs(count);
+        this.failing.set(pane, { count, until: instant(now + wait) });
         if (count === 1) {
             this.deps.log(textOf(`lane tokens on ${pane}: not written (${why}); trying again with a back-off`));
         }
