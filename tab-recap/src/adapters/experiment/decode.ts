@@ -38,12 +38,16 @@ const closedWhyOf = (row: Row): HistoryFact['closedWhy'] => {
     return isClosedWhy(row.closedWhy) ? row.closedWhy : refuse();
 };
 
+const queuedOf = (row: Row): Pick<Entry, 'queued'> => {
+    if (row.queued === undefined) return {};
+    return typeof row.queued === 'boolean' ? { queued: row.queued } : refuse();
+};
+
 const entryOf = (row: Row): Entry => ({
     role: roleOf(row),
     text: taken(parseText(row.text)),
     ...(row.at === undefined ? {} : { at: taken(parseInstant(row.at)) }),
-    ...(row.queued === true ? { queued: true } : {}),
-    ...(row.queued === false ? { queued: false } : {}),
+    ...queuedOf(row),
     ...(row.kind === undefined ? {} : { kind: kindOf(row) }),
     ...(row.what === undefined ? {} : { what: taken(parseText(row.what)) }),
 });

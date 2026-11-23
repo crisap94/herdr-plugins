@@ -61,6 +61,8 @@ test('readers: a point with a field of the wrong type is refused', () => {
         assert.throws(() => readPoints(txt(file)), TypeError);
         writeFileSync(file, `${JSON.stringify({ ...full, recent: [{ role: 'robot', text: 'x' }] })}\n`);
         assert.throws(() => readPoints(txt(file)), TypeError);
+        writeFileSync(file, `${JSON.stringify({ ...full, recent: [{ role: 'user', text: 'x', queued: 'yes' }] })}\n`);
+        assert.throws(() => readPoints(txt(file)), TypeError);
     });
 });
 
