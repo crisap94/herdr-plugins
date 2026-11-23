@@ -12,15 +12,16 @@ import { instant } from '#src/recap/domain/time.ts';
 import { present } from '#src/recap/render/present.ts';
 import type { Extension, Note, NotesResult } from '#src/ports/extension.ts';
 import type { TabLane } from '#src/ports/tab-views.ts';
+import { reconciliation, seenLane } from '#test/support/seen.ts';
 
 const noGlow = (): null => null;
 
-const seen = (paneId: string, cwd: string | null): SeenLane => ({ paneId, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', cwd });
+const seen = (paneId: string, cwd: string | null): SeenLane => (seenLane({ paneId, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', cwd }));
 
 test('viewOf carries each lane\'s cwd, null when herdr did not say', () => {
     const { board } = observe(emptyBoard(), {
         kind: 'reconciled',
-        seen: { focusedTab: 'w1:t1', lanes: [seen('w1:p1', '/w/repo'), seen('w1:p2', null)], columns: [], panes: ['w1:p1', 'w1:p2'], widths: new Map([['w1:t1', 200]]) },
+        seen: reconciliation({ focusedTab: 'w1:t1', lanes: [seen('w1:p1', '/w/repo'), seen('w1:p2', null)], columns: [], panes: ['w1:p1', 'w1:p2'], widths: new Map([['w1:t1', 200]]) }),
     }, instant(0), DEFAULT_POLICY);
     assert.deepEqual(viewOf(board, tabId('w1:t1'), instant(5)).lanes.map((lane) => lane.cwd), ['/w/repo', null]);
 });
@@ -28,7 +29,7 @@ test('viewOf carries each lane\'s cwd, null when herdr did not say', () => {
 test('viewOf carries each lane\'s since from the board', () => {
     const { board } = observe(emptyBoard(), {
         kind: 'reconciled',
-        seen: { focusedTab: 'w1:t1', lanes: [seen('w1:p1', '/w/repo'), seen('w1:p2', null)], columns: [], panes: ['w1:p1', 'w1:p2'], widths: new Map([['w1:t1', 200]]) },
+        seen: reconciliation({ focusedTab: 'w1:t1', lanes: [seen('w1:p1', '/w/repo'), seen('w1:p2', null)], columns: [], panes: ['w1:p1', 'w1:p2'], widths: new Map([['w1:t1', 200]]) }),
     }, instant(0), DEFAULT_POLICY);
     assert.deepEqual(viewOf(board, tabId('w1:t1'), instant(5)).lanes.map((lane) => lane.since), [instant(0), instant(0)]);
 });

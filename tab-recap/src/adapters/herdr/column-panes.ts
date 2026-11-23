@@ -3,7 +3,7 @@ import type { DeadColumn } from '#src/recap/domain/dead-columns.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
 import { parsePaneId, parseTabId, type PaneId } from '#src/recap/domain/ids.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import type { JsonObject } from './json-object.ts';
 
 export type AgentPaneSet = ReadonlySet<PaneId>;
@@ -43,7 +43,7 @@ export function columnsIn(panes: readonly JsonObject[], agentPanes: ReadonlySet<
     return panes.flatMap((pane): readonly SeenColumn[] => {
         const paneId = parseOptionalPaneId(pane['pane_id']);
         const shape = columnShape(parseOptionalText(pane['terminal_title_stripped']), parseOptionalText(pane['label']), parseOptionalText(pane['agent']));
-        return paneId === null || shape === null || agentPanes.has(paneId) ? [] : [{ tabId: parseOptionalText(pane['tab_id']) ?? '', paneId, shape }];
+        return paneId === null || shape === null || agentPanes.has(paneId) ? [] : [{ tabId: parseOptionalText(pane['tab_id']) ?? textOf(''), paneId: textOf(paneId), shape }];
     });
 }
 

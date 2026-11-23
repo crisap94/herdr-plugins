@@ -6,6 +6,7 @@ import type { Clock } from '#src/ports/clock.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { parseSessionId, type PaneId, type SessionId, type TabId } from '#src/recap/domain/ids.ts';
 import type { HookAnswer, HookCall, HookHarness, HookReceiver, PreCompactAnswer } from '#src/wire/hooks/contract.ts';
 import { PRE_COMPACT_HOLD_REASON } from '#src/wire/hooks/contract.ts';
@@ -43,7 +44,7 @@ const PRE_COMPACT_NOTHING: PreCompactAnswer = { kind: 'nothing' };
 const stopped = (deps: ReceiverDeps, followed: Followed): void => {
     const signal = turnSignalOf(followed.lane, deps.turnEnds.endedAt(followed.pane), deps.clock.now());
     if (signal.kind === 'as-status') {
-        deps.observe({ kind: 'status', pane: followed.pane, status: 'idle' });
+        deps.observe({ kind: 'status', pane: followed.pane, status: textOf('idle') });
     }
     if (signal.kind === 'direct') {
         deps.recaps.turnEnded(followed.tab, deps.lanesOf(followed.tab), 'turn-ended');

@@ -10,15 +10,16 @@ import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { hiddenState, restoreHidden } from '#src/recap/domain/visibility.ts';
+import { reconciliation, seenLane, statusObservation } from '#test/support/seen.ts';
 
-const lane = (pane: string, tab: string): SeenLane => ({ paneId: pane, tabId: tab, workspaceId: 'w1', agent: 'claude', status: 'idle', session: `s-${pane}` });
+const lane = (pane: string, tab: string): SeenLane => (seenLane({ paneId: pane, tabId: tab, workspaceId: 'w1', agent: 'claude', status: 'idle', session: `s-${pane}` }));
 const seen = (lanes: readonly SeenLane[], columns: { tab: string; pane: string }[] = []): Observation => ({
     kind: 'reconciled',
-    seen: {
+    seen: reconciliation({
         focusedTab: null, lanes, widths: new Map(),
         panes: [...lanes.map((l) => l.paneId), ...columns.map((c) => c.pane)],
         columns: columns.map((c) => ({ tabId: c.tab, paneId: c.pane, shape: 'side' as const })),
-    },
+    }),
 });
 const opened = (tab: string, pane: string): Observation => ({ kind: 'column-opened', tab: tabId(tab), pane: paneId(pane), shape: 'side' });
 const gone = (pane: string): Observation => ({ kind: 'closed', pane: paneId(pane) });
@@ -88,7 +89,7 @@ test('a hidden tab ignores reconciliation: a column found there is closed, none 
 });
 
 test('recaps keep being asked for while the column is hidden', () => {
-    const { steps } = play([seen([lane('w1:p1', 'w1:t1')]), hide('w1:t1'), { kind: 'requested', tab: tabId('w1:t1') }, { kind: 'status', pane: paneId('w1:p1'), status: 'working' }, { kind: 'status', pane: paneId('w1:p1'), status: 'idle' }]);
+    const { steps } = play([seen([lane('w1:p1', 'w1:t1')]), hide('w1:t1'), { kind: 'requested', tab: tabId('w1:t1') }, statusObservation({ kind: 'status', pane: paneId('w1:p1'), status: 'working' }), statusObservation({ kind: 'status', pane: paneId('w1:p1'), status: 'idle' })]);
     assert.ok(steps[2]?.includes('recap w1:t1 (requested)'));
     assert.ok(steps[4]?.includes('recap w1:t1 (turn-ended)'));
 });

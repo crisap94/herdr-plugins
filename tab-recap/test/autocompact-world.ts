@@ -28,12 +28,13 @@ import { decidedOf, textOf } from './fakes/decider-fixtures.ts';
 import type { Candidate } from '@stateforge-labs/session-ledger/compaction-timing';
 import { parseHarnessKind, parseScopeId, parseSessionKey } from '@stateforge-labs/session-ledger';
 import type { IdleHold } from '#src/recap/domain/idle-hold.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 export const NOW = 10_000_000;
 const SCOPE = must(parseScopeId('w1:t1'));
 const KEY = must(parseSessionKey('w1:p1'));
 const candidateWith = (harness: string): Candidate => ({ scope: SCOPE, key: KEY, harness: must(parseHarnessKind(harness)), ready: true });
-const laneOf = (from: Candidate, status: string): Lane => laneFrom({ paneId: from.key, tabId: from.scope, workspaceId: 'w1', agent: from.harness, status });
+const laneOf = (from: Candidate, status: string): Lane => laneFrom(seenLane({ paneId: from.key, tabId: from.scope, workspaceId: 'w1', agent: from.harness, status }));
 export const lane = (agent = 'claude', status = 'idle'): Lane => laneOf(candidateWith(agent), status);
 export const tuningOfKeys = (keys: Readonly<Record<string, string>>): CompactTuning => tuningFrom((key) => { const value = keys[key]; return value === undefined ? undefined : textOf(value); });
 export const SAFE = { closes_request: 0.95, announces_continuation: 0.05, asks_detailed_choice: 0.02, needs_verbatim: 0.10, changes_subject: 0.03, stuck: 0.01 };

@@ -34,6 +34,7 @@ import { oneTask } from './support.ts';
 import type { MissedFacts } from '#src/recap/domain/autocompact.ts';
 import { decidedOf, textOf } from './fakes/decider-fixtures.ts';
 import type { Section } from '#src/recap/domain/fact.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const fact = (section: Section, text: string, why: string | null = null, state: 'open' | 'closed' = 'open'): HistoryFact => ({ section, text: textOf(text), why: why === null ? null : textOf(why), state, closedWhy: null, closedAt: null, firstAt: instant(1), lastAt: instant(2) });
 const HISTORY = [fact('goal', 'Ship the cart rewrite'), fact('decisions', 'Keep SQLite', 'one file'), fact('next', 'Tag the release'), fact('done', 'Merged !12'), fact('rules', 'Never push to main', null, 'closed')];
@@ -102,7 +103,7 @@ function flow(checks: readonly Coverage[], withCoverage = true, template: { read
         missedFacts: () => options.missedFacts ?? 'append',
         checkedBriefs: store.autocompactBriefs,
         recent: () => Promise.resolve([{ role: 'user', text: textOf('go') }]), marks: () => Promise.resolve([{ kind: 'compacted', at: instant(NOW + 5000) }]), pause: () => Promise.resolve(), now: () => instant(clock),
-        webs: { of: () => null }, listsPane: () => 'present', lanes: () => [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: world.harness.agent })], focused: () => Promise.resolve(paneId('w1:p1')),
+        webs: { of: () => null }, listsPane: () => 'present', lanes: () => [laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: world.harness.agent }))], focused: () => Promise.resolve(paneId('w1:p1')),
         refresh: () => Promise.resolve('refreshed'), target: () => targetOf('focused'), messages: () => en, log: (line) => { world.logs.push(line); },
     };
     return { world, compaction: new Compaction(deps) };

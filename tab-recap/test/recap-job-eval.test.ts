@@ -17,6 +17,7 @@ import { brand } from '#src/recap/domain/brand.ts';
 import type { KeepInput } from '#src/recap/application/recap-job.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const transcripts: Transcripts = {
     agent: agentKind('claude'),
@@ -35,7 +36,7 @@ async function recapWith(keepInput: (() => KeepInput) | undefined): Promise<Retu
         repos: NO_REPOS, transcripts: registryWith({ [transcripts.agent]: transcripts }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(5) },
         summarizer: (): Summarizer => summarizer, language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined, ...(keepInput === undefined ? {} : { keepInput }),
     });
-    job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'requested');
+    job.request(tabId('w1:t1'), [laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' }))], 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 20); });
     const runs = runsOf(store.inputs, { tab: null, since: null, limit: 5, withInput: false });
     const [run] = runs;

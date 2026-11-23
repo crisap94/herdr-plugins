@@ -1,8 +1,5 @@
 {
   "src/recap/domain/legacy.ts": {
-    "legacy": 40
-  },
-  "src/recap/domain/twins/lane/legacy.ts": {
-    "legacy": 8
+    "legacy": 29
   }
 }

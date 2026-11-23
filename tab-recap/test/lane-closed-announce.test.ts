@@ -22,6 +22,7 @@ import type { TabViews } from '#src/ports/tab-views.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { SIZING } from './fakes/layout-values.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const noop = (): void => undefined;
 const noWebs = { of: (): null => null, refresh: (): Promise<Presence> => Promise.resolve('absent') };
@@ -74,7 +75,7 @@ test('a restart closure, built from a persisted lane, announces lane-closed exac
 
 test('a closure seen by dispatch and by the token publisher announces lane-closed once, from dispatch', async () => {
     const { lines, port } = eventsOf();
-    const lane: Lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
+    const lane: Lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
     const board: { current: Board } = { current: { ...emptyBoard(), lanes: new Map([[lane.pane, lane]]) } };
     let now = 0;
     const publisher = new LaneTokenPublisher({

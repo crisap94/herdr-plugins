@@ -6,10 +6,11 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { lane, world } from './autocompact-world.ts';
 import type { World } from './autocompact-world.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 20));
 const idle = (): Lane => lane('claude', 'idle');
-const working = (): Lane => laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'working' });
+const working = (): Lane => laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'working' }));
 
 async function claimOf(w: World, seen: Lane = idle()): Promise<{ claim: string; asked: number }> {
     const claim = w.service.claimIdle(seen);

@@ -37,6 +37,7 @@ import { must } from '#src/protocol/result.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { fsPathOf } from './fakes/transcript-lines.ts';
 import { countOf } from '#src/recap/domain/count.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const AT = Date.parse('2026-10-10T12:00:00Z');
 const MINUTE = 60_000;
@@ -168,7 +169,7 @@ test('the restore path runs on the engine\'s store and a scope and followed sess
         writeFileSync(records, '');
         const reader = new ClaudeTranscripts(fsPathOf(dirname(dirname(records))));
         const scope = tabId('00000000-0000-4000-8000-000000000002');
-        const session = laneFrom({ paneId: String(scope), tabId: String(scope), workspaceId: 'plain', agent: reader.agent, session: basename(records, '.jsonl') });
+        const session = laneFrom(seenLane({ paneId: String(scope), tabId: String(scope), workspaceId: 'plain', agent: reader.agent, session: basename(records, '.jsonl') }));
         const clock = { now: 1 };
         const { summarizer } = writer();
         const engine = createEngine({
@@ -192,7 +193,7 @@ test('the restore path runs on the engine\'s store and a scope and followed sess
             assert.ok(text.includes(shown.text), shown.text);
         }
         assert.ok(restored.open.length > 0);
-        const other = laneFrom({ paneId: 'someone-else', tabId: String(scope), workspaceId: 'plain', agent: reader.agent, session: 'other' });
+        const other = laneFrom(seenLane({ paneId: 'someone-else', tabId: String(scope), workspaceId: 'plain', agent: reader.agent, session: 'other' }));
         assert.equal(restoreTextOf(engine.restore(scope, other)), '', 'a session the scope never followed gets nothing back');
     } finally {
         scratch.dispose();

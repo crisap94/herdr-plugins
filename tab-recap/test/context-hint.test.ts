@@ -17,6 +17,7 @@ import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { paneId } from '#test/support/ids.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const noGlow = (): null => null;
 const noLimits: CompactLimits = { limitOf: () => ({ window: null, percent: null }) };
@@ -36,7 +37,7 @@ test('a lane header shows the hint with the percentage and the window it was mea
     assert.ok(!view(use, 50).includes('compact?'), 'the threshold is the operator\'s');
 });
 
-const lane = (agent: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent, cwd: '/w' });
+const lane = (agent: string): ReturnType<typeof laneFrom> => laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent, cwd: '/w' }));
 
 function reader(agent: string, model: string | null, tokens: number, window: number | null): Transcripts {
     return {

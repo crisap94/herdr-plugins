@@ -68,13 +68,14 @@ export function seenFrom(data: JsonObject, identity: SessionOf): SeenLane | null
     if (pane === null || tab === null || workspace === null || agent === null) {
         return null;
     }
+    const session = sessionOf(data, identity);
     return {
         paneId: pane,
         tabId: tab,
         workspaceId: workspace,
         agent,
         status: field(data, 'agent_status'),
-        session: sessionOf(data, identity),
+        session: session === null ? null : textOf(session),
         cwd: field(data, 'foreground_cwd') ?? field(data, 'cwd'),
         title: field(data, 'terminal_title_stripped'),
     };

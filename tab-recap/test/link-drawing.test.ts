@@ -22,6 +22,7 @@ import { makeRepo } from './fixtures/git-repo.ts';
 import { tabId } from '#test/support/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { paneId } from '#test/support/ids.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const E = String.fromCodePoint(0x1b);
 const open = (url: string): string => `${E}]8;;${url}${E}\\`;
@@ -109,7 +110,7 @@ test('a remote with a token: nothing stored and nothing drawn holds the secret (
     try {
         await addRemote({ fs: { promises: fsp }, dir: shop.root, remote: 'origin', url: 'https://oauth2:s3cr3t-token@gitlab.example/acme/shop.git' });
         const webs = new LaneWebs(new GitLaneRepo({ now: (): Instant => instant(0) }));
-        await webs.refresh(laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd: shop.root }));
+        await webs.refresh(laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd: shop.root })));
         const { views, db } = memoryStore();
         const view: TabView = { tab: 'w1:t1', column: null, at: 1, lanes: [lane('w1:p1', webs.of(paneId('w1:p1')))] };
         views.writeTab(view);

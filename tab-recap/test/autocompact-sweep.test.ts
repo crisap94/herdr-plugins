@@ -8,8 +8,9 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Candidate } from '@stateforge-labs/session-ledger/compaction-timing';
 import { candidatesOf } from '#src/daemon/autocompact.ts';
+import { seenLane } from '#test/support/seen.ts';
 
-const lane = (pane: string, status: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status });
+const lane = (pane: string, status: string): Lane => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status }));
 const boardOf = (lanes: readonly Lane[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((found) => [found.pane, found])) });
 const idle = [lane('w1:p1', 'idle'), lane('w1:p2', 'working'), lane('w1:p3', 'done'), lane('w1:p4', 'idle')];
 const settle = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });

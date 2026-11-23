@@ -24,6 +24,7 @@ import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { grewOf, cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 function recording(agent: string, source: (pane: string) => string, tail: string | null = null): { reader: Transcripts; seen: Position[] } {
     const seen: Position[] = [];
@@ -49,7 +50,7 @@ const writer = (requests: RecapRequest[]): Summarizer => ({
 async function recapOf(transcripts: TranscriptRegistry, agents: readonly string[], store = memoryStore()): Promise<{ store: Store; requests: RecapRequest[] }> {
     const requests: RecapRequest[] = [];
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts, records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Summarizer => writer(requests), language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined });
-    const lanes = agents.map((agent, at) => laneFrom({ paneId: `w1:p${at + 1}`, tabId: 'w1:t1', workspaceId: 'w1', agent }));
+    const lanes = agents.map((agent, at) => laneFrom(seenLane({ paneId: `w1:p${at + 1}`, tabId: 'w1:t1', workspaceId: 'w1', agent })));
     job.request(tabId('w1:t1'), lanes, 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 30); });
     return { store, requests };

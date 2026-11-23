@@ -35,6 +35,7 @@ import { cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 import { SIZING } from './fakes/layout-values.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
+import { seenLane as laneOf } from '#test/support/seen.ts';
 
 const said: Record<string, string> = { old: 'migrate victoria', new: 'write the docs' };
 
@@ -65,7 +66,7 @@ async function recapOnce(store: Store, lane: Lane, at: number, ops: readonly Rec
     return requests;
 }
 
-const seenLane = (pane: string, tab: string, session: string): SeenLane => ({ paneId: pane, tabId: tab, workspaceId: tab.split(':')[0] ?? '', agent: 'claude', status: 'idle', session });
+const seenLane = (pane: string, tab: string, session: string): SeenLane => laneOf({ paneId: pane, tabId: tab, workspaceId: tab.split(':')[0] ?? '', agent: 'claude', status: 'idle', session });
 
 const reconciled = (lanes: readonly SeenLane[], listed: readonly string[] | undefined): Observation =>
     ({ kind: 'reconciled', seen: { lanes, columns: [], panes: lanes.map((lane) => lane.paneId), widths: new Map(), ...(listed === undefined ? {} : { tabs: listed.map((tab) => tabId(tab)) }) } });

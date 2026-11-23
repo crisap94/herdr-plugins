@@ -16,6 +16,7 @@ import type { Intent } from '#src/recap/domain/intent.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { columnOpenedObservation } from '#test/support/seen.ts';
 
 type Raw = Record<string, unknown>;
 
@@ -32,7 +33,7 @@ const reconcile = (board: Board, panes: Raw[], at: number, seenAgents: Raw[] = a
 };
 
 const opened = (board: Board, column: string, at: number): Board =>
-    observe(board, { kind: 'column-opened', tab: tabId('w1:t1'), pane: paneId(column), shape: 'side', at }, instant(at), DEFAULT_POLICY).board;
+    observe(board, columnOpenedObservation({ kind: 'column-opened', tab: tabId('w1:t1'), pane: paneId(column), shape: 'side', at }), instant(at), DEFAULT_POLICY).board;
 
 const columnIntents = (intents: readonly Intent[]): string[] => intents.flatMap((intent) => {
     switch (intent.kind) {

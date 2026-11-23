@@ -35,6 +35,7 @@ import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { cursorOf, sourcePathOf, grewOf } from '#src/ports/transcripts.ts';
 import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const sections = (goal: string, rest: Partial<typeof NO_SECTIONS> = {}): typeof NO_SECTIONS => ({ ...NO_SECTIONS, goal: textOf(goal), ...rest });
 const taskOf = (id: string, name: string, lanes: readonly string[], goal = id): RecapTask => ({ id: textOf(id), name: textOf(name), lanes: lanes.map((lane) => paneIdOf(lane)), sections: sections(goal), markdown: textOf(`## Goal\n${goal}`) });
@@ -128,7 +129,7 @@ async function run(answers: readonly string[], lanes: readonly string[], store =
     const requests: RecapRequest[] = [];
     const summarizer: Summarizer = { backend: textOf('fake'), contract: 'strict', write: (request): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: textOf(answers[Math.min(requests.length - 1, answers.length - 1)] ?? ''), costUsd: brand<number, 'Usd'>(0) }); } };
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, transcripts: registryWith({ [transcripts.agent]: transcripts }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), repos, clock: { now: (): ReturnType<typeof instant> => instant(1) }, summarizer: (): Summarizer => summarizer, language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined });
-    job.request(tabId('w1:t1'), lanes.map((pane) => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd: pane === 'w1:p1' ? '/work/pay' : '/work/docs' })), 'requested');
+    job.request(tabId('w1:t1'), lanes.map((pane) => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd: pane === 'w1:p1' ? '/work/pay' : '/work/docs' }))), 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 40); });
     return { store, requests };
 }

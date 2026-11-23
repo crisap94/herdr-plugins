@@ -18,13 +18,14 @@ import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import type { HookReceiver } from '#src/wire/hooks/contract.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const NOW = 1_000_000;
 const TAB = tabId('w1:t1');
 const PANE = paneId('w1:p1');
 const SESSION = must(parseSessionId('s-lane'));
 const SESSION_TEXT = must(parseText('s-lane'));
-const lane: Lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: laneStatus('idle'), session: 's-lane', cwd: '/work/repo' });
+const lane: Lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: laneStatus('idle'), session: 's-lane', cwd: '/work/repo' }));
 
 interface Fixture {
     readonly receiver: HookReceiver & PreCompactReceiver;

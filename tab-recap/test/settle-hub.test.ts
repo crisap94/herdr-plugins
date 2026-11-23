@@ -11,8 +11,9 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { agentKind } from '#test/support/ids.ts';
+import { seenLane } from '#test/support/seen.ts';
 
-const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' });
+const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' }));
 
 function hub(options: { listening: boolean; statuses?: string[]; clock?: { at: number } }): { hub: SettleHub; polls: string[]; pauses: number[] } {
     const polls: string[] = [];

@@ -15,6 +15,7 @@ import { laneStatus, type LaneStatus } from '#src/recap/domain/status.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import type { HookAnswer, HookCall, HookSource } from '#src/wire/hooks/contract.ts';
 import { hookFixture, readHookCases, type HookCase, type HookEffect } from '#test/contracts/wire/fakes/fake-harness.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const NOW = 1_000_000;
 const TAB = tabId('w1:t1');
@@ -24,7 +25,7 @@ const NOTHING: HookAnswer = { kind: 'nothing' };
 const isRestoreText = (text: string): text is RestoreText => typeof text === 'string';
 
 const laneWith = (status: LaneStatus): Lane =>
-    laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status, session: 's-lane', cwd: '/work/repo' });
+    laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status, session: 's-lane', cwd: '/work/repo' }));
 
 const EFFECT_NAMES: Record<HookEffect, string> = {
     'as-status': 'observe',

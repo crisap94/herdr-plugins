@@ -2,6 +2,7 @@
   "src/daemon/engine-wire.ts",
   "src/daemon/slots.ts",
   "src/protocol/primitives.ts",
+  "src/recap/domain/board.ts",
   "src/recap/domain/byte-budget.ts",
   "src/recap/domain/compaction-plan.ts",
   "src/recap/domain/fact-index.ts",

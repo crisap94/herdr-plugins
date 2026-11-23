@@ -12,10 +12,11 @@ import { agentKind, paneId } from '#test/support/ids.ts';
 import { cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const view = prunedWriterView(keepNewestOf(2), nextHoursOf(24));
 const wide = prunedWriterView(keepNewestOf(10), nextHoursOf(24));
-const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' });
+const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' }));
 const cursor = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t'), cursor: cursorOf(5), tail: null, title: null, lastPrompt: null, claudeRecap: null };
 const HOUR = 3_600_000;
 const NOW = 100 * HOUR;

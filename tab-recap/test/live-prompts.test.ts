@@ -28,8 +28,9 @@ import { textOf, type Text } from '#src/recap/domain/text.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { SIZING } from './fakes/layout-values.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
+import { reconciliation, seenLane as laneOf, statusObservation } from '#test/support/seen.ts';
 
-const lane = (pane: string, agent = 'claude'): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, session: `s-${pane}` });
+const lane = (pane: string, agent = 'claude'): Lane => laneFrom(laneOf({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, session: `s-${pane}` }));
 
 function reader(agent: string, prompts: Record<string, PromptResult>): { transcripts: Transcripts; asked: { source: string; budget: number }[] } {
     const asked: { source: string; budget: number }[] = [];
@@ -57,7 +58,7 @@ test('LivePrompts: a lane that cannot be read, has no prompt or no reader keeps 
     const { transcripts } = reader('claude', { '/t/w1:p1': { kind: 'prompt', text: textOf('kept') }, '/t/w1:p2': unknown({ why: 'unreadable', detail: causeOf('x') }) });
     const prompts = new LivePrompts(registryWith({ [transcripts.agent]: transcripts }));
     await prompts.refresh(lane('w1:p1'));
-    assert.equal(await prompts.refresh(laneFrom({ paneId: 'w9:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' })), 'absent', 'cannot locate');
+    assert.equal(await prompts.refresh(laneFrom(laneOf({ paneId: 'w9:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' }))), 'absent', 'cannot locate');
     assert.equal(await prompts.refresh(lane('w1:p2')), 'absent', 'unreadable');
     assert.equal(prompts.of(paneId('w1:p2')), null);
     assert.equal(await prompts.refresh(lane('w1:p3')), 'absent', 'no prompt in the tail');
@@ -88,7 +89,7 @@ test('LivePrompts: a changed prompt replaces the old one; the table stays bounde
     assert.equal(prompts.of(paneId('w1:p1')), null, 'the oldest were forgotten');
 });
 
-const seenLane = (pane: string, status = 'idle'): SeenLane => ({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status, session: `s-${pane}` });
+const seenLane = (pane: string, status = 'idle'): SeenLane => laneOf({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status, session: `s-${pane}` });
 
 function play(observations: readonly Observation[]): Intent[][] {
     let board = emptyBoard();
@@ -100,15 +101,15 @@ function play(observations: readonly Observation[]): Intent[][] {
 }
 
 const reads = (intents: readonly Intent[]): string[] => intents.flatMap((intent) => (intent.kind === 'read-prompt' ? [`${String(intent.lane.pane)}:${intent.lane.status}`] : []));
-const reconciled = (...lanes: SeenLane[]): Observation => ({ kind: 'reconciled', seen: { focusedTab: null, lanes, panes: lanes.map((l) => l.paneId), columns: [], widths: new Map() } });
+const reconciled = (...lanes: SeenLane[]): Observation => ({ kind: 'reconciled', seen: reconciliation({ focusedTab: null, lanes, panes: lanes.map((l) => l.paneId), columns: [], widths: new Map() }) });
 
 test('fold: a status change reads the prompt of that lane (with its new status), right after publishing; no change, no read', () => {
     const steps = play([
         reconciled(seenLane('w1:p1', 'idle')),
-        { kind: 'status', pane: paneId('w1:p1'), status: 'working' },
-        { kind: 'status', pane: paneId('w1:p1'), status: 'working' },
-        { kind: 'status', pane: paneId('w1:p1'), status: 'idle' },
-        { kind: 'status', pane: paneId('w1:p7'), status: 'working' },
+        statusObservation({ kind: 'status', pane: paneId('w1:p1'), status: 'working' }),
+        statusObservation({ kind: 'status', pane: paneId('w1:p1'), status: 'working' }),
+        statusObservation({ kind: 'status', pane: paneId('w1:p1'), status: 'idle' }),
+        statusObservation({ kind: 'status', pane: paneId('w1:p7'), status: 'working' }),
     ]);
     assert.deepEqual(reads(steps[1] ?? []), ['w1:p1:working']);
     const kinds = (steps[1] ?? []).map((intent) => intent.kind);

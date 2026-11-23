@@ -14,10 +14,11 @@ import { es } from '#src/i18n/es.ts';
 import { CLOSE_POINTS } from '#src/recap/domain/lane-closed.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { reconciliation, seenLane } from '#test/support/seen.ts';
 
 const reconciled = (panes: readonly string[]): Observation => ({
     kind: 'reconciled',
-    seen: { lanes: panes.map((pane) => ({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', session: `s-${pane}` })), columns: [], panes: [...panes], widths: new Map() },
+    seen: reconciliation({ lanes: panes.map((pane) => seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', session: `s-${pane}` })), columns: [], panes: [...panes], widths: new Map() }),
 });
 
 test('the board lists a pane until the fold has applied its closed intent', () => {

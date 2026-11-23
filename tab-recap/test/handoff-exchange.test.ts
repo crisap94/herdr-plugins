@@ -21,12 +21,13 @@ import { HandoffMirror } from '#src/recap/application/handoff-mirror.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const HID = handoffIdOf(new Uint8Array(16).fill(7));
 
 const ask = (held: HandoffId | null): AskEntry => ({ exchange: HANDOFF_EXCHANGE, requester: must(parseToolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: instant(1), ref: held === null ? null : textOf(held), outcome: null });
 
-const lanes = ['w1:p1', 'w1:p2', 'w2:p7'].map((pane) => laneFrom({ paneId: pane, tabId: pane.replace(':p', ':t'), workspaceId: pane.split(':')[0] ?? '', agent: 'claude', status: 'idle' }));
+const lanes = ['w1:p1', 'w1:p2', 'w2:p7'].map((pane) => laneFrom(seenLane({ paneId: pane, tabId: pane.replace(':p', ':t'), workspaceId: pane.split(':')[0] ?? '', agent: 'claude', status: 'idle' })));
 const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map(lanes.map((lane) => [lane.pane, lane])) });
 
 interface Event { readonly kind: EventKind; readonly pane: string; readonly detail: string | null }

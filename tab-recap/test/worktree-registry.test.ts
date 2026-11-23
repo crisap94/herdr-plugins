@@ -19,6 +19,7 @@ import { duration, instant } from '#src/recap/domain/time.ts';
 import type { PorcelainReading } from '#src/recap/domain/porcelain.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { StatusTier, WorktreeStatus, WorktreeSwitch, WorktreeWatch } from '#src/recap/domain/worktree.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const dir = (path: string): Directory => must(parseDirectory(path));
 const reading = (tracked: number, untracked: number): PorcelainReading => ({ branch: must(parseText('main')), ahead: null, tracked: must(parseCount(tracked)), untracked: must(parseCount(untracked)) });
@@ -100,7 +101,7 @@ function rig(): Rig {
     return { registry, located, reads, watching, rows, bound, counts, clock, mode, gone };
 }
 
-const laneAt = (pane: string, cwd: string | null, status: string, tab = 'w1:t1'): Lane => laneFrom({ paneId: pane, tabId: tab, workspaceId: 'w1', agent: 'claude', status, cwd });
+const laneAt = (pane: string, cwd: string | null, status: string, tab = 'w1:t1'): Lane => laneFrom(seenLane({ paneId: pane, tabId: tab, workspaceId: 'w1', agent: 'claude', status, cwd }));
 const boardOf = (...lanes: Lane[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((lane): [PaneId, Lane] => [lane.pane, lane])) });
 
 test('two lanes of one repository share one watch and one first read; each pane is bound to the root', async () => {

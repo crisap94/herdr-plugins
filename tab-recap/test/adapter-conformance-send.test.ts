@@ -10,6 +10,7 @@ import { parseCompactionId } from '#src/recap/domain/ids.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
 import { must } from '#src/protocol/result.ts';
 import { compacted, compactionDeps, compactionFlow, failed, lane, NOW, typingFleet } from '#test/fakes/compaction-fleet.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const TEXT = { material: { sections: NO_SECTIONS, web: null, note: must(parseText('keep the schema')) }, brief: null };
 
@@ -37,7 +38,7 @@ test('every non-Claude kind takes the Codex path; target selection filters non-C
     for (const kind of ['codex', 'opencode']) {
         const world = typingFleet({ 'w1:p9': 'idle' });
         const looks = [[], [], [], [], [], [], [], [], [compacted]];
-        await new Sender(compactionDeps(world, 'focused', 'w1:p9', looks)).send(laneFrom({ paneId: 'w1:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: kind }), TEXT, trailOf(), NOT_QUEUED);
+        await new Sender(compactionDeps(world, 'focused', 'w1:p9', looks)).send(laneFrom(seenLane({ paneId: 'w1:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: kind })), TEXT, trailOf(), NOT_QUEUED);
         assert.deepEqual(world.events, [`type w1:p9`, 'prompt w1:p9'], `${kind}: typed, then the restore message`);
         const [command, restore] = world.typed;
         assert.ok(command);
@@ -49,13 +50,13 @@ test('every non-Claude kind takes the Codex path; target selection filters non-C
         assert.ok(world.pauses.some((ms) => ms === 1000), `${kind}: polled, not read once`);
 
         const failing = typingFleet({ 'w1:p9': 'idle' });
-        await new Sender(compactionDeps(failing, 'focused', 'w1:p9', [[failed]])).send(laneFrom({ paneId: 'w1:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: kind }), TEXT, trailOf(), NOT_QUEUED);
+        await new Sender(compactionDeps(failing, 'focused', 'w1:p9', [[failed]])).send(laneFrom(seenLane({ paneId: 'w1:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: kind })), TEXT, trailOf(), NOT_QUEUED);
         assert.equal(failing.typed.length, 1, `${kind}: typed once, not retried`);
         assert.deepEqual(failing.pauses, [], `${kind}: a failure is not polled`);
     }
     const unknownKind = typingFleet({ 'w1:p9': 'idle' });
     const trailEnds: unknown[] = [];
-    const refused = await new Sender(compactionDeps(unknownKind, 'focused', 'w1:p9')).send(laneFrom({ paneId: 'w1:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: 'zed' }), TEXT, trailOf(trailEnds), NOT_QUEUED);
+    const refused = await new Sender(compactionDeps(unknownKind, 'focused', 'w1:p9')).send(laneFrom(seenLane({ paneId: 'w1:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: 'zed' })), TEXT, trailOf(trailEnds), NOT_QUEUED);
     assert.equal(refused?.kind, 'unsupported');
     assert.deepEqual(unknownKind.typed, []);
     assert.deepEqual(trailEnds, [{ stage: 'failed', at: NOW, why: 'no compaction plan is registered for zed' }]);
@@ -63,7 +64,7 @@ test('every non-Claude kind takes the Codex path; target selection filters non-C
 
 test('pins today: an unconfirmed non-Claude compaction gets 20 looks and still gets the restore message', async () => {
     const world = typingFleet({ 'w1:p9': 'idle' });
-    await new Sender(compactionDeps(world, 'focused', 'w1:p9', [[]])).send(laneFrom({ paneId: 'w1:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: 'codex' }), TEXT, trailOf(), NOT_QUEUED);
+    await new Sender(compactionDeps(world, 'focused', 'w1:p9', [[]])).send(laneFrom(seenLane({ paneId: 'w1:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: 'codex' })), TEXT, trailOf(), NOT_QUEUED);
     assert.deepEqual([world.pauses.filter((ms) => ms === 1000).length, world.pauses.filter((ms) => ms === 300).length], [19, 60]);
     assert.equal(world.typed.length, 2, 'the command, then the restore message');
     assert.match(world.toasts.at(-1) ?? '', /could not confirm the compaction/);

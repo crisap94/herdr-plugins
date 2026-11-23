@@ -7,7 +7,7 @@ import { deadColumnsAfter } from './dead-columns.ts';
 import type { PaneId, TabId } from './ids.ts';
 import type { Intent, RecapCause } from './intent.ts';
 import { parsePaneId, parseTabId, sessionId } from './ids.ts';
-import type { ColumnOpenedObservation, Reconciliation, SessionObservation, StatusObservation, SwitchedObservation } from './legacy.ts';
+import type { ColumnOpenedObservation, Reconciliation, SessionObservation, StatusObservation, SwitchedObservation } from './seen.ts';
 import { laneFrom, withStatus } from './lane.ts';
 import type { Lane, SeenLane } from './lane.ts';
 import { lingering, settle, spend, wantsKind } from './policy.ts';
@@ -63,7 +63,7 @@ function withoutColumnAt(board: Board, seen: SeenLane): Board {
 
 function onDetected(held: Board, seen: SeenLane, now: Instant, policy: Policy): Step {
     const board = withoutColumnAt(held, seen);
-    if (wantsKind(policy, textOf(seen.agent)) === 'absent') {
+    if (wantsKind(policy, seen.agent) === 'absent') {
         return step(board);
     }
     const fresh = laneFrom(seen);
@@ -104,13 +104,13 @@ function onSession(board: Board, seen: SessionObservation): Step {
     if (lane === undefined || String(lane.session) === seen.session) {
         return step(board);
     }
-    return step({ ...board, lanes: put(board.lanes, seen.pane, { ...lane, session: sessionId(textOf(seen.session)) }) });
+    return step({ ...board, lanes: put(board.lanes, seen.pane, { ...lane, session: sessionId(seen.session) }) });
 }
 
 function onStatus(board: Board, seen: StatusObservation): Step {
     const pane = seen.pane;
     const lane = board.lanes.get(pane);
-    const next = laneStatus(textOf(seen.status));
+    const next = laneStatus(seen.status);
     if (lane === undefined || lane.status === next) {
         return step(board);
     }
@@ -137,7 +137,7 @@ interface ColumnsAfter { readonly columns: ReadonlyMap<TabId, Placement>; readon
 function columnsAfter(board: Board, seen: Reconciliation): ColumnsAfter {
     const alive = new Set(seen.panes);
     const agents = new Set(seen.lanes.map((lane) => lane.paneId));
-    const columns = new Map([...board.columns].filter(([, placed]) => !agents.has(placed.pane) && (alive.has(placed.pane) || (seen.at !== undefined && placed.since !== undefined && seen.at < placed.since))));
+    const columns = new Map([...board.columns].filter(([, placed]) => !agents.has(textOf(placed.pane)) && (alive.has(textOf(placed.pane)) || (seen.at !== undefined && placed.since !== undefined && seen.at < placed.since))));
     const extras: Extra[] = [];
     for (const column of seen.columns.filter((seenColumn) => !agents.has(seenColumn.paneId))) {
         const tab = parseTabId(column.tabId);
@@ -177,7 +177,7 @@ function seenTabs(board: Board, seen: Reconciliation): Pick<Board, 'widths' | 'f
 
 function onReconciled(board: Board, seen: Reconciliation, now: Instant, policy: Policy): Step {
     const lanes = new Map<PaneId, Lane>();
-    for (const raw of seen.lanes.filter((lane) => wantsKind(policy, textOf(lane.agent)) === 'present')) {
+    for (const raw of seen.lanes.filter((lane) => wantsKind(policy, lane.agent) === 'present')) {
         const fresh = laneFrom(raw);
         const prior = board.lanes.get(fresh.pane) ?? board.persisted?.find((lane) => lane.pane === fresh.pane);
         const lane = incarnating(keepingSession(fresh, board.lanes.get(fresh.pane)), prior, now);
@@ -186,7 +186,7 @@ function onReconciled(board: Board, seen: Reconciliation, now: Instant, policy: 
     const { columns, extras: found } = columnsAfter(board, seen);
     const extras = found.filter((extra) => lingering(board, extra.pane, now, policy) === 'absent');
     const alive = new Set(seen.panes);
-    let closing = new Map([...board.closing].filter(([pane]) => alive.has(pane)));
+    let closing = new Map([...board.closing].filter(([pane]) => alive.has(textOf(pane))));
     for (const extra of extras) {
         closing = new Map(closing).set(extra.pane, now);
     }
@@ -273,4 +273,5 @@ export function observe(board: Board, observation: Observation, now: Instant, po
     };
 }
 
-export type { ColumnOpenedObservation, Reconciliation, SeenColumn, SessionObservation, StatusObservation, SwitchedObservation } from './legacy.ts';
+
+export type { ColumnOpenedObservation, Reconciliation, SeenColumn, SessionObservation, StatusObservation, SwitchedObservation } from './seen.ts';

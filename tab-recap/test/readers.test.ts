@@ -17,10 +17,11 @@ import type { Chunk, ChunkResult, Located } from '#src/ports/transcripts.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { sourcePathOf, fsPathOf } from './fakes/transcript-lines.ts';
 import { countOf } from '#src/recap/domain/count.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const scratch = (): string => mkdtempSync(join(tmpdir(), 'recap-readers-'));
 const laneIn = (agent: string, extra: { session?: string; cwd?: string } = {}): Lane =>
-    laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent, ...extra });
+    laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent, ...extra }));
 
 function chunkOf(result: ChunkResult): Chunk {
     assert.equal(result.kind, 'chunk', JSON.stringify(result));

@@ -18,8 +18,9 @@ import type { DecidedAnswersResult } from '#src/ports/decider.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { NOW, SAFE, lane, rows, world } from './autocompact-world.ts';
 import { decidedOf } from './fakes/decider-fixtures.ts';
+import { seenLane } from '#test/support/seen.ts';
 
-const at = (pane: string, status = 'idle', agent = 'claude'): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, status });
+const at = (pane: string, status = 'idle', agent = 'claude'): Lane => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, status }));
 const boardOf = (lanes: readonly Lane[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((found) => [found.pane, found])) });
 const settle = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
 const SAFE_DECISION: DecidedAnswersResult = decidedOf(SAFE);

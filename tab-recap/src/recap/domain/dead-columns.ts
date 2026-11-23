@@ -2,12 +2,12 @@ import { put, without } from './board.ts';
 import type { Board } from './board.ts';
 import type { PaneId } from './ids.ts';
 import type { Intent } from './intent.ts';
-import type { DeadColumn, Reconciliation } from './legacy.ts';
+import type { DeadColumn, Reconciliation } from './seen.ts';
 import { spend } from './policy.ts';
 import type { Policy } from './policy.ts';
 import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 
-export type { DeadColumn } from './legacy.ts';
+export type { DeadColumn } from './seen.ts';
 
 export interface DeadColumnsStep { readonly board: Board; readonly intents: readonly Intent[] }
 

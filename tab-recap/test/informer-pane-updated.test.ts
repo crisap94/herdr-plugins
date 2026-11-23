@@ -7,6 +7,7 @@ import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import type { Frame, FleetSource, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
+import { reconciliation, seenLane } from '#test/support/seen.ts';
 
 class Herdr implements FleetSource {
     readonly queue = new AsyncQueue<Frame>();
@@ -58,8 +59,8 @@ class AgentWithoutSession implements FleetSource {
     }
 
     snapshot(): Promise<SnapshotResult> {
-        const lanes = [{ paneId: 'w21:pBZ', tabId: 'w21:t1', workspaceId: 'w21', agent: 'claude', status: 'idle', session: null }];
-        return Promise.resolve({ kind: 'snapshot', seen: { focusedTab: null, lanes, panes: ['w21:pBZ'], columns: [], widths: new Map() }, focusedTab: null, paneTokens: new Map() });
+        const lanes = [seenLane({ paneId: 'w21:pBZ', tabId: 'w21:t1', workspaceId: 'w21', agent: 'claude', status: 'idle', session: null })];
+        return Promise.resolve({ kind: 'snapshot', seen: reconciliation({ focusedTab: null, lanes, panes: ['w21:pBZ'], columns: [], widths: new Map() }), focusedTab: null, paneTokens: new Map() });
     }
 
     subscribe(): Promise<StreamResult> {

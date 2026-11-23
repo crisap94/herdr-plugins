@@ -1,16 +1,17 @@
+import { textOf } from '#src/recap/domain/text.ts';
 import type { AgentKind, SessionId } from '#src/recap/domain/ids.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import type { HcTerminal } from './sdk-core.ts';
 
 export function seenOfHcTerminal(terminal: HcTerminal, session: SessionId | null, agent: AgentKind): SeenLane {
     return {
-        paneId: terminal.address,
-        tabId: terminal.tab,
-        workspaceId: terminal.workspace,
-        agent,
-        status: terminal.status,
-        session,
-        cwd: terminal.cwd,
-        title: terminal.title,
+        paneId: textOf(terminal.address),
+        tabId: textOf(terminal.tab),
+        workspaceId: textOf(terminal.workspace),
+        agent: textOf(agent),
+        status: textOf(terminal.status),
+        session: session === null ? null : textOf(session),
+        cwd: terminal.cwd === null ? null : textOf(terminal.cwd),
+        title: terminal.title === null ? null : textOf(terminal.title),
     };
 }

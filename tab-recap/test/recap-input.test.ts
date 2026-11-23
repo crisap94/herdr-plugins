@@ -13,8 +13,9 @@ import { textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { agentKind, paneId } from '#test/support/ids.ts';
 import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { seenLane } from '#test/support/seen.ts';
 
-const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' });
+const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' }));
 const cursor = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t'), cursor: cursorOf(5), tail: null, title: null, lastPrompt: null, claudeRecap: textOf('stored') };
 const chunk = (notes: Chunk['notes']): Chunk => ({ kind: 'chunk', entries: [], notes, title: null, lastPrompt: null, claudeRecap: null, position: { cursor: cursorOf(9), tail: null }, grew: grewOf(true) });
 const at = (clock: string): number => Date.parse(`2026-10-06T${clock}:00Z`);

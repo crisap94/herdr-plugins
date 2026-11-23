@@ -92,7 +92,7 @@ export class Informer {
     }
 
     private async stamped(): Promise<SnapshotResult> {
-        const requested = Number(this.clock.now());
+        const requested = this.clock.now();
         const snap = await this.source.snapshot();
         if (isUnknown(snap)) {
             return snap;
@@ -222,7 +222,7 @@ export class Informer {
         }
         const session = paneSessionRefOf(data, this.identityForSession);
         if (session !== null) {
-            this.push({ kind: 'session', pane: session.pane, session: session.session });
+            this.push({ kind: 'session', pane: session.pane, session: textOf(session.session) });
         }
     }
 

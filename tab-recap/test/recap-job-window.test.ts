@@ -20,6 +20,7 @@ import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { cursorOf, sourcePathOf, grewOf } from '#src/ports/transcripts.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const WINDOW_60S: Debounce = debounceOf('60000');
 
@@ -73,8 +74,8 @@ function harness(settings: Settings, causes: string[], answer?: () => Promise<Wr
     return { job, settings, reads, sources, callCount: (): number => calls, clockReads: (): number => clockCalls };
 }
 
-const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
-const second = laneFrom({ paneId: 'w1:p2', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
+const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' }));
+const second = laneFrom(seenLane({ paneId: 'w1:p2', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' }));
 const settle = (): Promise<void> => new Promise((resolve) => { setImmediate(resolve); });
 const written: Written = { kind: 'written', text: textOf(JSON.stringify({ ops: [] })), costUsd: brand<number, 'Usd'>(0) };
 
@@ -400,7 +401,7 @@ test('a changed lane set starts at once inside a run window', async (t) => {
     t.mock.timers.tick(0);
     await settle();
     t.mock.timers.setTime(20_000);
-    const changed = laneFrom({ paneId: 'w1:p2', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
+    const changed = laneFrom(seenLane({ paneId: 'w1:p2', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' }));
     job.request(tabId('w1:t1'), [changed], 'turn-ended');
     t.mock.timers.tick(0);
     await settle();

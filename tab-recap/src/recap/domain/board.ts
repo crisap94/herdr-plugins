@@ -1,8 +1,13 @@
+import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import type { Lane } from './lane.ts';
 import type { PaneId, TabId } from './ids.ts';
 import type { Board } from './legacy.ts';
 
 export type Shape = 'side' | 'bar';
+
+export type Enabled = Brand<boolean, 'Enabled'>;
+
+export const enabledOf = brand<boolean, 'Enabled'>;
 
 export type Visibility = boolean | 'toggle';
 

@@ -21,6 +21,7 @@ import { parseCount } from '#src/recap/domain/count.ts';
 import { agentKind } from '#test/support/ids.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { runningOf } from '#src/recap/domain/in-flight.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 interface Scripted {
     readonly store: ReturnType<typeof memoryStore>;
@@ -54,7 +55,7 @@ function scripted(claims: LaneClaims): Scripted {
         informer: { current: emptyBoard() } as unknown as Informer, decider: () => decider,
         events: { lane: (pane, kind, detail) => { events.push(`${pane} ${kind} ${detail ?? ''}`); }, inWorkspace: () => undefined }, log: () => undefined,
     });
-    const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
+    const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
     return { store, events, flushed, service, lane };
 }
 
@@ -80,7 +81,7 @@ test('wireAutocompact: the stored row keeps the status of the lane the candidate
     const stored: (string | null)[] = [];
     for (const status of statuses) {
         const world = scripted(new LaneClaims());
-        await world.service.consider(candidateFor(laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status })));
+        await world.service.consider(candidateFor(laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status }))));
         stored.push(world.store.decisions.newest(must(parseCount(1)))[0]?.laneStatus ?? null);
     }
     assert.deepEqual(stored, ['idle', 'done']);
