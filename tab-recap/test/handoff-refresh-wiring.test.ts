@@ -7,7 +7,7 @@ import { productionWiring, type DeliverArguments } from '../bin/handoff.ts';
 import { databaseFile, openStoreAt } from '#src/adapters/db/database.ts';
 import { codeVersion } from '#src/adapters/os/plugin-version.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
-import type { RefreshFirst } from '#src/recap/domain/handoff.ts';
+import type { RefreshFirst } from '#src/ports/requests.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
 
@@ -22,9 +22,6 @@ async function refreshReaching(refresh: boolean): Promise<RefreshFirst> {
     try {
         const store = openStoreAt(databaseFile(root as Directory));
         assert.equal(store.kind, 'ready');
-        if (store.kind !== 'ready') {
-            throw new Error('the state database did not open');
-        }
         writeFileSync(join(root, 'daemon.pid'), `${process.pid}\n`);
         writeFileSync(join(root, 'daemon.version'), `${codeVersion() ?? 'unknown'}\n`);
         const delivering = productionWiring().deliver(request(refresh));
