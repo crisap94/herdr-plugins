@@ -5,22 +5,10 @@
   "src/recap/application/handoff-target.ts": {
     "property": 2
   },
-  "src/recap/application/input-retention.ts": {
-    "return": 3,
-    "property": 1
-  },
   "src/recap/application/judge-answer.ts": {
     "property": 1
   },
   "src/recap/application/lane-claims.ts": {
-    "return": 3
-  },
-  "src/recap/application/retention.ts": {
-    "parameter": 1,
-    "return": 1
-  },
-  "src/recap/application/screen-text.ts": {
-    "parameter": 4,
     "return": 3
   },
   "src/recap/application/setup-changes.ts": {

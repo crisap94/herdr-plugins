@@ -1,7 +1,7 @@
 import { parseUsd, usdOf } from '#src/recap/domain/usd.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseCount, countOf } from '#src/recap/domain/count.ts';
+import { parseCount, countOf, type Count } from '#src/recap/domain/count.ts';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import type { BriefRetention } from '#src/recap/domain/autocompact.ts';
 import { test } from 'node:test';
@@ -87,7 +87,7 @@ test('retention: the daily upkeep deletes a 15-day-old input and keeps the run, 
     let clock = now;
     const lines: string[] = [];
     const days = { value: 14 };
-    const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock: { now: (): ReturnType<typeof instant> => instant(clock) }, days: (): number => days.value, briefRetention: (): BriefRetention => ({ kind: 'days', value: brand<number, 'RetentionDays'>(14) }), log: (line: string): void => { lines.push(line); } });
+    const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock: { now: (): ReturnType<typeof instant> => instant(clock) }, days: (): Count => countOf(days.value), briefRetention: (): BriefRetention => ({ kind: 'days', value: brand<number, 'RetentionDays'>(14) }), log: (line: string): void => { lines.push(line); } });
     assert.equal(retention.tick(), 1);
     assert.deepEqual(runsOf(store.inputs, QUERY).map((r) => [r.at, r.input === 'present']), [[now - 13 * DAY, true], [now - 15 * DAY, false]], 'the run stays, its input is gone');
     assert.equal(store.db.prepare('SELECT COUNT(*) AS count FROM autocompact_brief').get()?.['count'], 0, 'the checked brief is past its retention');
@@ -134,7 +134,7 @@ test('retention: a brief retention of none deletes every checked brief at the da
     const decision = store.decisions.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(now), mode: 'shadow', share: countOf(50), tokens: must(parseCount(5)), window: must(parseCount(10)), gate: 'ask', verdict: 'compact', askedVerdict: 'compact', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null });
     store.autocompactBriefs.put(decision, textOf('fresh brief'), [], [], instant(now));
     const clock = now;
-    const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock: { now: (): ReturnType<typeof instant> => instant(clock) }, days: (): number => 14, briefRetention: (): BriefRetention => ({ kind: 'none' }), log: (): void => undefined });
+    const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock: { now: (): ReturnType<typeof instant> => instant(clock) }, days: (): Count => countOf(14), briefRetention: (): BriefRetention => ({ kind: 'none' }), log: (): void => undefined });
     retention.tick();
     assert.equal(store.db.prepare('SELECT COUNT(*) AS count FROM autocompact_brief').get()?.['count'], 0);
 });

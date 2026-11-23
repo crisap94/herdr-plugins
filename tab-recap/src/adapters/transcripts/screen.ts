@@ -49,7 +49,7 @@ export class ScreenTranscripts implements Transcripts {
         if (shown.kind === 'unknown') {
             return shown;
         }
-        const clean = cleanScreen(shown.text, CLAUDE_SCREEN_CHROME).slice(-budget);
+        const clean = textOf(cleanScreen(textOf(shown.text), CLAUDE_SCREEN_CHROME).slice(-budget));
         const tail = hashOf(must(parseText(steady(clean))));
         const grew = tail !== was.tail && clean !== '';
         return {
