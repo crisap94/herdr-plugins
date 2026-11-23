@@ -277,7 +277,7 @@ const main = (args: readonly string[]): number => {
     const root = join(dirname(fileURLToPath(import.meta.url)), '..');
     const project = projectOf(args, join(root, 'tsconfig.json'));
     const result = project.kind === 'err' ? project : check(project.value);
-    return runReport(root, args, result);
+    return runReport(args, result);
 };
 
 if (import.meta.main) {

@@ -66,7 +66,7 @@ echo "domain types (the signature check fails its bad probes and passes its good
 bash ci/gate-domain-types.sh && echo "  ok    domain types" || fail "a domain-type probe does not behave as its name says"
 
 echo "domain types over the tree (hard gate: any finding fails):"
-bun bin/check-domain-types.ts && echo "  ok    domain types" || fail "a signature is not a domain type: run bun bin/check-domain-types.ts --json"
+bun bin/check-domain-types.ts && echo "  ok    domain types over the tree" || fail "a signature is not a domain type: run bun bin/check-domain-types.ts --json"
 
 echo "migrations (a released one runs unchanged, its types may move; a new one is numbered the base's highest plus one):"
 bash gates/migrations/check-migrations.sh && echo "  ok    migrations" || fail "a released migration changed, or a new one is not numbered main's highest plus one"

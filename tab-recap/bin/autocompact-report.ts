@@ -13,7 +13,7 @@ import { tableOf } from '#src/experiment/report-render.ts';
 import type { Cell } from '#src/experiment/report-render.ts';
 import { codeAgreement } from '#src/experiment/report-code.ts';
 import { choose } from '#src/experiment/report-rule.ts';
-import { present } from '#src/experiment/stats.ts';
+import { countMean, present } from '#src/experiment/stats.ts';
 import type { Label } from '#src/experiment/stats.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
@@ -157,7 +157,7 @@ export function main(dir: string): string {
     const boundaries = existsSync(join(dir, 'outcomes.jsonl')) ? readBoundaries(asText(join(dir, 'outcomes.jsonl'))) : [];
     const policy = Object.entries(arms).map(([arm, reps]) => {
         const [all, above] = [reps.map((rep) => policyScore(rep, labels, keeping(() => true))), reps.map((rep) => policyScore(rep, labels, keeping((key) => high.has(key))))];
-        return { arm, all: { precision: mean(all.map((m) => num(m.precision))), recall: mean(all.map((m) => num(m.recall))), compact: mean(all.map((m) => m.compact)), safe: all[0]?.safe ?? 0 }, above: { precision: mean(above.map((m) => num(m.precision))), recall: mean(above.map((m) => num(m.recall))) } };
+        return { arm, all: { precision: mean(all.map((m) => num(m.precision))), recall: mean(all.map((m) => num(m.recall))), compact: countMean(all.map((m) => m.compact)), safe: all[0]?.safe ?? 0 }, above: { precision: mean(above.map((m) => num(m.precision))), recall: mean(above.map((m) => num(m.recall))) } };
     });
     const scores = policy.map(({ arm, all }) => ({
         arm, precision: all.precision, drift: mean(IDS.map((id) => num(driftOf(arms[arm] ?? [], id)))), needsOnlyRecapHarness: arm !== 'jev',
@@ -169,7 +169,7 @@ export function main(dir: string): string {
         `## Labels\n\n${points.length} points, ${labels.size} labelled, ${high.size} at or above the minimum; positives per question: ${IDS.map((id) => `${id} ${[...labels.values()].filter((l) => l.get(id) === 1).length}`).join(' · ')}; labelled safe (verdict compact): ${policy[0]?.all.safe ?? 0}.`,
         `## Operator kappa\n\n${operator.length === 0 ? 'Operator labels are pending: no question is gated by kappa yet.' : table(['question', 'n', 'kappa', 'usable (≥ 0.6)'], kappaScores(operator, readLabelled(asText(join(dir, 'labels.jsonl'))), IDS).map((row) => [row.question, row.n, row.kappa, asText(row.usable === 'usable' ? 'yes' : 'no')]))}`,
         `## Per arm and question (both repetitions)\n\n${questionTable(arms, labels, briefs)}`,
-        `## Per policy (mean of the repetitions)\n\n${table(['arm', 'precision (all)', 'recall (all)', 'compact verdicts', 'precision (share ≥ 40)', 'recall (share ≥ 40)', 'drift (mean of 6)', 'coverage AUC'], policy.map(({ arm, all, above }, i) => [asText(arm), shown(all.precision), shown(all.recall), shown(all.compact), shown(above.precision), shown(above.recall), shown(scores[i]?.drift ?? Number.NaN), shown(scores[i]?.coverageAuc ?? Number.NaN)]))}`,
+        `## Per policy (mean of the repetitions)\n\n${table(['arm', 'precision (all)', 'recall (all)', 'compact verdicts', 'precision (share ≥ 40)', 'recall (share ≥ 40)', 'drift (mean of 6)', 'coverage AUC'], policy.map(({ arm, all, above }, i) => [asText(arm), shown(all.precision), shown(all.recall), all.compact, shown(above.precision), shown(above.recall), shown(scores[i]?.drift ?? Number.NaN), shown(scores[i]?.coverageAuc ?? Number.NaN)]))}`,
         `## Outcome set (${boundaries.filter((row) => row.pointId !== null).length} compactions with a stored run before them, ${boundaries.filter((row) => row.pointId !== null && row.followed === 'yes').length} with something after)\n\n${table(['arm', 'allowed n', 'allowed re-reads', 'allowed restated', 'blocked n', 'blocked re-reads', 'blocked restated'], Object.entries(arms).map(([arm, reps]) => { const gap = gapOf(boundaries, reps); return [asText(arm), gap.allowed.n, gap.allowed.reReads, gap.allowed.restated, gap.blocked.n, gap.blocked.reReads, gap.blocked.restated]; }))}`,
         `## needs_verbatim against the code cross-check as labels\n\n${table(['arm', 'positives', 'AUC', 'Brier'], Object.entries(arms).map(([arm, reps]) => { const m = codeAgreement(points, reps); return [asText(arm), m.positives, m.auc, m.brier]; }))}`,
         `## Rule\n\nDefault decider: **${decision.defaultArm ?? 'none (stay on `recap`)'}**. Coverage decider: **${decision.coverageArm ?? 'none'}**.\n\n${decision.why}`,
@@ -177,13 +177,15 @@ export function main(dir: string): string {
     return sections.join('\n\n');
 }
 
-const at = process.argv.indexOf('--dir');
-const dir = at < 0 ? undefined : process.argv[at + 1];
-if (dir === undefined) {
-    console.error('usage: autocompact-report.ts --dir <exp002 dir>');
-    process.exitCode = 2;
-} else {
-    const text = main(dir);
-    writeFileSync(join(dir, 'report.md'), `${text}\n`);
-    console.log(text);
+if (import.meta.main) {
+    const at = process.argv.indexOf('--dir');
+    const dir = at < 0 ? undefined : process.argv[at + 1];
+    if (dir === undefined) {
+        console.error('usage: autocompact-report.ts --dir <exp002 dir>');
+        process.exitCode = 2;
+    } else {
+        const text = main(dir);
+        writeFileSync(join(dir, 'report.md'), `${text}\n`);
+        console.log(text);
+    }
 }
