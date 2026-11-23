@@ -19,7 +19,8 @@ import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
 import type { Done } from '#src/ports/columns.ts';
-import type { LaneTokens } from '#src/ports/lane-tokens.ts';
+import type { LaneTokenMap, LaneTokenReporter } from '#src/ports/lane-tokens.ts';
+import type { PaneId } from '#src/recap/domain/ids.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
@@ -31,12 +32,13 @@ const HID = handoffIdOf(new Uint8Array(16).fill(7));
 
 const settled = (): Promise<void> => new Promise((resolve) => { setImmediate(resolve); });
 
-class DeferredTokens implements LaneTokens {
+class DeferredTokens implements LaneTokenReporter {
     readonly issued: Array<Readonly<Record<string, string | null>>> = [];
     readonly landed: Array<Readonly<Record<string, string | null>>> = [];
     private readonly releases: Array<() => void> = [];
 
-    report(_pane: string, tokens: Readonly<Record<string, string | null>>): Promise<Done> {
+    report(_pane: PaneId, written: LaneTokenMap): Promise<Done> {
+        const tokens = Object.fromEntries(written);
         this.issued.push(tokens);
         return new Promise((resolve) => {
             this.releases.push(() => {
@@ -172,9 +174,9 @@ test('a stage reported while nothing is pending is issued at once', () => {
 test('a first report that fails, even in its log, does not stop the later stages of its pane', async () => {
     const reports: Array<Readonly<Record<string, string | null>>> = [];
     let failing = true;
-    const tokens: LaneTokens = {
-        report(_pane: string, written: Readonly<Record<string, string | null>>): Promise<Done> {
-            reports.push(written);
+    const tokens: LaneTokenReporter = {
+        report(_pane: PaneId, written: LaneTokenMap): Promise<Done> {
+            reports.push(Object.fromEntries(written));
             return failing ? Promise.reject(new Error('socket closed')) : Promise.resolve({ kind: 'done' });
         },
     };
@@ -197,9 +199,9 @@ test('a report that never settles delays the later stages of its pane by the bou
     try {
         const reports: Array<Readonly<Record<string, string | null>>> = [];
         let first = true;
-        const tokens: LaneTokens = {
-            report(_pane: string, written: Readonly<Record<string, string | null>>): Promise<Done> {
-                reports.push(written);
+        const tokens: LaneTokenReporter = {
+            report(_pane: PaneId, written: LaneTokenMap): Promise<Done> {
+                reports.push(Object.fromEntries(written));
                 if (first) {
                     first = false;
                     return new Promise<Done>(() => undefined);

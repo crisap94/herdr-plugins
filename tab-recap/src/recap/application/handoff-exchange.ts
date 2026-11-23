@@ -1,5 +1,5 @@
 import type { AskEntry, AskBook } from '#src/ports/ask-ledger.ts';
-import type { LaneTokens } from '#src/ports/lane-tokens.ts';
+import type { LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import type { HandoffAskQueue, HandoffAsker } from '#src/ports/requests.ts';
 import { idGrammarOf } from '#src/protocol/codec.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
@@ -45,7 +45,7 @@ export interface HandoffExchangeDeps {
     readonly queue: HandoffAskQueue;
     readonly asks: AskBook;
     readonly mirror: HandoffMirror;
-    readonly tokens: LaneTokens;
+    readonly tokens: LaneTokenReporter;
     readonly now: () => Instant;
     readonly log: HandoffLog;
 }

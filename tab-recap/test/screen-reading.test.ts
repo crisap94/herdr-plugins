@@ -49,7 +49,7 @@ const lane = (agent: string): ReturnType<typeof laneFrom> => laneFrom(seenLane({
 
 test('ScreenTranscripts: only for the kinds asked, one source per pane, the revision is the cursor and a hash of the clean text the tail', async () => {
     const screens = new FakeScreens();
-    const reader = new ScreenTranscripts(screens, (agent) => agent === 'gemini');
+    const reader = new ScreenTranscripts(screens, (agent) => (agent === 'gemini' ? 'present' : 'absent'));
     assert.equal(reader.agent, SCREEN_READER_ID);
     assert.equal((await reader.locate(lane('qwen'))).kind, 'unknown');
     const located = await reader.locate(lane('gemini'));
@@ -70,7 +70,7 @@ test('ScreenTranscripts: only for the kinds asked, one source per pane, the revi
 
 test('ScreenTranscripts: an unreadable pane is the reader\'s Unknown, and a screen of only chrome is not growth', async () => {
     const screens = new FakeScreens();
-    const reader = new ScreenTranscripts(screens, () => true);
+    const reader = new ScreenTranscripts(screens, () => 'present');
     screens.next = { kind: 'unknown', why: { why: 'unreachable', detail: causeOf('gone') } };
     assert.equal((await reader.read('screen:w1:p3', UNREAD, 100)).kind, 'unknown');
     screens.next = { kind: 'screen', text: textOf('────\n❯ \n'), revision: countOf(1), truncated: 'absent' };

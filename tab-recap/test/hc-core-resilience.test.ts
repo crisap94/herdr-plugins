@@ -10,7 +10,7 @@ import { PathHarnessDirectory } from '#src/adapters/harness/on-path.ts';
 import { kindOf } from '#test/fakes/agent-kind.ts';
 import type { CoreEventsTiming } from '#src/adapters/herdr-core/sdk-core.ts';
 import type { CoreLinkTiming } from '#src/adapters/herdr-core/sdk-core.ts';
-import type { Frame } from '#src/ports/fleet-source.ts';
+import type { FleetFrame } from '#src/ports/fleet-source.ts';
 import { FakeHcCore, frame, later } from '@stateforge-labs/herdr-sdk/core/test-kit';
 
 const LINK: CoreLinkTiming = { helloTimeout: duration(300), backoffBase: duration(40), backoffCap: duration(160) };
@@ -26,8 +26,8 @@ async function until(ready: () => boolean, tries = 150): Promise<void> {
     assert.ok(ready(), 'waited for the condition');
 }
 
-function framesOf(stream: AsyncIterable<Frame>): Frame[] {
-    const seen: Frame[] = [];
+function framesOf(stream: AsyncIterable<FleetFrame>): FleetFrame[] {
+    const seen: FleetFrame[] = [];
     void (async (): Promise<void> => { for await (const next of stream) { seen.push(next); } })();
     return seen;
 }

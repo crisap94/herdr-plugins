@@ -1,19 +1,21 @@
-import type { LaneTokens } from '#src/ports/lane-tokens.ts';
+import type { LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import type { PaneTokens } from '#src/ports/pane-tokens.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import { uncheckedMilliseconds, uncheckedTokenName, uncheckedTokenValue, type PaneId } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { parseMilliseconds, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
 import { LEASE, LEASE_TTL_MS, leaseBlocked } from '#src/recap/domain/typing-lease.ts';
 
 export const RETRY_MS = must(parseMilliseconds(1000));
 const LEASE_WAIT_MS = must(parseMilliseconds(LEASE_TTL_MS));
+const LEASE_TTL = uncheckedMilliseconds(LEASE_TTL_MS);
+const LEASE_NAME = uncheckedTokenName(LEASE);
 
 export type Acquired = 'taken' | 'busy' | 'unavailable';
 
 export interface PaneTypingLeaseDeps {
-    readonly tokens: LaneTokens;
+    readonly tokens: LaneTokenReporter;
     readonly panes: PaneTokens;
     readonly now: () => Instant;
     readonly pause: (ms: Milliseconds) => Promise<void>;
@@ -30,7 +32,7 @@ export class PaneTypingLease {
 
     private async take(pane: PaneId): Promise<Acquired> {
         const stamp = this.deps.now();
-        const wrote = await this.deps.tokens.report(pane, { [LEASE]: String(stamp) }, LEASE_TTL_MS);
+        const wrote = await this.deps.tokens.report(pane, new Map([[LEASE_NAME, uncheckedTokenValue(String(stamp))]]), LEASE_TTL);
         if (isUnknown(wrote)) {
             return 'unavailable';
         }
@@ -48,7 +50,7 @@ export class PaneTypingLease {
     }
 
     async release(pane: PaneId): Promise<void> {
-        await this.deps.tokens.report(pane, { [LEASE]: null }, LEASE_TTL_MS);
+        await this.deps.tokens.report(pane, new Map([[LEASE_NAME, null]]), LEASE_TTL);
     }
 
     async acquire(pane: PaneId, waitMs: Milliseconds = LEASE_WAIT_MS): Promise<Acquired> {

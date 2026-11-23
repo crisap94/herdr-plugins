@@ -6,8 +6,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PROTOCOL } from '@stateforge-labs/herdr-sdk';
 import { resetHerdrClients } from '#src/adapters/herdr/client.ts';
-import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
-import { reconciliationOf } from '#src/adapters/herdr/json.ts';
+import { HerdrFleetPorts } from '#src/adapters/herdr/fleet.ts';
+import { reconciliationOf } from '#src/adapters/herdr/snapshot-reading.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { observe } from '#src/recap/domain/fold.ts';
@@ -101,7 +101,7 @@ test('a column that keeps dying gives up after reopenLimit', () => {
     assert.deepEqual(seen, ['close w1:p2', 'open w1:t1', 'close w1:p3', 'open w1:t1', 'close w1:p4', 'give-up w1:t1']);
 });
 
-test('HerdrFleet.closeEvery closes Recap shells too, never an agent pane or a relay', async () => {
+test('HerdrFleetPorts.closeEvery closes Recap shells too, never an agent pane or a relay', async () => {
     const snapshot = {
         panes: [agentPane, pane('w1:p2', 'tab-recap'), pane('w1:p3', 'zsh'), pane('w1:p4', 'tab-recap:relay'), pane('w1:p5', 'zsh', { label: null }), pane('w1:p6', 'zsh', { agent: 'codex' })],
         agents,
@@ -128,7 +128,7 @@ test('HerdrFleet.closeEvery closes Recap shells too, never an agent pane or a re
     process.env['HERDR_SOCKET_PATH'] = path;
     resetHerdrClients();
     try {
-        assert.deepEqual(await new HerdrFleet(textOf('/state')).closeEvery(), { kind: 'closed', closed: 2, failed: 0 });
+        assert.deepEqual(await new HerdrFleetPorts(textOf('/state')).closeEvery(), { kind: 'closed', closed: 2, failed: 0 });
         assert.deepEqual(closed, ['w1:p2', 'w1:p3']);
     } finally {
         resetHerdrClients();

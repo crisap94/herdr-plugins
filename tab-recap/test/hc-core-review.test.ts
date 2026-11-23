@@ -11,7 +11,7 @@ import { PathHarnessDirectory } from '#src/adapters/harness/on-path.ts';
 import { kindOf } from '#test/fakes/agent-kind.ts';
 import type { CoreEventsTiming, HcCoreFeed } from '#src/adapters/herdr-core/sdk-core.ts';
 import type { CoreLinkTiming } from '#src/adapters/herdr-core/sdk-core.ts';
-import type { Frame } from '#src/ports/fleet-source.ts';
+import type { FleetFrame } from '#src/ports/fleet-source.ts';
 import { FakeHcCore, agentTerminal, later, nextWithin } from '@stateforge-labs/herdr-sdk/core/test-kit';
 
 const LINK: CoreLinkTiming = { helloTimeout: duration(300), backoffBase: duration(40), backoffCap: duration(160) };
@@ -57,7 +57,7 @@ test('subscribing before the first snapshot does not turn every existing agent i
     try {
         const stream = await fleet.subscribe();
         assert.ok(stream.kind === 'stream');
-        const seen: Frame[] = [];
+        const seen: FleetFrame[] = [];
         void (async (): Promise<void> => { for await (const frame of stream.stream.frames()) { seen.push(frame); } })();
         await until(() => core.subscribed === 1);
         const snap = await fleet.snapshot();

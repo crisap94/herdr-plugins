@@ -3,7 +3,7 @@ import type { Messages } from '#src/i18n/index.ts';
 import type { CompactTarget } from '#src/recap/domain/compaction.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { AgentPanes } from '#src/ports/agents.ts';
-import type { LaneSettling } from '#src/ports/lane-settling.ts';
+import type { LaneSettler } from '#src/ports/lane-settling.ts';
 import type { NotifierPort } from '#src/ports/notifier.ts';
 import type { BoundaryLog } from '#src/ports/boundaries.ts';
 import type { Entry, Mark } from '#src/ports/transcripts.ts';
@@ -44,7 +44,7 @@ export interface CompactionPorts {
     readonly ledger: Pick<GuardedLedger, 'historyOf'>;
     readonly boundaries: Pick<BoundaryLog, 'lastBreakAt'>;
     readonly compactions: Records;
-    readonly settling: LaneSettling;
+    readonly settling: LaneSettler;
     readonly brief: BriefPort;
     coverage(): CoveragePort | null;
     readonly decisions: Pick<DecisionLedger, 'linkLatest' | 'amend' | 'lastDecision'> | null;

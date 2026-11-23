@@ -15,7 +15,7 @@ import { countOf } from '#src/recap/domain/count.ts';
 import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
 import { silentClosures } from './fakes/silent-closures.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import type { Columns } from '#src/ports/columns.ts';
+import type { ColumnPanes } from '#src/ports/columns.ts';
 import type { ClosureRecorder } from '#src/ports/closed-lanes.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
@@ -50,7 +50,7 @@ function recorder(): { readonly records: ClosedLane[]; readonly port: ClosureRec
 
 function dispatchWith(options: { readonly events?: LaneEvents; readonly sharing?: boolean; readonly closures?: ClosureRecorder; readonly days: string; readonly log: (line: string) => void }): LaneDispatch {
     return new LaneDispatch({
-        columns: {} as Columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() },
+        columns: {} as ColumnPanes, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() },
         prompts: noPrompts, webs: noWebs, log: options.log, board: () => emptyBoard(), sizing: () => SIZING,
         feedback: noop, ...silentClosures, closedDays: () => closedLaneDaysOf(options.days),
         ...(options.closures === undefined ? {} : { closures: options.closures }),
@@ -79,7 +79,7 @@ test('a closure seen by dispatch and by the token publisher announces lane-close
     const board: { current: Board } = { current: { ...emptyBoard(), lanes: new Map([[lane.pane, lane]]) } };
     let now = 0;
     const publisher = new LaneTokenPublisher({
-        tokens: new RecordingTokens(), enabled: (): boolean => true, board: (): Board => board.current, facts: (): LaneTokenFacts => ({ share: null, recapAt: null, needs: countOf(0) }),
+        tokens: new RecordingTokens(), enabled: (): Presence => 'present', board: (): Board => board.current, facts: (): LaneTokenFacts => ({ share: null, recapAt: null, needs: countOf(0) }),
         now: (): number => now, log: noop, events: port,
     });
     publisher.tick();

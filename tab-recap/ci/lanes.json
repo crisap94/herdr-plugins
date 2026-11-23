@@ -37,7 +37,6 @@
       "src/ports/lane-settling.ts",
       "src/ports/lane-tokens.ts",
       "src/ports/legacy-store-files.ts",
-      "src/ports/legacy.ts",
       "src/ports/modal.ts",
       "src/ports/model-catalogue.ts",
       "src/ports/notifier.ts",
@@ -303,6 +302,7 @@
       "test/experiment-report.test.ts",
       "test/experiment-typed-adapters.test.ts",
       "test/fact-index.test.ts",
+      "test/fleet-snapshot-tokens.test.ts",
       "test/fold-session.test.ts",
       "test/fold.test.ts",
       "test/forbidden-words.test.ts",
@@ -791,8 +791,8 @@
       "src/adapters/herdr/host-check.ts",
       "src/adapters/herdr/json-object.ts",
       "src/adapters/herdr/json.ts",
-      "src/adapters/herdr/legacy.ts",
       "src/adapters/herdr/session-registry.ts",
+      "src/adapters/herdr/snapshot-reading.ts",
       "src/adapters/herdr/subscriptions.ts",
       "src/adapters/herdr/token-refusal.ts",
       "src/adapters/job/brief.ts",
@@ -871,7 +871,8 @@
       "test/recap-prompt.test.ts",
       "test/rubric.test.ts",
       "test/rubric.ts",
-      "test/run-process.test.ts"
+      "test/run-process.test.ts",
+      "test/support/frames.ts"
     ],
     "B7": [
       "src/compact/launch.mjs",

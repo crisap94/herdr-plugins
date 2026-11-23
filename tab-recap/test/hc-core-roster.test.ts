@@ -1,3 +1,5 @@
+import { dataOfFrame } from '#test/support/frames.ts';
+import type { FleetFrame } from '#src/ports/fleet-source.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { must } from '#src/protocol/result.ts';
@@ -21,7 +23,7 @@ const event = (type: string, terminal: string, data: object): HcCoreFeed => {
 const snapshot = (...terminals: HcPayload[]): HcCoreFeed => ({ kind: 'snapshot', snapshot: { seq: must(parseCount(1)), terminals } });
 const statusOf = (state: string): object => ({ records: {}, reported: true, status: { app: 'claude-code', state } });
 const who = (roster: HcCoreRoster): string[] => roster.lanes().map((lane) => `${lane.paneId}:${lane.tabId}:${lane.status}`);
-const names = (frames: readonly { readonly event: string; readonly data: Readonly<Record<string, unknown>> }[]): string[] => frames.map((frame) => `${frame.event}:${String(frame.data['pane_id'])}`);
+const names = (frames: readonly FleetFrame[]): string[] => frames.map((frame) => `${frame.event}:${String(dataOfFrame(frame)['pane_id'])}`);
 const noSession = (): null => null;
 
 function seeded(): HcCoreRoster {

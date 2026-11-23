@@ -13,6 +13,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { agentKind } from '#test/support/ids.ts';
+import { sessionId } from '#src/recap/domain/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { seenLane } from '#test/support/seen.ts';
 
@@ -40,14 +41,14 @@ function confirm(recent: LaneRecent, lane: Lane): Promise<string> {
 
 test('a brand-new agent: its lane has no session yet, herdr reports one now, and the compaction is confirmed in that session', async () => {
     const files = new Map([['/projects/x/S-new.jsonl', [compactedAt(SINCE + 4_000)]]]);
-    const recent = new LaneRecent(registryWith({ claude: claude(files) }), () => Promise.resolve('S-new'));
+    const recent = new LaneRecent(registryWith({ claude: claude(files) }), () => Promise.resolve(sessionId(textOf('S-new'))));
     const lane = laneFrom(seenLane({ paneId: 'w21:pBZ', tabId: 'w21:t1', workspaceId: 'w21', agent: 'claude', session: null }));
     assert.equal(await confirm(recent, lane), 'compacted');
 });
 
 test('a resumed agent: its lane holds the session it had, herdr reports the new one, and the compaction is confirmed in the new one', async () => {
     const files = new Map([['/projects/x/S-old.jsonl', []], ['/projects/x/S-new.jsonl', [compactedAt(SINCE + 4_000)]]]);
-    const recent = new LaneRecent(registryWith({ claude: claude(files) }), () => Promise.resolve('S-new'));
+    const recent = new LaneRecent(registryWith({ claude: claude(files) }), () => Promise.resolve(sessionId(textOf('S-new'))));
     const lane = laneFrom(seenLane({ paneId: 'w28:p1', tabId: 'w28:t1', workspaceId: 'w28', agent: 'claude', session: 'S-old' }));
     assert.equal(await confirm(recent, lane), 'compacted');
 });

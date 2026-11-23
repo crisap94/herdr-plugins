@@ -13,7 +13,7 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { AgentPanes, AgentLookup } from '#src/ports/agents.ts';
-import type { LaneSettling } from '#src/ports/lane-settling.ts';
+import type { LaneSettler } from '#src/ports/lane-settling.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
@@ -65,7 +65,7 @@ function world(states: readonly AgentLookup[], answerOn: boolean, claims: LaneCl
         typeLine: () => { typed.push('typeLine'); return Promise.resolve({ kind: 'sent' }); },
         askNote: () => Promise.resolve({ kind: 'done' }),
     };
-    const settling: LaneSettling = { settled: () => Promise.resolve({ kind: 'settled', status: 'done' }) };
+    const settling: LaneSettler = { settled: () => Promise.resolve({ kind: 'settled', status: 'done' }) };
     const deps: CompactionPorts = {
         compactionPlans: idleClaudePlans,
         agents,

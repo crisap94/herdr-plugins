@@ -1,6 +1,6 @@
 import type { Store } from '#src/adapters/db/database.ts';
 import { HandoffQueueRepository } from '#src/adapters/db/handoff-queue.ts';
-import type { LaneTokens } from '#src/ports/lane-tokens.ts';
+import type { LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import { HandoffExchangeResponder } from '#src/recap/application/handoff-exchange.ts';
 import { HandoffMirror, type HandoffLog } from '#src/recap/application/handoff-mirror.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
@@ -12,7 +12,7 @@ import { instant, type Instant } from '#src/recap/domain/time.ts';
 
 export interface HandoffExchangeParts {
     readonly store: Pick<Store, 'asks' | 'db' | 'requests'>;
-    readonly tokens: LaneTokens;
+    readonly tokens: LaneTokenReporter;
     readonly events: LaneEvents;
     readonly board: () => Board;
     readonly sharing: () => HerdrEvents;

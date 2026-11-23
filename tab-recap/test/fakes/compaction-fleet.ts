@@ -13,7 +13,7 @@ import type { Mark } from '#src/ports/transcripts.ts';
 import type { AgentPanes, AgentLookup, LineBehavior, PromptStance, PromptWaitFor, Prompted } from '#src/ports/agents.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { unknown } from '#src/ports/unknowable.ts';
-import type { LaneSettling } from '#src/ports/lane-settling.ts';
+import type { LaneSettler } from '#src/ports/lane-settling.ts';
 import { memoryStore } from '#test/db/support.ts';
 import { lineBreakRefusal } from '#test/fakes/typed-line.ts';
 import { oneTask } from '#test/support.ts';
@@ -32,7 +32,7 @@ export interface Fleet {
     readonly toasts: string[];
     readonly events: string[];
     readonly store: ReturnType<typeof memoryStore>;
-    readonly settling: LaneSettling;
+    readonly settling: LaneSettler;
     readonly settledAfter: string[];
     readonly laneEvents: string[];
     readonly answered: string[];
@@ -48,7 +48,7 @@ export function typingFleet(statuses: Record<string, string>, blocked: readonly 
     const settledAfter: string[] = [];
     const store = memoryStore();
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
-    const settling: LaneSettling = { settled: (pane) => { settledAfter.push(`${pane}: after ${events.join(',')}`); return Promise.resolve({ kind: 'settled', status: 'done' }); } };
+    const settling: LaneSettler = { settled: (pane) => { settledAfter.push(`${pane}: after ${events.join(',')}`); return Promise.resolve({ kind: 'settled', status: 'done' }); } };
     const agents: AgentPanes = {
         status: (pane): Promise<AgentLookup> => Promise.resolve(statuses[pane] === undefined ? unknown({ why: 'not-found', what: textOf(pane) }) : { kind: 'agent', agent: agentKind('x'), status: statuses[pane] as 'idle' }),
         prompt: (pane, text, wait, behavior): Promise<Prompted> => {

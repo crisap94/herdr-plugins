@@ -3,7 +3,7 @@ import { paneId, sessionIdFromAgentValue, sessionPathFromAgentValue, tabId } fro
 import type { AgentSession, PaneId, SessionId } from '#src/recap/domain/ids.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
-import type { Frame } from '#src/ports/fleet-source.ts';
+import type { FleetFrame } from '#src/ports/fleet-source.ts';
 import type { SessionOf } from '#src/ports/session-identity.ts';
 
 export interface ResyncDecoded {
@@ -146,13 +146,22 @@ function decodeKnown(kind: Text, data: JsonObject, identity: SessionOf): Decoded
     return null;
 }
 
-export function decode(frame: Frame, identity: SessionOf): Decoded {
+export function dataOf(frame: FleetFrame): JsonObject {
+    try {
+        const parsed: unknown = JSON.parse(frame.payload);
+        return typeof parsed === 'object' && parsed !== null ? { ...parsed } : EMPTY;
+    } catch {
+        return EMPTY;
+    }
+}
+
+export function decode(frame: FleetFrame, identity: SessionOf): Decoded {
     const raw = parseText(frame.event);
     const kind = parseText(frame.event.replaceAll('.', '_'));
     if (raw.kind === 'err' || kind.kind === 'err') {
         return { kind: 'resync' };
     }
-    const known = decodeKnown(kind.value, frame.data, identity);
+    const known = decodeKnown(kind.value, dataOf(frame), identity);
     if (known !== null) {
         return known;
     }

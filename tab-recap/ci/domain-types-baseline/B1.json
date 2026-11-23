@@ -1,12 +1,9 @@
 {
-  "src/ports/legacy.ts": {
-    "legacy": 3
-  },
   "src/ports/twins/legacy.ts": {
-    "legacy": 44
+    "legacy": 36
   },
   "src/ports/twins/runs/legacy.ts": {
-    "legacy": 19
+    "legacy": 16
   },
   "src/protocol/legacy.ts": {
     "legacy": 5

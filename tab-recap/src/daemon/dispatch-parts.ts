@@ -16,12 +16,15 @@ import type { Sizing } from '#src/recap/domain/layout.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
 import { loadSettings } from './config.ts';
 
 export interface Box {
     informer: Informer | null;
     autocompact: Autocompact | null;
 }
+
+export const listeningOf = (box: Box) => (): Presence => box.informer?.listening ?? 'absent';
 
 export interface DispatchParts {
     readonly fleet: Fleet;

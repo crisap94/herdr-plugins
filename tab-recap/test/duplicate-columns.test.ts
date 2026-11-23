@@ -12,7 +12,7 @@ import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
-import type { Frame, FleetSource, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
+import type { FleetFrame, FleetFeed, FleetSnapshotResult, FleetStreamResult } from '#src/ports/fleet-source.ts';
 import { columnOpenedObservation, reconciliation, seenLane } from '#test/support/seen.ts';
 
 const lane = (pane: string, tab: string, agent = 'claude'): SeenLane => (seenLane({ paneId: pane, tabId: tab, workspaceId: 'w1', agent, status: 'idle', session: `s-${pane}` }));
@@ -110,7 +110,7 @@ test('a hidden tab: its extras are closed too (the tracked one is closed by hidi
     assert.deepEqual(closes(intents[3] ?? []).toSorted(), ['w1:p8', 'w1:p9']);
 });
 
-const seenWith = (columns: { tabId: string; paneId: string; shape: Shape }[]): SnapshotResult => ({
+const seenWith = (columns: { tabId: string; paneId: string; shape: Shape }[]): FleetSnapshotResult => ({
     kind: 'snapshot', focusedTab: null, paneTokens: new Map(),
     seen: reconciliation({ focusedTab: null, lanes: [lane('w1:p1', 'w1:t1')], columns, widths: new Map(), panes: ['w1:p1', ...columns.map((c) => c.paneId)] }),
 });
@@ -121,8 +121,8 @@ test('informer: a slow snapshot that predates the open is stamped with when it w
     let release: (() => void) | null = null;
     let calls = 0;
     const made: { tabId: string; paneId: string; shape: Shape }[] = [];
-    const source: FleetSource = {
-        snapshot: async (): Promise<SnapshotResult> => {
+    const source: FleetFeed = {
+        snapshot: async (): Promise<FleetSnapshotResult> => {
             calls += 1;
             const taken = seenWith([...made]);
             if (calls === 2) {
@@ -130,7 +130,7 @@ test('informer: a slow snapshot that predates the open is stamped with when it w
             }
             return taken;
         },
-        subscribe: (): Promise<StreamResult> => Promise.resolve({ kind: 'stream', stream: { frames: (): AsyncIterable<Frame> => new AsyncQueue<Frame>(), close: (): void => undefined } }),
+        subscribe: (): Promise<FleetStreamResult> => Promise.resolve({ kind: 'stream', stream: { frames: (): AsyncIterable<FleetFrame> => new AsyncQueue<FleetFrame>(), close: (): void => undefined } }),
     };
     const informer = new Informer(source, { now: (): ReturnType<typeof instant> => instant(now) }, DEFAULT_POLICY, {
         onIntents: (intents): Promise<void> => {

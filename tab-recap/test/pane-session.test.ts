@@ -6,7 +6,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { resetHerdrClients } from '#src/adapters/herdr/client.ts';
 import { PROTOCOL } from '@stateforge-labs/herdr-sdk';
-import { readPaneSession } from '#src/adapters/herdr/fleet.ts';
+import { paneId } from '#test/support/ids.ts';
+import { readPaneSession } from '#src/adapters/herdr/snapshot-reading.ts';
 const PONG = { protocol: PROTOCOL, version: 'test' };
 import { isUnknown } from '#src/ports/unknowable.ts';
 
@@ -50,7 +51,7 @@ async function withHerdr<T>(path: string, body: () => Promise<T>): Promise<T> {
 test('pane.get names the session by its id', async () => {
     const herdr = await fakeHerdr(() => ({ pane: { pane_id: 'w28:p1', agent_session: { source: 'claude', agent: 'claude', kind: 'id', value: 'new-session' } } }));
     try {
-        assert.equal(await withHerdr(herdr.path, () => readPaneSession('w28:p1')), 'new-session');
+        assert.equal(await withHerdr(herdr.path, () => readPaneSession(paneId('w28:p1'))), 'new-session');
         assert.deepEqual(herdr.calls, ['pane.get'], 'one read of the pane, nothing else');
     } finally {
         herdr.done();
@@ -60,7 +61,7 @@ test('pane.get names the session by its id', async () => {
 test('a session reported as a path is named by its file name', async () => {
     const herdr = await fakeHerdr(() => ({ pane: { pane_id: 'w28:p1', agent_session: { source: 'claude', agent: 'claude', kind: 'path', value: '/home/u/.claude/projects/-x/4ce6fce1-e940.jsonl' } } }));
     try {
-        assert.equal(await withHerdr(herdr.path, () => readPaneSession('w28:p1')), '4ce6fce1-e940');
+        assert.equal(await withHerdr(herdr.path, () => readPaneSession(paneId('w28:p1'))), '4ce6fce1-e940');
     } finally {
         herdr.done();
     }
@@ -70,8 +71,8 @@ test('a pane with no session reads as none, and a reply without the pane is none
     const none = await fakeHerdr(() => ({ pane: { pane_id: 'w28:p1', agent_session: null } }));
     const unlike = await fakeHerdr(() => ({ panes: [] }));
     try {
-        assert.equal(await withHerdr(none.path, () => readPaneSession('w28:p1')), null);
-        assert.equal(await withHerdr(unlike.path, () => readPaneSession('w28:p1')), null);
+        assert.equal(await withHerdr(none.path, () => readPaneSession(paneId('w28:p1'))), null);
+        assert.equal(await withHerdr(unlike.path, () => readPaneSession(paneId('w28:p1'))), null);
     } finally {
         none.done();
         unlike.done();
@@ -79,6 +80,6 @@ test('a pane with no session reads as none, and a reply without the pane is none
 });
 
 test('herdr cannot be reached: unknown, so the lane\'s own session serves', async () => {
-    const found = await withHerdr(join(tmpdir(), 'no-such-herdr-for-pane-session.sock'), () => readPaneSession('w28:p1'));
+    const found = await withHerdr(join(tmpdir(), 'no-such-herdr-for-pane-session.sock'), () => readPaneSession(paneId('w28:p1')));
     assert.equal(typeof found === 'object' && found !== null && isUnknown(found), true);
 });

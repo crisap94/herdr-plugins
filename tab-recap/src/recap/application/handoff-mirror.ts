@@ -1,6 +1,6 @@
 import type { AskKey, AskBook } from '#src/ports/ask-ledger.ts';
 import type { HandoffAskRecord } from '#src/ports/requests.ts';
-import type { LaneTokens } from '#src/ports/lane-tokens.ts';
+import type { LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { handoff, HANDOFF_EVENTS, HANDOFF_STAGES } from '#src/protocol/exchanges/handoff.ts';
 import { failureStage, terminalStage } from '#src/protocol/exchange.ts';
@@ -13,7 +13,7 @@ import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import { parseStoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import { uncheckedMilliseconds, type PaneId } from '#src/recap/domain/ids.ts';
 import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
@@ -49,7 +49,7 @@ export function handoffStageOf(outcome: HandoffOutcome): Text {
 
 export interface HandoffMirrorDeps {
     readonly asks: AskBook;
-    readonly tokens: LaneTokens;
+    readonly tokens: LaneTokenReporter;
     readonly events: LaneEvents;
     readonly sharing: () => HerdrEvents;
     readonly log: HandoffLog;
@@ -58,6 +58,7 @@ export interface HandoffMirrorDeps {
 export const askKeyOf = (route: Route): AskKey => ({ exchange: HANDOFF_EXCHANGE, id: must(parseRequestId(route.id, 'token-safe')), pane: route.source });
 
 const REPORT_BOUND_MS = 5_000;
+const HANDOFF_ANSWER_TTL = uncheckedMilliseconds(HANDOFF_ANSWER_TTL_MS);
 
 async function settledOrBound(done: Promise<void>): Promise<void> {
     let timer: NodeJS.Timeout | undefined;
@@ -71,9 +72,9 @@ async function settledOrBound(done: Promise<void>): Promise<void> {
     }
 }
 
-export async function reportWrite(tokens: LaneTokens, log: HandoffLog, pane: PaneId, write: TokenWrite): Promise<void> {
+export async function reportWrite(tokens: LaneTokenReporter, log: HandoffLog, pane: PaneId, write: TokenWrite): Promise<void> {
     try {
-        const done = await tokens.report(pane, { [write.name]: write.value }, HANDOFF_ANSWER_TTL_MS);
+        const done = await tokens.report(pane, new Map([[write.name, write.value]]), HANDOFF_ANSWER_TTL);
         if (isUnknown(done)) {
             log(must(parseText(`handoff answer on ${pane}: not written (${saying(done.why)})`)));
         }

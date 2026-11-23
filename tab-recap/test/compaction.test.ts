@@ -18,7 +18,7 @@ import type { Mark } from '#src/ports/transcripts.ts';
 import type { AgentPanes, AgentLookup, LineBehavior, PromptStance, PromptWaitFor, Prompted } from '#src/ports/agents.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { unknown } from '#src/ports/unknowable.ts';
-import type { LaneSettling } from '#src/ports/lane-settling.ts';
+import type { LaneSettler } from '#src/ports/lane-settling.ts';
 import { memoryStore } from './db/support.ts';
 import { lineBreakRefusal } from './fakes/typed-line.ts';
 import { oneTask } from './support.ts';
@@ -49,14 +49,14 @@ const queuingPlans: CompactionPlanner = {
 
 interface Typed { readonly pane: string; readonly text: string; readonly pieces?: readonly string[]; readonly wait?: PromptWaitFor | undefined; readonly lineBehavior?: LineBehavior; readonly promptBehavior?: PromptStance; readonly typed?: boolean }
 
-function fleet(statuses: Record<string, string>, blocked: readonly string[] = []): { agents: AgentPanes; typed: Typed[]; toasts: string[]; events: string[]; store: ReturnType<typeof memoryStore>; settling: LaneSettling; settledAfter: string[]; laneEvents: string[]; answered: string[]; claims: LaneClaims; refreshFails: boolean; lease: { acquire: (pane: string) => Promise<'taken' | 'busy' | 'unavailable'>; release: (pane: string) => Promise<void> } | undefined } {
+function fleet(statuses: Record<string, string>, blocked: readonly string[] = []): { agents: AgentPanes; typed: Typed[]; toasts: string[]; events: string[]; store: ReturnType<typeof memoryStore>; settling: LaneSettler; settledAfter: string[]; laneEvents: string[]; answered: string[]; claims: LaneClaims; refreshFails: boolean; lease: { acquire: (pane: string) => Promise<'taken' | 'busy' | 'unavailable'>; release: (pane: string) => Promise<void> } | undefined } {
     const typed: Typed[] = [];
     const toasts: string[] = [];
     const events: string[] = [];
     const settledAfter: string[] = [];
     const store = memoryStore();
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
-    const settling: LaneSettling = { settled: (pane) => { settledAfter.push(`${pane}: after ${events.join(',')}`); return Promise.resolve({ kind: 'settled', status: 'done' }); } };
+    const settling: LaneSettler = { settled: (pane) => { settledAfter.push(`${pane}: after ${events.join(',')}`); return Promise.resolve({ kind: 'settled', status: 'done' }); } };
     const agents: AgentPanes = {
         status: (pane): Promise<AgentLookup> => Promise.resolve(statuses[pane] === undefined ? unknown({ why: 'not-found', what: textOf(pane) }) : { kind: 'agent', agent: agentKind('x'), status: statuses[pane] as 'idle' }),
         prompt: (pane, text, wait, behavior): Promise<Prompted> => {
@@ -86,7 +86,7 @@ const failed: Mark = { kind: 'compaction-failed', at: instant(NOW + 5000) };
 interface Clock { t: number }
 interface Slice { readonly settled: boolean; readonly after?: number }
 
-function ticking(clock: Clock, slices: readonly Slice[] = []): LaneSettling {
+function ticking(clock: Clock, slices: readonly Slice[] = []): LaneSettler {
     let call = 0;
     return { settled: (_pane, _since, timeoutMs) => {
         const slice = slices[call] ?? { settled: false };

@@ -5,6 +5,7 @@ import { parseCount } from '#src/recap/domain/count.ts';
 import { cleanScreen, screenEntries, steady } from '#src/recap/application/screen-text.ts';
 import type { ScreenChrome } from '#src/recap/application/screen-text.ts';
 import { parsePaneId, type AgentKind, agentKind } from '#src/recap/domain/ids.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { SCREEN_PREFIX } from '#src/ports/screens.ts';
@@ -17,7 +18,7 @@ const SCREEN_LINES = must(parseCount(200));
 export const SCREEN_READER_ID = '*';
 export const CLAUDE_SCREEN_CHROME: ScreenChrome = tuiChrome('claude');
 
-export type ScreenWants = (agent: AgentKind) => boolean;
+export type ScreenWants = (agent: AgentKind) => Presence;
 
 const hashOf = (text: Text): Text => must(parseText(createHash('sha1').update(text).digest('hex').slice(0, 16)));
 
@@ -34,7 +35,7 @@ export class ScreenTranscripts implements Transcripts {
 
     locate(lane: Lane): Promise<Located> {
         const agent = lane.agent;
-        return Promise.resolve(this.wants(agent)
+        return Promise.resolve(this.wants(agent) === 'present'
             ? { kind: 'located', source: sourcePathOf(`${SCREEN_PREFIX}${lane.pane}`) }
             : unknown({ why: 'not-found', what: textOf(`a transcript of ${agent} (add it to TAB_RECAP_SCREEN_AGENTS to read its screen)`) }));
     }

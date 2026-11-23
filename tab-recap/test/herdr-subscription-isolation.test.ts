@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { HerdrTransportError, Method } from '@stateforge-labs/herdr-sdk';
 import { createFakeHerdr } from '@stateforge-labs/herdr-sdk/test-kit';
 import { usePlugin, resetHerdrClients } from '#src/adapters/herdr/client.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { subscribeTopics } from '#src/adapters/herdr/subscriptions.ts';
 
 test('a transport failure on a shared call leaves a live event subscription open', async () => {
@@ -11,7 +12,7 @@ test('a transport failure on a shared call leaves a live event subscription open
     process.env['HERDR_SOCKET_PATH'] = herdr.path;
     resetHerdrClients();
     try {
-        const subscription = await subscribeTopics([{ type: 'tab.focused' }]);
+        const subscription = await subscribeTopics([{ type: textOf('tab.focused') }]);
         const frames = subscription[Symbol.asyncIterator]();
         herdr.rawReply(Method.PaneRead, 'not a json line');
         await assert.rejects(usePlugin((client) => client.call('pane.read', { pane_id: 'w1:p1', source: 'recent_unwrapped', lines: 10, format: 'text' })), HerdrTransportError);

@@ -7,7 +7,7 @@ import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
 import { silentClosures } from './fakes/silent-closures.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import type { Columns } from '#src/ports/columns.ts';
+import type { ColumnPanes } from '#src/ports/columns.ts';
 import type { ClosureRecorder } from '#src/ports/closed-lanes.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
@@ -30,7 +30,7 @@ function recorder(fail = false): { readonly records: ClosedLane[]; readonly port
 
 function dispatchWith(port: ClosureRecorder | undefined, days: string, log: (line: string) => void, flushed: string[] = []): LaneDispatch {
     return new LaneDispatch({
-        columns: {} as Columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (tab, why): Promise<void> => { flushed.push(`${String(tab)} ${why}`); return Promise.resolve(); } },
+        columns: {} as ColumnPanes, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (tab, why): Promise<void> => { flushed.push(`${String(tab)} ${why}`); return Promise.resolve(); } },
         prompts: noPrompts, webs: noWebs, log, board: () => emptyBoard(), sizing: () => SIZING,
         feedback: noop, ...silentClosures, ...(port === undefined ? {} : { closures: port }), closedDays: () => closedLaneDaysOf(days),
     });

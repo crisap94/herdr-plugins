@@ -19,7 +19,7 @@ test('exact lookup returns the reader for each registered kind', () => {
 
 test('exact lookup never falls back and readerFor prefers an exact reader', () => {
     const screens: ScreenReader = { readScreen: async () => ({ kind: 'screen', text: textOf(''), revision: countOf(1), truncated: 'absent' }) };
-    const registry = daemonTranscriptRegistry(screens, () => true);
+    const registry = daemonTranscriptRegistry(screens, () => 'present');
     assert.equal(registry.exact(agentKind('gemini')), undefined);
     assert.equal(registry.readerFor(agentKind('gemini'))?.agent, SCREEN_READER_ID);
     assert.equal(registry.readerFor(agentKind('claude'))?.agent, 'claude');
@@ -27,7 +27,7 @@ test('exact lookup never falls back and readerFor prefers an exact reader', () =
 
 test('prototype-key kinds are unknown and use only the configured fallback', () => {
     const screens: ScreenReader = { readScreen: async () => ({ kind: 'screen', text: textOf(''), revision: countOf(1), truncated: 'absent' }) };
-    const registry = daemonTranscriptRegistry(screens, () => true);
+    const registry = daemonTranscriptRegistry(screens, () => 'present');
     for (const kind of ['constructor', 'toString', '__proto__']) {
         assert.equal(readerKindOf(kind), null);
         assert.equal(registry.exact(agentKind(kind)), undefined);

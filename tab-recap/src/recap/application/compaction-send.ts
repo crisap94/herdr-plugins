@@ -5,7 +5,7 @@ import type { Prompted } from '#src/ports/agents.ts';
 import { saying, unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import { uncheckedMilliseconds, type PaneId } from '#src/recap/domain/ids.ts';
 import { parseText, type Text as Prose, textOf } from '#src/recap/domain/text.ts';
 import { duration, type Instant } from '#src/recap/domain/time.ts';
 import { figuresOf } from '#src/recap/render/compaction-stage.ts';
@@ -21,8 +21,8 @@ import type { Lease } from './typing-scope.ts';
 import { parseDuration, parseTokens } from '@stateforge-labs/recap-view';
 import { maybe } from '#src/view-model/column.ts';
 
-const RESTORING_MS = 2 * 60_000;
-const RESTORE_SETTLE_MS = 15_000;
+const RESTORING_MS = uncheckedMilliseconds(2 * 60_000);
+const RESTORE_SETTLE_MS = uncheckedMilliseconds(15_000);
 
 export type Placement = 'queued' | 'immediate';
 

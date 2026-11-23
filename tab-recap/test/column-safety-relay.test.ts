@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { paneEnvOf } from '../bin/commands/pane.ts';
-import { reconciliationOf } from '#src/adapters/herdr/json.ts';
+import { reconciliationOf } from '#src/adapters/herdr/snapshot-reading.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import { observe } from '#src/recap/domain/fold.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';

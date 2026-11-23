@@ -7,31 +7,31 @@ import { watchSet } from '#src/recap/domain/board.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
-import type { Frame, FleetSource, SnapshotResult, StreamResult, Topic } from '#src/ports/fleet-source.ts';
+import type { FleetFrame, FleetFeed, FleetSnapshotResult, FleetStreamResult, FleetTopic } from '#src/ports/fleet-source.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { reconciliation, seenLane } from '#test/support/seen.ts';
 
-class StrictHerdr implements FleetSource {
+class StrictHerdr implements FleetFeed {
     live = new Set<string>(['w1:p1']);
     attempts = 0;
     acked = 0;
-    readonly streams: AsyncQueue<Frame>[] = [];
+    readonly streams: AsyncQueue<FleetFrame>[] = [];
 
-    snapshot(): Promise<SnapshotResult> {
+    snapshot(): Promise<FleetSnapshotResult> {
         const lanes = [...this.live].map((pane) => seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', session: `s-${pane}` }));
         return Promise.resolve({ kind: 'snapshot', seen: reconciliation({ focusedTab: null, lanes, panes: [...this.live], columns: [], widths: new Map() }), focusedTab: null, paneTokens: new Map() });
     }
 
-    subscribe(topics: readonly Topic[]): Promise<StreamResult> {
+    subscribe(topics: readonly FleetTopic[]): Promise<FleetStreamResult> {
         this.attempts += 1;
-        if (topics.some((topic) => topic.pane_id !== undefined && !this.live.has(topic.pane_id))) {
+        if (topics.some((topic) => topic.pane !== undefined && !this.live.has(topic.pane))) {
             return Promise.resolve(unknown({ why: 'unreachable', detail: causeOf('events.subscribe: closed before the ack') }));
         }
         this.acked += 1;
-        const queue = new AsyncQueue<Frame>();
+        const queue = new AsyncQueue<FleetFrame>();
         this.streams.push(queue);
-        return Promise.resolve({ kind: 'stream', stream: { frames: (): AsyncIterable<Frame> => queue, close: (): void => { queue.end(); } } });
+        return Promise.resolve({ kind: 'stream', stream: { frames: (): AsyncIterable<FleetFrame> => queue, close: (): void => { queue.end(); } } });
     }
 }
 
@@ -69,9 +69,9 @@ test('a pane that died while we were not told must not blind the daemon for good
 });
 
 test('with herdr unreachable the retries back off instead of hammering', async () => {
-    const down: FleetSource = {
-        snapshot: (): Promise<SnapshotResult> => Promise.resolve(unknown({ why: 'unreachable', detail: causeOf('no socket') })),
-        subscribe: (): Promise<StreamResult> => { attempts += 1; return Promise.resolve(unknown({ why: 'unreachable', detail: causeOf('no socket') })); },
+    const down: FleetFeed = {
+        snapshot: (): Promise<FleetSnapshotResult> => Promise.resolve(unknown({ why: 'unreachable', detail: causeOf('no socket') })),
+        subscribe: (): Promise<FleetStreamResult> => { attempts += 1; return Promise.resolve(unknown({ why: 'unreachable', detail: causeOf('no socket') })); },
     };
     let attempts = 0;
     const informer = new Informer(down, { now: (): ReturnType<typeof instant> => instant(0) }, DEFAULT_POLICY, {

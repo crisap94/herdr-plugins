@@ -77,7 +77,7 @@ export class HandoffConfirmation {
     }
 
     private async sessionOf(lane: Lane): Promise<Lane> {
-        const current = await this.deps.session(String(lane.pane));
+        const current = await this.deps.session(lane.pane);
         return typeof current === 'string' && current.trim() !== '' ? { ...lane, session: sessionId(textOf(current)) } : lane;
     }
 

@@ -7,7 +7,7 @@ import { parseAgentKind, parsePaneId, uncheckedAgentKind } from '#src/recap/doma
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { setValues } from '#src/adapters/os/config/file.ts';
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
-import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
+import { HerdrFleetPorts } from '#src/adapters/herdr/fleet.ts';
 import { AUTO_PATH_KINDS, PathHarnessDirectory } from '#src/adapters/harness/on-path.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { BEL, FRAME_END, FRAME_HOME, LINE_END, RESET_SGR, SCREEN_OFF, SCREEN_ON, TITLE_OSC } from '#src/adapters/os/tui.ts';
@@ -42,7 +42,7 @@ const TINY: RecapRequest = {
 };
 
 const tab = process.env['TAB_RECAP_TAB'] ?? '';
-const fleet = new HerdrFleet(textOf(stateDirectory()));
+const fleet = new HerdrFleetPorts(textOf(stateDirectory()));
 const get = settingGetter();
 const config = loadSettings();
 

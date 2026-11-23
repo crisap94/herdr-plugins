@@ -3,12 +3,14 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import { CAPABILITY_VALUE, OWNED_TOKENS, STATE_TOKENS, clearing, tokenValuesOf, writeDueOf } from '#src/recap/domain/lane-tokens.ts';
 import { NEEDS_TOKEN } from '#src/recap/domain/lane-token-names.ts';
 import type { LaneTokenFacts, LaneWrite, TokenMap } from '#src/recap/domain/lane-tokens.ts';
-import { uncheckedTokenName } from '#src/recap/domain/ids.ts';
+import { uncheckedTokenName, type PaneId } from '#src/recap/domain/ids.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 import { instant, parseMilliseconds } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import { backoffMs } from '#src/recap/domain/backoff.ts';
 import { countOf } from '#src/recap/domain/count.ts';
-import type { LaneTokenMap, LaneTokens } from '#src/ports/lane-tokens.ts';
+import type { LaneTokenMap, LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import type { TokenName, TokenValue } from '#src/protocol/primitives.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { LaneEvents } from './lane-events.ts';
@@ -22,13 +24,13 @@ const STATE_NAMES: readonly TokenName[] = STATE_TOKENS.map(uncheckedTokenName);
 const OWNED_NAMES: readonly TokenName[] = OWNED_TOKENS.map(uncheckedTokenName);
 
 export interface LaneTokenDeps {
-    readonly tokens: LaneTokens;
-    readonly enabled: () => boolean;
+    readonly tokens: LaneTokenReporter;
+    readonly enabled: () => Presence;
     readonly board: () => Board;
     readonly facts: (lane: Lane) => LaneTokenFacts;
     readonly capability?: () => TokenValue;
     readonly now: () => number;
-    readonly log: (line: string) => void;
+    readonly log: (line: Text) => void;
     readonly events?: LaneEvents;
 }
 
@@ -39,8 +41,8 @@ interface Failing {
 
 export class LaneTokenPublisher {
     private readonly deps: LaneTokenDeps;
-    private readonly written = new Map<string, LaneWrite>();
-    private readonly failing = new Map<string, Failing>();
+    private readonly written = new Map<PaneId, LaneWrite>();
+    private readonly failing = new Map<PaneId, Failing>();
     private lastTick = Number.NEGATIVE_INFINITY;
 
     constructor(deps: LaneTokenDeps) {
@@ -53,8 +55,8 @@ export class LaneTokenPublisher {
             return;
         }
         this.lastTick = now;
-        const lanes = this.deps.enabled() ? [...this.deps.board().lanes.values()] : [];
-        const live = new Set(lanes.map((lane) => String(lane.pane)));
+        const lanes = this.deps.enabled() === 'present' ? [...this.deps.board().lanes.values()] : [];
+        const live = new Set(lanes.map((lane) => lane.pane));
         for (const pane of this.written.keys()) {
             if (!live.has(pane)) {
                 this.clear(pane);
@@ -66,7 +68,7 @@ export class LaneTokenPublisher {
     }
 
     private publish(lane: Lane, now: number): void {
-        const pane = String(lane.pane);
+        const pane = lane.pane;
         if ((this.failing.get(pane)?.until ?? 0) > now) {
             return;
         }
@@ -89,13 +91,13 @@ export class LaneTokenPublisher {
         }
     }
 
-    private clear(pane: string): void {
+    private clear(pane: PaneId): void {
         this.written.delete(pane);
         void this.send(pane, clearing(OWNED_NAMES), this.deps.now());
     }
 
-    private async send(pane: string, tokens: LaneTokenMap, now: number): Promise<void> {
-        const done = await this.deps.tokens.report(pane, Object.fromEntries(tokens), TTL_MS);
+    private async send(pane: PaneId, tokens: LaneTokenMap, now: number): Promise<void> {
+        const done = await this.deps.tokens.report(pane, tokens, TTL);
         if (isUnknown(done)) {
             this.written.delete(pane);
             this.fail(pane, now, saying(done.why));
@@ -104,12 +106,12 @@ export class LaneTokenPublisher {
         }
     }
 
-    private fail(pane: string, now: number, why: string): void {
+    private fail(pane: PaneId, now: number, why: string): void {
         const count = (this.failing.get(pane)?.count ?? 0) + 1;
         const wait = backoffMs(countOf(count));
         this.failing.set(pane, { count, until: now + wait });
         if (count === 1) {
-            this.deps.log(`lane tokens on ${pane}: not written (${why}); trying again with a back-off`);
+            this.deps.log(textOf(`lane tokens on ${pane}: not written (${why}); trying again with a back-off`));
         }
     }
 }

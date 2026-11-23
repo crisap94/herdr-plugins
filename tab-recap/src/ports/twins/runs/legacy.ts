@@ -1,4 +1,3 @@
-import type { Instant } from '#src/recap/domain/time.ts';
 import type { BackgroundItem } from '#src/recap/domain/in-flight.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 
@@ -9,12 +8,6 @@ export type InFlightReading =
 
 export interface InFlight {
     read(lane: Lane): Promise<InFlightReading>;
-}
-
-export type Settled = { readonly kind: 'settled'; readonly status: string } | { readonly kind: 'timeout' };
-
-export interface LaneSettling {
-    settled(pane: string, since: Instant, timeoutMs: number): Promise<Settled>;
 }
 
 export interface RunResult {

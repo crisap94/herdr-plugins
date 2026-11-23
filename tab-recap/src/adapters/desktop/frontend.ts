@@ -1,11 +1,10 @@
 import { join } from 'node:path';
-import { parsePaneId, type SessionId, type TabId } from '#src/recap/domain/ids.ts';
+import type { TabId } from '#src/recap/domain/ids.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import { stateDirectory } from '#src/daemon/config.ts';
 import type { CurrentSession } from '#src/recap/application/lane-recent.ts';
-import type { Unknown } from '#src/ports/unknowable.ts';
 import type { NonEmptyText } from '#src/recap/domain/text.ts';
 import type { Store } from '../db/database.ts';
 import type { Frontend, FlushTab } from '#src/ports/frontend.ts';
@@ -30,13 +29,8 @@ function fleetFor(path?: SocketPath): HcCoreFleet {
     return new HcCoreFleet(parts);
 }
 
-interface PaneInput {}
-
 function sessionThrough(fleet: HcCoreFleet): CurrentSession {
-    return async (pane: PaneInput): Promise<SessionId | null | Unknown> => {
-        const parsed = parsePaneId(pane);
-        return parsed.kind === 'ok' ? fleet.sessionOf(parsed.value) : null;
-    };
+    return (pane) => fleet.sessionOf(pane);
 }
 
 const now = (): Instant => instant(Date.now());

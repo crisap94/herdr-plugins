@@ -12,6 +12,8 @@ import { registryWith } from './fakes/transcript-registry.ts';
 import { laneWith, planWith, readyOf } from './fakes/handoff-delivery.ts';
 import { fsPathOf } from './fakes/transcript-lines.ts';
 import { agentKind } from '#test/support/ids.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { sessionId, type SessionId } from '#src/recap/domain/ids.ts';
 
 const TEXT = 'Handoff of the parser refactor.\n\nNext steps:\n  - finish the lexer\n  - run the suite';
 const EARLIER = 'Handoff of the lexer spike.\n\nNext steps:\n  - write the tests';
@@ -34,7 +36,7 @@ function confirmerOver(root: string, onPause: () => void): { readonly confirmer:
     const confirmer = new HandoffConfirmation({
         agents: { status: async (): Promise<AgentLookup> => ({ kind: 'agent', agent: agentKind('claude'), status: 'idle' }) },
         transcripts: registryWith({ claude: new ClaudeTranscripts(fsPathOf(root)) }),
-        session: async (): Promise<string> => 'sess-1',
+        session: async (): Promise<SessionId> => sessionId(textOf('sess-1')),
         pause: async (ms: number): Promise<void> => {
             pauses.push(ms);
             onPause();

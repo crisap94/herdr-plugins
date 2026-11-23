@@ -2,7 +2,7 @@ import { writeTx } from '#src/adapters/db/connection.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import { handoffBytesOf } from '#src/adapters/db/handoff-ids.ts';
 import { handoffPlanner } from '#src/adapters/capability/handoff-plans.ts';
-import { readPaneSession } from '#src/adapters/herdr/fleet.ts';
+import { readPaneSession } from '#src/adapters/herdr/snapshot-reading.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
 import { GitWorksite } from '#src/adapters/git/worksite.ts';
 import { TranscriptInFlight } from '#src/adapters/transcripts/in-flight.ts';
@@ -241,7 +241,7 @@ async function sourceOf(transcripts: TranscriptRegistry, board: () => Board, lan
     const full = board().lanes.get(lane.pane);
     if (full === undefined) { return null; }
     const reader = transcripts.readerFor(lane.agent);
-    const session = await readPaneSession(String(lane.pane));
+    const session = await readPaneSession(lane.pane);
     if (reader === undefined || typeof session !== 'string') { return null; }
     const located = await reader.locate({ ...full, session: sessionId(textOf(session)) });
     if (isUnknown(located)) { return null; }

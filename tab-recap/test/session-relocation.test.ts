@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { fleetFrame } from '#test/support/frames.ts';
 import assert from 'node:assert/strict';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import { decode, paneSessionRefOf, seenFrom, sessionOf } from '#src/recap/application/decode.ts';
@@ -29,13 +30,13 @@ test('degenerate session values remain total through every decoder entry point',
     const pathValues = ['/tmp/', '.jsonl', '/tmp/.jsonl', '/tmp\\', 'a.jsonl/'];
     assert.equal(sessionOf(idData, sessionOfForKind), ' ');
     assert.equal(seenFrom(idData, sessionOfForKind)?.session, ' ');
-    assert.equal(decode({ event: 'pane_agent_detected', data: idData }, sessionOfForKind).kind, 'detected');
+    assert.equal(decode(fleetFrame('pane_agent_detected', idData), sessionOfForKind).kind, 'detected');
     for (const value of pathValues) {
         const pathData = { pane_id: 'p', tab_id: 't', workspace_id: 'w', agent: 'claude', agent_session: { kind: 'path', value } };
         assert.equal(sessionOf(pathData, sessionOfForKind), '');
         assert.equal(paneSessionRefOf(pathData, sessionOfForKind)?.session, '');
         assert.equal(seenFrom(pathData, sessionOfForKind)?.session, '');
-        assert.equal(decode({ event: 'pane_agent_detected', data: pathData }, sessionOfForKind).kind, 'detected');
+        assert.equal(decode(fleetFrame('pane_agent_detected', pathData), sessionOfForKind).kind, 'detected');
     }
     const firstEmpty = { ...idData, agent_session: { kind: 'path', value: '/tmp/' }, pane: { agent_session: { kind: 'id', value: 'later' } } };
     assert.equal(sessionOf(firstEmpty, sessionOfForKind), '');

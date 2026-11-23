@@ -4,7 +4,7 @@ import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import { openPrintStore } from '#src/adapters/db/print-store.ts';
 import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
 import { GitWorksite } from '#src/adapters/git/worksite.ts';
-import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
+import { HerdrFleetPorts } from '#src/adapters/herdr/fleet.ts';
 import { SystemClock } from '#src/adapters/os/system-clock.ts';
 import { modalTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
@@ -146,7 +146,7 @@ function deliverDeps(): DeliverDeps {
 
 function printerOf(): HandoffPrintService {
     const transcripts = modalTranscriptRegistry();
-    const fleet = new HerdrFleet(textOf(stateDirectory()));
+    const fleet = new HerdrFleetPorts(textOf(stateDirectory()));
     return new PrintedHandoffs({
         openStore: () => openPrintStore(databaseFile(stateDirectory()), loadSettings().closedLaneDays),
         transcripts,

@@ -1,6 +1,6 @@
 import type { EventSubscription, Subscription } from '@stateforge-labs/herdr-sdk';
 import { subscribeOnOwnClient } from './client.ts';
-import type { Topic } from '#src/ports/fleet-source.ts';
+import type { FleetTopic } from '#src/ports/fleet-source.ts';
 
 const GLOBAL_SPECS = new Map<string, Subscription>([
     ['pane.created', { type: 'pane.created' }],
@@ -13,12 +13,12 @@ const GLOBAL_SPECS = new Map<string, Subscription>([
     ['layout.updated', { type: 'layout.updated' }],
 ]);
 
-export function subscribeTopics(topics: readonly Topic[]): Promise<EventSubscription> {
+export function subscribeTopics(topics: readonly FleetTopic[]): Promise<EventSubscription> {
     const specs: Subscription[] = [];
     for (const topic of topics) {
-        if (topic.pane_id !== undefined) {
+        if (topic.pane !== undefined) {
             if (topic.type === 'pane.agent_status_changed') {
-                specs.push({ type: 'pane.agent_status_changed', pane_id: topic.pane_id });
+                specs.push({ type: 'pane.agent_status_changed', pane_id: topic.pane });
             }
             continue;
         }

@@ -1,6 +1,7 @@
 import { test } from 'node:test';
+import { fleetFrame } from '#test/support/frames.ts';
 import assert from 'node:assert/strict';
-import { paneTokensOf } from '#src/adapters/herdr/json.ts';
+import { paneTokensOf } from '#src/adapters/herdr/snapshot-reading.ts';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { CompactRequestQueue } from '#src/recap/application/compact-requests.ts';
@@ -13,7 +14,7 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import type { FleetSource, Frame, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
+import type { FleetFeed, FleetFrame, FleetSnapshotResult, FleetStreamResult } from '#src/ports/fleet-source.ts';
 import type { CompactAsk } from '#src/ports/requests.ts';
 import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
@@ -34,15 +35,15 @@ interface Control {
     attempts: number;
 }
 
-class Herdr implements FleetSource {
+class Herdr implements FleetFeed {
     private readonly control: Control;
-    private readonly streams: AsyncQueue<Frame>[] = [];
+    private readonly streams: AsyncQueue<FleetFrame>[] = [];
 
     constructor(control: Control) {
         this.control = control;
     }
 
-    get queue(): AsyncQueue<Frame> {
+    get queue(): AsyncQueue<FleetFrame> {
         const newest = this.streams.at(-1);
         if (newest === undefined) {
             throw new Error('no subscription');
@@ -50,7 +51,7 @@ class Herdr implements FleetSource {
         return newest;
     }
 
-    snapshot(): Promise<SnapshotResult> {
+    snapshot(): Promise<FleetSnapshotResult> {
         const panes = [{ pane_id: PANE, tokens: this.control.tokens }];
         const present = this.control.present;
         return Promise.resolve({
@@ -61,10 +62,10 @@ class Herdr implements FleetSource {
         });
     }
 
-    subscribe(): Promise<StreamResult> {
-        const stream = new AsyncQueue<Frame>();
+    subscribe(): Promise<FleetStreamResult> {
+        const stream = new AsyncQueue<FleetFrame>();
         this.streams.push(stream);
-        return Promise.resolve({ kind: 'stream', stream: { frames: (): AsyncIterable<Frame> => stream, close: (): void => { stream.end(); } } });
+        return Promise.resolve({ kind: 'stream', stream: { frames: (): AsyncIterable<FleetFrame> => stream, close: (): void => { stream.end(); } } });
     }
 }
 
@@ -108,7 +109,7 @@ function harness(): Harness {
         onUnknownKind: (): void => undefined,
         onBeat: (): void => undefined,
         sessionIdentity: sessionOfForKind,
-        onPaneTokens: (pane, map): void => { answers.onPaneTokens(paneId(pane), wireOf(map)); },
+        onPaneTokens: (pane, map): void => { answers.onPaneTokens(pane, wireOf(Object.fromEntries(map))); },
     });
     return { control, herdr, informer, answers, asked, asks, tokens };
 }
@@ -171,7 +172,7 @@ test('a pane.updated frame reaches the request path once, from the same decoded 
     await run.informer.enterSubscription();
     const running = run.informer.run();
     await flush();
-    run.herdr.queue.push({ event: 'pane.updated', data: { pane: { pane_id: PANE, tokens: { 'compact-req-coordinator': 'r9' } } } });
+    run.herdr.queue.push(fleetFrame('pane.updated', { pane: { pane_id: PANE, tokens: { 'compact-req-coordinator': 'r9' } } }));
     await flush();
     assert.deepEqual(run.asked.map((request) => request.answer), ['r9']);
     run.informer.stop();
@@ -180,7 +181,7 @@ test('a pane.updated frame reaches the request path once, from the same decoded 
 
 test('the snapshot carries the token map of every pane that has one, and keeps only string values', () => {
     const found = paneTokensOf({ panes: [{ pane_id: 'w1:p1', tokens: { 'compact-req-coordinator': 'r9', 'tab-recap-api': 1 } }, { pane_id: 'w1:p2' }] });
-    assert.deepEqual([...found], [['w1:p1', { 'compact-req-coordinator': 'r9' }]]);
+    assert.deepEqual([...found].map(([pane, tokens]) => [pane, Object.fromEntries(tokens)]), [['w1:p1', { 'compact-req-coordinator': 'r9' }]]);
 });
 
 test('the ledger decides, not the value: a map read again with the same request acts on nothing, even after a refusal', () => {

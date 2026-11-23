@@ -13,7 +13,7 @@ import type { Sizing } from '#src/recap/domain/layout.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import type { ClosureRecorder } from '#src/ports/closed-lanes.ts';
 import type { TabRetirement } from '#src/ports/retention.ts';
-import type { Columns } from '#src/ports/columns.ts';
+import type { ColumnPanes } from '#src/ports/columns.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import type { LaneWeb, TabView, TabViews } from '#src/ports/tab-views.ts';
@@ -32,7 +32,7 @@ import type { Presence } from '#src/recap/domain/presence.ts';
 export type Sharing = 'on' | 'off';
 
 export interface LaneDispatchDeps {
-    readonly columns: Columns;
+    readonly columns: ColumnPanes;
     readonly views: TabViews;
     readonly visibility: ColumnVisibility;
     readonly recaps: Pick<TabRecaps, 'turnEnded' | 'flush'>;

@@ -4,8 +4,6 @@ import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
-export type { FleetSource, Frame, FrameStream, SnapshotResult, StreamResult, Topic } from './twins/legacy.ts';
-
 export interface FleetTopic {
     readonly type: Text;
     readonly pane?: PaneId;
@@ -16,11 +14,13 @@ export interface FleetFrame {
     readonly payload: Text;
 }
 
+export type FleetPaneTokens = ReadonlyMap<TokenName, TokenValue>;
+
 export interface FleetSnapshot {
     readonly kind: 'snapshot';
     readonly seen: Reconciliation;
     readonly focusedTab: TabId | null;
-    readonly paneTokens: ReadonlyMap<PaneId, ReadonlyMap<TokenName, TokenValue>>;
+    readonly paneTokens: ReadonlyMap<PaneId, FleetPaneTokens>;
 }
 
 export type FleetSnapshotResult = FleetSnapshot | Unknown;

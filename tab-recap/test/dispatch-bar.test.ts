@@ -8,7 +8,7 @@ import type { Sizing } from '#src/recap/domain/layout.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
 import { countOf } from '#src/recap/domain/count.ts';
-import type { Columns, ColumnLayoutResult } from '#src/ports/columns.ts';
+import type { ColumnPanes, ColumnLayoutResult } from '#src/ports/columns.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
 import { SIZING, placedOf, rectOf as rect, splitOf } from './fakes/layout-values.ts';
@@ -21,7 +21,7 @@ const noPrompts = { of: (): null => null, refresh: (): Promise<Presence> => Prom
 const noBoard = (): Board => emptyBoard();
 const sizing = (): Sizing => SIZING;
 
-function fakeColumns(): { columns: Columns; calls: string[] } {
+function fakeColumns(): { columns: ColumnPanes; calls: string[] } {
     const calls: string[] = [];
     let opened = false;
     const layout = (): ColumnLayoutResult => ({
@@ -33,7 +33,7 @@ function fakeColumns(): { columns: Columns; calls: string[] } {
         ],
         splits: [splitOf('down', 0.5, rect(0, 21, 60, 19))],
     });
-    const columns: Columns = {
+    const columns: ColumnPanes = {
         layout: (tab) => { calls.push(`layout ${tab}`); return Promise.resolve(layout()); },
         open: (tab, target, shape) => { calls.push(`open ${tab} next to ${target} as ${shape}`); opened = true; return Promise.resolve({ kind: 'opened', pane: paneId('w1:p9') }); },
         resize: (pane, direction, amount) => { calls.push(`resize ${pane} ${direction} ${amount.toFixed(3)}`); return Promise.resolve({ kind: 'done' }); },

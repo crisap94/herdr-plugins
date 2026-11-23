@@ -5,25 +5,23 @@ import { observe } from '#src/recap/domain/fold.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import { emptyBoard, watchSet } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { uncheckedTokenName, uncheckedTokenValue, type PaneId } from '#src/recap/domain/ids.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
 import type { Clock } from '#src/ports/clock.ts';
-import type { FleetSource, FrameStream, SnapshotResult } from '#src/ports/fleet-source.ts';
+import type { FleetFeed, FleetFrames, FleetPaneTokens, FleetSnapshot, FleetSnapshotResult } from '#src/ports/fleet-source.ts';
 import type { SessionOf } from '#src/ports/session-identity.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
-import type { TokenMap } from '#src/protocol/tokens.ts';
 import { AsyncQueue } from './async-queue.ts';
-import { decode, paneSessionRefOf, paneTokenMapOf } from './decode.ts';
+import { dataOf, decode, paneSessionRefOf, paneTokenMapOf, type JsonObject } from './decode.ts';
 import { specsFor } from './watch-set.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
-type Snapshot = Exclude<SnapshotResult, { readonly kind: 'unknown' }>;
-
 interface PaneTokens {
     readonly kind: 'tokens';
-    readonly pane: string;
-    readonly tokens: TokenMap;
+    readonly pane: PaneId;
+    readonly tokens: FleetPaneTokens;
 }
 
 type Step = Observation | PaneTokens;
@@ -39,7 +37,7 @@ export interface InformerHooks {
     onUnknownKind(rawKind: string): void;
     onBeat(): void;
     onStatus?(pane: string, status: string): void;
-    onPaneTokens?(pane: string, tokens: TokenMap): void;
+    onPaneTokens?(pane: PaneId, tokens: FleetPaneTokens): void;
     sessionIdentity: SessionOf;
 }
 
@@ -58,14 +56,14 @@ const WATCHDOG_MS = 300_000;
 export const RESUBSCRIBE_EVERY = 10;
 
 export class Informer {
-    private readonly source: FleetSource;
+    private readonly source: FleetFeed;
     private readonly clock: Clock;
     private readonly policy: Policy;
     private readonly hooks: InformerHooks;
     private readonly identityForSession: SessionOf;
     private readonly queue = new AsyncQueue<Step>();
     private board: Board = emptyBoard();
-    private stream: FrameStream | null = null;
+    private stream: FleetFrames | null = null;
     private pendingResync: ReturnType<typeof setTimeout> | null = null;
     private pendingRetry: ReturnType<typeof setTimeout> | null = null;
     private failures: Count = must(parseCount(0));
@@ -73,7 +71,7 @@ export class Informer {
     private lastLife: Instant;
     private readonly retry: Retry;
 
-    constructor(source: FleetSource, clock: Clock, policy: Policy, hooks: InformerHooks, retry: Retry = DEFAULT_RETRY) {
+    constructor(source: FleetFeed, clock: Clock, policy: Policy, hooks: InformerHooks, retry: Retry = DEFAULT_RETRY) {
         this.retry = retry;
         this.lastLife = clock.now();
         this.source = source;
@@ -87,11 +85,11 @@ export class Informer {
         return this.board;
     }
 
-    get listening(): boolean {
-        return this.stream !== null;
+    get listening(): Presence {
+        return this.stream === null ? 'absent' : 'present';
     }
 
-    private async stamped(): Promise<SnapshotResult> {
+    private async stamped(): Promise<FleetSnapshotResult> {
         const requested = this.clock.now();
         const snap = await this.source.snapshot();
         if (isUnknown(snap)) {
@@ -101,7 +99,7 @@ export class Informer {
         return { ...snap, seen: { ...snap.seen, at: requested } };
     }
 
-    private pushSnapshot(snap: Snapshot): void {
+    private pushSnapshot(snap: FleetSnapshot): void {
         this.queue.push({ kind: 'reconciled', seen: snap.seen });
         for (const [pane, tokens] of snap.paneTokens) {
             this.queue.push({ kind: 'tokens', pane, tokens });
@@ -129,7 +127,7 @@ export class Informer {
         const first = !this.board.seeded;
         this.pushSnapshot(snap);
         if (first && snap.focusedTab !== null) {
-            this.queue.push({ kind: 'focused', tab: tabId(textOf(snap.focusedTab)) });
+            this.queue.push({ kind: 'focused', tab: snap.focusedTab });
         }
     }
 
@@ -189,11 +187,11 @@ export class Informer {
         this.stream = null;
     }
 
-    private async pump(stream: FrameStream): Promise<void> {
+    private async pump(stream: FleetFrames): Promise<void> {
         for await (const frame of stream.frames()) {
             this.lastLife = this.clock.now();
             if (frame.event.replaceAll('.', '_') === 'pane_updated') {
-                this.paneUpdated(frame.data);
+                this.paneUpdated(dataOf(frame));
                 continue;
             }
             const decoded = decode(frame, this.identityForSession);
@@ -215,10 +213,10 @@ export class Informer {
         }
     }
 
-    private paneUpdated(data: Readonly<Record<string, unknown>>): void {
+    private paneUpdated(data: JsonObject): void {
         const tokens = paneTokenMapOf(data);
         if (tokens !== null) {
-            this.queue.push({ kind: 'tokens', pane: tokens.pane, tokens: Object.fromEntries(tokens.tokens) });
+            this.queue.push({ kind: 'tokens', pane: tokens.pane, tokens: new Map([...tokens.tokens].map(([name, value]) => [uncheckedTokenName(name), uncheckedTokenValue(value)])) });
         }
         const session = paneSessionRefOf(data, this.identityForSession);
         if (session !== null) {
