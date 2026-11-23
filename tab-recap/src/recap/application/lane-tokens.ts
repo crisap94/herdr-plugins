@@ -87,7 +87,7 @@ export class LaneTokenPublisher {
         const before = was?.get(NEEDS);
         const count = now.get(NEEDS);
         if (before !== undefined && count !== undefined && before !== count) {
-            this.deps.events?.lane(String(lane.pane), Number(count) > Number(before) ? 'needs-raised' : 'needs-cleared', count);
+            this.deps.events?.lane(lane.pane, Number(count) > Number(before) ? 'needs-raised' : 'needs-cleared', textOf(count));
         }
     }
 

@@ -1,4 +1,7 @@
 import { test } from 'node:test';
+import { textOf } from '#src/recap/domain/text.ts';
+import { instant } from '#src/recap/domain/time.ts';
+import { paneId, workspaceId } from '#test/support/ids.ts';
 import assert from 'node:assert/strict';
 import { EventStream, recapWritten } from '#src/recap/application/lane-events.ts';
 import { EVENT_TOKEN, VALUE_MAX } from '#src/recap/domain/event-token.ts';
@@ -40,7 +43,7 @@ function rigAt(startedAt: number, workspaces: readonly string[] = ['w1', 'w2']):
         },
         workspaces: async (): Promise<WorkspaceList> => ({ kind: 'workspaces', ids: workspaces.map((id) => uncheckedWorkspaceId(id)) }),
     };
-    rig.stream = new EventStream({ tokens, workspaces: ws, enabled: (): Presence => (rig.on ? 'present' : 'absent'), startedAt, log: (line: string): void => { rig.logged.push(line); } });
+    rig.stream = new EventStream({ tokens, workspaces: ws, enabled: (): Presence => (rig.on ? 'present' : 'absent'), startedAt: instant(startedAt), log: (line: string): void => { rig.logged.push(line); } });
     return rig;
 }
 
@@ -49,9 +52,9 @@ const base36 = (n: number): string => n.toString(36);
 
 test('each lane event is written once on the lane\'s pane, as `<seq>:<kind>[:<detail>]`; the sequence rises by one per pane', async () => {
     const rig = rigAt(36 ** 3);
-    rig.stream.lane('w1:p1', 'recap-written', 'turn-ended');
-    rig.stream.lane('w1:p1', 'autocompact-skipped', 'in-flight');
-    rig.stream.lane('w1:p2', 'lane-closed', 'w1:p9');
+    rig.stream.lane(paneId('w1:p1'), 'recap-written', textOf('turn-ended'));
+    rig.stream.lane(paneId('w1:p1'), 'autocompact-skipped', textOf('in-flight'));
+    rig.stream.lane(paneId('w1:p2'), 'lane-closed', textOf('w1:p9'));
     await flush();
     assert.deepEqual(rig.panes, [
         { target: 'w1:p1', value: `${base36(36 ** 3)}:recap-written:turn-ended` },
@@ -62,8 +65,8 @@ test('each lane event is written once on the lane\'s pane, as `<seq>:<kind>[:<de
 
 test('a fractional start is cut: the sequence is a whole base-36 number, never a fraction', async () => {
     const rig = rigAt(1_791_588_357_397.8179);
-    rig.stream.lane('w1:p1', 'lane-closed');
-    rig.stream.lane('w1:p1', 'lane-closed');
+    rig.stream.lane(paneId('w1:p1'), 'lane-closed');
+    rig.stream.lane(paneId('w1:p1'), 'lane-closed');
     await flush();
     const [first, second] = rig.panes.map((sent) => sent.value?.split(':')[0] ?? '');
     assert.match(first ?? '', /^[0-9a-z]+$/u);
@@ -74,7 +77,7 @@ test('a fractional start is cut: the sequence is a whole base-36 number, never a
 test('every kind is written as given, and the value never exceeds 80 characters', async () => {
     const kinds: EventKind[] = ['recap-written', 'needs-raised', 'needs-cleared', 'compact-queued', 'compact-running', 'compact-done', 'compact-failed', 'autocompact-decided', 'autocompact-skipped', 'lane-closed'];
     const rig = rigAt(1_000_000);
-    for (const kind of kinds) rig.stream.lane('w1:p1', kind, 'x'.repeat(200));
+    for (const kind of kinds) rig.stream.lane(paneId('w1:p1'), kind, textOf('x'.repeat(200)));
     await flush();
     assert.equal(rig.panes.length, kinds.length, 'one write per logged event');
     assert.ok(rig.panes.every((sent) => (sent.value ?? '').length <= VALUE_MAX));
@@ -84,17 +87,17 @@ test('every kind is written as given, and the value never exceeds 80 characters'
 test('off: nothing is written, for a lane or a workspace', async () => {
     const rig = rigAt(1_000_000);
     rig.on = false;
-    rig.stream.lane('w1:p1', 'lane-closed');
-    rig.stream.inWorkspace('w1', 'lane-closed', 'w1:p1');
-    await rig.stream.daemon('daemon-started', '2.2.1');
+    rig.stream.lane(paneId('w1:p1'), 'lane-closed');
+    rig.stream.inWorkspace(workspaceId('w1'), 'lane-closed', textOf('w1:p1'));
+    await rig.stream.daemon('daemon-started', textOf('2.2.1'));
     await flush();
     assert.deepEqual([rig.panes, rig.spaces], [[], []]);
 });
 
 test('the daemon\'s start and stop go to every workspace, as the workspace token, and are awaited', async () => {
     const rig = rigAt(36 ** 3, ['w1', 'w2']);
-    await rig.stream.daemon('daemon-started', '2.2.1');
-    await rig.stream.daemon('daemon-stopping', '2.2.1');
+    await rig.stream.daemon('daemon-started', textOf('2.2.1'));
+    await rig.stream.daemon('daemon-stopping', textOf('2.2.1'));
     assert.deepEqual(rig.spaces.map((sent) => sent.target), ['w1', 'w2', 'w1', 'w2'], 'every write has landed by the time the call returns');
     assert.equal(rig.spaces[0]?.value, `${base36(36 ** 3)}:daemon-started:2.2.1`);
     assert.equal(rig.spaces[2]?.value, `${base36(36 ** 3 + 1)}:daemon-stopping:2.2.1`);
@@ -103,7 +106,7 @@ test('the daemon\'s start and stop go to every workspace, as the workspace token
 test('a workspace report that fails is logged, not dropped', async () => {
     const rig = rigAt(1_000_000, ['w1']);
     rig.failing = true;
-    await rig.stream.daemon('daemon-stopping', '2.2.1');
+    await rig.stream.daemon('daemon-stopping', textOf('2.2.1'));
     assert.equal(rig.logged.length, 1);
     assert.match(rig.logged[0] ?? '', /not written/u);
 });
@@ -111,8 +114,8 @@ test('a workspace report that fails is logged, not dropped', async () => {
 test('a restart never reuses a sequence number: the next daemon starts later, so its numbers are above the last one', async () => {
     const first = rigAt(1_000_000);
     const second = rigAt(1_000_000 + 60_000);
-    for (let n = 0; n < 500; n += 1) first.stream.lane('w1:p1', 'lane-closed');
-    second.stream.lane('w1:p1', 'lane-closed');
+    for (let n = 0; n < 500; n += 1) first.stream.lane(paneId('w1:p1'), 'lane-closed');
+    second.stream.lane(paneId('w1:p1'), 'lane-closed');
     await flush();
     const seqOf = (sent: Sent): number => Number.parseInt(sent.value?.split(':')[0] ?? '', 36);
     const last = Math.max(...first.panes.map(seqOf));
@@ -121,11 +124,11 @@ test('a restart never reuses a sequence number: the next daemon starts later, so
 
 test('a pane forgotten by prune starts again from now, above every number it used: no number is reused', async () => {
     const rig = rigAt(1_000);
-    rig.stream.lane('w1:p1', 'lane-closed');
-    rig.stream.lane('w1:p1', 'lane-closed');
+    rig.stream.lane(paneId('w1:p1'), 'lane-closed');
+    rig.stream.lane(paneId('w1:p1'), 'lane-closed');
     await flush();
-    rig.stream.prune(Date.now() + 7_200_000);
-    rig.stream.lane('w1:p1', 'lane-closed');
+    rig.stream.prune(instant(Date.now() + 7_200_000));
+    rig.stream.lane(paneId('w1:p1'), 'lane-closed');
     await flush();
     const seqOf = (sent: Sent): number => Number.parseInt(sent.value?.split(':')[0] ?? '', 36);
     const used = rig.panes.map(seqOf);
@@ -134,8 +137,8 @@ test('a pane forgotten by prune starts again from now, above every number it use
 
 test('turning the setting off clears the event tokens: on every pane that carried one, and every workspace', async () => {
     const rig = rigAt(1_000_000, ['w1', 'w2']);
-    rig.stream.lane('w1:p1', 'recap-written', 'turn-ended');
-    rig.stream.inWorkspace('w1', 'lane-closed', 'w1:p9');
+    rig.stream.lane(paneId('w1:p1'), 'recap-written', textOf('turn-ended'));
+    rig.stream.inWorkspace(workspaceId('w1'), 'lane-closed', textOf('w1:p9'));
     await flush();
     rig.stream.tick();
     rig.on = false;
@@ -149,8 +152,8 @@ test('turning the setting off clears the event tokens: on every pane that carrie
 
 test('a recap written at the end of a turn is told to each lane of its tab; an imported one is not a new recap', async () => {
     const rig = rigAt(1_000_000);
-    recapWritten(rig.stream, [{ pane: 'w1:p1' }, { pane: 'w1:p2' }], 'turn-ended');
-    recapWritten(rig.stream, [{ pane: 'w1:p1' }], 'imported');
+    recapWritten(rig.stream, [{ pane: paneId('w1:p1') }, { pane: paneId('w1:p2') }], textOf('turn-ended'));
+    recapWritten(rig.stream, [{ pane: paneId('w1:p1') }], textOf('imported'));
     await flush();
     assert.deepEqual(rig.panes.map((sent) => [sent.target, (sent.value ?? '').split(':').slice(1).join(':')]), [['w1:p1', 'recap-written:turn-ended'], ['w1:p2', 'recap-written:turn-ended']]);
 });
@@ -161,7 +164,7 @@ test('a workspace that cannot be listed is logged, and nothing is written for it
         reportWorkspace: async (): Promise<Done> => ({ kind: 'done' }),
         workspaces: async (): Promise<WorkspaceList> => unknown({ why: 'unreachable', detail: causeOf('fake') }),
     };
-    const stream = new EventStream({ tokens: { report: async (): Promise<Done> => ({ kind: 'done' }) }, workspaces: ws, enabled: (): Presence => 'present', startedAt: 1, log: (line: string): void => { logged.push(line); } });
-    await stream.daemon('daemon-started', '2.2.1');
+    const stream = new EventStream({ tokens: { report: async (): Promise<Done> => ({ kind: 'done' }) }, workspaces: ws, enabled: (): Presence => 'present', startedAt: instant(1), log: (line: string): void => { logged.push(line); } });
+    await stream.daemon('daemon-started', textOf('2.2.1'));
     assert.equal(logged.length, 1);
 });

@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { textOf } from '#src/recap/domain/text.ts';
 import assert from 'node:assert/strict';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
@@ -34,11 +35,11 @@ test('the four writers write only tab-recap\'s names, on panes and on workspaces
             reportWorkspace: async (workspace: WorkspaceId, tokens: WorkspaceTokenMap): Promise<Done> => { spaces.push(...[...tokens.keys()].map((name) => `${workspace}:${name}`)); return { kind: 'done' }; },
             workspaces: async (): Promise<WorkspaceList> => ({ kind: 'workspaces', ids: [uncheckedWorkspaceId('w1')] }),
         },
-        enabled: (): Presence => 'present', startedAt: 1, log: (): void => undefined,
+        enabled: (): Presence => 'present', startedAt: instant(1), log: (): void => undefined,
     });
     const publisher = new LaneTokenPublisher({ tokens: paneWrites, enabled: (): Presence => 'present', board: (): Board => board, facts: (): LaneTokenFacts => ({ share: countOf(40), recapAt: instant(1), needs: countOf(2) }), now: (): Instant => instant(0), log: (): void => undefined, events });
     publisher.tick();
-    events.lane('w1:p1', 'recap-written', 'turn-ended');
+    events.lane(paneId('w1:p1'), 'recap-written', textOf('turn-ended'));
     const answers = new CompactRequestQueue({ enabled: (): Presence => 'present', board: (): Board => board, requests: { requestCompact: (): void => undefined }, asks: new MemoryAskLedger(), tokens: paneWrites, now: (): Instant => instant(1000), log: (): void => undefined });
     answers.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
     const panes: PaneTokens = { read: async (): Promise<PaneTokensResult> => ({ kind: 'tokens', tokens: new Map() }) };

@@ -120,7 +120,7 @@ export class Compactor {
             const pane = lane.pane;
             const id = this.deps.compactions.begin({ tab, pane, agent: lane.agent, stage: refusal.stage, at: this.deps.now(), why: textOf(refusal.why), origin, answer: request?.answer ?? null });
             linkAsk(this.deps.asks, request, pane, must(parseText(id)));
-            if (refusal.closedAt === undefined) this.deps.events?.lane(pane, COMPACT_EVENTS.failed, `${id}:${refusal.why}`);
+            if (refusal.closedAt === undefined) this.deps.events?.lane(pane, COMPACT_EVENTS.failed, textOf(`${id}:${refusal.why}`));
             this.answer(request, pane, must(parseAnswerStage(failureStage(refusal.reason))));
         } else {
             trail.end(refusal.stage, { why: refusal.why }, refusal.reason);
@@ -149,21 +149,21 @@ export class Compactor {
     private begun(request: CompactAsk, start: Start): CompactionId {
         const id = this.deps.compactions.begin({ ...start, at: this.deps.now(), origin: request.origin ?? 'operator', answer: request.answer ?? null });
         linkAsk(this.deps.asks, request, start.pane, must(parseText(id)));
-        this.deps.events?.lane(start.pane, COMPACT_EVENTS.queued, id);
+        this.deps.events?.lane(start.pane, COMPACT_EVENTS.queued, textOf(id));
         return id;
     }
 
     private ended(request: CompactAsk, pane: PaneId, id: CompactionId, end: CompactionFinish, reason: CompactFailure | null): void {
         this.answer(request, pane, must(parseAnswerStage(finalAnswerOf(end.stage, reason))));
         if (end.why === textOf(LANE_CLOSED)) return;
-        this.deps.events?.lane(pane, end.stage === 'compacted' ? COMPACT_EVENTS.done : COMPACT_EVENTS.failed, end.stage === 'compacted' ? id : `${id}:${end.why ?? end.stage}`);
+        this.deps.events?.lane(pane, end.stage === 'compacted' ? COMPACT_EVENTS.done : COMPACT_EVENTS.failed, textOf(end.stage === 'compacted' ? id : `${id}:${end.why ?? end.stage}`));
     }
 
     private opened(lane: Lane, tab: TabId, request: CompactAsk): Trail {
         const pane = lane.pane;
         const id = this.begun(request, { tab, pane, agent: lane.agent, stage: this.deps.brief.enabled() === 'present' ? 'briefing' : 'compacting', writer: this.deps.brief.job() });
         this.answer(request, pane, must(parseAnswerStage(COMPACT_STAGES.running)));
-        this.deps.events?.lane(pane, COMPACT_EVENTS.running, id);
+        this.deps.events?.lane(pane, COMPACT_EVENTS.running, textOf(id));
         return new Trail(this.deps.compactions, id, () => this.deps.now(), (end, reason) => { this.ended(request, pane, id, end, reason); });
     }
 
