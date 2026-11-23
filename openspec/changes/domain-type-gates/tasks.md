@@ -86,7 +86,7 @@ and `src/adapters/db/schema/migration.ts`) and the 12 files of lane `VIEW` (the 
       `src/recap/domain/legacy.ts`. Verify: B2's baseline holds only `legacy` counts. (baseline `{}` at f6d31f2b^, no `legacy.ts`; folder deleted by BCb; the eight throwing wrappers stay in `ids.ts` until 5.1)
 - [x] 4.3 B3 `src/recap/application/`, except the files of lane `ENG`. Verify: B3's baseline holds only `legacy` counts. (baseline `{}` at f6d31f2b^, no `legacy.ts`; folder deleted by BCb)
 - [x] 4.4 B4 `src/recap/render/`, `src/i18n/`, `src/column/`, except the files of lanes `ENG` and `VIEW`. Verify: B4's baseline holds only `legacy` counts. (baseline `{}` at f6d31f2b^, no `legacy.ts`; folder deleted by BCb)
-- [x] 4.5 B5 `src/adapters/db/`, except the files of lane `STO`; the released migrations stay listed as exceptions. Verify: B5's baseline holds only `legacy`
+- [x] 4.5 B5 `src/adapters/db/`, except the files of lane `STO`; the released migrations stay listed as exceptions. Verify: B5's baseline holds only `legacy` (baseline `{}` at f6d31f2b^; folder deleted by BCb)
       counts.
 - [x] 4.6 B6 `src/adapters/` except `db/`. Verify: B6's baseline holds only `legacy` counts. (baseline `{}` at f6d31f2b^, no `legacy.ts`; folder deleted by BCb)
 - [x] 4.7 B7 `src/daemon/`, `src/extensions/`, `src/compact/`, `src/setup/`, `src/transport/`. Verify: B7's baseline holds only
