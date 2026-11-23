@@ -95,7 +95,7 @@ test('a session start and a stop write a recap from the transcript, and a compac
     }
 });
 
-test('a file from a newer library is returned as newer-store and a stale one as stale-store', () => {
+test('a file from a newer library is returned as newer-store, not thrown', () => {
     const path = join(folderOf(), 'ledger.db');
     const newer = openStore(path, [...HISTORY, { version: HISTORY.length + 1, name: 'a later change', up: ['CREATE TABLE later (id INTEGER)'] }], 'owner');
     equal(newer.kind, 'ready');
