@@ -37,7 +37,7 @@ function deps(site: MemoryWorksite, result: RepoResult = repo, files: readonly {
     return { reader: site, repo: repoAt(result), edits: edits(files) };
 }
 
-const input = (overrides: Partial<WorksiteInput> = {}): WorksiteInput => ({ directory: DIR, cursor: CURSOR, tokens: new Map(), ...overrides });
+const input = (overrides: Partial<WorksiteInput> = {}): WorksiteInput => ({ directory: textOf(DIR), cursor: CURSOR, tokens: new Map(), ...overrides });
 
 test('a clean worktree gives the directory, repository, branch, last commit and zero uncommitted paths', async () => {
     const site = new MemoryWorksite();

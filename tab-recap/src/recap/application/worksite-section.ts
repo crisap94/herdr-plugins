@@ -12,7 +12,7 @@ import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 
 export interface WorksiteInput {
-    readonly directory: string | null;
+    readonly directory: Text | null;
     readonly cursor: LaneCursor | null;
     readonly tokens: ReadonlyMap<Text, Text> | null;
 }

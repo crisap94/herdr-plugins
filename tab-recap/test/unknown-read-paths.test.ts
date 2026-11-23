@@ -22,7 +22,7 @@ import { oneTask, withFacts } from './support.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 import { viewRecord } from '#test/support/tab-view-records.ts';
 
@@ -132,7 +132,7 @@ test('a handoff over an unreadable store is reported unreadable, not as an empty
         tokens: base.tokens,
         target: { status: async (): Promise<never> => { throw new Error('the target is not asked'); } },
         closedDays: closedDaysOf('14'),
-        now: (): number => NOW,
+        now: (): Instant => instant(NOW),
         flush: (): Promise<void> => Promise.resolve(),
         log: (line: string): void => { logged.push(line); },
     });

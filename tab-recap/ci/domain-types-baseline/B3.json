@@ -1,25 +1,11 @@
 {
-  "src/recap/application/freshness-block.ts": {
-    "container": 1,
-    "property": 3
-  },
   "src/recap/application/handoff-confirmation.ts": {
     "parameter": 3,
     "return": 1,
     "property": 5
   },
   "src/recap/application/handoff-flow.ts": {
-    "return": 1,
     "parameter": 1
-  },
-  "src/recap/application/handoff-pipeline.ts": {
-    "container": 1
-  },
-  "src/recap/application/handoff-print.ts": {
-    "return": 1
-  },
-  "src/recap/application/handoff-render.ts": {
-    "property": 7
   },
   "src/recap/application/handoff-request.ts": {
     "parameter": 2,
@@ -30,8 +16,7 @@
     "parameter": 2
   },
   "src/recap/application/handoff-source.ts": {
-    "return": 1,
-    "property": 2
+    "return": 1
   },
   "src/recap/application/handoff-target.ts": {
     "return": 2,
@@ -84,7 +69,6 @@
     "return": 1
   },
   "src/recap/application/worksite-section.ts": {
-    "return": 1,
-    "property": 1
+    "return": 1
   }
 }

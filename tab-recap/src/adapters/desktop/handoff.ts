@@ -2,6 +2,7 @@ import { loadSettings, stateDirectory } from '#src/daemon/config.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
 import type { HandoffPrintService } from '#src/ports/handoff-print.ts';
 import type { FlushTab } from '#src/ports/frontend.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { EditTally } from '#src/recap/application/edit-tally.ts';
 import { PrintedHandoffs } from '#src/recap/application/handoff-print.ts';
 import { databaseFile } from '../db/database.ts';
@@ -20,7 +21,7 @@ export function desktopPrinter(fleet: Pick<Fleet, 'read' | 'agents'>, flush: Flu
         tokens: fleet,
         target: fleet.agents(),
         closedDays: loadSettings().closedLaneDays,
-        now: Date.now,
+        now: (): Instant => instant(Date.now()),
         flush,
         log: (): void => undefined,
     });

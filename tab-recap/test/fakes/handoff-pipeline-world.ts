@@ -15,13 +15,14 @@ import { cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { runningOf } from '#src/recap/domain/in-flight.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 
 export const NOW = Date.parse('2026-10-11T10:00:00Z');
 export const ID = handoffId(asText('hnd_01j3tt8z1efcd9tfr14d2pf2db'));
 export const OTHER_ID = handoffId(asText('hnd_01j3tt8z1efcd9tfr14d2pf2dc'));
 export const SOURCE_FILE = 'session.jsonl';
 export const LAST_RUN: LastRun = { at: instant(NOW - 60_000), cause: 'turn-ended' };
-export const LANE: HandoffLane = { tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), status: 'idle', cwd: '/repo' };
+export const LANE: HandoffLane = { tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), status: 'idle', cwd: asText('/repo') };
 export const CURSOR: LaneCursor = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf(SOURCE_FILE), cursor: cursorOf(0), tail: null, title: null, lastPrompt: null, claudeRecap: null };
 
 export const FACTS: readonly Fact[] = [
@@ -58,14 +59,14 @@ export function depsOf(over: { readonly lastRun?: LastRun | null; readonly reade
         records: { lastRunOf: () => (over.lastRun === undefined ? LAST_RUN : over.lastRun) },
         transcripts: registryWith({ claude: claudeReader(2) }),
         log: () => undefined,
-        locate: async () => SOURCE_FILE,
+        locate: async () => fsPathOf(SOURCE_FILE),
         worksite: { reader: over.reader ?? worksiteWith(), repo: { repoOf: async () => ({ kind: 'no-repo' }) }, edits: { of: async () => [] } },
         tokens: { read: async () => ({ kind: 'tokens', tokens: new Map() }) },
     };
 }
 
 export function inputOf(over: Partial<HandoffRenderInput> = {}): HandoffRenderInput {
-    return { handoff: ID, at: NOW, lane: LANE, cursor: CURSOR, facts: FACTS, note: null, refresh: 'not-requested', ...over };
+    return { handoff: ID, at: instant(NOW), lane: LANE, cursor: CURSOR, facts: FACTS, note: null, refresh: 'not-requested', ...over };
 }
 
 export async function textOf(result: HandoffRenderResult): Promise<string> {

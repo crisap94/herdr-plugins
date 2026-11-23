@@ -155,7 +155,7 @@ function printerOf(): HandoffPrintService {
         tokens: fleet,
         target: { status: (pane) => fleet.agents().status(pane) },
         closedDays: loadSettings().closedLaneDays,
-        now: () => Date.now(),
+        now: () => instant(Date.now()),
         flush: () => Promise.resolve(),
         log: (line) => { console.error(`tab-recap: ${line}`); },
     });

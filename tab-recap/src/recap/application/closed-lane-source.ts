@@ -4,6 +4,7 @@ import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import { inWindow } from '#src/recap/domain/retention.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import type { ClosureReader, ClosureRuns } from '#src/ports/closed-lanes.ts';
 import { isUnknown, unreadableOf } from '#src/ports/unknowable.ts';
 import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
@@ -75,5 +76,5 @@ export function resolveClosedLane(identity: ClosedLaneIdentity, deps: ClosedSour
 }
 
 export function closedLaneOf(identity: ClosedLaneIdentity, view: ClosedView): HandoffLane {
-    return { tab: identity.tab, pane: identity.pane, agent: view.agent, status: 'unknown', cwd: view.cwd };
+    return { tab: identity.tab, pane: identity.pane, agent: view.agent, status: 'unknown', cwd: view.cwd === null ? null : textOf(view.cwd) };
 }

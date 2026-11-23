@@ -82,7 +82,7 @@ function printerWith(spy: Spy, world: World = {}, logged: string[] = [], flushed
         tokens: base.tokens,
         target: { status: async () => world.target ?? UNREACHABLE },
         closedDays: closedLaneDaysOf('14'),
-        now: () => NOW,
+        now: () => instant(NOW),
         flush: (tab, why): Promise<void> => { flushed.push(`${String(tab)} ${why} opened ${spy.opened}`); return Promise.resolve(); },
         log: (line) => { logged.push(line); },
     });

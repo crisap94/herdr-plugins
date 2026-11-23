@@ -1,3 +1,4 @@
+import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { test } from 'node:test';
@@ -161,7 +162,7 @@ test('on the SQLite store a delivered handoff writes its answer and settles its 
 
 test('the log line for a rendered handoff names its id, outcome, byte, omitted and withheld counts and no fact text', async () => {
     const taken = row();
-    const { runner, probe } = runnerOf(delivered, { flow: { execute: async (): Promise<HandoffRun> => ({ outcome: { kind: 'delivered' }, rendered: { bytes: 812, omitted: 3, withheld: 1 } }) } });
+    const { runner, probe } = runnerOf(delivered, { flow: { execute: async (): Promise<HandoffRun> => ({ outcome: { kind: 'delivered' }, rendered: { bytes: countOf(812), omitted: countOf(3), withheld: countOf(1) } }) } });
     await runner.take([taken]);
     assert.deepEqual(probe.logs, [`handoff ${taken.id}: delivered bytes 812 omitted 3 withheld 1`]);
 });

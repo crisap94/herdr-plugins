@@ -15,7 +15,8 @@ import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { fsPathOf, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { must } from '#src/protocol/result.ts';
 import { renderHandoff } from './handoff-pipeline.ts';
 import type { HandoffLane } from './handoff-render.ts';
@@ -45,13 +46,13 @@ export interface PrintDeps {
     readonly tokens: PaneTokens;
     readonly target: TargetStatus;
     readonly closedDays: ClosedLaneDays;
-    readonly now: () => number;
+    readonly now: () => Instant;
     readonly log: (line: Text) => void;
 }
 
 const refusedWith = (reason: Extract<HandoffOutcome, { readonly kind: 'refused' }>['reason']): PrintAnswer => ({ kind: 'refused', reason });
 
-const transcriptOf = (cursor: LaneCursor | null): Text | null => (cursor === null || cursor.transcript === '' ? null : must(parseText(cursor.transcript)));
+const transcriptOf = (cursor: LaneCursor | null): FsPath | null => (cursor === null || cursor.transcript === '' ? null : fsPathOf(cursor.transcript));
 
 const laneOf = (tab: TabId, lane: TabLaneRecord): HandoffLane => ({
     tab,
@@ -145,7 +146,7 @@ export class PrintedHandoffs implements HandoffPrintService {
             records: store.records,
             transcripts: this.deps.transcripts,
             log: this.deps.log,
-            locate: (): Promise<Text | null> => Promise.resolve(transcriptOf(view.cursor)),
+            locate: (): Promise<FsPath | null> => Promise.resolve(transcriptOf(view.cursor)),
             worksite: this.deps.worksite,
             tokens: this.deps.tokens,
         });
