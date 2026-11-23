@@ -147,7 +147,7 @@ test('a compaction that takes the target during the refresh makes the claim refu
     assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'refused', reason: 'lane-busy' });
     assert.equal(h.calls.includes('send'), false);
     assert.equal(h.claims.kindOf(paneId(String(TARGET))), 'compaction');
-    assert.equal(h.claims.has(SOURCE), false);
+    assert.equal(h.claims.has(SOURCE), 'free');
 });
 
 test('a target that becomes working during the refresh is refused status-not-ready and nothing is typed', async () => {
@@ -225,7 +225,7 @@ test('a run abandoned before it claims its lanes types nothing, claims nothing a
     mark.abandon();
     assert.deepEqual((await h.flow.execute(row, mark)).outcome, { kind: 'failed', reason: 'expired' });
     assert.deepEqual(h.sent, []);
-    assert.equal(h.claims.has(row.pane), false);
+    assert.equal(h.claims.has(row.pane), 'free');
 });
 
 test('a run abandoned while it waits for the settle hold keeps its claims for the abandoner and never types', async () => {
@@ -234,7 +234,7 @@ test('a run abandoned while it waits for the settle hold keeps its claims for th
     const row = request();
     assert.deepEqual((await h.flow.execute(row, mark)).outcome, { kind: 'failed', reason: 'expired' });
     assert.deepEqual(h.sent, []);
-    assert.equal(h.claims.has(row.pane), true);
+    assert.equal(h.claims.has(row.pane), 'held');
 });
 
 test('the flow flushes the source tab\'s pending recap after its checks and before it refreshes or renders', async () => {

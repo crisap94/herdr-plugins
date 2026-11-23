@@ -30,7 +30,7 @@ test('opencode: its own /compact is confirmed on the second look, then restored;
     assert.deepEqual(command.lineBehavior, { enterDelay: duration(300) });
     assert.deepEqual(restore.promptBehavior, { stall: 'accepts-stall' });
     assert.deepEqual(world.pauses, [300, 300, 300, 1000]);
-    assert.equal(world.claims.has(paneId('w1:p4')), false, 'the pane is released');
+    assert.equal(world.claims.has(paneId('w1:p4')), 'free', 'the pane is released');
     assert.match(world.toasts.at(-1) ?? '', /opencode compacted/);
 });
 

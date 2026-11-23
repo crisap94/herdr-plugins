@@ -9,30 +9,33 @@ export interface PaneClaim {
     readonly kind: ClaimKind;
 }
 
+export type ClaimOutcome = 'claimed' | 'taken';
+export type Holding = 'held' | 'free';
+
 export class LaneClaims {
     private readonly held = new Map<PaneId, Held>();
 
-    claim(pane: PaneId, kind: ClaimKind): boolean {
+    claim(pane: PaneId, kind: ClaimKind): ClaimOutcome {
         if (this.held.has(pane)) {
-            return false;
+            return 'taken';
         }
         this.put(pane, kind);
-        return true;
+        return 'claimed';
     }
 
-    claimAll(claims: readonly PaneClaim[]): boolean {
+    claimAll(claims: readonly PaneClaim[]): ClaimOutcome {
         const panes = new Set(claims.map((claim) => claim.pane));
         if (panes.size !== claims.length || claims.some((claim) => this.held.has(claim.pane))) {
-            return false;
+            return 'taken';
         }
         for (const claim of claims) {
             this.put(claim.pane, claim.kind);
         }
-        return true;
+        return 'claimed';
     }
 
-    has(pane: PaneId): boolean {
-        return this.held.has(pane);
+    has(pane: PaneId): Holding {
+        return this.held.has(pane) ? 'held' : 'free';
     }
 
     kindOf(pane: PaneId): ClaimKind | null {

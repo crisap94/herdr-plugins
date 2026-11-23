@@ -87,7 +87,7 @@ export class HandoffFlow {
             return unrendered(rendered);
         }
         const held = this.holdsOf(request);
-        if (!this.deps.claims.claimAll(held.map((pane) => ({ pane, kind: 'handoff' as const })))) {
+        if (this.deps.claims.claimAll(held.map((pane) => ({ pane, kind: 'handoff' as const }))) === 'taken') {
             return unrendered({ kind: 'refused', reason: 'lane-busy' });
         }
         if (mark.claim() === 'absent') {
@@ -122,7 +122,7 @@ export class HandoffFlow {
         if (target.kind !== 'ready') {
             return target;
         }
-        if (this.holdsOf(request).some((pane) => this.deps.claims.has(pane))) {
+        if (this.holdsOf(request).some((pane) => this.deps.claims.has(pane) === 'held')) {
             return { kind: 'refused', reason: 'lane-busy' };
         }
         return target;

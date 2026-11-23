@@ -12,14 +12,14 @@ const at = (pane: string): ReturnType<typeof laneFrom> => laneFrom(seenLane({ pa
 
 test('a pane is claimed once: a second claim fails, a join is kept for the answers, and the release frees it', () => {
     const claims = new LaneClaims();
-    assert.equal(claims.claim(paneId('w1:p1'), 'compaction'), true);
-    assert.equal(claims.claim(paneId('w1:p1'), 'compaction'), false, 'the running compaction holds it');
-    assert.equal(claims.has(paneId('w1:p1')), true);
+    assert.equal(claims.claim(paneId('w1:p1'), 'compaction'), 'claimed');
+    assert.equal(claims.claim(paneId('w1:p1'), 'compaction'), 'taken', 'the running compaction holds it');
+    assert.equal(claims.has(paneId('w1:p1')), 'held');
     claims.join(paneId('w1:p1'), { tab: tabId('w1:t1'), pane: paneId('w1:p1'), note: null, origin: 'request', answer: textOf('r1') });
     assert.deepEqual(claims.joinedOf(paneId('w1:p1')).map((request) => request.answer), ['r1']);
     claims.release(paneId('w1:p1'));
-    assert.deepEqual([claims.has(paneId('w1:p1')), claims.joinedOf(paneId('w1:p1')).length], [false, 0]);
-    assert.equal(claims.claim(paneId('w1:p1'), 'compaction'), true, 'a later request may start one');
+    assert.deepEqual([claims.has(paneId('w1:p1')), claims.joinedOf(paneId('w1:p1')).length], ['free', 0]);
+    assert.equal(claims.claim(paneId('w1:p1'), 'compaction'), 'claimed', 'a later request may start one');
 });
 
 test('a lane whose compaction a request started is busy for autocompact: no second request, and the skip says this lane', async () => {
