@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Correction, RecapRequest } from '#src/ports/summarizer.ts';
+import type { InputFact } from '#src/ports/recap-input.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { instructions } from '#src/adapters/job/prompts/recap-instructions.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { textOf } from '#src/recap/domain/text.ts';
@@ -57,4 +59,30 @@ test('writer instructions keep every prompt case byte-identical to main', () => 
     for (const [name, build, expected] of CASES) {
         assert.equal(digest(instructions(build())), expected, name);
     }
+});
+
+const spanish = (id: string, text: string): InputFact =>
+    ({ id: textOf(id), section: 'done', text: textOf(text), state: 'open', first: instant(0), last: instant(0), why: null, ref: null, anchor: null, agent: null, closed: null });
+
+const SPANISH_FACTS = [spanish('f1', 'Respuesta entregada al operador'), spanish('f2', 'Migración de la base de datos lista'), spanish('f3', 'Pruebas en verde en la rama')];
+
+test('after a language change the writer is told the ids of the open facts still in the old language', () => {
+    const request = { ...requestOf({ ledgers: [{ task: null, facts: SPANISH_FACTS }], language: textOf('en'), previousLanguage: textOf('es') }), notInLanguage: SPANISH_FACTS };
+    const lines = instructions(request).split('\n');
+    assert.ok(lines.includes('Some open facts in <ledger> are still in Spanish: update every open fact that is not in English, rewritten in English with the same meaning, even when nothing else changed. These open facts are not in English: f1, f2, f3.'));
+    assert.ok(!lines.some((line) => line.startsWith('The facts in <ledger> are in')));
+});
+
+test('with no open fact in another language the instructions are the ones main sends', () => {
+    const switching = requestOf({ ledgers: [{ task: null, facts: SPANISH_FACTS }], language: textOf('en'), previousLanguage: textOf('es') });
+    assert.equal(instructions({ ...switching, notInLanguage: [] }), instructions(switching));
+    assert.match(instructions(switching), /^The facts in <ledger> are in Spanish: update every open fact that is still relevant, rewritten in English\.$/m);
+    assert.doesNotMatch(instructions(switching), /These open facts are not in/);
+    assert.doesNotMatch(instructions(requestOf({ language: textOf('en'), previousLanguage: textOf('en') })), /<ledger> are/);
+});
+
+test('a correction round keeps its language line without the ids', () => {
+    const request = { ...requestOf({ ledgers: [{ task: null, facts: SPANISH_FACTS }], language: textOf('en'), previousLanguage: textOf('es') }), notInLanguage: SPANISH_FACTS, retry: retryOf(false) };
+    assert.doesNotMatch(instructions(request), /These open facts are not in/);
+    assert.match(instructions(request), /The facts in <ledger> are in Spanish: update every open fact that is still relevant, rewritten in English\./);
 });

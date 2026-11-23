@@ -107,6 +107,7 @@ export interface RecapRequest {
     readonly input: RecapInput;
     readonly language: Text;
     readonly previousLanguage: Text;
+    readonly notInLanguage?: readonly InputFact[];
     readonly correction?: Text;
     readonly retry?: Correction;
     readonly closeEvidence?: CloseEvidence;
