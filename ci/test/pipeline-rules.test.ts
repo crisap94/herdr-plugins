@@ -3,6 +3,8 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 
+declare const Bun: Readonly<{ YAML: Readonly<{ parse(text: string): unknown }> }>;
+
 const repository = join(dirname(new URL(import.meta.url).pathname), '..', '..');
 const MACOS_ONLY = "${{ matrix.os == 'macos-latest' }}";
 const GUARD = 'if [ -f "$UNIT/gates/run.sh" ]; then';
@@ -204,10 +206,12 @@ test('every unit job has the two rules: all non-merge-request pipelines, then me
         const rules = jobs.get(name)?.rules;
         assert.ok(rules !== undefined, `${name} is missing`);
         assert.equal(rules.length, 2, `${name} does not have exactly two rules`);
-        assert.equal(rules[0]?.if, '$CI_PIPELINE_SOURCE != "merge_request_event"', `${name}: first rule`);
-        assert.equal(rules[0].changes, undefined);
-        assert.equal(rules[1].if, '$CI_PIPELINE_SOURCE == "merge_request_event"', `${name}: second rule`);
-        assert.ok((rules[1].changes ?? []).includes('bun.lock'), `${name}: the shared paths are missing`);
+        const [always, onPaths] = rules;
+        assert.ok(always !== undefined && onPaths !== undefined, `${name}: a rule is missing`);
+        assert.equal(always.if, '$CI_PIPELINE_SOURCE != "merge_request_event"', `${name}: first rule`);
+        assert.equal(always.changes, undefined);
+        assert.equal(onPaths.if, '$CI_PIPELINE_SOURCE == "merge_request_event"', `${name}: second rule`);
+        assert.ok((onPaths.changes ?? []).includes('bun.lock'), `${name}: the shared paths are missing`);
     }
 });
 
@@ -249,8 +253,23 @@ test('path rules 3: a plugin source file runs the plugin only, and lane-scope on
     );
 });
 
-test('path rules 4: a root ci file runs the root unit and track-scope only', () => {
-    assert.deepEqual(checked(MERGE_REQUEST, ['ci/check-track.ts']), sorted(['unit:root'], MERGE_REQUEST_JOBS));
+test('path rules 4: a root ci file runs the root unit, the plugin lint that exercises the ci scripts, and track-scope', () => {
+    assert.deepEqual(checked(MERGE_REQUEST, ['ci/check-track.ts']), sorted(['unit:root', 'unit:tab-recap:lint'], MERGE_REQUEST_JOBS));
+});
+
+test('path rules 4b: the eval harness runs the plugin lint, which type-checks it', () => {
+    assert.deepEqual(checked(MERGE_REQUEST, ['evals/src/run.ts']), sorted(['unit:tab-recap:lint'], MERGE_REQUEST_JOBS));
+});
+
+test('path rules 4c: a gates folder of any unit runs the root unit, which holds the drift test, besides its own unit', () => {
+    for (const file of ['packages/recap-view/gates/rules.sh', 'desktop/gates/rules.sh', 'agent-sdk/gates/rules.sh', 'tab-recap/gates/rules.sh', 'packages/session-ledger-sqlite/gates/rules.sh']) {
+        assert.ok(checked(MERGE_REQUEST, [file]).includes('unit:root'), file);
+    }
+});
+
+test('path rules 4d: the sqlite ledger runs the agent-sdk unit, and .oxlintrc.json runs the root unit', () => {
+    assert.ok(checked(MERGE_REQUEST, ['packages/session-ledger-sqlite/src/index.ts']).includes('unit:agent-sdk'));
+    assert.ok(checked(MERGE_REQUEST, ['.oxlintrc.json']).includes('unit:root'));
 });
 
 test('path rules 5: the lockfile runs every unit job and the install smoke', () => {

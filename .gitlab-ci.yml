@@ -59,6 +59,11 @@ unit:root:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
         - ci/**/*
+        - .oxlintrc.json
+        - tab-recap/gates/**/*
+        - packages/*/gates/**/*
+        - desktop/gates/**/*
+        - agent-sdk/gates/**/*
         - bun.lock
         - package.json
         - bunfig.toml
@@ -78,6 +83,8 @@ unit:root:
       changes:
         - tab-recap/**/*
         - packages/**/*
+        - ci/**/*
+        - evals/**/*
         - bun.lock
         - package.json
         - bunfig.toml
@@ -214,6 +221,7 @@ unit:root:
       changes:
         - agent-sdk/**/*
         - packages/session-ledger/**/*
+        - packages/session-ledger-sqlite/**/*
         - bun.lock
         - package.json
         - bunfig.toml
@@ -227,6 +235,7 @@ unit:root:
     - bash agent-sdk/gates/run.sh test
 
 track-scope:
+  extends: .tools
   stage: check
   variables:
     GIT_DEPTH: "0"

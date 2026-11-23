@@ -137,7 +137,8 @@
     "tab-recap/src/daemon/slots/timing.ts": ["ENG", "SW"],
     "tab-recap/test/conformance/pending-{REC,FCT}.json": ["ENG", "STO"],
     "tab-recap/src/engine/**": ["ENG", "FND"],
-    "tab-recap/ci/{lint.sh,test.sh}": ["CI", "FND"]
+    "tab-recap/ci/{lint.sh,test.sh}": ["CI", "FND"],
+    "tab-recap/ci/gates.d/00-packages.sh": ["CI", "FND"]
   },
   "open": ["tab-recap/test/**"]
 }
