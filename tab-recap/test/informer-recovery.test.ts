@@ -10,6 +10,7 @@ import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import type { Frame, FleetSource, SnapshotResult, StreamResult, Topic } from '#src/ports/fleet-source.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
+import { reconciliation, seenLane } from '#test/support/seen.ts';
 
 class StrictHerdr implements FleetSource {
     live = new Set<string>(['w1:p1']);
@@ -18,8 +19,8 @@ class StrictHerdr implements FleetSource {
     readonly streams: AsyncQueue<Frame>[] = [];
 
     snapshot(): Promise<SnapshotResult> {
-        const lanes = [...this.live].map((pane) => ({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', session: `s-${pane}` }));
-        return Promise.resolve({ kind: 'snapshot', seen: { focusedTab: null, lanes, panes: [...this.live], columns: [], widths: new Map() }, focusedTab: null, paneTokens: new Map() });
+        const lanes = [...this.live].map((pane) => seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', session: `s-${pane}` }));
+        return Promise.resolve({ kind: 'snapshot', seen: reconciliation({ focusedTab: null, lanes, panes: [...this.live], columns: [], widths: new Map() }), focusedTab: null, paneTokens: new Map() });
     }
 
     subscribe(topics: readonly Topic[]): Promise<StreamResult> {

@@ -27,11 +27,12 @@ import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { type Instant } from '#src/recap/domain/time.ts';
+import { boardSeeded, seenLane } from '#test/support/seen.ts';
 
 const NOW = Date.parse('2026-10-10T10:00:00Z');
-const LANE = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' });
+const LANE = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' }));
 const coordinator = must(parseToolName('coordinator'));
-const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map([[LANE.pane, LANE]]) });
+const board = (): Board => ({ ...emptyBoard(), seeded: boardSeeded(true), lanes: new Map([[LANE.pane, LANE]]) });
 const flush = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
 
 interface World {

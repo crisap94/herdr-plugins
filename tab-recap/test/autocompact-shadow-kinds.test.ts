@@ -2,11 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { lane, world, rows } from '#test/autocompact-world.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 test('shadow Codex records with shadow mode while enabled Claude compacts normally', async () => {
     const w = world({ mode: 'on', kinds: ['claude', 'codex'], shadowKinds: ['codex'] });
     await w.service.consider(lane('codex', 'idle'));
-    await w.service.consider(laneFrom({ paneId: 'w1:p2', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
+    await w.service.consider(laneFrom(seenLane({ paneId: 'w1:p2', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' })));
     const decisions = rows(w);
     assert.equal(decisions.length, 2);
     assert.deepEqual(decisions.map(({ agent, mode }) => [agent, mode]), [['claude', 'on'], ['codex', 'shadow']]);

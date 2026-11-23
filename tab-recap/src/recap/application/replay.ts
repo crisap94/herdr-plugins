@@ -16,7 +16,7 @@ import type { Fact, FactId } from '#src/recap/domain/fact.ts';
 import type { SessionPath, TabId } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
@@ -126,7 +126,7 @@ export async function replayFile(deps: TypedReplayDeps, file: SessionPath, label
     const windows = mergedWindows(entries, mergeTurns);
     const at: Position = { turn: NONE, now: instant(windows.at(0)?.at(0)?.at ?? 1) };
     const engine = engineOf(deps, file, windows, at);
-    const lane = laneFrom({ paneId: 'replay:p1', tabId: label, workspaceId: 'replay', agent: deps.reader.agent, session: 'replay' });
+    const lane = laneFrom({ paneId: textOf('replay:p1'), tabId: textOf(label), workspaceId: textOf('replay'), agent: textOf(deps.reader.agent), session: textOf('replay') });
     await runWindows(engine, lane, windows, at, label);
     const tasks = knownOr(deps.records.readRecap(label), null)?.tasks ?? [];
     return {

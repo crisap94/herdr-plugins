@@ -255,3 +255,22 @@ test('TAB_RECAP_RUN_PACING: smart by default; turn only when set to turn; smart 
         rmSync(dir, { recursive: true, force: true });
     }
 });
+
+test('loadSettings: a numeric setting reads trimmed, lower-cased numeric text, and anything else, whole or out of range, gives the default', () => {
+    const readings: readonly (readonly [string, number])[] = [['1e3', 1000], [' 40 ', 40], ['0x10', 16], ['', 180_000], ['abc', 180_000], ['-1', 180_000], ['0', 180_000], ['2.5', 2.5]];
+    const wholes: readonly (readonly [string, number])[] = [['1E1', 10], [' 7 ', 7], ['0x10', 16], ['', 10], ['abc', 10], ['-1', 10], ['0', 10], ['51', 10], ['50', 50], ['2.5', 10]];
+    const before = [process.env['TAB_RECAP_TIMEOUT_MS'], process.env['TAB_RECAP_WRITER_KEEP_NEWEST']];
+    try {
+        for (const [raw, expected] of readings) {
+            process.env['TAB_RECAP_TIMEOUT_MS'] = raw;
+            assert.equal(loadSettings().timeoutMs, expected, `timeout ${JSON.stringify(raw)}`);
+        }
+        for (const [raw, expected] of wholes) {
+            process.env['TAB_RECAP_WRITER_KEEP_NEWEST'] = raw;
+            assert.equal(loadSettings().writerViewSettings.keepNewest, expected, `keep newest ${JSON.stringify(raw)}`);
+        }
+    } finally {
+        if (before[0] === undefined) { delete process.env['TAB_RECAP_TIMEOUT_MS']; } else { process.env['TAB_RECAP_TIMEOUT_MS'] = before[0]; }
+        if (before[1] === undefined) { delete process.env['TAB_RECAP_WRITER_KEEP_NEWEST']; } else { process.env['TAB_RECAP_WRITER_KEEP_NEWEST'] = before[1]; }
+    }
+});

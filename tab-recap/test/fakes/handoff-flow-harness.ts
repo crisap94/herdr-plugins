@@ -25,6 +25,7 @@ import { paneId, tabId } from '#test/support/ids.ts';
 import { MemoryLedger } from './memory-ledger.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 export const NOW = Date.parse('2026-10-11T10:00:00Z');
 export const SOURCE = paneId('w1:p1');
@@ -100,9 +101,9 @@ export function harness(over: Partial<FlowWorld> = {}, sender: Pick<HandoffSende
     const flushes: string[] = [];
     const targetKey = world.targetKeyKnown ? { session: 'sess-2', cwd: '/other' } : { session: null, cwd: null };
     const lanes = (): readonly Lane[] => [
-        laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: world.sourceStatus, session: 'sess-1', cwd: '/repo' }),
-        ...(world.targetPresent ? [laneFrom({ paneId: 'w1:p2', tabId: 'w1:t2', workspaceId: 'w1', agent: world.targetAgent, status: world.targetStatus, ...targetKey })] : []),
-        ...(world.targetPresent && world.peer ? [laneFrom({ paneId: 'w1:p3', tabId: 'w1:t2', workspaceId: 'w1', agent: world.targetAgent, status: 'idle', session: 'sess-3', cwd: '/other' })] : []),
+        laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: world.sourceStatus, session: 'sess-1', cwd: '/repo' })),
+        ...(world.targetPresent ? [laneFrom(seenLane({ paneId: 'w1:p2', tabId: 'w1:t2', workspaceId: 'w1', agent: world.targetAgent, status: world.targetStatus, ...targetKey }))] : []),
+        ...(world.targetPresent && world.peer ? [laneFrom(seenLane({ paneId: 'w1:p3', tabId: 'w1:t2', workspaceId: 'w1', agent: world.targetAgent, status: 'idle', session: 'sess-3', cwd: '/other' }))] : []),
     ];
     const inFlight: InFlight = { read: async () => { calls.push('flight'); return world.flight; } };
     const render: HandoffRender = async (input) => {

@@ -2,8 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { framesBetween } from '#src/adapters/herdr-core/frames.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
+import { seenLane } from '#test/support/seen.ts';
 
-const lane = (pane: string, status: string): SeenLane => ({ paneId: pane, tabId: 'tb1', workspaceId: 'sp1', agent: 'claude', status });
+const lane = (pane: string, status: string): SeenLane => (seenLane({ paneId: pane, tabId: 'tb1', workspaceId: 'sp1', agent: 'claude', status }));
 
 test('framesBetween names a new agent, a status change and a closed pane, and nothing else', () => {
     const frames = framesBetween([lane('t1', 'working'), lane('t2', 'idle'), lane('t3', 'idle')], [lane('t1', 'idle'), lane('t2', 'idle'), lane('t4', 'working')]);

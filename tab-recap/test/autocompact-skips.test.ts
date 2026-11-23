@@ -11,8 +11,9 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import { NOW, lane, world } from './autocompact-world.ts';
 import type { World } from './autocompact-world.ts';
 import { brand } from '#src/recap/domain/brand.ts';
+import { seenLane } from '#test/support/seen.ts';
 
-const at = (pane: string, status: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status });
+const at = (pane: string, status: string): Lane => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status }));
 const skipsOf = (w: World): unknown[] => w.store.decisions.skips().map((skip) => [skip.gate, skip.share, skip.detail]);
 
 test('a stop by the minimum, the cooldown, in flight, busy or an unknown share keeps its skip with the share and the detail', async () => {

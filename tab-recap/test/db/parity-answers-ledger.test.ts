@@ -19,6 +19,7 @@ import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { rid } from '../fakes/ask-ledger.ts';
 import { expectSameEffect, normalise } from './parity.ts';
+import { hiddenStateOf } from '#test/support/seen.ts';
 
 const ANSWER_DUMP = 'SELECT id, at, outcome, reason FROM handoff_answer ORDER BY id';
 const BRIEF_DUMP = 'SELECT decision_id, briefed_at, body FROM autocompact_brief ORDER BY decision_id';
@@ -222,7 +223,7 @@ describe('blank ids on the write paths', () => {
         const repoDb = memory(() => undefined);
         try {
             rawDb.prepare("INSERT OR REPLACE INTO tab_visibility (tab_id, state) VALUES ('', 'hidden')").run();
-            new ColumnVisibilityRepository(repoDb).writeHidden({ all: false, hidden: [''], shown: [] });
+            new ColumnVisibilityRepository(repoDb).writeHidden(hiddenStateOf({ all: false, hidden: [''], shown: [] }));
             assert.deepStrictEqual(normalise(dumpOf('SELECT tab_id, state FROM tab_visibility')(repoDb)), normalise(dumpOf('SELECT tab_id, state FROM tab_visibility')(rawDb)));
         } finally {
             rawDb.close();

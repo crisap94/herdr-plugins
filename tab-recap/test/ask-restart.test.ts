@@ -22,9 +22,10 @@ import type { Presence } from '#src/recap/domain/presence.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { boardSeeded, seenLane } from '#test/support/seen.ts';
 
-const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
-const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) });
+const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
+const board = (): Board => ({ ...emptyBoard(), seeded: boardSeeded(true), lanes: new Map([[lane.pane, lane]]) });
 const coordinator = must(parseToolName('coordinator'));
 const flush = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
 

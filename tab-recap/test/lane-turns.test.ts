@@ -15,8 +15,9 @@ import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import type { FleetSource, Frame, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
 import { memoryStore } from './db/support.ts';
+import { seenLane } from '#test/support/seen.ts';
 
-const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' });
+const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' }));
 const board = withLanes(emptyBoard(), new Map([[paneId('w1:p1'), lane]]));
 
 function turns(): { heard: (pane: string, status: string) => void; store: ReturnType<typeof memoryStore>; settled: string[] } {

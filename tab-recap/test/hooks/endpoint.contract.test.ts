@@ -19,6 +19,7 @@ import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { SOCKET_PATH_MAX } from '#src/wire/socket-claim.ts';
 import { postHook, readHookCases } from '#test/contracts/wire/fakes/fake-harness.ts';
 import type { HookCase } from '#test/contracts/wire/fakes/fake-harness.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const NOW = 1_000_000;
 const TAB = tabId('w1:t1');
@@ -37,7 +38,7 @@ const restoreOf = (text: string): RestoreText => {
 type LaneStatusName = NonNullable<HookCase['lane']>['status'];
 
 const laneOf = (status: LaneStatusName): Lane =>
-    laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: laneStatus(status), session: 's-lane', cwd: '/work/repo' });
+    laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: laneStatus(status), session: 's-lane', cwd: '/work/repo' }));
 
 function receiverFor(c: HookCase | null): ReturnType<typeof createReceiver> {
     const lane = laneOf(c?.lane?.status ?? 'idle');

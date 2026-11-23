@@ -12,11 +12,13 @@ import type { HandoffEvidence, HandoffPlan, LocatedBy } from '#src/recap/domain/
 import { HandoffConfirmation } from '#src/recap/application/handoff-confirmation.ts';
 import { HandoffSender } from '#src/recap/application/handoff-sender.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane, SeenLane } from '#src/recap/domain/lane.ts';
+import type { Lane } from '#src/recap/domain/lane.ts';
 import { registryWith } from './transcript-registry.ts';
 import { agentKind } from '#test/support/ids.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { seenLane } from '#test/support/seen.ts';
+import type { BareLane } from '#test/support/seen.ts';
 
 export interface Faults {
     readonly session?: boolean;
@@ -174,8 +176,8 @@ export function planWith(evidence: HandoffEvidence): HandoffPlan {
     return { ...CLAUDE_PLAN, evidence };
 }
 
-export function laneWith(over: Partial<SeenLane> = {}): Lane {
-    return laneFrom({ paneId: PANE, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', session: 'sess-1', cwd: '/repo', ...over });
+export function laneWith(over: Partial<BareLane> = {}): Lane {
+    return laneFrom(seenLane({ paneId: PANE, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', session: 'sess-1', cwd: '/repo', ...over }));
 }
 
 export function readyOf(lane: Lane, plan: HandoffPlan, ownTranscript = true): Ready {

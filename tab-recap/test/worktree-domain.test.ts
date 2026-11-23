@@ -19,6 +19,7 @@ import {
 } from '#src/recap/domain/worktree.ts';
 import type { LaneGlance } from '#src/recap/domain/worktree.ts';
 import type { PorcelainReading } from '#src/recap/domain/porcelain.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const count = (n: number): Count => must(parseCount(n));
 const dir = (path: string): Directory => must(parseDirectory(path));
@@ -68,7 +69,7 @@ test('the run of a root: requests merge into the strongest tier, one run at a ti
     assert.equal(takeRun(runDone(next.state)).start, null);
 });
 
-const laneAt = (pane: string, cwd: string | null, status: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status, cwd });
+const laneAt = (pane: string, cwd: string | null, status: string): Lane => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status, cwd }));
 
 const lanes = (...all: Lane[]): ReadonlyMap<PaneId, Lane> => new Map(all.map((lane): [PaneId, Lane] => [lane.pane, lane]));
 

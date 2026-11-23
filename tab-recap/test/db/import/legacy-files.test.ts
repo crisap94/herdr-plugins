@@ -4,6 +4,7 @@ import { rmSync } from 'node:fs';
 import type { LegacyStoreFiles } from '#src/adapters/db/import/legacy-files.ts';
 import { scratchDir } from '../support.ts';
 import { everyShape, filesAt, lane, put, sections } from './support.ts';
+import { hiddenStateOf } from '#test/support/seen.ts';
 
 test('the legacy reader knows every shape a file was ever stored in', () => {
     const dir = scratchDir('legacy');
@@ -52,7 +53,7 @@ test('damaged sections read as null, half-damaged ones keep what is text; pendin
         assert.deepEqual([legacy.pendingRequests(), legacy.pendingVisibility()], [['w1:t1'], [{ target: 'w1:t1', hidden: false }]]);
         assert.deepEqual(legacy.pendingRequests(), ['w1:t1'], 'still there');
         put(dir, '', 'hidden.json', '{"all":"yes","hidden":[1,"w1:t5"],"shown":null}');
-        assert.deepEqual(legacy.readHidden(), { all: false, hidden: ['w1:t5'], shown: [] });
+        assert.deepEqual(legacy.readHidden(), hiddenStateOf({ all: false, hidden: ['w1:t5'], shown: [] }));
         assert.equal(filesAt(scratchDir('none')).exists(), 'absent');
     } finally {
         rmSync(dir, { recursive: true, force: true });

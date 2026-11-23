@@ -11,9 +11,10 @@ import type { Intent } from '#src/recap/domain/intent.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { reconciliation, seenColumn, seenLane, sessionObservation, statusObservation, switchedObservation } from '#test/support/seen.ts';
 
 const lane = (pane: string, tab: string, status = 'idle', agent = 'claude'): SeenLane =>
-    ({ paneId: pane, tabId: tab, workspaceId: 'w1', agent, status, session: `s-${pane}` });
+    (seenLane({ paneId: pane, tabId: tab, workspaceId: 'w1', agent, status, session: `s-${pane}` }));
 
 function run(observations: readonly Observation[], start: Board = emptyBoard()): { board: Board; intents: Intent[]; outcomes: Outcome[] } {
     let board = start;
@@ -30,7 +31,7 @@ function run(observations: readonly Observation[], start: Board = emptyBoard()):
 
 const kinds = (intents: readonly Intent[]): string[] => intents.map((intent) => intent.kind);
 const seen = (lanes: readonly SeenLane[], columns: SeenColumn[] = [], panes: string[] = []): Observation =>
-    ({ kind: 'reconciled', seen: { lanes, columns, panes: [...lanes.map((l) => l.paneId), ...panes], widths: new Map() } });
+    ({ kind: 'reconciled', seen: reconciliation({ lanes, columns, panes: [...lanes.map((l) => l.paneId), ...panes], widths: new Map() }) });
 
 test('a new agent pops its column up at once', () => {
     const { intents, outcomes } = run([seen([]), { kind: 'detected', lane: lane('w1:p1', 'w1:t1') }]);
@@ -52,9 +53,9 @@ test('a column is not asked for twice while it is opening', () => {
 test('a turn ends on working → idle, and only then', () => {
     const { intents } = run([
         seen([lane('w1:p1', 'w1:t1', 'idle')]),
-        { kind: 'status', pane: paneId('w1:p1'), status: 'working' },
-        { kind: 'status', pane: paneId('w1:p1'), status: 'working' },
-        { kind: 'status', pane: paneId('w1:p1'), status: 'done' },
+        statusObservation({ kind: 'status', pane: paneId('w1:p1'), status: 'working' }),
+        statusObservation({ kind: 'status', pane: paneId('w1:p1'), status: 'working' }),
+        statusObservation({ kind: 'status', pane: paneId('w1:p1'), status: 'done' }),
     ]);
     const recaps = intents.flatMap((intent) => (intent.kind === 'recap' ? [intent] : []));
     const [only] = recaps;
@@ -102,19 +103,19 @@ test('switching off closes every column and opens none', () => {
     const { intents, board } = run([
         seen([lane('w1:p1', 'w1:t1')]),
         { kind: 'column-opened', tab: tabId('w1:t1'), pane: paneId('w1:p9'), shape: 'side' },
-        { kind: 'switched', enabled: false },
+        switchedObservation({ kind: 'switched', enabled: false }),
     ]);
     assert.deepEqual(intents.at(-1), { kind: 'close-column', tab: 'w1:t1', column: 'w1:p9' });
     assert.ok(board.closing.has(paneId('w1:p9')), 'asked, and not forgotten until herdr lets go of the pane');
 });
 
 test('a restarted daemon adopts the columns it finds instead of opening new ones', () => {
-    const { intents } = run([seen([lane('w1:p1', 'w1:t1')], [{ tabId: 'w1:t1', paneId: 'w1:p9', shape: 'side' }], ['w1:p9'])]);
+    const { intents } = run([seen([lane('w1:p1', 'w1:t1')], [seenColumn({ tabId: 'w1:t1', paneId: 'w1:p9', shape: 'side' })], ['w1:p9'])]);
     assert.equal(kinds(intents).filter((kind) => kind === 'open-column').length, 0);
 });
 
 const narrowTab = (focusedTab: string | null): Observation =>
-    ({ kind: 'reconciled', seen: { focusedTab, lanes: [lane('w1:p1', 'w1:t1')], columns: [], panes: ['w1:p1'], widths: new Map([['w1:t1', 60]]) } });
+    ({ kind: 'reconciled', seen: reconciliation({ focusedTab, lanes: [lane('w1:p1', 'w1:t1')], columns: [], panes: ['w1:p1'], widths: new Map([['w1:t1', 60]]) }) });
 
 test('a narrow tab (a phone) gets a bar along the bottom instead of a side column', () => {
     assert.deepEqual(run([narrowTab('w1:t1')]).intents.at(-1), { kind: 'open-column', tab: 'w1:t1', shape: 'bar' });
@@ -144,7 +145,7 @@ test('focusing a tab or pressing r asks for ONE recap of the whole tab', () => {
 test('a turn ending in one lane recaps the tab with all its lanes', () => {
     const { intents } = run([
         seen([lane('w1:p1', 'w1:t1', 'working'), lane('w1:p2', 'w1:t1', 'idle'), lane('w1:p3', 'w1:t2', 'working')]),
-        { kind: 'status', pane: paneId('w1:p1'), status: 'idle' },
+        statusObservation({ kind: 'status', pane: paneId('w1:p1'), status: 'idle' }),
     ]);
     const recaps = intents.flatMap((intent) => (intent.kind === 'recap' ? [intent] : []));
     const [only] = recaps;
@@ -161,7 +162,7 @@ test('a staged rollout: only the listed tabs get a column', () => {
 });
 
 const at = (width: number): Observation =>
-    ({ kind: 'reconciled', seen: { focusedTab: 'w1:t1', lanes: [lane('w1:p1', 'w1:t1')], columns: [], panes: ['w1:p1', 'w1:p9'], widths: new Map([['w1:t1', width]]) } });
+    ({ kind: 'reconciled', seen: reconciliation({ focusedTab: 'w1:t1', lanes: [lane('w1:p1', 'w1:t1')], columns: [], panes: ['w1:p1', 'w1:p9'], widths: new Map([['w1:t1', width]]) }) });
 
 test('a phone attaching swaps the side column for a bar, and back when the desktop returns', () => {
     const { intents } = run([at(189), { kind: 'column-opened', tab: tabId('w1:t1'), pane: paneId('w1:p9'), shape: 'side' }, at(55), closed('w1:p9')]);
@@ -177,12 +178,12 @@ test('a phone attaching swaps the side column for a bar, and back when the deskt
 const tabs = Array.from({ length: 28 }, (_, i) => i + 1);
 const bars = (width: number): Observation => ({
     kind: 'reconciled',
-    seen: {
+    seen: reconciliation({
         focusedTab: null, widths: new Map(tabs.map((n) => [`w1:t${n}`, width])),
         lanes: tabs.map((n) => lane(`w1:p${n}`, `w1:t${n}`)),
         columns: tabs.map((n) => ({ tabId: `w1:t${n}`, paneId: `w1:b${n}`, shape: 'bar' as const })),
         panes: tabs.flatMap((n) => [`w1:p${n}`, `w1:b${n}`]),
-    },
+    }),
 });
 const barsOpened = tabs.map((n): Observation => ({ kind: 'column-opened', tab: tabId(`w1:t${n}`), pane: paneId(`w1:b${n}`), shape: 'bar' }));
 
@@ -214,7 +215,7 @@ test('an explicit close emits lane-closed before its publish', () => {
 });
 
 test('a session observation closes nothing', () => {
-    const outcome = observedAfter([seen([lane('w1:p1', 'w1:t1')])], { kind: 'session', pane: paneId('w1:p1'), session: 's-2' });
+    const outcome = observedAfter([seen([lane('w1:p1', 'w1:t1')])], sessionObservation({ kind: 'session', pane: paneId('w1:p1'), session: 's-2' }));
     assert.deepEqual(closures(outcome.intents), []);
 });
 
@@ -299,13 +300,13 @@ test('a close that takes effect: one close and one open per tab, nothing else', 
     assert.equal(flip.closes.length, 28);
     assert.equal(done.closes.length, 0);
     assert.deepEqual(done.opens.map((i) => i.kind === 'open-column' ? i.shape : null), Array.from({ length: 28 }, () => 'side'));
-    const settled = playAt([[102, { kind: 'reconciled', seen: { focusedTab: null, widths: new Map(tabs.map((n) => [`w1:t${n}`, 164])), lanes: tabs.map((n) => lane(`w1:p${n}`, `w1:t${n}`)), columns: [], panes: tabs.map((n) => `w1:p${n}`) } }]], done.board);
+    const settled = playAt([[102, { kind: 'reconciled', seen: reconciliation({ focusedTab: null, widths: new Map(tabs.map((n) => [`w1:t${n}`, 164])), lanes: tabs.map((n) => lane(`w1:p${n}`, `w1:t${n}`)), columns: [], panes: tabs.map((n) => `w1:p${n}`) }) }]], done.board);
     assert.equal(settled.each.flat().filter((i) => i.kind === 'close-column' || i.kind === 'open-column').length, 0, 'the open is still on its way: not asked twice');
 });
 
 test('a hidden tab whose close never takes effect: 1 + 2 closes, then a give-up, then silence', () => {
     const column = { tabId: 'w1:t1', paneId: 'w1:p9', shape: 'side' as const };
-    const snapshot: Observation = { kind: 'reconciled', seen: { focusedTab: null, widths: new Map(), lanes: [lane('w1:p1', 'w1:t1')], columns: [column], panes: ['w1:p1', 'w1:p9'] } };
+    const snapshot: Observation = { kind: 'reconciled', seen: reconciliation({ focusedTab: null, widths: new Map(), lanes: [lane('w1:p1', 'w1:t1')], columns: [column], panes: ['w1:p1', 'w1:p9'] }) };
     const ready = run([seen([lane('w1:p1', 'w1:t1')]), { kind: 'column-opened', tab: tabId('w1:t1'), pane: paneId('w1:p9'), shape: 'side' }]).board;
     const hidden = playAt([[100, { kind: 'visibility', target: { tab: tabId('w1:t1') }, hidden: true }], [110, snapshot], [131, snapshot], [162, snapshot], [193, snapshot], [230, snapshot], [400, snapshot]], ready);
     const quiet = (n: number): number | undefined => hidden.each[n]?.filter((i) => i.kind === 'close-column' || i.kind === 'open-column' || i.kind === 'give-up').length;

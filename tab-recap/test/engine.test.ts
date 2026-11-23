@@ -21,11 +21,12 @@ import { brand } from '#src/recap/domain/brand.ts';
 import type { KeepInput } from '#src/recap/application/recap-job.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const TAB = 'w1:t1';
 const lanes: readonly Lane[] = [
-    laneFrom({ paneId: 'w1:p1', tabId: TAB, workspaceId: 'w1', agent: 'claude', session: 's1' }),
-    laneFrom({ paneId: 'w1:p2', tabId: TAB, workspaceId: 'w1', agent: 'claude', session: 's2' }),
+    laneFrom(seenLane({ paneId: 'w1:p1', tabId: TAB, workspaceId: 'w1', agent: 'claude', session: 's1' })),
+    laneFrom(seenLane({ paneId: 'w1:p2', tabId: TAB, workspaceId: 'w1', agent: 'claude', session: 's2' })),
 ];
 
 const reader: Transcripts = {

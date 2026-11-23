@@ -21,6 +21,8 @@ import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { reconciliation as reconciliationOfSeen, seenLane, switchedObservation } from '#test/support/seen.ts';
+import type { SeenLane } from '#src/recap/domain/lane.ts';
 
 const pane = (id: string, title: string, extra: Record<string, unknown> = {}): Record<string, unknown> =>
     ({ pane_id: id, tab_id: 'w1:t1', terminal_title_stripped: title, agent: null, label: null, ...extra });
@@ -57,8 +59,8 @@ test('a snapshot with an agent pane titled tab-recap-harness-config yields no co
     assert.deepEqual(reconciliation.columns.map((c) => c.paneId), ['w1:p2']);
 });
 
-const lane = (id: string, agent = 'claude'): { paneId: string; tabId: string; workspaceId: string; agent: string; status: string; session: string } =>
-    ({ paneId: id, tabId: 'w1:t1', workspaceId: 'w1', agent, status: 'idle', session: `s-${id}` });
+const lane = (id: string, agent = 'claude'): SeenLane =>
+    seenLane({ paneId: id, tabId: 'w1:t1', workspaceId: 'w1', agent, status: 'idle', session: `s-${id}` });
 
 function play(observations: readonly Observation[]): { board: Board; intents: Intent[] } {
     let board = emptyBoard();
@@ -73,12 +75,12 @@ function play(observations: readonly Observation[]): { board: Board; intents: In
 
 const reconciled = (lanes: ReturnType<typeof lane>[], columnPanes: string[]): Observation => ({
     kind: 'reconciled',
-    seen: { focusedTab: 'w1:t1', lanes, panes: [...lanes.map((l) => l.paneId), ...columnPanes], columns: columnPanes.map((p) => ({ tabId: 'w1:t1', paneId: p, shape: 'side' as const })), widths: new Map() },
+    seen: reconciliationOfSeen({ focusedTab: 'w1:t1', lanes, panes: [...lanes.map((l) => l.paneId), ...columnPanes], columns: columnPanes.map((p) => ({ tabId: 'w1:t1', paneId: p, shape: 'side' as const })), widths: new Map() }),
 });
 
 test('the domain never adopts an agent pane as a column, nor closes it — not even on stop', () => {
     for (const agent of ['claude', 'codex', 'opencode']) {
-        const { board, intents } = play([reconciled([lane('w1:p1', agent)], ['w1:p1']), { kind: 'switched', enabled: false }]);
+        const { board, intents } = play([reconciled([lane('w1:p1', agent)], ['w1:p1']), switchedObservation({ kind: 'switched', enabled: false })]);
         assert.equal(board.columns.size, 0, `${agent}: no column adopted`);
         const closes = intents.filter((intent) => intent.kind === 'close-column');
         assert.deepEqual(closes, [], `${agent}: no close-column intent`);
@@ -92,14 +94,14 @@ test('a pane the board held as a column, in which an agent then appears, becomes
         reconciled([lane('w1:p1')], []),
         real,
         { kind: 'detected', lane: lane('w1:p9', 'opencode') },
-        { kind: 'switched', enabled: false },
+        switchedObservation({ kind: 'switched', enabled: false }),
     ]);
     assert.ok([...board.columns.values()].every((placed) => String(placed.pane) !== 'w1:p9'));
     assert.deepEqual(intents.filter((intent) => intent.kind === 'close-column' && String(intent.column) === 'w1:p9'), []);
 });
 
 test('a real column is still closed on stop (the guard is not a blanket no)', () => {
-    const { intents } = play([reconciled([lane('w1:p1')], ['w1:p2']), { kind: 'switched', enabled: false }]);
+    const { intents } = play([reconciled([lane('w1:p1')], ['w1:p2']), switchedObservation({ kind: 'switched', enabled: false })]);
     assert.deepEqual(intents.filter((intent) => intent.kind === 'close-column').map((intent) => String(intent.column)), ['w1:p2']);
 });
 

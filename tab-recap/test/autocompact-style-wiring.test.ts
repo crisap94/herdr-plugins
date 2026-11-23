@@ -28,6 +28,7 @@ import { decidedOf, textOf } from './fakes/decider-fixtures.ts';
 import { agentKind } from '#test/support/ids.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { runningOf } from '#src/recap/domain/in-flight.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const env = (keys: Readonly<Record<string, string>>) => (key: string): string | undefined => keys[key];
 
@@ -77,7 +78,7 @@ async function decisionUnder(keys: Readonly<Record<string, string>>, closes: num
         claims: new LaneClaims(),
         log: () => undefined,
     });
-    const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
+    const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
     await service.consider(candidateFor(lane));
     return store.decisions.newest(must(parseCount(1)))[0]?.verdict;
 }
@@ -101,7 +102,7 @@ test('the daemon wiring reads the safe key: warnings of 0.42 wait under eager\'s
             informer: { current: emptyBoard() } as unknown as Informer, decider: () => decider,
             events: { lane: () => undefined, inWorkspace: () => undefined }, log: () => undefined,
         });
-        await service.consider(candidateFor(laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' })));
+        await service.consider(candidateFor(laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }))));
         return store.decisions.newest(must(parseCount(1)))[0]?.verdict;
     };
     assert.equal(await verdictWith({ TAB_RECAP_AUTOCOMPACT_STYLE: 'eager' }), 'wait');

@@ -15,11 +15,12 @@ import { countOf } from '#src/recap/domain/count.ts';
 import { uncheckedTokenName } from '#src/recap/domain/ids.ts';
 import { instant, parseMilliseconds } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const facts = (over: Partial<LaneTokenFacts> = {}): LaneTokenFacts => ({ share: countOf(40), recapAt: instant(1000), needs: countOf(0), ...over });
 const TTL = must(parseMilliseconds(TTL_MS));
 const OWNED_NAMES = OWNED_TOKENS.map(uncheckedTokenName);
-const laneOf = (pane: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
+const laneOf = (pane: string): Lane => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
 const boardOf = (...lanes: Lane[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((lane) => [lane.pane, lane])) });
 
 test('a lane carries the protocol version, its share, the last recap and the open needs; a fact unknown is left out', () => {

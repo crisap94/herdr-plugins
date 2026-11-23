@@ -21,9 +21,10 @@ import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { type Instant } from '#src/recap/domain/time.ts';
+import { boardSeeded, reconciliation, seenLane } from '#test/support/seen.ts';
 
 const PANE = 'w1:p1';
-const lane = { paneId: PANE, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', session: null };
+const lane = seenLane({ paneId: PANE, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', session: null });
 
 interface Control {
     on: boolean;
@@ -54,7 +55,7 @@ class Herdr implements FleetSource {
         const present = this.control.present;
         return Promise.resolve({
             kind: 'snapshot',
-            seen: { focusedTab: null, lanes: present ? [lane] : [], panes: present ? [PANE] : [], columns: [], widths: new Map() },
+            seen: reconciliation({ focusedTab: null, lanes: present ? [lane] : [], panes: present ? [PANE] : [], columns: [], widths: new Map() }),
             focusedTab: null,
             paneTokens: paneTokensOf({ panes: present ? panes : [] }),
         });
@@ -195,7 +196,7 @@ test('the ledger decides, not the value: a map read again with the same request 
         },
     };
     const seeded = laneFrom(lane);
-    const board: Board = { ...emptyBoard(), seeded: true, lanes: new Map([[seeded.pane, seeded]]) };
+    const board: Board = { ...emptyBoard(), seeded: boardSeeded(true), lanes: new Map([[seeded.pane, seeded]]) };
     const answers = new CompactRequestQueue({ enabled: (): Presence => 'present', board: (): Board => board, requests, asks: new MemoryAskLedger(), tokens: new RecordingTokens(), now: (): Instant => instant(1000), log: (): void => undefined });
     const tokens = { 'compact-req-coordinator': 'r9' };
     answers.onPaneTokens(paneId(PANE), wireOf(tokens));

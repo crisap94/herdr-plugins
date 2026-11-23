@@ -36,8 +36,9 @@ import { must } from '#src/protocol/result.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { type Instant } from '#src/recap/domain/time.ts';
+import { seenLane } from '#test/support/seen.ts';
 
-const lane = (pane: string, agent: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent });
+const lane = (pane: string, agent: string): ReturnType<typeof laneFrom> => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent }));
 const LANES = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'gemini')];
 const queuingPlans: CompactionPlanner = {
     forKind: (kind, guidance) => {

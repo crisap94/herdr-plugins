@@ -14,10 +14,11 @@ import { agentKind } from '#test/support/ids.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { countOf } from '#src/recap/domain/count.ts';
+import { seenLane } from '#test/support/seen.ts';
 
-const claude = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 'sess-1', cwd: '/repo' });
-const codex = laneFrom({ paneId: 'w1:p2', tabId: 'w1:t1', workspaceId: 'w1', agent: 'codex', cwd: '/repo' });
-const sessionless = laneFrom({ paneId: 'w1:p3', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' });
+const claude = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 'sess-1', cwd: '/repo' }));
+const codex = laneFrom(seenLane({ paneId: 'w1:p2', tabId: 'w1:t1', workspaceId: 'w1', agent: 'codex', cwd: '/repo' }));
+const sessionless = laneFrom(seenLane({ paneId: 'w1:p3', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' }));
 
 function fakeReader(agent: string, located: Located, flight: InFlightResult): Transcripts {
     return {
@@ -42,7 +43,7 @@ test('a lane without its locating key cannot tell, so it is unknown and not not-
 });
 
 test('a claude lane locates by its session, not its working directory', async () => {
-    const cwdOnly = laneFrom({ paneId: 'w1:p6', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', cwd: '/repo' });
+    const cwdOnly = laneFrom(seenLane({ paneId: 'w1:p6', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', cwd: '/repo' }));
     const reader = fakeReader('claude', unknown({ why: 'not-found', what: textOf('a session id for w1:p6') }), { kind: 'in-flight', count: runningOf(9), background: [] });
     assert.equal((await adapterFor(reader).read(cwdOnly)).kind, 'unknown');
 });
@@ -68,7 +69,7 @@ test('a read that fails is unknown', async () => {
 });
 
 test('an agent with no reader of its own is unknown', async () => {
-    const gemini = laneFrom({ paneId: 'w1:p5', tabId: 'w1:t1', workspaceId: 'w1', agent: 'gemini', session: 's', cwd: '/repo' });
+    const gemini = laneFrom(seenLane({ paneId: 'w1:p5', tabId: 'w1:t1', workspaceId: 'w1', agent: 'gemini', session: 's', cwd: '/repo' }));
     const reading = await new TranscriptInFlight(registryWith({})).read(gemini);
     assert.equal(reading.kind, 'unknown');
 });

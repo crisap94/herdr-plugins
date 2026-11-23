@@ -6,8 +6,9 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
 import { world } from './autocompact-world.ts';
 import { memoryStore } from './db/support.ts';
+import { seenLane } from '#test/support/seen.ts';
 
-const at = (pane: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
+const at = (pane: string): ReturnType<typeof laneFrom> => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
 
 test('a pane is claimed once: a second claim fails, a join is kept for the answers, and the release frees it', () => {
     const claims = new LaneClaims();

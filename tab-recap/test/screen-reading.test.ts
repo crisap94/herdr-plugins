@@ -15,6 +15,7 @@ import type { ScreenOutcome, ScreenReader } from '#src/ports/screens.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
 import { countOf, type Count } from '#src/recap/domain/count.ts';
 import { causeOf } from './fakes/cause.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const SCREEN = [
     '● I fixed the parser and the tests pass now.',
@@ -44,7 +45,7 @@ class FakeScreens implements ScreenReader {
     }
 }
 
-const lane = (agent: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: 'w1:p3', tabId: 'w1:t1', workspaceId: 'w1', agent });
+const lane = (agent: string): ReturnType<typeof laneFrom> => laneFrom(seenLane({ paneId: 'w1:p3', tabId: 'w1:t1', workspaceId: 'w1', agent }));
 
 test('ScreenTranscripts: only for the kinds asked, one source per pane, the revision is the cursor and a hash of the clean text the tail', async () => {
     const screens = new FakeScreens();

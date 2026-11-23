@@ -19,6 +19,7 @@ import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { paneId } from '#test/support/ids.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const SESSION = 'session-1';
 const PID = 4242;
@@ -80,7 +81,7 @@ function reader(model: string, tokens: number): Transcripts {
 
 const catalogue: ModelWindows = { windowOf: (model) => (model === 'claude-opus-5-5' ? countOf(1_000_000) : null) };
 
-const laneOf = (cwd: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', cwd, session: SESSION });
+const laneOf = (cwd: string): ReturnType<typeof laneFrom> => laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', cwd, session: SESSION }));
 
 async function measure(setup: Setup): Promise<ReturnType<LaneContexts['of']>> {
     const home = tempDir();

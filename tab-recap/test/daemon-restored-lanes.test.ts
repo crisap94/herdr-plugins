@@ -5,6 +5,7 @@ import type { LiveLanesRead, LiveLanes } from '#src/ports/tab-views.ts';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { causeOf } from './fakes/cause.ts';
+import { hiddenStateOf } from '#test/support/seen.ts';
 
 const fakeStore = (read: LiveLanesRead): LiveLanes => ({ liveLanes: (): LiveLanesRead => read });
 
@@ -27,7 +28,7 @@ test('a persisted lane list that cannot be read is logged without its content an
 });
 
 test('the boot pushes the hidden state first and the persisted lanes after it; an unreadable list leaves only the hidden state', () => {
-    const hidden = { all: false, hidden: [], shown: [] };
+    const hidden = hiddenStateOf({ all: false, hidden: [], shown: [] });
     const lanes = [{ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), since: instant(5), cwd: null }];
     assert.deepEqual(bootObservations(hidden, fakeStore({ kind: 'read', lanes }), () => undefined), [{ kind: 'hidden-restored', state: hidden }, { kind: 'restored', lanes }]);
     assert.deepEqual(bootObservations(hidden, fakeStore({ kind: 'unknown', why: { why: 'unreadable', detail: causeOf('x') } }), () => undefined), [{ kind: 'hidden-restored', state: hidden }]);

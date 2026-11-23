@@ -21,10 +21,11 @@ import type { Presence } from '#src/recap/domain/presence.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { paneId } from '#test/support/ids.ts';
+import { boardSeeded, seenLane } from '#test/support/seen.ts';
 
 test('the four writers write only tab-recap\'s names, on panes and on workspaces; a foreign name is refused by the adapter\'s rule', async () => {
-    const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
-    const board: Board = { ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) };
+    const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
+    const board: Board = { ...emptyBoard(), seeded: boardSeeded(true), lanes: new Map([[lane.pane, lane]]) };
     const paneWrites = new RecordingTokens();
     const spaces: string[] = [];
     const events = new EventStream({
@@ -56,8 +57,8 @@ test('the four writers write only tab-recap\'s names, on panes and on workspaces
 test('the request answers are not the tool\'s token: the answer is written under tab-recap-compact only', async () => {
     const requests: CompactAsk[] = [];
     const tokens = new RecordingTokens();
-    const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
-    const board: Board = { ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) };
+    const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
+    const board: Board = { ...emptyBoard(), seeded: boardSeeded(true), lanes: new Map([[lane.pane, lane]]) };
     new CompactRequestQueue({ enabled: (): Presence => 'present', board: (): Board => board, requests: { requestCompact: (request: CompactAsk): void => { requests.push(request); } }, asks: new MemoryAskLedger(), tokens, now: (): Instant => instant(1000), log: (): void => undefined })
         .onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
     await new Promise<void>((resolve) => { setImmediate(resolve); });

@@ -7,6 +7,7 @@ import { instant } from '#src/recap/domain/time.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { extractClaude, extractCodex } from './fakes/transcript-lines.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const row = (fields: Record<string, unknown>): string => JSON.stringify({ timestamp: '2026-10-07T10:00:05Z', ...fields });
 const AT = Date.parse('2026-10-07T10:00:05Z');
@@ -47,7 +48,7 @@ test('a queued compaction: every settle with no mark keeps the wait, the first t
         pause: () => Promise.resolve(),
         now: () => instant(clock.t),
     };
-    const verdict = await queuedOutcomeOf(deps, laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' }), instant(AT), () => { turnEnds += 1; });
+    const verdict = await queuedOutcomeOf(deps, laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' })), instant(AT), () => { turnEnds += 1; });
     assert.deepEqual([verdict.outcome, turnEnds, clock.t - AT], ['unconfirmed', 1, 10 * 60_000]);
 });
 
@@ -78,7 +79,7 @@ const queuedWorld = (pushes: readonly Push[], markAt: number | null, unknownSett
     return { deps, clock, settleCalls, turnEnds: 0, markReads };
 };
 
-const queuedLane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' });
+const queuedLane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' }));
 
 test('a queued compaction: a settle heard while the marks are read is seen by the next slice at once, and the turn end is reported once', async () => {
     const world = queuedWorld([{ at: AT + 5000, status: 'idle' }, { at: AT + 5500, status: 'done' }], AT + 7000);

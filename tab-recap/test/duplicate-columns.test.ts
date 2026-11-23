@@ -13,18 +13,19 @@ import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import type { Frame, FleetSource, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
+import { columnOpenedObservation, reconciliation, seenLane } from '#test/support/seen.ts';
 
-const lane = (pane: string, tab: string, agent = 'claude'): SeenLane => ({ paneId: pane, tabId: tab, workspaceId: 'w1', agent, status: 'idle', session: `s-${pane}` });
+const lane = (pane: string, tab: string, agent = 'claude'): SeenLane => (seenLane({ paneId: pane, tabId: tab, workspaceId: 'w1', agent, status: 'idle', session: `s-${pane}` }));
 const column = (tab: string, pane: string, shape: Shape = 'side'): { tabId: string; paneId: string; shape: Shape } => ({ tabId: tab, paneId: pane, shape });
 
 const snapshot = (at: number | undefined, lanes: SeenLane[], columns: { tabId: string; paneId: string; shape: Shape }[]): Observation => ({
     kind: 'reconciled',
-    seen: {
+    seen: reconciliation({
         focusedTab: null, lanes, columns, widths: new Map(), panes: [...lanes.map((l) => l.paneId), ...columns.map((c) => c.paneId)],
         ...(at === undefined ? {} : { at }),
-    },
+    }),
 });
-const opened = (tab: string, pane: string, at?: number): Observation => ({ kind: 'column-opened', tab: tabId(tab), pane: paneId(pane), shape: 'side', ...(at === undefined ? {} : { at }) });
+const opened = (tab: string, pane: string, at?: number): Observation => (columnOpenedObservation({ kind: 'column-opened', tab: tabId(tab), pane: paneId(pane), shape: 'side', ...(at === undefined ? {} : { at }) }));
 
 function play(observations: readonly Observation[]): { board: Board; intents: Intent[][] } {
     let board = emptyBoard();
@@ -111,7 +112,7 @@ test('a hidden tab: its extras are closed too (the tracked one is closed by hidi
 
 const seenWith = (columns: { tabId: string; paneId: string; shape: Shape }[]): SnapshotResult => ({
     kind: 'snapshot', focusedTab: null, paneTokens: new Map(),
-    seen: { focusedTab: null, lanes: [lane('w1:p1', 'w1:t1')], columns, widths: new Map(), panes: ['w1:p1', ...columns.map((c) => c.paneId)] },
+    seen: reconciliation({ focusedTab: null, lanes: [lane('w1:p1', 'w1:t1')], columns, widths: new Map(), panes: ['w1:p1', ...columns.map((c) => c.paneId)] }),
 });
 
 test('informer: a slow snapshot that predates the open is stamped with when it was requested, and costs no second column', async () => {
@@ -138,7 +139,7 @@ test('informer: a slow snapshot that predates the open is stamped with when it w
                     openedTabs.push(String(intent.tab));
                     now += 100;
                     made.push(column('w1:t1', 'w1:p9'));
-                    informer.push({ kind: 'column-opened', tab: intent.tab, pane: paneId('w1:p9'), shape: intent.shape, at: now });
+                    informer.push(columnOpenedObservation({ kind: 'column-opened', tab: intent.tab, pane: paneId('w1:p9'), shape: intent.shape, at: now }));
                 }
             }
             return Promise.resolve();

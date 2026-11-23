@@ -15,6 +15,7 @@ import { must } from '#src/protocol/result.ts';
 import type { HookAnswer, HookCall } from '#src/wire/hooks/contract.ts';
 import type { Mark } from '#src/ports/transcripts.ts';
 import { compactionDeps, compacted, NOW, typingFleet, type Fleet } from '#test/fakes/compaction-fleet.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const TEXT = { material: { sections: NO_SECTIONS, web: null, note: must(parseText('keep the schema')) }, brief: null };
 const FACTS = 'open fact one';
@@ -22,7 +23,7 @@ const isRestoreText = (text: string): text is RestoreText => typeof text === 'st
 
 const trailOf = (): Trail => new Trail({ begin: () => must(parseCompactionId('cmp_t0')), advance: () => undefined, finish: () => undefined }, must(parseCompactionId('cmp_t0')), () => instant(NOW));
 
-const LANE: Lane = laneFrom({ paneId: 'w1:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: 'codex', session: 'sess-1' });
+const LANE: Lane = laneFrom(seenLane({ paneId: 'w1:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: 'codex', session: 'sess-1' }));
 
 const COMPACT_START: HookCall = { harness: 'codex', kind: 'session-start', native: 'SessionStart', session: 'sess-1', source: 'compact', cwd: null };
 

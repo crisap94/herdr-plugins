@@ -1,7 +1,8 @@
-import { added, removed, without } from './board.ts';
+import { added, allHiddenOf, removed, without } from './board.ts';
 import type { Board, HiddenState, Visibility, VisibilityTarget } from './board.ts';
 import { uncheckedTabId } from './ids.ts';
 import type { TabId } from './ids.ts';
+import { textOf } from './text.ts';
 import type { Presence } from './presence.ts';
 
 export function isHidden(board: Board, tab: TabId): Presence {
@@ -27,7 +28,7 @@ function resolved(board: Board, target: VisibilityTarget, change: Visibility): P
 export function withVisibility(board: Board, target: VisibilityTarget, change: Visibility): Board {
     const hidden = resolved(board, target, change) === 'present';
     if (target === 'all') {
-        const cleared: Board = { ...board, allHidden: hidden, hidden: new Set(), shown: new Set() };
+        const cleared: Board = { ...board, allHidden: allHiddenOf(hidden), hidden: new Set(), shown: new Set() };
         return hidden ? cleared : { ...cleared, reopens: new Map(), givenUp: new Map() };
     }
     const tab = target.tab;
@@ -38,5 +39,5 @@ export function withVisibility(board: Board, target: VisibilityTarget, change: V
 }
 
 export function hiddenState(board: Board): HiddenState {
-    return { all: board.allHidden, hidden: [...board.hidden].map(String).toSorted(), shown: [...board.shown].map(String).toSorted() };
+    return { all: board.allHidden, hidden: [...board.hidden].map((tab) => textOf(tab)).toSorted(), shown: [...board.shown].map((tab) => textOf(tab)).toSorted() };
 }

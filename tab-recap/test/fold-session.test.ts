@@ -8,8 +8,9 @@ import { paneId } from '#test/support/ids.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { seenLane, sessionObservation } from '#test/support/seen.ts';
 
-const lane = (session: string | null, agent = 'claude'): SeenLane => ({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent, status: 'idle', session });
+const lane = (session: string | null, agent = 'claude'): SeenLane => (seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent, status: 'idle', session }));
 
 const snapshot = (only: SeenLane): Observation => ({ kind: 'reconciled', seen: { focusedTab: null, lanes: [only], panes: [only.paneId], columns: [], widths: new Map() } });
 
@@ -35,19 +36,19 @@ test('a detection that carries no session keeps the session the lane held', () =
 });
 
 test('a brand-new agent: its detection has no session; herdr reports one on the pane, and the lane follows it silently', () => {
-    const { board, outcomes } = run([{ kind: 'detected', lane: lane(null) }, { kind: 'session', pane: paneId('w1:p1'), session: 'S-new' }]);
+    const { board, outcomes } = run([{ kind: 'detected', lane: lane(null) }, sessionObservation({ kind: 'session', pane: paneId('w1:p1'), session: 'S-new' })]);
     assert.equal(sessionOf(board), 'S-new');
     assert.deepEqual(outcomes.at(-1)?.intents, [], 'no intent: the transcript read follows the lane');
     assert.equal(outcomes.at(-1)?.watchSet, 'unchanged');
 });
 
 test('a resumed agent: the lane held the old session; herdr reports the new one, and the lane follows it', () => {
-    const { board } = run([{ kind: 'detected', lane: lane('S-old') }, { kind: 'session', pane: paneId('w1:p1'), session: 'S-new' }]);
+    const { board } = run([{ kind: 'detected', lane: lane('S-old') }, sessionObservation({ kind: 'session', pane: paneId('w1:p1'), session: 'S-new' })]);
     assert.equal(sessionOf(board), 'S-new');
 });
 
 test('the same session again changes nothing; a session for a pane the board does not hold is ignored', () => {
-    const { board, outcomes } = run([{ kind: 'detected', lane: lane('S1') }, { kind: 'session', pane: paneId('w1:p1'), session: 'S1' }, { kind: 'session', pane: paneId('w9:p9'), session: 'S9' }]);
+    const { board, outcomes } = run([{ kind: 'detected', lane: lane('S1') }, sessionObservation({ kind: 'session', pane: paneId('w1:p1'), session: 'S1' }), sessionObservation({ kind: 'session', pane: paneId('w9:p9'), session: 'S9' })]);
     assert.deepEqual([sessionOf(board), board.lanes.has(paneId('w9:p9'))], ['S1', false]);
     assert.deepEqual(outcomes.slice(1).map((outcome) => outcome.intents), [[], []], 'the sessions ask for nothing');
 });

@@ -1,5 +1,5 @@
 import { err, ok, type Result } from '#src/protocol/result.ts';
-import type { HiddenState } from '#src/recap/domain/board.ts';
+import { allHiddenOf, type HiddenState } from '#src/recap/domain/board.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import { parseTextOrNull, textOf } from '#src/recap/domain/text.ts';
@@ -150,7 +150,7 @@ export function parseLegacyViewFile(input: unknown): Result<TabView, ParseFailur
 export function parseLegacyHidden(input: unknown): Result<HiddenState, ParseFailure> {
     if (!isRow(input)) return err({ kind: 'not-a-row' });
     return ok({
-        all: input.all === true,
+        all: allHiddenOf(input.all === true),
         hidden: Array.isArray(input.hidden) ? input.hidden.flatMap((entry) => (typeof entry === 'string' ? [textOf(entry)] : [])) : [],
         shown: Array.isArray(input.shown) ? input.shown.flatMap((entry) => (typeof entry === 'string' ? [textOf(entry)] : [])) : [],
     });

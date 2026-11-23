@@ -8,16 +8,17 @@ import type { Waiting } from '#src/recap/application/autocompact.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane, SeenLane } from '#src/recap/domain/lane.ts';
+import type { Lane } from '#src/recap/domain/lane.ts';
 import { paneId } from '#test/support/ids.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
+import { seenLane, type BareLane } from '#test/support/seen.ts';
 
 const SOURCE = paneId('w1:p9');
 const TARGET = paneId('w1:p1');
 const clear: Waiting = { kind: 'clear' };
 
-const seen = (pane: string, agent: string, over: Partial<SeenLane> = {}): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, status: 'idle', ...over });
+const seen = (pane: string, agent: string, over: Partial<BareLane> = {}): Lane => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, status: 'idle', ...over }));
 
 function probeOf(reading: InFlightReading): { readonly port: InFlight; readonly reads: () => number } {
     let reads = 0;

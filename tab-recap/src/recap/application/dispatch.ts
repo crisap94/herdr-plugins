@@ -211,7 +211,7 @@ export class LaneDispatch {
             await this.narrow(tab, opened.pane, axis, counted.value);
         }
         this.deps.log(must(parseText(`tab ${tab}: column opened (${opened.pane}, ${shape})`)));
-        this.deps.feedback({ kind: 'column-opened', tab, pane: opened.pane, shape, at: Date.now() });
+        this.deps.feedback({ kind: 'column-opened', tab, pane: opened.pane, shape, at: instant(Date.now()) });
     }
 
     private async narrow(tab: TabId, pane: PaneId, axis: Axis, cells: Count): Promise<void> {

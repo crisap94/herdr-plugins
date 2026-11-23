@@ -17,6 +17,7 @@ import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { paneId } from '#test/support/ids.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const roots: string[] = [];
 const tempDir = (): string => {
@@ -31,7 +32,7 @@ const write = (file: string, text: string): void => {
     writeFileSync(file, text);
 };
 
-const lane = (agent: string, cwd: string): ReturnType<typeof laneFrom> => laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent, cwd });
+const lane = (agent: string, cwd: string): ReturnType<typeof laneFrom> => laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent, cwd }));
 
 function reader(agent: string, model: string | null, tokens: number, window: number | null): Transcripts {
     return {

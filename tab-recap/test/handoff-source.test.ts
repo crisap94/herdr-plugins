@@ -18,13 +18,14 @@ import { causeOf } from './fakes/cause.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { tabIdOf, paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const NOW = Date.parse('2026-10-11T10:00:00Z');
 const TAB = tabId('w1:t1');
 const SOURCE = { tab: TAB, pane: paneId('w1:p1') };
 const board = [
-    laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', session: 'sess-1' }),
-    laneFrom({ paneId: 'w1:p2', tabId: 'w1:t1', workspaceId: 'w1', agent: 'codex', status: 'idle', cwd: '/repo' }),
+    laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', session: 'sess-1' })),
+    laneFrom(seenLane({ paneId: 'w1:p2', tabId: 'w1:t1', workspaceId: 'w1', agent: 'codex', status: 'idle', cwd: '/repo' })),
 ];
 
 const task = (key: string, lanes: readonly string[]): RecapTask => ({ id: textOf(key), name: textOf(key), lanes: lanes.map((lane) => paneIdOf(lane)), sections: null, markdown: textOf('') });
@@ -76,7 +77,7 @@ test('a pane the board does not hold is source-unavailable', () => {
 });
 
 test('a pane that is a lane of another tab is source-unavailable', () => {
-    const otherTab = [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t2', workspaceId: 'w1', agent: 'claude', status: 'idle', session: 'sess-1' })];
+    const otherTab = [laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t2', workspaceId: 'w1', agent: 'claude', status: 'idle', session: 'sess-1' }))];
     const resolved = resolveSource('live', SOURCE, depsOf({ lanes: otherTab }));
     assert.deepEqual(resolved, { kind: 'source-unavailable' });
 });

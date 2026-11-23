@@ -22,6 +22,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import { cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { exitCodeOf } from '#src/ports/unknowable.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const add = (section: string, text: string): Record<string, unknown> => ({ op: 'add', section, text, anchor: 'migrate victoria' });
 const answer = (...ops: readonly Record<string, unknown>[]): string => JSON.stringify({ ops });
@@ -54,8 +55,8 @@ test('one recap for the tab, written from every lane, advancing every cursor', a
         records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(5) }, summarizer: (): Summarizer => summarizer, language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined,
     });
     const lanes = [
-        laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' }),
-        laneFrom({ paneId: 'w1:p2', tabId: 'w1:t1', workspaceId: 'w1', agent: 'codex' }),
+        laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })),
+        laneFrom(seenLane({ paneId: 'w1:p2', tabId: 'w1:t1', workspaceId: 'w1', agent: 'codex' })),
     ];
     job.request(tabId('w1:t1'), lanes, 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 20); });
@@ -87,7 +88,7 @@ async function rewriteWith(language: string, stored: string | undefined, cause: 
         write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: textOf(answer({ op: 'update', id: 'f1', text: 'hecho' })), costUsd: brand<number, 'Usd'>(0) }); },
     };
     const store = memoryStore();
-    const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
+    const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' }));
     const base = blankRecap(tabId('w1:t1'));
     seed(store, {
         ...base, tasks: oneTask('## Goal\n- migrate', { goal: textOf('migrate'), now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: instant(1),
@@ -127,7 +128,7 @@ test('a recap stored before languages existed counts as English; a failed rewrit
     assert.equal(legacy.calls[0]?.previousLanguage, 'en');
     const failing: Summarizer = { backend: textOf('fake'), contract: 'strict', write: (): Promise<Written> => Promise.resolve({ kind: 'unknown', why: { why: 'failed', code: exitCodeOf(1), detail: causeOf('x') } }) };
     const store = memoryStore();
-    const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
+    const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' }));
     seed(store, { ...blankRecap(tabId('w1:t1')), tasks: oneTask('## Goal\n- m'), at: instant(1), language: textOf('en') });
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ claude: quiet }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => failing, language: (): Text => brand<string, 'Text'>('es'), log: (): void => undefined });
     job.request(tabId('w1:t1'), [lane], 'requested');
@@ -156,7 +157,7 @@ async function recapWith(answers: readonly string[], stored: Partial<TabRecap> =
         transcripts: registryWith({ claude: transcriptsOf('claude') }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(7) }, summarizer: (): Summarizer => summarizer,
         language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined,
     });
-    job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'requested');
+    job.request(tabId('w1:t1'), [laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' }))], 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 30); });
     const recap = storeRead(store.records.readRecap(tabId('w1:t1')));
     assert.ok(recap !== null);
@@ -208,7 +209,7 @@ test('the 1.x answer (a recap, not operations) is told so and may fix it; a cust
     const calls: RecapRequest[] = [];
     const custom: Summarizer = { backend: textOf('custom/mine'), contract: 'free-text', write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: textOf(JSON.stringify({ goal: 'x' })), costUsd: brand<number, 'Usd'>(0) }); } };
     const store = memoryStore();
-    const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
+    const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' }));
     new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ claude: transcriptsOf('claude') }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(7) }, summarizer: (): Summarizer => custom, language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined })
         .request(tabId('w1:t1'), [lane], 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 30); });
@@ -222,7 +223,7 @@ test('a harness that fails outright is not retried', async () => {
     const failing: Summarizer = { backend: textOf('fake'), contract: 'strict', write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'unknown', why: { why: 'timeout', after: 5 as never } }); } };
     const store = memoryStore();
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ claude: transcriptsOf('claude') }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(7) }, summarizer: (): Summarizer => failing, language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined });
-    job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'requested');
+    job.request(tabId('w1:t1'), [laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' }))], 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 30); });
     assert.equal(calls.length, 1);
 });
@@ -234,7 +235,7 @@ test('refreshNow resolves only once the recap of the tab has been written', asyn
         write: (): Promise<Written> => new Promise((resolve) => { setTimeout(() => { resolve({ kind: 'written', text: textOf(answer({ ...add('goal', 'written late'), anchor: 'go' })), costUsd: brand<number, 'Usd'>(0) }); }, 30); }),
     };
     const store = memoryStore();
-    const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
+    const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' }));
     const reader: Transcripts = { ...quiet, read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf('go') }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(5), tail: null }, grew: grewOf(true) }) };
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ [reader.agent]: reader }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => summarizer, language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined });
     await job.refreshNow(tabId('w1:t1'), [lane]);
@@ -249,7 +250,7 @@ test('a run logs how long it took and why it ran, written or failed', async () =
         const clock = { now: (): ReturnType<typeof instant> => { ticks += 1; return instant(1_000 + (ticks < 2 ? 0 : 12_400)); } };
         const reader: Transcripts = { ...quiet, read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf('go') }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(5), tail: null }, grew: grewOf(true) }) };
         const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ [reader.agent]: reader }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock, summarizer: (): Summarizer => summarizer, language: (): Text => brand<string, 'Text'>('en'), log: (line): void => { lines.push(line); } });
-        job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'turn-ended');
+        job.request(tabId('w1:t1'), [laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' }))], 'turn-ended');
         await new Promise((resolve) => { setTimeout(resolve, 2700); });
         assert.ok(lines.includes(want), `${want} in ${JSON.stringify(lines)}`);
     }
@@ -264,7 +265,7 @@ test('the rewrite line stays while an open fact is still in the old language, an
         write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: textOf(answers[calls.length - 1] ?? answer()), costUsd: brand<number, 'Usd'>(0) }); },
     };
     const store = memoryStore();
-    const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
+    const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' }));
     seed(store, {
         ...blankRecap(tabId('w1:t1')), tasks: oneTask('## Goal\n- migrate', { goal: textOf('migrate'), now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: instant(1), language: textOf('en'),
         lanes: [{ pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t/w1:p1'), cursor: cursorOf(100), tail: null, title: null, lastPrompt: null, claudeRecap: null }],
@@ -292,7 +293,7 @@ test('a recap already stamped in the wanted language but holding an open fact in
         write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: textOf(answer()), costUsd: brand<number, 'Usd'>(0) }); },
     };
     const store = memoryStore();
-    const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' });
+    const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' }));
     seed(store, {
         ...blankRecap(tabId('w1:t1')), tasks: oneTask('## Goal\n- migrate', { goal: textOf('migrate'), now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: instant(1), language: textOf('en'),
         lanes: [{ pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t/w1:p1'), cursor: cursorOf(100), tail: null, title: null, lastPrompt: null, claudeRecap: null }],
@@ -333,7 +334,7 @@ test('the close-evidence setting reaches the writer request and the piped run; u
             records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(5) }, summarizer: (): Summarizer => summarizer, language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined,
         };
         const job = new RecapJob(setting === undefined ? deps : { ...deps, closeEvidence: (): CloseEvidence => setting });
-        job.request(tabId('w1:t1'), [laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' })], 'requested');
+        job.request(tabId('w1:t1'), [laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' }))], 'requested');
         await new Promise((resolve) => { setTimeout(resolve, 20); });
         const expected: CloseEvidence = setting ?? 'off';
         assert.equal(requests[0]?.closeEvidence, expected, String(setting));

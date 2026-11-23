@@ -7,6 +7,7 @@ import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import type { FleetSource, Frame, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
+import { reconciliation, seenLane } from '#test/support/seen.ts';
 
 class CountingHerdr implements FleetSource {
     live = new Set<string>(['w1:p1']);
@@ -16,8 +17,8 @@ class CountingHerdr implements FleetSource {
 
     snapshot(): Promise<SnapshotResult> {
         this.snapshots += 1;
-        const lanes = [...this.live].map((pane) => ({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', session: `s-${pane}` }));
-        return Promise.resolve({ kind: 'snapshot', seen: { focusedTab: null, lanes, panes: [...this.live], columns: [], widths: new Map() }, focusedTab: null, paneTokens: new Map() });
+        const lanes = [...this.live].map((pane) => seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', session: `s-${pane}` }));
+        return Promise.resolve({ kind: 'snapshot', seen: reconciliation({ focusedTab: null, lanes, panes: [...this.live], columns: [], widths: new Map() }), focusedTab: null, paneTokens: new Map() });
     }
 
     subscribe(): Promise<StreamResult> {

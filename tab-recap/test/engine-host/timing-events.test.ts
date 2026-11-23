@@ -10,8 +10,9 @@ import { emptyBoard, type Board } from '#src/recap/domain/board.ts';
 import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
 import type { Autocompact } from '#src/recap/application/autocompact.ts';
 import { rows, world, type World } from '../autocompact-world.ts';
+import { seenLane } from '#test/support/seen.ts';
 
-const at = (pane: string, tab: string): Lane => laneFrom({ paneId: pane, tabId: tab, workspaceId: 'w1', agent: 'claude', status: 'idle' });
+const at = (pane: string, tab: string): Lane => laneFrom(seenLane({ paneId: pane, tabId: tab, workspaceId: 'w1', agent: 'claude', status: 'idle' }));
 const boardOf = (lanes: readonly Lane[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((found) => [found.pane, found])) });
 const settle = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
 const accomplished = (scope: string): LedgerEvent => ({ kind: 'accomplishment-established', scope, task: { id: 't' }, sessions: [], fact: {}, at: 0 }) as unknown as LedgerEvent;

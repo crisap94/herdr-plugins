@@ -70,6 +70,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { runningOf } from '#src/recap/domain/in-flight.ts';
 import { fsPathOf } from './fakes/transcript-lines.ts';
+import { seenLane } from '#test/support/seen.ts';
 
 const runtime = fakeRuntime({ scripts: {} });
 
@@ -80,7 +81,7 @@ after(() => { rmSync(dir, { recursive: true, force: true }); });
 const FIXTURES = join(import.meta.dirname, 'fixtures');
 const fixtureLines = (name: string): string[] => readFileSync(join(FIXTURES, name), 'utf8').split('\n').filter((line) => line !== '');
 const lane = (agent: string, extra: { cwd?: string; session?: string; pane?: string } = {}): Lane =>
-    laneFrom({ paneId: extra.pane ?? 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent, status: 'idle', ...(extra.cwd === undefined ? {} : { cwd: extra.cwd }), ...(extra.session === undefined ? {} : { session: extra.session }) });
+    laneFrom(seenLane({ paneId: extra.pane ?? 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent, status: 'idle', ...(extra.cwd === undefined ? {} : { cwd: extra.cwd }), ...(extra.session === undefined ? {} : { session: extra.session }) }));
 const today = (): string => { const day = new Date(); return join(String(day.getFullYear()), String(day.getMonth() + 1).padStart(2, '0'), String(day.getDate()).padStart(2, '0')); };
 
 interface Row {

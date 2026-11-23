@@ -90,7 +90,7 @@ export class HcCoreFleet implements Fleet {
         if (failed !== null) {
             return failed;
         }
-        return { kind: 'snapshot', seen: { focusedTab: null, lanes: this.roster.lanes(), panes: this.roster.panes(), columns: [], widths: new Map() }, focusedTab: null, paneTokens: new Map() };
+        return { kind: 'snapshot', seen: { focusedTab: null, lanes: this.roster.lanes(), panes: this.roster.panes().map((pane) => textOf(pane)), columns: [], widths: new Map() }, focusedTab: null, paneTokens: new Map() };
     }
 
     private async pump(events: CoreEvents, queue: AsyncQueue<Frame>): Promise<void> {
