@@ -6,6 +6,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffEvidence } from '#src/recap/domain/handoff-plan.ts';
+import type { TranscriptHold } from '#src/recap/application/handoff-target.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { confirmationOf, laneWith, planWith, readyOf, worldOf } from './fakes/handoff-delivery.ts';
@@ -16,9 +17,9 @@ const TEXT = 'Handoff of the parser refactor.\n\nNext steps:\n  - finish the lex
 const FAILED: HandoffOutcome = { kind: 'failed', reason: 'unconfirmed' };
 const DELIVERED: HandoffOutcome = { kind: 'delivered' };
 
-async function run(world: World, evidence: HandoffEvidence = 'either', lane: Lane = laneWith({ session: null }), ownTranscript = true, text = TEXT): Promise<HandoffOutcome> {
+async function run(world: World, evidence: HandoffEvidence = 'either', lane: Lane = laneWith({ session: null }), transcript: TranscriptHold = 'own', text = TEXT): Promise<HandoffOutcome> {
     const confirmer = confirmationOf(world);
-    const target = readyOf(lane, planWith(evidence), ownTranscript);
+    const target = readyOf(lane, planWith(evidence), transcript);
     const baseline = await confirmer.baseline(target);
     return confirmer.confirm(target, baseline, textOf(text));
 }
@@ -89,7 +90,7 @@ test('a prefix that diverges inside the first 400 code points is not confirmed, 
             world.latest = diverged;
         }
     };
-    assert.deepEqual(await run(world, 'transcript', laneWith(), true, text), FAILED);
+    assert.deepEqual(await run(world, 'transcript', laneWith(), 'own', text), FAILED);
     assert.equal(world.pauses.length, HANDOFF_OBSERVATIONS);
 });
 
@@ -122,7 +123,7 @@ test('a transcript that is not the target\'s own uses status evidence only, even
             world.latest = TEXT;
         }
     };
-    assert.deepEqual(await run(world, 'transcript', laneWith(), false), FAILED);
+    assert.deepEqual(await run(world, 'transcript', laneWith(), 'shared'), FAILED);
     assert.equal(world.locates, 0, 'the transcript is never located');
     assert.equal(world.statusReads, HANDOFF_OBSERVATIONS);
 });
@@ -134,7 +135,7 @@ test('a shared directory confirms on working status at a later observation', asy
             world.agentState = { kind: 'agent', agent: agentKind('claude'), status: 'working' };
         }
     };
-    assert.deepEqual(await run(world, 'either', laneWith(), false), DELIVERED);
+    assert.deepEqual(await run(world, 'either', laneWith(), 'shared'), DELIVERED);
     assert.equal(world.pauses.length, 2);
 });
 

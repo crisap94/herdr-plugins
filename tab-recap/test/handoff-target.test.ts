@@ -39,7 +39,7 @@ test('a fresh lane whose session is known and whose transcript does not exist ye
     const deps = depsOf([freshClaude], notStarted);
     const result = await resolveTarget(SOURCE, TARGET, deps);
     assert.ok(result.kind === 'ready');
-    assert.equal(result.ownTranscript, true);
+    assert.equal(result.transcript, 'own');
     assert.equal(deps.reads(), 1);
 });
 
@@ -82,7 +82,7 @@ test('two Codex lanes sharing a directory do not read each other as the target t
     const deps = depsOf(lanes, { kind: 'count', count: countOf(5), background: [] });
     const result = await resolveTarget(SOURCE, TARGET, deps);
     assert.ok(result.kind === 'ready');
-    assert.equal(result.ownTranscript, false);
+    assert.equal(result.transcript, 'shared');
     assert.equal(deps.reads(), 0);
 });
 
@@ -91,7 +91,7 @@ test('two Claude lanes in one directory keep their own transcripts, which the di
     const deps = depsOf(lanes, notStarted);
     const result = await resolveTarget(SOURCE, TARGET, deps);
     assert.ok(result.kind === 'ready');
-    assert.equal(result.ownTranscript, true);
+    assert.equal(result.transcript, 'own');
     assert.equal(deps.reads(), 1);
 });
 
@@ -99,7 +99,7 @@ test('a target whose session identifier is not known yet is ready on status and 
     const deps = depsOf([seen('w1:p1', 'claude', { cwd: '/repo' })], { kind: 'unknown', why: textOf('no session yet') });
     const result = await resolveTarget(SOURCE, TARGET, deps);
     assert.ok(result.kind === 'ready');
-    assert.equal(result.ownTranscript, false);
+    assert.equal(result.transcript, 'shared');
     assert.equal(deps.reads(), 0);
 });
 
@@ -107,7 +107,7 @@ test('a Codex target whose working directory is not known is ready on status and
     const deps = depsOf([seen('w1:p1', 'codex')], { kind: 'unknown', why: textOf('no directory') });
     const result = await resolveTarget(SOURCE, TARGET, deps);
     assert.ok(result.kind === 'ready');
-    assert.equal(result.ownTranscript, false);
+    assert.equal(result.transcript, 'shared');
     assert.equal(deps.reads(), 0);
 });
 

@@ -176,7 +176,7 @@ test('a ready target holds for its settle time, is re-checked, and is sent the t
     assert.deepEqual(h.pauses, [SETTLE_MS]);
     assert.equal(h.sent.length, 1);
     assert.deepEqual(h.sent.map((each) => each.text), [TEXT]);
-    assert.deepEqual(h.sent.map((each) => [String(each.target.lane.pane), each.target.ownTranscript]), [[String(TARGET), true]]);
+    assert.deepEqual(h.sent.map((each) => [String(each.target.lane.pane), each.target.transcript]), [[String(TARGET), 'own']]);
     assert.equal(bothFree(h.claims), true);
 });
 

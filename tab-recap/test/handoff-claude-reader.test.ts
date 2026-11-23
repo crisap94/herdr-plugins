@@ -48,7 +48,7 @@ function confirmerOver(root: string, onPause: () => void): { readonly confirmer:
 
 async function deliver(root: string, text: string, onPause: () => void): Promise<{ readonly outcome: HandoffOutcome; readonly pauses: number[] }> {
     const { confirmer, pauses } = confirmerOver(root, onPause);
-    const target = readyOf(laneWith({ session: 'sess-1' }), planWith('transcript'), true);
+    const target = readyOf(laneWith({ session: 'sess-1' }), planWith('transcript'), 'own');
     const baseline = await confirmer.baseline(target);
     return { outcome: await confirmer.confirm(target, baseline, textOf(text)), pauses };
 }
