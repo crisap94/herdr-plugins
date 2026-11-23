@@ -1,5 +1,6 @@
 import { createReceiver, type Followed } from '#src/adapters/hooks/receiver.ts';
 import { startHookEndpoint } from '#src/adapters/hooks/endpoint.ts';
+import { createRebind } from '#src/adapters/hooks/rebind.ts';
 import { createTurnEnds } from '#src/adapters/hooks/turn-ends.ts';
 import type { Running, SlotContext } from '#src/daemon/slots.ts';
 import { must } from '#src/protocol/result.ts';
@@ -31,6 +32,8 @@ export async function startHooks(context: SlotContext): Promise<Running> {
         preCompacts: context.preCompacts,
         claimIdle: context.claimIdle,
         restoreMode: () => (context.setting('TAB_RECAP_HOOKS_RESTORE') === 'off' ? 'off' : 'on'),
+        rebindMode: () => (context.setting('TAB_RECAP_HOOKS_REBIND') === 'on' ? 'on' : 'off'),
+        rebind: createRebind({ snapshot: () => context.fleet.snapshot(), observe: context.observe, log: context.log }),
         clock: context.clock,
         log: context.log,
     });

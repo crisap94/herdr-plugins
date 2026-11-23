@@ -47,6 +47,8 @@ const hookOf = (preCompacts: PreCompacts, mode: RestoreMode): ((call: HookCall) 
         preCompacts,
         claimIdle: () => 'declined',
         restoreMode: () => mode,
+        rebindMode: () => 'off',
+        rebind: { rebind: async () => {} },
         clock,
         log: () => undefined,
     });

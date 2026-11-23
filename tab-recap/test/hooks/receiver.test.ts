@@ -118,6 +118,8 @@ function world(setup: Setup): World {
         },
         claimIdle: () => 'declined',
         restoreMode: () => (setup.restoreOn ? 'on' : 'off'),
+        rebindMode: () => 'off',
+        rebind: { rebind: async () => {} },
         clock,
         log: (line) => {
             logged.push(line);
