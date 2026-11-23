@@ -66,7 +66,7 @@ export interface Draft {
     readonly herdrEvents: HerdrEvents;
 }
 
-export type Locks = Readonly<Partial<Record<FieldId, string>>>;
+export type Locks = Readonly<Partial<Record<FieldId, EnvironmentName>>>;
 
 export type TestState =
     | { readonly kind: 'idle' }

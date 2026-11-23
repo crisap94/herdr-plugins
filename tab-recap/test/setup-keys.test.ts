@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { environmentName } from '#src/recap/domain/backend.ts';
 import assert from 'node:assert/strict';
 import { changes, dirty, draftFrom, initial, locksOf, modelTarget, saved, step, tested, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Draft, Effect, Locks, Setup } from '#src/recap/application/setup-keys.ts';
@@ -142,7 +143,7 @@ test('screen agents: the fifth row takes a list or `all`, keeps only plain names
     assert.equal(all.draft.screenAgents, 'all');
     const cleared = typed({ ...typedList, stored: typedList.draft }, ['\r', '\u0015', '\r']).state;
     assert.deepEqual([...changes(cleared)], [['TAB_RECAP_SCREEN_AGENTS', '']], 'emptying it writes an empty value (none)');
-    const locked = typed(start({ screenAgents: 'TAB_RECAP_SCREEN_AGENTS' }), [...down(4), '\r']).state;
+    const locked = typed(start({ screenAgents: environmentName(textOf('TAB_RECAP_SCREEN_AGENTS')) }), [...down(4), '\r']).state;
     assert.equal(locked.note, 'locked');
     assert.deepEqual(locksOf({ TAB_RECAP_SCREEN_AGENTS: 'all' }), { screenAgents: 'TAB_RECAP_SCREEN_AGENTS' });
 });
@@ -155,7 +156,7 @@ test('the git note row: on by default, a choice list, saved as TAB_RECAP_GIT_NOT
     assert.equal(off.state.draft.gitNote, 'off');
     assert.deepEqual([...changes(off.state)], [['TAB_RECAP_GIT_NOTE', 'off']]);
     assert.deepEqual(locksOf({ TAB_RECAP_GIT_NOTE: 'off' }), { gitNote: 'TAB_RECAP_GIT_NOTE' });
-    assert.equal(typed(start({ gitNote: 'TAB_RECAP_GIT_NOTE' }), [...down(5), '\r']).state.note, 'locked');
+    assert.equal(typed(start({ gitNote: environmentName(textOf('TAB_RECAP_GIT_NOTE')) }), [...down(5), '\r']).state.note, 'locked');
 });
 
 test('job telemetry tags: off by default, saved as TAB_RECAP_TELEMETRY_TAGS, read-only when the variable is set', () => {
@@ -166,7 +167,7 @@ test('job telemetry tags: off by default, saved as TAB_RECAP_TELEMETRY_TAGS, rea
     assert.equal(on.state.draft.telemetryTags, 'on');
     assert.deepEqual([...changes(on.state)], [['TAB_RECAP_TELEMETRY_TAGS', 'on']]);
     assert.deepEqual(locksOf({ TAB_RECAP_TELEMETRY_TAGS: 'on' }), { telemetryTags: 'TAB_RECAP_TELEMETRY_TAGS' });
-    const locked = typed(start({ telemetryTags: 'TAB_RECAP_TELEMETRY_TAGS' }), [...down(18), '\r']).state;
+    const locked = typed(start({ telemetryTags: environmentName(textOf('TAB_RECAP_TELEMETRY_TAGS')) }), [...down(18), '\r']).state;
     assert.equal(locked.note, 'locked');
     assert.deepEqual([...changes(locked)], []);
 });
@@ -179,7 +180,7 @@ test('the effort row: medium by default, a choice list, saved as TAB_RECAP_EFFOR
     assert.equal(high.state.draft.effort, 'high');
     assert.deepEqual([...changes(high.state)], [['TAB_RECAP_EFFORT', 'high']]);
     assert.deepEqual(locksOf({ TAB_RECAP_EFFORT: 'high' }), { effort: 'TAB_RECAP_EFFORT' });
-    assert.equal(typed(start({ effort: 'TAB_RECAP_EFFORT' }), ['l', 'l', '\r']).state.note, 'locked');
+    assert.equal(typed(start({ effort: environmentName(textOf('TAB_RECAP_EFFORT')) }), ['l', 'l', '\r']).state.note, 'locked');
 });
 
 test('the compaction rows: target, hint (40 by default, 10–95 or off) and window (empty = found at runtime), each saved under its variable and read-only when it is set', () => {
@@ -199,7 +200,7 @@ test('the compaction rows: target, hint (40 by default, 10–95 or off) and wind
     assert.deepEqual([...changes(window)], [['TAB_RECAP_CONTEXT_WINDOW', '300000']]);
     assert.equal(typed(window, ['\r', '\u0015', '\r']).state.draft.contextWindow, '', 'emptied: detect at runtime');
     assert.deepEqual(locksOf({ TAB_RECAP_COMPACT_TARGET: 'all', TAB_RECAP_COMPACT_HINT: 'off', TAB_RECAP_CONTEXT_WINDOW: '1' }), { compactTarget: 'TAB_RECAP_COMPACT_TARGET', compactHint: 'TAB_RECAP_COMPACT_HINT', contextWindow: 'TAB_RECAP_CONTEXT_WINDOW' });
-    assert.equal(typed(start({ compactHint: 'TAB_RECAP_COMPACT_HINT' }), [...down(8),'\r']).state.note, 'locked');
+    assert.equal(typed(start({ compactHint: environmentName(textOf('TAB_RECAP_COMPACT_HINT')) }), [...down(8),'\r']).state.note, 'locked');
 });
 
 test('the Models group: ←/→ walk the harness · model · effort of a job row, and do nothing elsewhere', () => {
@@ -226,8 +227,8 @@ test('the compact brief job: as the recap writer, no model of its own and high e
     const effort = typed(start(), ['j', 'l', 'l', '\r', 'k', '\r']).state;
     assert.deepEqual([...changes(effort)], [['TAB_RECAP_COMPACT_EFFORT', 'medium']]);
     assert.deepEqual(locksOf({ TAB_RECAP_COMPACT_BY: 'off', TAB_RECAP_COMPACT_MODEL: 'x', TAB_RECAP_COMPACT_EFFORT: 'low' }), { compactBy: 'TAB_RECAP_COMPACT_BY', compactModel: 'TAB_RECAP_COMPACT_MODEL', compactEffort: 'TAB_RECAP_COMPACT_EFFORT' });
-    assert.equal(typed(start({ compactModel: 'TAB_RECAP_COMPACT_MODEL' }), ['j', 'l', '\r']).state.note, 'locked');
-    assert.equal(typed(start({ compactModel: 'TAB_RECAP_COMPACT_MODEL' }), ['j', 'l', 'l', '\r']).state.editing?.kind, 'choice', 'only the locked part is read-only');
+    assert.equal(typed(start({ compactModel: environmentName(textOf('TAB_RECAP_COMPACT_MODEL')) }), ['j', 'l', '\r']).state.note, 'locked');
+    assert.equal(typed(start({ compactModel: environmentName(textOf('TAB_RECAP_COMPACT_MODEL')) }), ['j', 'l', 'l', '\r']).state.editing?.kind, 'choice', 'only the locked part is read-only');
 });
 
 test('the judge job: as the recap writer, no model of its own and medium effort until set; each part is edited and saved under its variable, read-only when set', () => {
@@ -244,8 +245,8 @@ test('the judge job: as the recap writer, no model of its own and medium effort 
     const effort = typed(start(), [...toJudge, 'l', 'l', '\r', 'j', '\r']).state;
     assert.deepEqual([...changes(effort)], [['TAB_RECAP_JUDGE_EFFORT', 'high']]);
     assert.deepEqual(locksOf({ TAB_RECAP_JUDGE_BY: 'off', TAB_RECAP_JUDGE_MODEL: 'x', TAB_RECAP_JUDGE_EFFORT: 'low' }), { judgeBy: 'TAB_RECAP_JUDGE_BY', judgeModel: 'TAB_RECAP_JUDGE_MODEL', judgeEffort: 'TAB_RECAP_JUDGE_EFFORT' });
-    assert.equal(typed(start({ judgeModel: 'TAB_RECAP_JUDGE_MODEL' }), [...toJudge, 'l', '\r']).state.note, 'locked');
-    assert.equal(typed(start({ judgeModel: 'TAB_RECAP_JUDGE_MODEL' }), [...toJudge, 'l', 'l', '\r']).state.editing?.kind, 'choice', 'only the locked part is read-only');
+    assert.equal(typed(start({ judgeModel: environmentName(textOf('TAB_RECAP_JUDGE_MODEL')) }), [...toJudge, 'l', '\r']).state.note, 'locked');
+    assert.equal(typed(start({ judgeModel: environmentName(textOf('TAB_RECAP_JUDGE_MODEL')) }), [...toJudge, 'l', 'l', '\r']).state.editing?.kind, 'choice', 'only the locked part is read-only');
 });
 
 test('the autocompact rows: mode (shadow by default), the minimum (10, 10–95) and the decider job (as the recap writer, low; jev among the choices), saved under their variables and read-only when set', () => {
@@ -263,7 +264,7 @@ test('the autocompact rows: mode (shadow by default), the minimum (10, 10–95) 
     const model = typed(start(), [...down(16),'l', '\r', 'm', '\r', 'l', '\r', 'j', '\r']).state;
     assert.deepEqual([...changes(model)], [['TAB_RECAP_AUTOCOMPACT_MODEL', 'm'], ['TAB_RECAP_AUTOCOMPACT_EFFORT', 'medium']]);
     assert.deepEqual(locksOf({ TAB_RECAP_AUTOCOMPACT: 'on', TAB_RECAP_AUTOCOMPACT_AT: '50', TAB_RECAP_AUTOCOMPACT_BY: 'jev' }), { autocompact: 'TAB_RECAP_AUTOCOMPACT', autocompactAt: 'TAB_RECAP_AUTOCOMPACT_AT', decideBy: 'TAB_RECAP_AUTOCOMPACT_BY' });
-    assert.equal(typed(start({ autocompact: 'TAB_RECAP_AUTOCOMPACT' }), [...down(12),'\r']).state.note, 'locked');
+    assert.equal(typed(start({ autocompact: environmentName(textOf('TAB_RECAP_AUTOCOMPACT')) }), [...down(12),'\r']).state.note, 'locked');
 });
 
 test('the key and the endpoint of the TypeSafe API are never a row or a config entry the modal writes', () => {

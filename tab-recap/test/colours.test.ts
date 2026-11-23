@@ -1,4 +1,5 @@
 import { catalogFor } from '#src/i18n/index.ts';
+import { environmentName } from '#src/recap/domain/backend.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { test } from 'node:test';
@@ -51,7 +52,7 @@ test('colours: with the plain table the column has no escape sequence and the sa
 });
 
 const models = { claude: textOf(''), codex: textOf(''), opencode: textOf(''), custom: textOf('') };
-const setup = initial(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined }), { locale: 'TAB_RECAP_LOCALE' });
+const setup = initial(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined }), { locale: environmentName(textOf('TAB_RECAP_LOCALE')) });
 
 test('colours: the setup screen takes the plain table too', () => {
     const lines = setupLines(withAvailable(setup, ['claude']), catalogFor(en.locale), countOf(60), plain);

@@ -19,7 +19,7 @@ import { setupFooterLine, setupLines } from '#src/recap/render/setup.ts';
 import { plain, visibleLength } from '#src/recap/render/wrap.ts';
 
 const models = { claude: textOf(''), codex: textOf('gpt-6-luna'), opencode: textOf(''), custom: textOf('') };
-const base = initial(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined }), { locale: 'TAB_RECAP_LOCALE' });
+const base = initial(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined }), { locale: environmentName(textOf('TAB_RECAP_LOCALE')) });
 
 function typed(state: Setup, keys: readonly string[]): Setup {
     return keys.reduce((now, key) => step(now, key).state, state);
@@ -77,7 +77,7 @@ test('the telemetry setting shows its choices and environment lock', () => {
     assert.ok(choices.includes('Job telemetry tags'));
     assert.ok(choices.includes('on — add the tab_recap.job resource attribute'));
     assert.ok(choices.includes('off — do not add a job attribute'));
-    const locked = { ...base, row: 18, locks: { telemetryTags: 'TAB_RECAP_TELEMETRY_TAGS' } };
+    const locked = { ...base, row: 18, locks: { telemetryTags: environmentName(textOf('TAB_RECAP_TELEMETRY_TAGS')) } };
     assert.ok(setupLines(locked, catalogFor(en.locale), countOf(100)).join('\n').includes('read-only: TAB_RECAP_TELEMETRY_TAGS'));
 });
 

@@ -1,4 +1,5 @@
 import { catalogFor } from '#src/i18n/index.ts';
+import { environmentName } from '#src/recap/domain/backend.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { test } from 'node:test';
@@ -29,7 +30,7 @@ test('the row starts at balanced, and choosing eager writes TAB_RECAP_AUTOCOMPAC
 });
 
 test('a locked row is never written: the row names its variable and a change is not saved', () => {
-    const locked = start({ autocompactStyle: 'TAB_RECAP_AUTOCOMPACT_STYLE' });
+    const locked = start({ autocompactStyle: environmentName(textOf('TAB_RECAP_AUTOCOMPACT_STYLE')) });
     const attempted = typed(locked, [...down(14), '\r', 'j', '\r']);
     assert.equal(typed(locked, [...down(14), '\r']).note, 'locked');
     assert.deepEqual([...changes(attempted)], [], 'a locked row produces no change');

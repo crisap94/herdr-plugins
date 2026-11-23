@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { environmentName } from '#src/recap/domain/backend.ts';
 import assert from 'node:assert/strict';
 import { herdrEventsFrom } from '#src/recap/domain/herdr-events.ts';
 import { textOf } from '#src/recap/domain/text.ts';
@@ -21,5 +22,5 @@ test('the modal writes TAB_RECAP_HERDR_EVENTS when the row changes, and a locked
     const state = initial({ ...draft, herdrEvents: 'on' }, {});
     assert.deepEqual([...changes({ ...state, stored: draft })], [['TAB_RECAP_HERDR_EVENTS', 'on']]);
     assert.deepEqual(locksOf({ TAB_RECAP_HERDR_EVENTS: 'on' }), { herdrEvents: 'TAB_RECAP_HERDR_EVENTS' });
-    assert.equal(changes({ ...state, stored: draft, locks: { herdrEvents: 'TAB_RECAP_HERDR_EVENTS' } }).size, 0);
+    assert.equal(changes({ ...state, stored: draft, locks: { herdrEvents: environmentName(textOf('TAB_RECAP_HERDR_EVENTS')) } }).size, 0);
 });
