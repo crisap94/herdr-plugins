@@ -1,16 +1,14 @@
-import type { DecodedFrame } from '@stateforge-labs/herdr-sdk';
 import type { ClosedEvery, ColumnPanes, Done, ColumnLayoutResult, OpenResult, ResizeDirection } from '#src/ports/columns.ts';
 import type { HarnessDirectory, HarnessList } from '#src/ports/harnesses.ts';
 import type { ModalHost, SetupOpened } from '#src/ports/modal.ts';
 import type { Notice, NotifierPort } from '#src/ports/notifier.ts';
 import type { ScreenOutcome, ScreenReader } from '#src/ports/screens.ts';
-import type { Frame, FleetSource, SnapshotResult, StreamResult, Topic } from '#src/ports/fleet-source.ts';
+import type { FleetFeed, FleetSnapshotResult, FleetStreamResult, FleetTopic } from '#src/ports/fleet-source.ts';
 import type { LaneTokenMap, LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import type { WorkspaceList, WorkspaceTokenMap, WorkspaceTokenReporter } from '#src/ports/workspace-tokens.ts';
 import { unknown, type Unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
-import type { TokenMap } from '#src/protocol/tokens.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import type { Probability } from '#src/recap/domain/probability.ts';
 import { countOf, type Count } from '#src/recap/domain/count.ts';
@@ -22,13 +20,11 @@ import type { Placed, Split } from '#src/recap/domain/layout.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import { type Milliseconds } from '#src/recap/domain/time.ts';
-import { AsyncQueue } from '#src/recap/application/async-queue.ts';
-import { paneTokenMapOf, seenFrom, sessionOf } from '#src/recap/application/decode.ts';
+import { seenFrom, sessionOf } from '#src/recap/application/decode.ts';
 import { agentPanesIn, columnsIn, deadColumnsIn } from './column-panes.ts';
 import { HerdrAgentPanes, herdrWire } from './agents.ts';
 import { usePlugin } from './client.ts';
-import { HerdrFleetPorts, PLUGIN_ID, pumpFrames } from './fleet.ts';
-import { subscribeTopics } from './subscriptions.ts';
+import { HerdrFleetPorts, PLUGIN_ID } from './fleet.ts';
 import { sessionOfForKind } from './session-registry.ts';
 import { parseJson, parseJsonList, parseJsonRect, parseJsonText, type Json } from './json-object.ts';
 
@@ -40,13 +36,6 @@ export function reconciliationOf(snapshot: Json): Reconciliation {
     const focused = parseJsonText(snapshot['focused_tab_id']);
     const tabs = Array.isArray(snapshot['tabs']) ? { tabs: parseJsonList(snapshot['tabs']).map((tab) => parseJsonText(tab['tab_id'])).filter((tab) => tab !== '').map((tab) => tabId(tab)) } : {};
     return { focusedTab: focused === '' ? null : focused, lanes, panes: panes.map((pane) => parseJsonText(pane['pane_id'])), columns: columnsIn(panes, agents), dead: deadColumnsIn(panes, agents), widths, ...tabs };
-}
-
-export function paneTokensOf(snapshot: Json): ReadonlyMap<PaneId, TokenMap> {
-    return new Map(parseJsonList(snapshot['panes']).flatMap((pane) => {
-        const found = paneTokenMapOf(pane);
-        return found === null ? [] : [[found.pane, Object.fromEntries(found.tokens)] as const];
-    }));
 }
 
 export function layoutOf(layout: Json): ColumnLayoutResult {
@@ -61,8 +50,6 @@ export function layoutOf(layout: Json): ColumnLayoutResult {
     return { kind: 'layout', width: area.width, height: area.height, focused: focused === '' ? null : uncheckedPaneId(focused), panes, splits };
 }
 
-const legacyFrameOf = (frame: DecodedFrame): Frame => ({ event: frame.event, data: 'data' in frame ? parseJson(frame.data) : {} });
-
 export async function readPaneSession(pane: string): Promise<string | null | Unknown> {
     try {
         const info = parseJson(await usePlugin((client) => client.call('pane.get', { pane_id: pane })))['pane'];
@@ -72,7 +59,7 @@ export async function readPaneSession(pane: string): Promise<string | null | Unk
     }
 }
 
-export class HerdrFleet implements FleetSource, ColumnPanes, ModalHost, HarnessDirectory, NotifierPort, ScreenReader, LaneTokenReporter, PaneTokens, WorkspaceTokenReporter {
+export class HerdrFleet implements FleetFeed, ColumnPanes, ModalHost, HarnessDirectory, NotifierPort, ScreenReader, LaneTokenReporter, PaneTokens, WorkspaceTokenReporter {
     private readonly stateDir: Text;
     private readonly ports: HerdrFleetPorts;
 
@@ -85,25 +72,12 @@ export class HerdrFleet implements FleetSource, ColumnPanes, ModalHost, HarnessD
         return new HerdrAgentPanes(herdrWire, { id: must(parseText(PLUGIN_ID)), stateDir: this.stateDir });
     }
 
-    async snapshot(): Promise<SnapshotResult> {
-        try {
-            const snap = await this.ports.rawSnapshot();
-            const focused = parseJsonText(snap['focused_tab_id']);
-            return { kind: 'snapshot', seen: reconciliationOf(snap), focusedTab: focused === '' ? null : focused, paneTokens: paneTokensOf(snap) };
-        } catch (error) {
-            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
-        }
+    async snapshot(): Promise<FleetSnapshotResult> {
+        return this.ports.snapshot();
     }
 
-    async subscribe(topics: readonly Topic[]): Promise<StreamResult> {
-        const queue = new AsyncQueue<Frame>();
-        try {
-            const live = await subscribeTopics(topics);
-            pumpFrames(live, queue, legacyFrameOf);
-            return { kind: 'stream', stream: { frames: (): AsyncIterable<Frame> => queue, close: (): void => { live.close(); queue.end(); } } };
-        } catch (error) {
-            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
-        }
+    async subscribe(topics: readonly FleetTopic[]): Promise<FleetStreamResult> {
+        return this.ports.subscribe(topics);
     }
 
     async layout(tab: TabId): Promise<ColumnLayoutResult> {

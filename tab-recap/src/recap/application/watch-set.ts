@@ -1,5 +1,6 @@
 import type { PaneId } from '#src/recap/domain/ids.ts';
-import type { Topic } from '#src/ports/fleet-source.ts';
+import type { FleetTopic } from '#src/ports/fleet-source.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 export const GLOBAL_TOPICS = [
     'pane.created',
@@ -14,8 +15,8 @@ export const GLOBAL_TOPICS = [
 
 export const PER_PANE_TOPIC = 'pane.agent_status_changed';
 
-export function specsFor(lanes: readonly PaneId[]): readonly Topic[] {
-    const globals: Topic[] = GLOBAL_TOPICS.map((type) => ({ type }));
-    const perLane: Topic[] = lanes.map((pane) => ({ type: PER_PANE_TOPIC, pane_id: String(pane) }));
+export function specsFor(lanes: readonly PaneId[]): readonly FleetTopic[] {
+    const globals: FleetTopic[] = GLOBAL_TOPICS.map((type) => ({ type: textOf(type) }));
+    const perLane: FleetTopic[] = lanes.map((pane) => ({ type: textOf(PER_PANE_TOPIC), pane }));
     return [...globals, ...perLane];
 }

@@ -1,3 +1,4 @@
+import { dataOfFrame, fleetFrame } from '#test/support/frames.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { must } from '#src/protocol/result.ts';
@@ -12,7 +13,7 @@ import { kindOf } from '#test/fakes/agent-kind.ts';
 import type { CoreEventsTiming } from '#src/adapters/herdr-core/sdk-core.ts';
 import type { CoreLinkTiming } from '#src/adapters/herdr-core/sdk-core.ts';
 import type { SessionOfTerminal } from '#src/adapters/herdr-core/sessions.ts';
-import type { Frame } from '#src/ports/fleet-source.ts';
+import type { FleetFrame } from '#src/ports/fleet-source.ts';
 import { FakeFault, FakeHcCore, later } from '@stateforge-labs/herdr-sdk/core/test-kit';
 
 const LINK: CoreLinkTiming = { helloTimeout: duration(300), backoffBase: duration(40), backoffCap: duration(160) };
@@ -62,7 +63,7 @@ test('after the first snapshot, events cost no terminal.list and no terminal.get
         await fleet.snapshot();
         const stream = await fleet.subscribe();
         assert.ok(stream.kind === 'stream');
-        const seen: Frame[] = [];
+        const seen: FleetFrame[] = [];
         const reading = (async (): Promise<void> => { for await (const frame of stream.stream.frames()) { seen.push(frame); } })();
         await until(() => core.subscribed === 1);
         core.event('title', 't1', { title: 'busy' });
@@ -72,10 +73,12 @@ test('after the first snapshot, events cost no terminal.list and no terminal.get
         assert.equal(seen.length, 0);
         core.event('status', 't1', status('idle'));
         await until(() => seen.length === 1);
-        assert.deepEqual([seen[0]?.event, seen[0]?.data['pane_id'], seen[0]?.data['agent_status']], ['pane.agent_status_changed', 't1', 'idle']);
+        const first = (seen[0] ?? fleetFrame('missing', {}));
+        assert.deepEqual([first.event, dataOfFrame(first)['pane_id'], dataOfFrame(first)['agent_status']], ['pane.agent_status_changed', 't1', 'idle']);
         core.event('removed', 't2');
         await until(() => seen.length === 2);
-        assert.deepEqual([seen[1]?.event, seen[1]?.data['pane_id']], ['pane.closed', 't2']);
+        const second = (seen[1] ?? fleetFrame('missing', {}));
+        assert.deepEqual([second.event, dataOfFrame(second)['pane_id']], ['pane.closed', 't2']);
         assert.equal(countOf(core, 'terminal.list', 'terminal.get'), 1);
         assert.equal(countOf(core, 'events.subscribe'), 1);
         stream.stream.close();

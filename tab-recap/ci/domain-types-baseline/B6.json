@@ -31,10 +31,10 @@
   },
   "src/adapters/herdr/fleet.ts": {
     "parameter": 1,
-    "container": 3
+    "container": 2
   },
   "src/adapters/herdr/legacy.ts": {
-    "legacy": 4
+    "legacy": 2
   },
   "src/adapters/job/prompts/recap-instructions.ts": {
     "parameter": 3,

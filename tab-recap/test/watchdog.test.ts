@@ -11,24 +11,24 @@ import type { Blindness } from '#src/recap/application/informer.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
-import type { Frame, FleetSource, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
+import type { FleetFrame, FleetFeed, FleetSnapshotResult, FleetStreamResult } from '#src/ports/fleet-source.ts';
 
 const pause = (ms: number): Promise<void> => new Promise((resolve) => { setTimeout(resolve, ms); });
 
-function silentHerdr(): { source: FleetSource; subscribes: () => number } {
+function silentHerdr(): { source: FleetFeed; subscribes: () => number } {
     let subscribes = 0;
     let answered = false;
-    const source: FleetSource = {
-        snapshot: (): Promise<SnapshotResult> => {
+    const source: FleetFeed = {
+        snapshot: (): Promise<FleetSnapshotResult> => {
             if (answered) {
-                return new Promise<SnapshotResult>(() => undefined);
+                return new Promise<FleetSnapshotResult>(() => undefined);
             }
             answered = true;
             return Promise.resolve({ kind: 'snapshot', focusedTab: null, seen: { focusedTab: null, lanes: [], panes: [], columns: [], widths: new Map() }, paneTokens: new Map() });
         },
-        subscribe: (): Promise<StreamResult> => {
+        subscribe: (): Promise<FleetStreamResult> => {
             subscribes += 1;
-            return Promise.resolve({ kind: 'stream', stream: { frames: (): AsyncIterable<Frame> => new AsyncQueue<Frame>(), close: (): void => undefined } });
+            return Promise.resolve({ kind: 'stream', stream: { frames: (): AsyncIterable<FleetFrame> => new AsyncQueue<FleetFrame>(), close: (): void => undefined } });
         },
     };
     return { source, subscribes: (): number => subscribes };
@@ -68,11 +68,11 @@ test('watchdog: after N minutes with no frame and no snapshot the tick says so a
 
 test('watchdog: a frame, or a snapshot, counts as a sign of life', async () => {
     let now = 0;
-    const queue = new AsyncQueue<Frame>();
+    const queue = new AsyncQueue<FleetFrame>();
     let subscribes = 0;
-    const source: FleetSource = {
-        snapshot: (): Promise<SnapshotResult> => Promise.resolve({ kind: 'snapshot', focusedTab: null, seen: { focusedTab: null, lanes: [], panes: [], columns: [], widths: new Map() }, paneTokens: new Map() }),
-        subscribe: (): Promise<StreamResult> => { subscribes += 1; return Promise.resolve({ kind: 'stream', stream: { frames: (): AsyncIterable<Frame> => queue, close: (): void => undefined } }); },
+    const source: FleetFeed = {
+        snapshot: (): Promise<FleetSnapshotResult> => Promise.resolve({ kind: 'snapshot', focusedTab: null, seen: { focusedTab: null, lanes: [], panes: [], columns: [], widths: new Map() }, paneTokens: new Map() }),
+        subscribe: (): Promise<FleetStreamResult> => { subscribes += 1; return Promise.resolve({ kind: 'stream', stream: { frames: (): AsyncIterable<FleetFrame> => queue, close: (): void => undefined } }); },
     };
     const informer = new Informer(source, { now: (): ReturnType<typeof instant> => instant(now) }, DEFAULT_POLICY, {
         onIntents: (): Promise<void> => Promise.resolve(),

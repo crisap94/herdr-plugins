@@ -40,10 +40,9 @@
     "property": 2
   },
   "src/recap/application/informer.ts": {
-    "parameter": 5,
+    "parameter": 3,
     "return": 1,
-    "container": 4,
-    "property": 6
+    "property": 5
   },
   "src/recap/application/input-retention.ts": {
     "parameter": 2,

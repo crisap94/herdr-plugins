@@ -5,7 +5,7 @@ import { uncheckedWorkspaceId, type PaneId, type SessionId, type TabId } from '#
 import { must } from '#src/protocol/result.ts';
 import type { ClosedEvery, Done, ColumnLayoutResult, OpenResult } from '#src/ports/columns.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
-import type { Frame, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
+import type { FleetFrame, FleetSnapshotResult, FleetStreamResult } from '#src/ports/fleet-source.ts';
 import type { HarnessDirectory, HarnessList } from '#src/ports/harnesses.ts';
 import type { Notice } from '#src/ports/notifier.ts';
 import type { PaneTokensResult } from '#src/ports/pane-tokens.ts';
@@ -85,7 +85,7 @@ export class HcCoreFleet implements Fleet {
         return found.terminal === null ? null : this.sessions(found.terminal);
     }
 
-    async snapshot(): Promise<SnapshotResult> {
+    async snapshot(): Promise<FleetSnapshotResult> {
         const failed = await this.load();
         if (failed !== null) {
             return failed;
@@ -93,7 +93,7 @@ export class HcCoreFleet implements Fleet {
         return { kind: 'snapshot', seen: { focusedTab: null, lanes: this.roster.lanes(), panes: this.roster.panes().map((pane) => textOf(pane)), columns: [], widths: new Map() }, focusedTab: null, paneTokens: new Map() };
     }
 
-    private async pump(events: CoreEvents, queue: AsyncQueue<Frame>): Promise<void> {
+    private async pump(events: CoreEvents, queue: AsyncQueue<FleetFrame>): Promise<void> {
         const own = new HcCoreRoster(this.sessions);
         for await (const feed of events.feed) {
             this.roster.fold(feed);
@@ -105,11 +105,11 @@ export class HcCoreFleet implements Fleet {
         this.streams.delete(events);
     }
 
-    subscribe(): Promise<StreamResult> {
+    subscribe(): Promise<FleetStreamResult> {
         if (this.life === 'shut') {
             return Promise.resolve(unknown({ why: 'unreachable', detail: causeOf(must(parseText(HC_SHUT))) }));
         }
-        const queue = new AsyncQueue<Frame>();
+        const queue = new AsyncQueue<FleetFrame>();
         const events = new CoreEvents(this.eventsTiming === undefined ? { path: this.path } : { path: this.path, timing: this.eventsTiming });
         this.streams.add(events);
         events.start();

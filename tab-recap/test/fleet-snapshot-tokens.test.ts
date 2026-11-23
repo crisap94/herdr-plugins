@@ -7,7 +7,6 @@ import { join } from 'node:path';
 import { PROTOCOL } from '@stateforge-labs/herdr-sdk';
 import { resetHerdrClients } from '#src/adapters/herdr/client.ts';
 import { HerdrFleetPorts } from '#src/adapters/herdr/fleet.ts';
-import { paneTokensOf } from '#src/adapters/herdr/json.ts';
 import { notesOf } from '#src/recap/domain/coordination.ts';
 import type { TokenName, TokenValue } from '#src/protocol/primitives.ts';
 import { paneId } from '#test/support/ids.ts';
@@ -58,17 +57,18 @@ const textMap = (tokens: Iterable<readonly [string, string]>): ReadonlyMap<Text,
 
 const entriesOf = (tokens: ReadonlyMap<TokenName, TokenValue> | undefined): (readonly [string, string])[] => [...(tokens ?? new Map())].map(([name, value]): readonly [string, string] => [String(name), String(value)]);
 
+const sent = new Map([['w1:p1', Object.entries(snapshot.panes[0]?.tokens ?? {})], ['w1:p2', []]]);
+
 test('a snapshot keeps every pane token herdr sent: an 81-char note, a dotted note name and a 33-char name', async () => {
     const result = await served(() => new HerdrFleetPorts(textOf('/state')).snapshot());
     if (result.kind !== 'snapshot') { assert.fail('the snapshot was not read'); }
-    const legacy = paneTokensOf(snapshot);
-    assert.deepEqual([...result.paneTokens.keys()].map(String), [...legacy.keys()].map(String));
-    for (const [pane, tokens] of legacy) {
-        const entries = entriesOf(result.paneTokens.get(pane));
-        assert.deepEqual(entries, Object.entries(tokens));
-        assert.deepEqual(notesOf(textMap(entries)), notesOf(textMap(Object.entries(tokens))));
+    assert.deepEqual([...result.paneTokens.keys()].map(String), [...sent.keys()]);
+    for (const [pane, tokens] of sent) {
+        const entries = entriesOf(result.paneTokens.get(paneId(pane)));
+        assert.deepEqual(entries, tokens);
+        assert.deepEqual(notesOf(textMap(entries)), notesOf(textMap(tokens)));
     }
-    const names = entriesOf(result.paneTokens.get(paneId('w1:p1'))).map(([name]) => name);
-    assert.deepEqual(names, ['note', 'note-a.b', longName, 'ok']);
+    assert.deepEqual(entriesOf(result.paneTokens.get(paneId('w1:p1'))).map(([name]) => name), ['note', 'note-a.b', longName, 'ok']);
     assert.deepEqual(entriesOf(result.paneTokens.get(paneId('w1:p1')))[0], ['note', longNote]);
+    assert.deepEqual(notesOf(textMap(sent.get('w1:p1') ?? [])).map((note) => note.label), ['note', 'a.b']);
 });

@@ -871,7 +871,8 @@
       "test/recap-prompt.test.ts",
       "test/rubric.test.ts",
       "test/rubric.ts",
-      "test/run-process.test.ts"
+      "test/run-process.test.ts",
+      "test/support/frames.ts"
     ],
     "B7": [
       "src/compact/launch.mjs",

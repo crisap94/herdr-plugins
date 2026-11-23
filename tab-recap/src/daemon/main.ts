@@ -42,7 +42,7 @@ import { SLOT_TABLE } from './slot-table.ts';
 import { contextOf, parseRoot, parseSwitch, parseVersion, startSlots, taps, type Slots, type SlotKey, type StatusEvent, type Switch, type Version } from './slots.ts';
 import { Backends } from './backends.ts';
 import { boundedBy } from './bounded.ts';
-import { failureLog, logVia, paneTokensTo } from './legacy.ts';
+import { failureLog, logVia } from './legacy.ts';
 import { SHUTDOWN_MS, shutDownWithin } from './shutdown.ts';
 import { openStateAt } from './state.ts';
 import type { Autocompact } from '#src/recap/application/autocompact.ts';
@@ -70,7 +70,7 @@ import type { Directory } from '#src/recap/domain/directory.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { HandoffRequests } from '#src/recap/domain/handoff-requests.ts';
 import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
-import { wireWorktrees, type Worktrees } from './worktrees.ts';
+import { routePaneTokens, wireWorktrees, type Worktrees } from './worktrees.ts';
 import { ASK_KEEP_MS, CHECKPOINT_EVERY, EVENT_STOP_MS, FLUSH_STOP_MS, INTENT_MS, REQUEST_POLL_MS, RESYNC_MS, RETENTION_EVERY } from './timing.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
@@ -145,7 +145,7 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
         onUnknownKind: (): void => { },
         onBeat: onBeatOf((current: Board): void => { worktrees.registry.beat(current); }, recaps, board, loadSettings().pacing),
         onStatus: parseStatusPush.bind(undefined, turns),
-        onPaneTokens: paneTokensTo(worktrees, answers, exchange),
+        onPaneTokens: routePaneTokens(worktrees, answers, exchange),
         sessionIdentity: sessionOfForKind,
     });
     box.informer = informer;

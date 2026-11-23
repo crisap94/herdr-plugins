@@ -2,7 +2,7 @@ import { parsePaneId } from '#src/recap/domain/ids.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { parseNonEmptyText } from '#src/recap/domain/text.ts';
-import type { Frame } from '#src/ports/fleet-source.ts';
+import type { FleetFrame } from '#src/ports/fleet-source.ts';
 import { CoreRoster, parseHcAddress } from './sdk-core.ts';
 import type { Count as CoreCount, HcCoreFeed, HcPayload, HcTerminal } from './sdk-core.ts';
 import { framesBetween } from './frames.ts';
@@ -35,7 +35,7 @@ export class HcCoreRoster {
         }
     }
 
-    fold(feed: HcCoreFeed): readonly Frame[] {
+    fold(feed: HcCoreFeed): readonly FleetFrame[] {
         const step = this.core.fold(feed);
         const lanes = this.derive();
         const frames = step.initial ? [] : framesBetween(this.known, lanes);

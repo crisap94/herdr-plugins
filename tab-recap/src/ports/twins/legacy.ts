@@ -2,8 +2,6 @@ import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { Locale } from '#src/i18n/messages.ts';
-import type { TokenMap } from '#src/protocol/tokens.ts';
-import type { Reconciliation } from '#src/recap/domain/fold.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 import type { Forge } from '@stateforge-labs/session-ledger/unstable/ports/lane-repo.ts';
 
@@ -26,30 +24,6 @@ export interface Extension {
     readonly id: string;
     notes?(lanes?: readonly TabLane[], locale?: Locale): NotesResult;
     warning?(locale: Locale): string | null;
-}
-
-export interface Topic {
-    readonly type: string;
-    readonly pane_id?: string;
-}
-
-export interface Frame {
-    readonly event: string;
-    readonly data: Readonly<Record<string, unknown>>;
-}
-
-export type SnapshotResult = { readonly kind: 'snapshot'; readonly seen: Reconciliation; readonly focusedTab: string | null; readonly paneTokens: ReadonlyMap<string, TokenMap> } | Unknown;
-
-export interface FrameStream {
-    frames(): AsyncIterable<Frame>;
-    close(): void;
-}
-
-export type StreamResult = { readonly kind: 'stream'; readonly stream: FrameStream } | Unknown;
-
-export interface FleetSource {
-    snapshot(): Promise<SnapshotResult>;
-    subscribe(topics: readonly Topic[]): Promise<StreamResult>;
 }
 
 export interface StoredRun {

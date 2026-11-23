@@ -1,4 +1,5 @@
 import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { fleetFrame } from '#test/support/frames.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { laneTurns } from '#src/daemon/lane-turns.ts';
@@ -12,7 +13,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
-import type { FleetSource, Frame, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
+import type { FleetFeed, FleetFrame, FleetSnapshotResult, FleetStreamResult } from '#src/ports/fleet-source.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
@@ -50,10 +51,10 @@ test('a working push after the compaction ended dismisses it; the flow\'s own tu
 });
 
 test('the informer hands every status push to the daemon\'s hook, before the fold sees it', async () => {
-    const queue = new AsyncQueue<Frame>();
-    const herdr: FleetSource = {
-        snapshot: (): Promise<SnapshotResult> => Promise.resolve({ kind: 'snapshot', seen: { focusedTab: null, lanes: [], panes: [], columns: [], widths: new Map() }, focusedTab: null, paneTokens: new Map() }),
-        subscribe: (): Promise<StreamResult> => Promise.resolve({ kind: 'stream', stream: { frames: (): AsyncIterable<Frame> => queue, close: (): void => { queue.end(); } } }),
+    const queue = new AsyncQueue<FleetFrame>();
+    const herdr: FleetFeed = {
+        snapshot: (): Promise<FleetSnapshotResult> => Promise.resolve({ kind: 'snapshot', seen: { focusedTab: null, lanes: [], panes: [], columns: [], widths: new Map() }, focusedTab: null, paneTokens: new Map() }),
+        subscribe: (): Promise<FleetStreamResult> => Promise.resolve({ kind: 'stream', stream: { frames: (): AsyncIterable<FleetFrame> => queue, close: (): void => { queue.end(); } } }),
     };
     const heard: string[] = [];
     const informer = new Informer(herdr, { now: (): ReturnType<typeof instant> => instant(0) }, DEFAULT_POLICY, {
@@ -64,7 +65,7 @@ test('the informer hands every status push to the daemon\'s hook, before the fol
     assert.equal(informer.listening, 'absent');
     await informer.enterSubscription();
     assert.equal(informer.listening, 'present', 'a subscription is open');
-    queue.push({ event: 'pane_agent_status_changed', data: { pane_id: 'w1:p1', agent_status: 'done' } });
+    queue.push(fleetFrame('pane_agent_status_changed', { pane_id: 'w1:p1', agent_status: 'done' }));
     for (let wait = 0; wait < 100 && heard.length === 0; wait += 1) {
         await new Promise<void>((resolve) => { setTimeout(resolve, 5); });
     }
