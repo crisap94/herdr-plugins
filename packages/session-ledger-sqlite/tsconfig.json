@@ -26,7 +26,8 @@
     "test",
     "testkit",
     "gates",
-    "bin"
+    "bin",
+    "types/*.d.ts"
   ],
   "exclude": [
     "node_modules"

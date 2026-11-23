@@ -1,41 +1,9 @@
-import { Database } from 'bun:sqlite';
-
-export const MEMORY = ':memory:';
-
-export const BUSY_PRAGMA = 'PRAGMA busy_timeout = 2000';
-
-export const CHECKPOINT_PRAGMA = 'PRAGMA wal_checkpoint(TRUNCATE)';
-
-export function connect(path: string): Database {
-    const db = new Database(path);
-    db.exec(BUSY_PRAGMA);
-    db.exec('PRAGMA foreign_keys = ON');
-    db.exec('PRAGMA synchronous = FULL');
-    return db;
-}
-
-export function closeDatabase(db: Database): void {
-    db.exec(CHECKPOINT_PRAGMA);
-    db.close();
-}
-
-export function connectReadOnly(path: string): Database {
-    const db = new Database(path, { readonly: true });
-    db.exec(BUSY_PRAGMA);
-    return db;
-}
-
-export function writeTx<T>(db: Database, work: () => T): T {
-    if (db.inTransaction) {
-        return work();
-    }
-    db.exec('BEGIN IMMEDIATE');
-    try {
-        const done = work();
-        db.exec('COMMIT');
-        return done;
-    } catch (error) {
-        db.exec('ROLLBACK');
-        throw error;
-    }
-}
+export {
+    IN_MEMORY as MEMORY,
+    BUSY_PRAGMA,
+    CHECKPOINT_PRAGMA,
+    connect,
+    closeDatabase,
+    connectReadOnly,
+    writeTransaction as writeTx,
+} from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';

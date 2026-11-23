@@ -1,0 +1,31 @@
+{
+  "src/backup.ts": {
+    "parameter": 8,
+    "return": 4,
+    "container": 1
+  },
+  "src/connection.ts": {
+    "parameter": 2
+  },
+  "src/index.ts": {
+    "parameter": 2
+  },
+  "src/migrate.ts": {
+    "return": 2
+  },
+  "src/migration.ts": {
+    "property": 3
+  },
+  "src/open.ts": {
+    "parameter": 7,
+    "return": 1,
+    "property": 9
+  },
+  "src/rebuild.ts": {
+    "container": 1,
+    "property": 3
+  },
+  "src/store.ts": {
+    "property": 6
+  }
+}
