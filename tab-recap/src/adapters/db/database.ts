@@ -9,7 +9,7 @@ import type { GuardedLedger, GuardedRecapRecords } from '#src/ports/guarded-read
 import type { CompactionAskQueue, RequestPort } from '#src/ports/requests.ts';
 import type { RunInputReader } from '#src/ports/run-inputs.ts';
 import type { VerdictStore } from '#src/ports/verdicts.ts';
-import type { SessionSource } from '#src/ports/session-source.ts';
+import type { SessionSourcePort } from '#src/ports/session-source.ts';
 import type { Stories } from '#src/ports/stories.ts';
 import type { RetentionPort, TabRetirement } from '#src/ports/retention.ts';
 import type { ClosureReader, ClosureRecorder, ClosureRuns, ClosureSweep } from '#src/ports/closed-lanes.ts';
@@ -40,7 +40,7 @@ import { AskBookRepository } from './ask-ledger.ts';
 import type { AskBook } from '#src/ports/ask-ledger.ts';
 import { RunInputStore } from './run-inputs.ts';
 import { VerdictRowStore } from './verdicts.ts';
-import { SessionSourceRepository } from './session-source/legacy.ts';
+import { SessionSourceStore } from './session-source.ts';
 import { StoriesRepository } from './stories.ts';
 import { RetentionRepository } from './retention.ts';
 import { TabViewsRepository } from './tab-views/legacy.ts';
@@ -69,7 +69,7 @@ export interface Store {
     readonly inputs: RunInputReader;
     readonly verdicts: VerdictStore;
     readonly stories: Stories;
-    readonly session: SessionSource;
+    readonly session: SessionSourcePort;
     readonly boundaries: BoundaryLog;
     readonly retention: RetentionPort & TabRetirement;
     readonly closedLanes: ClosureRecorder & ClosureReader & ClosureRuns & ClosureSweep;
@@ -94,7 +94,7 @@ export function storeOver(db: Database, options: StoreSettings = {}): Store {
         kind: 'ready', db, records: new RecapRecordsRepository(db), ledger, views: new TabViewsRepository(db, options.daemonVersion ?? null),
         visibility: new ColumnVisibilityRepository(db), requests: new RequestsStore(db, options.now), handoffs: new HandoffAnswerRepository(db, options.now), compactions: new CompactionLogRepository(db), asks: new AskBookRepository(db, options.log), autocompact: new AutocompactRecordsRepository(db), decisions: new DecisionLedgerRepository(db), autocompactBriefs: new DecisionBriefsRepository(db),
         inputs: new RunInputStore(db), verdicts: new VerdictRowStore(db),
-        stories: new StoriesRepository(db, ledger), session: new SessionSourceRepository(db),
+        stories: new StoriesRepository(db, ledger), session: new SessionSourceStore(db),
         boundaries: new BoundaryLogRepository(db), retention: new RetentionRepository(db),
         closedLanes: new ClosedLanesRepository(db, options.closedDays ?? DEFAULT_CLOSED_LANE_DAYS),
         closedDays: options.closedDays ?? DEFAULT_CLOSED_LANE_DAYS,

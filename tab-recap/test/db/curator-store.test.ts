@@ -149,17 +149,17 @@ test('curate requests are taken once; a tab asked twice is one request, and the 
 
 test('session source: first seen, runs by cause (imported apart), and the finished compactions with their tokens', () => {
     const store = memoryStore();
-    assert.equal(store.session.firstSeen('w1:t1'), null);
-    assert.deepEqual(store.session.runsByCause('w1:t1'), {});
+    assert.equal(store.session.firstSeen(tabId('w1:t1')), null);
+    assert.deepEqual(store.session.runsByCause(tabId('w1:t1')), {});
     const run = (cause: 'turn-ended' | 'focused' | 'requested' | 'imported', at: number): void => {
         recordOps(store, { tab: tabId('w1:t1'), at: instant(at), cause, backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1', at)], tasks: SHAPE, ops: [] });
     };
     run('turn-ended', 100); run('turn-ended', 200); run('focused', 300); run('imported', 50);
-    assert.equal(store.session.firstSeen('w1:t1'), 100, 'the tab row keeps the time it was first touched');
-    assert.deepEqual(store.session.runsByCause('w1:t1'), { 'turn-ended': 2, focused: 1, imported: 1 });
+    assert.equal(store.session.firstSeen(tabId('w1:t1')), 100, 'the tab row keeps the time it was first touched');
+    assert.deepEqual(store.session.runsByCause(tabId('w1:t1')), { 'turn-ended': 2, focused: 1, imported: 1 });
     const add = store.db.prepare("INSERT INTO compaction (id, tab_id, pane, agent, stage, brief, started_at, stage_at, finished_at, tokens_before, tokens_after) VALUES (?, 'w1:t1', 'w1:p1', 'claude', ?, 'written', ?, ?, ?, ?, ?)");
     add.run(ids.next(), 'compacted', 10, 10, 20, 800_000, 14_000);
     add.run(ids.next(), 'failed', 30, 30, 40, null, null);
     add.run(ids.next(), 'compacted', 50, 50, 60, null, null);
-    assert.deepEqual(store.session.compactions('w1:t1'), [{ tokensBefore: 800_000, tokensAfter: 14_000, origin: 'operator' }, { tokensBefore: null, tokensAfter: null, origin: 'operator' }]);
+    assert.deepEqual(store.session.compactions(tabId('w1:t1')), [{ tokensBefore: 800_000, tokensAfter: 14_000, origin: 'operator' }, { tokensBefore: null, tokensAfter: null, origin: 'operator' }]);
 });

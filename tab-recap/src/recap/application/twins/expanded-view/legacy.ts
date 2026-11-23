@@ -2,7 +2,7 @@ import { knownOr, type GuardedLedger, type GuardedRecapRecords } from '#src/port
 import type { BoundaryLog } from '#src/ports/boundaries.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import type { RequestPort } from '#src/ports/requests.ts';
-import type { SessionSource } from '#src/ports/session-source.ts';
+import type { SessionSourcePort } from '#src/ports/session-source.ts';
 import type { Stories } from '#src/ports/stories.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
@@ -31,7 +31,7 @@ export interface ExpandedDeps {
     readonly records: GuardedRecapRecords;
     readonly ledger: GuardedLedger;
     readonly stories: Stories;
-    readonly session: SessionSource;
+    readonly session: SessionSourcePort;
     readonly autocompact?: Pick<AutocompactRecords, 'countsFor'>;
     readonly boundaries: Pick<BoundaryLog, 'breaksOf' | 'chapterCount'>;
     readonly requests: Pick<RequestPort, 'requestCurate'>;
@@ -88,7 +88,8 @@ export class ExpandedModel {
         const lanes = view?.lanes ?? [];
         const counted = parseTabId(tab);
         const session = sessionFactsOf({
-            firstSeen: this.deps.session.firstSeen(tab), now, runs: this.deps.session.runsByCause(tab), compactions: this.deps.session.compactions(tab),
+            firstSeen: counted.kind === 'ok' ? this.deps.session.firstSeen(counted.value) : null, now,
+            runs: counted.kind === 'ok' ? this.deps.session.runsByCause(counted.value) : {}, compactions: counted.kind === 'ok' ? this.deps.session.compactions(counted.value) : [],
             lanes: lanes.map((lane) => ({ agent: lane.agent, label: clipped(lane.title), context: lane.context ?? null })),
             webs: lanes.map((lane) => lane.web ?? null), edits: this.deps.edits(recap?.lanes ?? [], instant(now)),
             chapters: this.deps.boundaries.chapterCount(tabIdOf(tab)),
