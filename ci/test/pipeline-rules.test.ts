@@ -92,6 +92,7 @@ test('the floor job runs the tab-recap unit only', () => {
 type Rule = Readonly<{ if?: string; changes?: readonly string[]; exists?: readonly string[] }>;
 type PipelineJob = Readonly<{ stage?: string; extends?: string; needs?: readonly (string | Readonly<{ job: string }>)[]; rules?: readonly Rule[] }>;
 type Env = Readonly<Record<string, string>>;
+type Scripted = Readonly<{ script?: readonly string[] }>;
 
 const UNIT_JOBS: readonly string[] = [
     'unit:root',
@@ -299,3 +300,30 @@ test('the install smoke runs in a merge request that touches a package.json or t
     assert.ok(checked(MERGE_REQUEST, ['packages/recap-view/package.json']).includes('install-smoke'));
     assert.ok(checked(MERGE_REQUEST, ['tab-recap/herdr-plugin.toml']).includes('install-smoke'));
 });
+
+test('path rules 8: desktop and agent-sdk files run the three plugin jobs, which import their contract and testkit', () => {
+    for (const file of ['desktop/src/contract.ts', 'agent-sdk/src/testkit.ts']) {
+        const running = checked(MERGE_REQUEST, [file]);
+        for (const name of PLUGIN_JOBS) assert.ok(running.includes(name), `${file}: ${name}`);
+    }
+});
+
+test('path rules 9: the conformance pending files run the ledger unit that reads them', () => {
+    assert.ok(checked(MERGE_REQUEST, ['tab-recap/test/conformance/pending-1.json']).includes('unit:session-ledger'));
+});
+
+test('path rules 10: the codemod move maps run the plugin test and floor jobs that read them', () => {
+    const running = checked(MERGE_REQUEST, ['ci/codemod/moves/ENG-E2b.tsv']);
+    assert.ok(running.includes('unit:tab-recap:test'));
+    assert.ok(running.includes('unit:tab-recap:floor'));
+});
+
+test('the agent-sdk unit type-checks as well as lints and tests', () => {
+    const script = (pipelineScript('unit:agent-sdk'));
+    assert.ok(script.includes('bash agent-sdk/gates/run.sh typecheck'));
+});
+
+function pipelineScript(name: string): readonly string[] {
+    const parsed = Bun.YAML.parse(readFileSync(join(repository, '.gitlab-ci.yml'), 'utf8')) as Readonly<Record<string, Scripted>>;
+    return parsed[name]?.script ?? [];
+}

@@ -83,6 +83,8 @@ unit:root:
       changes:
         - tab-recap/**/*
         - packages/**/*
+        - desktop/**/*
+        - agent-sdk/**/*
         - ci/**/*
         - evals/**/*
         - bun.lock
@@ -103,6 +105,9 @@ unit:root:
       changes:
         - tab-recap/**/*
         - packages/**/*
+        - desktop/**/*
+        - agent-sdk/**/*
+        - ci/codemod/**/*
         - bun.lock
         - package.json
         - bunfig.toml
@@ -124,6 +129,9 @@ unit:root:
       changes:
         - tab-recap/**/*
         - packages/**/*
+        - desktop/**/*
+        - agent-sdk/**/*
+        - ci/codemod/**/*
         - bun.lock
         - package.json
         - bunfig.toml
@@ -144,6 +152,7 @@ unit:root:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
         - packages/session-ledger/**/*
+        - tab-recap/test/conformance/**/*
         - bun.lock
         - package.json
         - bunfig.toml
@@ -233,6 +242,7 @@ unit:root:
   script:
     - bash agent-sdk/gates/run.sh lint
     - bash agent-sdk/gates/run.sh test
+    - bash agent-sdk/gates/run.sh typecheck
 
 track-scope:
   extends: .tools
