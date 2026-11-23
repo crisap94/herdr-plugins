@@ -303,6 +303,7 @@
       "test/experiment-report.test.ts",
       "test/experiment-typed-adapters.test.ts",
       "test/fact-index.test.ts",
+      "test/fleet-snapshot-tokens.test.ts",
       "test/fold-session.test.ts",
       "test/fold.test.ts",
       "test/forbidden-words.test.ts",

@@ -8,14 +8,14 @@ import { paneTokensOf, parseJsonList, parseJsonRect, parseJsonText, reconciliati
 import { parseJson, type JsonObject } from './json-object.ts';
 import { refusalOfTokens } from './token-refusal.ts';
 import { OWNERS } from '#src/recap/domain/token-registry.ts';
-import { parseAgentKind, parseTabId, uncheckedPaneId, uncheckedRatio, uncheckedWorkspaceId, type PaneId, type TabId, type WorkspaceId } from '#src/recap/domain/ids.ts';
+import { parseAgentKind, parseTabId, uncheckedPaneId, uncheckedRatio, uncheckedTokenName, uncheckedTokenValue, uncheckedWorkspaceId, type PaneId, type TabId, type WorkspaceId } from '#src/recap/domain/ids.ts';
 import type { Probability } from '#src/recap/domain/probability.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import type { Milliseconds } from '#src/recap/domain/time.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { parseTokenName, parseTokenValue, type TokenName, type TokenValue } from '#src/protocol/primitives.ts';
+import { parseTokenName, type TokenName, type TokenValue } from '#src/protocol/primitives.ts';
 import { EVENT_TOKEN } from '#src/recap/domain/event-token.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import { must } from '#src/protocol/result.ts';
@@ -42,16 +42,9 @@ const CLOSE = must(parseText('close'));
 
 const parseOptionalTabId = (input: unknown): TabId | null => { const found = parseTabId(input); return found.kind === 'ok' ? found.value : null; };
 
-const tokenMapOf = (tokens: TokenMap): ReadonlyMap<TokenName, TokenValue> => new Map(Object.entries(tokens).flatMap(([name, value]) => {
-    const key = parseTokenName(name);
-    const raw = parseTokenValue(value);
-    return key.kind === 'ok' && raw.kind === 'ok' ? [[key.value, raw.value] as const] : [];
-}));
+const tokenMapOf = (tokens: TokenMap): ReadonlyMap<TokenName, TokenValue> => new Map(Object.entries(tokens).map(([name, value]) => [uncheckedTokenName(name), uncheckedTokenValue(value)] as const));
 
-const brandedTokens = (snapshot: JsonObject): ReadonlyMap<PaneId, ReadonlyMap<TokenName, TokenValue>> => new Map([...paneTokensOf(snapshot)].flatMap(([pane, tokens]) => {
-    const id = parseOptionalPaneId(pane);
-    return id === null ? [] : [[id, tokenMapOf(tokens)] as const];
-}));
+const brandedTokens = (snapshot: JsonObject): ReadonlyMap<PaneId, ReadonlyMap<TokenName, TokenValue>> => new Map([...paneTokensOf(snapshot)].map(([pane, tokens]) => [pane, tokenMapOf(tokens)] as const));
 
 const frameOf = (frame: DecodedFrame): FleetFrame => ({
     event: must(parseText(frame.event)),
