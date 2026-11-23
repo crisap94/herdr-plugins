@@ -69,7 +69,7 @@ import type { Directory } from '#src/recap/domain/directory.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { textOf, type NonEmptyText, type Text } from '#src/recap/domain/text.ts';
 import type { HandoffRequests } from '#src/recap/domain/handoff-requests.ts';
-import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
+import { lazyRuntime } from '#src/adapters/harness/library.ts';
 import { routePaneTokens, wireWorktrees, type Worktrees } from './worktrees.ts';
 import { ASK_KEEP_MS, CHECKPOINT_EVERY, EVENT_STOP_MS, FLUSH_STOP_MS, INTENT_MS, REQUEST_POLL_MS, RESYNC_MS, RETENTION_EVERY } from './timing.ts';
 import { countOf } from '#src/recap/domain/count.ts';
@@ -116,7 +116,7 @@ const handoffRequestsOn = (): HandoffRequests => loadSettings().handoffRequests;
 function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wired {
     const clock = new SystemClock();
     const events = new EventStream({ tokens: fleet, workspaces: fleet, enabled: herdrEventsPresence, startedAt: instant(Date.now() - process.uptime() * 1000), log });
-    const backends = new Backends(root, { herdr: fleet, path: new PathHarnessDirectory(AUTO_PATH_KINDS) }, fleet, log, createRuntime());
+    const backends = new Backends(root, { herdr: fleet, path: new PathHarnessDirectory(AUTO_PATH_KINDS) }, fleet, log, lazyRuntime());
     const transcripts = daemonTranscriptRegistry(fleet, screenWanted);
     const repos = new GitLaneRepo(clock);
     const curate = wireCurate({ store, curator: () => backends.curator(), transcripts, log });
