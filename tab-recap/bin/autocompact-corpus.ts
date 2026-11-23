@@ -43,7 +43,9 @@ const jsonl = (items: readonly object[]): string => items.map((item) => JSON.str
 const runBefore = (points: readonly Stored[], at: number | null): Stored | null =>
     at === null ? null : (points.filter((point) => point.at <= at && at - point.at <= TEN_MINUTES).toSorted((a, b) => b.at - a.at)[0] ?? null);
 
-function outcomeRows(outcomes: ReadonlyMap<string, readonly BoundaryOutcome[]>, bySource: ReadonlyMap<string, readonly Stored[]>, make: (stored: Stored) => Point | null): { readonly rows: readonly object[]; readonly extra: readonly Point[] } {
+interface OutcomeRow { readonly point_id: string | null }
+
+function outcomeRows(outcomes: ReadonlyMap<string, readonly BoundaryOutcome[]>, bySource: ReadonlyMap<string, readonly Stored[]>, make: (stored: Stored) => Point | null): { readonly rows: readonly OutcomeRow[]; readonly extra: readonly Point[] } {
     const extra = new Map<string, Point>();
     const rows = [...outcomes].flatMap(([source, list]) => list.map((outcome) => {
         const stored = runBefore(bySource.get(source) ?? [], outcome.at);
@@ -76,11 +78,11 @@ async function main(): Promise<void> {
     console.log(JSON.stringify(manifest, null, 2));
 }
 
-function writeAll(out: string, db: string, data: { readonly points: readonly Point[]; readonly rows: readonly object[]; readonly extra: readonly Point[] }, counts: object): object {
+function writeAll(out: string, db: string, data: { readonly points: readonly Point[]; readonly rows: readonly OutcomeRow[]; readonly extra: readonly Point[] }, counts: object): object {
     const files: Record<string, readonly object[]> = { 'corpus.jsonl': data.points, 'outcomes.jsonl': data.rows, 'outcome-points.jsonl': data.extra };
     for (const [name, items] of Object.entries(files)) writeFileSync(join(out, name), jsonl(items));
     const manifest = {
-        seed: 42, ...counts, corpus: data.points.length, boundaries: data.rows.length, boundariesWithRun: data.rows.filter((r) => (r as { point_id: string | null }).point_id !== null).length,
+        seed: 42, ...counts, corpus: data.points.length, boundaries: data.rows.length, boundariesWithRun: data.rows.filter((r) => r.point_id !== null).length,
         outcomePointsNotInSample: data.extra.length, db: { file: 'tab-recap.db', sha256: sha256Of(asFsPath(db)) }, files: Object.fromEntries(Object.keys(files).map((name) => [name, sha256Of(asFsPath(join(out, name)))])),
     };
     writeFileSync(join(out, 'manifest.json'), JSON.stringify(manifest, null, 2));

@@ -12,19 +12,6 @@ if [ -x node_modules/.bin/ast-grep ]; then AST="node_modules/.bin/ast-grep"; els
 failures=0
 fail() { echo "  FAIL  $*"; failures=$((failures + 1)); }
 
-rule="rules/pending/recap-one-brand-cast.yml"
-id="$(basename "$rule" .yml)"
-probes="rules/pending/probes/$id"
-[ -f "$probes/bad.ts" ] && [ -f "$probes/good.ts" ] || fail "$id — no bad/good probe"
-for extra in "$probes"/bad*.ts; do
-    [ -f "$extra" ] || continue
-    $AST scan --rule "$rule" "$extra" >/dev/null 2>&1 && fail "$id — $(basename "$extra") does not trigger it: the pending rule does not bite"
-done
-while IFS= read -r extra; do
-    $AST scan --rule "$rule" "$extra" >/dev/null 2>&1 || fail "$id — $(basename "$extra") triggers it: the pending rule over-reaches"
-done < <(find "$probes" -name 'good*.ts' 2>/dev/null)
-[ "$failures" -eq 0 ] && echo "  ok    $id (pending: bad probes bite, good probes pass)"
-
 oxprobe="rules/probes/oxlint-unsafe-any"
 oxlint_run() { bun --bun node_modules/.bin/oxlint --type-aware -c "$oxprobe/oxlintrc.json" --tsconfig "$1/tsconfig.json" "$1/src/index.ts" >/dev/null 2>&1; }
 oxlint_run "$oxprobe/bad" && fail "oxlint-unsafe-any — the bad probe (const id: PaneId = JSON.parse) passes: the unsafe-any rules do not bite"

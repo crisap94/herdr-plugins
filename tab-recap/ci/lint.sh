@@ -53,7 +53,7 @@ bun --bun node_modules/.bin/oxlint --type-aware . && echo "  ok    oxlint" || fa
 echo "evals typecheck (evals/tsconfig.json: the eval harness type-checks clean):"
 { [ -d ../evals/node_modules ] || (cd ../evals && bun install --frozen-lockfile >/dev/null); } && ../node_modules/.bin/tsgo --noEmit -p ../evals/tsconfig.json && echo "  ok    evals typecheck" || fail "the evals harness does not type-check"
 
-echo "domain-type gates bite (the pending brand-cast rule and the oxlint unsafe-any probe):"
+echo "domain-type gates bite (the oxlint unsafe-any probe):"
 bash ci/gate-rules.sh && echo "  ok    gate-rules" || fail "a domain-type gate does not bite"
 
 echo "module graph (dependency-cruiser: one rule set, every rule bites its fixtures, the cruise sees every module):"
@@ -65,8 +65,8 @@ bun ci/lanes-generate.ts --check && echo "  ok    lane map" || fail "ci/lanes.js
 echo "domain types (the signature check fails its bad probes and passes its good ones):"
 bash ci/gate-domain-types.sh && echo "  ok    domain types" || fail "a domain-type probe does not behave as its name says"
 
-echo "domain types over the tree (the ratchet: no signature gets worse, no baseline entry goes stale):"
-bun bin/check-domain-types.ts --baseline ci/domain-types-baseline && echo "  ok    domain-type ratchet" || fail "a signature got worse, or a baseline entry is stale: run bun bin/check-domain-types.ts --json and lower or fix"
+echo "domain types over the tree (hard gate: any finding fails):"
+bun bin/check-domain-types.ts && echo "  ok    domain types" || fail "a signature is not a domain type: run bun bin/check-domain-types.ts --json"
 
 echo "migrations (a released one runs unchanged, its types may move; a new one is numbered the base's highest plus one):"
 bash gates/migrations/check-migrations.sh && echo "  ok    migrations" || fail "a released migration changed, or a new one is not numbered main's highest plus one"

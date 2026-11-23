@@ -26,7 +26,7 @@ const asText = (value: string): Text => must(parseText(value));
 const IDS = [...QUESTIONS.keys()];
 const COVERAGE: readonly BriefQuestion[] = ['brief_keeps_fact', 'brief_keeps_reason'];
 
-interface BriefRow { readonly id: string; readonly facts: readonly { readonly n: number; readonly why: string | null }[]; readonly labels: Readonly<Record<string, { readonly keeps: Label; readonly reason?: Label }>> }
+interface BriefRow { readonly id: string; readonly labels: Readonly<Record<string, { readonly keeps: Label; readonly reason?: Label }>> }
 
 interface AnswerRecord {
     readonly key: string;
@@ -39,6 +39,57 @@ interface AnswerRecord {
 }
 
 interface BoundaryRecord { readonly point_id: string | null; readonly reReads: number; readonly restated: boolean; readonly followed: boolean }
+
+const fieldOf = (row: unknown, key: string): unknown => Reflect.get(Object(row), key);
+const bad = (what: string): Error => new Error(`autocompact-report: a ${what} row does not have the expected shape`);
+const entriesOf = (value: unknown, what: string): readonly (readonly [string, unknown])[] => {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) throw bad(what);
+    return Object.keys(value).map((key): readonly [string, unknown] => [key, Reflect.get(value, key)]);
+};
+const optional = <T>(value: unknown, what: string, is: (found: unknown) => found is T): T | undefined => {
+    if (value === undefined) return undefined;
+    if (!is(value)) throw bad(what);
+    return value;
+};
+const isNumber = (value: unknown): value is number => typeof value === 'number';
+const isString = (value: unknown): value is string => typeof value === 'string';
+const isKind = (value: unknown): value is AnswerKind => value === 'point' || value === 'fact' || value === 'brief';
+const isLabel = (value: unknown): value is Label => value === 0 || value === 1;
+
+function answerRecordOf(line: string): AnswerRecord {
+    const row: unknown = JSON.parse(line);
+    const [key, kind, answers] = [fieldOf(row, 'key'), fieldOf(row, 'kind'), fieldOf(row, 'answers')];
+    if (!isString(key) || !isKind(kind)) throw bad('answer');
+    const [tokens, costUsd, tookMs, unknown] = [optional(fieldOf(row, 'tokens'), 'answer', isNumber), optional(fieldOf(row, 'costUsd'), 'answer', isNumber), optional(fieldOf(row, 'tookMs'), 'answer', isNumber), optional(fieldOf(row, 'unknown'), 'answer', isString)];
+    return {
+        key, kind,
+        ...(answers === undefined ? {} : { answers: Object.fromEntries(entriesOf(answers, 'answer').flatMap(([id, value]) => (isNumber(value) ? [[id, value] as const] : []))) }),
+        ...(tokens === undefined ? {} : { tokens }),
+        ...(costUsd === undefined ? {} : { costUsd }),
+        ...(tookMs === undefined ? {} : { tookMs }),
+        ...(unknown === undefined ? {} : { unknown }),
+    };
+}
+
+
+function boundaryRecordOf(line: string): BoundaryRecord {
+    const row: unknown = JSON.parse(line);
+    const [pointId, reReads] = [fieldOf(row, 'point_id'), fieldOf(row, 'reReads')];
+    if ((pointId !== null && !isString(pointId)) || !isNumber(reReads)) throw bad('boundary');
+    return { point_id: pointId, reReads, restated: Boolean(fieldOf(row, 'restated')), followed: Boolean(fieldOf(row, 'followed')) };
+}
+
+function briefRowOf(line: string): BriefRow {
+    const row: unknown = JSON.parse(line);
+    const id = fieldOf(row, 'id');
+    if (!isString(id)) throw bad('brief');
+    const labels = Object.fromEntries(entriesOf(fieldOf(row, 'labels'), 'brief').map(([n, label]): readonly [string, { readonly keeps: Label; readonly reason?: Label }] => {
+        const [keeps, reason] = [fieldOf(label, 'keeps'), optional(fieldOf(label, 'reason'), 'brief', isLabel)];
+        if (!isLabel(keeps)) throw bad('brief');
+        return [n, reason === undefined ? { keeps } : { keeps, reason }];
+    }));
+    return { id, labels };
+}
 
 const scoresOf = (answers: Readonly<Record<string, number>>): ReadonlyMap<Text, Probability> =>
     new Map(Object.entries(answers).flatMap(([id, value]) => { const score = parseProbability(value); return score === null ? [] : [[textOf(id), score] as const]; }));
@@ -54,15 +105,15 @@ function answerOf(row: AnswerRecord): ScoredAnswer {
     };
 }
 
-const readAnswers = (path: Text): readonly ScoredAnswer[] => jsonLines(path).map((line) => JSON.parse(line) as AnswerRecord).map(answerOf);
+const readAnswers = (path: Text): readonly ScoredAnswer[] => jsonLines(path).map(answerRecordOf).map(answerOf);
 
-const readBoundaries = (path: Text): readonly Boundary[] => jsonLines(path).map((line) => JSON.parse(line) as BoundaryRecord).map((row): Boundary => ({
+const readBoundaries = (path: Text): readonly Boundary[] => jsonLines(path).map(boundaryRecordOf).map((row): Boundary => ({
     pointId: row.point_id === null ? null : textOf(row.point_id), reReads: must(parseCount(row.reReads)), restated: row.restated ? 'yes' : 'no', followed: row.followed ? 'yes' : 'no',
 }));
 
 const mean = (values: readonly number[]): number => (values.length === 0 ? Number.NaN : values.reduce((sum, value) => sum + value, 0) / values.length);
 const num = (value: number | null): number => value ?? Number.NaN;
-const shown = (value: number): Cell => (Number.isNaN(value) ? null : (value as Probability));
+const shown = (value: number): Cell => (Number.isNaN(value) ? null : parseProbability(value));
 const count = (value: number): Cell => must(parseCount(value));
 const maybeProbability = (raw: number): Probability | null => (Number.isNaN(raw) ? null : present(parseProbability(raw)));
 const keeping = (keep: (key: Text) => boolean): KeyFilter => (key) => (keep(key) ? 'keep' : 'drop');
@@ -76,7 +127,7 @@ const coverageLabel = (label: { readonly keeps: Label; readonly reason?: Label }
     new Map<Text, Label>(label.reason === undefined ? [[asText('brief_keeps_fact'), label.keeps]] : [[asText('brief_keeps_fact'), label.keeps], [asText('brief_keeps_reason'), label.reason]]);
 
 function briefLabels(dir: string): Labels {
-    const rows = existsSync(join(dir, 'briefs.jsonl')) ? jsonLines(asText(join(dir, 'briefs.jsonl'))).map((line) => JSON.parse(line) as BriefRow) : [];
+    const rows = existsSync(join(dir, 'briefs.jsonl')) ? jsonLines(asText(join(dir, 'briefs.jsonl'))).map(briefRowOf) : [];
     return new Map(rows.flatMap((row) => Object.entries(row.labels).map(([n, label]) => [textOf(`${row.id}#${n}`), coverageLabel(label)] as const)));
 }
 
