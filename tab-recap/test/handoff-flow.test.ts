@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { paneId } from '#test/support/ids.ts';
 import assert from 'node:assert/strict';
 import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
@@ -49,18 +50,18 @@ test('a target with work in flight is refused in-flight before any refresh', asy
 
 test('a compaction already holding the source lane refuses lane-busy before any refresh', async () => {
     const h = harness();
-    h.claims.claim(String(SOURCE), 'compaction');
+    h.claims.claim(paneId(String(SOURCE)), 'compaction');
     assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'refused', reason: 'lane-busy' });
     assert.equal(h.calls.some((call) => call.startsWith('refresh')), false);
-    assert.equal(h.claims.kindOf(String(SOURCE)), 'compaction');
+    assert.equal(h.claims.kindOf(paneId(String(SOURCE))), 'compaction');
 });
 
 test('a compaction already holding the target lane refuses lane-busy before any refresh', async () => {
     const h = harness();
-    h.claims.claim(String(TARGET), 'compaction');
+    h.claims.claim(paneId(String(TARGET)), 'compaction');
     assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'refused', reason: 'lane-busy' });
     assert.equal(h.calls.some((call) => call.startsWith('refresh')), false);
-    assert.equal(h.claims.kindOf(String(TARGET)), 'compaction');
+    assert.equal(h.claims.kindOf(paneId(String(TARGET))), 'compaction');
 });
 
 test('without the flag no refresh runs and the render sees not-requested', async () => {
@@ -142,10 +143,10 @@ test('a render that throws is failed internal-error with nothing typed', async (
 });
 
 test('a compaction that takes the target during the refresh makes the claim refuse lane-busy, types nothing, and keeps that compaction claim', async () => {
-    const h = harness({ onRefresh: (): void => { h.claims.claim(String(TARGET), 'compaction'); } });
+    const h = harness({ onRefresh: (): void => { h.claims.claim(paneId(String(TARGET)), 'compaction'); } });
     assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'refused', reason: 'lane-busy' });
     assert.equal(h.calls.includes('send'), false);
-    assert.equal(h.claims.kindOf(String(TARGET)), 'compaction');
+    assert.equal(h.claims.kindOf(paneId(String(TARGET))), 'compaction');
     assert.equal(h.claims.has(SOURCE), false);
 });
 

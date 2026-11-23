@@ -5,14 +5,14 @@ import type { PaneId } from '#src/recap/domain/ids.ts';
 type Held = { readonly kind: 'compaction'; readonly joined: CompactAsk[] } | { readonly kind: 'handoff' };
 
 export interface PaneClaim {
-    readonly pane: string;
+    readonly pane: PaneId;
     readonly kind: ClaimKind;
 }
 
 export class LaneClaims {
-    private readonly held = new Map<string, Held>();
+    private readonly held = new Map<PaneId, Held>();
 
-    claim(pane: string, kind: ClaimKind): boolean {
+    claim(pane: PaneId, kind: ClaimKind): boolean {
         if (this.held.has(pane)) {
             return false;
         }
@@ -35,27 +35,27 @@ export class LaneClaims {
         return this.held.has(pane);
     }
 
-    kindOf(pane: string): ClaimKind | null {
+    kindOf(pane: PaneId): ClaimKind | null {
         return this.held.get(pane)?.kind ?? null;
     }
 
-    join(pane: string, request: CompactAsk): void {
+    join(pane: PaneId, request: CompactAsk): void {
         const claim = this.held.get(pane);
         if (claim?.kind === 'compaction') {
             claim.joined.push(request);
         }
     }
 
-    joinedOf(pane: string): readonly CompactAsk[] {
+    joinedOf(pane: PaneId): readonly CompactAsk[] {
         const claim = this.held.get(pane);
         return claim?.kind === 'compaction' ? claim.joined : [];
     }
 
-    release(pane: string): void {
+    release(pane: PaneId): void {
         this.held.delete(pane);
     }
 
-    private put(pane: string, kind: ClaimKind): void {
+    private put(pane: PaneId, kind: ClaimKind): void {
         this.held.set(pane, kind === 'compaction' ? { kind, joined: [] } : { kind });
     }
 }

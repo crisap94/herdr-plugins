@@ -12,20 +12,20 @@ const at = (pane: string): ReturnType<typeof laneFrom> => laneFrom(seenLane({ pa
 
 test('a pane is claimed once: a second claim fails, a join is kept for the answers, and the release frees it', () => {
     const claims = new LaneClaims();
-    assert.equal(claims.claim('w1:p1', 'compaction'), true);
-    assert.equal(claims.claim('w1:p1', 'compaction'), false, 'the running compaction holds it');
+    assert.equal(claims.claim(paneId('w1:p1'), 'compaction'), true);
+    assert.equal(claims.claim(paneId('w1:p1'), 'compaction'), false, 'the running compaction holds it');
     assert.equal(claims.has(paneId('w1:p1')), true);
-    claims.join('w1:p1', { tab: tabId('w1:t1'), pane: paneId('w1:p1'), note: null, origin: 'request', answer: textOf('r1') });
-    assert.deepEqual(claims.joinedOf('w1:p1').map((request) => request.answer), ['r1']);
-    claims.release('w1:p1');
-    assert.deepEqual([claims.has(paneId('w1:p1')), claims.joinedOf('w1:p1').length], [false, 0]);
-    assert.equal(claims.claim('w1:p1', 'compaction'), true, 'a later request may start one');
+    claims.join(paneId('w1:p1'), { tab: tabId('w1:t1'), pane: paneId('w1:p1'), note: null, origin: 'request', answer: textOf('r1') });
+    assert.deepEqual(claims.joinedOf(paneId('w1:p1')).map((request) => request.answer), ['r1']);
+    claims.release(paneId('w1:p1'));
+    assert.deepEqual([claims.has(paneId('w1:p1')), claims.joinedOf(paneId('w1:p1')).length], [false, 0]);
+    assert.equal(claims.claim(paneId('w1:p1'), 'compaction'), true, 'a later request may start one');
 });
 
 test('a lane whose compaction a request started is busy for autocompact: no second request, and the skip says this lane', async () => {
     const w = world();
     w.share = 85;
-    w.claims.claim('w1:p1', 'compaction');
+    w.claims.claim(paneId('w1:p1'), 'compaction');
     await w.service.consider(at('w1:p1'));
     assert.deepEqual([w.requests.length, w.store.decisions.skips().map((skip) => [skip.pane, skip.gate, skip.detail])], [0, [['w1:p1', 'busy', 'this lane']]]);
 });
@@ -33,7 +33,7 @@ test('a lane whose compaction a request started is busy for autocompact: no seco
 test('a lane a handoff holds is busy for autocompact as well: no request, and the skip says this lane', async () => {
     const w = world();
     w.share = 85;
-    w.claims.claim('w1:p1', 'handoff');
+    w.claims.claim(paneId('w1:p1'), 'handoff');
     await w.service.consider(at('w1:p1'));
     assert.deepEqual([w.requests.length, w.store.decisions.skips().map((skip) => [skip.pane, skip.gate, skip.detail])], [0, [['w1:p1', 'busy', 'this lane']]]);
 });

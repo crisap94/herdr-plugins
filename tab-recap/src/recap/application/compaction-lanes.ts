@@ -43,7 +43,7 @@ export function splitByClaim(claims: Pick<LaneClaims, 'kindOf'>, lanes: readonly
     const owned: Lane[] = [];
     const held: Lane[] = [];
     for (const lane of lanes) {
-        if (claims.kindOf(String(lane.pane)) === 'handoff') {
+        if (claims.kindOf(lane.pane) === 'handoff') {
             held.push(lane);
         } else if (claim(lane) === 'present') {
             owned.push(lane);

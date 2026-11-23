@@ -55,10 +55,7 @@
     "property": 3
   },
   "src/recap/application/lane-claims.ts": {
-    "parameter": 6,
-    "return": 3,
-    "container": 1,
-    "property": 1
+    "return": 3
   },
   "src/recap/application/lane-events.ts": {
     "parameter": 19,

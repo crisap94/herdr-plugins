@@ -140,8 +140,8 @@ export class HandoffRunner {
         if (run !== null) { return run; }
         const abandoned = mark.abandon();
         if (abandoned === 'claimed') {
-            this.deps.claims.release(String(row.pane));
-            this.deps.claims.release(String(row.toPane));
+            this.deps.claims.release(row.pane);
+            this.deps.claims.release(row.toPane);
         }
         return unrendered({ kind: 'failed', reason: abandoned === 'typed' ? 'unconfirmed' : 'expired' });
     }
