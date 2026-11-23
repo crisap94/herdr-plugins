@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import { fakeOutput } from '@stateforge-labs/harness-adapters/testing';
 import { lazyRuntime, RuntimeLoadError } from '#src/adapters/harness/library.ts';
 import type { RuntimeLoader } from '#src/adapters/harness/library.ts';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { Backends } from '#src/daemon/backends.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
@@ -130,4 +131,63 @@ test('the custom backend never loads the runtime', async () => {
         assert.equal(loads, 0);
         assert.deepEqual(lines, []);
     });
+});
+
+const ROOT = join(import.meta.dirname, '..', '..');
+const HEAVY: readonly string[] = JSON.parse(readFileSync(join(ROOT, '..', 'ci', 'baselines', 'memory.json'), 'utf8')).heavyModules;
+const ENTRY = 'src/daemon/main.ts';
+const STATIC_VALUE = /^(?:import|export)\s+(?!type\b)[^;]*?from\s*['"]([^'"]+)['"]|^import\s*['"]([^'"]+)['"]/gmu;
+const LAZY_EDGE = /\b(?:require|import)\(\s*['"]([^'"]+)['"]\s*\)/gu;
+
+type Edges = 'static' | 'static and lazy';
+
+const specifiersOf = (text: string, edges: Edges): readonly string[] =>
+    [...text.matchAll(STATIC_VALUE), ...(edges === 'static' ? [] : [...text.matchAll(LAZY_EDGE)])].map((match) => match[1] ?? match[2] ?? '');
+
+function heavyReachedFrom(entry: string, edges: Edges): readonly string[] {
+    const seen = new Set<string>();
+    const reached = new Set<string>();
+    const queue = [entry];
+    for (let file = queue.shift(); file !== undefined; file = queue.shift()) {
+        if (seen.has(file)) continue;
+        seen.add(file);
+        for (const specifier of specifiersOf(readFileSync(join(ROOT, file), 'utf8'), edges)) {
+            if (HEAVY.includes(specifier)) reached.add(`${file} -> ${specifier}`);
+            else if (specifier.startsWith('.')) queue.push(relative(ROOT, resolve(ROOT, dirname(file), specifier)));
+            else if (specifier.startsWith('#src/')) queue.push(specifier.replace(/^#src\//u, 'src/'));
+        }
+    }
+    return [...reached];
+}
+
+test('no static value import in the closure of the daemon entry reaches the harness runtime, and the closure does reach it through the lazy loader', () => {
+    assert.deepEqual(heavyReachedFrom(ENTRY, 'static'), []);
+    assert.deepEqual(heavyReachedFrom(ENTRY, 'static and lazy'), ['src/adapters/harness/library.ts -> @stateforge-labs/harness-adapters/runtime']);
+});
+
+test('a fresh process has the harness runtime in no module cache until the loader runs, and the loader finds it', () => {
+    const home = mkdtempSync(join(tmpdir(), 'daemon-lazy-home-'));
+    const script = `
+        const isRuntime = (path) => /harness-adapters\\/dist\\/src\\/runtime\\/index\\.js$/.test(path);
+        const loaded = () => Object.keys(require.cache).some(isRuntime);
+        (async () => {
+            const seen = [];
+            await import('#src/daemon/backends.ts');
+            await import('#src/daemon/deciders.ts');
+            const library = await import('#src/adapters/harness/library.ts');
+            seen.push(loaded());
+            library.lazyRuntime();
+            seen.push(loaded());
+            library.libraryRuntime();
+            seen.push(loaded());
+            console.log(JSON.stringify(seen));
+        })();
+    `;
+    try {
+        const ran = spawnSync('bun', ['-e', script], { cwd: ROOT, encoding: 'utf8', env: { ...process.env, HOME: home, HERDR_PLUGIN_CONFIG_DIR: join(home, 'config'), HERDR_PLUGIN_STATE_DIR: join(home, 'state') } });
+        assert.equal(ran.status, 0, ran.stderr);
+        assert.deepEqual(JSON.parse(ran.stdout.trim()), [false, false, true]);
+    } finally {
+        rmSync(home, { recursive: true, force: true });
+    }
 });
