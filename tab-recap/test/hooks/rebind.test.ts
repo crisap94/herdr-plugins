@@ -20,6 +20,8 @@ import type { HookAnswer, HookCall, HookHarness, HookKind } from '#src/wire/hook
 import { causeOf } from '#test/fakes/cause.ts';
 import { readHookCases, postHook, type HookCase, type HookEffect } from '#test/contracts/wire/fakes/fake-harness.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
+import { sessionId } from '#src/recap/domain/ids.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { reconciliation, seenLane, sessionObservation } from '#test/support/seen.ts';
 
 const noop = (): void => {};
@@ -309,3 +311,23 @@ for (const harness of ['claude', 'codex'] as const) {
         }
     });
 }
+
+test('two session starts on one pane rebind in the order they arrived, even when the first snapshot answers last', async () => {
+    const observed: Observation[] = [];
+    const answers: Array<(result: FleetSnapshotResult) => void> = [];
+    const rebind = createRebind({
+        snapshot: () => new Promise((resolve) => { answers.push(resolve); }),
+        observe: (observation) => { observed.push(observation); },
+        log: noop,
+    });
+    const first = rebind.rebind('claude', sessionId(textOf('session-a')));
+    const second = rebind.rebind('claude', sessionId(textOf('session-b')));
+    await Promise.resolve();
+    assert.equal(answers.length, 1);
+    answers[0]?.(snapshotOf([laneAt('w1:p1', 'claude', 'session-a')]));
+    await first;
+    assert.equal(answers.length, 1 + 1);
+    answers[1]?.(snapshotOf([laneAt('w1:p1', 'claude', 'session-b')]));
+    await second;
+    assert.deepEqual(observed.map((observation) => observation.kind === 'session' ? String(observation.session) : observation.kind), ['session-a', 'session-b']);
+});

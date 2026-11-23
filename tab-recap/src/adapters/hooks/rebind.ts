@@ -18,28 +18,33 @@ export interface Rebind {
 }
 
 export function createRebind(deps: RebindDeps): Rebind {
-    return {
-        rebind: async (harness: HookHarness, session: SessionId): Promise<void> => {
-            try {
-                const result = await deps.snapshot();
-                if (result.kind !== 'snapshot') {
-                    return;
-                }
-                const wanted = textOf(session);
-                const matches = result.seen.lanes.filter((lane) => lane.session === wanted && lane.agent === harness);
-                const [match] = matches;
-                if (match === undefined) {
-                    return;
-                }
-                if (matches.length > 1) {
-                    deps.log(parseLine(`hook rebind ${harness}: ${matches.length} panes report one session`));
-                    return;
-                }
-                deps.observe({ kind: 'session', pane: paneId(match.paneId), session: wanted });
-                deps.log(parseLine(`hook rebind ${harness} ${match.paneId}`));
-            } catch (error) {
-                deps.log(parseLine(`hook rebind: ${parseMessage(error)}`));
+    let last: Promise<void> = Promise.resolve();
+    const once = async (harness: HookHarness, session: SessionId): Promise<void> => {
+        try {
+            const result = await deps.snapshot();
+            if (result.kind !== 'snapshot') {
+                return;
             }
+            const wanted = textOf(session);
+            const matches = result.seen.lanes.filter((lane) => lane.session === wanted && lane.agent === harness);
+            const [match] = matches;
+            if (match === undefined) {
+                return;
+            }
+            if (matches.length > 1) {
+                deps.log(parseLine(`hook rebind ${harness}: ${matches.length} panes report one session`));
+                return;
+            }
+            deps.observe({ kind: 'session', pane: paneId(match.paneId), session: wanted });
+            deps.log(parseLine(`hook rebind ${harness} ${match.paneId}`));
+        } catch (error) {
+            deps.log(parseLine(`hook rebind: ${parseMessage(error)}`));
+        }
+    };
+    return {
+        rebind: (harness: HookHarness, session: SessionId): Promise<void> => {
+            last = last.then(() => once(harness, session));
+            return last;
         },
     };
 }
