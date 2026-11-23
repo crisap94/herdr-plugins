@@ -3,7 +3,7 @@ import { policyOf, tuningOf } from './fakes/settings-readers.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
 import { must as mustParsed } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { parseCount, countOf } from '#src/recap/domain/count.ts';
 import { must } from '#src/protocol/result.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -17,7 +17,7 @@ import { parseBackoff, parseBriefRetention, parseCeilingPolicy } from '#src/reca
 import { STYLE_NUMBERS, styleOf } from '#src/recap/domain/autocompact-style.ts';
 import { THRESHOLDS, verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 import type { Thresholds } from '#src/recap/domain/autocompact-verdict.ts';
-import type { Decider, DecidedResult } from '#src/ports/decider.ts';
+import type { DeciderPort, DecidedAnswersResult } from '#src/ports/decider.ts';
 import { NOW, world, lane, tuningOfKeys } from './autocompact-world.ts';
 import type { World } from './autocompact-world.ts';
 import { decidedOf, textOf } from './fakes/decider-fixtures.ts';
@@ -29,12 +29,12 @@ function styled(keys: Readonly<Record<string, string>>, startedAt = 0): World {
 }
 
 function waitedMinutesAgo(w: World, minutes: number): void {
-    w.store.autocompact.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - minutes * 60_000), mode: 'on', share: 12, tokens: mustParsed(parseCount(120_000)), window: mustParsed(parseCount(1_000_000)), gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: mustParsed(parseUsd(0)), tookMs: null, why: null });
+    w.store.decisions.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - minutes * 60_000), mode: 'on', share: countOf(12), tokens: mustParsed(parseCount(120_000)), window: mustParsed(parseCount(1_000_000)), gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: mustParsed(parseUsd(0)), tookMs: null, why: null });
 }
 
 const passes = async (style: string): Promise<boolean> => (await checkCoverage(textOf('the brief'), NEEDS, keeping(0.65), probabilityRequired(parseProbability(tuningOf(env({ TAB_RECAP_AUTOCOMPACT_STYLE: style })).coverageAtLeast)))).complete === 'present';
 
-const keeping = (keeps: number): Decider => ({ label: textOf('fake'), ask: (_state, questions): Promise<DecidedResult> => Promise.resolve(decidedOf(Object.fromEntries([...questions.keys()].map((id) => [id, keeps])))) });
+const keeping = (keeps: number): DeciderPort => ({ label: textOf('fake'), ask: (_state, questions): Promise<DecidedAnswersResult> => Promise.resolve(decidedOf(Object.fromEntries([...questions.keys()].map((id) => [id, keeps])))) });
 const NEEDS: readonly CheckedFact[] = [{ section: 'needs', text: textOf('Keep the token'), why: null }];
 
 test('balanced is today\'s numbers: the verdict 0.30 and 0.70 with the band 0.35–0.65, the pass mark 0.70, the ceiling 80, the cooldown ten minutes, no re-check', () => {
@@ -107,7 +107,7 @@ test('the gates: the ceiling of eager (65 %) gives compact with no model call, a
     const eager = styled({ TAB_RECAP_AUTOCOMPACT_STYLE: 'eager' });
     eager.share = 70;
     await eager.service.consider(lane());
-    assert.deepEqual([eager.asked.length, eager.store.autocompact.newest(must(parseCount(1)))[0]?.gate], [0, 'ceiling']);
+    assert.deepEqual([eager.asked.length, eager.store.decisions.newest(must(parseCount(1)))[0]?.gate], [0, 'ceiling']);
     const balanced = styled({ TAB_RECAP_AUTOCOMPACT_STYLE: 'balanced' });
     balanced.share = 70;
     await balanced.service.consider(lane());
@@ -120,7 +120,7 @@ test('the cooldown reaches the gate: eager asks six minutes after a decision, ba
         waitedMinutesAgo(w, 6);
         w.share = 62;
         await w.service.consider(lane());
-        return w.asked.length === 1 ? 'asked' : w.store.autocompact.skips()[0]?.gate;
+        return w.asked.length === 1 ? 'asked' : w.store.decisions.skips()[0]?.gate;
     }));
     assert.deepEqual(outcomes, ['asked', 'cooldown', 'cooldown']);
 });
@@ -141,7 +141,7 @@ test('the re-check waits for its interval: twenty minutes idle is still unchange
     waitedMinutesAgo(w, 20);
     w.share = 12;
     await w.service.consider(lane());
-    assert.deepEqual([w.asked.length, w.store.autocompact.skips().map((skip) => skip.gate)], [0, ['unchanged']]);
+    assert.deepEqual([w.asked.length, w.store.decisions.skips().map((skip) => skip.gate)], [0, ['unchanged']]);
 });
 
 test('the re-check never bypasses the in-flight gate', async () => {
@@ -150,7 +150,7 @@ test('the re-check never bypasses the in-flight gate', async () => {
     w.share = 12;
     w.inFlight = 1;
     await w.service.consider(lane());
-    assert.deepEqual([w.asked.length, w.store.autocompact.skips().map((skip) => skip.gate)], [0, ['in-flight']]);
+    assert.deepEqual([w.asked.length, w.store.decisions.skips().map((skip) => skip.gate)], [0, ['in-flight']]);
 });
 
 test('the re-check key works under any style: balanced with a re-check of one minute asks an idle wait lane again', async () => {

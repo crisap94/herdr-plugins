@@ -4,7 +4,6 @@ import type { Instant } from '#src/recap/domain/time.ts';
 import type { Locale } from '#src/i18n/messages.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import type { Reconciliation } from '#src/recap/domain/fold.ts';
-import type { Origin } from '#src/recap/domain/origin.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 import type { Forge } from '@stateforge-labs/session-ledger/unstable/ports/lane-repo.ts';
 
@@ -102,16 +101,4 @@ export interface TabViews {
     readTab(tab: string): TabView | null;
     writeTab(view: TabView): void;
     tabOf(pane: string): string | null;
-}
-
-export interface CompactionTokens {
-    readonly tokensBefore: number | null;
-    readonly tokensAfter: number | null;
-    readonly origin: Origin;
-}
-
-export interface SessionSource {
-    firstSeen(tab: string): number | null;
-    runsByCause(tab: string): Readonly<Record<string, number>>;
-    compactions(tab: string): readonly CompactionTokens[];
 }

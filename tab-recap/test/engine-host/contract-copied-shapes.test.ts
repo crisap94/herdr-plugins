@@ -18,6 +18,15 @@ const NAME_MAP: Readonly<Record<string, string>> = {
     AutocompactState: 'DeciderState',
     Noul: 'Question',
     NoulCriteria: 'QuestionCriteria',
+    SkipRow: 'Skip',
+    LastDecisionRow: 'LastDecision',
+    DecisionDraft: 'Decision',
+    CoverageRevision: 'CoverageAmendment',
+    CoverageVerdict: 'CoverageOutcome',
+    DecidedAnswers: 'Decided',
+    AnswerTally: 'ReadonlyMap<Text, Probability>',
+    CoverageBlock: "'blocks' | 'allows'",
+    TokenAmount: "Brand<number, 'TokenAmount'>",
 };
 
 interface Row {

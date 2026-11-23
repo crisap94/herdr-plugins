@@ -155,7 +155,7 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
     const autocompact = (box.autocompact = wireAutocompact({ store, transcripts, contexts, recent, recaps, informer, decider: () => backends.decider(), log, events, claims }));
     const compaction = wireCompaction({
         fleet, records: store.records, boundaries: store.boundaries, ledger: store.ledger, compactions: store.compactions, settling: hub, webs, recaps, informer, log,
-        briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.autocompact, checkedBriefs: store.autocompactBriefs, answers, asks: store.asks, events, claims, preCompacts,
+        briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.decisions, checkedBriefs: store.autocompactBriefs, answers, asks: store.asks, events, claims, preCompacts,
         typing: new PaneTypingLease({ tokens: fleet, panes: fleet, now: nowInstant, pause: sleep, log }),
     });
     return { informer, fleet, backends, store, engine, recaps, transcripts, clock, viewers, autocompact, statuses: statusTaps.tap, ledger: ledgerTaps.tap, compaction, retention: new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: () => loadSettings().keepInputDays, briefRetention: (): BriefRetention => loadSettings().keepBrief, log }), curate, sweep: new AutocompactSweep({ candidates: () => candidatesOf(informer.current, log), autocompact: (): Autocompact | null => box.autocompact, log }), laneTokens, answers, events, worktrees, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror: exchange.mirror, pause: sleep, log: write }) };

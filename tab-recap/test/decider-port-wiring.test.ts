@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { coverageDeciderFor, coverageDeciderPortFor, deciderFor, deciderPortFor } from '#src/daemon/deciders.ts';
+import { coverageDeciderFor, deciderFor } from '#src/daemon/deciders.ts';
 import { loadSettings } from '#src/daemon/config.ts';
-import type { Decider, DeciderPort, Noul } from '#src/ports/decider.ts';
+import type { DeciderPort, Noul } from '#src/ports/decider.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import type { BackendId } from '#src/recap/domain/backend.ts';
@@ -36,16 +36,11 @@ const CONFIGS: readonly Config[] = [
     { name: 'coverage jev', env: { TAB_RECAP_AUTOCOMPACT_BY: 'recap', TAB_RECAP_AUTOCOMPACT_COVERAGE_BY: 'jev', TAB_RECAP_JEV_KEY: 'sk-wiring' }, available: ['claude'] },
 ];
 
-type Build = (config: ReturnType<typeof loadSettings>, available: readonly BackendId[], runtime: ReturnType<typeof fakeRuntime>) => Decider | DeciderPort | null;
+type Build = (config: ReturnType<typeof loadSettings>, available: readonly BackendId[], runtime: ReturnType<typeof fakeRuntime>) => DeciderPort | null;
 
-const LEGACY: Readonly<Record<'decider' | 'coverage', Build>> = {
+const BUILD: Readonly<Record<'decider' | 'coverage', Build>> = {
     decider: (config, available, runtime) => deciderFor(config, available, WORK, runtime),
     coverage: (config, available, runtime) => coverageDeciderFor(config, available, WORK, runtime),
-};
-
-const TYPED: Readonly<Record<'decider' | 'coverage', Build>> = {
-    decider: (config, available, runtime) => deciderPortFor(config, available, WORK, runtime),
-    coverage: (config, available, runtime) => coverageDeciderPortFor(config, available, WORK, runtime),
 };
 
 async function answered(build: Build, setting: Config): Promise<{ readonly label: Text | null; readonly answer: unknown }> {
@@ -73,22 +68,12 @@ async function answered(build: Build, setting: Config): Promise<{ readonly label
     }
 }
 
-for (const job of ['decider', 'coverage'] as const) {
-    for (const setting of CONFIGS) {
-        test(`${job}PortFor gives what ${job === 'decider' ? 'deciderFor' : 'coverageDeciderFor'} gives for ${setting.name}: null together, the same label, the same answers`, async () => {
-            const legacy = await answered(LEGACY[job], setting);
-            const typed = await answered(TYPED[job], setting);
-            assert.deepEqual(typed, legacy);
-        });
-    }
-}
-
 test('a fractional Jev token count survives the typed port', async () => {
-    const found = await answered(TYPED.decider, CONFIGS[3] as Config);
+    const found = await answered(BUILD.decider, CONFIGS[3] as Config);
     assert.deepEqual((found.answer as { tokens: number }).tokens, 12.5);
 });
 
 test('a harness decider answers through the typed port with the probabilities the harness said', async () => {
-    const found = await answered(TYPED.decider, CONFIGS[0] as Config);
+    const found = await answered(BUILD.decider, CONFIGS[0] as Config);
     assert.deepEqual((found.answer as { kind: string; answers: unknown }).answers, { q: 0.8 });
 });

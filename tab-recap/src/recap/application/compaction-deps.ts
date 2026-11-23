@@ -8,7 +8,7 @@ import type { NotifierPort } from '#src/ports/notifier.ts';
 import type { BoundaryLog } from '#src/ports/boundaries.ts';
 import type { Entry, Mark } from '#src/ports/transcripts.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
-import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
+import type { DecisionLedger } from '#src/ports/autocompact-records.ts';
 import type { MissedFacts } from '#src/recap/domain/autocompact.ts';
 import type { Written } from './compaction-brief.ts';
 import type { CheckedCoverage } from './brief-coverage.ts';
@@ -47,7 +47,7 @@ export interface CompactionPorts {
     readonly settling: LaneSettling;
     readonly brief: BriefPort;
     coverage(): CoveragePort | null;
-    readonly decisions: Pick<AutocompactRecords, 'linkLatest' | 'amend' | 'lastDecision'> | null;
+    readonly decisions: Pick<DecisionLedger, 'linkLatest' | 'amend' | 'lastDecision'> | null;
     readonly checkedBriefs?: DecisionBriefs;
     ceilingOverride?(): Presence;
     missedFacts?(): MissedFacts;

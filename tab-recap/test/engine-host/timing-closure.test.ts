@@ -44,8 +44,6 @@ const TIMING: readonly string[] = [
 const ENGINE: readonly string[] = engineOf(JSON.parse(readFileSync(ENGINE_FILES_PATH, 'utf8')));
 
 const STUB_CARRIED: readonly Edge[] = [
-    { from: 'src/ports/autocompact-records.ts', to: 'src/ports/legacy.ts', kind: 're-export' },
-    { from: 'src/ports/decider.ts', to: 'src/ports/legacy.ts', kind: 're-export' },
     { from: 'src/recap/domain/autocompact-style.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
     { from: 'src/recap/domain/autocompact-style.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
     { from: 'src/recap/domain/autocompact.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },

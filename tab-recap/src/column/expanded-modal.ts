@@ -11,7 +11,7 @@ import { coloured, wrap } from '#src/recap/render/wrap.ts';
 
 export function expandedScreen(store: Store | null): (view: ColumnView, width: number) => readonly Text[] {
     const edits = new EditCache(new EditTally(modalTranscriptRegistry()));
-    const model = store === null ? null : new ExpandedModel({ records: store.records, ledger: store.ledger, stories: store.stories, session: store.session, autocompact: store.autocompact, boundaries: store.boundaries, requests: store.requests, edits: edits.of.bind(edits) });
+    const model = store === null ? null : new ExpandedModel({ records: store.records, ledger: store.ledger, stories: store.stories, session: store.session, autocompact: store.decisions, boundaries: store.boundaries, requests: store.requests, edits: edits.of.bind(edits) });
     const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     return (view, width) => {
         const style = view.style ?? coloured;

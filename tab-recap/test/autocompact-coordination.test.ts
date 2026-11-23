@@ -7,8 +7,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { detailOf } from '#src/recap/application/autocompact-gates.ts';
 import { lane, NOW, rows, world } from './autocompact-world.ts';
-import type { DecidedResult } from '#src/ports/decider.ts';
-import type { Decision } from '#src/ports/autocompact-records.ts';
+import type { DecidedAnswersResult } from '#src/ports/decider.ts';
+import type { DecisionDraft } from '#src/ports/autocompact-records.ts';
 import { awaitedNames, backgroundItem, backgroundLabel, backgroundTool, flightOf, flightReason, NOT_AWAITING, NOTHING_IN_FLIGHT, observedFrom, runningCount } from '#src/recap/domain/in-flight.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
@@ -16,8 +16,8 @@ import { textOf } from '#src/recap/domain/text.ts';
 
 const monitor = backgroundItem(backgroundTool(textOf('Monitor')), backgroundLabel(textOf('open merge requests')));
 
-const coverageWait = (tokens: number): Decision => ({
-    tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 10 * 60_000), mode: 'on', share: 70, tokens: must(parseCount(tokens)), window: must(parseCount(1_000_000)), gate: 'coverage', verdict: 'wait', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null,
+const coverageWait = (tokens: number): DecisionDraft => ({
+    tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 10 * 60_000), mode: 'on', share: countOf(70), tokens: must(parseCount(tokens)), window: must(parseCount(1_000_000)), gate: 'coverage', verdict: 'wait', askedVerdict: 'compact', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null,
 });
 
 test('A full lane waits for two others', async () => {
@@ -34,7 +34,7 @@ test('Below the ceiling it still waits', async () => {
     w.awaiting = 'reviewer,tester';
     w.share = 79;
     await w.service.consider(lane());
-    assert.deepEqual([w.asked.length, w.requests.length, w.store.autocompact.skips()[0]?.gate, w.store.autocompact.skips()[0]?.detail], [0, 0, 'in-flight', 'awaiting reviewer,tester']);
+    assert.deepEqual([w.asked.length, w.requests.length, w.store.decisions.skips()[0]?.gate, w.store.decisions.skips()[0]?.detail], [0, 0, 'in-flight', 'awaiting reviewer,tester']);
 });
 
 test('A foreground call is not cut', async () => {
@@ -43,7 +43,7 @@ test('A foreground call is not cut', async () => {
     w.inFlight = 2;
     w.share = 92;
     await w.service.consider(lane());
-    assert.deepEqual([w.requests.length, rows(w).length, w.store.autocompact.skips()[0]?.gate, w.store.autocompact.skips()[0]?.detail], [0, 0, 'in-flight', '2 running']);
+    assert.deepEqual([w.requests.length, rows(w).length, w.store.decisions.skips()[0]?.gate, w.store.decisions.skips()[0]?.detail], [0, 0, 'in-flight', '2 running']);
 });
 
 test('A monitor keeps running', async () => {
@@ -73,20 +73,20 @@ test('Nothing to name', async () => {
 
 test('the coverage backoff yields to the ceiling: a full lane with an awaited reply and a recent coverage failure is ceiling', async () => {
     const w = world({ coverageBackoff: { kind: 'window', ms: brand<number, 'Milliseconds'>(30 * 60_000) } });
-    w.store.autocompact.record(coverageWait(800_000));
+    w.store.decisions.record(coverageWait(800_000));
     w.awaiting = 'reviewer';
     w.byPane = { 'w1:p1': 85 };
     await w.service.consider(lane());
-    assert.deepEqual([rows(w)[0]?.gate, rows(w)[0]?.why, w.store.autocompact.skips().length], ['ceiling', 'ceiling-overrides-wait (awaiting reviewer)', 0]);
+    assert.deepEqual([rows(w)[0]?.gate, rows(w)[0]?.why, w.store.decisions.skips().length], ['ceiling', 'ceiling-overrides-wait (awaiting reviewer)', 0]);
 });
 
 test('the coverage backoff holds a lane below the ceiling before the in-flight gate: coverage-backoff, not in-flight', async () => {
     const w = world({ coverageBackoff: { kind: 'window', ms: brand<number, 'Milliseconds'>(30 * 60_000) } });
-    w.store.autocompact.record(coverageWait(700_000));
+    w.store.decisions.record(coverageWait(700_000));
     w.awaiting = 'reviewer';
     w.byPane = { 'w1:p1': 75 };
     await w.service.consider(lane());
-    assert.deepEqual([w.asked.length, w.store.autocompact.skips()[0]?.gate], [0, 'coverage-backoff']);
+    assert.deepEqual([w.asked.length, w.store.decisions.skips()[0]?.gate], [0, 'coverage-backoff']);
 });
 
 test('an `awaiting` token makes the lane in flight, with the detail `awaiting <value>`: no decider is asked, nothing is requested, and the in-flight reader is not read', async () => {
@@ -94,7 +94,7 @@ test('an `awaiting` token makes the lane in flight, with the detail `awaiting <v
     w.awaiting = 'reviewer';
     await w.service.consider(lane());
     assert.deepEqual([w.asked, w.requests, w.reads], [[], [], []]);
-    const skip = w.store.autocompact.skips().find((each) => each.pane === 'w1:p1');
+    const skip = w.store.decisions.skips().find((each) => each.pane === 'w1:p1');
     assert.deepEqual([skip?.gate, skip?.detail], ['in-flight', 'awaiting reviewer']);
 });
 
@@ -136,7 +136,7 @@ test('an unreadable `awaiting` counts as in flight: nothing is asked, and the re
     w.awaitingUnknown = true;
     await w.service.consider(lane());
     assert.deepEqual([w.asked, w.requests], [[], []]);
-    const skip = w.store.autocompact.skips().find((each) => each.pane === 'w1:p1');
+    const skip = w.store.decisions.skips().find((each) => each.pane === 'w1:p1');
     assert.ok(skip !== undefined, 'the lane was skipped');
     assert.equal(skip.gate, 'in-flight');
     assert.match(skip.detail ?? '', /unreadable|unreachable|not/u);
@@ -145,8 +145,8 @@ test('an unreadable `awaiting` counts as in flight: nothing is asked, and the re
 test('`awaiting` is read again after the decider answers: a wait that began while it answered stops the request', async () => {
     const w = world();
     const decide = w.decide;
-    w.decide = (): DecidedResult => { w.awaiting = 'reviewer'; return decide(); };
+    w.decide = (): DecidedAnswersResult => { w.awaiting = 'reviewer'; return decide(); };
     await w.service.consider(lane());
     assert.deepEqual(w.requests, [], 'the decider was asked, but nothing is requested');
-    assert.deepEqual(w.store.autocompact.skips().find((each) => each.pane === 'w1:p1')?.detail, 'awaiting reviewer');
+    assert.deepEqual(w.store.decisions.skips().find((each) => each.pane === 'w1:p1')?.detail, 'awaiting reviewer');
 });

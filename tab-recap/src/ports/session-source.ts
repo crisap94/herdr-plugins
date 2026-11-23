@@ -6,8 +6,6 @@ import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 
-export type { CompactionTokens, SessionSource } from './twins/legacy.ts';
-
 export interface CompactionTokensRecord {
     readonly tokensBefore: Count | null;
     readonly tokensAfter: Count | null;

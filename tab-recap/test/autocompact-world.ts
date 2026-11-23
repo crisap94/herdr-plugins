@@ -15,8 +15,7 @@ import type { AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
 import { tuningFrom } from '#src/recap/domain/autocompact-style.ts';
 
 import type { CompactTuning } from '#src/recap/domain/autocompact-style.ts';
-import type { DecidedAnswersResult, DeciderPort, DecidedResult } from '#src/ports/decider.ts';
-import { parseTokenAmount } from '#src/recap/domain/token-amount.ts';
+import type { DecidedAnswersResult, DeciderPort } from '#src/ports/decider.ts';
 import type { CompactAsk } from '#src/ports/requests.ts';
 import { memoryStore } from './db/support.ts';
 import { unknown } from '#src/ports/unknowable.ts';
@@ -37,7 +36,6 @@ const candidateWith = (harness: string): Candidate => ({ scope: SCOPE, key: KEY,
 const laneOf = (from: Candidate, status: string): Lane => laneFrom({ paneId: from.key, tabId: from.scope, workspaceId: 'w1', agent: from.harness, status });
 export const lane = (agent = 'claude', status = 'idle'): Lane => laneOf(candidateWith(agent), status);
 export const tuningOfKeys = (keys: Readonly<Record<string, string>>): CompactTuning => tuningFrom((key) => { const value = keys[key]; return value === undefined ? undefined : textOf(value); });
-const typed = (decided: DecidedResult): DecidedAnswersResult => (decided.kind === 'decided' ? { ...decided, tokens: must(parseTokenAmount(decided.tokens)) } : decided);
 export const SAFE = { closes_request: 0.95, announces_continuation: 0.05, asks_detailed_choice: 0.02, needs_verbatim: 0.10, changes_subject: 0.03, stuck: 0.01 };
 
 export function candidateFor(found: Lane): Candidate {
@@ -52,7 +50,7 @@ export interface LaneService {
     claimIdle(seen: Lane): IdleClaim;
 }
 
-export interface World { breakAt: number | null; readonly service: LaneService; readonly watch: Autocompact; readonly claims: LaneClaims; readonly queued: Set<string>;readonly events: string[]; awaiting: string | null; lateAwaiting: string | null; awaitingUnknown: boolean; known: boolean; gate: Promise<void> | null; byPane: Record<string, number>; readonly store: ReturnType<typeof memoryStore>; readonly requests: CompactAsk[]; readonly logs: string[]; readonly asked: number[]; readonly refreshed: string[]; readonly flushed: string[]; readonly reads: number[]; readonly clock: { at: number }; idleHold: IdleHold; policy: AutocompactPolicy; inFlight: number | 'unknown'; background: readonly BackgroundItem[]; share: number; decide: () => DecidedResult }
+export interface World { breakAt: number | null; readonly service: LaneService; readonly watch: Autocompact; readonly claims: LaneClaims; readonly queued: Set<string>;readonly events: string[]; awaiting: string | null; lateAwaiting: string | null; awaitingUnknown: boolean; known: boolean; gate: Promise<void> | null; byPane: Record<string, number>; readonly store: ReturnType<typeof memoryStore>; readonly requests: CompactAsk[]; readonly logs: string[]; readonly asked: number[]; readonly refreshed: string[]; readonly flushed: string[]; readonly reads: number[]; readonly clock: { at: number }; idleHold: IdleHold; policy: AutocompactPolicy; inFlight: number | 'unknown'; background: readonly BackgroundItem[]; share: number; decide: () => DecidedAnswersResult }
 
 export function world(over: Partial<AutocompactPolicy> = {}, recap = true, startedAt = 0, tuning: Partial<CompactTuning> = {}): World {
     const store = memoryStore();
@@ -60,8 +58,8 @@ export function world(over: Partial<AutocompactPolicy> = {}, recap = true, start
     const [requests, logs, asked, refreshed, reads, events] = [[] as CompactAsk[], [] as string[], [] as number[], [] as string[], [] as number[], [] as string[]];
     const flushed: string[] = [];
     const clock = { at: NOW };
-    const state = { breakAt: null as number | null, policy: { ...policyOf(() => undefined), mode: 'on' as const, ...over }, tuning: { ...tuningFrom(() => undefined), ...tuning }, inFlight: 0 as number | 'unknown', background: [] as readonly BackgroundItem[], awaiting: null as string | null, lateAwaiting: null as string | null, awaitingReads: 0, awaitingUnknown: false, known: true, gate: null as Promise<void> | null, byPane: {} as Record<string, number>, share: 62, idleHold: 'on' as IdleHold, decide: (): DecidedResult => decidedOf(SAFE, { tokens: 700, costUsd: 0.00003, tookMs: duration(550) }) };
-    const decider: DeciderPort = { label: textOf('fake · m'), ask: async (_state, questions) => { asked.push(questions.size); if (state.gate !== null) await state.gate; return typed(state.decide()); } };
+    const state = { breakAt: null as number | null, policy: { ...policyOf(() => undefined), mode: 'on' as const, ...over }, tuning: { ...tuningFrom(() => undefined), ...tuning }, inFlight: 0 as number | 'unknown', background: [] as readonly BackgroundItem[], awaiting: null as string | null, lateAwaiting: null as string | null, awaitingReads: 0, awaitingUnknown: false, known: true, gate: null as Promise<void> | null, byPane: {} as Record<string, number>, share: 62, idleHold: 'on' as IdleHold, decide: (): DecidedAnswersResult => decidedOf(SAFE, { tokens: 700, costUsd: 0.00003, tookMs: duration(550) }) };
+    const decider: DeciderPort = { label: textOf('fake · m'), ask: async (_state, questions) => { asked.push(questions.size); if (state.gate !== null) await state.gate; return state.decide(); } };
     const claims = new LaneClaims();
     const statuses = new WeakMap<Candidate, string>();
     const queued = new Set<string>();
@@ -86,4 +84,4 @@ function awaitingOf(state: { awaiting: string | null; lateAwaiting: string | nul
     return value === null ? { kind: 'clear' } : { kind: 'waiting', value: must(parseText(value)) };
 }
 
-export const rows = (w: World): ReturnType<World['store']['autocompact']['newest']> => w.store.autocompact.newest(must(parseCount(20)));
+export const rows = (w: World): ReturnType<World['store']['decisions']['newest']> => w.store.decisions.newest(must(parseCount(20)));

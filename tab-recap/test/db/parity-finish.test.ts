@@ -7,7 +7,7 @@ import { BoundaryRows } from '#src/adapters/db/boundaries.ts';
 import { RetentionRepository } from '#src/adapters/db/retention.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { SessionSourceRepository } from '#src/adapters/db/session-source/legacy.ts';
+import { SessionSourceStore } from '#src/adapters/db/session-source.ts';
 import { StoriesRepository } from '#src/adapters/db/stories.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
@@ -68,21 +68,21 @@ const count = (parity: { reader: Database }, sql: string, tab: string): number =
 describe('parity: finish (boundaries, reads, retention, session source, stories, verdicts)', () => {
     test('session source: firstSeen matches the raw tab lookup', () => {
         withParity(seedAll, (parity) => {
-            const first = new SessionSourceRepository(parity.raw).firstSeen('t1');
+            const first = new SessionSourceStore(parity.raw).firstSeen(tabId('t1'));
             expectSameRows(parity, { sql: 'SELECT first_seen FROM tab WHERE id = ?', params: ['t1'] }, [{ first_seen: first }]);
         });
     });
 
     test('session source: runsByCause groups the tab runs like the raw GROUP BY', () => {
         withParity(seedAll, (parity) => {
-            const produced = Object.entries(new SessionSourceRepository(parity.raw).runsByCause('t1')).map(([cause, n]) => ({ cause, n }));
+            const produced = Object.entries(new SessionSourceStore(parity.raw).runsByCause(tabId('t1'))).map(([cause, n]) => ({ cause, n }));
             expectSameRows(parity, { sql: SESSION_RUNS, params: ['t1'] }, produced);
         });
     });
 
     test('session source: compactions lists the compacted stage rows in order', () => {
         withParity(seedAll, (parity) => {
-            const produced = new SessionSourceRepository(parity.raw).compactions('t1').map((each) => ({ tokens_before: each.tokensBefore, tokens_after: each.tokensAfter, origin: each.origin }));
+            const produced = new SessionSourceStore(parity.raw).compactions(tabId('t1')).map((each) => ({ tokens_before: each.tokensBefore, tokens_after: each.tokensAfter, origin: each.origin }));
             expectSameRows(parity, { sql: SESSION_COMPACTED, params: ['t1'] }, produced, (row) => ({ tokens_before: row.tokens_before, tokens_after: row.tokens_after, origin: row.origin }));
         });
     });

@@ -63,7 +63,7 @@ export class DesktopReads {
         this.deps = deps;
         const edits = new EditCache(new EditTally(modalTranscriptRegistry()));
         const base: Omit<ExpandedDeps, 'requests'> = {
-            records: deps.store.records, ledger: deps.store.ledger, stories: deps.store.stories, session: deps.store.session, autocompact: deps.store.autocompact, boundaries: deps.store.boundaries,
+            records: deps.store.records, ledger: deps.store.ledger, stories: deps.store.stories, session: deps.store.session, autocompact: deps.store.decisions, boundaries: deps.store.boundaries,
             edits: deps.mode === 'daemon' ? edits.of.bind(edits) : nobody,
         };
         this.watching = new ExpandedModel({ ...base, requests: deps.store.requests });

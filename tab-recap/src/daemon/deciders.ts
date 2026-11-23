@@ -3,7 +3,7 @@ import { homedir } from 'node:os';
 import { HarnessPortDecider } from '#src/adapters/job/decider.ts';
 import { JevPortDecider } from '#src/adapters/job/jev-decider.ts';
 import { jevKey } from '#src/adapters/job/jev-key.ts';
-import type { Decider, DeciderPort } from '#src/ports/decider.ts';
+import type { DeciderPort } from '#src/ports/decider.ts';
 import { placementFor } from '#src/recap/domain/job.ts';
 import type { JobSetting } from '#src/recap/domain/job.ts';
 import { settingReader } from './config.ts';
@@ -58,18 +58,10 @@ function coverageDecider(config: Settings, available: readonly BackendId[], work
     return harnessDeciderFor(config, { ...config.coverageJob, by }, available, (id, tag) => MAKERS[id](config, work, runtime, tag, log), 'coverageCheck');
 }
 
-export function deciderFor(config: Settings, available: readonly BackendId[], work: Directory, runtime: HarnessRuntime, log?: LogLine): Decider | null {
+export function deciderFor(config: Settings, available: readonly BackendId[], work: Directory, runtime: HarnessRuntime, log?: LogLine): DeciderPort | null {
     return decider(config, available, work, runtime, log);
 }
 
-export function coverageDeciderFor(config: Settings, available: readonly BackendId[], work: Directory, runtime: HarnessRuntime, log?: LogLine): Decider | null {
-    return coverageDecider(config, available, work, runtime, log);
-}
-
-export function deciderPortFor(config: Settings, available: readonly BackendId[], work: Directory, runtime: HarnessRuntime, log?: LogLine): DeciderPort | null {
-    return decider(config, available, work, runtime, log);
-}
-
-export function coverageDeciderPortFor(config: Settings, available: readonly BackendId[], work: Directory, runtime: HarnessRuntime, log?: LogLine): DeciderPort | null {
+export function coverageDeciderFor(config: Settings, available: readonly BackendId[], work: Directory, runtime: HarnessRuntime, log?: LogLine): DeciderPort | null {
     return coverageDecider(config, available, work, runtime, log);
 }

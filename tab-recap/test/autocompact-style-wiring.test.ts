@@ -21,10 +21,10 @@ import type { Informer } from '#src/recap/application/informer.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { DecidedAnswersResult, DecidedResult, Decider, DeciderPort } from '#src/ports/decider.ts';
+import type { DecidedAnswersResult, DeciderPort } from '#src/ports/decider.ts';
 import type { InFlightResult, Located, Transcripts } from '#src/ports/transcripts.ts';
 import { memoryStore } from './db/support.ts';
-import { decidedAnswersOf, decidedOf, textOf } from './fakes/decider-fixtures.ts';
+import { decidedOf, textOf } from './fakes/decider-fixtures.ts';
 import { agentKind } from '#src/recap/domain/ids.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { runningOf } from '#src/recap/domain/in-flight.ts';
@@ -35,8 +35,8 @@ function configOf(keys: Readonly<Record<string, string>>): Settings {
     return { autocompact: { ...policyOf(env(keys)), mode: 'on' }, tuning: tuningOf(env(keys)) } as unknown as Settings;
 }
 
-function keeping(keeps: number): Decider {
-    return { label: textOf('fake'), ask: (_s, questions): Promise<DecidedResult> => Promise.resolve(decidedOf(Object.fromEntries([...questions.keys()].map((id): [string, number] => [id, keeps])))) };
+function keeping(keeps: number): DeciderPort {
+    return { label: textOf('fake'), ask: (_s, questions): Promise<DecidedAnswersResult> => Promise.resolve(decidedOf(Object.fromEntries([...questions.keys()].map((id): [string, number] => [id, keeps])))) };
 }
 
 function inertTranscripts(): Transcripts {
@@ -54,7 +54,7 @@ async function decisionUnder(keys: Readonly<Record<string, string>>, closes: num
     store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
     const decider: DeciderPort = {
         label: textOf('fake'),
-        ask: (_state, questions): Promise<DecidedAnswersResult> => Promise.resolve(decidedAnswersOf(Object.fromEntries([...questions.keys()].map((id) => [id, id === 'closes_request' ? closes : 0.15])))),
+        ask: (_state, questions): Promise<DecidedAnswersResult> => Promise.resolve(decidedOf(Object.fromEntries([...questions.keys()].map((id) => [id, id === 'closes_request' ? closes : 0.15])))),
     };
     const transcripts: Transcripts = {
         agent: agentKind('claude'),
@@ -79,7 +79,7 @@ async function decisionUnder(keys: Readonly<Record<string, string>>, closes: num
     });
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
     await service.consider(candidateFor(lane));
-    return store.autocompact.newest(must(parseCount(1)))[0]?.verdict;
+    return store.decisions.newest(must(parseCount(1)))[0]?.verdict;
 }
 
 test('the daemon wiring hands the configured style to the service: a close of 0.65 is compact under eager and undecided under balanced', async () => {
@@ -89,7 +89,7 @@ test('the daemon wiring hands the configured style to the service: a close of 0.
 
 test('the daemon wiring reads the safe key: warnings of 0.42 wait under eager\'s 0.40 and compact once the key sets 0.44', async () => {
     const warned = { closes_request: 0.95, announces_continuation: 0.42, asks_detailed_choice: 0.02, needs_verbatim: 0.10, changes_subject: 0.03, stuck: 0.01 };
-    const decider: DeciderPort = { label: textOf('fake'), ask: () => Promise.resolve(decidedAnswersOf(warned)) };
+    const decider: DeciderPort = { label: textOf('fake'), ask: () => Promise.resolve(decidedOf(warned)) };
     const verdictWith = async (keys: Readonly<Record<string, string>>): Promise<string | undefined> => {
         const store = memoryStore();
         store.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
@@ -102,7 +102,7 @@ test('the daemon wiring reads the safe key: warnings of 0.42 wait under eager\'s
             events: { lane: () => undefined, inWorkspace: () => undefined }, log: () => undefined,
         });
         await service.consider(candidateFor(laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' })));
-        return store.autocompact.newest(must(parseCount(1)))[0]?.verdict;
+        return store.decisions.newest(must(parseCount(1)))[0]?.verdict;
     };
     assert.equal(await verdictWith({ TAB_RECAP_AUTOCOMPACT_STYLE: 'eager' }), 'wait');
     assert.equal(await verdictWith({ TAB_RECAP_AUTOCOMPACT_STYLE: 'eager', TAB_RECAP_AUTOCOMPACT_SAFE_AT_MOST: '0.44' }), 'compact');
