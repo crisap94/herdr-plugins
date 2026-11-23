@@ -43,32 +43,230 @@ secret_detection:
     - cd tab-recap
     - bun install --frozen-lockfile
 
-lint:
-  extends: .tab-recap
-  stage: check
+.unit:
   variables:
     GIT_DEPTH: "0"
-  script:
+  before_script:
+    - !reference [.tools, before_script]
     - git fetch --quiet origin "+refs/heads/$CI_DEFAULT_BRANCH:refs/remotes/origin/$CI_DEFAULT_BRANCH"
-    - bash ci/lint.sh
+    - bun install --frozen-lockfile
 
-test:
-  extends: .tab-recap
+unit:root:
+  extends: .unit
   stage: check
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - ci/**/*
+        - .oxlintrc.json
+        - tab-recap/gates/**/*
+        - packages/*/gates/**/*
+        - desktop/gates/**/*
+        - agent-sdk/gates/**/*
+        - bun.lock
+        - package.json
+        - bunfig.toml
+        - tsconfig.json
+        - .gitlab-ci.yml
+        - ci/lib/**/*
+  script:
+    - bash ci/gates/run.sh lint
+    - bash ci/gates/run.sh test
+
+"unit:tab-recap:lint":
+  extends: .unit
+  stage: check
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - tab-recap/**/*
+        - packages/**/*
+        - desktop/**/*
+        - agent-sdk/**/*
+        - ci/**/*
+        - evals/**/*
+        - bun.lock
+        - package.json
+        - bunfig.toml
+        - tsconfig.json
+        - .gitlab-ci.yml
+        - ci/lib/**/*
+  script:
+    - bash tab-recap/gates/run.sh lint
+
+"unit:tab-recap:test":
+  extends: .unit
+  stage: check
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - tab-recap/**/*
+        - packages/**/*
+        - desktop/**/*
+        - agent-sdk/**/*
+        - ci/codemod/**/*
+        - bun.lock
+        - package.json
+        - bunfig.toml
+        - tsconfig.json
+        - .gitlab-ci.yml
+        - ci/lib/**/*
   script:
     - apt-get update -qq && apt-get install -y -qq libxml2-utils
     - xmllint --version
-    - bash ci/test.sh
+    - bash tab-recap/gates/run.sh test
 
-test:floor:
-  extends: .tab-recap
+"unit:tab-recap:floor":
+  extends: .unit
   stage: check
   image: $BUN_FLOOR_IMAGE
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - tab-recap/**/*
+        - packages/**/*
+        - desktop/**/*
+        - agent-sdk/**/*
+        - ci/codemod/**/*
+        - bun.lock
+        - package.json
+        - bunfig.toml
+        - tsconfig.json
+        - .gitlab-ci.yml
+        - ci/lib/**/*
   script:
     - bun --version
     - apt-get update -qq && apt-get install -y -qq libxml2-utils
     - xmllint --version
-    - bash ci/test.sh
+    - bash tab-recap/gates/run.sh test
+
+"unit:session-ledger":
+  extends: .unit
+  stage: check
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - packages/session-ledger/**/*
+        - tab-recap/test/conformance/**/*
+        - bun.lock
+        - package.json
+        - bunfig.toml
+        - tsconfig.json
+        - .gitlab-ci.yml
+        - ci/lib/**/*
+  script:
+    - bash packages/session-ledger/gates/run.sh lint
+    - bash packages/session-ledger/gates/run.sh test
+
+"unit:session-ledger-sqlite":
+  extends: .unit
+  stage: check
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - packages/session-ledger-sqlite/**/*
+        - packages/session-ledger/**/*
+        - bun.lock
+        - package.json
+        - bunfig.toml
+        - tsconfig.json
+        - .gitlab-ci.yml
+        - ci/lib/**/*
+  script:
+    - bash packages/session-ledger-sqlite/gates/run.sh lint
+    - bash packages/session-ledger-sqlite/gates/run.sh test
+
+"unit:recap-view":
+  extends: .unit
+  stage: check
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - packages/recap-view/**/*
+        - packages/session-ledger/**/*
+        - bun.lock
+        - package.json
+        - bunfig.toml
+        - tsconfig.json
+        - .gitlab-ci.yml
+        - ci/lib/**/*
+  script:
+    - bash packages/recap-view/gates/run.sh lint
+    - bash packages/recap-view/gates/run.sh test
+
+"unit:desktop":
+  extends: .unit
+  stage: check
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - desktop/**/*
+        - bun.lock
+        - package.json
+        - bunfig.toml
+        - tsconfig.json
+        - .gitlab-ci.yml
+        - ci/lib/**/*
+      exists:
+        - desktop/gates/run.sh
+  script:
+    - bash desktop/gates/run.sh lint
+    - bash desktop/gates/run.sh test
+
+"unit:agent-sdk":
+  extends: .unit
+  stage: check
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - agent-sdk/**/*
+        - packages/session-ledger/**/*
+        - packages/session-ledger-sqlite/**/*
+        - bun.lock
+        - package.json
+        - bunfig.toml
+        - tsconfig.json
+        - .gitlab-ci.yml
+        - ci/lib/**/*
+      exists:
+        - agent-sdk/gates/run.sh
+  script:
+    - bash agent-sdk/gates/run.sh lint
+    - bash agent-sdk/gates/run.sh test
+    - bash agent-sdk/gates/run.sh typecheck
+
+track-scope:
+  extends: .tools
+  stage: check
+  variables:
+    GIT_DEPTH: "0"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  script:
+    - git fetch --quiet origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+    - bun ci/check-track.ts
+
+install-smoke:
+  extends: .tools
+  stage: check
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - bun.lock
+        - "**/package.json"
+        - tab-recap/herdr-plugin.toml
+  script:
+    - bash ci/install-smoke.sh
 
 lane-scope:
   extends: .tab-recap
@@ -106,7 +304,7 @@ release:prepare:
   extends: .tools
   stage: release
   resource_group: release-prepare
-  needs: [lint, test, "test:floor"]
+  needs: ["unit:tab-recap:lint", "unit:tab-recap:test", "unit:tab-recap:floor", "unit:session-ledger", "unit:session-ledger-sqlite", "unit:recap-view", install-smoke]
   variables:
     GIT_DEPTH: "0"
   allow_failure:
@@ -121,7 +319,7 @@ release:tag:
   stage: release
   allow_failure:
     exit_codes: 1
-  needs: [lint, test, "test:floor"]
+  needs: ["unit:tab-recap:lint", "unit:tab-recap:test", "unit:tab-recap:floor", "unit:session-ledger", "unit:session-ledger-sqlite", "unit:recap-view", install-smoke]
   variables:
     GIT_DEPTH: "0"
   rules:
@@ -133,7 +331,7 @@ release:tag:
 release-notes:
   extends: .tools
   stage: release
-  needs: [lint, test, "test:floor"]
+  needs: ["unit:tab-recap:lint", "unit:tab-recap:test", "unit:tab-recap:floor", "unit:session-ledger", "unit:session-ledger-sqlite", "unit:recap-view", install-smoke]
   variables:
     GIT_DEPTH: "0"
   rules:
