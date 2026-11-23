@@ -10,7 +10,7 @@ import { must } from '#src/protocol/result.ts';
 import { parseFactId, parseRunId } from '#src/recap/domain/run-ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { ColumnVisibilityRepository } from '../column-visibility.ts';
 import { LedgerRows } from '../ledger-rows.ts';
 import { RequestsStore } from '../requests.ts';
@@ -91,6 +91,6 @@ export class RowsWriter {
     requests(refresh: readonly Text[], visibility: readonly VisibilityAsk[], now: Instant): void {
         const queue = new RequestsStore(this.db, () => now);
         refresh.forEach((tab) => { queue.request(tabId(tab)); });
-        visibility.forEach((asked) => { queue.requestVisibility(asked); });
+        visibility.forEach((asked) => { queue.requestVisibility({ target: paneId(textOf(asked.target)), visibility: asked.visibility }); });
     }
 }
