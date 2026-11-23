@@ -5,7 +5,8 @@ import type { Statement } from 'bun:sqlite';
 import { stateDirectory } from '#src/daemon/config.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import { isClosedWhy, isSection } from '#src/recap/domain/fact.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { countOf, type Count } from '#src/recap/domain/count.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { databaseFile } from '../db/database.ts';
@@ -15,9 +16,9 @@ export interface StoredPoint {
     readonly id: Text;
     readonly tab: Text;
     readonly pane: Text;
-    readonly at: number;
+    readonly at: Instant;
     readonly source: Text;
-    readonly cursor: number;
+    readonly cursor: Count;
     readonly transcript: Text;
 }
 
@@ -37,13 +38,16 @@ const BREAK = "SELECT max(b.at) AS at FROM boundary b JOIN chapter c ON c.id = b
 
 const EMPTY: Text = must(parseText(''));
 
-function parseWord(value: unknown): Text | null {
+export type Word = Text | null;
+export type Whole = Count | null;
+
+export function parseWord(value: unknown): Word {
     return typeof value === 'string' ? must(parseText(value)) : null;
 }
 
-function parseNumber(value: unknown): number | null {
-    if (typeof value === 'bigint') return Number(value);
-    return typeof value === 'number' ? value : null;
+export function parseWhole(value: unknown): Whole {
+    if (typeof value === 'bigint') return countOf(Number(value));
+    return typeof value === 'number' ? countOf(value) : null;
 }
 
 const onDisk = (path: Text): Text => {
@@ -71,24 +75,25 @@ export class ExperimentStore {
 
     frame(): readonly FramePoint[] {
         return this.db.prepare(FRAME).all().map((row): FramePoint => ({
-            id: must(parseText(`${parseWord(row['run']) ?? ''}:${parseWord(row['pane']) ?? ''}`)), tab: parseWord(row['tab']) ?? EMPTY, pane: parseWord(row['pane']) ?? EMPTY, at: parseNumber(row['at']) ?? 0,
-            source: parseWord(row['source']) ?? EMPTY, cursor: parseNumber(row['cursor']) ?? 0, transcript: parseWord(row['transcript']) ?? EMPTY, blob: row['run_blob'] as Uint8Array,
+            id: must(parseText(`${parseWord(row['run']) ?? ''}:${parseWord(row['pane']) ?? ''}`)), tab: parseWord(row['tab']) ?? EMPTY, pane: parseWord(row['pane']) ?? EMPTY, at: instant(parseWhole(row['at']) ?? 0),
+            source: parseWord(row['source']) ?? EMPTY, cursor: parseWhole(row['cursor']) ?? countOf(0), transcript: parseWord(row['transcript']) ?? EMPTY, blob: row['run_blob'] instanceof Uint8Array ? row['run_blob'] : new Uint8Array(),
         }));
     }
 
     factsAt(point: Pick<FramePoint, 'tab' | 'at' | 'blob'>): readonly HistoryFact[] {
         return this.facts.all(point.tab, point.at, point.blob).flatMap((row): readonly HistoryFact[] => {
-            const [section, closedWhy, closedAt] = [parseWord(row['section']) ?? EMPTY, parseWord(row['closed_why']), parseNumber(row['closed_at'])];
+            const [section, closedWhy, closedAt] = [parseWord(row['section']) ?? EMPTY, parseWord(row['closed_why']), parseWhole(row['closed_at'])];
             if (!isSection(section) || (closedWhy !== null && !isClosedWhy(closedWhy))) return [];
             return [{
                 section, text: parseWord(row['text']) ?? EMPTY, why: parseWord(row['why']), state: row['state'] === 'open' ? 'open' : 'closed',
-                closedWhy, closedAt: closedAt === null ? null : instant(closedAt), firstAt: instant(parseNumber(row['first_at']) ?? 0), lastAt: instant(parseNumber(row['last_at']) ?? 0),
+                closedWhy, closedAt: closedAt === null ? null : instant(closedAt), firstAt: instant(parseWhole(row['first_at']) ?? 0), lastAt: instant(parseWhole(row['last_at']) ?? 0),
             }];
         });
     }
 
-    lastBreakAt(tab: Text, at: number): number | null {
-        return parseNumber(this.breaks.get(tab, at)?.['at']);
+    lastBreakAt(tab: Text, at: Instant): Instant | null {
+        const found = parseWhole(this.breaks.get(tab, at)?.['at']);
+        return found === null ? null : instant(found);
     }
 
     close(): void {

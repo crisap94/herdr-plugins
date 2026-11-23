@@ -2,6 +2,8 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { writeAtomically } from '#src/adapters/os/atomic-file.ts';
 
 export const STOP_WAIT_MS = 30_000;
@@ -36,7 +38,7 @@ export const processAlive: Alive = (pid) => running(pid) && isDaemonCommand(comm
 const markerOf = (root: string): string => join(root, 'daemon.stopping');
 
 export function markStopping(root: string, pid: number): void {
-    writeAtomically(markerOf(root), `${pid}\n`);
+    writeAtomically(fsPathOf(markerOf(root)), textOf(`${pid}\n`));
 }
 
 export function stoppingPid(root: string, alive: Alive): number | null {

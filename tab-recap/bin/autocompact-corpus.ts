@@ -12,7 +12,7 @@ import type { BoundaryOutcome } from '#src/experiment/outcomes.ts';
 import { stratifyMoments } from '#src/experiment/stratify.ts';
 import type { Moment } from '#src/experiment/stratify.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { countOf, parseCount } from '#src/recap/domain/count.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 const asText = (value: string): Text => must(parseText(value));
@@ -62,7 +62,7 @@ async function main(): Promise<void> {
     const frame = all.filter((point) => existsSync(point.source));
     const bySource = new Map<string, Stored[]>();
     for (const point of frame) bySource.set(point.source, [...(bySource.get(point.source) ?? []), point]);
-    const files = withBoundaries([...new Set<string>([...recentTranscripts(asText(join(homedir(), '.claude', 'projects')), 30), ...bySource.keys()])].map((file) => asText(file)));
+    const files = withBoundaries([...new Set<string>([...recentTranscripts(asText(join(homedir(), '.claude', 'projects')), countOf(30)), ...bySource.keys()])].map((file) => asText(file)));
     const outcomes = new Map<string, readonly BoundaryOutcome[]>();
     for (const file of files) outcomes.set(file, boundaryOutcomes(await eventsOf(asFsPath(file))));
     const before = new Set([...bySource].flatMap(([source, points]) => Array.from(lastBefore((outcomes.get(source) ?? []).map((o) => o.pos), points))));

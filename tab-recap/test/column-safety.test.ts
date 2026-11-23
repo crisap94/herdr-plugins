@@ -14,7 +14,7 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { observe } from '#src/recap/domain/fold.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
-import { uncheckedRatio } from '#src/recap/domain/ids.ts';
+import { uncheckedRatio, type PaneId } from '#src/recap/domain/ids.ts';
 import { paneId } from '#test/support/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
@@ -26,7 +26,7 @@ import type { SeenLane } from '#src/recap/domain/lane.ts';
 
 const pane = (id: string, title: string, extra: Record<string, unknown> = {}): Record<string, unknown> =>
     ({ pane_id: id, tab_id: 'w1:t1', terminal_title_stripped: title, agent: null, label: null, ...extra });
-const none = new Set<string>();
+const none = new Set<PaneId>();
 
 test('columnsIn: only an EXACT title, no agent, and the manifest label when herdr reports one', () => {
     const panes = [
@@ -42,7 +42,7 @@ test('columnsIn: only an EXACT title, no agent, and the manifest label when herd
         pane('w1:p10', 'tab-recap '),
     ];
     assert.deepEqual(columnsIn(panes, none).map((c) => [c.paneId, c.shape]), [['w1:p1', 'side'], ['w1:p2', 'bar'], ['w1:p3', 'side']]);
-    assert.deepEqual(columnsIn(panes, new Set(['w1:p3'])).map((c) => c.paneId), ['w1:p1', 'w1:p2'], 'the snapshot agents list is cross-checked');
+    assert.deepEqual(columnsIn(panes, new Set([paneId('w1:p3')])).map((c) => c.paneId), ['w1:p1', 'w1:p2'], 'the snapshot agents list is cross-checked');
 });
 
 test('agentPanesIn: the agents list and any pane carrying an agent', () => {

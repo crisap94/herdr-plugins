@@ -7,6 +7,7 @@ import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { retriedBy } from '#src/experiment/pool.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { duration, type Duration } from '#src/recap/domain/time.ts';
 import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 
@@ -15,7 +16,7 @@ const TIMEOUT_MS = uncheckedMilliseconds(15 * 60_000);
 
 export interface Labelled<T> {
     readonly answer: T | null;
-    readonly ms: number;
+    readonly ms: Duration;
     readonly attempts: Count;
     readonly why: Text | null;
 }
@@ -26,7 +27,7 @@ export class Labeller {
     private readonly log: (line: Text) => void;
     readonly settings: HarnessChoice;
 
-    constructor(runtime: HarnessRuntime, slots: number, log: (line: Text) => void, settings: HarnessChoice = LABELLER, make: () => HarnessPort = (): HarnessPort => noticing(new LibraryHarnessPort(runtime, LIBRARY_IDS.codex, TIMEOUT_MS), log)) {
+    constructor(runtime: HarnessRuntime, slots: Count, log: (line: Text) => void, settings: HarnessChoice = LABELLER, make: () => HarnessPort = (): HarnessPort => noticing(new LibraryHarnessPort(runtime, LIBRARY_IDS.codex, TIMEOUT_MS), log)) {
         this.free = Array.from({ length: slots }, () => make());
         this.log = log;
         this.settings = settings;
@@ -58,7 +59,7 @@ export class Labeller {
             }, (parsed) => (parsed !== null ? 'usable' : 'unusable'), {
                 onRetry: (n, wait) => { this.log(must(parseText(`${name}: attempt ${n} gave nothing (${why ?? '?'}); waiting ${Math.round(wait / 1000)} s`))); },
             });
-            return { answer, ms: Date.now() - began, attempts: must(parseCount(attempts)), why: answer === null ? why : null };
+            return { answer, ms: duration(Date.now() - began), attempts: must(parseCount(attempts)), why: answer === null ? why : null };
         } finally {
             this.give(harness);
         }

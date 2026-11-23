@@ -1,10 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { xdgPaths } from '#src/adapters/os/config/paths-xdg.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { configDirectory, stateDirectory } from '#src/daemon/config.ts';
 
 test('the paths herdr uses (~/.config and ~/.local/state) are the defaults', () => {
-    assert.deepEqual(xdgPaths('/home/me'), {
+    assert.deepEqual(xdgPaths(fsPathOf('/home/me')), {
         configDir: '/home/me/.config/herdr/plugins/config/tab-recap',
         stateDir: '/home/me/.local/state/herdr/plugins/tab-recap',
     });

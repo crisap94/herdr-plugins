@@ -43,7 +43,7 @@ import { contextOf, parseRoot, parseSwitch, parseVersion, startSlots, taps, type
 import { Backends } from './backends.ts';
 import { boundedBy } from './bounded.ts';
 import { SHUTDOWN_MS, shutDownWithin } from './shutdown.ts';
-import { openStateAt } from './state.ts';
+import { OWN_PID, openStateAt } from './state.ts';
 import type { Autocompact } from '#src/recap/application/autocompact.ts';
 import { candidateOf, candidatesOf, wireAutocompact } from './autocompact.ts';
 import { AutocompactSweep } from './autocompact-sweep.ts';
@@ -66,12 +66,12 @@ import type { LaneTokenFacts } from '#src/recap/domain/lane-tokens.ts';
 import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
 import { duration, instant, type Instant } from '#src/recap/domain/time.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
-import type { NonEmptyText, Text } from '#src/recap/domain/text.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
+import { textOf, type NonEmptyText, type Text } from '#src/recap/domain/text.ts';
 import type { HandoffRequests } from '#src/recap/domain/handoff-requests.ts';
 import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import { routePaneTokens, wireWorktrees, type Worktrees } from './worktrees.ts';
 import { ASK_KEEP_MS, CHECKPOINT_EVERY, EVENT_STOP_MS, FLUSH_STOP_MS, INTENT_MS, REQUEST_POLL_MS, RESYNC_MS, RETENTION_EVERY } from './timing.ts';
-import { textOf } from '#src/recap/domain/text.ts';
 
 type ExitCode = 0 | 1;
 
@@ -188,12 +188,12 @@ async function boot(root: Directory, pidfile: Pidfile): Promise<Wired | ExitCode
         log(textOf(`another daemon is running (pid ${other})`));
         return 0;
     }
-    pidfile.claim(process.pid, codeVersion());
+    pidfile.claim(OWN_PID, codeVersion());
     pidfile.beat();
     const frontend = frontendFor(() => new HerdrFleetPorts(textOf(root)));
     const opened = await openStateAt(root, frontend.fleet, log);
     if (opened === null) {
-        pidfile.release(process.pid);
+        pidfile.release(OWN_PID);
         return 1;
     }
     const flushing: { run: FlushTab | null } = { run: null };
@@ -205,7 +205,7 @@ async function boot(root: Directory, pidfile: Pidfile): Promise<Wired | ExitCode
 
 async function start(): Promise<ExitCode> {
     const root = stateDirectory();
-    const pidfile = new Pidfile(root);
+    const pidfile = new Pidfile(fsPathOf(root));
     const booted = await boot(root, pidfile);
     if (typeof booted === 'number') return booted;
     const { informer, fleet, backends, store, retention, sweep, events, handoffs, worktrees, engine, recaps, transcripts, clock, viewers, statuses, ledger } = booted;
@@ -216,7 +216,7 @@ async function start(): Promise<ExitCode> {
             return;
         }
         stopping = true;
-        void boundedBy(events.daemon('daemon-stopping', codeVersion() ?? 'unknown'), duration(EVENT_STOP_MS)).then(() => shutDownWithin(fleet, informer, log, duration(SHUTDOWN_MS))).then(() => boundedBy(slots?.stop() ?? Promise.resolve(), duration(EVENT_STOP_MS))).then(() => boundedBy(recaps.flushAll(), duration(FLUSH_STOP_MS))).finally(() => { store.close(); pidfile.release(process.pid); process.exit(0); });
+        void boundedBy(events.daemon('daemon-stopping', codeVersion() ?? 'unknown'), duration(EVENT_STOP_MS)).then(() => shutDownWithin(fleet, informer, log, duration(SHUTDOWN_MS))).then(() => boundedBy(slots?.stop() ?? Promise.resolve(), duration(EVENT_STOP_MS))).then(() => boundedBy(recaps.flushAll(), duration(FLUSH_STOP_MS))).finally(() => { store.close(); pidfile.release(OWN_PID); process.exit(0); });
     };
     process.on('SIGTERM', stop).on('SIGINT', stop);
     const restarted = restartAnswers({
@@ -254,7 +254,7 @@ async function start(): Promise<ExitCode> {
     void events.daemon('daemon-started', codeVersion() ?? 'unknown');
     await informer.enterSubscription();
     await informer.run();
-    pidfile.release(process.pid);
+    pidfile.release(OWN_PID);
     return 0;
 }
 

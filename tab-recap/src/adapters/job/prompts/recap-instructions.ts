@@ -1,21 +1,21 @@
 import { languageNameOf } from '#src/i18n/index.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 import { SECTIONS } from '#src/i18n/sections.ts';
-import type { SectionId } from '#src/i18n/sections.ts';
+import type { Section } from '#src/i18n/sections.ts';
 import { CAPS, MAX_WORDS } from '#src/recap/domain/shape.ts';
 import type { RecapRequest } from '#src/ports/summarizer.ts';
 import { WHY_WORDS } from '#src/recap/application/ops-answer.ts';
 import { RECONCILE_LINES } from './reconcile-instructions.ts';
 import { RUBRIC } from './rubric.ts';
 
-function languageLines(language: string, previous: string): string[] {
+function languageLines(language: Text, previous: Text): readonly Text[] {
     const own = language === 'es'
         ? 'Write every text and why in Spanish (neutral Latin American, informal "tú"). Keep the JSON keys and the words add, update, close in English.'
-        : `Write every text and why in ${languageNameOf(textOf(language))}. Keep the JSON keys and the words add, update, close in English.`;
+        : `Write every text and why in ${languageNameOf(language)}. Keep the JSON keys and the words add, update, close in English.`;
     const carried = previous === language ? [] : [
-        `The facts in <ledger> are in ${languageNameOf(textOf(previous))}: update every open fact that is still relevant, rewritten in ${languageNameOf(textOf(language))}.`,
+        `The facts in <ledger> are in ${languageNameOf(previous)}: update every open fact that is still relevant, rewritten in ${languageNameOf(language)}.`,
     ];
-    return [own, ...carried, ''];
+    return [textOf(own), ...carried.map(textOf), textOf('')];
 }
 
 const SHAPE = [
@@ -26,19 +26,17 @@ const SHAPE = [
     ']}',
 ];
 
-const groups = (request: Pick<RecapRequest, 'input'>): boolean => request.input.ledgers.length > 1;
-
-const sectionLine = (section: { id: SectionId; hint: string }): string => {
+const sectionLine = (section: Section): Text => {
     const size = section.id === 'goal' ? 'one line, one open at a time' : `the column shows the newest ${CAPS[section.id]}`;
-    return `${section.id.padEnd(10)}— ${section.hint} (${size})`;
+    return textOf(`${section.id.padEnd(10)}— ${section.hint} (${size})`);
 };
 
-export function instructions(request: Pick<RecapRequest, 'language' | 'previousLanguage' | 'input' | 'retry' | 'closeEvidence'>): string {
+export function instructions(request: Pick<RecapRequest, 'language' | 'previousLanguage' | 'input' | 'retry' | 'closeEvidence'>): Text {
     if (request.retry !== undefined) {
         return correctionInstructions(request);
     }
-    const tasks = groups(request);
-    return [
+    const tasks = request.input.ledgers.length > 1;
+    return textOf([
         'You keep a ledger of facts about ONE terminal tab. The tab may hold several coding agents working side by side.',
         'The operator reads the newest facts at a glance, often on a phone, so each must be short and easy to read.',
         '',
@@ -84,11 +82,11 @@ export function instructions(request: Pick<RecapRequest, 'language' | 'previousL
         '',
         'An operation that fails a rule is sent back once, alone, in a <correction_input>: the operation and why. Fix each one so it',
         'passes, or leave it out of your answer. Never send the same operation again.',
-    ].join('\n');
+    ].join('\n'));
 }
 
-function correctionInstructions(request: Pick<RecapRequest, 'language' | 'previousLanguage' | 'input' | 'retry'>): string {
-    return [
+function correctionInstructions(request: Pick<RecapRequest, 'language' | 'previousLanguage' | 'input' | 'retry'>): Text {
+    return textOf([
         'Some operations you answered on the ledger of a terminal tab were refused by rules checked in code. Input: one <correction_input>.',
         'Each <refused> holds the operation as you gave it and, for every rule that refused it, the rule\'s id and why. <ledger> shows the facts the operations name',
         '(an id is that fact\'s id in your first document). Nothing else is repeated: the rest of your answer was accepted.',
@@ -105,5 +103,5 @@ function correctionInstructions(request: Pick<RecapRequest, 'language' | 'previo
         '',
         ...languageLines(request.language, request.previousLanguage),
         `Plain everyday words, ${MAX_WORDS} words or fewer per text, ${WHY_WORDS} per why. Never invent facts.`,
-    ].join('\n');
+    ].join('\n'));
 }

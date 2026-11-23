@@ -5,9 +5,11 @@ import { join } from 'node:path';
 import { BOUNDARY_LITERAL, DAY_MS, SCAN_CHUNK_BYTES, SUBAGENT_SEGMENT, TRANSCRIPT_SUFFIX } from '#src/adapters/experiment/file-constants.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
+import type { Count } from '#src/recap/domain/count.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 
-export function recentTranscripts(root: Text, days: number, now = Date.now()): readonly FsPath[] {
+export function recentTranscripts(root: Text, days: Count, now: Instant = instant(Date.now())): readonly FsPath[] {
     const floor = Math.floor((now - days * DAY_MS) / 1000) * 1000;
     const found: FsPath[] = [];
     const stack = [{ path: root, directory: true }];

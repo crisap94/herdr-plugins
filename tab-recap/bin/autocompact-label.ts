@@ -16,7 +16,7 @@ import { kappaOf } from '#src/experiment/stats.ts';
 import { labelBriefs } from './autocompact-briefs.ts';
 import { operatorLabels } from './autocompact-operator.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { countOf, parseCount } from '#src/recap/domain/count.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 const asText = (value: string): Text => must(parseText(value));
@@ -34,7 +34,7 @@ async function labelPoints(dir: string, limit: number | null, runtime: HarnessRu
     const [file, log] = [join(dir, 'labels.jsonl'), (line: string): void => { console.error(`${new Date().toISOString()} ${line}`); }];
     const done = doneKeys(asText(file), asText('id'));
     const todo = readPoints(asText(join(dir, 'corpus.jsonl'))).filter((point) => !done.has(asText(point.id))).slice(0, limit ?? Infinity);
-    const labeller = new Labeller(runtime, 6, log);
+    const labeller = new Labeller(runtime, countOf(6), log);
     const instructions = labelInstructions(QUESTIONS);
     let finished = 0;
     await pooledBy(todo, must(parseCount(6)), async (point) => {

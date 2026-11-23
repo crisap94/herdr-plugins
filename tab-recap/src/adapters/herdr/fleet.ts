@@ -3,14 +3,14 @@ import type { DecodedFrame, EventSubscription } from '@stateforge-labs/herdr-sdk
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { usePlugin, useAdmin } from './client.ts';
 import { subscribeTopics } from './subscriptions.ts';
-import { agentPanesIn, columnsIn, deadColumnsIn, parseOptionalPaneId } from './column-panes.ts';
+import { agentPanesIn, columnsIn, deadColumnsIn, parseOptionalPaneId, parseOptionalTabId } from './column-panes.ts';
 import { parseJsonList, parseJsonRect, parseJsonText } from './json.ts';
 import { paneTokensOf, readPaneTokens, reconciliationOf } from './snapshot-reading.ts';
 import { parseJson, type JsonObject } from './json-object.ts';
 import { refusalOfTokens } from './token-refusal.ts';
 import { HerdrAgentPanes, herdrWire } from './agents.ts';
 import { OWNERS } from '#src/recap/domain/token-registry.ts';
-import { parseAgentKind, parseTabId, uncheckedPaneId, uncheckedRatio, uncheckedWorkspaceId, type PaneId, type TabId, type WorkspaceId } from '#src/recap/domain/ids.ts';
+import { parseAgentKind, uncheckedPaneId, uncheckedRatio, uncheckedWorkspaceId, type PaneId, type TabId, type WorkspaceId } from '#src/recap/domain/ids.ts';
 import type { Probability } from '#src/recap/domain/probability.ts';
 import { countOf, parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
@@ -41,7 +41,7 @@ const WORKSPACE_WRITABLE: readonly TokenName[] = [must(parseTokenName(EVENT_TOKE
 const RESIZE = must(parseText('resize'));
 const CLOSE = must(parseText('close'));
 
-const parseOptionalTabId = (input: unknown): TabId | null => { const found = parseTabId(input); return found.kind === 'ok' ? found.value : null; };
+type Refusal = Done | null;
 
 const frameOf = (frame: DecodedFrame): FleetFrame => ({
     event: must(parseText(frame.event)),
@@ -85,7 +85,7 @@ export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, Harne
         try {
             const live = await subscribeTopics(topics);
             pumpFrames(live, queue, frameOf);
-            return { kind: 'stream', stream: { frames: (): AsyncIterable<FleetFrame> => queue, close: (): void => { live.close(); queue.end(); } } };
+            return { kind: 'stream', stream: { frames: (): AsyncIterable<FleetFrame, void, undefined> => queue, close: (): void => { live.close(); queue.end(); } } };
         } catch (error) {
             return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
         }
@@ -252,7 +252,7 @@ export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, Harne
         }
     }
 
-    private async refuseAgent(verb: Text, pane: PaneId): Promise<Done | null> {
+    private async refuseAgent(verb: Text, pane: PaneId): Promise<Refusal> {
         try {
             const snapshot = await this.rawSnapshot();
             if (!agentPanesIn(parseJsonList(snapshot['panes']), parseJsonList(snapshot['agents'])).has(pane)) {

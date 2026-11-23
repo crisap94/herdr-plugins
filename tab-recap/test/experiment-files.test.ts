@@ -1,3 +1,5 @@
+import { countOf } from '#src/recap/domain/count.ts';
+import { instant } from '#src/recap/domain/time.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -78,7 +80,7 @@ function withRoot(run: (root: string) => void): void {
 test('recentTranscripts: recent *.jsonl only, no subagents, dotfiles and deep files kept', () => {
     withRoot((root) => {
         layout(root);
-        assert.deepEqual(new Set(recentTranscripts(txt(root), DAYS, NOW)), new Set([
+        assert.deepEqual(new Set(recentTranscripts(txt(root), countOf(DAYS), instant(NOW))), new Set([
             join(root, 'a/new.jsonl'),
             join(root, 'a/plain.jsonl'),
             join(root, 'a/b/deep.jsonl'),
@@ -103,7 +105,7 @@ test('recentTranscripts: the threshold is strict, sub-second precision counts', 
         utimesSync(join(root, 'exact.jsonl'), floorSeconds, floorSeconds);
         utimesSync(join(root, 'later.jsonl'), floorSeconds + 1, floorSeconds + 1);
         utimesSync(join(root, 'half.jsonl'), floorSeconds + 0.5, floorSeconds + 0.5);
-        assert.deepEqual(recentTranscripts(txt(root), DAYS, NOW).toSorted(), [join(root, 'half.jsonl'), join(root, 'later.jsonl')]);
+        assert.deepEqual(recentTranscripts(txt(root), countOf(DAYS), instant(NOW)).toSorted(), [join(root, 'half.jsonl'), join(root, 'later.jsonl')]);
     });
 });
 
@@ -113,14 +115,14 @@ test('recentTranscripts: same order as a pre-order walk in readdir order', () =>
         mkdirSync(join(root, 'z/y'), { recursive: true });
         writeFileSync(join(root, 'z/y/last.jsonl'), LINE);
         writeFileSync(join(root, 'aa.jsonl'), LINE);
-        assert.deepEqual(recentTranscripts(txt(root), DAYS, NOW), oracle(root, FLOOR));
-        assert.ok(recentTranscripts(txt(root), DAYS, NOW).length > 3);
+        assert.deepEqual(recentTranscripts(txt(root), countOf(DAYS), instant(NOW)), oracle(root, FLOOR));
+        assert.ok(recentTranscripts(txt(root), countOf(DAYS), instant(NOW)).length > 3);
     });
 });
 
 test('recentTranscripts: a missing root gives an empty list', () => {
     withRoot((root) => {
-        assert.deepEqual(recentTranscripts(txt(join(root, 'absent')), DAYS, NOW), []);
+        assert.deepEqual(recentTranscripts(txt(join(root, 'absent')), countOf(DAYS), instant(NOW)), []);
     });
 });
 

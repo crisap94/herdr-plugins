@@ -2,6 +2,9 @@ import { shouldRoll } from '#src/adapters/os/plugin-version.ts';
 import { parseLine, parseVersion, type Line, type Running, type Version } from '#src/daemon/slots.ts';
 import type { ActiveInstallRead } from '#src/ports/active-install.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
+
+const textOrNull = (version: Version | null): Text | null => (version === null ? null : textOf(version));
 
 export type Activity = 'idle' | 'compacting';
 
@@ -32,7 +35,7 @@ export function startRoll(parts: RollParts): Running {
     const decide = (successor: Successor): void => {
         const previous = seen;
         seen = successor.version;
-        if (!shouldRoll(parts.started, successor.version, previous) || parts.activity() === 'compacting') {
+        if (shouldRoll(textOrNull(parts.started), textOrNull(successor.version), textOrNull(previous)) === 'stay' || parts.activity() === 'compacting') {
             return;
         }
         attempted = true;

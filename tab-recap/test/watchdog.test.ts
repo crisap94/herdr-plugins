@@ -1,3 +1,6 @@
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
+import { parsePid } from '#src/recap/domain/pid.ts';
+import { must } from '#src/protocol/result.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
@@ -103,20 +106,20 @@ test('bounded: a task that takes too long is given up on, one that fails still f
 test('the daemon beat: beating makes it fresh; no beat for too long while the daemon lives makes it wedged; no beat file at all is not', () => {
     const dir = mkdtempSync(join(tmpdir(), 'recap-beat-'));
     try {
-        const pidfile = new Pidfile(dir);
-        pidfile.claim(process.pid);
-        assert.equal(pidfile.wedged(1000), false, 'an older daemon that never beat is not called stuck');
+        const pidfile = new Pidfile(fsPathOf(dir));
+        pidfile.claim(must(parsePid(process.pid)));
+        assert.equal(pidfile.wedged(duration(1000)) === 'wedged', false, 'an older daemon that never beat is not called stuck');
         pidfile.beat();
-        assert.equal(pidfile.wedged(60_000), false);
+        assert.equal(pidfile.wedged(duration(60_000)) === 'wedged', false);
         const old = new Date(Date.now() - 10 * 60_000);
         utimesSync(join(dir, 'daemon.beat'), old, old);
-        assert.equal(pidfile.wedged(180_000), true, 'ten minutes without a beat');
+        assert.equal(pidfile.wedged(duration(180_000)) === 'wedged', true, 'ten minutes without a beat');
         pidfile.beat();
-        assert.equal(pidfile.wedged(180_000), false, 'beating again clears it');
+        assert.equal(pidfile.wedged(duration(180_000)) === 'wedged', false, 'beating again clears it');
         utimesSync(join(dir, 'daemon.beat'), old, old);
         rmSync(join(dir, 'daemon.pid'));
         writeFileSync(join(dir, 'daemon.pid'), '999999999\n');
-        assert.equal(pidfile.wedged(180_000), false, 'a daemon that is not running is not wedged, just gone');
+        assert.equal(pidfile.wedged(duration(180_000)) === 'wedged', false, 'a daemon that is not running is not wedged, just gone');
     } finally {
         rmSync(dir, { recursive: true });
     }

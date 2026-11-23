@@ -1,3 +1,5 @@
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -36,13 +38,13 @@ const withManifest = (text: string | null, run: (root: string) => void): void =>
 test('readDiskVersion reads the same version as codeVersion from the real manifest', () => {
     const version = readDiskVersion(urlOf(ROOT)).diskVersion;
     assert.notEqual(version, null);
-    assert.equal(version, codeVersion(ROOT));
+    assert.equal(version, codeVersion(fsPathOf(ROOT)));
 });
 
 test('readDiskVersion agrees with parseVersion on every manifest of the table', () => {
     for (const text of MANIFESTS) {
         withManifest(text, (root) => {
-            assert.equal(readDiskVersion(urlOf(root)).diskVersion, parseVersion(text), JSON.stringify(text));
+            assert.equal(readDiskVersion(urlOf(root)).diskVersion, parseVersion(textOf(text)), JSON.stringify(text));
         });
     }
 });

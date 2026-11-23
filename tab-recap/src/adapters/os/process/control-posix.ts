@@ -9,6 +9,6 @@ const killGroup = (pid: Count, mode: KillMode): void => {
 };
 
 export function posixProcess(spawner: Spawner = spawn): ProcessPort {
-    const flavour: Flavour = { spawner, detached: true, killTree: killGroup };
+    const flavour: Flavour = { spawner, detached: 'detached', killTree: killGroup };
     return { run: (command, args, options) => runIn(flavour, command, args, options), killTree: killGroup };
 }

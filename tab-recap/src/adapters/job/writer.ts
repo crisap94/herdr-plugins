@@ -25,7 +25,7 @@ export class RecapWriter implements Summarizer {
     }
 
     async write(request: RecapRequest): Promise<Written> {
-        const asked: HarnessAsk = this.harness.limit === null ? { instructions: textOf(instructions(request)), input: textOf(writerContext(request, TRANSCRIPT_BUDGET)) } : fittedAsk(request, this.harness.limit);
+        const asked: HarnessAsk = this.harness.limit === null ? { instructions: instructions(request), input: textOf(writerContext(request, TRANSCRIPT_BUDGET)) } : fittedAsk(request, this.harness.limit);
         const call: HarnessAsk = this.answer === 'schema' && this.harness.structured === 'schema' ? { ...asked, answer: { kind: 'schema', schema: 'writer' } } : asked;
         const ran = await this.harness.run(call, this.settings);
         return isUnknown(ran) ? ran : { kind: 'written', text: unfencedText(ran.text), costUsd: ran.costUsd };

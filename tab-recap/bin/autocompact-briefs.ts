@@ -16,7 +16,7 @@ import { sectionsOf } from '#src/experiment/coverage.ts';
 import { pooledBy } from '#src/experiment/pool.ts';
 import { drawsOf, shuffledBy } from '#src/experiment/seeded.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { countOf, parseCount } from '#src/recap/domain/count.ts';
 import { parseFactIndex } from '#src/recap/domain/fact-index.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
@@ -43,7 +43,7 @@ export async function labelBriefs(dir: string, runtime: HarnessRuntime): Promise
     const done = doneKeys(asText(file), asText('id'));
     const todo = briefPoints(readPoints(asText(join(dir, 'corpus.jsonl')))).filter((point) => !done.has(asText(point.id)));
     const writers = Array.from({ length: 6 }, () => new HarnessBrief(new LibraryHarnessPort(runtime, LIBRARY_IDS.codex, uncheckedMilliseconds(15 * 60_000)), LABELLER));
-    const labeller = new Labeller(runtime, 6, log);
+    const labeller = new Labeller(runtime, countOf(6), log);
     await pooledBy(todo, must(parseCount(6)), async (point, _index, lane) => {
         const began = Date.now();
         const written = await (writers[lane] as HarnessBrief).write(textOf(documentOf(point)));

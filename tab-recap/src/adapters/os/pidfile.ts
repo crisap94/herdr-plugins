@@ -2,26 +2,31 @@ import { existsSync, readFileSync, rmSync, statSync, utimesSync } from 'node:fs'
 import { join } from 'node:path';
 import { must } from '#src/protocol/result.ts';
 import { parsePid, type Pid } from '#src/recap/domain/pid.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { fsPathOf, type FsPath } from '#src/recap/domain/fs-path.ts';
+import type { Duration } from '#src/recap/domain/time.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import { writeAtomically } from './atomic-file.ts';
 
-export class Pidfile {
-    private readonly root: string;
+export type Wedging = 'wedged' | 'beating';
+export type Switching = 'disabled' | 'enabled';
 
-    constructor(root: string) {
+export class Pidfile {
+    private readonly root: FsPath;
+
+    constructor(root: FsPath) {
         this.root = root;
     }
 
-    get logPath(): string {
-        return join(this.root, 'daemon.log');
+    get logPath(): FsPath {
+        return fsPathOf(join(this.root, 'daemon.log'));
     }
 
-    private get path(): string {
-        return join(this.root, 'daemon.pid');
+    private get path(): FsPath {
+        return fsPathOf(join(this.root, 'daemon.pid'));
     }
 
-    private get switchPath(): string {
-        return join(this.root, 'disabled');
+    private get switchPath(): FsPath {
+        return fsPathOf(join(this.root, 'disabled'));
     }
 
     alive(): Pid | null {
@@ -39,13 +44,13 @@ export class Pidfile {
         return parsed.kind === 'ok' ? parsed.value : null;
     }
 
-    private get versionPath(): string {
-        return join(this.root, 'daemon.version');
+    private get versionPath(): FsPath {
+        return fsPathOf(join(this.root, 'daemon.version'));
     }
 
-    claim(pid: number, version: string | null = null): void {
-        writeAtomically(this.path, `${pid}\n`);
-        writeAtomically(this.versionPath, `${version ?? ''}\n`);
+    claim(pid: Pid, version: Text | null = null): void {
+        writeAtomically(this.path, textOf(`${pid}\n`));
+        writeAtomically(this.versionPath, textOf(`${version ?? ''}\n`));
     }
 
     daemonVersion(): Text | null {
@@ -58,14 +63,14 @@ export class Pidfile {
         return version === '' ? null : must(parseText(version));
     }
 
-    release(pid: number): void {
+    release(pid: Pid): void {
         if (this.alive() === pid) {
             rmSync(this.path, { force: true });
         }
     }
 
-    private get beatPath(): string {
-        return join(this.root, 'daemon.beat');
+    private get beatPath(): FsPath {
+        return fsPathOf(join(this.root, 'daemon.beat'));
     }
 
     beat(): void {
@@ -73,25 +78,25 @@ export class Pidfile {
         try {
             utimesSync(this.beatPath, now, now);
         } catch {
-            writeAtomically(this.beatPath, `${now.getTime()}\n`);
+            writeAtomically(this.beatPath, textOf(`${now.getTime()}\n`));
         }
     }
 
-    wedged(ms: number): boolean {
+    wedged(span: Duration): Wedging {
         try {
-            return this.alive() !== null && Date.now() - statSync(this.beatPath).mtimeMs > ms;
+            return this.alive() !== null && Date.now() - statSync(this.beatPath).mtimeMs > span ? 'wedged' : 'beating';
         } catch {
-            return false;
+            return 'beating';
         }
     }
 
-    get disabled(): boolean {
-        return existsSync(this.switchPath);
+    get disabled(): Switching {
+        return existsSync(this.switchPath) ? 'disabled' : 'enabled';
     }
 
-    set disabled(value: boolean) {
-        if (value) {
-            writeAtomically(this.switchPath, `${Date.now()}\n`);
+    set disabled(value: Switching) {
+        if (value === 'disabled') {
+            writeAtomically(this.switchPath, textOf(`${Date.now()}\n`));
         } else {
             rmSync(this.switchPath, { force: true });
         }
