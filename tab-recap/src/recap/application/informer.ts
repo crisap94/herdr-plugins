@@ -6,6 +6,7 @@ import type { Observation } from '#src/recap/domain/fold.ts';
 import { emptyBoard, watchSet } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
 import type { Clock } from '#src/ports/clock.ts';
@@ -87,8 +88,8 @@ export class Informer {
         return this.board;
     }
 
-    get listening(): boolean {
-        return this.stream !== null;
+    get listening(): Presence {
+        return this.stream === null ? 'absent' : 'present';
     }
 
     private async stamped(): Promise<SnapshotResult> {

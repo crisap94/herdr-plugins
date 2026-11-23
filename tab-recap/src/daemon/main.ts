@@ -24,7 +24,7 @@ import { withdrawAsked } from '#src/recap/application/handoff-exchange.ts';
 import { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { LaneWebs } from '#src/recap/application/lane-webs.ts';
 import type { Sharing } from '#src/recap/application/dispatch.ts';
-import { dispatchFor, type Box } from './dispatch-parts.ts';
+import { dispatchFor, listeningOf, type Box } from './dispatch-parts.ts';
 import { SettleHub } from '#src/recap/application/settle-hub.ts';
 import { laneTurns, parseStatusPush } from './lane-turns.ts';
 import { Informer, type Blindness } from '#src/recap/application/informer.ts';
@@ -42,7 +42,7 @@ import { SLOT_TABLE } from './slot-table.ts';
 import { contextOf, parseRoot, parseSwitch, parseVersion, startSlots, taps, type Slots, type SlotKey, type StatusEvent, type Switch, type Version } from './slots.ts';
 import { Backends } from './backends.ts';
 import { boundedBy } from './bounded.ts';
-import { capabilityNow, failureLog, herdrEventsOn, herdrEventsPresence, listeningIn, logVia, paneTokensTo, wantsScreen } from './legacy.ts';
+import { capabilityNow, failureLog, herdrEventsOn, herdrEventsPresence, logVia, paneTokensTo, wantsScreen } from './legacy.ts';
 import { SHUTDOWN_MS, shutDownWithin } from './shutdown.ts';
 import { openStateAt } from './state.ts';
 import type { Autocompact } from '#src/recap/application/autocompact.ts';
@@ -126,11 +126,10 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
     const worktrees = wireWorktrees(store, log);
     const answers = new CompactRequestQueue({ enabled: herdrEventsPresence, board, requests: store.requests, asks: store.asks, tokens: fleet, now: nowInstant, log });
     const exchange = handoffExchangeOf({ store, tokens: fleet, events, board, sharing: (): HerdrEvents => loadSettings().herdrEvents, requests: handoffRequestsOn, log });
-    const hub = new SettleHub({ agents: fleet.agents(), listening: listeningIn(box), pause: sleep, now: nowInstant });
+    const hub = new SettleHub({ agents: fleet.agents(), listening: listeningOf(box), pause: sleep, now: nowInstant });
     const webs = new LaneWebs(repos);
     const contexts = new LaneContexts(transcripts, agentWindows(new CatalogueWindows()), systemCompactLimits(), () => loadSettings().compaction.window);
     const laneTokens = new LaneTokenPublisher({ tokens: fleet, enabled: herdrEventsOn, board, facts: (lane): LaneTokenFacts => factsOf(lane, { contexts, records: store.records, ledger: store.ledger }), capability: capabilityNow, now: nowInstant, log, events });
-
     const dispatch = dispatchFor(box, { fleet, store, recaps, transcripts, webs, contexts, events, sharing: (): Sharing => (herdrEventsOn() ? 'on' : 'off') }, log);
     const turns = laneTurns({ hub, compactions: store.compactions, board: (): Board => box.informer?.current ?? emptyBoard(), now: nowInstant, statused: statusTaps.emit });
     const informer = new Informer(fleet, clock, loadSettings().policy, {

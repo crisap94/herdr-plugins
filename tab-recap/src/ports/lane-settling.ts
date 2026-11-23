@@ -2,8 +2,6 @@ import type { PaneId } from '#src/recap/domain/ids.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
 import type { Instant, Milliseconds } from '#src/recap/domain/time.ts';
 
-export type { LaneSettling, Settled } from './twins/runs/legacy.ts';
-
 export interface SettledStatus {
     readonly kind: 'settled';
     readonly status: LaneStatus;

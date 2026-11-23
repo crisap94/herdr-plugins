@@ -4,6 +4,7 @@ import { queuedOutcomeOf, verdictOf } from '#src/recap/application/compaction-ou
 import type { QueuedDeps } from '#src/recap/application/compaction-outcome.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { laneStatus } from '#src/recap/domain/status.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { extractClaude, extractCodex } from './fakes/transcript-lines.ts';
@@ -69,7 +70,7 @@ const queuedWorld = (pushes: readonly Push[], markAt: number | null, unknownSett
                 const heard = pushes.find((push) => push.at >= since && push.at <= clock.t + timeoutMs);
                 if (heard === undefined) { clock.t += timeoutMs; return Promise.resolve({ kind: 'timeout' }); }
                 clock.t = Math.max(clock.t, heard.at);
-                return Promise.resolve({ kind: 'settled', status: heard.status });
+                return Promise.resolve({ kind: 'settled', status: laneStatus(textOf(heard.status)) });
             },
         },
         marks: () => { markReads.n += 1; return Promise.resolve(markAt !== null && clock.t >= markAt ? [{ kind: 'compacted', at: instant(markAt) }] : []); },

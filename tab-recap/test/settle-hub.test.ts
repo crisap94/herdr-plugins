@@ -5,12 +5,14 @@ import { confirmedOutcomeOf, outcomeOf } from '#src/recap/application/compaction
 import { instant, duration } from '#src/recap/domain/time.ts';
 import { SettleHub } from '#src/recap/application/settle-hub.ts';
 import type { SettleHubDeps } from '#src/recap/application/settle-hub.ts';
-import type { LaneSettling } from '#src/ports/lane-settling.ts';
+import type { LaneSettler } from '#src/ports/lane-settling.ts';
 import type { Mark } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
-import { agentKind } from '#test/support/ids.ts';
+import { agentKind, paneId } from '#test/support/ids.ts';
+import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
 import { seenLane } from '#test/support/seen.ts';
 
 const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' }));
@@ -22,16 +24,16 @@ function hub(options: { listening: boolean; statuses?: string[]; clock?: { at: n
     const clock = options.clock ?? { at: 1000 };
     const deps: SettleHubDeps = {
         agents: { status: () => { polls.push('status'); const next = statuses.shift(); return Promise.resolve(next === undefined ? unknown({ why: 'not-found', what: textOf('pane') }) : { kind: 'agent', agent: agentKind('claude'), status: next as 'idle' }); } },
-        listening: () => options.listening,
+        listening: (): Presence => (options.listening ? 'present' : 'absent'),
         pause: (ms) => { pauses.push(ms); return Promise.resolve(); },
-        now: () => clock.at,
+        now: () => instant(clock.at),
     };
     return { hub: new SettleHub(deps), polls, pauses };
 }
 
 test('a push settles the waiter at once: the first idle/done after `since`, with no status poll; working does not', async () => {
     const { hub: waiting, polls } = hub({ listening: true });
-    const settled = waiting.settled('w1:p1', instant(1000), 60_000);
+    const settled = waiting.settled(paneId('w1:p1'), instant(1000), uncheckedMilliseconds(60_000));
     waiting.heard('w1:p1', 'working');
     waiting.heard('w1:p2', 'done');
     let resolved = false;
@@ -48,25 +50,25 @@ test('a push that came between the typing and the wait is not lost; one from bef
     const { hub: early } = hub({ listening: true, clock });
     early.heard('w1:p1', 'idle');
     clock.at = 1200;
-    assert.deepEqual(await early.settled('w1:p1', instant(1000), 5), { kind: 'timeout' }, 'an idle push from before the command says nothing about it');
+    assert.deepEqual(await early.settled(paneId('w1:p1'), instant(1000), uncheckedMilliseconds(5)), { kind: 'timeout' }, 'an idle push from before the command says nothing about it');
     early.heard('w1:p1', 'done');
-    assert.deepEqual(await early.settled('w1:p1', instant(1000), 5), { kind: 'settled', status: 'done' });
+    assert.deepEqual(await early.settled(paneId('w1:p1'), instant(1000), uncheckedMilliseconds(5)), { kind: 'settled', status: 'done' });
 });
 
 test('listening but silent: after the timeout the lane is looked at once, and a lane that settled unheard still counts', async () => {
     const quiet = hub({ listening: true, statuses: ['idle'] });
-    assert.deepEqual(await quiet.hub.settled('w1:p1', instant(1000), 5), { kind: 'settled', status: 'idle' });
+    assert.deepEqual(await quiet.hub.settled(paneId('w1:p1'), instant(1000), uncheckedMilliseconds(5)), { kind: 'settled', status: 'idle' });
     const stuck = hub({ listening: true, statuses: ['working'] });
-    assert.deepEqual(await stuck.hub.settled('w1:p1', instant(1000), 5), { kind: 'timeout' });
+    assert.deepEqual(await stuck.hub.settled(paneId('w1:p1'), instant(1000), uncheckedMilliseconds(5)), { kind: 'timeout' });
 });
 
 test('blind (no subscription): today\'s polling — a pause for the agent to start, then a status every 2 s until idle or done', async () => {
     const blind = hub({ listening: false, statuses: ['working', 'working', 'idle'] });
-    assert.deepEqual(await blind.hub.settled('w1:p1', instant(1000), 600_000), { kind: 'settled', status: 'idle' });
+    assert.deepEqual(await blind.hub.settled(paneId('w1:p1'), instant(1000), uncheckedMilliseconds(600_000)), { kind: 'settled', status: 'idle' });
     assert.deepEqual(blind.pauses, [4000, 2000, 2000]);
     assert.equal(blind.polls.length, 3);
     const lost = hub({ listening: false, statuses: ['working', 'working', 'working', 'working', 'working', 'working'] });
-    assert.deepEqual(await lost.hub.settled('w1:p1', instant(1000), 9000), { kind: 'timeout' }, 'bounded by the timeout');
+    assert.deepEqual(await lost.hub.settled(paneId('w1:p1'), instant(1000), uncheckedMilliseconds(9000)), { kind: 'timeout' }, 'bounded by the timeout');
 });
 
 const compacted = (at: number): Mark => ({ kind: 'compacted', at: instant(at), tokensBefore: countOf(39532), tokensAfter: countOf(3057), tookMs: duration(15588) });
@@ -74,7 +76,7 @@ const compacted = (at: number): Mark => ({ kind: 'compacted', at: instant(at), t
 test('the outcome: after the push the records are read at once; they say nothing yet → up to three more reads 300 ms apart', async () => {
     const pauses: number[] = [];
     const settled: string[] = [];
-    const settling: LaneSettling = { settled: (pane) => { settled.push(pane); return Promise.resolve({ kind: 'settled', status: 'done' }); } };
+    const settling: LaneSettler = { settled: (pane) => { settled.push(pane); return Promise.resolve({ kind: 'settled', status: 'done' }); } };
     let reads = 0;
     const deps = { settling, pause: (ms: number): Promise<void> => { pauses.push(ms); return Promise.resolve(); }, marks: (): Promise<readonly Mark[]> => { reads += 1; return Promise.resolve(reads >= 3 ? [compacted(2000)] : []); } };
     assert.deepEqual(await outcomeOf(deps, lane, instant(1000)), { outcome: 'compacted', tokensBefore: countOf(39532), tokensAfter: countOf(3057), tookMs: duration(15588) });
@@ -88,7 +90,7 @@ test('the outcome: after the push the records are read at once; they say nothing
 
 test('the outcome: a failure mark is not re-read; the numbers a record lacks are left out; settle=false (codex waits in its own prompt) does not wait on the hub', async () => {
     const settled: string[] = [];
-    const settling: LaneSettling = { settled: (pane) => { settled.push(pane); return Promise.resolve({ kind: 'timeout' }); } };
+    const settling: LaneSettler = { settled: (pane) => { settled.push(pane); return Promise.resolve({ kind: 'timeout' }); } };
     const pauses: number[] = [];
     const base = { settling, pause: (ms: number): Promise<void> => { pauses.push(ms); return Promise.resolve(); } };
     assert.deepEqual(await outcomeOf({ ...base, marks: (): Promise<readonly Mark[]> => Promise.resolve([{ kind: 'compaction-failed', at: instant(2000) }]) }, lane, instant(1000)), { outcome: 'failed' });

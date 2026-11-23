@@ -18,7 +18,6 @@ import type { HandoffExchangeWiring } from './handoff-exchange-wiring.ts';
 import type { Worktrees } from './worktrees.ts';
 import { ANY_KIND } from '#src/recap/domain/policy.ts';
 import type { AgentKind } from '#src/recap/domain/ids.ts';
-import type { Box } from './dispatch-parts.ts';
 import { loadSettings, parseSettingsFile, settingReader } from './config.ts';
 
 export function logVia(write: (line: Text) => void): (line: string) => void {
@@ -81,8 +80,4 @@ export function herdrEventsOn(): boolean {
 export function wantsScreen(agent: AgentKind): boolean {
     const { screenAgents } = loadSettings();
     return screenAgents.includes(uncheckedAgentKind(ANY_KIND)) || screenAgents.includes(agent);
-}
-
-export function listeningIn(box: Box): () => boolean {
-    return () => box.informer?.listening ?? false;
 }

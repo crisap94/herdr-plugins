@@ -1,7 +1,8 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { LaneSettling, Settled } from '#src/ports/lane-settling.ts';
+import type { LaneSettler, Settling } from '#src/ports/lane-settling.ts';
 import type { Mark } from '#src/ports/transcripts.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
 import { duration, parseDuration, type Duration, type Instant } from '#src/recap/domain/time.ts';
 
 export type Outcome = 'compacted' | 'failed' | 'unconfirmed';
@@ -46,13 +47,13 @@ function verdictFrom(marks: readonly Mark[], since: Instant): Verdict {
 }
 
 export interface OutcomeDeps {
-    readonly settling: LaneSettling;
+    readonly settling: LaneSettler;
     marks(lane: Lane): Promise<readonly Mark[]>;
     pause(ms: Duration): Promise<void>;
 }
 
 export async function outcomeOf(deps: OutcomeDeps, lane: Lane, since: Instant): Promise<Verdict> {
-    await deps.settling.settled(String(lane.pane), since, WAIT_MS);
+    await deps.settling.settled(lane.pane, since, uncheckedMilliseconds(WAIT_MS));
     return confirmedOutcomeOf(deps, lane, since);
 }
 
@@ -74,7 +75,7 @@ const PACE_MS = 1000;
 
 type Turn = 'ended' | 'running';
 
-const turnOf = (settled: Settled): Turn => (settled.kind === 'settled' && TURN_ENDS.has(settled.status) ? 'ended' : 'running');
+const turnOf = (settled: Settling): Turn => (settled.kind === 'settled' && TURN_ENDS.has(settled.status) ? 'ended' : 'running');
 
 export async function queuedOutcomeOf(deps: QueuedDeps, lane: Lane, typedAt: Instant, onTurnEnd: () => void): Promise<Verdict> {
     const deadline = typedAt + WAIT_MS;
@@ -82,7 +83,7 @@ export async function queuedOutcomeOf(deps: QueuedDeps, lane: Lane, typedAt: Ins
     let turnEnded = false;
     for (;;) {
         const sliceStart = deps.now();
-        const settled = await deps.settling.settled(String(lane.pane), since, Math.min(SLICE_MS, deadline - sliceStart));
+        const settled = await deps.settling.settled(lane.pane, since, uncheckedMilliseconds(Math.min(SLICE_MS, deadline - sliceStart)));
         since = deps.now();
         const verdict = await confirmedOutcomeOf(deps, lane, typedAt);
         if (verdict.outcome !== 'unconfirmed' || deps.now() >= deadline) {
