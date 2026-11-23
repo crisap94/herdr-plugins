@@ -9,7 +9,6 @@ import type { EvalReport, RunLine, Totals } from '#src/recap/application/eval-re
 import type { Candidate } from '#src/recap/application/eval-label.ts';
 import type { Share } from '#src/recap/application/judge-coverage.ts';
 import type { Style } from '@stateforge-labs/recap-view/unstable/wrap.ts';
-export { candidateLines, reportLines } from './legacy.ts';
 
 const NAMES: Readonly<Record<string, string>> = {
     I1: 'atomic', I2: 'stands alone', I3: 'specific', I4: 'supported', I5: 'about the work', I6: 'new', I7: 'still true',

@@ -6,7 +6,7 @@ import { countOf, parseCount } from '#src/recap/domain/count.ts';
 import { uncheckedTabId } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { agreeLines, candidateLines, gateLines, reportLines } from '#src/recap/render/eval.ts';
+import { agreeLines, candidateText, gateLines, reportText } from '#src/recap/render/eval.ts';
 import type { Style } from '#src/recap/render/wrap.ts';
 import { answerOf, candidatesOf, labelVerdicts } from '../../eval-label.ts';
 import type { Candidate } from '../../eval-label.ts';
@@ -48,12 +48,12 @@ async function sample(options: EvalRequest, deps: EvalDeps): Promise<number> {
     let done = 0;
     const results = await judgeRuns(judging, runs, () => { done += 1; deps.err(`judged ${done}/${runs.length}`); });
     const report = reportOf(judge.label, results);
-    deps.out(options.json === 'present' ? JSON.stringify({ ...report, missingInput: missing }) : reportLines(report, deps.style, missing).join('\n'));
+    deps.out(options.json === 'present' ? JSON.stringify({ ...report, missingInput: missing }) : reportText(report, deps.style, must(parseCount(missing))).join('\n'));
     return results.length > 0 && results.every((result) => result.kind === 'not-judged') ? 1 : 0;
 }
 
 async function labelOne(candidate: Candidate, position: string, deps: EvalDeps, check: Text | null): Promise<boolean> {
-    deps.out(candidateLines(candidate, position, deps.style).join('\n'));
+    deps.out(candidateText(candidate, must(parseText(position)), deps.style).join('\n'));
     for (;;) {
         const line = await deps.ask(check === null ? 'ok / fail [I1…I7 S-section …] / skip / quit > ' : `${check}: ok / fail / skip / quit > `);
         const answer = line === null ? { kind: 'quit' } as const : answerOf(must(parseText(line)), candidate.section, check);

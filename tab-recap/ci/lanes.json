@@ -579,7 +579,6 @@
       "src/recap/render/freshness.ts",
       "src/recap/render/handoff-budget.ts",
       "src/recap/render/handoff-markdown.ts",
-      "src/recap/render/legacy.ts",
       "src/recap/render/restore-markdown.ts",
       "src/recap/render/setup.ts",
       "src/recap/render/utc-minute.ts",
