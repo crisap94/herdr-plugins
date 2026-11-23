@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
 import assert from 'node:assert/strict';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { Informer } from '#src/recap/application/informer.ts';
@@ -146,7 +147,7 @@ test('informer: a slow snapshot that predates the open is stamped with when it w
         },
         onBlind: (): void => undefined, onUnknownKind: (): void => undefined, onBeat: (): void => undefined,
         sessionIdentity: sessionOfForKind,
-    }, { retryBaseMs: 10, retryMaxMs: 40, resyncDebounceMs: 5 });
+    }, { retryBaseMs: uncheckedMilliseconds(10), retryMaxMs: uncheckedMilliseconds(40), resyncDebounceMs: uncheckedMilliseconds(5) });
     try {
         await informer.enterSubscription();
         const slow = informer.reconcile();

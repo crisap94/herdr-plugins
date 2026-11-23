@@ -38,11 +38,6 @@
     "container": 1,
     "property": 2
   },
-  "src/recap/application/informer.ts": {
-    "parameter": 3,
-    "return": 1,
-    "property": 5
-  },
   "src/recap/application/input-retention.ts": {
     "return": 3,
     "property": 1

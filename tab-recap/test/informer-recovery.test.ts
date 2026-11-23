@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
 import assert from 'node:assert/strict';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { Informer } from '#src/recap/application/informer.ts';
@@ -51,7 +52,7 @@ test('a pane that died while we were not told must not blind the daemon for good
         onUnknownKind: (): void => undefined,
         onBeat: (): void => undefined,
         sessionIdentity: sessionOfForKind,
-    }, { retryBaseMs: 10, retryMaxMs: 40 });
+    }, { retryBaseMs: uncheckedMilliseconds(10), retryMaxMs: uncheckedMilliseconds(40) });
     await informer.enterSubscription();
     void informer.run();
     await until(() => watchSet(informer.current).length === 1 && herdr.acked >= 2);
@@ -80,7 +81,7 @@ test('with herdr unreachable the retries back off instead of hammering', async (
         onUnknownKind: (): void => undefined,
         onBeat: (): void => undefined,
         sessionIdentity: sessionOfForKind,
-    }, { retryBaseMs: 20, retryMaxMs: 80 });
+    }, { retryBaseMs: uncheckedMilliseconds(20), retryMaxMs: uncheckedMilliseconds(80) });
     await informer.enterSubscription();
     await new Promise((resolve) => { setTimeout(resolve, 400); });
     informer.stop();
