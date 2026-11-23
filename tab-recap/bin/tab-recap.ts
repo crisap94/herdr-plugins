@@ -73,11 +73,13 @@ function stop(): number {
     return OK;
 }
 
+const fieldOf = (parsed: unknown, key: string): unknown => (typeof parsed === 'object' && parsed !== null ? Reflect.get(parsed, key) : undefined);
+
 function currentPane(): string | null {
     const context = process.env['HERDR_PLUGIN_CONTEXT_JSON'];
     try {
-        const parsed = JSON.parse(context ?? '{}') as { pane_id?: unknown; focused_pane_id?: unknown };
-        const found = parsed.pane_id ?? parsed.focused_pane_id;
+        const parsed: unknown = JSON.parse(context ?? '{}');
+        const found = fieldOf(parsed, 'pane_id') ?? fieldOf(parsed, 'focused_pane_id');
         return typeof found === 'string' && found !== '' ? found : (process.env['HERDR_PANE_ID'] ?? null);
     } catch {
         return process.env['HERDR_PANE_ID'] ?? null;
@@ -88,8 +90,8 @@ function currentTab(): string | null {
     const context = process.env['HERDR_PLUGIN_CONTEXT_JSON'];
     if (context !== undefined && context !== '') {
         try {
-            const parsed = JSON.parse(context) as { tab_id?: unknown; focused_tab_id?: unknown };
-            const found = parsed.tab_id ?? parsed.focused_tab_id;
+            const parsed: unknown = JSON.parse(context);
+            const found = fieldOf(parsed, 'tab_id') ?? fieldOf(parsed, 'focused_tab_id');
             if (typeof found === 'string' && found !== '') {
                 return found;
             }

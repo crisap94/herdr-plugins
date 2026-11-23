@@ -100,7 +100,7 @@ and `src/adapters/db/schema/migration.ts`) and the 12 files of lane `VIEW` (the 
 
 - [ ] 5.1 Move every remaining caller off the legacy exports and delete every `legacy.ts`. Verify: no `legacy.ts` exists under
       `src/`, no exported function throws `NotAnIdentifierError`, and the test suite passes.
-- [ ] 5.2 Move `recap-one-brand-cast` from `rules/pending/` into `rules/` and delete `ci/domain-types-baseline/`; the check and the
+- [x] 5.2 Move `recap-one-brand-cast` from `rules/pending/` into `rules/` and delete `ci/domain-types-baseline/`; the check and the
       rule now fail on any finding. Verify: a probe adding one primitive parameter, and one adding `as PaneId`, each fail
       `ci/lint.sh`. If `ENG.json`, `STO.json` or `VIEW.json` still has rows, those files stay; the folder is deleted by the step
       that empties the last of them.

@@ -46,7 +46,9 @@ export async function labelBriefs(dir: string, runtime: HarnessRuntime): Promise
     const labeller = new Labeller(runtime, countOf(6), log);
     await pooledBy(todo, must(parseCount(6)), async (point, _index, lane) => {
         const began = Date.now();
-        const written = await (writers[lane] as HarnessBrief).write(textOf(documentOf(point)));
+        const writer = writers[lane];
+        if (writer === undefined) throw new Error(`autocompact-briefs: no writer for lane ${lane}`);
+        const written = await writer.write(textOf(documentOf(point)));
         if (isUnknown(written)) { log(`${point.id.slice(0, 8)}: no brief (${saying(written.why)})`); return; }
         const facts = checkedFactsOf(point.history);
         const asked = facts.map((fact, n) => ({ n, ...fact }));

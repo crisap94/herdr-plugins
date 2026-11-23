@@ -185,7 +185,7 @@ function jobsThatRun(env: Env, files: readonly string[], present: Present = onDi
         .toSorted();
 }
 
-const MERGE_REQUEST_JOBS: readonly string[] = ['domain-baseline', 'merge-request-notes', 'track-scope'];
+const MERGE_REQUEST_JOBS: readonly string[] = ['merge-request-notes', 'track-scope'];
 const CHECKED_JOBS: ReadonlySet<string> = new Set([...UNIT_JOBS, 'install-smoke', 'track-scope', 'lane-scope', 'domain-baseline', 'merge-request-notes']);
 
 function checked(env: Env, files: readonly string[], present: Present = onDisk): readonly string[] {
@@ -286,8 +286,9 @@ test('path rules 11: with the baseline folder and lane map gone, domain-baseline
     );
 });
 
-test('the glob guard matches the folder on disk today', () => {
-    assert.equal(onDisk('tab-recap/ci/domain-types-baseline/*.json'), true);
+test('the glob guard no longer matches the baseline folder, which is gone, and still matches a folder that exists', () => {
+    assert.equal(onDisk('tab-recap/ci/domain-types-baseline/*.json'), false);
+    assert.equal(onDisk('tab-recap/ci/domain-types-exceptions/*.json'), true);
     assert.equal(onDisk('tab-recap/ci/no-such-folder/*.json'), false);
 });
 

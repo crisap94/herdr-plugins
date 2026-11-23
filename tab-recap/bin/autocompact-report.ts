@@ -13,7 +13,7 @@ import { tableOf } from '#src/experiment/report-render.ts';
 import type { Cell } from '#src/experiment/report-render.ts';
 import { codeAgreement } from '#src/experiment/report-code.ts';
 import { choose } from '#src/experiment/report-rule.ts';
-import { present } from '#src/experiment/stats.ts';
+import { countMean, present } from '#src/experiment/stats.ts';
 import type { Label } from '#src/experiment/stats.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
@@ -26,7 +26,7 @@ const asText = (value: string): Text => must(parseText(value));
 const IDS = [...QUESTIONS.keys()];
 const COVERAGE: readonly BriefQuestion[] = ['brief_keeps_fact', 'brief_keeps_reason'];
 
-interface BriefRow { readonly id: string; readonly facts: readonly { readonly n: number; readonly why: string | null }[]; readonly labels: Readonly<Record<string, { readonly keeps: Label; readonly reason?: Label }>> }
+interface BriefRow { readonly id: string; readonly labels: Readonly<Record<string, { readonly keeps: Label; readonly reason?: Label }>> }
 
 interface AnswerRecord {
     readonly key: string;
@@ -39,6 +39,57 @@ interface AnswerRecord {
 }
 
 interface BoundaryRecord { readonly point_id: string | null; readonly reReads: number; readonly restated: boolean; readonly followed: boolean }
+
+const fieldOf = (row: unknown, key: string): unknown => Reflect.get(Object(row), key);
+const bad = (what: string): Error => new Error(`autocompact-report: a ${what} row does not have the expected shape`);
+const entriesOf = (value: unknown, what: string): readonly (readonly [string, unknown])[] => {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) throw bad(what);
+    return Object.keys(value).map((key): readonly [string, unknown] => [key, Reflect.get(value, key)]);
+};
+const optional = <T>(value: unknown, what: string, is: (found: unknown) => found is T): T | undefined => {
+    if (value === undefined) return undefined;
+    if (!is(value)) throw bad(what);
+    return value;
+};
+const isNumber = (value: unknown): value is number => typeof value === 'number';
+const isString = (value: unknown): value is string => typeof value === 'string';
+const isKind = (value: unknown): value is AnswerKind => value === 'point' || value === 'fact' || value === 'brief';
+const isLabel = (value: unknown): value is Label => value === 0 || value === 1;
+
+function answerRecordOf(line: string): AnswerRecord {
+    const row: unknown = JSON.parse(line);
+    const [key, kind, answers] = [fieldOf(row, 'key'), fieldOf(row, 'kind'), fieldOf(row, 'answers')];
+    if (!isString(key) || !isKind(kind)) throw bad('answer');
+    const [tokens, costUsd, tookMs, unknown] = [optional(fieldOf(row, 'tokens'), 'answer', isNumber), optional(fieldOf(row, 'costUsd'), 'answer', isNumber), optional(fieldOf(row, 'tookMs'), 'answer', isNumber), optional(fieldOf(row, 'unknown'), 'answer', isString)];
+    return {
+        key, kind,
+        ...(answers === undefined ? {} : { answers: Object.fromEntries(entriesOf(answers, 'answer').flatMap(([id, value]) => (isNumber(value) ? [[id, value] as const] : []))) }),
+        ...(tokens === undefined ? {} : { tokens }),
+        ...(costUsd === undefined ? {} : { costUsd }),
+        ...(tookMs === undefined ? {} : { tookMs }),
+        ...(unknown === undefined ? {} : { unknown }),
+    };
+}
+
+
+function boundaryRecordOf(line: string): BoundaryRecord {
+    const row: unknown = JSON.parse(line);
+    const [pointId, reReads] = [fieldOf(row, 'point_id'), fieldOf(row, 'reReads')];
+    if ((pointId !== null && !isString(pointId)) || !isNumber(reReads)) throw bad('boundary');
+    return { point_id: pointId, reReads, restated: Boolean(fieldOf(row, 'restated')), followed: Boolean(fieldOf(row, 'followed')) };
+}
+
+function briefRowOf(line: string): BriefRow {
+    const row: unknown = JSON.parse(line);
+    const id = fieldOf(row, 'id');
+    if (!isString(id)) throw bad('brief');
+    const labels = Object.fromEntries(entriesOf(fieldOf(row, 'labels'), 'brief').map(([n, label]): readonly [string, { readonly keeps: Label; readonly reason?: Label }] => {
+        const [keeps, reason] = [fieldOf(label, 'keeps'), optional(fieldOf(label, 'reason'), 'brief', isLabel)];
+        if (!isLabel(keeps)) throw bad('brief');
+        return [n, reason === undefined ? { keeps } : { keeps, reason }];
+    }));
+    return { id, labels };
+}
 
 const scoresOf = (answers: Readonly<Record<string, number>>): ReadonlyMap<Text, Probability> =>
     new Map(Object.entries(answers).flatMap(([id, value]) => { const score = parseProbability(value); return score === null ? [] : [[textOf(id), score] as const]; }));
@@ -54,15 +105,15 @@ function answerOf(row: AnswerRecord): ScoredAnswer {
     };
 }
 
-const readAnswers = (path: Text): readonly ScoredAnswer[] => jsonLines(path).map((line) => JSON.parse(line) as AnswerRecord).map(answerOf);
+const readAnswers = (path: Text): readonly ScoredAnswer[] => jsonLines(path).map(answerRecordOf).map(answerOf);
 
-const readBoundaries = (path: Text): readonly Boundary[] => jsonLines(path).map((line) => JSON.parse(line) as BoundaryRecord).map((row): Boundary => ({
+const readBoundaries = (path: Text): readonly Boundary[] => jsonLines(path).map(boundaryRecordOf).map((row): Boundary => ({
     pointId: row.point_id === null ? null : textOf(row.point_id), reReads: must(parseCount(row.reReads)), restated: row.restated ? 'yes' : 'no', followed: row.followed ? 'yes' : 'no',
 }));
 
 const mean = (values: readonly number[]): number => (values.length === 0 ? Number.NaN : values.reduce((sum, value) => sum + value, 0) / values.length);
 const num = (value: number | null): number => value ?? Number.NaN;
-const shown = (value: number): Cell => (Number.isNaN(value) ? null : (value as Probability));
+const shown = (value: number): Cell => (Number.isNaN(value) ? null : parseProbability(value));
 const count = (value: number): Cell => must(parseCount(value));
 const maybeProbability = (raw: number): Probability | null => (Number.isNaN(raw) ? null : present(parseProbability(raw)));
 const keeping = (keep: (key: Text) => boolean): KeyFilter => (key) => (keep(key) ? 'keep' : 'drop');
@@ -76,7 +127,7 @@ const coverageLabel = (label: { readonly keeps: Label; readonly reason?: Label }
     new Map<Text, Label>(label.reason === undefined ? [[asText('brief_keeps_fact'), label.keeps]] : [[asText('brief_keeps_fact'), label.keeps], [asText('brief_keeps_reason'), label.reason]]);
 
 function briefLabels(dir: string): Labels {
-    const rows = existsSync(join(dir, 'briefs.jsonl')) ? jsonLines(asText(join(dir, 'briefs.jsonl'))).map((line) => JSON.parse(line) as BriefRow) : [];
+    const rows = existsSync(join(dir, 'briefs.jsonl')) ? jsonLines(asText(join(dir, 'briefs.jsonl'))).map(briefRowOf) : [];
     return new Map(rows.flatMap((row) => Object.entries(row.labels).map(([n, label]) => [textOf(`${row.id}#${n}`), coverageLabel(label)] as const)));
 }
 
@@ -106,7 +157,7 @@ export function main(dir: string): string {
     const boundaries = existsSync(join(dir, 'outcomes.jsonl')) ? readBoundaries(asText(join(dir, 'outcomes.jsonl'))) : [];
     const policy = Object.entries(arms).map(([arm, reps]) => {
         const [all, above] = [reps.map((rep) => policyScore(rep, labels, keeping(() => true))), reps.map((rep) => policyScore(rep, labels, keeping((key) => high.has(key))))];
-        return { arm, all: { precision: mean(all.map((m) => num(m.precision))), recall: mean(all.map((m) => num(m.recall))), compact: mean(all.map((m) => m.compact)), safe: all[0]?.safe ?? 0 }, above: { precision: mean(above.map((m) => num(m.precision))), recall: mean(above.map((m) => num(m.recall))) } };
+        return { arm, all: { precision: mean(all.map((m) => num(m.precision))), recall: mean(all.map((m) => num(m.recall))), compact: countMean(all.map((m) => m.compact)), safe: all[0]?.safe ?? 0 }, above: { precision: mean(above.map((m) => num(m.precision))), recall: mean(above.map((m) => num(m.recall))) } };
     });
     const scores = policy.map(({ arm, all }) => ({
         arm, precision: all.precision, drift: mean(IDS.map((id) => num(driftOf(arms[arm] ?? [], id)))), needsOnlyRecapHarness: arm !== 'jev',
@@ -118,7 +169,7 @@ export function main(dir: string): string {
         `## Labels\n\n${points.length} points, ${labels.size} labelled, ${high.size} at or above the minimum; positives per question: ${IDS.map((id) => `${id} ${[...labels.values()].filter((l) => l.get(id) === 1).length}`).join(' · ')}; labelled safe (verdict compact): ${policy[0]?.all.safe ?? 0}.`,
         `## Operator kappa\n\n${operator.length === 0 ? 'Operator labels are pending: no question is gated by kappa yet.' : table(['question', 'n', 'kappa', 'usable (≥ 0.6)'], kappaScores(operator, readLabelled(asText(join(dir, 'labels.jsonl'))), IDS).map((row) => [row.question, row.n, row.kappa, asText(row.usable === 'usable' ? 'yes' : 'no')]))}`,
         `## Per arm and question (both repetitions)\n\n${questionTable(arms, labels, briefs)}`,
-        `## Per policy (mean of the repetitions)\n\n${table(['arm', 'precision (all)', 'recall (all)', 'compact verdicts', 'precision (share ≥ 40)', 'recall (share ≥ 40)', 'drift (mean of 6)', 'coverage AUC'], policy.map(({ arm, all, above }, i) => [asText(arm), shown(all.precision), shown(all.recall), shown(all.compact), shown(above.precision), shown(above.recall), shown(scores[i]?.drift ?? Number.NaN), shown(scores[i]?.coverageAuc ?? Number.NaN)]))}`,
+        `## Per policy (mean of the repetitions)\n\n${table(['arm', 'precision (all)', 'recall (all)', 'compact verdicts', 'precision (share ≥ 40)', 'recall (share ≥ 40)', 'drift (mean of 6)', 'coverage AUC'], policy.map(({ arm, all, above }, i) => [asText(arm), shown(all.precision), shown(all.recall), all.compact, shown(above.precision), shown(above.recall), shown(scores[i]?.drift ?? Number.NaN), shown(scores[i]?.coverageAuc ?? Number.NaN)]))}`,
         `## Outcome set (${boundaries.filter((row) => row.pointId !== null).length} compactions with a stored run before them, ${boundaries.filter((row) => row.pointId !== null && row.followed === 'yes').length} with something after)\n\n${table(['arm', 'allowed n', 'allowed re-reads', 'allowed restated', 'blocked n', 'blocked re-reads', 'blocked restated'], Object.entries(arms).map(([arm, reps]) => { const gap = gapOf(boundaries, reps); return [asText(arm), gap.allowed.n, gap.allowed.reReads, gap.allowed.restated, gap.blocked.n, gap.blocked.reReads, gap.blocked.restated]; }))}`,
         `## needs_verbatim against the code cross-check as labels\n\n${table(['arm', 'positives', 'AUC', 'Brier'], Object.entries(arms).map(([arm, reps]) => { const m = codeAgreement(points, reps); return [asText(arm), m.positives, m.auc, m.brier]; }))}`,
         `## Rule\n\nDefault decider: **${decision.defaultArm ?? 'none (stay on `recap`)'}**. Coverage decider: **${decision.coverageArm ?? 'none'}**.\n\n${decision.why}`,
@@ -126,13 +177,15 @@ export function main(dir: string): string {
     return sections.join('\n\n');
 }
 
-const at = process.argv.indexOf('--dir');
-const dir = at < 0 ? undefined : process.argv[at + 1];
-if (dir === undefined) {
-    console.error('usage: autocompact-report.ts --dir <exp002 dir>');
-    process.exitCode = 2;
-} else {
-    const text = main(dir);
-    writeFileSync(join(dir, 'report.md'), `${text}\n`);
-    console.log(text);
+if (import.meta.main) {
+    const at = process.argv.indexOf('--dir');
+    const dir = at < 0 ? undefined : process.argv[at + 1];
+    if (dir === undefined) {
+        console.error('usage: autocompact-report.ts --dir <exp002 dir>');
+        process.exitCode = 2;
+    } else {
+        const text = main(dir);
+        writeFileSync(join(dir, 'report.md'), `${text}\n`);
+        console.log(text);
+    }
 }

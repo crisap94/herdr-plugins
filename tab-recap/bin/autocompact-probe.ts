@@ -28,9 +28,17 @@ interface Job { readonly key: string; readonly kind: 'point' | 'brief'; readonly
 
 interface BriefRow { readonly id: string; readonly brief: string; readonly facts: readonly unknown[] }
 
+function briefRowOf(line: string): BriefRow {
+    const parsed: unknown = JSON.parse(line);
+    const fieldOf = (key: string): unknown => Reflect.get(Object(parsed), key);
+    const [id, brief, facts] = [fieldOf('id'), fieldOf('brief'), fieldOf('facts')];
+    if (typeof id !== 'string' || typeof brief !== 'string' || !Array.isArray(facts)) throw new Error('autocompact-probe: a briefs.jsonl row has no id, brief and facts');
+    return { id, brief, facts };
+}
+
 export function jobsOf(dir: string): readonly Job[] {
     const points = [...readPoints(asText(join(dir, 'corpus.jsonl'))), ...readPoints(asText(join(dir, 'outcome-points.jsonl')))];
-    const briefs = jsonLines(asText(join(dir, 'briefs.jsonl'))).map((line) => JSON.parse(line) as BriefRow);
+    const briefs = jsonLines(asText(join(dir, 'briefs.jsonl'))).map(briefRowOf);
     return [
         ...points.map((point): Job => ({ key: point.id, kind: 'point', state: must(parseText(JSON.stringify(point.state))), questions: QUESTIONS })),
         ...briefs.map((row): Job => ({ key: row.id, kind: 'brief', state: must(parseText(JSON.stringify({ brief: row.brief, facts: row.facts }))), questions: questionsOf(row.facts.flatMap((fact): CheckedFact[] => { const checked = parseCheckedFact(fact); return checked === null ? [] : [checked]; })) })),
@@ -61,7 +69,9 @@ async function main(): Promise<void> {
     const deciders = Array.from({ length: CONCURRENCY }, () => deciderOf(arm, runtime));
     let finished = 0;
     await pooledBy(todo, must(parseCount(CONCURRENCY)), async (job, _index, lane) => {
-        const { answer, attempts } = await ask(deciders[lane] as DeciderPort, job, log);
+        const decider = deciders[lane];
+        if (decider === undefined) throw new Error(`autocompact-probe: no decider for lane ${lane}`);
+        const { answer, attempts } = await ask(decider, job, log);
         if (answer.kind === 'decided') appendJsonl(asFsPath(file), { key: job.key, kind: job.kind, answers: answer.answers, tokens: answer.tokens, costUsd: answer.costUsd, tookMs: answer.tookMs, model: answer.model, attempts });
         else appendJsonl(asFsPath(file), { key: job.key, kind: job.kind, unknown: saying(answer.why), attempts });
         finished += 1;
