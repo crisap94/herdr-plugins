@@ -2,13 +2,14 @@ import type { SeenColumn } from '#src/recap/domain/fold.ts';
 import type { DeadColumn } from '#src/recap/domain/dead-columns.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
-import { parsePaneId, parseTabId, type PaneId } from '#src/recap/domain/ids.ts';
+import { parsePaneId, parseTabId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import type { JsonObject } from './json-object.ts';
 
 export type AgentPaneSet = ReadonlySet<PaneId>;
 export type OptionalPaneId = PaneId | null;
 export type OptionalText = Text | null;
+export type OptionalTabId = TabId | null;
 
 export const COLUMN_TITLE = 'tab-recap';
 export const BAR_TITLE = 'tab-recap:bar';
@@ -22,6 +23,11 @@ export function parseOptionalText(input: unknown): OptionalText {
 
 export function parseOptionalPaneId(input: unknown): OptionalPaneId {
     const found = parsePaneId(input);
+    return found.kind === 'ok' ? found.value : null;
+}
+
+export function parseOptionalTabId(input: unknown): OptionalTabId {
+    const found = parseTabId(input);
     return found.kind === 'ok' ? found.value : null;
 }
 
@@ -39,7 +45,7 @@ const columnShape = (title: OptionalText, label: OptionalText, agent: OptionalTe
         ? titleShape(title)
         : null;
 
-export function columnsIn(panes: readonly JsonObject[], agentPanes: ReadonlySet<string>): readonly SeenColumn[] {
+export function columnsIn(panes: readonly JsonObject[], agentPanes: AgentPaneSet): readonly SeenColumn[] {
     return panes.flatMap((pane): readonly SeenColumn[] => {
         const paneId = parseOptionalPaneId(pane['pane_id']);
         const shape = columnShape(parseOptionalText(pane['terminal_title_stripped']), parseOptionalText(pane['label']), parseOptionalText(pane['agent']));

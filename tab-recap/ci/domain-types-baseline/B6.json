@@ -6,20 +6,8 @@
     "container": 1,
     "return": 1
   },
-  "src/adapters/herdr/column-panes.ts": {
-    "container": 1
-  },
-  "src/adapters/herdr/fleet.ts": {
-    "parameter": 1,
-    "container": 2
-  },
   "src/adapters/os/terminal-style.ts": {
     "parameter": 1,
     "return": 1
-  },
-  "src/adapters/transcripts/context-values.ts": {
-    "parameter": 1,
-    "return": 1,
-    "container": 1
   }
 }

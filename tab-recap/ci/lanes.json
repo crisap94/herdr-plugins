@@ -829,7 +829,6 @@
       "src/adapters/transcripts/codex/marks.ts",
       "src/adapters/transcripts/codex/tool-calls.ts",
       "src/adapters/transcripts/codex/transcripts.ts",
-      "src/adapters/transcripts/context-values.ts",
       "src/adapters/transcripts/in-flight.ts",
       "src/adapters/transcripts/jsonl.ts",
       "src/adapters/transcripts/opencode/context.ts",
