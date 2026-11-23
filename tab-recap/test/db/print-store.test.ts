@@ -13,7 +13,7 @@ import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { closedDaysOf as closedLaneDaysOf } from '../fakes/closed-days.ts';
 import { scratchDir } from './support.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseFsPath } from '#src/recap/domain/fs-path.ts';
+import { parseFsPath, fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { tabId, paneId } from '#test/support/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
@@ -35,7 +35,7 @@ test('print reads a database not yet upgraded to the handoff tables, and writes 
     const dir = scratchDir('print-store');
     try {
         const path = join(dir, 'tab-recap.db');
-        const seeded = openDatabase(path, MIGRATIONS.slice(0, BEFORE_HANDOFF));
+        const seeded = openDatabase(fsPathOf(path), MIGRATIONS.slice(0, BEFORE_HANDOFF));
         assert.equal(seeded.kind, 'ready');
         const at = 1_000;
         new RecapRecordsRepository(seeded.db).recordRun({ tab: tabId('w1:t1'), at: instant(at), cause: 'focused', backend: null, language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [], tasks: [], changed: [], refused: [] });

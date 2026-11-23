@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { migrate } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { parsePaneAlertRow } from '#src/adapters/db/pane-alerts.ts';
 import { parsePaneNoteRow } from '#src/adapters/db/pane-notes.ts';
 import { parseAlertSource } from '#src/recap/domain/pane-alert.ts';
@@ -25,7 +26,7 @@ const count = (n: number): Count => must(parseCount(n));
 const status = (root: string, tracked: number, untracked: number | null): WorktreeStatus => ({ root: dir(root), branch: must(parseText('main')), ahead: count(1), tracked: count(tracked), untracked: untracked === null ? null : count(untracked), at: instant(5) });
 
 test('migration 20 adds the four tables to a v19 store and keeps what was there', () => {
-    const old = openDatabase(MEMORY, MIGRATIONS.slice(0, 19));
+    const old = openDatabase(fsPathOf(MEMORY), MIGRATIONS.slice(0, 19));
     assert.equal(old.kind, 'ready');
     old.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 2)");
     migrate(old.db);

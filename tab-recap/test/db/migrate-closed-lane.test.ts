@@ -7,6 +7,7 @@ import { backupsOf } from '#src/adapters/db/backup.ts';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { versionOf } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { scratchDir, shapeOf } from './support.ts';
@@ -14,7 +15,7 @@ import { scratchDir, shapeOf } from './support.ts';
 const BEFORE = 18;
 
 const freshDb = (): Database => {
-    const opened = openDatabase(MEMORY);
+    const opened = openDatabase(fsPathOf(MEMORY));
     if (opened.kind !== 'ready') {
         throw new Error('a fresh in-memory database is never newer');
     }
@@ -50,14 +51,14 @@ test('migration 19 from the previous version keeps every lane and request row, l
     const dir = scratchDir('closed-lane-upgrade');
     try {
         const path = join(dir, 'tab-recap.db');
-        const old = openDatabase(path, MIGRATIONS.slice(0, BEFORE));
+        const old = openDatabase(fsPathOf(path), MIGRATIONS.slice(0, BEFORE));
         assert.equal(old.kind, 'ready');
         old.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)");
         old.db.exec("INSERT INTO lane (tab_id, pane, position, agent, status) VALUES ('w1:t1', 'w1:p1', 0, 'claude', 'idle')");
         old.db.exec("INSERT INTO request (id, at, kind, target, hidden, pane, note, origin, answer, to_pane, refresh_first) VALUES (X'0190a0b1c2d3e4f5a6b7c8d9e0f1a2b4', 2, 'handoff', 'w1:t1', NULL, 'w1:p1', NULL, 'operator', NULL, 'w1:p2', 0)");
         old.db.close();
 
-        const opened = openDatabase(path);
+        const opened = openDatabase(fsPathOf(path));
         assert.equal(opened.kind, 'ready');
         const { db } = opened;
         assert.equal(versionOf(db), MIGRATIONS.length);

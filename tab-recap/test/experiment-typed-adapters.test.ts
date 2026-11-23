@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { appendJsonl, doneKeys, readJsonl } from '#src/adapters/experiment/io.ts';
+import { appendJsonl, doneKeys, jsonLines } from '#src/adapters/experiment/io.ts';
 import { Labeller } from '#src/adapters/experiment/labeller.ts';
 import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
 import type { HarnessPort } from '#src/ports/harness.ts';
@@ -20,11 +20,11 @@ test('io: a missing file reads as empty; appended records round-trip and doneKey
     const dir = mkdtempSync(join(tmpdir(), 'exp1-io-'));
     try {
         const file = fsp(join(dir, 'rows.jsonl'));
-        assert.deepEqual(readJsonl(txt(file)), []);
+        assert.deepEqual(jsonLines(txt(file)), []);
         assert.deepEqual([...doneKeys(txt(file), txt('id'))], []);
         appendJsonl(file, { id: 'a', n: 1 });
         appendJsonl(file, { id: 'b' });
-        assert.deepEqual(readJsonl(txt(file)), [{ id: 'a', n: 1 }, { id: 'b' }]);
+        assert.deepEqual(jsonLines(txt(file)), ['{"id":"a","n":1}', '{"id":"b"}']);
         assert.deepEqual([...doneKeys(txt(file), txt('id'))], ['a', 'b']);
     } finally {
         rmSync(dir, { recursive: true, force: true });

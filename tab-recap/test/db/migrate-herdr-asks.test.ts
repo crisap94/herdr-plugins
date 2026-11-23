@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { versionOf } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { storeOver } from '#src/adapters/db/database.ts';
 import { parseToolName } from '#src/protocol/primitives.ts';
@@ -23,12 +24,12 @@ test('migration 13 from a v12 database: an answer id on a compaction, asks remem
     const dir = scratchDir('v12');
     try {
         const path = join(dir, 'tab-recap.db');
-        const old = openDatabase(path, MIGRATIONS.slice(0, 12));
+        const old = openDatabase(fsPathOf(path), MIGRATIONS.slice(0, 12));
         assert.equal(old.kind, 'ready');
         old.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 2)");
         old.db.exec("INSERT INTO compaction (id, tab_id, pane, agent, stage, started_at, stage_at, origin) VALUES (X'00000000000000000000000000000001', 'w1:t1', 'w1:p1', 'claude', 'compacting', 1, 2, 'request')");
         old.db.close();
-        const opened = openDatabase(path);
+        const opened = openDatabase(fsPathOf(path));
         assert.equal(opened.kind, 'ready');
         const { db } = opened;
         assert.equal(versionOf(db), MIGRATIONS.length);
@@ -48,7 +49,7 @@ test('migration 13 from a v12 database: an answer id on a compaction, asks remem
         store.requests.requestCompact({ tab: tabId('w1:t1'), pane: paneId('w1:p2'), note: null, origin: 'request', answer: textOf('r8') });
         assert.deepEqual(store.requests.takeAnswered(), [{ pane: 'w1:p2', answer: 'r8' }]);
         assert.deepEqual(store.requests.takeAnswered(), []);
-        assert.deepEqual(shapeOf(db), shapeOf(openDatabase(MEMORY).db), 'upgraded == fresh');
+        assert.deepEqual(shapeOf(db), shapeOf(openDatabase(fsPathOf(MEMORY)).db), 'upgraded == fresh');
         assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(), []);
     } finally {
         rmSync(dir, { recursive: true, force: true });

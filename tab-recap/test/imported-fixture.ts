@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { openDatabase } from '#src/adapters/db/open.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 
 export const MIN = 60_000;
 export const T0 = Date.parse('2026-10-04T21:00:00Z');
 
 export function liveDatabase(path: string): void {
-    const opened = openDatabase(path);
+    const opened = openDatabase(fsPathOf(path));
     assert.equal(opened.kind, 'ready');
     const { db } = opened;
     db.prepare('INSERT INTO tab (id, first_seen, last_seen) VALUES (?, 1, 1)').run('w1:t1');

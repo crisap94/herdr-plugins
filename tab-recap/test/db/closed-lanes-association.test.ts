@@ -6,6 +6,7 @@ import type { Database } from 'bun:sqlite';
 import { ClosedLanesRepository } from '#src/adapters/db/closed-lanes.ts';
 import { connectReadOnly, MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import type { ClosedLaneRead } from '#src/ports/closed-lanes.ts';
@@ -23,7 +24,7 @@ const FOURTEEN = closedLaneDaysOf('14');
 const NOW = instant(Date.parse('2026-10-11T12:00:00Z'));
 
 const freshDb = (): Database => {
-    const opened = openDatabase(MEMORY);
+    const opened = openDatabase(fsPathOf(MEMORY));
     if (opened.kind !== 'ready') {
         throw new Error('a fresh in-memory database is never newer');
     }
@@ -146,7 +147,7 @@ test('a read-only open of a database below the migration answers absent, an empt
     const dir = scratchDir('closed-lane-old-schema');
     try {
         const path = join(dir, 'tab-recap.db');
-        const old = openDatabase(path, MIGRATIONS.slice(0, BEFORE));
+        const old = openDatabase(fsPathOf(path), MIGRATIONS.slice(0, BEFORE));
         assert.equal(old.kind, 'ready');
         old.db.close();
         const readOnly = connectReadOnly(path);

@@ -8,7 +8,7 @@ import { backupsOf } from '#src/adapters/db/backup.ts';
 import { closeDatabase, connectReadOnly, MEMORY, writeTx } from '#src/adapters/db/connection.ts';
 import { openDatabase, openForRole, type Opened, type StaleDatabase } from '#src/adapters/db/open.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseFsPath } from '#src/recap/domain/fs-path.ts';
+import { parseFsPath, fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { versionOf } from '#src/adapters/db/migrate.ts';
 
 const handles = new WeakMap<ReadyResult, Database>();
@@ -52,7 +52,7 @@ const openedOver = (opened: Opened | StaleDatabase): OpenResult => {
 const pluginStore: StoreSubject = {
     name: 'plugin store',
     memory: MEMORY,
-    open: (path: string, history: MigrationHistory, role: Role): OpenResult => openedOver(role === 'owner' ? openDatabase(path, history) : openForRole(must(parseFsPath(path)), history, role)),
+    open: (path: string, history: MigrationHistory, role: Role): OpenResult => openedOver(role === 'owner' ? openDatabase(fsPathOf(path), history) : openForRole(must(parseFsPath(path)), history, role)),
     openReadOnly: (path: string): ReadOnlyResult => {
         const db = connectReadOnly(path);
         return {

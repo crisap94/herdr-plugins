@@ -60,9 +60,9 @@ test('colours: the setup screen takes the plain table too', () => {
     assert.ok(lines.every((line) => !line.includes(ESC)));
 });
 
-const nodeHasColors = Reflect.get(WriteStream.prototype, 'hasColors') as (this: unknown, env?: object) => boolean;
+const nodeHasColors = Reflect.get(WriteStream.prototype, 'hasColors') as (this: unknown, first?: number | object) => boolean;
 const nodeColorDepth = Reflect.get(WriteStream.prototype, 'getColorDepth') as unknown;
-const terminal = { hasColors: (env?: object): boolean => nodeHasColors.call({ getColorDepth: nodeColorDepth }, env) };
+const terminal = { hasColors: (first?: number | object): boolean => nodeHasColors.call({ getColorDepth: nodeColorDepth }, first) };
 const COLOUR_TERM = { TERM: 'xterm-256color' };
 
 test('colours: a colour terminal gets colours; NO_COLOR, FORCE_COLOR=0, NODE_DISABLE_COLORS and a non-terminal get none', () => {

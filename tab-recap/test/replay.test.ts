@@ -14,6 +14,7 @@ import { closeDatabase, connect } from '#src/adapters/db/connection.ts';
 import { storeOver } from '#src/adapters/db/database.ts';
 import { factsOfTabAt } from '#src/adapters/db/imported.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { scratchStore } from '#src/adapters/db/scratch.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
@@ -71,7 +72,7 @@ test('a 6-turn transcript: 6 extractor runs on the scratch ledger, each shown wh
     const live = scratchDir('replay-live');
     try {
         const path = join(live, 'tab-recap.db');
-        const opened = openDatabase(path);
+        const opened = openDatabase(fsPathOf(path));
         assert.equal(opened.kind, 'ready');
         closeDatabase(opened.db);
         const before = hash(path);

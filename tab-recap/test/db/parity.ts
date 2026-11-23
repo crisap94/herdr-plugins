@@ -5,6 +5,7 @@ import type { BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
 import { drizzle } from 'drizzle-orm/bun-sqlite';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { scratchDir } from './support.ts';
 
 export type ParityDatabase = { raw: Database; reader: Database; orm: BunSQLiteDatabase; close(): void };
@@ -13,7 +14,7 @@ export type ParityCheck = { raw: RawQuery; orm: (orm: BunSQLiteDatabase) => unkn
 
 export function parityDatabase(seed: (db: Database) => void): ParityDatabase {
     const path = join(scratchDir('parity'), 'parity.db');
-    const opened = openDatabase(path);
+    const opened = openDatabase(fsPathOf(path));
     if (opened.kind !== 'ready') {
         throw new Error('a fresh database file is never newer');
     }
@@ -75,7 +76,7 @@ export function expectSameRows(parity: ParityDatabase, raw: RawQuery, produced: 
 export type SameEffect = { seed: (db: Database) => void; raw: (db: Database) => void; builder: (db: Database) => void; dump: (db: Database) => unknown };
 
 function memoryDatabase(seed: (db: Database) => void): Database {
-    const opened = openDatabase(MEMORY);
+    const opened = openDatabase(fsPathOf(MEMORY));
     if (opened.kind !== 'ready') {
         throw new Error('a fresh in-memory database is never newer');
     }

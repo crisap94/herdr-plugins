@@ -5,6 +5,7 @@ import type { Database } from 'bun:sqlite';
 import { closeDatabase, MEMORY } from '#src/adapters/db/connection.ts';
 import { latestVersion } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import type { Migration } from '#src/adapters/db/schema/migration.ts';
 
@@ -68,7 +69,7 @@ function ownersOf(text: string): Owners {
 const OWNERS = ownersOf(readFileSync(new URL('table-owners.json', import.meta.url), 'utf8'));
 
 function opened(migrations: readonly Migration[]): Database {
-    const store = openDatabase(MEMORY, migrations);
+    const store = openDatabase(fsPathOf(MEMORY), migrations);
     if (store.kind !== 'ready') throw new Error('a fresh in-memory store is never newer');
     return store.db;
 }
