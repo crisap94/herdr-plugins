@@ -1,4 +1,4 @@
-import { parseText, textOf, type Text } from './text.ts';
+import { parseText, type Text } from './text.ts';
 import { must, type Result } from '#src/protocol/result.ts';
 import { instant, type Instant } from './time.ts';
 import type { ContextUse } from './compaction.ts';
@@ -7,11 +7,9 @@ import type { Origin } from './origin.ts';
 import { RUN_CAUSES, sessionFactsFrom, type AutocompactCounts, type RunCounts, type SessionFacts } from './session-facts.ts';
 import type { Shape } from './board.ts';
 import type { RestoredLane } from './closures.ts';
-import { NOTE } from './coordination.ts';
 import { STORY_TOO_LONG, STORY_WORDS, storyOf } from './curation.ts';
 import type { PaneId, TabId } from './ids.ts';
 import type { Lane, SeenLane } from './lane.ts';
-import { collapsedText } from './text-collapse.ts';
 
 export function numberIn(raw: string | undefined, min: number, max: number, whole = false): number | null {
     const text = (raw ?? '').trim().toLowerCase();
@@ -27,16 +25,6 @@ export interface HiddenState { readonly all: boolean; readonly hidden: readonly 
 export interface Board { readonly lanes: ReadonlyMap<PaneId, Lane>; readonly columns: ReadonlyMap<TabId, Placement>; readonly closing: ReadonlyMap<PaneId, Instant>; readonly opening: ReadonlySet<TabId>; readonly reopens: ReadonlyMap<TabId, readonly Instant[]>; readonly givenUp: ReadonlyMap<TabId, Instant>; readonly widths: ReadonlyMap<TabId, number>; readonly focused: TabId | null; readonly enabled: boolean; readonly seeded: boolean; readonly hidden: ReadonlySet<TabId>; readonly allHidden: boolean; readonly shown: ReadonlySet<TabId>; readonly persisted: readonly RestoredLane[] | null; }
 
 export function listsPane(board: Board, pane: PaneId): boolean { return board.lanes.has(pane); }
-
-export interface NoteToken { readonly label: string; readonly value: string; }
-
-export function notesOf(tokens: Readonly<Record<string, string>>): readonly NoteToken[] {
-    return Object.keys(tokens).toSorted().flatMap((name): NoteToken[] => {
-        const found = NOTE.exec(name);
-        const value = collapsedText(textOf(tokens[name] ?? ''), 'space');
-        return found === null || value === '' ? [] : [{ label: found[1] ?? 'note', value }];
-    });
-}
 
 import { isObject, verdictOf, type Merge } from './twins/curation/legacy.ts';
 

@@ -11,7 +11,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { bumped, NO_COUNTS, perfLine } from '#src/recap/domain/perf.ts';
 import { notesKey } from '#src/recap/domain/pane-notes.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
 import {
@@ -100,8 +100,8 @@ test('perf: counters bump one by one and the line carries window, counters, cpu 
 });
 
 test('notesKey: the same notes give the same key, a changed value another', () => {
-    const one = [{ label: 'note', value: 'a' }];
-    assert.equal(notesKey(one), notesKey([{ label: 'note', value: 'a' }]));
-    assert.notEqual(notesKey(one), notesKey([{ label: 'note', value: 'b' }]));
+    const one = [{ label: textOf('note'), value: textOf('a') }];
+    assert.equal(notesKey(one), notesKey([{ label: textOf('note'), value: textOf('a') }]));
+    assert.notEqual(notesKey(one), notesKey([{ label: textOf('note'), value: textOf('b') }]));
     assert.notEqual(notesKey([]), notesKey(one));
 });

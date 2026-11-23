@@ -17,7 +17,7 @@ test('awaiting: the first non-empty `awaiting` or `awaiting-<tool>` names what t
 });
 
 test('notes: `note-<tool>` is labelled with the tool, a bare `note` with `note`; empty and foreign tokens are not notes', () => {
-    assert.deepEqual(notesOf({ 'note-coordinator': 'waiting for review', note: 'hold', 'typing-coordinator': '5', 'tab-recap-api': '1', 'note-x': '' }), [
+    assert.deepEqual(notesOf(tokenEntries({ 'note-coordinator': 'waiting for review', note: 'hold', 'typing-coordinator': '5', 'tab-recap-api': '1', 'note-x': '' })), [
         { label: 'note', value: 'hold' },
         { label: 'coordinator', value: 'waiting for review' },
     ]);
@@ -42,8 +42,8 @@ test('an event value is `<seq>:<kind>[:<detail>]`, cut to 80 characters; the seq
 });
 
 test('notes are plain text: escapes, line breaks and tabs become spaces, runs of spaces collapse; a note that is only control characters is no note', () => {
-    assert.deepEqual(notesOf({ 'note-x': 'a\u001b[31mred\u001b[0m\nline\there' }), [{ label: 'x', value: 'a [31mred [0m line here' }]);
-    assert.deepEqual(notesOf({ 'note-x': '\u0007\u0008' }), []);
+    assert.deepEqual(notesOf(tokenEntries({ 'note-x': 'a\u001b[31mred\u001b[0m\nline\there' })), [{ label: 'x', value: 'a [31mred [0m line here' }]);
+    assert.deepEqual(notesOf(tokenEntries({ 'note-x': '\u0007\u0008' })), []);
 });
 
 test('an empty or non-positive foreign lease is no lease', () => {

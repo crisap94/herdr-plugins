@@ -15,7 +15,7 @@ import type { Count } from '#src/recap/domain/count.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import { paneId } from '#test/support/ids.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { WorktreeStatus } from '#src/recap/domain/worktree.ts';
 import { memoryStore } from './support.ts';
@@ -70,11 +70,11 @@ test('a row the database cannot make a status of is refused', () => {
 test('a pane\'s notes are replaced as a set, read by label, and forgotten', () => {
     const { paneNotes } = memoryStore();
     const pane = paneId('w1:p1');
-    paneNotes.replace(pane, [{ label: 'review', value: 'waiting' }, { label: 'note', value: 'hold' }]);
+    paneNotes.replace(pane, [{ label: textOf('review'), value: textOf('waiting') }, { label: textOf('note'), value: textOf('hold') }]);
     assert.deepEqual(paneNotes.notesOf(pane), [{ label: 'note', value: 'hold' }, { label: 'review', value: 'waiting' }]);
-    paneNotes.replace(pane, [{ label: 'note', value: 'go' }]);
+    paneNotes.replace(pane, [{ label: textOf('note'), value: textOf('go') }]);
     assert.deepEqual(paneNotes.notesOf(pane), [{ label: 'note', value: 'go' }]);
-    paneNotes.replace(paneId('w1:p2'), [{ label: 'note', value: 'other' }]);
+    paneNotes.replace(paneId('w1:p2'), [{ label: textOf('note'), value: textOf('other') }]);
     paneNotes.forget(pane);
     assert.deepEqual(paneNotes.notesOf(pane), []);
     assert.equal(paneNotes.notesOf(paneId('w1:p2')).length, 1);

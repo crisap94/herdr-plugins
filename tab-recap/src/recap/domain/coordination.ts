@@ -16,7 +16,17 @@ export function coordinationNamesOf(tokens: ReadonlyMap<Text, Text>): readonly T
     });
 }
 
-export type { NoteToken } from './legacy.ts';
-export { notesOf } from './legacy.ts';
+export interface NoteToken {
+    readonly label: Text;
+    readonly value: Text;
+}
+
+export function notesOf(tokens: ReadonlyMap<Text, Text>): readonly NoteToken[] {
+    return [...tokens.keys()].toSorted().flatMap((name): NoteToken[] => {
+        const found = NOTE.exec(name);
+        const value = plainText(tokens.get(name) ?? textOf(''));
+        return found === null || value === '' ? [] : [{ label: textOf(found[1] ?? 'note'), value }];
+    });
+}
 
 export function plainText(raw: Text): Text { return collapsedText(raw, 'space'); }
