@@ -2,7 +2,7 @@ import { join } from 'node:path';
 import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import { deciderOf, isArm } from '#src/adapters/experiment/arms.ts';
 import { readPoints } from '#src/adapters/experiment/data.ts';
-import { appendJsonl, doneKeys, readJsonl } from '#src/adapters/experiment/io.ts';
+import { appendJsonl, doneKeys, jsonLines } from '#src/adapters/experiment/io.ts';
 import type { DeciderPort, DecidedAnswersResult, Noul } from '#src/ports/decider.ts';
 import { saying } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
@@ -30,7 +30,7 @@ interface BriefRow { readonly id: string; readonly brief: string; readonly facts
 
 export function jobsOf(dir: string): readonly Job[] {
     const points = [...readPoints(asText(join(dir, 'corpus.jsonl'))), ...readPoints(asText(join(dir, 'outcome-points.jsonl')))];
-    const briefs = readJsonl(asText(join(dir, 'briefs.jsonl'))) as readonly BriefRow[];
+    const briefs = jsonLines(asText(join(dir, 'briefs.jsonl'))).map((line) => JSON.parse(line) as BriefRow);
     return [
         ...points.map((point): Job => ({ key: point.id, kind: 'point', state: must(parseText(JSON.stringify(point.state))), questions: QUESTIONS })),
         ...briefs.map((row): Job => ({ key: row.id, kind: 'brief', state: must(parseText(JSON.stringify({ brief: row.brief, facts: row.facts }))), questions: questionsOf(row.facts.flatMap((fact): CheckedFact[] => { const checked = parseCheckedFact(fact); return checked === null ? [] : [checked]; })) })),

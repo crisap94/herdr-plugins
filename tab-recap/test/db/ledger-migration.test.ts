@@ -9,6 +9,7 @@ import { connect } from '#src/adapters/db/connection.ts';
 import { storeOver } from '#src/adapters/db/database.ts';
 import { migrate, versionOf } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { scratchDir } from './support.ts';
@@ -51,7 +52,7 @@ test('a v5 database with real recaps migrates to v6: every tab\'s column is the 
     try {
         const path = join(dir, 'tab-recap.db');
         oldDatabase(path).close();
-        const opened = openDatabase(path);
+        const opened = openDatabase(fsPathOf(path));
         assert.equal(opened.kind, 'ready');
         assert.deepEqual(backupsOf(path).map((file) => file.split('.').slice(-2).join('.')), ['v5.bak']);
         assert.equal(versionOf(opened.db), MIGRATIONS.length);

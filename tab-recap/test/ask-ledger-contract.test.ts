@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { AskBookRepository } from '#src/adapters/db/ask-ledger.ts';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import type { AskBook } from '#src/ports/ask-ledger.ts';
 import { parseExchangeName, parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
@@ -14,7 +15,7 @@ import { paneId } from '#test/support/ids.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 
 const sqlite = (): AskBook => {
-    const opened = openDatabase(MEMORY);
+    const opened = openDatabase(fsPathOf(MEMORY));
     assert.equal(opened.kind, 'ready');
     return new AskBookRepository(opened.db);
 };
@@ -125,7 +126,7 @@ for (const [name, make] of implementations) {
 }
 
 test('SQLite: a row this build cannot read is left out of unfinished and logged, not dropped silently', () => {
-    const opened = openDatabase(MEMORY);
+    const opened = openDatabase(fsPathOf(MEMORY));
     assert.equal(opened.kind, 'ready');
     const logged: string[] = [];
     const ledger = new AskBookRepository(opened.db, (line: Text) => { logged.push(line); });
@@ -136,7 +137,7 @@ test('SQLite: a row this build cannot read is left out of unfinished and logged,
 });
 
 test('SQLite: a read that fails answers seen, so nothing is acted on that cannot be recorded, and lists no unfinished ask', () => {
-    const opened = openDatabase(MEMORY);
+    const opened = openDatabase(fsPathOf(MEMORY));
     assert.equal(opened.kind, 'ready');
     const ledger = new AskBookRepository(opened.db);
     opened.db.exec('DROP TABLE ask');

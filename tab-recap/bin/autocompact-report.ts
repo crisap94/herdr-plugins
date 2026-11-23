@@ -2,7 +2,7 @@ import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ARMS } from '#src/adapters/experiment/arms.ts';
 import { readLabelled, readPoints } from '#src/adapters/experiment/data.ts';
-import { readJsonl } from '#src/adapters/experiment/io.ts';
+import { jsonLines } from '#src/adapters/experiment/io.ts';
 import type { Boundary } from '#src/experiment/report-outcome.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
 import { kappaScores } from '#src/experiment/kappa-report.ts';
@@ -54,9 +54,9 @@ function answerOf(row: AnswerRecord): ScoredAnswer {
     };
 }
 
-const readAnswers = (path: Text): readonly ScoredAnswer[] => (readJsonl(path) as readonly AnswerRecord[]).map(answerOf);
+const readAnswers = (path: Text): readonly ScoredAnswer[] => jsonLines(path).map((line) => JSON.parse(line) as AnswerRecord).map(answerOf);
 
-const readBoundaries = (path: Text): readonly Boundary[] => (readJsonl(path) as readonly BoundaryRecord[]).map((row): Boundary => ({
+const readBoundaries = (path: Text): readonly Boundary[] => jsonLines(path).map((line) => JSON.parse(line) as BoundaryRecord).map((row): Boundary => ({
     pointId: row.point_id === null ? null : textOf(row.point_id), reReads: must(parseCount(row.reReads)), restated: row.restated ? 'yes' : 'no', followed: row.followed ? 'yes' : 'no',
 }));
 
@@ -76,7 +76,7 @@ const coverageLabel = (label: { readonly keeps: Label; readonly reason?: Label }
     new Map<Text, Label>(label.reason === undefined ? [[asText('brief_keeps_fact'), label.keeps]] : [[asText('brief_keeps_fact'), label.keeps], [asText('brief_keeps_reason'), label.reason]]);
 
 function briefLabels(dir: string): Labels {
-    const rows = existsSync(join(dir, 'briefs.jsonl')) ? (readJsonl(asText(join(dir, 'briefs.jsonl'))) as readonly BriefRow[]) : [];
+    const rows = existsSync(join(dir, 'briefs.jsonl')) ? jsonLines(asText(join(dir, 'briefs.jsonl'))).map((line) => JSON.parse(line) as BriefRow) : [];
     return new Map(rows.flatMap((row) => Object.entries(row.labels).map(([n, label]) => [textOf(`${row.id}#${n}`), coverageLabel(label)] as const)));
 }
 

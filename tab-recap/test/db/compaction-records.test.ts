@@ -6,6 +6,7 @@ import { backupsOf } from '#src/adapters/db/backup.ts';
 import { connect } from '#src/adapters/db/connection.ts';
 import { migrate, versionOf } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { memoryStore, newId, openFixture, scratchDir } from './support.ts';
 import { countOf } from '#src/recap/domain/count.ts';
@@ -33,7 +34,7 @@ test('migration 4 from a v3 database with data: backup tab-recap.db.v3.bak, rows
         old.exec("INSERT INTO request (id, at, kind, target) VALUES (x'01880000000070008000000000000001', 5, 'refresh', 'w1:t1')");
         assert.equal(versionOf(old), 3);
         old.close();
-        const opened = openDatabase(path);
+        const opened = openDatabase(fsPathOf(path));
         assert.equal(opened.kind, 'ready');
         assert.equal(versionOf(opened.db), MIGRATIONS.length);
         assert.deepEqual(backupsOf(path).map((file) => file.slice(path.length)), ['.v3.bak']);
@@ -136,7 +137,7 @@ test('records go with their tab, and a column reading while the daemon writes se
     const dir = scratchDir('compaction-wal');
     try {
         const path = join(dir, 'tab-recap.db');
-        const writer = openDatabase(path);
+        const writer = openDatabase(fsPathOf(path));
         if (writer.kind !== 'ready') { throw new Error('ready'); }
         writer.db.prepare("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 1)").run();
         assert.equal(connect(path).prepare('SELECT COUNT(*) AS n FROM compaction').get()?.['n'], 0);

@@ -1,13 +1,1 @@
-{
-  "src/adapters/experiment/data.ts": {
-    "assertion": 2
-  },
-  "src/adapters/experiment/io.ts": {
-    "container": 1,
-    "return": 1
-  },
-  "src/adapters/os/terminal-style.ts": {
-    "parameter": 1,
-    "return": 1
-  }
-}
+{}

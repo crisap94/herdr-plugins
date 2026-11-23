@@ -6,6 +6,7 @@ import type { Database } from 'bun:sqlite';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { versionOf } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { scratchDir } from './support.ts';
 
@@ -16,11 +17,11 @@ test('migration 11 from a v10 database: one skip per lane (replaced, not appende
     const dir = scratchDir('v10');
     try {
         const path = join(dir, 'tab-recap.db');
-        const old = openDatabase(path, MIGRATIONS.slice(0, 10));
+        const old = openDatabase(fsPathOf(path), MIGRATIONS.slice(0, 10));
         assert.equal(old.kind, 'ready');
         old.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 2)");
         old.db.close();
-        const opened = openDatabase(path);
+        const opened = openDatabase(fsPathOf(path));
         assert.equal(opened.kind, 'ready');
         const { db } = opened;
         assert.equal(versionOf(db), MIGRATIONS.length);
@@ -31,7 +32,7 @@ test('migration 11 from a v10 database: one skip per lane (replaced, not appende
         assert.throws(() => { db.exec("INSERT INTO autocompact_skip (tab_id, pane, agent, at, gate, share) VALUES ('w1:t1', 'w1:p3', 'claude', 1, 'busy', -1)"); }, /CHECK/);
         db.exec("DELETE FROM tab WHERE id = 'w1:t1'");
         assert.equal((db.prepare('SELECT COUNT(*) AS n FROM autocompact_skip').get() as { n: number }).n, 0, 'a forgotten tab takes its skips');
-        assert.deepEqual(shape(db), shape(openDatabase(MEMORY).db), 'upgraded == fresh');
+        assert.deepEqual(shape(db), shape(openDatabase(fsPathOf(MEMORY)).db), 'upgraded == fresh');
         assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(), []);
     } finally {
         rmSync(dir, { recursive: true, force: true });

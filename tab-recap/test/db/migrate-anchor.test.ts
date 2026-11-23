@@ -7,6 +7,7 @@ import { backupsOf } from '#src/adapters/db/backup.ts';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { versionOf } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { scratchDir } from './support.ts';
 
@@ -17,7 +18,7 @@ test('migration 9 from a v8 database with facts in it: they keep every column, g
     const dir = scratchDir('v8');
     try {
         const path = join(dir, 'tab-recap.db');
-        const old = openDatabase(path, MIGRATIONS.slice(0, 8));
+        const old = openDatabase(fsPathOf(path), MIGRATIONS.slice(0, 8));
         assert.equal(old.kind, 'ready');
         old.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 2)");
         old.db.exec("INSERT INTO chapter (id, tab_id, n, started_at) VALUES (x'00000000000000000000000000000001', 'w1:t1', 1, 1)");
@@ -25,7 +26,7 @@ test('migration 9 from a v8 database with facts in it: they keep every column, g
         old.db.exec("INSERT INTO task (id, tab_id, key) VALUES (x'00000000000000000000000000000003', 'w1:t1', 't1')");
         old.db.exec("INSERT INTO fact (id, tab_id, task_id, section, text, first_at, last_at, state, born_run, last_run, language) VALUES (x'00000000000000000000000000000004', 'w1:t1', x'00000000000000000000000000000003', 'done', 'Merged !256.', 5, 5, 'open', x'00000000000000000000000000000002', x'00000000000000000000000000000002', 'en')");
         old.db.close();
-        const opened = openDatabase(path);
+        const opened = openDatabase(fsPathOf(path));
         assert.equal(opened.kind, 'ready');
         assert.equal(versionOf(opened.db), MIGRATIONS.length);
         assert.deepEqual(backupsOf(path).map((name) => name.slice(-7)), ['.v8.bak']);
@@ -33,7 +34,7 @@ test('migration 9 from a v8 database with facts in it: they keep every column, g
         assert.deepEqual(opened.db.prepare('SELECT text, anchor FROM fact_readable').all().map((row) => Object.assign({}, row)), [{ text: 'Merged !256.', anchor: null }]);
         opened.db.exec("UPDATE fact SET anchor = 'the pipeline went green'");
         assert.throws(() => { opened.db.exec("UPDATE fact SET anchor = ''"); }, /CHECK/);
-        assert.deepEqual(shape(opened.db), shape(openDatabase(MEMORY).db), 'upgraded == fresh');
+        assert.deepEqual(shape(opened.db), shape(openDatabase(fsPathOf(MEMORY)).db), 'upgraded == fresh');
         assert.deepEqual(opened.db.prepare('PRAGMA foreign_key_check').all(), []);
     } finally {
         rmSync(dir, { recursive: true, force: true });

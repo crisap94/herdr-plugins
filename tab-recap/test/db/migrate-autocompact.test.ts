@@ -7,6 +7,7 @@ import { backupsOf } from '#src/adapters/db/backup.ts';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { versionOf } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { scratchDir } from './support.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -21,7 +22,7 @@ test('migration 10 from a v9 database: manual boundaries read as plugin, links a
     const dir = scratchDir('v9');
     try {
         const path = join(dir, 'tab-recap.db');
-        const old = openDatabase(path, MIGRATIONS.slice(0, 9));
+        const old = openDatabase(fsPathOf(path), MIGRATIONS.slice(0, 9));
         assert.equal(old.kind, 'ready');
         old.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 2)");
         old.db.exec(`INSERT INTO chapter (id, tab_id, n, started_at) VALUES (${id(1)}, 'w1:t1', 1, 1), (${id(2)}, 'w1:t1', 2, 50)`);
@@ -30,7 +31,7 @@ test('migration 10 from a v9 database: manual boundaries read as plugin, links a
             (${id(4)}, ${id(2)}, ${id(3)}, 'compacted', 50, 'manual', 9, 800, 14, 15), (${id(5)}, ${id(2)}, ${id(3)}, 'compacted', 60, 'auto', 10, NULL, NULL, NULL), (${id(6)}, ${id(2)}, ${id(3)}, 'switched', 70, NULL, 11, NULL, NULL, NULL)`);
         old.db.exec(`INSERT INTO compaction (id, tab_id, pane, agent, stage, brief, started_at, stage_at, finished_at, boundary_id) VALUES (${id(7)}, 'w1:t1', 'w1:p1', 'claude', 'compacted', 'written', 49, 50, 50, ${id(4)})`);
         old.db.close();
-        const opened = openDatabase(path);
+        const opened = openDatabase(fsPathOf(path));
         assert.equal(opened.kind, 'ready');
         const { db } = opened;
         assert.equal(versionOf(db), MIGRATIONS.length);
@@ -55,7 +56,7 @@ test('migration 10 from a v9 database: manual boundaries read as plugin, links a
         assert.deepEqual(rows(db, 'SELECT compaction_id FROM autocompact_decision'), [{ compaction_id: null }], 'a deleted compaction leaves the decision');
         db.exec("DELETE FROM tab WHERE id = 'w1:t1'");
         assert.deepEqual(rows(db, 'SELECT * FROM autocompact_decision'), [], 'a forgotten tab takes its decisions');
-        assert.deepEqual(shape(db), shape(openDatabase(MEMORY).db), 'upgraded == fresh');
+        assert.deepEqual(shape(db), shape(openDatabase(fsPathOf(MEMORY)).db), 'upgraded == fresh');
         assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(), []);
     } finally {
         rmSync(dir, { recursive: true, force: true });

@@ -4,6 +4,7 @@ import type { Database } from 'bun:sqlite';
 import { TranscriptStore } from '#src/adapters/db/transcripts.ts';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import { normalise } from './parity.ts';
@@ -43,7 +44,7 @@ const seedBoth = (db: Database): void => {
 const lane = (pane: string, transcript: string, cursor: number, text: string | null = null): LaneCursor => ({ pane: paneId(pane), agent: agentKind('claude'), transcript: sourcePathOf(transcript), cursor: cursorOf(cursor), tail: parseTextOrNull(text), title: parseTextOrNull(text), lastPrompt: parseTextOrNull(text), claudeRecap: parseTextOrNull(text) });
 
 const memory = (seed: (db: Database) => void): Database => {
-    const opened = openDatabase(MEMORY);
+    const opened = openDatabase(fsPathOf(MEMORY));
     if (opened.kind !== 'ready') {
         throw new Error('expected a ready database');
     }

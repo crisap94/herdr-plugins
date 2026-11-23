@@ -4,7 +4,7 @@ import { openDatabase } from '../open.ts';
 import { compareLegacyFiles } from './import-files.ts';
 import { LegacyStoreFiles } from './legacy-files.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseFsPath } from '#src/recap/domain/fs-path.ts';
+import { fsPathOf, parseFsPath } from '#src/recap/domain/fs-path.ts';
 import { instant } from '#src/recap/domain/time.ts';
 
 const directory = process.argv.slice(2).find((argument) => !argument.startsWith('--'));
@@ -12,7 +12,7 @@ if (directory === undefined) {
     process.stderr.write('usage: node src/adapters/db/import/dry-run.ts [--dry-run] <state-dir>\n');
     process.exit(2);
 }
-const opened = openDatabase(MEMORY);
+const opened = openDatabase(fsPathOf(MEMORY));
 if (opened.kind !== 'ready') {
     throw new Error('an in-memory database cannot be newer');
 }

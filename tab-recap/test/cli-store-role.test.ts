@@ -10,6 +10,7 @@ import { backupsOf } from '#src/adapters/db/backup.ts';
 import { connect, connectReadOnly } from '#src/adapters/db/connection.ts';
 import { latestVersion, versionOf } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import { messagesOf } from '#src/daemon/config.ts';
@@ -49,7 +50,7 @@ async function withState(body: (state: string, file: string) => Promise<void> | 
 
 function behind(file: string): void {
     mkdirSync(join(file, '..'), { recursive: true });
-    const opened = openDatabase(file, MIGRATIONS.slice(0, -1));
+    const opened = openDatabase(fsPathOf(file), MIGRATIONS.slice(0, -1));
     opened.db.close();
 }
 

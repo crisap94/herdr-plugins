@@ -8,6 +8,7 @@ import { Database } from 'bun:sqlite';
 import { backupPath } from '#src/adapters/db/backup.ts';
 import { migrate, versionOf } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { LedgerRepository } from '#src/adapters/db/ledger.ts';
@@ -39,7 +40,7 @@ test('migration 7 from the oldest fixture: every registered migration runs, a fr
         assert.equal(versionOf(old), 1);
         migrate(old, MIGRATIONS.slice(0, 7));
         assert.equal(versionOf(old), 7);
-        const fresh = openDatabase(MEMORY, MIGRATIONS.slice(0, 7));
+        const fresh = openDatabase(fsPathOf(MEMORY), MIGRATIONS.slice(0, 7));
         assert.equal(fresh.kind, 'ready');
         assert.deepEqual(shape(old), shape(fresh.db));
         assert.deepEqual(old.prepare('PRAGMA foreign_key_check').all(), []);
@@ -62,10 +63,10 @@ test('upgrading a database of version 6 backs it up as .v6.bak first', () => {
     const dir = scratchDir('m7bak');
     try {
         const path = join(dir, 'tab-recap.db');
-        const six = openDatabase(path, MIGRATIONS.slice(0, 6));
+        const six = openDatabase(fsPathOf(path), MIGRATIONS.slice(0, 6));
         assert.equal(six.kind, 'ready');
         six.db.close();
-        const seven = openDatabase(path, MIGRATIONS.slice(0, 7));
+        const seven = openDatabase(fsPathOf(path), MIGRATIONS.slice(0, 7));
         assert.equal(seven.kind, 'ready');
         assert.ok(existsSync(backupPath(path, 6)));
         assert.equal(versionOf(seven.db), 7);

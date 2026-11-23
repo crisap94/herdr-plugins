@@ -59,6 +59,6 @@ export function openForRole(path: FsPath, migrations: readonly Migration[], role
     return raw.kind === 'stale-store' ? staleOf(raw) : openedOf(raw);
 }
 
-export function openDatabase(path: string, migrations: readonly Migration[] = MIGRATIONS): Opened {
+export function openDatabase(path: FsPath, migrations: readonly Migration[] = MIGRATIONS): Opened {
     return openedOf(openRawDatabase(path, migrations));
 }

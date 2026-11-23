@@ -2,12 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { migrate } from '#src/adapters/db/migrate.ts';
 import { LANE_STATUSES } from '#src/recap/domain/autocompact.ts';
 
 test('migration 18 upgrades a v17 store with a decision: the row reads as not recorded, the readable view shows the column, and only the three statuses are accepted', () => {
-    const old = openDatabase(MEMORY, MIGRATIONS.slice(0, 17));
+    const old = openDatabase(fsPathOf(MEMORY), MIGRATIONS.slice(0, 17));
     assert.equal(old.kind, 'ready');
     old.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 2)");
     old.db.exec("INSERT INTO autocompact_decision (id, tab_id, pane, agent, at, mode, share, tokens, window, gate, verdict, answers) VALUES (X'00000000000000000000000000000001', 'w1:t1', 'w1:p1', 'claude', 1, 'on', 60, 600000, 1000000, 'ask', 'compact', '{}')");

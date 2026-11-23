@@ -10,6 +10,7 @@ import { connect, MEMORY } from '#src/adapters/db/connection.ts';
 import { storeOver } from '#src/adapters/db/database.ts';
 import { migrate, MigrationFailed, versionOf } from '#src/adapters/db/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { rebuildTable } from '#src/adapters/db/rebuild.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import type { Migration } from '#src/adapters/db/schema/migration.ts';
@@ -48,14 +49,14 @@ function fromFixture(path: string, fixture = FIXTURE): Database {
 test('a fresh install is the schema of every released version upgraded to the latest (and the fixture of 1.6.0 is still what migration 1 builds)', () => {
     const dir = scratchDir('migrate');
     try {
-        const opened = openDatabase(MEMORY, TOYS);
+        const opened = openDatabase(fsPathOf(MEMORY), TOYS);
         assert.equal(opened.kind, 'ready');
         const latest = fromFixture(join(dir, 'upgraded.db'));
         migrate(latest, TOYS);
         assert.equal(versionOf(latest), 3);
         assert.deepEqual(shape(latest), shape(opened.db));
         const released = fromFixture(join(dir, 'released.db'));
-        assert.deepEqual(shape(released), shape(openDatabase(MEMORY, [m1]).db), 'migration 1 still builds what 1.6.0 shipped: a change to it is a new migration');
+        assert.deepEqual(shape(released), shape(openDatabase(fsPathOf(MEMORY), [m1]).db), 'migration 1 still builds what 1.6.0 shipped: a change to it is a new migration');
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }
@@ -64,7 +65,7 @@ test('a fresh install is the schema of every released version upgraded to the la
 test('the real migrations: a fresh install is the 1.6.0 fixture upgraded (migration 2 adds only the lane web columns), and the data stays', () => {
     const dir = scratchDir('real');
     try {
-        const fresh = openDatabase(MEMORY);
+        const fresh = openDatabase(fsPathOf(MEMORY));
         assert.equal(fresh.kind, 'ready');
         const upgraded = fromFixture(join(dir, 'upgraded.db'));
         migrate(upgraded, MIGRATIONS);
@@ -81,7 +82,7 @@ test('the real migrations: a fresh install is the 1.6.0 fixture upgraded (migrat
 test('migrations 3 to 6 from the 1.7.0 schema (v2): fresh == upgraded, items and foreign keys kept, rules accepted', () => {
     const dir = scratchDir('v2');
     try {
-        const fresh = openDatabase(MEMORY);
+        const fresh = openDatabase(fsPathOf(MEMORY));
         assert.equal(fresh.kind, 'ready');
         const upgraded = fromFixture(join(dir, 'v2.db'), FIXTURE_V2);
         assert.equal(versionOf(upgraded), 2);
@@ -103,7 +104,7 @@ test('an upgraded fixture keeps its data readable through the repositories', () 
     const dir = scratchDir('fixture');
     try {
         fromFixture(join(dir, 'tab-recap.db')).close();
-        const opened = openDatabase(join(dir, 'tab-recap.db'), MIGRATIONS);
+        const opened = openDatabase(fsPathOf(join(dir, 'tab-recap.db')), MIGRATIONS);
         assert.equal(opened.kind, 'ready');
         const store = storeOver(opened.db);
         const recap = must(storeRead(store.records.readRecap(tabId('w1:t1'))));
@@ -155,10 +156,10 @@ test('an upgrade backs the database up first (never a fresh create), reuses a co
     try {
         const path = join(dir, 'tab-recap.db');
         const steps = (n: number): Migration[] => [m1, ...Array.from({ length: n - 1 }, (_, at): Migration => ({ version: at + 2, name: `step-${at + 2}`, up: [`CREATE TABLE step_${at + 2} (x INTEGER)`] }))];
-        openDatabase(path, steps(1)).db.close();
+        openDatabase(fsPathOf(path), steps(1)).db.close();
         assert.deepEqual(backupsOf(path), [], 'a fresh create has nothing to back up');
         for (let version = 2; version <= 6; version += 1) {
-            const opened = openDatabase(path, steps(version));
+            const opened = openDatabase(fsPathOf(path), steps(version));
             opened.db.close();
         }
         assert.deepEqual(backupsOf(path).map((file) => file.slice(path.length)), ['.v5.bak', '.v4.bak', '.v3.bak']);
@@ -179,7 +180,7 @@ test('a database newer than the code opens read-only, is not written, and says w
         db.close();
         rmSync(`${path}-wal`, { force: true });
         writeFileSync(`${path}.v1.bak`, 'a copy');
-        const opened = openDatabase(path);
+        const opened = openDatabase(fsPathOf(path));
         if (opened.kind !== 'newer-db') {
             assert.fail('a database written by a newer plugin opens as newer-db');
         }
@@ -193,7 +194,7 @@ test('a database newer than the code opens read-only, is not written, and says w
 });
 
 test('rebuildTable: a table changed by create-new, copy, drop, rename — rows kept, foreign keys checked, and a broken one rolls the upgrade back', () => {
-    const db = openDatabase(MEMORY, [m1]).db;
+    const db = openDatabase(fsPathOf(MEMORY), [m1]).db;
     db.exec("INSERT INTO column_state (id, all_hidden) VALUES (1, 1)");
     migrate(db, TOYS);
     assert.deepEqual({ ...(db.prepare('SELECT id, all_hidden, note FROM column_state').get() as object) }, { id: 1, all_hidden: 1, note: null });
@@ -213,18 +214,18 @@ test('migration 8 from a v7 database with a compaction in it: the record is kept
     const dir = scratchDir('v7');
     try {
         const path = join(dir, 'tab-recap.db');
-        const old = openDatabase(path, MIGRATIONS.slice(0, 7));
+        const old = openDatabase(fsPathOf(path), MIGRATIONS.slice(0, 7));
         assert.equal(old.kind, 'ready');
         old.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 2)");
         old.db.exec("INSERT INTO compaction (id, tab_id, pane, agent, stage, started_at, stage_at, finished_at, tokens_before, tokens_after) VALUES (randomblob(16), 'w1:t1', 'w1:p1', 'claude', 'compacted', 10, 10, 30, 800000, 14000)");
         old.db.close();
-        const opened = openDatabase(path);
+        const opened = openDatabase(fsPathOf(path));
         assert.equal(opened.kind, 'ready');
         assert.equal(versionOf(opened.db), MIGRATIONS.length);
         assert.deepEqual(backupsOf(path).map((name) => name.slice(-7)), ['.v7.bak']);
         assert.deepEqual(opened.db.prepare('SELECT stage, tokens_before, boundary_id FROM compaction').all().map((row) => Object.assign({}, row)), [{ stage: 'compacted', tokens_before: 800_000, boundary_id: null }]);
         assert.deepEqual(opened.db.prepare('SELECT boundary_id FROM compaction_readable').all().map((row) => Object.assign({}, row)), [{ boundary_id: null }]);
-        assert.deepEqual(shape(opened.db), shape(openDatabase(MEMORY).db), 'upgraded == fresh');
+        assert.deepEqual(shape(opened.db), shape(openDatabase(fsPathOf(MEMORY)).db), 'upgraded == fresh');
         assert.deepEqual(opened.db.prepare('PRAGMA foreign_key_check').all(), []);
         assert.throws(() => { opened.db.exec('UPDATE compaction SET boundary_id = x\'00\''); }, /CHECK/);
         assert.throws(() => { opened.db.exec('UPDATE compaction SET boundary_id = randomblob(16)'); }, /FOREIGN KEY/);

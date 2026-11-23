@@ -5,6 +5,7 @@ import { rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { Database } from 'bun:sqlite';
 import { openDatabase } from '#src/adapters/db/open.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { openStoreAt } from '#src/adapters/db/database.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { TabViewRowStore } from '#src/adapters/db/tab-views.ts';
@@ -62,7 +63,7 @@ test('a read-only open of a database below the since column lists no lanes and s
     const dir = scratchDir('views-before-since');
     try {
         const path = join(dir, 'tab-recap.db');
-        const old = openDatabase(path, MIGRATIONS.slice(0, 18));
+        const old = openDatabase(fsPathOf(path), MIGRATIONS.slice(0, 18));
         if (old.kind !== 'ready') {
             throw new Error('a fresh file is never newer');
         }
@@ -83,7 +84,7 @@ test('a write to a database below the since column keeps the old lane shape', ()
     const dir = scratchDir('views-write-before-since');
     try {
         const path = join(dir, 'tab-recap.db');
-        const old = openDatabase(path, MIGRATIONS.slice(0, 18));
+        const old = openDatabase(fsPathOf(path), MIGRATIONS.slice(0, 18));
         if (old.kind !== 'ready') {
             throw new Error('a fresh file is never newer');
         }
