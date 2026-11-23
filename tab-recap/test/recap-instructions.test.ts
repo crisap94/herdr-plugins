@@ -45,6 +45,7 @@ const CASES: readonly (readonly [string, () => RecapRequest, string])[] = [
     ['lang-fr-diff', () => language('fr', 'en'), '2e80ae06d763ec0ba1b66d511dc61bb62b7c37ed692d58e05dea08643f81ec21'],
     ['two-ledgers', () => requestOf({ ledgers: [{ task: textOf('t1'), facts: [] }, { task: textOf('t2'), facts: [] }] }), '787d1dc479e0b70bee241dced75c7ce6331c69efb8bafc4f2a5fa9eaa927a1f5'],
     ['close-on', () => ({ ...requestOf(), closeEvidence: 'on' }), '4f5064e73b817eebfd4fb0ac231553bf1901258b49dadae93807fa4fdc80fb9f'],
+    ['close-off', () => ({ ...requestOf(), closeEvidence: 'off' }), '9f6881c8ac20bf119018ba96ca42d7f84c5e0a650a9f59f51ec04d58ddbd86bf'],
     ['hidden', () => requestOf({ ledgers: [{ task: null, facts: [], hidden: new Map([['done', positiveCount(20)]]) }] }), '9afdb90403e66ec6c7a87c9ea8e2c79ff8c0d2b80653b2b2ab7f0c2abe585ff7'],
     ['retry-en-true', () => retrying('en', 'es', true), '48f83ef983ac1fac8bfbd064e72cb94550b2cafe2638fe479da9dbf721f6a2c1'],
     ['retry-en-false', () => retrying('en', 'es', false), 'df4962d661d82f6be00fe5d47bbba0f101b7bf6eab44db6af3469d505ac5204c'],
