@@ -2,29 +2,9 @@
   "src/adapters/experiment/data.ts": {
     "assertion": 2
   },
-  "src/adapters/experiment/events.ts": {
-    "parameter": 1
-  },
-  "src/adapters/experiment/files.ts": {
-    "parameter": 2
-  },
   "src/adapters/experiment/io.ts": {
     "container": 1,
     "return": 1
-  },
-  "src/adapters/experiment/labeller.ts": {
-    "property": 1,
-    "parameter": 1
-  },
-  "src/adapters/experiment/point.ts": {
-    "parameter": 3,
-    "property": 9
-  },
-  "src/adapters/experiment/store.ts": {
-    "parameter": 3,
-    "return": 2,
-    "property": 2,
-    "assertion": 1
   },
   "src/adapters/herdr/column-panes.ts": {
     "container": 1

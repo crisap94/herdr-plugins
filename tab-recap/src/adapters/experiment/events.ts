@@ -9,7 +9,11 @@ import type { TranscriptEvent } from '#src/experiment/outcomes.ts';
 import { extractClaudeOf } from '../transcripts/claude/rows.ts';
 import { parseFilledTextOrNull, parseLine, parseRowOrEmpty, parseRowsOrEmpty } from '../transcripts/jsonl.ts';
 
-const number = (value: unknown): Count | null => (typeof value === 'number' ? must(parseCount(value)) : null);
+export type Tokens = Count | null;
+
+export function parseTokens(value: unknown): Tokens {
+    return typeof value === 'number' ? must(parseCount(value)) : null;
+}
 
 function toolEvents(line: Text): readonly TranscriptEvent[] {
     const row = parseLine(line);
@@ -26,7 +30,7 @@ function entryEvents(line: Text, pos: Count): readonly TranscriptEvent[] {
     const metadata = parseRowOrEmpty(parseRowOrEmpty(parseLine(line) ?? {})['compactMetadata']);
     const marks: TranscriptEvent[] = (found.marks ?? []).filter((mark) => mark.kind === 'compacted').map((mark) => {
         const trigger = mark.trigger ?? parseFilledTextOrNull(metadata['trigger']);
-        return { kind: 'boundary', pos, at: mark.at, trigger: trigger === null ? null : textOf(trigger), pre: number(metadata['preTokens']), post: number(metadata['postTokens']) };
+        return { kind: 'boundary', pos, at: mark.at, trigger: trigger === null ? null : textOf(trigger), pre: parseTokens(metadata['preTokens']), post: parseTokens(metadata['postTokens']) };
     });
     return [...prompts, ...marks];
 }

@@ -1,3 +1,4 @@
+import { countOf } from '#src/recap/domain/count.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -33,7 +34,7 @@ test('io: a missing file reads as empty; appended records round-trip and doneKey
 test('labeller: a usable first reply is returned with one attempt and no log line', async () => {
     const lines: Text[] = [];
     const harness: HarnessPort = { id: txt('fake'), label: () => txt('fake'), limit: null, run: async () => ({ kind: 'ran', text: txt('yes'), costUsd: must(parseUsd(0)) }) };
-    const labeller = new Labeller({} as HarnessRuntime, 2, (line) => lines.push(line), undefined, () => harness);
+    const labeller = new Labeller({} as HarnessRuntime, countOf(2), (line) => lines.push(line), undefined, () => harness);
     const made = await labeller.ask(txt('instructions'), {}, (reply) => (reply === 'yes' ? 1 : null), txt('abc'));
     assert.equal(made.answer, 1);
     assert.equal(made.attempts, 1);
