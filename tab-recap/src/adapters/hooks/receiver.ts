@@ -15,6 +15,7 @@ import type { IdleClaim } from '#src/recap/application/autocompact.ts';
 import { turnSignalOf } from '#src/wire/hooks/turn-signal.ts';
 import type { PreCompacts } from '#src/adapters/hooks/pre-compacts.ts';
 import type { TurnEnds } from '#src/adapters/hooks/turn-ends.ts';
+import type { Rebind, RebindMode } from '#src/adapters/hooks/rebind.ts';
 
 export interface Followed {
     readonly tab: TabId;
@@ -34,6 +35,8 @@ export interface ReceiverDeps {
     preCompacts: PreCompacts;
     claimIdle(lane: Lane): IdleClaim;
     restoreMode(): RestoreMode;
+    rebindMode(): RebindMode;
+    rebind: Rebind;
     clock: Clock;
     log(line: Line): void;
 }
@@ -67,6 +70,12 @@ const sessionStartedAnswer = (deps: ReceiverDeps, call: HookCall, session: Sessi
     return NOTHING;
 };
 
+const rebound = (deps: ReceiverDeps, call: HookCall, session: SessionId): void => {
+    if (call.kind === 'session-start' && deps.rebindMode() === 'on') {
+        void deps.rebind.rebind(call.harness, session);
+    }
+};
+
 const preCompactAnswer = (deps: ReceiverDeps, call: PreCompactCall): PreCompactAnswer => {
     if (call.session === null) {
         return PRE_COMPACT_NOTHING;
@@ -97,6 +106,7 @@ export function createReceiver(deps: ReceiverDeps): HookReceiver & PreCompactRec
         }
         const followed = deps.followed(call.harness, session.value);
         if (followed === null) {
+            rebound(deps, call, session.value);
             return NOTHING;
         }
         const scope = scopeOf(followed.tab);

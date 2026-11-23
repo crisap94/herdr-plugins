@@ -52,6 +52,8 @@ function receiverFor(c: HookCase): ReturnType<typeof createReceiver> {
         preCompacts: createPreCompacts(),
         claimIdle: () => 'declined',
         restoreMode: () => 'on',
+        rebindMode: () => 'off',
+        rebind: { rebind: async () => {} },
         clock,
         log: () => {},
     };

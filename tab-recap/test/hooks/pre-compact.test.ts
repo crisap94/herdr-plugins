@@ -60,6 +60,8 @@ function fixture(claim: IdleClaim, followed = true): Fixture {
             return claim;
         },
         restoreMode: () => 'off',
+        rebindMode: () => 'off',
+        rebind: { rebind: async () => {} },
         clock,
         log: () => {},
     };
