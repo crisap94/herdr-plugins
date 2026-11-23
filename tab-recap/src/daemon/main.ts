@@ -39,10 +39,9 @@ import type { Engine, LedgerEvent } from '@stateforge-labs/session-ledger';
 import type { Clock } from '#src/ports/clock.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { SLOT_TABLE } from './slot-table.ts';
-import { contextOf, parseRoot, parseSwitch, parseVersion, startSlots, taps, type Slots, type SlotKey, type StatusEvent, type Switch, type Version } from './slots.ts';
+import { contextOf, parseRoot, parseSwitch, parseVersion, startSlots, taps, type Line, type Slots, type SlotKey, type StatusEvent, type Switch, type Version } from './slots.ts';
 import { Backends } from './backends.ts';
 import { boundedBy } from './bounded.ts';
-import { failureLog, logVia } from './legacy.ts';
 import { SHUTDOWN_MS, shutDownWithin } from './shutdown.ts';
 import { openStateAt } from './state.ts';
 import type { Autocompact } from '#src/recap/application/autocompact.ts';
@@ -67,7 +66,7 @@ import type { LaneTokenFacts } from '#src/recap/domain/lane-tokens.ts';
 import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
 import { duration, instant, type Instant } from '#src/recap/domain/time.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { NonEmptyText, Text } from '#src/recap/domain/text.ts';
 import type { HandoffRequests } from '#src/recap/domain/handoff-requests.ts';
 import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import { routePaneTokens, wireWorktrees, type Worktrees } from './worktrees.ts';
@@ -76,11 +75,11 @@ import { textOf } from '#src/recap/domain/text.ts';
 
 type ExitCode = 0 | 1;
 
-function write(line: Text): void {
+async function failureLog(sink: (line: Text) => void, what: Text, running: Promise<void>): Promise<void> { try { await running; } catch (error) { sink(textOf(`${what}: ${error instanceof Error ? error.message : String(error)}`)); } }
+
+function log(line: Text | Line | NonEmptyText): void {
     console.error(`${new Date().toISOString()} ${line}`);
 }
-
-const log = logVia(write);
 
 const nowInstant = (): Instant => instant(Date.now());
 const statusTaps = taps<StatusEvent>(log);
@@ -136,12 +135,12 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
         onIntents: async (intents: readonly Intent[]): Promise<void> => {
             for (const intent of intents) {
                 if (await boundedBy(dispatch.send(intent), duration(INTENT_MS)) === 'timeout') {
-                    log(`intent ${intent.kind} took more than ${INTENT_MS / 1000} s: moving on`);
+                    log(textOf(`intent ${intent.kind} took more than ${INTENT_MS / 1000} s: moving on`));
                 }
                 await new Promise<void>((resolve) => { setImmediate(resolve); });
             }
         },
-        onBlind: (blindness: Blindness): void => { log(`blind at ${blindness.at}: ${blindness.saying}`); },
+        onBlind: (blindness: Blindness): void => { log(textOf(`blind at ${blindness.at}: ${blindness.saying}`)); },
         onUnknownKind: (): void => { },
         onBeat: onBeatOf((current: Board): void => { worktrees.registry.beat(current); }, recaps, board, loadSettings().pacing),
         onStatus: parseStatusPush.bind(undefined, turns),
@@ -157,7 +156,7 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
         briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.decisions, checkedBriefs: store.autocompactBriefs, answers, asks: store.asks, events, claims, preCompacts,
         typing: new PaneTypingLease({ tokens: fleet, panes: fleet, now: nowInstant, pause: sleep, log }),
     });
-    return { informer, fleet, backends, store, engine, recaps, transcripts, clock, viewers, autocompact, statuses: statusTaps.tap, ledger: ledgerTaps.tap, compaction, retention: new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: () => loadSettings().keepInputDays, briefRetention: (): BriefRetention => loadSettings().keepBrief, log }), curate, sweep: new AutocompactSweep({ candidates: () => candidatesOf(informer.current, log), autocompact: (): Autocompact | null => box.autocompact, log }), laneTokens, answers, events, worktrees, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror: exchange.mirror, pause: sleep, log: write }) };
+    return { informer, fleet, backends, store, engine, recaps, transcripts, clock, viewers, autocompact, statuses: statusTaps.tap, ledger: ledgerTaps.tap, compaction, retention: new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: () => loadSettings().keepInputDays, briefRetention: (): BriefRetention => loadSettings().keepBrief, log }), curate, sweep: new AutocompactSweep({ candidates: () => candidatesOf(informer.current, log), autocompact: (): Autocompact | null => box.autocompact, log }), laneTokens, answers, events, worktrees, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror: exchange.mirror, pause: sleep, log }) };
 }
 
 function versionOf(): Version | null { const version = codeVersion(); return version === null ? null : parseVersion(version); }
@@ -172,11 +171,11 @@ function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compa
         informer.push({ kind: 'requested', tab });
     }
     for (const asked of store.requests.takeCompactions()) {
-        compaction.run(asked).catch(failureLog(log, `compaction ${asked.tab}`));
+        void failureLog(log, textOf(`compaction ${asked.tab}`), compaction.run(asked));
     }
     pollHandoffs({ runner: handoffs, requests: store.requests, log });
     for (const tab of store.requests.takeCurations()) {
-        curate.run(tab).catch(failureLog(log, `curator ${tab}`));
+        void failureLog(log, textOf(`curator ${tab}`), curate.run(tab));
     }
     for (const asked of store.requests.takeVisibility()) {
         informer.push({ kind: 'visibility', target: asked.target === 'all' ? 'all' : { tab: tabId(textOf(asked.target)) }, hidden: asked.visibility === 'toggle' ? 'toggle' : asked.visibility === 'hidden' });
@@ -186,7 +185,7 @@ function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compa
 async function boot(root: Directory, pidfile: Pidfile): Promise<Wired | ExitCode> {
     const other = pidfile.alive();
     if (other !== null && other !== process.pid) {
-        log(`another daemon is running (pid ${other})`);
+        log(textOf(`another daemon is running (pid ${other})`));
         return 0;
     }
     pidfile.claim(process.pid, codeVersion());
@@ -222,11 +221,11 @@ async function start(): Promise<ExitCode> {
     process.on('SIGTERM', stop).on('SIGINT', stop);
     const restarted = restartAnswers({
         exchanges: REGISTRY.exchanges, ledger: store.asks, requests: store.requests, compactions: store.compactions, tokens: fleet,
-        enabled: herdrEventsPresence, local: (ask): void => { log(`ask ${ask.id} from ${ask.requester}: interrupted, no local flow answers yet`); },
+        enabled: herdrEventsPresence, local: (ask): void => { log(textOf(`ask ${ask.id} from ${ask.requester}: interrupted, no local flow answers yet`)); },
         handoff: handoffRestartOf(handoffs), withdraw: (ask): void => { withdrawAsked(store.requests, ask); },
         log, now: nowInstant, restartedWhy: textOf(messagesOf().compaction.stage.restarted),
     });
-    if (restarted > 0) { log(`${restarted} compaction(s) were in progress when the daemon stopped: not confirmed`); }
+    if (restarted > 0) { log(textOf(`${restarted} compaction(s) were in progress when the daemon stopped: not confirmed`)); }
     bootObservations(store.visibility.readHidden(), store.views, log).forEach((observation) => { informer.push(observation); });
     setInterval(() => { poll(pidfile, booted); slots?.poll(); }, REQUEST_POLL_MS).unref();
     let ticks = 0;
@@ -251,7 +250,7 @@ async function start(): Promise<ExitCode> {
     }, RESYNC_MS).unref();
     await backends.refresh();
     slots = await startSlots(SLOT_TABLE, contextOf({ root: parseRoot(root), store, fleet, engine, recaps, transcripts, events, board: (): Board => informer.current, observe: (observation): void => { informer.push(observation); }, statuses, ledger, candidates: () => candidatesOf(informer.current, log), consider: (candidate) => booted.autocompact.consider(candidate), clock, viewers, preCompacts, claimIdle: (lane) => { const found = candidateOf(lane); return found === null ? 'declined' : booted.autocompact.claimIdle(found); }, log }, versionOf(), (key: SlotKey): Switch => parseSwitch(settingGetter()(key))));
-    log(`daemon ${process.pid} up, state in ${root}`);
+    log(textOf(`daemon ${process.pid} up, state in ${root}`));
     void events.daemon('daemon-started', codeVersion() ?? 'unknown');
     await informer.enterSubscription();
     await informer.run();

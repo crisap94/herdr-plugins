@@ -1,6 +1,6 @@
 {
   "src/ports/twins/runs/legacy.ts": {
-    "legacy": 16
+    "legacy": 13
   },
   "src/protocol/legacy.ts": {
     "legacy": 5

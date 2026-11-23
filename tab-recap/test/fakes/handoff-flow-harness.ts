@@ -10,7 +10,7 @@ import type { Waiting } from '#src/recap/application/autocompact.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import type { RecapRecords, TabRecap } from '#src/ports/recap-records.ts';
 import type { HandoffAskRecord } from '#src/ports/requests.ts';
-import type { InFlight, InFlightReading } from '#src/ports/in-flight.ts';
+import type { InFlightReader, InFlightRead } from '#src/ports/in-flight.ts';
 import { handoffPlanner } from '#src/adapters/capability/handoff-plans.ts';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
@@ -37,7 +37,7 @@ export const TEXT = 'Handoff text.';
 export const SETTLE_MS = 10_000;
 
 const CLEAR: Waiting = { kind: 'clear' };
-const IDLE_FLIGHT: InFlightReading = { kind: 'not-started', why: 'no transcript yet' };
+const IDLE_FLIGHT: InFlightRead = { kind: 'not-started', why: textOf('no transcript yet') };
 
 export interface FlowWorld {
     sourceStatus: LaneStatus;
@@ -49,7 +49,7 @@ export interface FlowWorld {
     recap: TabRecap | null;
     facts: readonly Fact[];
     awaiting: Waiting;
-    flight: InFlightReading;
+    flight: InFlightRead;
     refreshed: RefreshStatus;
     refreshThrows: boolean;
     renderResult: HandoffRenderResult;
@@ -105,7 +105,7 @@ export function harness(over: Partial<FlowWorld> = {}, sender: Pick<HandoffSende
         ...(world.targetPresent ? [laneFrom(seenLane({ paneId: 'w1:p2', tabId: 'w1:t2', workspaceId: 'w1', agent: world.targetAgent, status: world.targetStatus, ...targetKey }))] : []),
         ...(world.targetPresent && world.peer ? [laneFrom(seenLane({ paneId: 'w1:p3', tabId: 'w1:t2', workspaceId: 'w1', agent: world.targetAgent, status: 'idle', session: 'sess-3', cwd: '/other' }))] : []),
     ];
-    const inFlight: InFlight = { read: async () => { calls.push('flight'); return world.flight; } };
+    const inFlight: InFlightReader = { read: async () => { calls.push('flight'); return world.flight; } };
     const render: HandoffRender = async (input) => {
         calls.push('render');
         renders.push(input);

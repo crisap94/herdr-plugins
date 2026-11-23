@@ -4,7 +4,7 @@ import { isUnknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { uncheckedMilliseconds, uncheckedTokenName, uncheckedTokenValue, type PaneId } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { parseMilliseconds, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
+import { duration, parseMilliseconds, type Duration, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
 import { LEASE, LEASE_TTL_MS, leaseBlocked } from '#src/recap/domain/typing-lease.ts';
 
 export const RETRY_MS = must(parseMilliseconds(1000));
@@ -18,7 +18,7 @@ export interface PaneTypingLeaseDeps {
     readonly tokens: LaneTokenReporter;
     readonly panes: PaneTokens;
     readonly now: () => Instant;
-    readonly pause: (ms: Milliseconds) => Promise<void>;
+    readonly pause: (span: Duration) => Promise<void>;
     readonly log: (line: Text) => void;
 }
 
@@ -57,7 +57,7 @@ export class PaneTypingLease {
         const until = this.deps.now() + waitMs;
         let got = await this.take(pane);
         while (got === 'busy' && this.deps.now() < until) {
-            await this.deps.pause(RETRY_MS);
+            await this.deps.pause(duration(RETRY_MS));
             got = await this.take(pane);
         }
         if (got === 'unavailable' && !this.outage) {

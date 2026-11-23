@@ -3,13 +3,15 @@ import assert from 'node:assert/strict';
 import { resolveTarget } from '#src/recap/application/handoff-target.ts';
 import type { TargetDeps } from '#src/recap/application/handoff-target.ts';
 import { handoffPlanner } from '#src/adapters/capability/handoff-plans.ts';
-import type { InFlight, InFlightReading } from '#src/ports/in-flight.ts';
+import type { InFlightReader, InFlightRead } from '#src/ports/in-flight.ts';
 import type { Waiting } from '#src/recap/application/autocompact.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { paneId } from '#test/support/ids.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { seenLane, type BareLane } from '#test/support/seen.ts';
@@ -20,17 +22,17 @@ const clear: Waiting = { kind: 'clear' };
 
 const seen = (pane: string, agent: string, over: Partial<BareLane> = {}): Lane => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, status: 'idle', ...over }));
 
-function probeOf(reading: InFlightReading): { readonly port: InFlight; readonly reads: () => number } {
+function probeOf(reading: InFlightRead): { readonly port: InFlightReader; readonly reads: () => number } {
     let reads = 0;
     return { port: { read: () => { reads += 1; return Promise.resolve(reading); } }, reads: () => reads };
 }
 
-function depsOf(lanes: readonly Lane[], reading: InFlightReading, awaiting: Waiting = clear): TargetDeps & { readonly reads: () => number } {
+function depsOf(lanes: readonly Lane[], reading: InFlightRead, awaiting: Waiting = clear): TargetDeps & { readonly reads: () => number } {
     const probe = probeOf(reading);
     return { lanes, plans: handoffPlanner, inFlight: probe.port, awaiting: () => Promise.resolve(awaiting), reads: probe.reads };
 }
 
-const notStarted: InFlightReading = { kind: 'not-started', why: 'the transcript of sess-new not found' };
+const notStarted: InFlightRead = { kind: 'not-started', why: textOf('the transcript of sess-new not found') };
 const freshClaude = seen('w1:p1', 'claude', { session: 'sess-new', cwd: '/repo' });
 
 test('a fresh lane whose session is known and whose transcript does not exist yet is ready', async () => {
@@ -42,7 +44,7 @@ test('a fresh lane whose session is known and whose transcript does not exist ye
 });
 
 test('a done lane is ready exactly as an idle one is', async () => {
-    const result = await resolveTarget(SOURCE, TARGET, depsOf([seen('w1:p1', 'claude', { status: 'done', session: 'sess-1' })], { kind: 'count', count: 0, background: [] }));
+    const result = await resolveTarget(SOURCE, TARGET, depsOf([seen('w1:p1', 'claude', { status: 'done', session: 'sess-1' })], { kind: 'count', count: countOf(0), background: [] }));
     assert.ok(result.kind === 'ready');
 });
 
@@ -66,18 +68,18 @@ test('an awaiting token that cannot be read is in-flight', async () => {
 });
 
 test('a transcript that exists but cannot be read is in-flight and sends nothing', async () => {
-    const deps = depsOf([seen('w1:p1', 'claude', { session: 'sess-1' })], { kind: 'unknown', why: 'unreadable transcript' });
+    const deps = depsOf([seen('w1:p1', 'claude', { session: 'sess-1' })], { kind: 'unknown', why: textOf('unreadable transcript') });
     assert.deepEqual(await resolveTarget(SOURCE, TARGET, deps), { kind: 'refused', reason: 'in-flight' });
 });
 
 test('running work in the target transcript is in-flight', async () => {
-    const deps = depsOf([seen('w1:p1', 'claude', { session: 'sess-1' })], { kind: 'count', count: 2, background: [] });
+    const deps = depsOf([seen('w1:p1', 'claude', { session: 'sess-1' })], { kind: 'count', count: countOf(2), background: [] });
     assert.deepEqual(await resolveTarget(SOURCE, TARGET, deps), { kind: 'refused', reason: 'in-flight' });
 });
 
 test('two Codex lanes sharing a directory do not read each other as the target transcript', async () => {
     const lanes = [seen('w1:p9', 'codex', { cwd: '/repo' }), seen('w1:p1', 'codex', { cwd: '/repo' })];
-    const deps = depsOf(lanes, { kind: 'count', count: 5, background: [] });
+    const deps = depsOf(lanes, { kind: 'count', count: countOf(5), background: [] });
     const result = await resolveTarget(SOURCE, TARGET, deps);
     assert.ok(result.kind === 'ready');
     assert.equal(result.ownTranscript, false);
@@ -94,7 +96,7 @@ test('two Claude lanes in one directory keep their own transcripts, which the di
 });
 
 test('a target whose session identifier is not known yet is ready on status and awaiting only', async () => {
-    const deps = depsOf([seen('w1:p1', 'claude', { cwd: '/repo' })], { kind: 'unknown', why: 'no session yet' });
+    const deps = depsOf([seen('w1:p1', 'claude', { cwd: '/repo' })], { kind: 'unknown', why: textOf('no session yet') });
     const result = await resolveTarget(SOURCE, TARGET, deps);
     assert.ok(result.kind === 'ready');
     assert.equal(result.ownTranscript, false);
@@ -102,7 +104,7 @@ test('a target whose session identifier is not known yet is ready on status and 
 });
 
 test('a Codex target whose working directory is not known is ready on status and awaiting only', async () => {
-    const deps = depsOf([seen('w1:p1', 'codex')], { kind: 'unknown', why: 'no directory' });
+    const deps = depsOf([seen('w1:p1', 'codex')], { kind: 'unknown', why: textOf('no directory') });
     const result = await resolveTarget(SOURCE, TARGET, deps);
     assert.ok(result.kind === 'ready');
     assert.equal(result.ownTranscript, false);

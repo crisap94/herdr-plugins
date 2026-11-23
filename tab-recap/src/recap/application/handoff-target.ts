@@ -4,7 +4,7 @@ import type { PaneId } from '#src/recap/domain/ids.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffPlan } from '#src/recap/domain/handoff-plan.ts';
 import type { HandoffPlanCatalogue } from '#src/ports/handoff-plans.ts';
-import type { InFlight } from '#src/ports/in-flight.ts';
+import type { InFlightReader } from '#src/ports/in-flight.ts';
 import type { Waiting } from './autocompact.ts';
 
 export type TargetRefusal = Extract<HandoffOutcome, { readonly kind: 'refused'; readonly reason: 'source-equals-target' | 'not-a-lane' | 'status-not-ready' | 'in-flight' }>;
@@ -27,8 +27,8 @@ export type TargetResolution = Ready | TargetRefusal | Unsupported;
 export interface TargetDeps {
     readonly lanes: readonly Lane[];
     readonly plans: HandoffPlanCatalogue;
-    readonly inFlight: InFlight;
-    readonly awaiting: (pane: string) => Promise<Waiting>;
+    readonly inFlight: InFlightReader;
+    readonly awaiting: (pane: PaneId) => Promise<Waiting>;
 }
 
 const keyOf = (plan: HandoffPlan, lane: Lane): string | null => (plan.locatedBy === 'session' ? lane.session : lane.cwd);
@@ -38,7 +38,7 @@ function ownTranscriptOf(lanes: readonly Lane[], lane: Lane, plan: HandoffPlan):
     return key !== null && !lanes.some((other) => other.pane !== lane.pane && other.agent === lane.agent && keyOf(plan, other) === key);
 }
 
-async function nothingInFlight(port: InFlight, lane: Lane): Promise<boolean> {
+async function nothingInFlight(port: InFlightReader, lane: Lane): Promise<boolean> {
     const reading = await port.read(lane);
     return reading.kind === 'not-started' || (reading.kind === 'count' && reading.count === 0);
 }
@@ -47,7 +47,7 @@ export async function readinessOf(lane: Lane, plan: HandoffPlan, deps: Pick<Targ
     if (!READY.has(lane.status)) {
         return { kind: 'refused', reason: 'status-not-ready' };
     }
-    if ((await deps.awaiting(String(lane.pane))).kind !== 'clear') {
+    if ((await deps.awaiting(lane.pane)).kind !== 'clear') {
         return { kind: 'refused', reason: 'in-flight' };
     }
     const ownTranscript = ownTranscriptOf(deps.lanes, lane, plan);

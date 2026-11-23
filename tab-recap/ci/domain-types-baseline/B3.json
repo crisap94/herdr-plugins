@@ -4,13 +4,13 @@
     "property": 3
   },
   "src/recap/application/handoff-confirmation.ts": {
-    "parameter": 5,
+    "parameter": 3,
     "return": 1,
     "property": 5
   },
   "src/recap/application/handoff-flow.ts": {
-    "parameter": 3,
-    "return": 1
+    "return": 1,
+    "parameter": 1
   },
   "src/recap/application/handoff-pipeline.ts": {
     "container": 1
@@ -27,14 +27,13 @@
     "property": 5
   },
   "src/recap/application/handoff-sender.ts": {
-    "parameter": 3
+    "parameter": 2
   },
   "src/recap/application/handoff-source.ts": {
     "return": 1,
     "property": 2
   },
   "src/recap/application/handoff-target.ts": {
-    "parameter": 1,
     "return": 2,
     "container": 1,
     "property": 2
@@ -45,7 +44,6 @@
     "property": 5
   },
   "src/recap/application/input-retention.ts": {
-    "parameter": 2,
     "return": 3,
     "property": 1
   },

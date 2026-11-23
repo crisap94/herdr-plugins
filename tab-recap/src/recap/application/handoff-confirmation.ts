@@ -2,12 +2,13 @@ import type { AgentPanes } from '#src/ports/agents.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { sessionId } from '#src/recap/domain/ids.ts';
+import { duration, type Duration } from '#src/recap/domain/time.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffEvidence } from '#src/recap/domain/handoff-plan.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import { collapsedText } from '#src/recap/domain/text-collapse.ts';
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import type { CurrentSession } from './lane-recent.ts';
 import type { Ready } from './handoff-target.ts';
 import { HANDOFF_OBSERVATIONS, HANDOFF_OBSERVE_MS, HANDOFF_PREFIX_CODE_POINTS, HANDOFF_PROMPT_TAIL_BYTES } from './handoff-limits.ts';
@@ -44,8 +45,8 @@ export interface ConfirmationDeps {
     readonly agents: Pick<AgentPanes, 'status'>;
     readonly transcripts: TranscriptRegistry;
     readonly session: CurrentSession;
-    readonly pause: (ms: number) => Promise<void>;
-    readonly log: (line: string) => void;
+    readonly pause: (span: Duration) => Promise<void>;
+    readonly log: (line: Text) => void;
 }
 
 const prefixOf = (text: string): string => collapsedText(textOf(Array.from(text).slice(0, HANDOFF_PREFIX_CODE_POINTS).join('')), 'space');
@@ -123,7 +124,7 @@ export class HandoffConfirmation {
         const prefix = prefixOf(text);
         let lane = baseline.lane;
         for (let observation = 0; observation < HANDOFF_OBSERVATIONS; observation += 1) {
-            await this.deps.pause(HANDOFF_OBSERVE_MS);
+            await this.deps.pause(duration(HANDOFF_OBSERVE_MS));
             try {
                 const seen = await this.observe(lane, evidence, prefix);
                 lane = seen.lane;
@@ -131,7 +132,7 @@ export class HandoffConfirmation {
                     return { kind: 'delivered' };
                 }
             } catch (error) {
-                this.deps.log(`handoff observe ${target.lane.pane}: ${failureCauseOf(parseThrown(error))}`);
+                this.deps.log(textOf(`handoff observe ${target.lane.pane}: ${failureCauseOf(parseThrown(error))}`));
                 return { kind: 'failed', reason: 'unconfirmed' };
             }
         }

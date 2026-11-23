@@ -6,7 +6,7 @@ import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { tabId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant, type Duration } from '#src/recap/domain/time.ts';
 import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import type { LaneClaims } from './lane-claims.ts';
 import type { HandoffRender, HandoffRenderResult, RenderMetrics } from './handoff-render.ts';
@@ -18,7 +18,7 @@ import type { ClosedSourceDeps } from './closed-lane-source.ts';
 import { DeliveryTracker } from './delivery-tracker.ts';
 import { resolveTarget } from './handoff-target.ts';
 import type { Ready, TargetDeps, TargetResolution } from './handoff-target.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 
 export interface ClosedFlowDeps {
     readonly closures: ClosedSourceDeps['closures'];
@@ -38,9 +38,9 @@ export interface HandoffFlowDeps {
     readonly flush: (tab: TabId, why: 'handoff') => Promise<void>;
     readonly render: HandoffRender;
     readonly sender: Pick<HandoffSender, 'send'>;
-    readonly pause: (ms: number) => Promise<void>;
+    readonly pause: (span: Duration) => Promise<void>;
     readonly now: () => number;
-    readonly log: (line: string) => void;
+    readonly log: (line: Text) => void;
 }
 
 export interface HandoffRun {
@@ -67,7 +67,7 @@ export class HandoffFlow {
         try {
             return await this.steps(request, mark);
         } catch (error) {
-            this.deps.log(`handoff ${request.id}: ${failureCauseOf(parseThrown(error))}`);
+            this.deps.log(textOf(`handoff ${request.id}: ${failureCauseOf(parseThrown(error))}`));
             return unrendered({ kind: 'failed', reason: 'internal-error' });
         }
     }
@@ -137,7 +137,7 @@ export class HandoffFlow {
         try {
             return await this.deps.refresh(tab, this.deps.lanes().filter((lane) => lane.tab === tab));
         } catch (error) {
-            this.deps.log(`handoff refresh ${tab}: ${failureCauseOf(parseThrown(error))}`);
+            this.deps.log(textOf(`handoff refresh ${tab}: ${failureCauseOf(parseThrown(error))}`));
             return 'failed';
         }
     }
@@ -148,7 +148,7 @@ export class HandoffFlow {
             return this.renderOf(request, found, refresh);
         }
         if (found.kind === 'unknown') {
-            this.deps.log(`handoff ${request.id}: source unreadable (${found.why})`);
+            this.deps.log(textOf(`handoff ${request.id}: source unreadable (${found.why})`));
         }
         return unfoundOutcome(found);
     }
