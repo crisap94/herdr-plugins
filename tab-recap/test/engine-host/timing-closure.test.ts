@@ -43,9 +43,7 @@ const TIMING: readonly string[] = [
 
 const ENGINE: readonly string[] = engineOf(JSON.parse(readFileSync(ENGINE_FILES_PATH, 'utf8')));
 
-const STUB_CARRIED: readonly Edge[] = [
-    { from: 'src/recap/domain/autocompact-style.ts', to: 'src/recap/domain/legacy.ts', kind: 're-export' },
-];
+const STUB_CARRIED: readonly Edge[] = [];
 
 const ALLOWED_PREFIXES: readonly string[] = ['src/compaction-timing/', 'src/protocol/', 'src/contract/', 'src/ports/', 'src/recap/domain/'];
 

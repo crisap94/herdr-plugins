@@ -35,7 +35,7 @@ import { err, must, ok, type Result } from '#src/protocol/result.ts';
 import { parseText, textOf as uncheckedText, type Text } from '#src/recap/domain/text.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
 import { parseAgentKind, type AgentKind } from '#src/recap/domain/ids.ts';
-import { numberIn } from '#src/recap/domain/legacy.ts';
+import { numberIn, type NumberRange } from '#src/recap/domain/number-in.ts';
 import type { CompactionSettings, Glow, Models, SettingGet, SettingName, SettingReader, Settings } from './settings.ts';
 
 export type SettingsFile = ReadonlyMap<EnvironmentName, Text>;
@@ -99,7 +99,11 @@ export function parseSettingsFile(input: unknown): Result<SettingsFile, ParseFai
     return ok(values);
 }
 
-const POSITIVE = { min: Number.MIN_VALUE, max: Number.MAX_VALUE } as const;
+const POSITIVE: NumberRange = { min: countOf(Number.MIN_VALUE), max: countOf(Number.MAX_VALUE) };
+const KEEP_NEWEST_BOUNDS: NumberRange = { min: countOf(KEEP_NEWEST_RANGE.min), max: countOf(KEEP_NEWEST_RANGE.max) };
+const NEXT_HOURS_BOUNDS: NumberRange = { min: countOf(NEXT_HOURS_RANGE.min), max: countOf(NEXT_HOURS_RANGE.max) };
+const QUIET_BOUNDS: NumberRange = { min: countOf(10_000), max: countOf(600_000) };
+const MAX_WAIT_BOUNDS: NumberRange = { min: countOf(60_000), max: countOf(3_600_000) };
 
 export function localeFrom(setting: Text | undefined, env: SettingReader): Locale {
     const chosen = LOCALES.find((locale) => locale === setting);
@@ -166,9 +170,9 @@ export function recapLanguageSource(): LanguageSource {
 }
 
 const sizingFrom = (get: SettingGet): Sizing => ({
-    fraction: uncheckedRatio(Math.min(0.6, numberIn(get('TAB_RECAP_WIDTH'), POSITIVE.min, POSITIVE.max) ?? 0.3)),
-    minCols: countOf(numberIn(get('TAB_RECAP_MIN_COLS'), POSITIVE.min, POSITIVE.max) ?? 36),
-    maxCols: countOf(numberIn(get('TAB_RECAP_MAX_COLS'), POSITIVE.min, POSITIVE.max) ?? 64),
+    fraction: uncheckedRatio(Math.min(0.6, numberIn(get('TAB_RECAP_WIDTH'), POSITIVE) ?? 0.3)),
+    minCols: countOf(numberIn(get('TAB_RECAP_MIN_COLS'), POSITIVE) ?? 36),
+    maxCols: countOf(numberIn(get('TAB_RECAP_MAX_COLS'), POSITIVE) ?? 64),
 });
 
 const listOf = (raw: Text | undefined): readonly Text[] | undefined => raw?.split(',').flatMap((item) => (item.trim() === '' ? [] : [must(parseText(item.trim()))]));
@@ -176,9 +180,9 @@ const listOf = (raw: Text | undefined): readonly Text[] | undefined => raw?.spli
 const policyFrom = (get: SettingGet, screenAgents: readonly AgentKind[]): Policy => ({
     ...DEFAULT_POLICY,
     kinds: [...new Set([...(listOf(get('TAB_RECAP_AGENTS')) ?? DEFAULT_POLICY.kinds), ...screenAgents.map((agent) => uncheckedText(agent))])],
-    minTabCols: countOf(numberIn(get('TAB_RECAP_MIN_TAB_COLS'), POSITIVE.min, POSITIVE.max) ?? DEFAULT_POLICY.minTabCols),
-    giveUpFor: duration(numberIn(get('TAB_RECAP_GIVE_UP_MS'), POSITIVE.min, POSITIVE.max) ?? DEFAULT_POLICY.giveUpFor),
-    closeGrace: duration(numberIn(get('TAB_RECAP_CLOSE_GRACE_MS'), POSITIVE.min, POSITIVE.max) ?? DEFAULT_POLICY.closeGrace),
+    minTabCols: countOf(numberIn(get('TAB_RECAP_MIN_TAB_COLS'), POSITIVE) ?? DEFAULT_POLICY.minTabCols),
+    giveUpFor: duration(numberIn(get('TAB_RECAP_GIVE_UP_MS'), POSITIVE) ?? DEFAULT_POLICY.giveUpFor),
+    closeGrace: duration(numberIn(get('TAB_RECAP_CLOSE_GRACE_MS'), POSITIVE) ?? DEFAULT_POLICY.closeGrace),
     onlyTabs: listOf(get('TAB_RECAP_TABS')) ?? [],
 });
 
@@ -189,8 +193,8 @@ const compactionFrom = (get: SettingGet): CompactionSettings => {
 };
 
 const writerViewFrom = (get: SettingGet): PrunedWriterView => prunedWriterView(
-    keepNewestOf(numberIn(get('TAB_RECAP_WRITER_KEEP_NEWEST'), KEEP_NEWEST_RANGE.min, KEEP_NEWEST_RANGE.max, true) ?? KEEP_NEWEST_RANGE.fallback),
-    nextHoursOf(numberIn(get('TAB_RECAP_WRITER_NEXT_HOURS'), NEXT_HOURS_RANGE.min, NEXT_HOURS_RANGE.max, true) ?? NEXT_HOURS_RANGE.fallback),
+    keepNewestOf(numberIn(get('TAB_RECAP_WRITER_KEEP_NEWEST'), KEEP_NEWEST_BOUNDS, 'whole') ?? KEEP_NEWEST_RANGE.fallback),
+    nextHoursOf(numberIn(get('TAB_RECAP_WRITER_NEXT_HOURS'), NEXT_HOURS_BOUNDS, 'whole') ?? NEXT_HOURS_RANGE.fallback),
 );
 
 const screenAgentsFrom = (get: SettingGet): readonly AgentKind[] => screenKindsOf(get('TAB_RECAP_SCREEN_AGENTS')).flatMap((kind) => {
@@ -198,9 +202,9 @@ const screenAgentsFrom = (get: SettingGet): readonly AgentKind[] => screenKindsO
     return parsed.kind === 'ok' ? [parsed.value] : [];
 });
 
-const pacingOf = (get: SettingGet): Pacing => parsePacing(get('TAB_RECAP_RUN_PACING')?.trim().toLowerCase() === 'turn' ? 'turn' : 'smart', numberIn(get('TAB_RECAP_RUN_QUIET_MS'), 10_000, 600_000, true) ?? 45_000, numberIn(get('TAB_RECAP_RUN_MAX_WAIT_MS'), 60_000, 3_600_000, true) ?? 1_200_000);
+const pacingOf = (get: SettingGet): Pacing => parsePacing(get('TAB_RECAP_RUN_PACING')?.trim().toLowerCase() === 'turn' ? 'turn' : 'smart', numberIn(get('TAB_RECAP_RUN_QUIET_MS'), QUIET_BOUNDS, 'whole') ?? 45_000, numberIn(get('TAB_RECAP_RUN_MAX_WAIT_MS'), MAX_WAIT_BOUNDS, 'whole') ?? 1_200_000);
 
-const reconcileEveryFrom = (get: SettingGet): PositiveCount => positiveOr(parsePositiveCount(Math.max(1, Math.floor(numberIn(get('TAB_RECAP_RECONCILE_EVERY'), POSITIVE.min, POSITIVE.max) ?? RECONCILE_EVERY))), must(parsePositiveCount(RECONCILE_EVERY)));
+const reconcileEveryFrom = (get: SettingGet): PositiveCount => positiveOr(parsePositiveCount(Math.max(1, Math.floor(numberIn(get('TAB_RECAP_RECONCILE_EVERY'), POSITIVE) ?? RECONCILE_EVERY))), must(parsePositiveCount(RECONCILE_EVERY)));
 
 export function loadSettings(): Settings {
     const typed = readerOf(readFile());
@@ -242,7 +246,7 @@ export function loadSettings(): Settings {
         keepDays: tabKeepCountOf(get('TAB_RECAP_KEEP_DAYS')),
         closedLaneDays: closedLaneDaysOrDefault(parseClosedLaneDays(get('TAB_RECAP_CLOSED_LANE_DAYS'))),
         glow: GLOWS.find((choice) => choice === get('TAB_RECAP_GLOW')) ?? 'auto',
-        timeoutMs: must(parseDuration(numberIn(get('TAB_RECAP_TIMEOUT_MS'), POSITIVE.min, POSITIVE.max) ?? 180_000)),
+        timeoutMs: must(parseDuration(numberIn(get('TAB_RECAP_TIMEOUT_MS'), POSITIVE) ?? 180_000)),
         herdrEvents,
         handoffRequests: parseHandoffRequests(get('TAB_RECAP_HANDOFF_REQUESTS'), herdrEvents),
         holdIdle: parseIdleHold(get('TAB_RECAP_AUTOCOMPACT_HOLD_IDLE')),

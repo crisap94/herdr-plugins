@@ -10,13 +10,6 @@ import type { RestoredLane } from './closures.ts';
 import type { PaneId, TabId } from './ids.ts';
 import type { Lane, SeenLane } from './lane.ts';
 
-export function numberIn(raw: string | undefined, min: number, max: number, whole = false): number | null {
-    const text = (raw ?? '').trim().toLowerCase();
-    const value = Number(text);
-    const usable = text !== '' && Number.isFinite(value) && (!whole || Number.isInteger(value));
-    return usable && value >= min && value <= max ? value : null;
-}
-
 export interface Placement { readonly pane: PaneId; readonly shape: Shape; readonly since?: number; }
 
 export interface HiddenState { readonly all: boolean; readonly hidden: readonly string[]; readonly shown: readonly string[]; }
