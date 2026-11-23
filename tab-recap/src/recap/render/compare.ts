@@ -19,7 +19,7 @@ type ComparedChapter = ChapterResult & { kind: 'compared' };
 const tally = (part: Share): Tally => ({ passed: must(parseCount(part.passed)), total: must(parseCount(part.total)) });
 const when = (at: Instant): Text => must(parseText(new Date(at).toISOString().slice(0, 16).replace('T', ' ')));
 const figure = (part: Tally): Text => must(parseText(part.total === 0 ? 'n/a' : `${percent(part.passed, part.total)}% (${part.passed}/${part.total})`));
-const back = (side: Pick<Side, 'readback'>): Text => must(parseText(side.readback === null ? 'n/a' : `${side.readback.filter((grade) => grade.pass).length}/6`));
+const back = (side: Pick<Side, 'readback'>): Text => must(parseText(side.readback === null ? 'n/a' : `${side.readback.filter((grade) => grade.pass === 'pass').length}/6`));
 const row = (cells: readonly Text[], widths: readonly Count[]): Text =>
     must(parseText(cells.map((cell, at) => (at === 0 ? cell.padEnd(widths[at] ?? 0) : cell.padStart(widths[at] ?? 0))).join('  ').trimEnd()));
 

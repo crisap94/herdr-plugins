@@ -22,7 +22,7 @@ export interface Scored {
 
 export interface Grade {
     readonly question: Count;
-    readonly pass: boolean;
+    readonly pass: Outcome;
     readonly critique: Text;
 }
 
@@ -189,7 +189,7 @@ export function parseGrades(text: Text): Parsed<readonly Grade[]> {
         const question = entry.question;
         const pass = passOf(entry.pass);
         return question?.kind === 'count' && question.count >= 1 && question.count <= 6 && pass !== null
-            ? [{ question: question.count, pass: pass === 'pass', critique: pass === 'pass' ? must(parseText('')) : critiqueOf(entry) }]
+            ? [{ question: question.count, pass, critique: pass === 'pass' ? must(parseText('')) : critiqueOf(entry) }]
             : [];
     });
     const byQuestion = QUESTIONS.flatMap((question) => grades.find((grade) => grade.question === question) ?? []);

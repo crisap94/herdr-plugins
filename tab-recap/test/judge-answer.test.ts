@@ -59,6 +59,6 @@ test('grades need all six whole questions from 1 to 6 with a boolean pass, the f
     const grades = [1, 2, 3, 4, 5, 6].map((question) => ({ question, pass: question % 2 === 0, critique: 'c' }));
     const parsed = parseGrades(t(JSON.stringify({ grades: [{ question: 1, pass: true }, ...grades, { question: 0, pass: true }, { question: 7, pass: true }, { question: 2.5, pass: true }] })));
     assert.ok(parsed.kind === 'ok');
-    assert.deepEqual(parsed.value.map((grade) => [Number(grade.question), grade.pass, grade.critique]), [[1, true, ''], [2, true, ''], [3, false, 'c'], [4, true, ''], [5, false, 'c'], [6, true, '']]);
+    assert.deepEqual(parsed.value.map((grade) => [Number(grade.question), grade.pass, grade.critique]), [[1, 'pass', ''], [2, 'pass', ''], [3, 'fail', 'c'], [4, 'pass', ''], [5, 'fail', 'c'], [6, 'pass', '']]);
     assert.deepEqual(parseGrades(t(JSON.stringify({ grades: grades.slice(1) }))), { kind: 'unusable', why: 'the answer does not grade all six questions' });
 });

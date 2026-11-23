@@ -1,7 +1,4 @@
 {
-  "src/recap/application/judge-answer.ts": {
-    "property": 1
-  },
   "src/recap/application/setup-changes.ts": {
     "container": 1,
     "return": 1
