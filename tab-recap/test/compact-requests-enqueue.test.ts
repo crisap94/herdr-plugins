@@ -8,7 +8,7 @@ import { CompactRequestQueue } from '#src/recap/application/compact-requests.ts'
 import { wireOf } from './fakes/wire-tokens.ts';
 import { restartAnswers } from '#src/recap/application/ask-restart.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
-import type { CompactRequest } from '#src/ports/requests.ts';
+import type { AnsweredPane, CompactAsk } from '#src/ports/requests.ts';
 import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
@@ -28,12 +28,12 @@ class CrashingLedger extends MemoryAskLedger {
     override withdraw(): void { }
 }
 
-function handler(asks: MemoryAskLedger, tokens: RecordingTokens, queue: { throwing: boolean }, asked: CompactRequest[]): CompactRequestQueue {
+function handler(asks: MemoryAskLedger, tokens: RecordingTokens, queue: { throwing: boolean }, asked: CompactAsk[]): CompactRequestQueue {
     return new CompactRequestQueue({
         enabled: (): Presence => 'present',
         board,
         requests: {
-            requestCompact: (request: CompactRequest): void => {
+            requestCompact: (request: CompactAsk): void => {
                 if (queue.throwing) {
                     throw new Error('the queue is full');
                 }
@@ -50,12 +50,12 @@ function handler(asks: MemoryAskLedger, tokens: RecordingTokens, queue: { throwi
 test('an enqueue that throws leaves no ask behind, so the same request is taken again on the next read', async () => {
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
-    const asked: CompactRequest[] = [];
+    const asked: CompactAsk[] = [];
     const queue = { throwing: true };
     const first = handler(asks, tokens, queue, asked);
     first.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
     await flush();
-    assert.deepEqual([asks.seen(COMPACT_EXCHANGE, coordinator, rid('r7')), tokens.reports.length, asked.length], [false, 0, 0]);
+    assert.deepEqual([asks.seen(COMPACT_EXCHANGE, coordinator, rid('r7')) === 'seen', tokens.reports.length, asked.length], [false, 0, 0]);
     queue.throwing = false;
     first.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
     await flush();
@@ -65,7 +65,7 @@ test('an enqueue that throws leaves no ask behind, so the same request is taken 
 test('a crash between recording the ask and enqueueing leaves an unfinished ask that a restart answers failed-interrupted', async () => {
     const asks = new CrashingLedger();
     const tokens = new RecordingTokens();
-    const asked: CompactRequest[] = [];
+    const asked: CompactAsk[] = [];
     handler(asks, tokens, { throwing: true }, asked).onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
     await flush();
     assert.deepEqual([asked.length, asks.unfinished().map((ask) => ask.id)], [0, ['r7']]);
@@ -73,7 +73,7 @@ test('a crash between recording the ask and enqueueing leaves an unfinished ask 
         exchanges: REGISTRY.exchanges,
         ledger: asks,
         withdraw: (): void => undefined,
-        requests: { takeAnswered: (): readonly { readonly pane: string; readonly answer: string }[] => [] },
+        requests: { takeAnswered: (): readonly AnsweredPane[] => [] },
         compactions: { interrupted: (): Count => must(parseCount(0)) },
         tokens,
         enabled: (): Presence => 'present',
@@ -97,7 +97,7 @@ test('the ask is recorded before the request is queued, so the queue never sees 
         board,
         requests: {
             requestCompact: (): void => {
-                seenAtEnqueue.push(asks.seen(COMPACT_EXCHANGE, coordinator, rid('r7')));
+                seenAtEnqueue.push(asks.seen(COMPACT_EXCHANGE, coordinator, rid('r7')) === 'seen');
             },
         },
         asks,

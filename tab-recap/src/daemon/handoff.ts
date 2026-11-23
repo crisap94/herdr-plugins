@@ -6,12 +6,12 @@ import { readPaneSession } from '#src/adapters/herdr/fleet.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
 import { GitWorksite } from '#src/adapters/git/worksite.ts';
 import { TranscriptInFlight } from '#src/adapters/transcripts/in-flight.ts';
-import { LOCAL_REQUESTER, type Ask, type AskKey, type AskLedger } from '#src/ports/ask-ledger.ts';
+import { LOCAL_REQUESTER, type AskBook, type AskEntry, type AskKey } from '#src/ports/ask-ledger.ts';
 import type { HandoffAnswerStore } from '#src/ports/handoff-answers.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
-import type { HandoffRequestRow, Requests } from '#src/ports/requests.ts';
+import type { HandoffAskRecord, RequestPort } from '#src/ports/requests.ts';
 import { requestId, type RequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { HandoffFlow, unrendered, type HandoffRun } from '#src/recap/application/handoff-flow.ts';
@@ -43,7 +43,7 @@ import { withinBy } from './bounded.ts';
 
 export interface HandoffRunnerDeps {
     readonly flow: Pick<HandoffFlow, 'execute'>;
-    readonly asks: AskLedger;
+    readonly asks: AskBook;
     readonly answers: HandoffAnswerStore;
     readonly claims: Pick<LaneClaims, 'release'>;
     readonly mirror: HandoffMirror;
@@ -70,11 +70,11 @@ export class HandoffRunner {
         this.deps = deps;
     }
 
-    take(rows: readonly HandoffRequestRow[]): Promise<void> {
+    take(rows: readonly HandoffAskRecord[]): Promise<void> {
         return Promise.all(rows.map((row) => this.serve(row))).then(() => undefined);
     }
 
-    interrupted(ask: Ask): void {
+    interrupted(ask: AskEntry): void {
         try {
             const id = parseHandoffId(ask.ref);
             const { asks, answers, transaction } = this.deps;
@@ -88,7 +88,7 @@ export class HandoffRunner {
         }
     }
 
-    private async serve(row: HandoffRequestRow): Promise<void> {
+    private async serve(row: HandoffAskRecord): Promise<void> {
         try {
             if (row.answer === undefined || row.answer === null) {
                 await this.serveLocal(row);
@@ -100,7 +100,7 @@ export class HandoffRunner {
         }
     }
 
-    private async serveLocal(row: HandoffRequestRow): Promise<void> {
+    private async serveLocal(row: HandoffAskRecord): Promise<void> {
         if (this.deps.now() - row.at > HANDOFF_TAKE_MAX_AGE_MS) {
             this.finish(row.id, unrendered({ kind: 'failed', reason: 'expired' }), null);
             return;
@@ -111,11 +111,11 @@ export class HandoffRunner {
             return;
         }
         const key: AskKey = { exchange: HANDOFF_EXCHANGE, id, pane: row.pane };
-        this.deps.asks.record({ ...key, requester: LOCAL_REQUESTER, at: this.deps.now(), ref: row.id });
+        this.deps.asks.record({ ...key, requester: LOCAL_REQUESTER, at: this.deps.now(), ref: textOf(row.id) });
         this.finish(row.id, await this.flowOf(row), key);
     }
 
-    private async serveAsked(row: HandoffRequestRow): Promise<void> {
+    private async serveAsked(row: HandoffAskRecord): Promise<void> {
         const route = this.deps.mirror.routeOf(row);
         if (route === null) {
             this.deps.log(must(parseText(`handoff ${row.id}: no ask recorded for it; not run`)));
@@ -129,12 +129,12 @@ export class HandoffRunner {
         this.concludeAsked(row, route, await this.flowOf(row));
     }
 
-    private concludeAsked(row: HandoffRequestRow, route: Route, run: HandoffRun): void {
+    private concludeAsked(row: HandoffAskRecord, route: Route, run: HandoffRun): void {
         this.finish(row.id, run, askKeyOf(route));
         this.deps.mirror.terminal(route, run.outcome);
     }
 
-    private async flowOf(row: HandoffRequestRow): Promise<HandoffRun> {
+    private async flowOf(row: HandoffAskRecord): Promise<HandoffRun> {
         const mark = new DeliveryTracker();
         const run = await withinBy<HandoffRun | null>(this.executed(row, mark), duration(HANDOFF_FLOW_MAX_MS), null);
         if (run !== null) { return run; }
@@ -146,7 +146,7 @@ export class HandoffRunner {
         return unrendered({ kind: 'failed', reason: abandoned === 'typed' ? 'unconfirmed' : 'expired' });
     }
 
-    private async executed(row: HandoffRequestRow, mark: DeliveryTracker): Promise<HandoffRun> {
+    private async executed(row: HandoffAskRecord, mark: DeliveryTracker): Promise<HandoffRun> {
         try {
             return await this.deps.flow.execute(row, mark);
         } catch (error) {
@@ -193,7 +193,7 @@ export class HandoffRunner {
 
 interface HandoffPollParts {
     readonly runner: Pick<HandoffRunner, 'take'>;
-    readonly requests: Pick<Requests, 'takeHandoffs'>;
+    readonly requests: Pick<RequestPort, 'takeHandoffs'>;
     readonly log: (line: Text) => void;
 }
 
@@ -218,8 +218,8 @@ export function pruneHandoffAnswers(parts: HandoffPruneParts): void {
     parts.answers.prune(instant(parts.now() - HANDOFF_ANSWER_TTL_MS));
 }
 
-export function handoffRestartOf(runner: Pick<HandoffRunner, 'interrupted'>): (ask: Ask) => void {
-    return (ask: Ask): void => { runner.interrupted(ask); };
+export function handoffRestartOf(runner: Pick<HandoffRunner, 'interrupted'>): (ask: AskEntry) => void {
+    return (ask: AskEntry): void => { runner.interrupted(ask); };
 }
 
 export interface HandoffWiring {

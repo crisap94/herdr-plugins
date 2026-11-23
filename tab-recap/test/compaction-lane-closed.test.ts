@@ -7,13 +7,13 @@ import type { CompactionPorts } from '#src/recap/application/compaction-deps.ts'
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { checkedOf } from './fakes/coverage-fixtures.ts';
 import type { PlainCoverage as Coverage } from './fakes/coverage-fixtures.ts';
-import type { CompactRequest } from '#src/ports/requests.ts';
+import type { CompactAsk } from '#src/ports/requests.ts';
 import type { AgentLookup, AgentPanes } from '#src/ports/agents.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { compactionDeps, compacted, typingFleet } from '#test/fakes/compaction-fleet.ts';
 import type { Fleet } from '#test/fakes/compaction-fleet.ts';
-import { agentKind } from '#src/recap/domain/ids.ts';
+import { agentKind, tabId, paneId } from '#src/recap/domain/ids.ts';
 
 interface Hostile {
     readonly world: Fleet;
@@ -33,7 +33,7 @@ interface Steps {
 const MISSING: Coverage = { ok: false, missing: ['the goal'], missingFacts: [{ index: 0, fact: { section: 'goal', text: 'Ship it', why: null }, parts: [] }], answers: {}, unknown: null };
 const PASSING: Coverage = { ok: true, missing: [], missingFacts: [], answers: {}, unknown: null };
 const IDLE: AgentLookup = { kind: 'agent', agent: agentKind('claude'), status: 'idle' };
-const AUTO: CompactRequest = { tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'auto', answer: 'r1' };
+const AUTO: CompactAsk = { tab: tabId('w1:t1'), pane: paneId('w1:p1'), note: null, origin: 'auto', answer: textOf('r1') };
 
 function hostile(steps: Steps = {}): Hostile {
     const world = typingFleet({ 'w1:p1': 'idle' });
@@ -67,7 +67,7 @@ function hostile(steps: Steps = {}): Hostile {
     return { world, calls, logs, board, compaction: new Compaction(deps) };
 }
 
-const stages = (world: Fleet): readonly (readonly [string, string | null])[] => world.store.compactions.shownFor('w1:t1').map((record) => [record.stage, record.why]);
+const stages = (world: Fleet): readonly (readonly [string, string | null])[] => world.store.compactions.shownFor(tabId('w1:t1')).map((record) => [record.stage, record.why]);
 const closedLines = (logs: readonly string[]): readonly string[] => logs.filter((line) => line.includes('closed, skipped'));
 
 test('the lane closes while the writer runs: no coverage check, no rewrite, nothing typed, skipped lane closed, no toast about a failure, one log line', async () => {
@@ -130,14 +130,14 @@ test('herdr does not answer: the compaction fails as before, with its reason and
 
 test('a token asked for a lane that closes while the brief is written is answered with the existing skipped reason', async () => {
     const run = hostile({ closesIn: 'writer' });
-    await run.compaction.run({ ...AUTO, origin: 'request', answer: 'r9' });
+    await run.compaction.run({ ...AUTO, origin: 'request', answer: textOf('r9') });
     assert.deepEqual(run.world.answered.findLast((each) => each.startsWith('r9')), 'r9 w1:p1 failed-skipped');
     assert.deepEqual(run.world.typed, []);
 });
 
 test('an operator compaction of a lane that closes while the writer runs is skipped lane closed too, and nothing is typed', async () => {
     const run = hostile({ closesIn: 'writer' });
-    await run.compaction.run({ tab: 'w1:t1', pane: 'w1:p1', note: null });
+    await run.compaction.run({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), note: null });
     assert.deepEqual(run.world.typed, []);
     assert.deepEqual(stages(run.world), [['skipped', 'lane closed']]);
 });

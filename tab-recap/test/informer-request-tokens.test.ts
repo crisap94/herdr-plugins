@@ -14,7 +14,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { FleetSource, Frame, SnapshotResult, StreamResult } from '#src/ports/fleet-source.ts';
-import type { CompactRequest } from '#src/ports/requests.ts';
+import type { CompactAsk } from '#src/ports/requests.ts';
 import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
@@ -78,7 +78,7 @@ interface Harness {
     readonly herdr: Herdr;
     readonly informer: Informer;
     readonly answers: CompactRequestQueue;
-    readonly asked: CompactRequest[];
+    readonly asked: CompactAsk[];
     readonly asks: MemoryAskLedger;
     readonly tokens: RecordingTokens;
 }
@@ -86,11 +86,11 @@ interface Harness {
 function harness(): Harness {
     const control: Control = { on: true, present: true, tokens: {}, refuseNext: false, attempts: 0 };
     const herdr = new Herdr(control);
-    const asked: CompactRequest[] = [];
+    const asked: CompactAsk[] = [];
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
     const requests = {
-        requestCompact: (request: CompactRequest): void => {
+        requestCompact: (request: CompactAsk): void => {
             control.attempts += 1;
             if (control.refuseNext) {
                 control.refuseNext = false;
@@ -136,7 +136,7 @@ test('a request a pane holds while sharing is off is remembered and never acted 
     void run.informer.run();
     await run.informer.enterSubscription();
     await flush();
-    assert.equal(run.asks.seen(COMPACT_EXCHANGE, must(parseToolName('coordinator')), rid('r9')), true, 'remembered while off');
+    assert.equal(run.asks.seen(COMPACT_EXCHANGE, must(parseToolName('coordinator')), rid('r9')), 'seen', 'remembered while off');
     run.control.on = true;
     await run.informer.reconcile();
     await flush();
@@ -183,10 +183,10 @@ test('the snapshot carries the token map of every pane that has one, and keeps o
 });
 
 test('the ledger decides, not the value: a map read again with the same request acts on nothing, even after a refusal', () => {
-    const asked: CompactRequest[] = [];
+    const asked: CompactAsk[] = [];
     let attempts = 0;
     const requests = {
-        requestCompact: (request: CompactRequest): void => {
+        requestCompact: (request: CompactAsk): void => {
             attempts += 1;
             if (attempts === 1) {
                 throw new Error('the queue is full');

@@ -1,13 +1,13 @@
 // The expanded view's screenshot: invented content for the README, drawn by the plugin's own pure view.
 import { en } from '#src/i18n/en.ts';
-import type { Break } from '#src/ports/boundaries.ts';
+import type { BoundaryBreak } from '#src/ports/boundaries.ts';
 import type { Fact, FactId } from '#src/recap/domain/fact.ts';
 import { sessionFactsOf } from '#src/recap/domain/session-facts.ts';
 import { expanded } from '#src/recap/render/expanded.ts';
 import { parseCurating, parseInstant, parseProse, parseTaskName } from '@stateforge-labs/recap-view';
 import { viewBreakOf, webOf } from '#src/view-model/column.ts';
 import { countOf } from '#src/recap/domain/count.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { duration, instant } from '#src/recap/domain/time.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
@@ -35,9 +35,9 @@ const FACTS: readonly Fact[] = [
     fact('f12', 'links', '`src/payments/v2/client.ts`', ago(60)),
 ];
 
-const BREAKS: readonly Break[] = [
-    { kind: 'compacted', at: ago(180), trigger: 'manual', tokensBefore: 812_000, tokensAfter: 14_000, tookMs: 16_000 },
-    { kind: 'switched', at: ago(380), trigger: null, tokensBefore: null, tokensAfter: null, tookMs: null },
+const BREAKS: readonly BoundaryBreak[] = [
+    { kind: 'compacted', at: instant(ago(180)), trigger: 'manual', tokensBefore: countOf(812_000), tokensAfter: countOf(14_000), took: duration(16_000) },
+    { kind: 'switched', at: instant(ago(380)), trigger: null, tokensBefore: null, tokensAfter: null, took: null },
 ];
 
 /** The lines of the screenshot, at `width` cells. */

@@ -1,5 +1,5 @@
 import type { Done } from '#src/ports/columns.ts';
-import type { CompactRequest } from '#src/ports/requests.ts';
+import type { CompactAsk } from '#src/ports/requests.ts';
 import type { CompactNote } from '#src/recap/domain/compact-note.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
@@ -9,7 +9,7 @@ import { NOTE_LIMIT } from './compaction-message.ts';
 
 export interface CompactStart {
     askNote(tab: TabId, pane: PaneId | null): Promise<Done>;
-    queue(request: CompactRequest): Done;
+    queue(request: CompactAsk): Done;
 }
 
 export function noteFromRequest(raw: Text): Text | null {

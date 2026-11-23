@@ -1,5 +1,6 @@
+import { textOf } from '#src/recap/domain/text.ts';
 import type { HandoffAnswerRecord, HandoffAnswerStore } from '#src/ports/handoff-answers.ts';
-import type { HandoffRequester } from '#src/ports/requests.ts';
+import type { HandoffAsker } from '#src/ports/requests.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
@@ -31,7 +32,7 @@ export interface DaemonReading {
 
 export interface HandoffStore {
     readonly views: Pick<TabViews, 'tabOf'>;
-    readonly requests: HandoffRequester;
+    readonly requests: HandoffAsker;
     readonly handoffs: Pick<HandoffAnswerStore, 'handoffAnswer'>;
     close(): void;
 }
@@ -95,7 +96,7 @@ async function settledOutcome(id: HandoffId, store: HandoffStore, deps: DeliverD
     if (answer !== null) {
         return outcomeOf(answer);
     }
-    if (store.requests.withdrawHandoff(id)) {
+    if (store.requests.withdrawHandoff(id) === 'withdrawn') {
         return failed('not-answered-withdrawn');
     }
     const late = store.handoffs.handoffAnswer(id);
@@ -103,7 +104,7 @@ async function settledOutcome(id: HandoffId, store: HandoffStore, deps: DeliverD
 }
 
 function queuedOf(request: DeliverRequest, store: HandoffStore, tab: TabId): HandoffId {
-    return store.requests.requestHandoff({ tab, pane: request.from, toPane: request.to, note: request.note, refreshFirst: request.refresh, source: sourceOf(request.closed) });
+    return store.requests.requestHandoff({ tab, pane: request.from, toPane: request.to, note: request.note === null ? null : textOf(request.note), refresh: request.refresh ? 'refresh-first' : 'as-is', source: sourceOf(request.closed) });
 }
 
 export async function deliverHandoff(request: DeliverRequest, deps: DeliverDeps): Promise<HandoffOutcome> {

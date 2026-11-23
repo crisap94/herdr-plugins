@@ -17,8 +17,6 @@ export type Stage = ActiveStage | EndStage;
 
 export type BriefOrigin = 'written' | 'template';
 
-export type { BeginCompaction, CompactionEnd, CompactionRecord, CompactionRecords, CompactionView, StageFacts } from './legacy.ts';
-
 export type RetryMark = 'retried' | 'first-try';
 export type QueueMark = 'queued' | 'direct';
 export type CompactionActivity = 'auto-in-progress' | 'idle';

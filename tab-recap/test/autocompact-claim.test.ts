@@ -1,3 +1,5 @@
+import { instant } from '#src/recap/domain/time.ts';
+import { tabId, paneId, agentKind } from '#src/recap/domain/ids.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { laneFrom } from '#src/recap/domain/lane.ts';
@@ -48,7 +50,7 @@ test('a claim is declined when the share is below the minimum or unknown', async
 
 test('a claim is declined while a compaction is in flight or queued for the lane', async () => {
     const flying = world();
-    flying.store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'compacting', at: flying.clock.at });
+    flying.store.compactions.begin({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), stage: 'compacting', at: instant(flying.clock.at) });
     assert.deepEqual(await claimOf(flying), { claim: 'declined', asked: 0 });
     const queued = world();
     queued.queued.add('w1:p1');

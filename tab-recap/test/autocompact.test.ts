@@ -110,7 +110,7 @@ test('a compaction in progress, or one just requested, stops a second request', 
     await w.service.consider(lane());
     assert.deepEqual([w.requests.length, w.asked.length], [1, 1], 'the request has not begun yet: busy');
     const going = world();
-    going.store.compactions.begin({ tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'compacting', at: NOW });
+    going.store.compactions.begin({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), stage: 'compacting', at: instant(NOW) });
     await going.service.consider(lane());
     assert.equal(going.asked.length, 0);
 });

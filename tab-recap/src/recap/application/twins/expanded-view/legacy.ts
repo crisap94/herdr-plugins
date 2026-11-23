@@ -1,7 +1,7 @@
 import { knownOr, type GuardedLedger, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
-import type { Boundaries } from '#src/ports/boundaries.ts';
+import type { BoundaryLog } from '#src/ports/boundaries.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
-import type { Requests } from '#src/ports/requests.ts';
+import type { RequestPort } from '#src/ports/requests.ts';
 import type { SessionSource } from '#src/ports/session-source.ts';
 import type { Stories } from '#src/ports/stories.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
@@ -33,8 +33,8 @@ export interface ExpandedDeps {
     readonly stories: Stories;
     readonly session: SessionSource;
     readonly autocompact?: Pick<AutocompactRecords, 'countsFor'>;
-    readonly boundaries: Pick<Boundaries, 'breaksOf' | 'chapterCount'>;
-    readonly requests: Pick<Requests, 'requestCurate'>;
+    readonly boundaries: Pick<BoundaryLog, 'breaksOf' | 'chapterCount'>;
+    readonly requests: Pick<RequestPort, 'requestCurate'>;
     readonly edits: (lanes: readonly LaneCursor[], now: Instant) => readonly FileCount[];
 }
 
@@ -83,7 +83,7 @@ export class ExpandedModel {
         const recap = knownOr(this.deps.records.readRecap(tabIdOf(tab)), null);
         const found = (recap?.tasks ?? []).map((task) => this.taskOf(tab, task, now));
         if (found.some((one) => one.asks)) {
-            this.deps.requests.requestCurate(tab);
+            this.deps.requests.requestCurate(tabIdOf(tab));
         }
         const lanes = view?.lanes ?? [];
         const counted = parseTabId(tab);
@@ -91,9 +91,9 @@ export class ExpandedModel {
             firstSeen: this.deps.session.firstSeen(tab), now, runs: this.deps.session.runsByCause(tab), compactions: this.deps.session.compactions(tab),
             lanes: lanes.map((lane) => ({ agent: lane.agent, label: clipped(lane.title), context: lane.context ?? null })),
             webs: lanes.map((lane) => lane.web ?? null), edits: this.deps.edits(recap?.lanes ?? [], instant(now)),
-            chapters: this.deps.boundaries.chapterCount(tab),
+            chapters: this.deps.boundaries.chapterCount(tabIdOf(tab)),
             ...(this.deps.autocompact === undefined ? {} : { autocompact: counted.kind === 'ok' ? this.deps.autocompact.countsFor(counted.value) : NO_DECISIONS }),
         });
-        return { tasks: found.map((one) => one.task), session, webs: lanes.map((lane) => (lane.web === undefined || lane.web === null ? lane.web : webOf(lane.web))), breaks: this.deps.boundaries.breaksOf(tab).map(viewBreakOf) };
+        return { tasks: found.map((one) => one.task), session, webs: lanes.map((lane) => (lane.web === undefined || lane.web === null ? lane.web : webOf(lane.web))), breaks: this.deps.boundaries.breaksOf(tabIdOf(tab)).map(viewBreakOf) };
     }
 }

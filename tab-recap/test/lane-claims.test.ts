@@ -1,10 +1,11 @@
+import { textOf } from '#src/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
-import type { CompactRequest } from '#src/ports/requests.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import type { CompactAsk } from '#src/ports/requests.ts';
 
-const request: CompactRequest = { tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r1' };
+const request: CompactAsk = { tab: tabId('w1:t1'), pane: paneId('w1:p1'), note: null, origin: 'request', answer: textOf('r1') };
 
 test('a handoff claim is held like a compaction claim and reports its kind', () => {
     const claims = new LaneClaims();

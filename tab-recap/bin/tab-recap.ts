@@ -4,9 +4,9 @@ import { openSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
-import type { Requests } from '#src/ports/requests.ts';
+import type { RequestPort } from '#src/ports/requests.ts';
 import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { boundKeysIn, herdrConfigPathOf } from '#src/adapters/herdr/host-check.ts';
@@ -145,7 +145,7 @@ async function configure(): Promise<number> {
     return OK;
 }
 
-function requests(): Requests | null {
+function requests(): RequestPort | null {
     const store = openCliStore();
     if (store.kind === 'ready') {
         return store.requests;
@@ -164,7 +164,7 @@ function toggle(all: boolean): number {
     if (queue === null) {
         return FAILED;
     }
-    queue.requestVisibility({ target: tab, hidden: 'toggle' });
+    queue.requestVisibility({ target: paneId(tab), visibility: 'toggle' });
     console.log(`tab-recap: ${all ? m().cli.columnsToggled : m().cli.columnToggled(tab)}`);
     return OK;
 }
@@ -215,7 +215,7 @@ const commands: Readonly<Record<string, (arg: string | undefined) => number | Pr
         if (queue === null) {
             return FAILED;
         }
-        queue.request(tab);
+        queue.request(tabId(tab));
         console.log(`tab-recap: ${m().cli.requested(tab)}`);
         return OK;
     },

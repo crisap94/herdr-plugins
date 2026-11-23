@@ -87,7 +87,7 @@ const viewOf = (store: Store, config: Settings, style: Style): ColumnView => {
         messages: messagesFor(config.locale),
         version: null,
         compactHint: config.compaction.hint,
-        compactions: store.compactions.shownFor(TAB),
+        compactions: store.compactions.shownFor(tabId(TAB)),
         style,
     };
 };

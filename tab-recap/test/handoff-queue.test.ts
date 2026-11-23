@@ -1,10 +1,11 @@
+import { instant } from '#src/recap/domain/time.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { AskLedgerRepository } from '#src/adapters/db/legacy.ts';
+import { AskBookRepository } from '#src/adapters/db/ask-ledger.ts';
 import { HandoffQueueRepository } from '#src/adapters/db/handoff-queue.ts';
 import type { Store } from '#src/adapters/db/database.ts';
-import type { NewAsk } from '#src/ports/ask-ledger.ts';
-import type { NewHandoffRequest } from '#src/ports/requests.ts';
+import type { AskDraft } from '#src/ports/ask-ledger.ts';
+import type { HandoffAsk } from '#src/ports/requests.ts';
 import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
@@ -13,9 +14,9 @@ import { parseText } from '#src/recap/domain/text.ts';
 import { memoryStore } from './db/support.ts';
 import { rid } from './fakes/ask-ledger.ts';
 
-const ask: NewAsk = { exchange: HANDOFF_EXCHANGE, requester: must(parseToolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: 1, ref: null };
+const ask: AskDraft = { exchange: HANDOFF_EXCHANGE, requester: must(parseToolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: instant(1), ref: null };
 
-const request: NewHandoffRequest = { tab: tabId('w1:t1'), pane: paneId('w1:p1'), toPane: paneId('w1:p2'), note: null, refreshFirst: false, source: { kind: 'live' }, answer: must(parseText('h1')) };
+const request: HandoffAsk = { tab: tabId('w1:t1'), pane: paneId('w1:p1'), toPane: paneId('w1:p2'), note: null, refresh: 'as-is', source: { kind: 'live' }, answer: must(parseText('h1')) };
 
 const queueOf = (store: Store): HandoffQueueRepository => new HandoffQueueRepository(store.db, store.asks, store.requests);
 
@@ -38,5 +39,5 @@ test('a failing attach leaves neither the ask nor the row, and a restart finds n
     const store = memoryStore();
     store.db.exec("CREATE TRIGGER refuse_attach BEFORE UPDATE OF ref ON ask BEGIN SELECT RAISE(ABORT, 'attach refused'); END");
     assert.throws(() => { queueOf(store).queueHandoff(ask, request); }, /attach refused/);
-    assert.deepEqual([store.asks.unfinished(), store.requests.takeHandoffs(), new AskLedgerRepository(store.db).unfinished()], [[], [], []]);
+    assert.deepEqual([store.asks.unfinished(), store.requests.takeHandoffs(), new AskBookRepository(store.db).unfinished()], [[], [], []]);
 });

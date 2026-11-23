@@ -1,24 +1,25 @@
 import type { Database } from 'bun:sqlite';
-import type { AskLedger, NewAsk } from '#src/ports/ask-ledger.ts';
-import type { HandoffQueue, HandoffRequester, NewHandoffRequest } from '#src/ports/requests.ts';
+import type { AskBook, AskDraft } from '#src/ports/ask-ledger.ts';
+import type { HandoffAsk, HandoffAskQueue, HandoffAsker } from '#src/ports/requests.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { writeTx } from './connection.ts';
 
-export class HandoffQueueRepository implements HandoffQueue {
+export class HandoffQueueRepository implements HandoffAskQueue {
     private readonly db: Database;
-    private readonly asks: AskLedger;
-    private readonly requests: HandoffRequester;
+    private readonly asks: AskBook;
+    private readonly requests: HandoffAsker;
 
-    constructor(db: Database, asks: AskLedger, requests: HandoffRequester) {
+    constructor(db: Database, asks: AskBook, requests: HandoffAsker) {
         this.db = db;
         this.asks = asks;
         this.requests = requests;
     }
 
-    queueHandoff(ask: NewAsk, request: NewHandoffRequest): void {
+    queueHandoff(ask: AskDraft, request: HandoffAsk): void {
         writeTx(this.db, () => {
             this.asks.record(ask);
             const id = this.requests.requestHandoff(request);
-            this.asks.attach(ask, id);
+            this.asks.attach(ask, textOf(id));
         });
     }
 }

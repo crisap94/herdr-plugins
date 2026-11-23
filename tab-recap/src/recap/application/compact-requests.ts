@@ -4,8 +4,8 @@ import { ANSWER_TTL_MS, COMPACT_EXCHANGE, NOT_ACTED, noteOf } from '#src/recap/d
 import { outcomeOf } from '#src/recap/domain/ask-outcome.ts';
 import { COMPACT_TOKEN } from '#src/recap/domain/lane-tokens.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
-import type { AskLedger } from '#src/ports/ask-ledger.ts';
-import type { Requests } from '#src/ports/requests.ts';
+import type { AskBook } from '#src/ports/ask-ledger.ts';
+import type { RequestPort } from '#src/ports/requests.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
@@ -16,7 +16,7 @@ import { answerWrite, takeRequests } from '#src/protocol/responder.ts';
 import type { Refused } from '#src/protocol/responder.ts';
 import type { TokenWrite } from '#src/protocol/tokens.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 
 const PENDING_MAX = 200;
@@ -25,8 +25,8 @@ const BAD_MAX = 500;
 export interface CompactRequestQueueDeps {
     readonly enabled: () => Presence;
     readonly board: () => Board;
-    readonly requests: Pick<Requests, 'requestCompact'>;
-    readonly asks: AskLedger;
+    readonly requests: Pick<RequestPort, 'requestCompact'>;
+    readonly asks: AskBook;
     readonly tokens: LaneTokens;
     readonly now: () => Instant;
     readonly log: (line: Text) => void;
@@ -52,7 +52,7 @@ export class CompactRequestQueue {
         if (pane.trim() === '') {
             return;
         }
-        const taking = takeRequests(REGISTRY, tokens, (exchange, requester, id) => (this.deps.asks.seen(exchange, requester, id) ? 'seen' : 'fresh'));
+        const taking = takeRequests(REGISTRY, tokens, (exchange, requester, id) => (this.deps.asks.seen(exchange, requester, id) === 'seen' ? 'seen' : 'fresh'));
         for (const refused of taking.refused) {
             if (refused.exchange.name === COMPACT_EXCHANGE) {
                 this.refuseBadId(pane, refused);
@@ -71,7 +71,7 @@ export class CompactRequestQueue {
             return;
         }
         for (const item of this.pending.splice(0)) {
-            if (this.deps.enabled() === 'present' && !this.deps.asks.seen(COMPACT_EXCHANGE, item.requester, item.id)) {
+            if (this.deps.enabled() === 'present' && this.deps.asks.seen(COMPACT_EXCHANGE, item.requester, item.id) === 'unseen') {
                 this.act(item);
             }
         }
@@ -116,7 +116,7 @@ export class CompactRequestQueue {
         }
         this.remember(incoming);
         try {
-            this.deps.requests.requestCompact({ tab: String(lane.tab), pane, note, origin: 'request', answer: id });
+            this.deps.requests.requestCompact({ tab: lane.tab, pane, note, origin: 'request', answer: textOf(id) });
         } catch (error) {
             this.deps.asks.withdraw({ exchange: COMPACT_EXCHANGE, requester: incoming.requester, id });
             this.deps.log(must(parseText(`compaction request ${id} on ${pane}: not queued (${error instanceof Error ? error.message : String(error)})`)));

@@ -1,3 +1,4 @@
+import { textOf } from '#src/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
@@ -13,7 +14,7 @@ test('a pane is claimed once: a second claim fails, a join is kept for the answe
     assert.equal(claims.claim('w1:p1', 'compaction'), true);
     assert.equal(claims.claim('w1:p1', 'compaction'), false, 'the running compaction holds it');
     assert.equal(claims.has(paneId('w1:p1')), true);
-    claims.join('w1:p1', { tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r1' });
+    claims.join('w1:p1', { tab: tabId('w1:t1'), pane: paneId('w1:p1'), note: null, origin: 'request', answer: textOf('r1') });
     assert.deepEqual(claims.joinedOf('w1:p1').map((request) => request.answer), ['r1']);
     claims.release('w1:p1');
     assert.deepEqual([claims.has(paneId('w1:p1')), claims.joinedOf('w1:p1').length], [false, 0]);
@@ -46,10 +47,10 @@ test('a compaction request still queued for the lane (not yet taken) makes the l
 
 test('the queue answers for a lane: a request for its pane, or one for the tab with no pane (the focused one); taking it clears it', () => {
     const store = memoryStore();
-    store.requests.requestCompact({ tab: 'w1:t1', pane: 'w1:p1', note: null, origin: 'request', answer: 'r1' });
-    assert.deepEqual([store.requests.compactQueued(tabId('w1:t1'), paneId('w1:p1')), store.requests.compactQueued(tabId('w1:t1'), paneId('w1:p2'))], [true, false]);
+    store.requests.requestCompact({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), note: null, origin: 'request', answer: textOf('r1') });
+    assert.deepEqual([store.requests.compactQueued(tabId('w1:t1'), paneId('w1:p1')), store.requests.compactQueued(tabId('w1:t1'), paneId('w1:p2'))], ['queued', 'not-queued']);
     store.requests.takeCompactions();
-    assert.equal(store.requests.compactQueued(tabId('w1:t1'), paneId('w1:p1')), false, 'taken: no longer queued');
-    store.requests.requestCompact({ tab: 'w1:t1', pane: null, note: null });
-    assert.equal(store.requests.compactQueued(tabId('w1:t1'), paneId('w1:p2')), true, 'no pane: the focused lane, which may be this one');
+    assert.equal(store.requests.compactQueued(tabId('w1:t1'), paneId('w1:p1')), 'not-queued', 'taken: no longer queued');
+    store.requests.requestCompact({ tab: tabId('w1:t1'), pane: null, note: null });
+    assert.equal(store.requests.compactQueued(tabId('w1:t1'), paneId('w1:p2')), 'queued', 'no pane: the focused lane, which may be this one');
 });

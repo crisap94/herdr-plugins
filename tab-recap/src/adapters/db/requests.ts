@@ -16,8 +16,6 @@ import { ids } from './uuid7.ts';
 import { request as requestTable } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 
-export { RequestsRepository } from './legacy.ts';
-
 const ORIGIN_DEFAULT = 'operator';
 
 const HIDDEN_WORD: Readonly<Record<Visibility, string>> = { toggle: 'toggle', hidden: 'hide', shown: 'show' };

@@ -3,7 +3,7 @@ import type { CompactTarget } from '#src/recap/domain/compaction.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
-import type { CompactRequest } from '#src/ports/requests.ts';
+import type { CompactAsk } from '#src/ports/requests.ts';
 import type { CompactionPorts } from './compaction-deps.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
@@ -38,7 +38,7 @@ export interface Scope {
 
 type Targeting = Pick<CompactionPorts, 'lanes' | 'focused' | 'target'>;
 
-async function targetsFor(deps: Targeting, request: CompactRequest, tab: TabId, lanes: readonly Lane[]): Promise<readonly Lane[]> {
+async function targetsFor(deps: Targeting, request: CompactAsk, tab: TabId, lanes: readonly Lane[]): Promise<readonly Lane[]> {
     const asked = request.pane === null ? null : parsePaneId(request.pane);
     if (asked !== null && asked.kind === 'err') return [];
     const focused = await deps.focused(tab);
@@ -46,7 +46,7 @@ async function targetsFor(deps: Targeting, request: CompactRequest, tab: TabId, 
     return targetsOf(lanes, deps.target(), { pane: asked === null ? null : asked.value, focused: seen === null || seen.kind === 'err' ? null : seen.value });
 }
 
-export async function scopeOf(deps: Targeting, request: CompactRequest): Promise<Scope | null> {
+export async function scopeOf(deps: Targeting, request: CompactAsk): Promise<Scope | null> {
     const parsed = parseTabId(request.tab);
     if (parsed.kind === 'err') return null;
     const lanes = deps.lanes(parsed.value);

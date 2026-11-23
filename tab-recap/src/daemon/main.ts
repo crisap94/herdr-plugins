@@ -42,7 +42,7 @@ import { SLOT_TABLE } from './slot-table.ts';
 import { contextOf, parseRoot, parseSwitch, parseVersion, startSlots, taps, type Slots, type SlotKey, type StatusEvent, type Switch, type Version } from './slots.ts';
 import { Backends } from './backends.ts';
 import { boundedBy } from './bounded.ts';
-import { capabilityNow, failureLog, herdrEventsOn, herdrEventsPresence, interruptedBy, listeningIn, logVia, paneTokensTo, wantsScreen } from './legacy.ts';
+import { capabilityNow, failureLog, herdrEventsOn, herdrEventsPresence, listeningIn, logVia, paneTokensTo, wantsScreen } from './legacy.ts';
 import { SHUTDOWN_MS, shutDownWithin } from './shutdown.ts';
 import { openStateAt } from './state.ts';
 import type { Autocompact } from '#src/recap/application/autocompact.ts';
@@ -180,7 +180,7 @@ function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compa
         curate.run(tab).catch(failureLog(log, `curator ${tab}`));
     }
     for (const asked of store.requests.takeVisibility()) {
-        informer.push({ kind: 'visibility', target: asked.target === 'all' ? 'all' : { tab: tabId(asked.target) }, hidden: asked.hidden });
+        informer.push({ kind: 'visibility', target: asked.target === 'all' ? 'all' : { tab: tabId(asked.target) }, hidden: asked.visibility === 'toggle' ? 'toggle' : asked.visibility === 'hidden' });
     }
 }
 
@@ -222,7 +222,7 @@ async function start(): Promise<ExitCode> {
     };
     process.on('SIGTERM', stop).on('SIGINT', stop);
     const restarted = restartAnswers({
-        exchanges: REGISTRY.exchanges, ledger: store.asks, requests: store.requests, compactions: interruptedBy(store.compactions), tokens: fleet,
+        exchanges: REGISTRY.exchanges, ledger: store.asks, requests: store.requests, compactions: store.compactions, tokens: fleet,
         enabled: herdrEventsPresence, local: (ask): void => { log(`ask ${ask.id} from ${ask.requester}: interrupted, no local flow answers yet`); },
         handoff: handoffRestartOf(handoffs), withdraw: (ask): void => { withdrawAsked(store.requests, ask); },
         log, now: nowInstant, restartedWhy: textOf(messagesOf().compaction.stage.restarted),
@@ -240,7 +240,7 @@ async function start(): Promise<ExitCode> {
             forgetClosedTabs(store, log);
         }
         informer.tick();
-        store.asks.prune(Date.now() - ASK_KEEP_MS);
+        store.asks.prune(instant(Date.now() - ASK_KEEP_MS));
         pruneHandoffAnswers({ answers: store.handoffs, now: nowInstant });
         events.prune(Date.now());
         sweep.tick();

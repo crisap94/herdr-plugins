@@ -1,3 +1,4 @@
+import { parseFactIndex } from '#src/recap/domain/fact-index.ts';
 import { knownOr } from '#src/ports/guarded-reads.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
@@ -12,7 +13,7 @@ import { MISSED_FACTS_DEFAULT } from '#src/recap/domain/autocompact.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { must } from '#src/protocol/result.ts';
-import { duration, instant } from '#src/recap/domain/time.ts';
+import { duration } from '#src/recap/domain/time.ts';
 import { appendedBrief, checkedBrief } from './compaction-coverage.ts';
 import type { Briefed, Checked, CoverageFlow } from './compaction-coverage.ts';
 import { checkedFactsOf } from './brief-coverage.ts';
@@ -60,8 +61,8 @@ export class Briefing {
         }
         const label = knownOr(records.readRecap(tab), null)?.lanes.find((each) => each.pane === pane)?.title ?? lane.title ?? '';
         const clock = { now: this.deps.now(), zone: textOf(Intl.DateTimeFormat().resolvedOptions().timeZone) };
-        const broke = this.deps.boundaries.lastBreakAt(tab, pane);
-        const document = compactionMaterialInput({ agent: { kind: textOf(agent), label: textOf(label), repo: null, branch: null }, note: material.note, current: material.sections, history, lastBreakAt: broke === null ? null : instant(broke), recent, clock });
+        const broke = this.deps.boundaries.lastBreakAt(tab, lane.pane);
+        const document = compactionMaterialInput({ agent: { kind: textOf(agent), label: textOf(label), repo: null, branch: null }, note: material.note, current: material.sections, history, lastBreakAt: broke, recent, clock });
         return { ...(await brief.write(document, own, correction)), own, history };
     }
 
@@ -96,7 +97,7 @@ export class Briefing {
         const appended = flow.appends === 'present' && checked.outcome.kind === 'missed' && checked.brief.text !== null
             ? appendedBrief(checked.brief.text, checked.outcome.facts, checkedFacts)
             : null;
-        if (decision !== null && checked.brief.text !== null) this.deps.checkedBriefs?.put(decision, checked.brief.text, appended?.indexes ?? [], checkedFacts, this.deps.now());
+        if (decision !== null && checked.brief.text !== null) this.deps.checkedBriefs?.put(decision, checked.brief.text, (appended?.indexes ?? []).flatMap((each) => { const index = parseFactIndex(each); return index.kind === 'ok' ? [index.value] : []; }), checkedFacts, this.deps.now());
         return appended === null ? checked : { ...checked, brief: { ...checked.brief, text: appended.text } };
     }
 

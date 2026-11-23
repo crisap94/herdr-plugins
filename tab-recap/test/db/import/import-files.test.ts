@@ -32,7 +32,7 @@ test('every historical shape imports and reads back equal to what the legacy rea
             assert.deepEqual(viewDifferenceLines({ ...view, column: view.column ?? null }, store.views.readTab(view.tab)), [], view.tab);
         }
         assert.deepEqual(store.visibility.readHidden(), legacy.readHidden());
-        assert.deepEqual(store.requests.takeVisibility(), [{ target: 'w1:t1', hidden: 'toggle' }, { target: 'all', hidden: true }]);
+        assert.deepEqual(store.requests.takeVisibility(), [{ target: 'w1:t1', visibility: 'toggle' }, { target: 'all', visibility: 'hidden' }]);
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }

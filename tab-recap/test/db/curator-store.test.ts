@@ -138,10 +138,10 @@ test('the real ledger stores what the view reads: a done fact is drawn when it h
 
 test('curate requests are taken once; a tab asked twice is one request, and the other queues are not disturbed', () => {
     const store = memoryStore(); const { requests } = store;
-    requests.requestCurate('w1:t1');
-    requests.requestCurate('w1:t1');
-    requests.requestCurate('w1:t2');
-    requests.request('w1:t5');
+    requests.requestCurate(tabId('w1:t1'));
+    requests.requestCurate(tabId('w1:t1'));
+    requests.requestCurate(tabId('w1:t2'));
+    requests.request(tabId('w1:t5'));
     assert.deepEqual(requests.takeCurations().map(String).toSorted(), ['w1:t1', 'w1:t2']);
     assert.deepEqual(requests.takeCurations(), []);
     assert.deepEqual(requests.takeRequests().map(String), ['w1:t5']);

@@ -1,7 +1,9 @@
+import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Database } from 'bun:sqlite';
-import { RequestsRepository } from '#src/adapters/db/requests.ts';
+import { RequestsStore } from '#src/adapters/db/requests.ts';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { expectSameEffect } from './parity.ts';
@@ -16,7 +18,7 @@ const SEED = [seedRow(1, 'compact', "'p1', 'n', 'auto', NULL"), seedRow(2, 'comp
 const withoutIds = (db: Database): unknown => db.prepare(DUMP.replace('id, ', '')).all().map((row) => JSON.stringify(row)).toSorted();
 const rawTake = (db: Database, kind: string): unknown => db.prepare(`DELETE FROM request WHERE kind = '${kind}' RETURNING id, target`).all();
 const targetsOf = (rows: unknown): readonly string[] => (rows as { target: string }[]).map((row) => row.target);
-const NOW = (): number => 42;
+const NOW = (): Instant => instant(42);
 
 describe('parity: requests', () => {
     test('inserts write the same row as the old statements', () => {
@@ -30,12 +32,12 @@ describe('parity: requests', () => {
                 db.prepare("INSERT INTO request (id, at, kind, target, pane, to_pane, note, refresh_first, closed_at, answer) VALUES (?, 42, 'handoff', 't1', 'p1', 'p2', 'n', 1, 9, NULL)").run(keyOf(5));
             },
             builder: (db) => {
-                const repo = new RequestsRepository(db, NOW);
-                repo.request('t1');
-                repo.requestVisibility({ target: 't1', hidden: 'toggle' });
-                repo.requestCompact({ tab: 't1', pane: 'p1', note: null, origin: 'auto', answer: 'a' });
-                repo.requestCurate('t1');
-                repo.requestHandoff({ tab: 't1', pane: 'p1', toPane: 'p2', note: 'n', refreshFirst: true, source: { kind: 'closed', closedAt: 9 } } as never);
+                const repo = new RequestsStore(db, NOW);
+                repo.request(tabId('t1'));
+                repo.requestVisibility({ target: paneId('t1'), visibility: 'toggle' });
+                repo.requestCompact({ tab: tabId('t1'), pane: paneId('p1'), note: null, origin: 'auto', answer: textOf('a') });
+                repo.requestCurate(tabId('t1'));
+                repo.requestHandoff({ tab: tabId('t1'), pane: paneId('p1'), toPane: paneId('p2'), note: textOf('n'), refresh: 'refresh-first', source: { kind: 'closed', closedAt: instant(9) } });
             },
             dump: withoutIds,
         });
@@ -47,7 +49,7 @@ describe('parity: requests', () => {
             seed: exec(SEED),
             raw: (db) => { results.raw = [rawTake(db, 'curate'), rawTake(db, 'refresh'), db.prepare("DELETE FROM request WHERE kind = 'compact' RETURNING id, target, pane, note, origin, answer").all()]; },
             builder: (db) => {
-                const repo = new RequestsRepository(db, NOW);
+                const repo = new RequestsStore(db, NOW);
                 results.built = [repo.takeCurations(), repo.takeRequests(), repo.takeCompactions()];
             },
             dump,
@@ -65,7 +67,7 @@ describe('parity: requests', () => {
                 db.prepare("DELETE FROM request WHERE kind = 'handoff' AND id = ?").run(keyOf(9));
             },
             builder: (db) => {
-                const repo = new RequestsRepository(db, NOW);
+                const repo = new RequestsStore(db, NOW);
                 repo.takeAnswered();
                 repo.withdrawHandoff(handoffIdOf(keyOf(9)));
             },
@@ -75,10 +77,10 @@ describe('parity: requests', () => {
 
     test('compactQueued matches a pane-specific and a pane-less compact request', () => {
         expectSameEffect({ seed: exec(SEED), raw: () => undefined, builder: (db) => {
-            const repo = new RequestsRepository(db, NOW);
-            assert.equal(repo.compactQueued(tabId('t1'), paneId('p1')), true);
-            assert.equal(repo.compactQueued(tabId('t1'), paneId('p9')), false);
-            assert.equal(repo.compactQueued(tabId('t2'), paneId('p9')), true);
+            const repo = new RequestsStore(db, NOW);
+            assert.equal(repo.compactQueued(tabId('t1'), paneId('p1')), 'queued');
+            assert.equal(repo.compactQueued(tabId('t1'), paneId('p9')), 'not-queued');
+            assert.equal(repo.compactQueued(tabId('t2'), paneId('p9')), 'queued');
         }, dump });
     });
 });

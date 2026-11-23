@@ -9,7 +9,7 @@ import { NOTE_LIMIT } from '#src/recap/application/compaction-message.ts';
 import { changes, draftFrom, initial, locksOf } from '#src/recap/application/setup-keys.ts';
 import type { Draft } from '#src/recap/application/setup-keys.ts';
 import type { Done } from '#src/ports/columns.ts';
-import type { CompactRequest } from '#src/ports/requests.ts';
+import type { CompactAsk } from '#src/ports/requests.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 
@@ -17,9 +17,9 @@ const TAB = 'w1:t1';
 const PANE = 'w1:p2';
 const models = { claude: '', codex: '', opencode: '', custom: '' };
 
-function recorder(done: Done = { kind: 'done' }): { asked: [string, string | null][]; queued: CompactRequest[]; start: CompactStart } {
+function recorder(done: Done = { kind: 'done' }): { asked: [string, string | null][]; queued: CompactAsk[]; start: CompactStart } {
     const asked: [string, string | null][] = [];
-    const queued: CompactRequest[] = [];
+    const queued: CompactAsk[] = [];
     const start: CompactStart = {
         askNote: (tab, pane) => { asked.push([tab, pane]); return Promise.resolve(done); },
         queue: (request) => { queued.push(request); return done; },

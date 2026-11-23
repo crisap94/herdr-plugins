@@ -4,7 +4,7 @@ import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { loadSettings, messagesOf, stateDirectory } from '#src/daemon/config.ts';
 import { beginCompact, noteFromRequest, opensAskPopup } from '#src/recap/application/compact-start.ts';
 import type { Done } from '#src/ports/columns.ts';
-import type { CompactRequest } from '#src/ports/requests.ts';
+import type { CompactAsk } from '#src/ports/requests.ts';
 import { isUnknown, saying, unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
@@ -15,7 +15,7 @@ import { paneId, tabId } from '#src/recap/domain/ids.ts';
 const OK = 0;
 const FAILED = 1;
 
-function queueCompaction(request: CompactRequest): Done {
+function queueCompaction(request: CompactAsk): Done {
     const store = openCliStore();
     if (store.kind !== 'ready') {
         console.error(`tab-recap: 1 — ${notReadyLine(store, messagesOf())}`);

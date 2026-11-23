@@ -1,3 +1,4 @@
+import { tabId } from '#src/recap/domain/ids.ts';
 import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -21,7 +22,7 @@ test('a reader on a current file writes a request that the owner reads', () => {
         if (reader.kind !== 'ready') {
             assert.fail('the reader opens a current store');
         }
-        reader.requests.request('tab-1');
+        reader.requests.request(tabId('tab-1'));
         reader.close();
 
         const again = openStoreAt(file);

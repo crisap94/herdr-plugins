@@ -1,3 +1,4 @@
+import { instant } from '#src/recap/domain/time.ts';
 import { HandoffFlow } from '#src/recap/application/handoff-flow.ts';
 import type { HandoffFlowDeps } from '#src/recap/application/handoff-flow.ts';
 import { DEFAULT_CLOSED_LANE_DAYS } from '#src/recap/domain/retention.ts';
@@ -8,7 +9,7 @@ import type { Ready } from '#src/recap/application/handoff-target.ts';
 import type { Waiting } from '#src/recap/application/autocompact.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import type { RecapRecords, TabRecap } from '#src/ports/recap-records.ts';
-import type { HandoffRequestRow } from '#src/ports/requests.ts';
+import type { HandoffAskRecord } from '#src/ports/requests.ts';
 import type { InFlight, InFlightReading } from '#src/ports/in-flight.ts';
 import { handoffPlanner } from '#src/adapters/capability/handoff-plans.ts';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
@@ -154,8 +155,8 @@ export function harness(over: Partial<FlowWorld> = {}, sender: Pick<HandoffSende
     return { flow: new HandoffFlow(deps), world, claims, calls, pauses, sent, renders, logs, flushes };
 }
 
-export function request(over: Partial<HandoffRequestRow> = {}): HandoffRequestRow {
-    return { id: handoffIdOf(ids.next()), at: NOW, tab: TAB, pane: SOURCE, toPane: TARGET, refreshFirst: false, note: null, source: { kind: 'live' }, ...over };
+export function request(over: Partial<HandoffAskRecord> = {}): HandoffAskRecord {
+    return { id: handoffIdOf(ids.next()), at: instant(NOW), tab: TAB, pane: SOURCE, toPane: TARGET, refresh: 'as-is', note: null, source: { kind: 'live' }, ...over };
 }
 
 export const bothFree = (claims: LaneClaims): boolean => !claims.has(SOURCE) && !claims.has(TARGET);

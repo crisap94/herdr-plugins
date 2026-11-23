@@ -1,5 +1,5 @@
 import type { Messages } from '#src/i18n/index.ts';
-import type { CompactionRecord } from '#src/ports/compaction-records.ts';
+import type { CompactionRow } from '#src/ports/compaction-records.ts';
 import { DEFAULT_MARK, type Note } from '#src/ports/extension.ts';
 import type { TabRecap } from '#src/ports/recap-records.ts';
 import { isScreenSource } from '#src/ports/screens.ts';
@@ -39,12 +39,12 @@ function percentOf(use: ContextUse | null | undefined): GuiLane['contextPercent'
     return use === null || use === undefined || use.window <= 0 ? null : orElse(parseCount(Math.min(100, Math.round((use.tokens / use.window) * 100))), null);
 }
 
-function stageOf(record: CompactionRecord, draw: LaneDraw): GuiStage {
+function stageOf(record: CompactionRow, draw: LaneDraw): GuiStage {
     return {
-        id: orElse(parseNonEmptyText(record.id), UNKNOWN), stage: record.stage, queued: record.queued ? YES : NO,
+        id: orElse(parseNonEmptyText(record.id), UNKNOWN), stage: record.stage, queued: record.queue === 'queued' ? YES : NO,
         writer: orElse(parseText(record.writer), null), brief: record.brief, why: orElse(parseText(record.why), null),
         startedAt: instant(record.startedAt), stageAt: instant(record.stageAt), tokensBefore: orElse(parseCount(record.tokensBefore), null),
-        tokensAfter: orElse(parseCount(record.tokensAfter), null), tookMs: orElse(parseCount(record.tookMs === null ? null : Math.round(record.tookMs)), null),
+        tokensAfter: orElse(parseCount(record.tokensAfter), null), tookMs: orElse(parseCount(record.took === null ? null : Math.round(record.took)), null),
         origin: record.origin, text: must(parseText(stageLine(record, draw.now, { messages: draw.messages, style: plain }))),
     };
 }

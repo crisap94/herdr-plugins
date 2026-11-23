@@ -1,6 +1,6 @@
 import type { RecapRefresh } from './recap-wait.ts';
 import { knownOr } from '#src/ports/guarded-reads.ts';
-import type { HandoffRequestRow } from '#src/ports/requests.ts';
+import type { HandoffAskRecord } from '#src/ports/requests.ts';
 import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { tabId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
@@ -58,11 +58,11 @@ export class HandoffFlow {
         this.deps = deps;
     }
 
-    async run(request: HandoffRequestRow): Promise<HandoffOutcome> {
+    async run(request: HandoffAskRecord): Promise<HandoffOutcome> {
         return (await this.execute(request)).outcome;
     }
 
-    async execute(request: HandoffRequestRow, mark: DeliveryTracker = new DeliveryTracker()): Promise<HandoffRun> {
+    async execute(request: HandoffAskRecord, mark: DeliveryTracker = new DeliveryTracker()): Promise<HandoffRun> {
         try {
             return await this.steps(request, mark);
         } catch (error) {
@@ -71,7 +71,7 @@ export class HandoffFlow {
         }
     }
 
-    private async steps(request: HandoffRequestRow, mark: DeliveryTracker): Promise<HandoffRun> {
+    private async steps(request: HandoffAskRecord, mark: DeliveryTracker): Promise<HandoffRun> {
         if (request.source.kind === 'live' && request.pane === request.toPane) {
             return unrendered({ kind: 'refused', reason: 'source-equals-target' });
         }
@@ -80,7 +80,7 @@ export class HandoffFlow {
             return unrendered(early);
         }
         await this.deps.flush(request.tab, 'handoff');
-        const refresh = request.refreshFirst ? await this.refreshed(request.tab) : 'not-requested';
+        const refresh = request.refresh === 'refresh-first' ? await this.refreshed(request.tab) : 'not-requested';
         const rendered = await this.rendered(request, refresh);
         if (rendered.kind !== 'text') {
             return unrendered(rendered);
@@ -102,7 +102,7 @@ export class HandoffFlow {
         }
     }
 
-    private holdsOf(request: HandoffRequestRow): readonly PaneId[] {
+    private holdsOf(request: HandoffAskRecord): readonly PaneId[] {
         return request.source.kind === 'live' ? [request.pane, request.toPane] : [request.toPane];
     }
 
@@ -112,7 +112,7 @@ export class HandoffFlow {
         }
     }
 
-    private async early(request: HandoffRequestRow): Promise<Ready | HandoffOutcome> {
+    private async early(request: HandoffAskRecord): Promise<Ready | HandoffOutcome> {
         const lanes = this.deps.lanes();
         if (request.source.kind === 'live' && !isLaneOfTab(lanes, { tab: request.tab, pane: request.pane })) {
             return { kind: 'refused', reason: 'source-unavailable' };
@@ -127,7 +127,7 @@ export class HandoffFlow {
         return target;
     }
 
-    private resolve(request: HandoffRequestRow): Promise<TargetResolution> {
+    private resolve(request: HandoffAskRecord): Promise<TargetResolution> {
         const source = request.source.kind === 'live' ? request.pane : null;
         return resolveTarget(source, request.toPane, { ...this.deps.target, lanes: this.deps.lanes() });
     }
@@ -141,7 +141,7 @@ export class HandoffFlow {
         }
     }
 
-    private async rendered(request: HandoffRequestRow, refresh: RefreshStatus): Promise<HandoffRenderResult | HandoffOutcome> {
+    private async rendered(request: HandoffAskRecord, refresh: RefreshStatus): Promise<HandoffRenderResult | HandoffOutcome> {
         const found = this.sourceOf(request);
         if (found.kind === 'found') {
             return this.renderOf(request, found, refresh);
@@ -152,7 +152,7 @@ export class HandoffFlow {
         return unfoundOutcome(found);
     }
 
-    private sourceOf(request: HandoffRequestRow): SourceResolution {
+    private sourceOf(request: HandoffAskRecord): SourceResolution {
         if (request.source.kind === 'closed') {
             const identity = { tab: request.tab, pane: request.pane, closedAt: request.source.closedAt };
             return resolveSource('closed', identity, { ...this.deps.closed, closedDays: this.deps.closed.closedDays(), now: instant(this.deps.now()) });
@@ -160,7 +160,7 @@ export class HandoffFlow {
         return resolveSource('live', { tab: request.tab, pane: request.pane }, { lanes: this.deps.lanes(), records: this.deps.records, ledger: this.deps.ledger, now: this.deps.now() });
     }
 
-    private renderOf(request: HandoffRequestRow, found: FoundSource, refresh: RefreshStatus): RenderStep {
+    private renderOf(request: HandoffAskRecord, found: FoundSource, refresh: RefreshStatus): RenderStep {
         if (found.source === 'closed') {
             const lane = closedLaneOf(found.identity, found.view);
             return this.deps.render({ handoff: request.id, at: this.deps.now(), lane, cursor: null, facts: found.facts, note: request.note, refresh, closed: found.view });
@@ -173,7 +173,7 @@ export class HandoffFlow {
         return this.deps.render({ handoff: request.id, at: this.deps.now(), lane, cursor, facts: found.facts, note: request.note, refresh });
     }
 
-    private async deliver(request: HandoffRequestRow, text: string, mark: DeliveryTracker): Promise<HandoffOutcome> {
+    private async deliver(request: HandoffAskRecord, text: string, mark: DeliveryTracker): Promise<HandoffOutcome> {
         const first = await this.resolve(request);
         if (first.kind !== 'ready') {
             return first;

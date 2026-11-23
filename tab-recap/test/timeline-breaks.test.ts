@@ -1,33 +1,33 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { messagesFor } from '#src/i18n/index.ts';
-import type { Break } from '#src/ports/boundaries.ts';
+import type { BoundaryBreak } from '#src/ports/boundaries.ts';
 import { breakLine as drawBreak, chaptersFact } from '#src/recap/render/timeline-breaks.ts';
 import { viewBreakOf } from '#src/view-model/column.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
 
 const [en, es] = [messagesFor('en').chapters, messagesFor('es').chapters];
-const compacted = (over: Partial<Break> = {}): Break => ({ kind: 'compacted', at: instant(1), trigger: 'auto', tokensBefore: 800_000, tokensAfter: 14_000, tookMs: 15_588, ...over });
-const breakLine = (found: Break, say: typeof en, width: number | null = null): string => drawBreak(viewBreakOf(found), say, width);
-const switched: Break = { kind: 'switched', at: 1, trigger: null, tokensBefore: null, tokensAfter: null, tookMs: null };
+const compacted = (over: Partial<BoundaryBreak> = {}): BoundaryBreak => ({ kind: 'compacted', at: instant(1), trigger: 'auto', tokensBefore: countOf(800_000), tokensAfter: countOf(14_000), took: duration(15_588), ...over });
+const breakLine = (found: BoundaryBreak, say: typeof en, width: number | null = null): string => drawBreak(viewBreakOf(found), say, width);
+const switched: BoundaryBreak = { kind: 'switched', at: instant(1), trigger: null, tokensBefore: null, tokensAfter: null, took: null };
 
 test('golden: a compaction with its tokens and time, with its tokens only, with nothing, with a time only', () => {
     assert.equal(breakLine(compacted(), en), '── compacted 800k → 14k · 16 s ──');
-    assert.equal(breakLine(compacted({ tookMs: null }), en), '── compacted 800k → 14k ──');
-    assert.equal(breakLine(compacted({ tokensBefore: null, tokensAfter: null, tookMs: null }), en), '── compacted ──');
+    assert.equal(breakLine(compacted({ took: null }), en), '── compacted 800k → 14k ──');
+    assert.equal(breakLine(compacted({ tokensBefore: null, tokensAfter: null, took: null }), en), '── compacted ──');
     assert.equal(breakLine(compacted({ tokensBefore: null, tokensAfter: null }), en), '── compacted 16 s ──');
 });
 
 test('a number that is half known is left out, never guessed', () => {
-    assert.equal(breakLine(compacted({ tokensAfter: null, tookMs: null }), en), '── compacted ──');
-    assert.equal(breakLine(compacted({ tokensBefore: null, tookMs: null }), en), '── compacted ──');
+    assert.equal(breakLine(compacted({ tokensAfter: null, took: null }), en), '── compacted ──');
+    assert.equal(breakLine(compacted({ tokensBefore: null, took: null }), en), '── compacted ──');
 });
 
 test('golden: the short forms and long times', () => {
-    assert.equal(breakLine(compacted({ tokensBefore: 39_532, tokensAfter: countOf(3057), tookMs: 65_000 }), en), '── compacted 39.5k → 3.1k · 1 min 5 s ──');
-    assert.equal(breakLine(compacted({ tokensBefore: 1_200_000, tokensAfter: countOf(812), tookMs: 120_000 }), en), '── compacted 1.2M → 812 · 2 min ──');
-    assert.equal(breakLine(compacted({ tookMs: duration(100) }), en), '── compacted 800k → 14k · 1 s ──', 'a measured time is never 0 s');
+    assert.equal(breakLine(compacted({ tokensBefore: countOf(39_532), tokensAfter: countOf(3057), took: duration(65_000) }), en), '── compacted 39.5k → 3.1k · 1 min 5 s ──');
+    assert.equal(breakLine(compacted({ tokensBefore: countOf(1_200_000), tokensAfter: countOf(812), took: duration(120_000) }), en), '── compacted 1.2M → 812 · 2 min ──');
+    assert.equal(breakLine(compacted({ took: duration(100) }), en), '── compacted 800k → 14k · 1 s ──', 'a measured time is never 0 s');
 });
 
 test('golden: a new session, in both languages; Spanish for a compaction', () => {

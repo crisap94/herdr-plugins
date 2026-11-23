@@ -109,7 +109,7 @@ export const sqliteStoreSubject: Subject<null, StoreUnderTest> = {
             failReads: () => {
                 store.db.close();
             },
-            marksOf: (scope) => store.boundaries.breaksOf(scope).filter((each) => each.kind === 'compacted').map((each) => ({ at: instant(each.at) })),
+            marksOf: (scope) => store.boundaries.breaksOf(tabId(scope)).filter((each) => each.kind === 'compacted').map((each) => ({ at: instant(each.at) })),
         };
     },
 };

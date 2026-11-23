@@ -1,8 +1,9 @@
+import { parseDecisionId } from '#src/recap/domain/ids.ts';
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import type { Database } from 'bun:sqlite';
-import { AskLedgerRepository } from '#src/adapters/db/legacy.ts';
-import { AutocompactBriefsRepository } from '#src/adapters/db/legacy.ts';
+import { AskBookRepository } from '#src/adapters/db/ask-ledger.ts';
+import { DecisionBriefsRepository } from '#src/adapters/db/autocompact-briefs.ts';
 import { ColumnVisibilityRepository } from '#src/adapters/db/column-visibility.ts';
 import { encode } from '#src/adapters/db/checked-fact-codec.ts';
 import { MEMORY } from '#src/adapters/db/connection.ts';
@@ -14,7 +15,7 @@ import { parseExchangeName, parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { rid } from '../fakes/ask-ledger.ts';
 import { expectSameEffect, normalise } from './parity.ts';
@@ -46,7 +47,7 @@ const memory = (seed: (db: Database) => void): Database => {
 
 const ANSWER_SEED = `INSERT INTO handoff_answer (id, at, outcome, reason) VALUES (X'${hex(keyOf(1))}', 5, 'refused', 'task-ambiguous'), (X'${hex(keyOf(2))}', 30, 'delivered', NULL)`;
 const BRIEF_SEED = `PRAGMA foreign_keys = OFF; INSERT INTO autocompact_brief (decision_id, briefed_at, body) VALUES (X'${hex(keyOf(7))}', 10, X'0102'), (X'${hex(keyOf(8))}', 30, X'03')`;
-const ledgerWrite = (write: (repo: AskLedgerRepository) => void) => (db: Database): void => { write(new AskLedgerRepository(db)); };
+const ledgerWrite = (write: (repo: AskBookRepository) => void) => (db: Database): void => { write(new AskBookRepository(db)); };
 const ASK_SEED = [
     `INSERT INTO ask (exchange, requester, id, pane, at, ref, outcome) VALUES ('${COMPACT_EXCHANGE}', 'coord', 'r1', 'w1:p1', 5, NULL, NULL)`,
     `INSERT INTO ask (exchange, requester, id, pane, at, ref, outcome) VALUES ('${COMPACT_EXCHANGE}', 'coord', 'r2', 'w1:p2', 40, 'ref-2', NULL)`,
@@ -103,7 +104,7 @@ describe('parity: autocompact briefs', () => {
         expectSameEffect({
             seed: exec(BRIEF_SEED),
             raw: (db) => { db.prepare(BRIEF_UPSERT).run(idOf('decision', decisionOf(9)), 20, bodyOf('new')); },
-            builder: (db) => new AutocompactBriefsRepository(db).put(decisionOf(9), 'new', [], [], 20),
+            builder: (db) => new DecisionBriefsRepository(db).put(must(parseDecisionId(decisionOf(9))), must(parseText('new')), [], [], instant(20)),
             dump: dumpOf(BRIEF_DUMP),
         });
     });
@@ -112,7 +113,7 @@ describe('parity: autocompact briefs', () => {
         expectSameEffect({
             seed: exec(BRIEF_SEED),
             raw: (db) => { db.prepare(BRIEF_UPSERT).run(idOf('decision', decisionOf(7)), 20, bodyOf('new')); },
-            builder: (db) => new AutocompactBriefsRepository(db).put(decisionOf(7), 'new', [], [], 20),
+            builder: (db) => new DecisionBriefsRepository(db).put(must(parseDecisionId(decisionOf(7))), must(parseText('new')), [], [], instant(20)),
             dump: dumpOf(BRIEF_DUMP),
         });
     });
@@ -122,7 +123,7 @@ describe('parity: autocompact briefs', () => {
         const repoDb = memory(exec(BRIEF_SEED));
         try {
             const removed = rawDb.prepare('DELETE FROM autocompact_brief WHERE briefed_at < ?').run(20).changes;
-            assert.equal(new AutocompactBriefsRepository(repoDb).clearBefore(20), removed);
+            assert.equal(new DecisionBriefsRepository(repoDb).clearBefore(instant(20)), removed);
             assert.deepStrictEqual(normalise(dumpOf(BRIEF_DUMP)(repoDb)), normalise(dumpOf(BRIEF_DUMP)(rawDb)));
         } finally {
             rawDb.close();
@@ -143,8 +144,8 @@ describe('parity: ask ledger', () => {
                 db.prepare('INSERT OR IGNORE INTO ask (exchange, requester, id, pane, at, ref, outcome) VALUES (?, ?, ?, ?, ?, ?, NULL)').run(COMPACT_EXCHANGE, 'coord', 'r1', 'w1:p1', 99, null);
             },
             builder: ledgerWrite((repo) => {
-                repo.record({ exchange: EXCHANGE, requester: CLI, id: rid('r9'), pane: paneId('w1:p9'), at: 7, ref: null });
-                repo.record({ exchange: EXCHANGE, requester: COORD, id: rid('r1'), pane: paneId('w1:p1'), at: 99, ref: null });
+                repo.record({ exchange: EXCHANGE, requester: CLI, id: rid('r9'), pane: paneId('w1:p9'), at: instant(7), ref: null });
+                repo.record({ exchange: EXCHANGE, requester: COORD, id: rid('r1'), pane: paneId('w1:p1'), at: instant(99), ref: null });
             }),
             dump: dumpOf(ASK_DUMP),
         });
@@ -158,8 +159,8 @@ describe('parity: ask ledger', () => {
                 db.prepare('UPDATE ask SET ref = ? WHERE exchange = ? AND id = ? AND pane = ? AND ref IS NULL').run('ref-new', COMPACT_EXCHANGE, 'r2', 'w1:p2');
             },
             builder: ledgerWrite((repo) => {
-                repo.attach(key, 'ref-new');
-                repo.attach({ ...key, id: rid('r2'), pane: paneId('w1:p2') }, 'ref-new');
+                repo.attach(key, textOf('ref-new'));
+                repo.attach({ ...key, id: rid('r2'), pane: paneId('w1:p2') }, textOf('ref-new'));
             }),
             dump: dumpOf(ASK_DUMP),
         });
@@ -199,7 +200,7 @@ describe('parity: ask ledger', () => {
         expectSameEffect({
             seed,
             raw: (db) => { db.prepare('DELETE FROM ask WHERE at < ? AND outcome IS NOT NULL').run(20); },
-            builder: ledgerWrite((repo) => repo.prune(20)),
+            builder: ledgerWrite((repo) => repo.prune(instant(20))),
             dump: dumpOf(ASK_DUMP),
         });
     });
@@ -208,7 +209,7 @@ describe('parity: ask ledger', () => {
         const db = memory(seed);
         try {
             const expected = normalise(dumpOf(ASK_OPEN_ROWS)(db));
-            assert.deepStrictEqual(normalise(new AskLedgerRepository(db).unfinished()), expected);
+            assert.deepStrictEqual(normalise(new AskBookRepository(db).unfinished()), expected);
         } finally {
             db.close();
         }

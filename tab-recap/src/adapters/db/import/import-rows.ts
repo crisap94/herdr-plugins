@@ -2,17 +2,17 @@ import type { Database, Statement } from 'bun:sqlite';
 import type { HiddenState } from '#src/recap/domain/board.ts';
 import type { TabRecap } from '#src/ports/recap-records.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
-import type { VisibilityRequest } from '#src/ports/requests.ts';
+import type { Visibility, VisibilityRequest } from '#src/ports/requests.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
 import type { FactId } from '#src/recap/domain/fact.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseFactId, parseRunId } from '#src/recap/domain/run-ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { ColumnVisibilityRepository } from '../column-visibility.ts';
 import { LedgerRows } from '../ledger-rows.ts';
-import { RequestsRepository } from '../requests.ts';
+import { RequestsStore } from '../requests.ts';
 import { RunRows } from '../run-write.ts';
 import { TabStore } from '../tab-row.ts';
 import { TabViewsRepository } from '../tab-views/legacy.ts';
@@ -20,6 +20,11 @@ import { TranscriptStore } from '../transcripts.ts';
 import { typeIdOf } from '../typeid.ts';
 import { ids } from '../uuid7.ts';
 import { opsOfSections } from './sections-to-ops.ts';
+
+function visibilityOf(asked: VisibilityRequest): Visibility {
+    if (asked.hidden === 'toggle') return 'toggle';
+    return asked.hidden ? 'hidden' : 'shown';
+}
 
 export function attempt(db: Database, name: Text, work: () => void): Text | null {
     db.exec('SAVEPOINT piece');
@@ -87,8 +92,8 @@ export class RowsWriter {
     }
 
     requests(refresh: readonly Text[], visibility: readonly VisibilityRequest[], now: Instant): void {
-        const queue = new RequestsRepository(this.db, () => now);
-        refresh.forEach((tab) => { queue.request(tab); });
-        visibility.forEach((asked) => { queue.requestVisibility(asked); });
+        const queue = new RequestsStore(this.db, () => now);
+        refresh.forEach((tab) => { queue.request(tabId(tab)); });
+        visibility.forEach((asked) => { queue.requestVisibility({ target: paneId(asked.target), visibility: visibilityOf(asked) }); });
     }
 }

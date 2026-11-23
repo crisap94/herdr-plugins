@@ -4,7 +4,7 @@ import { PrintedHandoffs } from '#src/recap/application/handoff-print.ts';
 import type { PrintStore } from '#src/recap/application/handoff-print.ts';
 import { renderHandoff } from '#src/recap/application/handoff-pipeline.ts';
 import type { AgentLookup } from '#src/ports/agents.ts';
-import type { PrintRequest, PrintResult } from '#src/ports/handoff-print.ts';
+import type { PrintAsk, PrintAnswer } from '#src/ports/handoff-print.ts';
 import type { LastRun, TabRecap } from '#src/ports/recap-records.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
 import type { ClosedLaneList, ClosedLaneRead } from '#src/ports/closed-lanes.ts';
@@ -87,7 +87,7 @@ function printerWith(spy: Spy, world: World = {}, logged: string[] = [], flushed
     });
 }
 
-const request = (over: Partial<PrintRequest> = {}): PrintRequest => ({ from: FROM, to: null, note: null, closed: null, ...over });
+const request = (over: Partial<PrintAsk> = {}): PrintAsk => ({ from: FROM, to: null, note: null, closed: null, ...over });
 
 const bodyOf = (text: string): string => text.replace(/^Handoff reference: .*$/m, '');
 
@@ -143,7 +143,7 @@ test('print of a closed source whose store cannot be read fails source-unreadabl
 });
 
 test('print of a lane with no recap run is refused ledger-empty', async () => {
-    const result: PrintResult = await printerWith({ opened: 0, closed: 0 }, { lastRun: null }).renderForPrint(request());
+    const result: PrintAnswer = await printerWith({ opened: 0, closed: 0 }, { lastRun: null }).renderForPrint(request());
     assert.deepEqual(result, { kind: 'refused', reason: 'ledger-empty' });
 });
 

@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryRequests } from './fakes/requests.ts';
+import type { Withdrawal } from '#src/ports/requests.ts';
 import { MemoryHandoffAnswers } from './fakes/handoff-answers.ts';
 import type { HandoffAnswerRecord } from '#src/ports/handoff-answers.ts';
 import { deliverHandoff, type DeliverDeps, type DeliverRequest, type DaemonReading } from '#src/recap/application/handoff-request.ts';
@@ -141,7 +142,7 @@ test('a request the daemon took before the withdrawal, with no answer, is report
 test('an answer written between the last poll and the withdrawal is reported, not the timeout', async () => {
     const s = setup({ tabs: TABS });
     const withdraw = s.requests.withdrawHandoff.bind(s.requests);
-    s.requests.withdrawHandoff = (id: HandoffId): boolean => {
+    s.requests.withdrawHandoff = (id: HandoffId): Withdrawal => {
         s.requests.takeHandoffs();
         s.answers.answerHandoff(id, { kind: 'refused', reason: 'source-unavailable' });
         return withdraw(id);

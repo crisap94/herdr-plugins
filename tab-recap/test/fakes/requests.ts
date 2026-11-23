@@ -1,46 +1,47 @@
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
-import type { CompactRequest, HandoffRequestRow, NewHandoffRequest, Requests, VisibilityRequest } from '#src/ports/requests.ts';
+import type { AnsweredPane, CompactAsk, HandoffAskRecord, HandoffAsk, RequestPort, VisibilityAsk, Withdrawal } from '#src/ports/requests.ts';
 import type { HandoffId, TabId } from '#src/recap/domain/ids.ts';
+import { instant } from '#src/recap/domain/time.ts';
 
-export class MemoryRequests implements Requests {
+export class MemoryRequests implements RequestPort {
     private readonly now: () => number;
     private refreshes: TabId[] = [];
     private curations: TabId[] = [];
-    private visibilities: VisibilityRequest[] = [];
-    private compactions: CompactRequest[] = [];
-    private handoffs: HandoffRequestRow[] = [];
+    private visibilities: VisibilityAsk[] = [];
+    private compactions: CompactAsk[] = [];
+    private handoffs: HandoffAskRecord[] = [];
 
     constructor(now: () => number = Date.now) {
         this.now = now;
     }
 
-    request(tab: string): void {
-        this.refreshes.push(tab as TabId);
+    request(tab: TabId): void {
+        this.refreshes.push(tab);
     }
 
-    requestVisibility(request: VisibilityRequest): void {
+    requestVisibility(request: VisibilityAsk): void {
         this.visibilities.push(request);
     }
 
-    requestCompact(request: CompactRequest): void {
+    requestCompact(request: CompactAsk): void {
         this.compactions.push(request);
     }
 
-    requestCurate(tab: string): void {
-        this.curations.push(tab as TabId);
+    requestCurate(tab: TabId): void {
+        this.curations.push(tab);
     }
 
-    requestHandoff(request: NewHandoffRequest): HandoffId {
+    requestHandoff(request: HandoffAsk): HandoffId {
         const id = handoffIdOf(ids.next());
-        this.handoffs.push({ id, at: this.now(), ...request });
+        this.handoffs.push({ id, at: instant(this.now()), ...request });
         return id;
     }
 
-    withdrawHandoff(id: HandoffId): boolean {
+    withdrawHandoff(id: HandoffId): Withdrawal {
         const before = this.handoffs.length;
         this.handoffs = this.handoffs.filter((row) => row.id !== id);
-        return this.handoffs.length < before;
+        return this.handoffs.length < before ? 'withdrawn' : 'not-found';
     }
 
     takeRequests(): readonly TabId[] {
@@ -49,13 +50,13 @@ export class MemoryRequests implements Requests {
         return taken;
     }
 
-    takeVisibility(): readonly VisibilityRequest[] {
+    takeVisibility(): readonly VisibilityAsk[] {
         const taken = this.visibilities;
         this.visibilities = [];
         return taken;
     }
 
-    takeCompactions(): readonly CompactRequest[] {
+    takeCompactions(): readonly CompactAsk[] {
         const taken = this.compactions;
         this.compactions = [];
         return taken;
@@ -67,13 +68,13 @@ export class MemoryRequests implements Requests {
         return taken;
     }
 
-    takeAnswered(): readonly { readonly pane: string; readonly answer: string }[] {
+    takeAnswered(): readonly AnsweredPane[] {
         const answered = this.compactions.filter((request) => request.answer !== undefined);
         this.compactions = this.compactions.filter((request) => request.answer === undefined);
         return answered.flatMap((request) => (request.pane === null || request.answer === undefined ? [] : [{ pane: request.pane, answer: request.answer }]));
     }
 
-    takeHandoffs(): readonly HandoffRequestRow[] {
+    takeHandoffs(): readonly HandoffAskRecord[] {
         const taken = this.handoffs;
         this.handoffs = [];
         return taken;

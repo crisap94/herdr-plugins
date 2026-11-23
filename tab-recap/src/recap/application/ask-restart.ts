@@ -1,8 +1,8 @@
 import { LOCAL_REQUESTER } from '#src/ports/ask-ledger.ts';
-import type { Ask, AskLedger } from '#src/ports/ask-ledger.ts';
+import type { AskEntry, AskBook } from '#src/ports/ask-ledger.ts';
 import type { CompactionLog } from '#src/ports/compaction-records.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
-import type { Requests } from '#src/ports/requests.ts';
+import type { RequestPort } from '#src/ports/requests.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { failureStage, INTERRUPTED_REASON } from '#src/protocol/exchange.ts';
 import type { Exchange } from '#src/protocol/exchange.ts';
@@ -20,14 +20,14 @@ import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 
 export interface RestartWiring {
     readonly exchanges: readonly Exchange[];
-    readonly ledger: AskLedger;
-    readonly requests: Pick<Requests, 'takeAnswered'>;
+    readonly ledger: AskBook;
+    readonly requests: Pick<RequestPort, 'takeAnswered'>;
     readonly compactions: Pick<CompactionLog, 'interrupted'>;
     readonly tokens: Pick<LaneTokens, 'report'>;
     readonly enabled: () => Presence;
-    readonly local: (ask: Ask) => void;
-    readonly handoff: (ask: Ask) => void;
-    readonly withdraw: (ask: Ask) => void;
+    readonly local: (ask: AskEntry) => void;
+    readonly handoff: (ask: AskEntry) => void;
+    readonly withdraw: (ask: AskEntry) => void;
     readonly log: (line: Text) => void;
     readonly now: () => Instant;
     readonly restartedWhy: Text;
@@ -36,7 +36,7 @@ export interface RestartWiring {
 const INTERRUPTED: AskOutcome = { kind: 'interrupted' };
 const FAILED_INTERRUPTED: AskOutcome = { kind: 'failed', reason: INTERRUPTED_REASON };
 
-export function purgeAnsweredCompactions(requests: Pick<Requests, 'takeAnswered'>): Count {
+export function purgeAnsweredCompactions(requests: Pick<RequestPort, 'takeAnswered'>): Count {
     return must(parseCount(requests.takeAnswered().length));
 }
 
@@ -47,7 +47,7 @@ async function sendAnswer(deps: RestartWiring, pane: PaneId, write: TokenWrite):
     }
 }
 
-function answerInterrupted(deps: RestartWiring, ask: Ask): void {
+function answerInterrupted(deps: RestartWiring, ask: AskEntry): void {
     const exchange = deps.exchanges.find((each) => each.name === ask.exchange);
     if (exchange === undefined) {
         deps.log(must(parseText(`ask ${ask.id} of ${ask.exchange}: interrupted; no exchange of that name is answered here`)));

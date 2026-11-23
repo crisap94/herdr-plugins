@@ -7,36 +7,38 @@ import { clockOf, figuresOf, stageLine } from '#src/recap/render/compaction-stag
 import { present, presentBar } from '#src/recap/render/present.ts';
 import { coloured, plain, visibleLength } from '#src/recap/render/wrap.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
-import type { CompactionRecord } from '#src/ports/compaction-records.ts';
+import type { CompactionRow } from '#src/ports/compaction-records.ts';
 import type { Messages } from '#src/i18n/messages.ts';
 import { parseDuration, parseTokens } from '@stateforge-labs/recap-view';
 import { maybe } from '#src/view-model/column.ts';
 import { countOf } from '#src/recap/domain/count.ts';
-import { duration } from '#src/recap/domain/time.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, parseCompactionId, tabId } from '#src/recap/domain/ids.ts';
+import { must } from '#src/protocol/result.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { duration, instant } from '#src/recap/domain/time.ts';
 
-const base: CompactionRecord = { id: 'cmp_x', tab: 'w1:t1', pane: 'w1:p1', agent: 'claude', stage: 'compacting', brief: 'written', writer: 'codex · gpt-6-luna · high', templateWhy: null, startedAt: 0, stageAt: 0, finishedAt: null, tokensBefore: null, tokensAfter: null, tookMs: null, retried: false, queued: false, why: null, origin: 'operator' };
-const done = { finishedAt: 1, tokensBefore: countOf(39532), tokensAfter: countOf(3057), tookMs: duration(15588) };
+const base: CompactionRow = { id: must(parseCompactionId('cmp_x')), tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), stage: 'compacting', brief: 'written', writer: textOf('codex · gpt-6-luna · high'), templateWhy: null, startedAt: instant(0), stageAt: instant(0), finishedAt: null, tokensBefore: null, tokensAfter: null, took: null, retry: 'first-try', queue: 'direct', why: null, origin: 'operator' };
+const done = { finishedAt: instant(1), tokensBefore: countOf(39532), tokensAfter: countOf(3057), took: duration(15588) };
 
-const STAGES: readonly (readonly [string, Partial<CompactionRecord>, number])[] = [
+const STAGES: readonly (readonly [string, Partial<CompactionRow>, number])[] = [
     ['briefing', { stage: 'briefing' }, 8000],
     ['compacting', { stage: 'compacting' }, 12_000],
-    ['queued behind the current turn', { stage: 'compacting', queued: true }, 12_000],
+    ['queued behind the current turn', { stage: 'compacting', queue: 'queued' }, 12_000],
     ['restoring', { stage: 'restoring' }, 3000],
     ['compacted', { stage: 'compacted', ...done }, 0],
     ['compacted with the template', { stage: 'compacted', brief: 'template', ...done }, 0],
-    ['compacted, no tokens said', { stage: 'compacted', finishedAt: 1, tookMs: 90_000 }, 0],
-    ['failed', { stage: 'failed', finishedAt: 1, why: 'x' }, 0],
-    ['unconfirmed', { stage: 'unconfirmed', finishedAt: 1 }, 0],
-    ['skipped', { stage: 'skipped', finishedAt: 1, why: 'x' }, 0],
+    ['compacted, no tokens said', { stage: 'compacted', finishedAt: instant(1), took: duration(90_000) }, 0],
+    ['failed', { stage: 'failed', finishedAt: instant(1), why: textOf('x') }, 0],
+    ['unconfirmed', { stage: 'unconfirmed', finishedAt: instant(1) }, 0],
+    ['skipped', { stage: 'skipped', finishedAt: instant(1), why: textOf('x') }, 0],
 ];
 
-const column = (m: Messages, record: CompactionRecord, now: number): string[] => {
+const column = (m: Messages, record: CompactionRow, now: number): string[] => {
     const tab = { tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'Victoria', cwd: null, context: { tokens: countOf(600_000), window: countOf(1_000_000), source: 'catalogue' as const } }] };
     return present({ tab, recap: blankRecap(tabId('w1:t1')), notes: new Map(), warnings: [], now, messages: m, compactHint: 40, compactions: [record], style: plain }, 44, () => null).slice(1, 4).filter((line) => line !== '');
 };
 
-const bar = (m: Messages, record: CompactionRecord, now: number): string[] => {
+const bar = (m: Messages, record: CompactionRow, now: number): string[] => {
     const tab = { tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: null }] };
     return presentBar({ tab, recap: blankRecap(tabId('w1:t1')), notes: new Map(), warnings: [], now, messages: m, compactions: [record], style: plain }, 46);
 };
@@ -85,7 +87,7 @@ const GOLDEN = {
 for (const [locale, m] of [['en', en], ['es', es]] as const) {
     test(`golden (${locale}): every stage on the lane's header (column) and on the bar's headline`, () => {
         STAGES.forEach(([name, patch, after], at) => {
-            const record: CompactionRecord = { ...base, ...patch, ...(patch.why === undefined ? {} : { why: WHY[locale] }) };
+            const record: CompactionRow = { ...base, ...patch, ...(patch.why === undefined ? {} : { why: textOf(WHY[locale]) }) };
             assert.deepEqual(column(m, record, after), GOLDEN[locale].column[at], `${name}: column`);
             assert.deepEqual(bar(m, record, after), [GOLDEN[locale].bar[at]], `${name}: bar`);
             assert.ok(column(m, record, after).every((line) => visibleLength(line) <= 44));
@@ -105,21 +107,21 @@ test('the stage replaces the hint while it is shown and the hint is back after; 
 
 test('on the bar, the newest compaction of the tab speaks, prefixed with its agent', () => {
     const tab = { tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: null }, { pane: 'w1:p2', agent: 'codex', status: 'idle', title: null, cwd: null }] };
-    const older = { ...base, startedAt: 1, stage: 'compacted' as const, finishedAt: 5 };
-    const newer = { ...base, pane: 'w1:p2', agent: 'codex', startedAt: 9, stageAt: 9000 };
+    const older = { ...base, startedAt: instant(1), stage: 'compacted' as const, finishedAt: instant(5) };
+    const newer = { ...base, pane: paneId('w1:p2'), agent: agentKind('codex'), startedAt: instant(9), stageAt: instant(9000) };
     const lines = presentBar({ tab, recap: blankRecap(tabId('w1:t1')), notes: new Map(), warnings: [], now: 12_000, messages: en, compactions: [older, newer], style: plain }, 60);
     assert.match(lines.join(''), /◐ compacting codex… 0:03/);
 });
 
-const line = (patch: Partial<CompactionRecord>): string => stageLine({ ...base, ...patch }, 0, { messages: en, style: coloured });
+const line = (patch: Partial<CompactionRow>): string => stageLine({ ...base, ...patch }, 0, { messages: en, style: coloured });
 const said = (tokensBefore: number | null, tokensAfter: number | null, tookMs: number | null): object => figuresOf({ tokensBefore: maybe(tokensBefore, parseTokens), tokensAfter: maybe(tokensAfter, parseTokens), tookMs: maybe(tookMs, parseDuration) }, en);
 
 test('the stage is coloured: yellow while it runs, green when done (the template tag gray), red when it failed, gray otherwise', () => {
     const [yellow, green, red, gray] = ['\u001B[33m', '\u001B[32m', '\u001B[31m', '\u001B[90m'];
     assert.ok(line({}).startsWith(yellow));
-    assert.ok(line({ stage: 'compacted', finishedAt: 1, brief: 'template' }).startsWith(green) && line({ stage: 'compacted', finishedAt: 1, brief: 'template' }).includes(`${gray} · template`));
-    assert.ok(line({ stage: 'failed', finishedAt: 1 }).startsWith(red));
-    assert.ok(line({ stage: 'unconfirmed', finishedAt: 1 }).startsWith(gray) && line({ stage: 'skipped', finishedAt: 1 }).startsWith(gray));
+    assert.ok(line({ stage: 'compacted', finishedAt: instant(1), brief: 'template' }).startsWith(green) && line({ stage: 'compacted', finishedAt: instant(1), brief: 'template' }).includes(`${gray} · template`));
+    assert.ok(line({ stage: 'failed', finishedAt: instant(1) }).startsWith(red));
+    assert.ok(line({ stage: 'unconfirmed', finishedAt: instant(1) }).startsWith(gray) && line({ stage: 'skipped', finishedAt: instant(1) }).startsWith(gray));
 });
 
 test('numbers: the short token form; a pair needs both counts, a missing number is left out, never guessed; the clock is m:ss from the stage start', () => {

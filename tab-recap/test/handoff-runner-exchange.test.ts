@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { HandoffRunner } from '#src/daemon/handoff.ts';
 import type { HandoffAnswerRecord, HandoffAnswerStore } from '#src/ports/handoff-answers.ts';
-import type { HandoffRequestRow } from '#src/ports/requests.ts';
+import type { HandoffAskRecord } from '#src/ports/requests.ts';
 import { unrendered } from '#src/recap/application/handoff-flow.ts';
 import { HandoffMirror } from '#src/recap/application/handoff-mirror.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
@@ -15,7 +15,7 @@ import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 
@@ -41,7 +41,7 @@ class MemoryAnswers implements HandoffAnswerStore {
 
 function setup(now: number): { readonly runner: HandoffRunner; readonly tokens: RecordingTokens; readonly answers: MemoryAnswers; readonly ran: number[]; readonly asks: MemoryAskLedger } {
     const asks = new MemoryAskLedger();
-    asks.record({ exchange: HANDOFF_EXCHANGE, requester: must(parseToolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: 1, ref: HID });
+    asks.record({ exchange: HANDOFF_EXCHANGE, requester: must(parseToolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: instant(1), ref: textOf(HID) });
     const tokens = new RecordingTokens();
     const answers = new MemoryAnswers();
     const ran: number[] = [];
@@ -51,7 +51,7 @@ function setup(now: number): { readonly runner: HandoffRunner; readonly tokens: 
     return { runner, tokens, answers, ran, asks };
 }
 
-const row = (at: number): HandoffRequestRow => ({ id: HID, at, tab: tabId('w1:t1'), pane: paneId('w1:p1'), toPane: paneId('w1:p2'), refreshFirst: false, note: null, source: { kind: 'live' }, answer: must(parseText('h1')) });
+const row = (at: number): HandoffAskRecord => ({ id: HID, at: instant(at), tab: tabId('w1:t1'), pane: paneId('w1:p1'), toPane: paneId('w1:p2'), refresh: 'as-is', note: null, source: { kind: 'live' }, answer: must(parseText('h1')) });
 
 test('an exchange row runs: running, then delivered on the source pane; its answer row is written and its ask settled', async () => {
     const run = setup(1000);
