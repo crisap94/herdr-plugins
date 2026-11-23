@@ -1,6 +1,6 @@
 const { readdirSync } = require('node:fs');
 const { join } = require('node:path');
-const brandImporters = require('./ci/brand-importers.json');
+const brandImporters = require('./gates/brand-importers.json');
 
 const exact = (path) => `^${path.replace(/[.]/g, '\\.')}$`;
 const brandFile = exact('src/recap/domain/brand.ts');

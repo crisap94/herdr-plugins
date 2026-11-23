@@ -13,6 +13,6 @@ test('the files that import brand.ts are exactly the files that declare a brand 
       return text.includes('Brand<') && /from '[^']*brand\.ts'/.test(text);
     })
     .toSorted();
-  const listed: unknown = JSON.parse(readFileSync(new URL('ci/brand-importers.json', root), 'utf8'));
+  const listed: unknown = JSON.parse(readFileSync(new URL('gates/brand-importers.json', root), 'utf8'));
   assert.deepEqual(declaring, listed);
 });

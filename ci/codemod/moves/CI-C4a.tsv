@@ -1,0 +1,14 @@
+path	tab-recap/ci/probes	tab-recap/gates/probes
+path	tab-recap/ci/gates.d	tab-recap/gates/gates.d
+path	tab-recap/ci/brand-importers.json	tab-recap/gates/brand-importers.json
+text	ci/probes/	gates/probes/	tab-recap/ci/gate-graph.sh
+text	ci/probes/	gates/probes/	tab-recap/ci/gate-domain-types.sh
+text	ci/probes/	gates/probes/	tab-recap/.oxlintrc.json
+text	ci/probes/	gates/probes/	tab-recap/test/pane/relay-closure.test.ts
+text	ci/probes/	gates/probes/	ci/tracks.json
+text	ci/probes/	gates/probes/	ci/test/check-track.test.ts
+text	ci/gates.d/	gates/gates.d/	tab-recap/ci/lint.sh
+text	ci/gates.d/	gates/gates.d/	ci/tracks.json
+text	ci/brand-importers.json	gates/brand-importers.json	tab-recap/test/brand-importers.test.ts
+text	ci/brand-importers.json	gates/brand-importers.json	tab-recap/CLAUDE.md
+text	'ci', 'probes'	'gates', 'probes'	tab-recap/test/check-domain-types.test.ts

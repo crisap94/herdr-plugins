@@ -75,7 +75,7 @@ test('the closure walker bites: an import of src/daemon, of a package or of bun:
 });
 
 test('the pane-closure rule fires on its bad probe, stays silent on its good probe, and holds on src/pane', () => {
-    const probes = join(ROOT, 'ci/probes/depcruise/pane-closure');
+    const probes = join(ROOT, 'gates/probes/depcruise/pane-closure');
     assert.deepEqual(cruise(join(probes, 'bad'), 'src'), ['src/pane/relay.ts -> src/daemon/config.ts']);
     assert.deepEqual(cruise(join(probes, 'good'), 'src'), []);
     assert.deepEqual(cruise(ROOT, 'src/pane'), []);

@@ -22,8 +22,8 @@
       "tab-recap/ci/domain-types-exceptions/ENG.json",
       "tab-recap/src/daemon/slots/timing.ts",
       "tab-recap/rules/graph/engine.cjs",
-      "tab-recap/ci/probes/depcruise/engine-*/**",
-      "tab-recap/ci/gates.d/engine-*.sh",
+      "tab-recap/gates/probes/depcruise/engine-*/**",
+      "tab-recap/gates/gates.d/engine-*.sh",
       "ci/codemod/moves/ENG-*.tsv"
     ],
     "STO": [
@@ -57,8 +57,8 @@
       "tab-recap/rules/hooks-*.yml",
       "tab-recap/rules/probes/hooks-*/**",
       "tab-recap/rules/graph/hooks.cjs",
-      "tab-recap/ci/probes/depcruise/hooks-*/**",
-      "tab-recap/ci/gates.d/hooks-*.sh"
+      "tab-recap/gates/probes/depcruise/hooks-*/**",
+      "tab-recap/gates/gates.d/hooks-*.sh"
     ],
     "PANE": [
       "tab-recap/src/pane/**",
@@ -69,8 +69,8 @@
       "tab-recap/rules/pane-*.yml",
       "tab-recap/rules/probes/pane-*/**",
       "tab-recap/rules/graph/{pane,daemon-lazy}.cjs",
-      "tab-recap/ci/probes/depcruise/pane-*/**",
-      "tab-recap/ci/gates.d/pane-*.sh",
+      "tab-recap/gates/probes/depcruise/pane-*/**",
+      "tab-recap/gates/gates.d/pane-*.sh",
       "ci/baselines/memory.{md,json}"
     ],
     "UP": [],
@@ -90,8 +90,8 @@
       "!ci/test/{check-track,relocate,gates-in-sync,pipeline-rules,baselines}.test.ts",
       "tab-recap/ci/**",
       "!tab-recap/ci/{lanes.json,lanes-generate.ts,check-lane.ts,engine-files.json}",
-      "!tab-recap/ci/probes/depcruise/{wire-self-contained,workspace-types-only}/**",
-      "!tab-recap/ci/probes/domain-types/*exception-wire*/**",
+      "!tab-recap/gates/probes/depcruise/{wire-self-contained,workspace-types-only}/**",
+      "!tab-recap/gates/probes/domain-types/*exception-wire*/**",
       "!tab-recap/ci/domain-types-*/**",
       "tab-recap/gates/**",
       "tab-recap/test/release.test.ts"
@@ -124,8 +124,8 @@
       "tab-recap/src/wire/**",
       "tab-recap/test/contracts/**",
       "tab-recap/ci/domain-types-exceptions/FND.json",
-      "tab-recap/ci/probes/depcruise/{wire-self-contained,workspace-types-only}/**",
-      "tab-recap/ci/probes/domain-types/*exception-wire*/**",
+      "tab-recap/gates/probes/depcruise/{wire-self-contained,workspace-types-only}/**",
+      "tab-recap/gates/probes/domain-types/*exception-wire*/**",
       { "lane": "lead" }
     ]
   },
@@ -138,7 +138,7 @@
     "tab-recap/test/conformance/pending-{REC,FCT}.json": ["ENG", "STO"],
     "tab-recap/src/engine/**": ["ENG", "FND"],
     "tab-recap/ci/{lint.sh,test.sh}": ["CI", "FND"],
-    "tab-recap/ci/gates.d/00-packages.sh": ["CI", "FND"]
+    "tab-recap/gates/gates.d/00-packages.sh": ["CI", "FND"]
   },
   "open": ["tab-recap/test/**"]
 }

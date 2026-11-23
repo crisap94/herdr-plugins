@@ -20,7 +20,7 @@
   "ignorePatterns": [
     "node_modules/**",
     "rules/probes/**",
-    "ci/probes/**",
+    "gates/probes/**",
     "experiments/**"
   ],
   "rules": {
