@@ -14,6 +14,7 @@ import type { EvalRequest } from '../../eval-request.ts';
 import { reportOf } from '../../eval-report.ts';
 import type { EvalReport } from '../../eval-report.ts';
 import { agreementOf, gateReportOf } from '../../eval-stats.ts';
+import type { Agreement } from '../../eval-stats.ts';
 import { withText } from '../../judge-anchors.ts';
 import { judgeRuns } from '../../judge.ts';
 import type { JudgeDeps } from '../../judge.ts';
@@ -39,6 +40,11 @@ const reportJson = (report: EvalReport, missing: Count): Text => textOf(JSON.str
     runs: report.runs.map((line) => ({ ...line, run: { id: line.run.id, tab: line.run.tab, at: line.run.at, language: line.run.language, backend: line.run.backend, hasInput: line.run.input === 'present', gateStats: line.run.gateStats } })),
     missingInput: missing,
 }));
+
+const agreeJson = (rows: readonly Agreement[]): Text => textOf(JSON.stringify(rows.map((row) => ({
+    ...row,
+    worst: row.worst.map((one) => ({ run: one.run, item: one.item, check: one.check, judge: one.judge === 'pass', operator: one.operator === 'pass', judgeCritique: one.judgeCritique, reason: one.reason, at: one.at, text: one.text })),
+}))));
 
 const queryOf = (options: EvalRequest, deps: EvalDeps, limit: number, withInput: boolean): RunFilter =>
     ({ tab: options.tab === null ? null : uncheckedTabId(options.tab), since: options.since === null ? null : instant(deps.now() - options.since * DAY_MS), limit: countOf(limit), input: withInput ? 'with-input' : 'any' });
@@ -104,7 +110,7 @@ export async function runEval(options: EvalRequest, deps: EvalDeps): Promise<num
             return label(options, deps);
         case 'agree': {
             const rows = agreementOf(deps.verdicts.pairs(), withText(deps.verdicts.disagreements(), deps.inputs));
-            deps.out(options.json === 'present' ? JSON.stringify(rows) : agreeLines(rows, deps.style).join('\n'));
+            deps.out(options.json === 'present' ? agreeJson(rows) : agreeLines(rows, deps.style).join('\n'));
             return 0;
         }
         case 'gates': {

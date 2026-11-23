@@ -103,7 +103,7 @@ export function agreeLines(rows: readonly Agreement[], style: Style): readonly T
     });
     const worst = rows.flatMap((agreement) => (agreement.worst.length === 0 ? [] : [
         EMPTY, must(parseText(style.bold(`${agreement.check}: where they disagree (newest first)`))),
-        ...agreement.worst.map((one) => must(parseText(`  "${one.text}" — judge ${one.judge ? 'pass' : 'fail'}${one.judgeCritique === null ? '' : ` (${one.judgeCritique})`}, operator ${one.operator ? 'pass' : 'fail'}${one.reason === null ? '' : ` (${one.reason})`}`))),
+        ...agreement.worst.map((one) => must(parseText(`  "${one.text}" — judge ${one.judge}${one.judgeCritique === null ? '' : ` (${one.judgeCritique})`}, operator ${one.operator}${one.reason === null ? '' : ` (${one.reason})`}`))),
     ]));
     return [must(parseText(style.bold("judge against operator (Cohen's kappa; a check under the bar is yellow)"))), ...lines, ...worst];
 }

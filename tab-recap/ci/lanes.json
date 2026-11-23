@@ -506,7 +506,6 @@
       "src/recap/application/transcript-read-budget.ts",
       "src/recap/application/transcript-tail.ts",
       "src/recap/application/twins/eval-run/legacy.ts",
-      "src/recap/application/twins/eval-stats/legacy.ts",
       "src/recap/application/typing-lease.ts",
       "src/recap/application/typing-scope.ts",
       "src/recap/application/watch-set.ts",
