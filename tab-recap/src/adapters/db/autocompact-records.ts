@@ -1,3 +1,4 @@
+import { uncheckedTypeId } from '#src/recap/domain/type-id.ts';
 import type { Database } from 'bun:sqlite';
 import { and, asc, count, desc, eq, gte, isNull, sql } from 'drizzle-orm';
 import { parseSkipRow, parseStoredDecisionRow } from '#src/ports/autocompact-records.ts';
@@ -73,21 +74,21 @@ export class DecisionLedgerRepository implements DecisionLedger {
     }
 
     link(id: DecisionId, compactionId: CompactionId): void {
-        const [key, target] = [idOf('decision', id), idOf('compaction', compactionId)];
+        const [key, target] = [idOf('decision', uncheckedTypeId(id)), idOf('compaction', uncheckedTypeId(compactionId))];
         if (key !== null && target !== null) writeTx(this.db, () => { this.attachTo(key, target); });
     }
 
     linkLatest(tab: TabId, pane: PaneId, compactionId: CompactionId): LinkedDecision | null {
         const [row, target] = [guarded((): LatestDecision | null => this.orm.select({ id: autocompactDecision.id, gate: autocompactDecision.gate }).from(autocompactDecision)
             .where(and(eq(autocompactDecision.tabId, tab), eq(autocompactDecision.pane, pane), eq(autocompactDecision.verdict, COMPACT), isNull(autocompactDecision.compactionId)))
-            .orderBy(desc(autocompactDecision.at), desc(autocompactDecision.id)).limit(1).get() ?? null, null), idOf('compaction', compactionId)];
+            .orderBy(desc(autocompactDecision.at), desc(autocompactDecision.id)).limit(1).get() ?? null, null), idOf('compaction', uncheckedTypeId(compactionId))];
         if (row === null || target === null) return null;
         writeTx(this.db, () => { this.attachTo(row.id, target); });
         return { id: must(parseDecisionId(typeIdOf('decision', row.id))), gate: row.gate };
     }
 
     amend(id: DecisionId, update: CoverageRevision): void {
-        const key = idOf('decision', id);
+        const key = idOf('decision', uncheckedTypeId(id));
         const { coverage, outcome, coverageMs, coverageCostUsd, why, block } = update;
         const waited = outcome.kind === 'unchecked' || outcome.kind === 'missed';
         const flag = waited && block === 'blocks' ? 1 : 0;
@@ -135,7 +136,7 @@ export class DecisionLedgerRepository implements DecisionLedger {
     }
 
     markRequested(id: DecisionId): void {
-        const key = idOf('decision', id);
+        const key = idOf('decision', uncheckedTypeId(id));
         if (key !== null) writeTx(this.db, () => { this.orm.update(autocompactDecision).set({ requested: 1 }).where(eq(autocompactDecision.id, key)).run(); });
     }
 

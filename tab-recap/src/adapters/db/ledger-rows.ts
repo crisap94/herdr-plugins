@@ -1,3 +1,4 @@
+import { uncheckedTypeId } from '#src/recap/domain/type-id.ts';
 import type { Database } from 'bun:sqlite';
 import { and, asc, desc, eq, gte, or } from 'drizzle-orm';
 import type { Applied } from '#src/ports/ledger.ts';
@@ -28,7 +29,7 @@ type SweepNow = 'sweep' | 'keep';
 export const mintFactId = (): FactId => must(parseFactId(typeIdOf('fact', ids.next())));
 
 const factIdOf = (f: Fact): Uint8Array => {
-    const id = idOf('fact', f.id);
+    const id = idOf('fact', uncheckedTypeId(f.id));
     if (id === null) {
         throw new Error(`${f.id} is not a fact id`);
     }

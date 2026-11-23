@@ -1,3 +1,5 @@
+import { textOf } from '#src/recap/domain/text.ts';
+import { uncheckedTypeId } from '#src/recap/domain/type-id.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { compareIds, Uuid7Generator } from '#src/adapters/db/uuid7.ts';
@@ -6,8 +8,8 @@ import { decodeSuffix, encodeSuffix, idOf, typeIdOf } from '#src/adapters/db/typ
 test('typeid: the spec\'s zero and maximum suffixes', () => {
     assert.equal(encodeSuffix(new Uint8Array(16)), '00000000000000000000000000');
     assert.equal(encodeSuffix(new Uint8Array(16).fill(255)), '7zzzzzzzzzzzzzzzzzzzzzzzzz');
-    assert.deepEqual(decodeSuffix('7zzzzzzzzzzzzzzzzzzzzzzzzz'), new Uint8Array(16).fill(255));
-    assert.equal(decodeSuffix('8zzzzzzzzzzzzzzzzzzzzzzzzz'), null);
+    assert.deepEqual(decodeSuffix(textOf('7zzzzzzzzzzzzzzzzzzzzzzzzz')), new Uint8Array(16).fill(255));
+    assert.equal(decodeSuffix(textOf('8zzzzzzzzzzzzzzzzzzzzzzzzz')), null);
 });
 
 test('typeid: encode and decode round-trip, and the text sorts the way the bytes do', () => {
@@ -25,9 +27,9 @@ test('typeid: a wrong prefix, length or alphabet is Unknown (null), never anothe
     const good = typeIdOf('chapter', new Uuid7Generator().next());
     assert.ok(idOf('chapter', good) !== null);
     assert.equal(idOf('run', good), null, 'prefix of another table');
-    assert.equal(idOf('chapter', good.slice(0, -1)), null, 'short');
-    assert.equal(idOf('chapter', `${good}0`), null, 'long');
-    assert.equal(idOf('chapter', `${good.slice(0, -1)}u`), null, 'u is not in the alphabet');
-    assert.equal(idOf('chapter', good.toUpperCase()), null, 'lowercase only');
-    assert.equal(idOf('chapter', ''), null);
+    assert.equal(idOf('chapter', uncheckedTypeId(good.slice(0, -1))), null, 'short');
+    assert.equal(idOf('chapter', uncheckedTypeId(`${good}0`)), null, 'long');
+    assert.equal(idOf('chapter', uncheckedTypeId(`${good.slice(0, -1)}u`)), null, 'u is not in the alphabet');
+    assert.equal(idOf('chapter', uncheckedTypeId(good.toUpperCase())), null, 'lowercase only');
+    assert.equal(idOf('chapter', uncheckedTypeId('')), null);
 });

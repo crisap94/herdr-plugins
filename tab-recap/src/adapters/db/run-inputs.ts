@@ -1,3 +1,4 @@
+import { uncheckedTypeId } from '#src/recap/domain/type-id.ts';
 import type { Database } from 'bun:sqlite';
 import { gunzipSync, gzipSync } from 'node:zlib';
 import { and, desc, eq, gte, inArray, isNotNull, lt, sql } from 'drizzle-orm';
@@ -55,14 +56,14 @@ export class RunInputStore implements RunInputReader {
     }
 
     document(run: RunId): Text | null {
-        const id = idOf('run', run);
+        const id = idOf('run', uncheckedTypeId(run));
         const row = id === null ? undefined : this.orm.select({ document: runInput.document }).from(runInput).where(eq(runInput.runId, id)).get();
         const packed = row?.document ?? null;
         return guarded(() => (packed instanceof Uint8Array ? must(parseText(gunzipSync(packed).toString('utf8'))) : null), null);
     }
 
     itemsOf(run: RunId, mode: ItemsMode): readonly RunEntry[] {
-        const id = idOf('run', run);
+        const id = idOf('run', uncheckedTypeId(run));
         if (id === null) {
             return [];
         }

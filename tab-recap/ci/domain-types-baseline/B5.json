@@ -1,8 +1,5 @@
 {
   "src/adapters/db/rows/legacy.ts": {
     "legacy": 33
-  },
-  "src/adapters/db/typeid/legacy.ts": {
-    "legacy": 4
   }
 }

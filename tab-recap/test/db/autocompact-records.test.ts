@@ -1,3 +1,4 @@
+import { uncheckedTypeId } from '#src/recap/domain/type-id.ts';
 import { parseFactIndex } from '#src/recap/domain/fact-index.ts';
 import { parseUsd } from '#src/recap/domain/usd.ts';
 import { brand } from '#src/recap/domain/brand.ts';
@@ -168,7 +169,7 @@ test('a checked brief is stored with its exact checked fact wording and pruned b
     const id = store.decisions.record(decision());
     const checked = [{ section: 'needs' as const, text: brand<string, 'Text'>('keep the title'), why: null }];
     store.autocompactBriefs.put(id, textOf('brief body'), [mustParsed(parseFactIndex(0))], checked, instant(100));
-    const row = must(store.db.prepare('SELECT briefed_at, body FROM autocompact_brief WHERE decision_id = ?').get(idOf('decision', id)) as { briefed_at: number; body: Uint8Array } | null);
+    const row = must(store.db.prepare('SELECT briefed_at, body FROM autocompact_brief WHERE decision_id = ?').get(idOf('decision', uncheckedTypeId(id))) as { briefed_at: number; body: Uint8Array } | null);
     assert.equal(row.briefed_at, 100);
     assert.deepEqual(decode(row.body), { brief: 'brief body', appended: [0], checked });
     assert.equal(store.autocompactBriefs.clearBefore(instant(101)), 1);
@@ -191,7 +192,7 @@ test('the unchecked reason is set exactly when the outcome is unchecked', () => 
     amend(unchecked, { kind: 'unchecked', reason: 'no-brief' });
     amend(passed, { kind: 'passed' });
     amend(missed, { kind: 'missed', facts: [{ section: 'goal', text: brand<string, 'Text'>('ship'), why: null }] });
-    const reasonOf = (id: string): unknown => store.db.prepare('SELECT unchecked_reason AS reason FROM autocompact_decision WHERE id = ?').get(idOf('decision', id))?.['reason'];
+    const reasonOf = (id: string): unknown => store.db.prepare('SELECT unchecked_reason AS reason FROM autocompact_decision WHERE id = ?').get(idOf('decision', uncheckedTypeId(id)))?.['reason'];
     assert.deepEqual([reasonOf(unchecked), reasonOf(passed), reasonOf(missed)], ['no-brief', null, null]);
 });
 

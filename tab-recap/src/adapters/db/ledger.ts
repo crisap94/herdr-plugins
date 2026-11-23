@@ -1,3 +1,4 @@
+import { uncheckedTypeId } from '#src/recap/domain/type-id.ts';
 import type { Database } from 'bun:sqlite';
 import type { Applied, HistoryFact } from '#src/ports/ledger.ts';
 import type { GuardedLedger } from '#src/ports/guarded-reads.ts';
@@ -46,7 +47,7 @@ export class LedgerRepository implements GuardedLedger {
     }
 
     apply(run: RunRef, ops: readonly Operation[]): Applied {
-        const id = idOf('run', run.id);
+        const id = idOf('run', uncheckedTypeId(run.id));
         if (id === null) {
             throw new Error(`${run.id} is not a run id`);
         }

@@ -4,6 +4,8 @@ import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/reca
 
 export type TypeId = Brand<string, 'TypeId'>;
 
+export const uncheckedTypeId = brand<string, 'TypeId'>;
+
 export type TypeIdPrefix = 'tscr' | 'chap' | 'bnd' | 'task' | 'run' | 'req' | 'hnd' | 'cmp' | 'vrd' | 'fct' | 'dcn';
 
 const TYPE_ID = /^(tscr|chap|bnd|task|run|req|hnd|cmp|vrd|fct|dcn)_[0-7][0-9a-hjkmnp-tv-z]{25}$/u;

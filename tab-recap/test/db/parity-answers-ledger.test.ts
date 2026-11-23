@@ -1,3 +1,4 @@
+import { uncheckedTypeId } from '#src/recap/domain/type-id.ts';
 import { parseDecisionId } from '#src/recap/domain/ids.ts';
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
@@ -104,7 +105,7 @@ describe('parity: autocompact briefs', () => {
     test('put inserts a new brief with the same columns', () => {
         expectSameEffect({
             seed: exec(BRIEF_SEED),
-            raw: (db) => { db.prepare(BRIEF_UPSERT).run(idOf('decision', decisionOf(9)), 20, bodyOf('new')); },
+            raw: (db) => { db.prepare(BRIEF_UPSERT).run(idOf('decision', uncheckedTypeId(decisionOf(9))), 20, bodyOf('new')); },
             builder: (db) => new DecisionBriefsRepository(db).put(must(parseDecisionId(decisionOf(9))), must(parseText('new')), [], [], instant(20)),
             dump: dumpOf(BRIEF_DUMP),
         });
@@ -113,7 +114,7 @@ describe('parity: autocompact briefs', () => {
     test('put on an existing decision replaces briefed_at and body and keeps the key', () => {
         expectSameEffect({
             seed: exec(BRIEF_SEED),
-            raw: (db) => { db.prepare(BRIEF_UPSERT).run(idOf('decision', decisionOf(7)), 20, bodyOf('new')); },
+            raw: (db) => { db.prepare(BRIEF_UPSERT).run(idOf('decision', uncheckedTypeId(decisionOf(7))), 20, bodyOf('new')); },
             builder: (db) => new DecisionBriefsRepository(db).put(must(parseDecisionId(decisionOf(7))), must(parseText('new')), [], [], instant(20)),
             dump: dumpOf(BRIEF_DUMP),
         });
