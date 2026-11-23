@@ -1,4 +1,5 @@
 import type { Count } from '#src/recap/domain/count.ts';
+import type { Pid } from '#src/recap/domain/pid.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { MissedFacts, UncheckedReason } from '#src/recap/domain/autocompact.ts';
@@ -212,12 +213,12 @@ export interface KeyBinding {
 }
 
 export interface CliMessages {
-    readonly daemonRunning: (pid: number) => Text;
+    readonly daemonRunning: (pid: Pid) => Text;
     readonly daemonStillStopping: Text;
-    readonly daemonWedged: (pid: number) => Text;
+    readonly daemonWedged: (pid: Pid) => Text;
     readonly daemonStarted: (pid: Text, log: Text) => Text;
     readonly offIdle: Text;
-    readonly offClosing: (pid: number) => Text;
+    readonly offClosing: (pid: Pid) => Text;
     readonly tabUnknown: Text;
     readonly modalFailed: (why: Text) => Text;
     readonly requested: (tab: Text) => Text;
@@ -233,7 +234,7 @@ export interface CliMessages {
     readonly statusRuntime: (path: Text, version: Text) => Text;
     readonly hostRefusal: (refusal: Pick<Refusal, 'found' | 'needed' | 'steps'>, path: Text) => Text;
     readonly statusKeys: (bindings: readonly KeyBinding[], configPath: Text) => Text;
-    readonly statusDaemon: (pid: number | null, off: Presence, version: Text | null) => Text;
+    readonly statusDaemon: (pid: Pid | null, off: Presence, version: Text | null) => Text;
     readonly statusBackend: (what: Text) => Text;
     readonly statusLanguage: 'language' | 'idioma  ';
     readonly statusSources: LanguageSourceNames;

@@ -1,24 +1,8 @@
 {
-  "src/i18n/en.ts": {
-    "parameter": 4
-  },
-  "src/i18n/es.ts": {
-    "parameter": 4
-  },
   "src/i18n/legacy.ts": {
-    "legacy": 13
-  },
-  "src/i18n/messages.ts": {
-    "parameter": 4
+    "legacy": 12
   },
   "src/recap/render/handoff-budget.ts": {
-    "parameter": 1,
-    "return": 2,
-    "container": 2,
-    "property": 2
-  },
-  "src/recap/render/handoff-markdown.ts": {
-    "return": 2,
-    "container": 2
+    "property": 1
   }
 }

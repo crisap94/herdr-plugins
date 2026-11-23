@@ -3,7 +3,7 @@ import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import type { HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
 import type { HandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import type { FreshnessBlock } from '#src/recap/render/freshness.ts';
 import { utcMinuteOf } from '#src/recap/render/utc-minute.ts';
@@ -46,19 +46,19 @@ const HEADINGS: Readonly<Record<HandoffGroupId, string>> = {
 
 export const omittedTotal = (omitted: OmittedCounts): Count => must(parseCount(OMITTED_KINDS.reduce((sum, kind) => sum + omitted[kind], 0)));
 
-const omittedLine = (omitted: OmittedCounts): string =>
-    `${omittedTotal(omitted)} facts omitted (${OMITTED_KINDS.map((kind) => `${kind} ${omitted[kind]}`).join(', ')})`;
+const omittedLine = (omitted: OmittedCounts): Text =>
+    textOf(`${omittedTotal(omitted)} facts omitted (${OMITTED_KINDS.map((kind) => `${kind} ${omitted[kind]}`).join(', ')})`);
 
-const referenceLine = (reference: HandoffReference): string =>
-    reference.kind === 'dry-run' ? 'Handoff reference: dry run' : `Handoff reference: ${utcMinuteOf(reference.at)}-${reference.id.slice(-8)}`;
+const referenceLine = (reference: HandoffReference): Text =>
+    textOf(reference.kind === 'dry-run' ? 'Handoff reference: dry run' : `Handoff reference: ${utcMinuteOf(reference.at)}-${reference.id.slice(-8)}`);
 
-const entryLines = (group: HandoffGroup, entry: HandoffEntry): string[] => [
-    `- ${utcMinuteOf(instant(entry.lastAt))} ${entry.text}`,
-    ...(entry.reason === null ? [] : [`  - ${group.id === 'closed' ? 'closed' : 'reason'}: ${entry.reason}`]),
+const entryLines = (group: HandoffGroup, entry: HandoffEntry): readonly Text[] => [
+    textOf(`- ${utcMinuteOf(instant(entry.lastAt))} ${entry.text}`),
+    ...(entry.reason === null ? [] : [textOf(`  - ${group.id === 'closed' ? 'closed' : 'reason'}: ${entry.reason}`)]),
 ];
 
-export const groupLinesOf = (group: HandoffGroup): readonly string[] =>
-    group.entries.length === 0 ? [] : ['', `## ${HEADINGS[group.id]}`, ...group.entries.flatMap((entry) => entryLines(group, entry))];
+export const groupLinesOf = (group: HandoffGroup): readonly Text[] =>
+    group.entries.length === 0 ? [] : [textOf(''), textOf(`## ${HEADINGS[group.id]}`), ...group.entries.flatMap((entry) => entryLines(group, entry))];
 
 export function serializeHandoff(parts: HandoffParts): Text {
     const note = parts.note === null ? [] : ['', `Note: ${parts.note}`];

@@ -1,6 +1,5 @@
 {
   "src/setup/main.ts": {
-    "container": 2,
     "parameter": 2
   }
 }

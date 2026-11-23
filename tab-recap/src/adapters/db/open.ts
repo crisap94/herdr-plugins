@@ -7,17 +7,17 @@ import { latestVersion, migrate, versionOf } from './migrate.ts';
 import { MIGRATIONS } from './schema/index.ts';
 import type { Migration } from './schema/migration.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import type { FsPath } from '#src/recap/domain/fs-path.ts';
+import { countOf, parseCount, type Count } from '#src/recap/domain/count.ts';
+import { fsPathOf, type FsPath } from '#src/recap/domain/fs-path.ts';
 
 export type Role = 'owner' | 'reader';
 
 export interface NewerDatabase {
     readonly kind: 'newer-db';
     readonly db: Database;
-    readonly found: number;
-    readonly known: number;
-    readonly backup: string | null;
+    readonly found: Count;
+    readonly known: Count;
+    readonly backup: FsPath | null;
 }
 
 export interface StaleDatabase {
@@ -34,21 +34,26 @@ export interface ReadyDatabase {
 
 export type Opened = ReadyDatabase | NewerDatabase;
 
-function createFresh(db: Database, path: string): void {
+function createFresh(db: Database, path: FsPath): void {
     db.exec('PRAGMA auto_vacuum = INCREMENTAL');
     if (path !== MEMORY) {
         db.exec('PRAGMA journal_mode = WAL');
     }
 }
 
-function newerThan(path: string, known: number): NewerDatabase | null {
+function newestBackupOf(path: FsPath): FsPath | null {
+    const [newest] = backupsOf(path);
+    return newest === undefined ? null : fsPathOf(newest);
+}
+
+function newerThan(path: FsPath, known: Count): NewerDatabase | null {
     const db = connectReadOnly(path);
     const found = versionOf(db);
     if (found <= known) {
         db.close();
         return null;
     }
-    return { kind: 'newer-db', db, found, known, backup: backupsOf(path)[0] ?? null };
+    return { kind: 'newer-db', db, found: countOf(found), known, backup: newestBackupOf(path) };
 }
 
 function openReader(path: FsPath, migrations: readonly Migration[]): Opened | StaleDatabase {
@@ -59,7 +64,7 @@ function openReader(path: FsPath, migrations: readonly Migration[]): Opened | St
     const probe = connectReadOnly(path);
     const found = versionOf(probe);
     if (found > known) {
-        return { kind: 'newer-db', db: probe, found, known, backup: backupsOf(path)[0] ?? null };
+        return { kind: 'newer-db', db: probe, found: countOf(found), known: countOf(known), backup: newestBackupOf(path) };
     }
     if (found < known) {
         return { kind: 'stale-store', found: must(parseCount(found)), known: must(parseCount(known)), close: () => { probe.close(); } };
@@ -81,10 +86,10 @@ export function openDatabase(path: string, migrations: readonly Migration[] = MI
     const current = versionOf(db);
     if (current > known) {
         closeDatabase(db);
-        return newerThan(path, known) ?? { kind: 'ready', db: connect(path) };
+        return newerThan(fsPathOf(path), countOf(known)) ?? { kind: 'ready', db: connect(path) };
     }
     if (current === 0) {
-        createFresh(db, path);
+        createFresh(db, fsPathOf(path));
     } else if (current < known && path !== MEMORY) {
         backUp(db, path, current);
     }

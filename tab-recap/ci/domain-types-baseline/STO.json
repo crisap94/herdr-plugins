@@ -11,8 +11,7 @@
     "return": 2
   },
   "src/adapters/db/open.ts": {
-    "parameter": 4,
-    "property": 3
+    "parameter": 1
   },
   "src/adapters/db/rebuild.ts": {
     "container": 1,
