@@ -21,7 +21,7 @@
     "erasableSyntaxOnly": true,
     "skipLibCheck": true
   },
-  "include": ["src", "test", "examples", "testkit", "gates"],
+  "include": ["src", "test", "examples", "testkit", "gates", "../packages/session-ledger-sqlite/types/*.d.ts"],
   "exclude": [
     "node_modules"
   ]
