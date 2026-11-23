@@ -2,11 +2,12 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 import type { LaneWebRecord } from '#src/ports/tab-views.ts';
 
 const REMEMBERED = 200;
 
-const keyOf = (web: LaneWebRecord | null | undefined): string => (web === null || web === undefined ? '' : `${web.base} ${web.forge} ${web.branch ?? ''}`);
+const keyOf = (web: LaneWebRecord | null | undefined): Text => textOf(web === null || web === undefined ? '' : `${web.base} ${web.forge} ${web.branch ?? ''}`);
 
 export class LaneWebs {
     private readonly repos: LaneRepo;

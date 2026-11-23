@@ -3,13 +3,13 @@ import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import { shareOf } from '#src/recap/domain/compaction.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { LaneTokenFacts } from '#src/recap/domain/lane-tokens.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId, type PaneId } from '#src/recap/domain/ids.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
 interface ContextsOf {
-    of(pane: string): ContextUse | null;
+    of(pane: PaneId): ContextUse | null;
 }
 
 export interface FactsDeps {

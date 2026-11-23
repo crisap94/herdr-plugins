@@ -72,6 +72,7 @@ import type { HandoffRequests } from '#src/recap/domain/handoff-requests.ts';
 import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import { routePaneTokens, wireWorktrees, type Worktrees } from './worktrees.ts';
 import { ASK_KEEP_MS, CHECKPOINT_EVERY, EVENT_STOP_MS, FLUSH_STOP_MS, INTENT_MS, REQUEST_POLL_MS, RESYNC_MS, RETENTION_EVERY } from './timing.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 type ExitCode = 0 | 1;
 
@@ -127,7 +128,7 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
     const exchange = handoffExchangeOf({ store, tokens: fleet, events, board, sharing: (): HerdrEvents => loadSettings().herdrEvents, requests: handoffRequestsOn, log });
     const hub = new SettleHub({ agents: fleet.agents(), listening: listeningOf(box), pause: sleep, now: nowInstant });
     const webs = new LaneWebs(repos);
-    const contexts = new LaneContexts(transcripts, agentWindows(new CatalogueWindows()), systemCompactLimits(), () => loadSettings().compaction.window);
+    const contexts = new LaneContexts(transcripts, agentWindows(new CatalogueWindows()), systemCompactLimits(), () => { const size = loadSettings().compaction.window; return size === null ? null : countOf(size); });
     const laneTokens = new LaneTokenPublisher({ tokens: fleet, enabled: herdrEventsPresence, board, facts: (lane): LaneTokenFacts => factsOf(lane, { contexts, records: store.records, ledger: store.ledger }), capability: advertisedCapability, now: nowInstant, log, events });
     const dispatch = dispatchFor(box, { fleet, store, recaps, transcripts, webs, contexts, events, sharing: (): Sharing => (herdrEventsPresence() === 'present' ? 'on' : 'off') }, log);
     const turns = laneTurns({ hub, compactions: store.compactions, board: (): Board => box.informer?.current ?? emptyBoard(), now: nowInstant, statused: statusTaps.emit });

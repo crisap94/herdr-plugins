@@ -60,25 +60,16 @@
     "container": 1,
     "property": 1
   },
-  "src/recap/application/lane-contexts.ts": {
-    "return": 3
-  },
   "src/recap/application/lane-events.ts": {
     "parameter": 19,
     "return": 2,
     "container": 3,
     "property": 7
   },
-  "src/recap/application/lane-facts.ts": {
-    "parameter": 1
-  },
   "src/recap/application/lane-tokens.ts": {
     "parameter": 4,
     "return": 1,
     "property": 3
-  },
-  "src/recap/application/lane-webs.ts": {
-    "return": 1
   },
   "src/recap/application/replay-judge.ts": {
     "parameter": 1,
