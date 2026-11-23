@@ -7,7 +7,7 @@ import { compareLegacyFiles, importFilesAt } from '#src/adapters/db/import/impor
 import { canonicalRecap, holdingOf, recapDifferenceLines, viewDifferenceLines } from '#src/adapters/db/import/equivalence.ts';
 import { memoryStore, scratchDir } from '../support.ts';
 import { everyShape, filesAt, put, sections } from './support.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { recapRunningOf, type TabRecap } from '#src/ports/recap-records.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { textOf } from '#src/recap/domain/text.ts';

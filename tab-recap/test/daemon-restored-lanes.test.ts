@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { bootObservations, restoredObservation } from '#src/daemon/restored-lanes.ts';
 import type { LiveLanesRead, LiveLanes } from '#src/ports/tab-views.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { causeOf } from './fakes/cause.ts';
 

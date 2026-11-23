@@ -62,8 +62,8 @@ const cursorOf = (input: Row): Result<LaneCursor, ParseFailure> => {
     if (typeof input.transcript !== 'string') return err({ kind: 'not-a-string' });
     if (typeof input.cursor !== 'number') return err({ kind: 'not-a-number' });
     return ok({
-        pane: paneId(input.pane),
-        agent: agentKind(input.agent),
+        pane: paneId(textOf(input.pane)),
+        agent: agentKind(textOf(input.agent)),
         transcript: sourcePathOf(input.transcript),
         cursor: positionOf(input.cursor),
         tail: parseTextOrNull(input.tail),
@@ -130,7 +130,7 @@ export function parseLegacyRecapFile(input: unknown): Result<TabRecap, ParseFail
     const lanes = cursorsOf(input);
     if (lanes.kind === 'err') return lanes;
     const costUsd = typeof input.costUsd === 'number' ? input.costUsd : 0;
-    return ok({ tab: tabId(input.tab), lanes: lanes.value, tasks: tasksOf(input), costUsd: usdOf(costUsd), ...recapMetaOf(input) });
+    return ok({ tab: tabId(textOf(input.tab)), lanes: lanes.value, tasks: tasksOf(input), costUsd: usdOf(costUsd), ...recapMetaOf(input) });
 }
 
 export function parseLegacyViewFile(input: unknown): Result<TabView, ParseFailure> {

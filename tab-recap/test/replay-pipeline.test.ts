@@ -18,7 +18,8 @@ import { answer, scripted } from '#test/fakes/enumerator.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { must } from '#src/protocol/result.ts';
 import { countOf, parsePositiveCount } from '#src/recap/domain/count.ts';
-import { parseSessionPath, tabId } from '#src/recap/domain/ids.ts';
+import { parseSessionPath } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 
 const FILE = join(import.meta.dirname, 'fixtures', 'replay-claude.jsonl');
 

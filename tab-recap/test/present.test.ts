@@ -9,7 +9,7 @@ import { blankRecap } from '#src/ports/recap-records.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { tabId, agentKind, paneId } from '#src/recap/domain/ids.ts';
+import { tabId, agentKind, paneId } from '#test/support/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
 

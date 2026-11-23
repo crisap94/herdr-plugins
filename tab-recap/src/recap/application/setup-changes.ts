@@ -6,6 +6,7 @@ import type { LiveLanes } from '#src/ports/tab-views.ts';
 import { tabId, type TabId } from '#src/recap/domain/ids.ts';
 import type { Draft, FieldId, Locks, Setup } from './setup-state.ts';
 import { FIELDS } from './setup-state.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const LOCK_KEYS: Readonly<Record<FieldId, readonly string[]>> = {
     harness: ['TAB_RECAP_BACKEND'],
@@ -91,7 +92,7 @@ export function requestRewrites(opener: TabId | null, store: RewriteStore): read
     const live = store.views.liveLanes();
     const seen = live.kind === 'read' ? live.lanes.map((lane) => lane.tab) : [];
     const tabs = [...new Set([...(opener === null ? [] : [opener]), ...seen])]
-        .filter((tab) => tab === opener || hasRecap(knownOr(store.records.readRecap(tabId(String(tab))), null) ?? blankRecap(tabId(String(tab)))));
+        .filter((tab) => tab === opener || hasRecap(knownOr(store.records.readRecap(tabId(textOf(String(tab)))), null) ?? blankRecap(tabId(textOf(String(tab))))));
     tabs.forEach((tab) => { store.requests.request(tab); });
     return tabs;
 }

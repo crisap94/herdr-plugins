@@ -7,7 +7,7 @@ import { ids } from '#src/adapters/db/uuid7.ts';
 import { RECAP_CAUSES } from '#src/recap/domain/intent.ts';
 import { expectSameEffect, expectSameRows, withParity } from './parity.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';

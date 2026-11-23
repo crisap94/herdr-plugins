@@ -13,7 +13,7 @@ import { onBeatOf } from '#src/daemon/follow-board.ts';
 import { PACING_TURN, type Pacing } from '#src/recap/domain/pacing.ts';
 import { createFakeEngine, duration } from '@stateforge-labs/session-ledger/testkit';
 import { emptyBoard, type Board } from '#src/recap/domain/board.ts';
-import { tabId, agentKind } from '#src/recap/domain/ids.ts';
+import { tabId, agentKind } from '#test/support/ids.ts';
 import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { FULL_WRITER_VIEW } from '#src/recap/domain/writer-view.ts';

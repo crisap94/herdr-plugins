@@ -73,7 +73,7 @@ export class ClaudeReader {
 }
 
 export class ClaudeTranscripts implements Transcripts {
-    readonly agent = agentKind(CLAUDE_KIND);
+    readonly agent = agentKind(textOf(CLAUDE_KIND));
     private readonly root: FsPath;
     private readonly reader = new ClaudeReader();
     readonly inFlight: SupportedReading = { kind: 'supported', split: CLAUDE_SPLIT, read: (source, budget) => this.readInFlight(source, budget) };

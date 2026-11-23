@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/adapters/herdr-core/sdk-core.ts';
 import { duration } from '#src/adapters/herdr-core/sdk-core.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 import { HcCoreFleet } from '#src/adapters/herdr-core/fleet.ts';
 import { CoreEvents } from '#src/adapters/herdr-core/sdk-core.ts';
 import { HcCoreLines, parseWireChunk } from '#src/adapters/herdr-core/sdk-core.ts';

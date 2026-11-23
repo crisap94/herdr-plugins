@@ -14,7 +14,7 @@ import { rebuildTable } from '#src/adapters/db/rebuild.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import type { Migration } from '#src/adapters/db/schema/migration.ts';
 import { must, openFixture, scratchDir } from './support.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'schema-v1.sql');
 const FIXTURE_V2 = join(import.meta.dirname, 'fixtures', 'schema-v2.sql');

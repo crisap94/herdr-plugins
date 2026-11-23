@@ -4,7 +4,7 @@ import { paneTokensOf } from '#src/adapters/herdr/json.ts';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { CompactRequestQueue } from '#src/recap/application/compact-requests.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 import { wireOf } from './fakes/wire-tokens.ts';
 import { Informer } from '#src/recap/application/informer.ts';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';

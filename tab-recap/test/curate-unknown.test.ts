@@ -6,7 +6,7 @@ import type { GuardedLedger, GuardedRecapRecords } from '#src/ports/guarded-read
 import { blankRecap } from '#src/ports/recap-records.ts';
 import type { TabRecap } from '#src/ports/recap-records.ts';
 import { unknown, type Unknown } from '#src/ports/unknowable.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { causeOf } from './fakes/cause.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { MemoryStories } from '#test/fakes/memory-stories.ts';

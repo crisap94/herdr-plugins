@@ -10,7 +10,7 @@ import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { guiTabOf } from '#src/recap/application/gui-tab-build.ts';
 import { TOO_LARGE_ERROR } from '#src/recap/domain/gui-fit.ts';
 import { GUI_TAB_LIMIT, encodeGuiTab, guiFileName, worstStatus, type GuiLaneV1, type GuiTab } from '#src/recap/domain/gui-tab.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { parseNonEmptyText, parseText, textOf } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { blankRecap, type RecapRecords, type TabRecap } from '#src/ports/recap-records.ts';

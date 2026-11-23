@@ -8,7 +8,7 @@ import type { FactId, RunId } from '#src/recap/domain/fact.ts';
 import type { Operation, RunRef } from '#src/recap/domain/ops.ts';
 import { cursor, memoryStore, recordOps, type RunInput } from './support.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 import { paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';

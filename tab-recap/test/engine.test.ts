@@ -6,7 +6,7 @@ import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { createEngine, type Engine, type EnginePlugs } from '#src/recap/application/engine.ts';
 import { RecapJob, type RecapJobDeps } from '#src/recap/application/recap-job.ts';
 import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
-import { tabId, agentKind, paneId } from '#src/recap/domain/ids.ts';
+import { tabId, agentKind, paneId } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';

@@ -55,8 +55,8 @@ const transcriptOf = (cursor: LaneCursor | null): Text | null => (cursor === nul
 
 const laneOf = (tab: TabId, lane: TabLane): HandoffLane => ({
     tab,
-    pane: paneId(lane.pane),
-    agent: agentKind(lane.agent),
+    pane: paneId(textOf(lane.pane)),
+    agent: agentKind(textOf(lane.agent)),
     status: laneStatus(textOf(lane.status)),
     cwd: lane.cwd,
 });
@@ -100,10 +100,10 @@ export class PrintedHandoffs implements HandoffPrintService {
         if (tab === null) {
             return refusedWith('source-unavailable');
         }
-        const tabRef = tabId(tab);
+        const tabRef = tabId(textOf(tab));
         await this.deps.flush(tabRef, 'handoff print');
         const lanes = store.views.readTab(tab)?.lanes ?? [];
-        const sourceLanes: readonly SourceLane[] = lanes.map((lane) => ({ tab: tabRef, pane: paneId(lane.pane) }));
+        const sourceLanes: readonly SourceLane[] = lanes.map((lane) => ({ tab: tabRef, pane: paneId(textOf(lane.pane)) }));
         const found = resolveSource('live', { tab: tabRef, pane: request.from }, { lanes: sourceLanes, records: store.records, ledger: store.ledger, now: this.deps.now() });
         return this.outcome(store, request, found, { tab: tabRef, lanes });
     }
@@ -129,7 +129,7 @@ export class PrintedHandoffs implements HandoffPrintService {
         if (live === null || source === undefined) {
             return null;
         }
-        const cursor = knownOr(store.records.readRecap(tabId(String(live.tab))), null)?.lanes.find((lane) => lane.pane === String(request.from)) ?? null;
+        const cursor = knownOr(store.records.readRecap(tabId(textOf(String(live.tab)))), null)?.lanes.find((lane) => lane.pane === String(request.from)) ?? null;
         return { lane: laneOf(live.tab, source), cursor, facts, closed: undefined };
     }
 

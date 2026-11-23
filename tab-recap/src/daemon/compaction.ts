@@ -20,7 +20,6 @@ import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { lanesOf, listsPane } from '#src/recap/domain/board.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Text } from '#src/recap/domain/text.ts';
@@ -92,7 +91,7 @@ export function wireCompaction(parts: CompactionParts): Compaction {
         listsPane: (pane: PaneId): Presence => (listsPane(informer.current, pane) ? 'present' : 'absent'),
         focused: async (tab: TabId): Promise<PaneId | null> => {
             const layout = await fleet.layout(tab);
-            return isUnknown(layout) || layout.focused === null ? null : paneId(layout.focused);
+            return isUnknown(layout) || layout.focused === null ? null : layout.focused;
         },
         refresh: refreshVia(recaps, parts.records),
         coverage: () => coverageOf(parts.coverageDecider(), () => loadSettings().tuning),

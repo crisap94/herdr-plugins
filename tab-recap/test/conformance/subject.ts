@@ -12,7 +12,7 @@ import type { Fact, FactId } from '#src/recap/domain/fact.ts';
 import type { Operation, Refusal } from '#src/recap/domain/ops.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { memoryStore } from '#test/db/support.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 
 const isLedgerFactId = (id: FactId): id is FactId & sl.FactId => id !== '';

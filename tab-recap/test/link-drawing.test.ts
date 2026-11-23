@@ -19,9 +19,9 @@ import type { ColumnView } from '#src/recap/render/present.ts';
 import { plain, visibleLength, wrap } from '#src/recap/render/wrap.ts';
 import { oneTask } from '#test/support.ts';
 import { makeRepo } from './fixtures/git-repo.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 
 const E = String.fromCodePoint(0x1b);
 const open = (url: string): string => `${E}]8;;${url}${E}\\`;

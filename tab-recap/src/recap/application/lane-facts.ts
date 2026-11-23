@@ -5,6 +5,7 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { LaneFacts } from '#src/recap/domain/lane-tokens.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 interface ContextsOf {
     of(pane: string): ContextUse | null;
@@ -19,7 +20,7 @@ export interface FactsDeps {
 export function factsOf(lane: Lane, deps: FactsDeps): LaneFacts {
     const tab = String(lane.tab);
     const use = deps.contexts.of(lane.pane);
-    const recap = knownOr(deps.records.readRecap(tabId(tab)), null);
+    const recap = knownOr(deps.records.readRecap(tabId(textOf(tab))), null);
     const needs = (recap?.tasks ?? []).reduce((count, task) => count + knownOr(deps.ledger.openOf({ tab: tabIdOf(tab), key: task.id }), []).filter((fact) => fact.section === 'needs').length, 0);
     return { share: use === null ? null : shareOf(use), recapAt: recap?.at ?? null, needs };
 }

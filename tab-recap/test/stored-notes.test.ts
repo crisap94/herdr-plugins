@@ -5,7 +5,7 @@ import type { NotesResult } from '#src/ports/extension.ts';
 import type { PaneAlertReader } from '#src/ports/pane-alerts.ts';
 import { parseAlertSource } from '#src/recap/domain/pane-alert.ts';
 import type { PaneAlert } from '#src/recap/domain/pane-alert.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 import type { TabLane } from '#src/ports/tab-views.ts';
 import type { PaneNoteReader, WorktreeStatusReader } from '#src/ports/worktree-status.ts';
 import { must } from '#src/protocol/result.ts';

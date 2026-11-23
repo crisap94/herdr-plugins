@@ -7,7 +7,7 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { closuresBetween } from '#src/recap/domain/closures.ts';
 import type { ClosedLane, RestoredLane } from '#src/recap/domain/closures.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { LaneFacts } from '#src/recap/domain/lane-tokens.ts';

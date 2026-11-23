@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { openStoreAt } from '#src/adapters/db/database.ts';
 import { cursor, memoryStore, scratchDir } from './support.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { tabId, paneId } from '#src/recap/domain/ids.ts';
+import { tabId, paneId } from '#test/support/ids.ts';
 
 test('refresh requests are taken once; one tab asked twice is one request', () => {
     const { requests } = memoryStore();

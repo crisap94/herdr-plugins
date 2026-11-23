@@ -107,7 +107,7 @@ function save(values: ReadonlyMap<string, string>, languageChanged: boolean): vo
             if (store.kind !== 'ready') {
                 throw new Error(notReadyLine(store, messages()));
             }
-            requestRewrites(tab === '' ? null : tabId(tab), store);
+            requestRewrites(tab === '' ? null : tabId(textOf(tab)), store);
         }
         state = saved(state, null, languageChanged);
     } catch (error) {

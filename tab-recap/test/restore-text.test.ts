@@ -18,7 +18,7 @@ import { SECTION_IDS } from '#src/recap/domain/fact.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import { cleanHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import { vetHandoffText } from '#src/recap/domain/handoff-vetting.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';

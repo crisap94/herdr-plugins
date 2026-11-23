@@ -25,7 +25,7 @@ import type { DecidedAnswersResult, DeciderPort } from '#src/ports/decider.ts';
 import type { InFlightResult, Located, Transcripts } from '#src/ports/transcripts.ts';
 import { memoryStore } from './db/support.ts';
 import { decidedOf, textOf } from './fakes/decider-fixtures.ts';
-import { agentKind } from '#src/recap/domain/ids.ts';
+import { agentKind } from '#test/support/ids.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { runningOf } from '#src/recap/domain/in-flight.ts';
 

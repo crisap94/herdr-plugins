@@ -15,7 +15,7 @@ import { parseRoot } from '#src/daemon/slots.ts';
 import type { Line, Root } from '#src/daemon/slots.ts';
 import { viewersOf, visibleOf } from '#src/daemon/view/viewers.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { viewSocketPath } from '#src/wire/paths.ts';
 import { LineSplitter, decodeDaemon, encode } from '#src/wire/view/codec.ts';
 import { PROTOCOL } from '#src/wire/view/protocol.ts';

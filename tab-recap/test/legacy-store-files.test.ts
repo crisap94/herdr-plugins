@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseLegacyHidden, parseLegacyRecapFile, parseLegacyVisibility, parseLegacyViewFile } from '#src/ports/legacy-store-files.ts';
-import { agentKind, paneId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId } from '#test/support/ids.ts';
 import { cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 

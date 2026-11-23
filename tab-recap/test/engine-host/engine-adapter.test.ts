@@ -6,7 +6,7 @@ import type { Engine, FollowedSession, HistoryFact as LedgerHistoryFact, LedgerE
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { createEngine, type Engine as LegacyEngine, type EnginePlugs } from '#src/recap/application/engine.ts';
 import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
-import { tabId, agentKind, paneId } from '#src/recap/domain/ids.ts';
+import { tabId, agentKind, paneId } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';

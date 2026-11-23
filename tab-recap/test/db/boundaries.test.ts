@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import type { Database } from 'bun:sqlite';
 import { opsOfSections } from '#src/adapters/db/import/sections-to-ops.ts';
 import type { LaneMark } from '#src/recap/domain/boundary.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { cursor, memoryStore, must, recordOps, type RunInput } from './support.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import { countOf } from '#src/recap/domain/count.ts';

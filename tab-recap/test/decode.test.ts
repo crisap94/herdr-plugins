@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { decode, paneSessionRefOf } from '#src/recap/application/decode.ts';
 import { specsFor, GLOBAL_TOPICS, PER_PANE_TOPIC } from '#src/recap/application/watch-set.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 
 test('emitted frames use underscores; both spellings decode', () => {

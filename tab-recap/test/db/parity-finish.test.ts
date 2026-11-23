@@ -5,7 +5,7 @@ import type { Database } from 'bun:sqlite';
 import { BoundaryLogRepository } from '#src/adapters/db/boundary-read.ts';
 import { BoundaryRows } from '#src/adapters/db/boundaries.ts';
 import { RetentionRepository } from '#src/adapters/db/retention.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { SessionSourceStore } from '#src/adapters/db/session-source.ts';
 import { StoriesRepository } from '#src/adapters/db/stories.ts';

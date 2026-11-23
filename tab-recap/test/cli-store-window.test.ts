@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { databaseFile, openStoreAt } from '#src/adapters/db/database.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 
 const DAY_MS = 86_400_000;
 const KEYS = ['HERDR_PLUGIN_CONFIG_DIR', 'TAB_RECAP_STATE', 'TAB_RECAP_CLOSED_LANE_DAYS'] as const;

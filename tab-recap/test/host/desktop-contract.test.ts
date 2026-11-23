@@ -9,7 +9,7 @@ import { API_HEALTH_PATH, API_HOST, API_POLL_DEFAULT_S, API_VERSION } from '#src
 import { GuiPublisher } from '#src/adapters/desktop/publisher.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { blankRecap, type RecapRecords } from '#src/ports/recap-records.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';

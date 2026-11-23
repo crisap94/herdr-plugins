@@ -10,7 +10,7 @@ import type { RecapSections } from '#src/recap/domain/shape.ts';
 import { cursor, memoryStore, must, recordOps, type RunInput } from './support.ts';
 import type { TaskOps } from '@stateforge-labs/session-ledger/unstable/recap/domain/ops.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 import { tabIdOf, paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';

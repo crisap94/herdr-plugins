@@ -11,7 +11,7 @@ import type { ClosedLaneList, ClosedLaneRead } from '#src/ports/closed-lanes.ts'
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { ID, CURSOR, FACTS, LAST_RUN, NOW, claudeReader, depsOf, inputOf, textOf } from './fakes/handoff-pipeline-world.ts';

@@ -1,7 +1,7 @@
 import { describe, test } from 'node:test';
 import type { Database } from 'bun:sqlite';
 import { LedgerRows } from '#src/adapters/db/ledger-rows.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { typeIdOf } from '#src/adapters/db/typeid.ts';
 import { expectSameRows, withParity } from './parity.ts';

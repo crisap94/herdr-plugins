@@ -12,7 +12,7 @@ import { openDatabase } from '#src/adapters/db/open.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { scratchDir } from './support.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 
 type Stored = readonly { readonly key: string; readonly runs: readonly { readonly at: number; readonly language: string; readonly good: boolean; readonly items: readonly (readonly [string, number, string])[] }[] }[];
 const FIXTURE = JSON.parse(readFileSync(join(import.meta.dirname, 'fixtures', 'live-items.json'), 'utf8')) as Stored;

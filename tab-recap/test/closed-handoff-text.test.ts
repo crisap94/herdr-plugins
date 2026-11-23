@@ -5,7 +5,7 @@ import type { ClosedView } from '#src/recap/application/closed-view.ts';
 import type { ClosedLaneRecord } from '#src/ports/closed-lanes.ts';
 import { freshnessTextOf } from '#src/recap/render/freshness.ts';
 import { serializeClosedListing } from '#src/recap/render/closed-listing.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { directoryOf, taskNameOf } from './fakes/closed-values.ts';
 import { textOf } from '#src/recap/domain/text.ts';

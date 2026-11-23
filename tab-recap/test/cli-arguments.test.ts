@@ -4,7 +4,7 @@ import type { Directory } from '#src/recap/domain/directory.ts';
 import { must } from '#src/protocol/result.ts';
 import { countOf, parseCount } from '#src/recap/domain/count.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';

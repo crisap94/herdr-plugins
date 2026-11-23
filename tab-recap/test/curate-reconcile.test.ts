@@ -24,7 +24,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const [textOf, countOf, tabOf, boundaryOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Count'>, brand<string, 'TabId'>, brand<boolean, 'Boundary'>, brand<number, 'Instant'>];

@@ -12,11 +12,11 @@ import type { Transcripts } from '#src/ports/transcripts.ts';
 import type { ModelWindows } from '#src/ports/model-catalogue.ts';
 import type { CompactLimits } from '#src/ports/compact-limits.ts';
 import { memoryStore } from './db/support.ts';
-import { agentKind } from '#src/recap/domain/ids.ts';
+import { agentKind } from '#test/support/ids.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 
 const noGlow = (): null => null;
 const noLimits: CompactLimits = { limitOf: () => ({ window: null, percent: null }) };

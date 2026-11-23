@@ -54,7 +54,7 @@ export class Briefing {
     private async briefOf(lane: Lane, tab: TabId, material: Material, correction?: Text): Promise<Drafted> {
         const { brief, records, ledger } = this.deps;
         const [pane, agent] = [String(lane.pane), String(lane.agent)];
-        const [recent, history]: [readonly Entry[], History] = [await this.deps.recent(lane), ledger.historyOf(tab, paneId(pane))];
+        const [recent, history]: [readonly Entry[], History] = [await this.deps.recent(lane), ledger.historyOf(tab, paneId(textOf(pane)))];
         const own = must(parseText([...recent.map((entry) => entry.text), ...history.flatMap((item) => [item.text, item.why ?? ''])].join('\n')));
         if (brief.enabled() === 'absent') {
             return { text: null, why: null, own, history };

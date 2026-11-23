@@ -14,7 +14,7 @@ import { duration } from '#src/recap/domain/time.ts';
 import type { LastCommitOutcome, UncommittedOutcome } from '#src/ports/worksite-reader.ts';
 import type { WorksiteFacts, WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 import { MemoryWorksite } from './fakes/worksite-reader.ts';
-import { agentKind, paneId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId } from '#test/support/ids.ts';
 import { sourcePathOf, cursorOf } from '#src/ports/transcripts.ts';
 
 const DIR = '/work/project';

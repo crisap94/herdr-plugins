@@ -1,6 +1,7 @@
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import { paneId, tabId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 export interface HandoffValues {
     readonly from?: readonly string[];
@@ -32,7 +33,7 @@ export function paneOf(raw: string | undefined): PaneId | null {
         return null;
     }
     try {
-        return paneId(raw);
+        return paneId(textOf(raw));
     } catch {
         return null;
     }
@@ -60,7 +61,7 @@ function identityOf(rawPane: string | undefined, rawTab: string | undefined, raw
         return problem('--from-closed needs a pane id and --tab a tab id');
     }
     const closedAt = rawAt === undefined ? null : closedAtOf(rawAt);
-    return closedAt === null ? problem('--closed-at needs a non-negative integer') : { tab: tabId(rawTab), pane, closedAt };
+    return closedAt === null ? problem('--closed-at needs a non-negative integer') : { tab: tabId(textOf(rawTab)), pane, closedAt };
 }
 
 export function closedOf(values: HandoffValues): ClosedLaneIdentity | HandoffProblem | null {
@@ -109,5 +110,5 @@ export function listingOf(values: HandoffValues, positionals: readonly string[])
         return problem(tabs.length === 0 ? '--list-closed needs --tab' : '--tab given more than once');
     }
     const clashes = [values.from, values['from-closed'], values.to, values.print, values.note, values.refresh, values['closed-at']].some((value) => value !== undefined);
-    return clashes ? problem('--list-closed takes only --tab') : { mode: 'list', tab: tabId(tab) };
+    return clashes ? problem('--list-closed takes only --tab') : { mode: 'list', tab: tabId(textOf(tab)) };
 }

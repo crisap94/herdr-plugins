@@ -36,7 +36,7 @@ function newest(entries: readonly Entry[], budget: Count): readonly Entry[] {
 const sessionOf = (source: Text): Text => must(parseText(sessionIdOfTranscriptPath('opencode', source) ?? ''));
 
 export class OpencodeTranscripts implements Transcripts {
-    readonly agent = agentKind('opencode');
+    readonly agent = agentKind(textOf('opencode'));
     readonly inFlight: SupportedReading = { kind: 'supported', split: { kind: 'foreground-only', why: 'opencode-parts' }, read: (source) => this.readInFlight(textOf(source)) };
     private readonly database: FsPath;
 

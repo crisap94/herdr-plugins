@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { Briefing } from '#src/recap/application/compaction-briefing.ts';
 import type { CompactionPorts } from '#src/recap/application/compaction-deps.ts';
 import { guidanceOf } from '#src/recap/application/compaction-message.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 import { compactPreviewOf } from '#src/recap/application/compact-preview.ts';

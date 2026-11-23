@@ -6,7 +6,7 @@ import { PerfLedger } from '#src/recap/application/perf-ledger.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import type { NoteToken } from '#src/recap/domain/coordination.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 import type { UsageSample } from '#src/ports/process-usage.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';

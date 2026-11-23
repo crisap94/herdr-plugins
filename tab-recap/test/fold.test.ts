@@ -5,7 +5,7 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { observe } from '#src/recap/domain/fold.ts';
 import type { Observation, Outcome, SeenColumn } from '#src/recap/domain/fold.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import type { ClosedLane } from '#src/recap/domain/closures.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';

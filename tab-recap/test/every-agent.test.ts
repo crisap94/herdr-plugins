@@ -12,7 +12,7 @@ import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
 import { present } from '#src/recap/render/present.ts';
-import { tabId, agentKind, paneId } from '#src/recap/domain/ids.ts';
+import { tabId, agentKind, paneId } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';

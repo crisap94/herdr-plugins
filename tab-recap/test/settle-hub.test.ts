@@ -10,7 +10,7 @@ import type { Mark } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
-import { agentKind } from '#src/recap/domain/ids.ts';
+import { agentKind } from '#test/support/ids.ts';
 
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' });
 

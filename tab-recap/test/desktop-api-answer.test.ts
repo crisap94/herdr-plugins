@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { apiProblems, v2Problems } from '#test/gui-schema-support.ts';
 import { ExpandedModel } from '#src/recap/application/expanded-view.ts';
 import { add, api, OTHER_TAB, seedOther, seedRun, seqOf, startWorld, TAB, TASK, type World } from '#test/desktop-engine-world.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';

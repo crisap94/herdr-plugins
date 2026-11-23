@@ -27,7 +27,7 @@ interface LatestRun {
 }
 
 const cursorOf = (row: Row): LaneCursor => ({
-    pane: paneId(text(row, 'pane')), agent: agentKind(text(row, 'agent')), transcript: sourcePathOf(text(row, 'source')), cursor: positionOf(whole(row, 'cursor')),
+    pane: paneId(textOf(text(row, 'pane'))), agent: agentKind(textOf(text(row, 'agent'))), transcript: sourcePathOf(text(row, 'source')), cursor: positionOf(whole(row, 'cursor')),
     tail: parseTextOrNull(maybeText(row, 'tail')), title: parseTextOrNull(maybeText(row, 'title')), lastPrompt: parseTextOrNull(maybeText(row, 'last_prompt')), claudeRecap: parseTextOrNull(maybeText(row, 'claude_note')),
 });
 

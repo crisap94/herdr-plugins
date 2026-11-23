@@ -19,7 +19,7 @@ import { uncheckedMilliseconds, uncheckedWorkspaceId, type WorkspaceId } from '#
 import type { LaneFacts } from '#src/recap/domain/lane-tokens.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 
 test('the four writers write only tab-recap\'s names, on panes and on workspaces; a foreign name is refused by the adapter\'s rule', async () => {
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });

@@ -158,7 +158,7 @@ const WEB = { base: 'https://git.example/team/shop', forge: 'gitlab', branch: 'f
 const VERSION = '1.8.1';
 
 const lane = (pane: string, agent: string, prompt: string, title: string | null): TabRecap['lanes'][number] =>
-    ({ pane: paneId(pane), agent: agentKind(agent), transcript: sourcePathOf(`${agent}.jsonl`), cursor: cursorOf(1), tail: null, title: parseTextOrNull(title), lastPrompt: textOf(prompt), claudeRecap: null });
+    ({ pane: paneId(textOf(pane)), agent: agentKind(textOf(agent)), transcript: sourcePathOf(`${agent}.jsonl`), cursor: cursorOf(1), tail: null, title: parseTextOrNull(title), lastPrompt: textOf(prompt), claudeRecap: null });
 
 function columnView(fixture: Fixture): ColumnView {
     const tab: TabView = {
@@ -169,7 +169,7 @@ function columnView(fixture: Fixture): ColumnView {
         ],
     };
     const recap: TabRecap = {
-        ...blankRecap(tabId('w1:t1')), at: instant(NOW - 120_000), backend: textOf(fixture.backend), tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1'), paneIdOf('w1:p2')], sections: fixture.sections, markdown: renderRecap(fixture.sections, fixture.messages.locale) }],
+        ...blankRecap(tabId(textOf('w1:t1'))), at: instant(NOW - 120_000), backend: textOf(fixture.backend), tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1'), paneIdOf('w1:p2')], sections: fixture.sections, markdown: renderRecap(fixture.sections, fixture.messages.locale) }],
         lanes: [lane('w1:p1', 'claude', fixture.prompts[0], fixture.title), lane('w1:p2', 'codex', fixture.prompts[1], null)],
     };
     return { tab, recap, notes: new Map(), warnings: [], now: NOW, messages: fixture.messages, version: VERSION, compactHint: 40 };

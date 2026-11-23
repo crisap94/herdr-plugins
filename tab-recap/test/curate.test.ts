@@ -26,7 +26,7 @@ import { NO_REPOS, oneTask, requestOf } from '#test/support.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { must } from '#src/protocol/result.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const [textOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Instant'>];

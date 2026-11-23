@@ -13,7 +13,7 @@ import { checkedLedger, isUnknownRead } from '#src/ports/guarded-reads.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import { foldedRun, throwingLedger } from '@stateforge-labs/session-ledger/unstable/recap/application/run-fold.ts';
 import type { TaskOps } from '@stateforge-labs/session-ledger/unstable/recap/domain/ops.ts';
-import { agentKind, paneId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId } from '#test/support/ids.ts';
 import { sourcePathOf, cursorOf } from '#src/ports/transcripts.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { countOf } from '#src/recap/domain/count.ts';

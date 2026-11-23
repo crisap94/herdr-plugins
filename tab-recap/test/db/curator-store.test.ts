@@ -20,7 +20,7 @@ import { clockOf, timelineOf } from '#src/recap/render/timeline.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { cursor, memoryStore, must, openFixture, scratchDir, recordOps } from './support.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 import { paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 import { factIdOf } from '#src/recap/domain/fact.ts';

@@ -17,7 +17,7 @@ import { plain } from '#src/recap/render/wrap.ts';
 import { cursor, memoryStore, recordOps, runIdOf, runsOf, storeRead } from '#test/db/support.ts';
 import { oneTask } from '#test/support.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 import { factIdOf } from '#src/recap/domain/fact.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';

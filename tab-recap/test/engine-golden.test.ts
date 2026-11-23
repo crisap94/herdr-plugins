@@ -17,7 +17,7 @@ import { NO_REPOS } from '#test/support.ts';
 import { answer, scripted as scriptedEnumerator } from '#test/fakes/enumerator.ts';
 import { writer } from '#test/fakes/golden-writer.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';

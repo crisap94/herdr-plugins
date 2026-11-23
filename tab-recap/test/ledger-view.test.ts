@@ -8,7 +8,7 @@ import { keepNewestOf, nextHoursOf, prunedWriterView } from '#src/recap/domain/w
 import { factOf } from './fakes/facts.ts';
 import { agentOf, NO_REPOS } from '#test/support.ts';
 import { brand } from '#src/recap/domain/brand.ts';
-import { agentKind, paneId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId } from '#test/support/ids.ts';
 import { cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 import { textOf } from '#src/recap/domain/text.ts';

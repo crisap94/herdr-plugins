@@ -1,6 +1,6 @@
 import type { LiveLanes, LiveLanesRead, TabView, TabViews } from '#src/ports/tab-views.ts';
 import type { RestoredLane } from '#src/recap/domain/closures.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { directoryOf } from './closed-values.ts';
 
 export class MemoryTabViews implements Pick<TabViews, 'writeTab' | 'tabOf'>, LiveLanes {

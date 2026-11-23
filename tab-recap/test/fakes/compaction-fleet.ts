@@ -18,7 +18,7 @@ import { memoryStore } from '#test/db/support.ts';
 import { lineBreakRefusal } from '#test/fakes/typed-line.ts';
 import { oneTask } from '#test/support.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { tabId, paneId, agentKind } from '#src/recap/domain/ids.ts';
+import { tabId, paneId, agentKind } from '#test/support/ids.ts';
 
 export const lane = (pane: string, agent: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent });
 export const CLAUDE_CODEX_GEMINI = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'gemini')];

@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import { world } from './autocompact-world.ts';
 import { memoryStore } from './db/support.ts';
 

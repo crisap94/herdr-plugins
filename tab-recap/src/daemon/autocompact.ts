@@ -81,13 +81,13 @@ export function candidatesOf(board: Board, log: (line: Text) => void): readonly 
 }
 
 const emitTo = (events: LaneEvents, event: SafePointEvent): void => {
-    if (event.kind === 'session-skipped') events.lane(paneId(event.key), 'autocompact-skipped', event.gate);
-    else if (event.kind === 'safe-point-decided') events.lane(paneId(event.key), 'autocompact-decided', `${event.verdict}-${event.share}`);
+    if (event.kind === 'session-skipped') events.lane(paneId(textOf(event.key)), 'autocompact-skipped', event.gate);
+    else if (event.kind === 'safe-point-decided') events.lane(paneId(textOf(event.key)), 'autocompact-decided', `${event.verdict}-${event.share}`);
 };
 
 const activityOf = (parts: AutocompactParts): Pick<CompactionActivity, 'activeFor' | 'automaticInProgress'> => {
     function activeFor(scope: ScopeId, key: SessionKey): boolean {
-        return parts.store.compactions.shownFor(tabId(scope)).some((record) => record.pane === paneId(key) && ACTIVE.has(record.stage)) || parts.claims.has(paneId(key)) || parts.store.requests.compactQueued(tabId(scope), paneId(key)) === 'queued';
+        return parts.store.compactions.shownFor(tabId(textOf(scope))).some((record) => record.pane === paneId(textOf(key)) && ACTIVE.has(record.stage)) || parts.claims.has(paneId(textOf(key))) || parts.store.requests.compactQueued(tabId(textOf(scope)), paneId(textOf(key))) === 'queued';
     }
     function automaticInProgress(): boolean {
         return parts.store.compactions.autoInProgress() === 'auto-in-progress';
@@ -97,7 +97,7 @@ const activityOf = (parts: AutocompactParts): Pick<CompactionActivity, 'activeFo
 
 const signalsOf = (store: Store): Pick<SessionSignals, 'lastBreakAt'> => {
     function lastBreakAt(scope: ScopeId, key: SessionKey): number | null {
-        return store.boundaries.lastBreakAt(tabId(scope), paneId(key));
+        return store.boundaries.lastBreakAt(tabId(textOf(scope)), paneId(textOf(key)));
     }
     return { lastBreakAt };
 };
@@ -106,7 +106,7 @@ const readinessOf = (parts: AutocompactParts): RecapReadiness => {
     const refresh = refreshVia(parts.recaps, parts.store.records);
     return {
         ensure: async (scope) => {
-            const tab = tabId(scope);
+            const tab = tabId(textOf(scope));
             await parts.recaps.flush(tab, 'autocompact');
             const recap = knownOr(parts.store.records.readRecap(tab), null);
             if (!(recap !== null && hasRecap(recap))) await refresh(tab, lanesOf(parts.informer.current, tab));
@@ -125,7 +125,7 @@ export function wireAutocompact(parts: AutocompactParts): Autocompact {
     const read = parts.config ?? loadSettings;
     return new Autocompact({
         policy: () => read().autocompact, tuning: (): CompactTuning => compactTuningOf(read().tuning), idleHold: () => read().holdIdle, decider: parts.decider, contexts: parts.contexts, inFlight: (candidate) => inFlightOf(flight, candidate), awaiting: parts.awaiting ?? awaitingPane, emit: (event) => { emitTo(parts.events, event); }, recent: (candidate) => { const lane = lanesBehind.get(candidate); return lane === undefined ? Promise.resolve([]) : parts.recent.of(lane); }, statusOf: (candidate) => parseLaneStatusAtDecision(lanesBehind.get(candidate)?.status), startedAt: instant(Date.now() - process.uptime() * 1000),
-        ledger: store.ledger, sessions: signalsOf(store), activity: activityOf(parts), decisions: store.decisions, request: (ask) => { store.requests.requestCompact({ tab: tabId(ask.scope), pane: paneId(ask.key), note: ask.note === null ? null : textOf(ask.note), origin: 'auto' }); },
+        ledger: store.ledger, sessions: signalsOf(store), activity: activityOf(parts), decisions: store.decisions, request: (ask) => { store.requests.requestCompact({ tab: tabId(textOf(ask.scope)), pane: paneId(textOf(ask.key)), note: ask.note === null ? null : textOf(ask.note), origin: 'auto' }); },
         recaps: readinessOf(parts),
         now: () => instant(Date.now()), log: (line) => { parts.log(line); },
     });

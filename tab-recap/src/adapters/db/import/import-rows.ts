@@ -20,6 +20,7 @@ import { TranscriptStore } from '../transcripts.ts';
 import { typeIdOf } from '../typeid.ts';
 import { ids } from '../uuid7.ts';
 import { opsOfSections } from './sections-to-ops.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 function visibilityOf(asked: VisibilityRequest): Visibility {
     if (asked.hidden === 'toggle') return 'toggle';
@@ -72,8 +73,8 @@ export class RowsWriter {
 
     recap(file: TabRecap, now: Instant): void {
         const at = file.at ?? now;
-        this.tabs.ensure(tabId(file.tab), instant(at));
-        this.transcripts.attach(tabId(file.tab), file.lanes, instant(at));
+        this.tabs.ensure(file.tab, instant(at));
+        this.transcripts.attach(file.tab, file.lanes, instant(at));
         if (file.at !== null || file.error !== null || file.costUsd > 0) {
             const facts = { tab: file.tab, at, cause: 'imported', backend: file.backend, language: file.language, costUsd: file.costUsd } as const;
             const failed = file.at === null;
@@ -94,6 +95,6 @@ export class RowsWriter {
     requests(refresh: readonly Text[], visibility: readonly VisibilityRequest[], now: Instant): void {
         const queue = new RequestsStore(this.db, () => now);
         refresh.forEach((tab) => { queue.request(tabId(tab)); });
-        visibility.forEach((asked) => { queue.requestVisibility({ target: paneId(asked.target), visibility: visibilityOf(asked) }); });
+        visibility.forEach((asked) => { queue.requestVisibility({ target: paneId(textOf(asked.target)), visibility: visibilityOf(asked) }); });
     }
 }

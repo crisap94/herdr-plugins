@@ -14,7 +14,7 @@ import { oneTask } from '#test/support.ts';
 import { MIN, T0 } from './imported-fixture.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 
 const add = (section: 'goal' | 'done' | 'next', text: string): Operation => ({ op: 'add', section, text: textOf(text), why: null, ref: null, at: null, agent: null });
 

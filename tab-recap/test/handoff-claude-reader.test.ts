@@ -11,7 +11,7 @@ import type { AgentLookup } from '#src/ports/agents.ts';
 import { registryWith } from './fakes/transcript-registry.ts';
 import { laneWith, planWith, readyOf } from './fakes/handoff-delivery.ts';
 import { fsPathOf } from './fakes/transcript-lines.ts';
-import { agentKind } from '#src/recap/domain/ids.ts';
+import { agentKind } from '#test/support/ids.ts';
 
 const TEXT = 'Handoff of the parser refactor.\n\nNext steps:\n  - finish the lexer\n  - run the suite';
 const EARLIER = 'Handoff of the lexer spike.\n\nNext steps:\n  - write the tests';

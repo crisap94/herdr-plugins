@@ -5,7 +5,7 @@ import { textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { paneId, tabId, agentKind } from '#src/recap/domain/ids.ts';
+import { paneId, tabId, agentKind } from '#test/support/ids.ts';
 import type { DecisionDraft, SkipRow } from '#src/ports/autocompact-records.ts';
 import { memoryStore } from './support.ts';
 

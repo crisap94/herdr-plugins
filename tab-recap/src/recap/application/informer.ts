@@ -16,6 +16,7 @@ import type { TokenMap } from '#src/protocol/tokens.ts';
 import { AsyncQueue } from './async-queue.ts';
 import { decode, paneSessionRefOf, paneTokenMapOf } from './decode.ts';
 import { specsFor } from './watch-set.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 type Snapshot = Exclude<SnapshotResult, { readonly kind: 'unknown' }>;
 
@@ -128,7 +129,7 @@ export class Informer {
         const first = !this.board.seeded;
         this.pushSnapshot(snap);
         if (first && snap.focusedTab !== null) {
-            this.queue.push({ kind: 'focused', tab: tabId(snap.focusedTab) });
+            this.queue.push({ kind: 'focused', tab: tabId(textOf(snap.focusedTab)) });
         }
     }
 

@@ -7,7 +7,7 @@ import { openDatabase } from '#src/adapters/db/open.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import { normalise } from './parity.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { sourcePathOf, cursorOf } from '#src/ports/transcripts.ts';
 import { parseTextOrNull } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';

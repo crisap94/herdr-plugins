@@ -14,7 +14,7 @@ import { idOf, typeIdOf } from '#src/adapters/db/typeid.ts';
 import { parseExchangeName, parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { rid } from '../fakes/ask-ledger.ts';

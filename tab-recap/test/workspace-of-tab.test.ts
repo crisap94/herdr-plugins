@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { tabId, workspaceOfTab } from '#src/recap/domain/ids.ts';
+import { workspaceOfTab } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 
 test('the workspace of a workspace-qualified tab id is the part before the colon', () => {
     assert.equal(workspaceOfTab(tabId('w1:t1')), 'w1');

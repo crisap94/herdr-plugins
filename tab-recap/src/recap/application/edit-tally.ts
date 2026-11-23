@@ -8,7 +8,6 @@ import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { parseMilliseconds, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
 import { TRANSCRIPT_READ_BUDGET_BYTES } from './transcript-read-budget.ts';
-import { agentKind } from '#src/recap/domain/ids.ts';
 
 type Ordering = -1 | 0 | 1;
 
@@ -49,7 +48,7 @@ export class EditTally implements EditSource {
     }
 
     private async editsOf(lane: LaneCursor): Promise<readonly Text[]> {
-        const reader = this.transcripts.readerFor(agentKind(lane.agent));
+        const reader = this.transcripts.readerFor(lane.agent);
         if (reader === undefined || lane.transcript === '' || isScreenSource(sourcePathOf(lane.transcript))) {
             return [];
         }

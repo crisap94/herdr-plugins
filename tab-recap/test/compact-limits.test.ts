@@ -12,11 +12,11 @@ import { must } from '#src/protocol/result.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
 import type { ModelWindows } from '#src/ports/model-catalogue.ts';
-import { agentKind } from '#src/recap/domain/ids.ts';
+import { agentKind } from '#test/support/ids.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 
 const roots: string[] = [];
 const tempDir = (): string => {

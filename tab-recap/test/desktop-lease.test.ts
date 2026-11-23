@@ -11,7 +11,7 @@ import { OpenLeases } from '#src/adapters/desktop/lease.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 
 test('the bus counts, rings and resets', () => {

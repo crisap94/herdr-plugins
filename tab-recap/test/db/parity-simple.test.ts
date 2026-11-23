@@ -6,7 +6,7 @@ import { PaneAlertsRepository } from '#src/adapters/db/pane-alerts.ts';
 import { PaneNotesRepository } from '#src/adapters/db/pane-notes.ts';
 import { TabStore } from '#src/adapters/db/tab-row.ts';
 import type { HiddenState } from '#src/recap/domain/board.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import { parseAlertSource } from '#src/recap/domain/pane-alert.ts';
 import type { PaneAlert } from '#src/recap/domain/pane-alert.ts';
 import { parseText } from '#src/recap/domain/text.ts';

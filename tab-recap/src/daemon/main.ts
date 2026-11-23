@@ -180,7 +180,7 @@ function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compa
         curate.run(tab).catch(failureLog(log, `curator ${tab}`));
     }
     for (const asked of store.requests.takeVisibility()) {
-        informer.push({ kind: 'visibility', target: asked.target === 'all' ? 'all' : { tab: tabId(asked.target) }, hidden: asked.visibility === 'toggle' ? 'toggle' : asked.visibility === 'hidden' });
+        informer.push({ kind: 'visibility', target: asked.target === 'all' ? 'all' : { tab: tabId(textOf(asked.target)) }, hidden: asked.visibility === 'toggle' ? 'toggle' : asked.visibility === 'hidden' });
     }
 }
 

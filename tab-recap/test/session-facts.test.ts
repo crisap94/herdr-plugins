@@ -17,7 +17,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { cursor } from '#test/db/support.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
-import { agentKind } from '#src/recap/domain/ids.ts';
+import { agentKind } from '#test/support/ids.ts';
 import { cursorOf, sourcePathOf, grewOf } from '#src/ports/transcripts.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 

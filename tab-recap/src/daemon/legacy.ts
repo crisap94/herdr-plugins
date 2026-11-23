@@ -29,7 +29,7 @@ export function pauseVia(pause: (span: Duration) => Promise<void>): (ms: number)
 }
 
 export function awaitingNow(pane: string): Promise<Waiting> {
-    return awaitingPane(paneId(pane));
+    return awaitingPane(paneId(textOf(pane)));
 }
 
 function switchOn(setting: string): boolean {
@@ -58,9 +58,9 @@ const wireMap = (tokens: TokenMap): ReadonlyMap<WireText, WireText> => {
 
 export function paneTokensTo(worktrees: Worktrees, answers: CompactRequestQueue, exchange: HandoffExchangeWiring): (pane: string, tokens: TokenMap) => void {
     return (pane, tokens) => {
-        worktrees.feed.update(paneId(pane), notesOf(tokens));
-        answers.onPaneTokens(paneId(pane), wireMap(tokens));
-        exchange.responder.onPaneTokens(paneId(pane), new Map(Object.entries(tokens).map(([name, raw]): [Text, Text] => [must(parseText(name)), must(parseText(raw))])));
+        worktrees.feed.update(paneId(textOf(pane)), notesOf(tokens));
+        answers.onPaneTokens(paneId(textOf(pane)), wireMap(tokens));
+        exchange.responder.onPaneTokens(paneId(textOf(pane)), new Map(Object.entries(tokens).map(([name, raw]): [Text, Text] => [must(parseText(name)), must(parseText(raw))])));
     };
 }
 

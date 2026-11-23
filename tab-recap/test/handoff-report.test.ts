@@ -8,7 +8,7 @@ import type { PrintAsk, PrintAnswer } from '#src/ports/handoff-print.ts';
 import type { DeliverRequest } from '#src/recap/application/handoff-request.ts';
 import { HANDOFF_OUTCOME_ROWS, type HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { handoffOutcomeOf } from './fakes/handoff-outcome-readers.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 
 const FROM = paneId('w1:p1');
 const TO = paneId('w1:p2');

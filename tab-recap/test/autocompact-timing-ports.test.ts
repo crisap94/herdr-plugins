@@ -18,7 +18,7 @@ import { decidedOf, textOf } from './fakes/decider-fixtures.ts';
 import { SAFE, candidateFor } from './autocompact-world.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
-import { agentKind } from '#src/recap/domain/ids.ts';
+import { agentKind } from '#test/support/ids.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { runningOf } from '#src/recap/domain/in-flight.ts';
 

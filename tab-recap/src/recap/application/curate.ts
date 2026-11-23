@@ -7,7 +7,7 @@ import type { Fact } from '#src/recap/domain/fact.ts';
 import type { CloseOp } from '#src/recap/domain/ops.ts';
 import { parseText, parseTextOrNull } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import { parseTabId, paneId } from '#src/recap/domain/ids.ts';
+import { parseTabId } from '#src/recap/domain/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
@@ -69,7 +69,7 @@ export class CurateTasks {
 
     private async one(tab: TabId, task: RecapTask, how: CurateScope): Promise<Presence> {
         try {
-            const reconciled = await this.reconciling.task(tab, { id: must(parseText(task.id)), name: must(parseText(task.name)), lanes: task.lanes.map((member) => paneId(member)) }, how.lanes, how.why);
+            const reconciled = await this.reconciling.task(tab, { id: must(parseText(task.id)), name: must(parseText(task.name)), lanes: task.lanes.map((member) => member) }, how.lanes, how.why);
             if (how.why === 'open') {
                 await this.curate(tab, task);
             }

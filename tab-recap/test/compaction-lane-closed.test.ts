@@ -13,7 +13,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { compactionDeps, compacted, typingFleet } from '#test/fakes/compaction-fleet.ts';
 import type { Fleet } from '#test/fakes/compaction-fleet.ts';
-import { agentKind, tabId, paneId } from '#src/recap/domain/ids.ts';
+import { agentKind, tabId, paneId } from '#test/support/ids.ts';
 
 interface Hostile {
     readonly world: Fleet;

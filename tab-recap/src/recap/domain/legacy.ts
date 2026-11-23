@@ -21,7 +21,7 @@ import type { Freshness } from './freshness.ts';
 import type { HandoffGroupId } from './handoff-content.ts';
 import type { HandoffText } from './handoff-sanitize.ts';
 import type { WorksiteSnapshot } from './worksite.ts';
-import { NotAnIdentifierError, parseAgentKind, parsePaneId, parseTabId, parseWorkspaceId, type PaneId, type AgentKind, type TabId, type WorkspaceId } from './ids.ts';
+import type { PaneId, TabId } from './ids.ts';
 import type { Lane, SeenLane } from './lane.ts';
 import { collapsedText } from './text-collapse.ts';
 
@@ -115,21 +115,6 @@ export interface ColumnOpenedObservation { readonly kind: 'column-opened'; reado
 export interface SwitchedObservation { readonly kind: 'switched'; readonly enabled: boolean; }
 
 function okOrNull<T, E>(parsed: Result<T, E>): T | null { return parsed.kind === 'ok' ? parsed.value : null; }
-
-function orThrow<T>(value: T | null, why: string): T {
-    if (value === null) {
-        throw new NotAnIdentifierError(why);
-    }
-    return value;
-}
-
-export function paneId(raw: string): PaneId { return orThrow(okOrNull(parsePaneId(raw)), 'a pane id cannot be empty'); }
-
-export function tabId(raw: string): TabId { return orThrow(okOrNull(parseTabId(raw)), 'a tab id cannot be empty'); }
-
-export function workspaceId(raw: string): WorkspaceId { return orThrow(okOrNull(parseWorkspaceId(raw)), 'a workspace id cannot be empty'); }
-
-export function agentKind(raw: string): AgentKind { return orThrow(okOrNull(parseAgentKind(raw)), 'an agent kind cannot be empty'); }
 
 export interface SettleEvidence { readonly trials: number; readonly source: string; }
 

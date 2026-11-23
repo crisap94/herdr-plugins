@@ -4,7 +4,6 @@ import type { SQL } from 'drizzle-orm';
 import { must } from '#src/protocol/result.ts';
 import type { RemovedCounts, RetentionPort, Retirement, TabRetirement } from '#src/ports/retention.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { writeTx } from './connection.ts';
@@ -35,12 +34,12 @@ export class RetentionRepository implements RetentionPort, TabRetirement {
         return this.orm.select({ id: tabs.id }).from(tabs)
             .where(and(isNull(tabs.columnPane), lt(sql`max(${tabs.lastSeen}, coalesce(${tabs.viewAt}, 0))`, cutoff)))
             .orderBy(asc(tabs.id)).all()
-            .map((row) => tabId(row.id))
+            .map((row) => row.id)
             .filter((tab) => !kept.has(tab));
     }
 
     remove(tab: TabId): RemovedCounts {
-        const id = tabId(tab);
+        const id = tab;
         return writeTx(this.db, () => {
             const removed = this.sizeOf(id);
             this.orm.delete(tabVisibility).where(eq(tabVisibility.tabId, id)).run();

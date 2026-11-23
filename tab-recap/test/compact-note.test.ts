@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { compactNoteOf } from '#src/recap/domain/compact-note.ts';
 import { beginCompact } from '#src/recap/application/compact-start.ts';
 import { requestNoteOf } from './fakes/compact-note.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import type { CompactStart } from '#src/recap/application/compact-start.ts';
 import { NOTE_LIMIT } from '#src/recap/application/compaction-message.ts';
 import { changes, draftFrom, initial, locksOf } from '#src/recap/application/setup-keys.ts';

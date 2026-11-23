@@ -14,7 +14,7 @@ import { fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import { causeOf } from './fakes/cause.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
-import { agentKind } from '#src/recap/domain/ids.ts';
+import { agentKind } from '#test/support/ids.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 
 const found = (...ids: string[]): HarnessList => ({ kind: 'available', ids: ids.map((id) => agentKind(id)) });

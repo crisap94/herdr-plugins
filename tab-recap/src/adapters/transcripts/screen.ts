@@ -22,7 +22,7 @@ export type ScreenWants = (agent: AgentKind) => boolean;
 const hashOf = (text: Text): Text => must(parseText(createHash('sha1').update(text).digest('hex').slice(0, 16)));
 
 export class ScreenTranscripts implements Transcripts {
-    readonly agent = agentKind(SCREEN_READER_ID);
+    readonly agent = agentKind(textOf(SCREEN_READER_ID));
     readonly inFlight: InFlightCapability = { kind: 'unsupported', why: 'screen' };
     private readonly screens: ScreenReader;
     private readonly wants: ScreenWants;

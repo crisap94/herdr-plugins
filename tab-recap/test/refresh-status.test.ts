@@ -4,7 +4,7 @@ import { refreshStatusOf } from '#src/recap/domain/freshness.ts';
 import { refreshWithin } from '#src/daemon/refresh-status.ts';
 import { memoryStore, recordOps } from './db/support.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 

@@ -20,7 +20,6 @@ import { Briefing } from './compaction-briefing.ts';
 import { Sender, type Placed, type Placement } from './compaction-send.ts';
 import { scopeOf } from './compaction-targets.ts';
 import { Trail } from './compaction-trail.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
 import type { AgentKind, CompactionId, PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
@@ -225,7 +224,7 @@ export class Compactor {
 
     private async withoutTarget(request: CompactAsk): Promise<void> {
         const { compaction } = this.deps.messages();
-        const pane = request.pane === null || request.pane === '' ? null : paneId(request.pane);
+        const pane = request.pane === null || request.pane === '' ? null : request.pane;
         if (request.origin === 'auto' && pane !== null && this.deps.listsPane(pane) === 'absent') {
             this.answer(request, pane, must(parseAnswerStage(failureStage(COMPACT_FAILURES.skipped))));
             this.deps.log(must(parseText(compaction.laneClosed(null, pane, 'before-writer'))));

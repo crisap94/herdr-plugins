@@ -5,7 +5,7 @@ import { HerdrAgentPanes } from '#src/adapters/herdr/agents.ts';
 import type { Wire } from '#src/adapters/herdr/agents.ts';
 import { compactionLine, parseCompactionPiece } from '#src/recap/domain/compaction-plan.ts';
 import { duration, parseMilliseconds } from '#src/recap/domain/time.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
 function agents(fail: string | null = null): { agents: HerdrAgentPanes; calls: { method: string; params: unknown }[] } {

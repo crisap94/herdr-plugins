@@ -12,7 +12,7 @@ import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { storeOver } from '#src/adapters/db/database.ts';
 import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import { rid } from '../fakes/ask-ledger.ts';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
 import { scratchDir, shapeOf } from './support.ts';

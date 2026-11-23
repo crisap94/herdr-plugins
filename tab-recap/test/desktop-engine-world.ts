@@ -9,7 +9,7 @@ import { parseSocketPath } from '#src/adapters/herdr-core/sdk-core.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
 import { cursor, recordOps } from '#test/db/support.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 import { paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';

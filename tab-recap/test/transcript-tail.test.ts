@@ -13,7 +13,7 @@ import { SCREEN_READER_ID } from '#src/adapters/transcripts/screen.ts';
 import { cursor } from '#test/db/support.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
-import { agentKind } from '#src/recap/domain/ids.ts';
+import { agentKind } from '#test/support/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 
 const reader = (agent: string, bySource: Readonly<Record<string, readonly Entry[]>>, asked: { source: string; was: Position }[] = []): Transcripts => ({

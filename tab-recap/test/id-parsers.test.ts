@@ -10,6 +10,7 @@ import {
     parseWorkspaceId,
     tabId,
 } from '#src/recap/domain/ids.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const PARSERS = [
     parsePaneId,
@@ -54,14 +55,14 @@ test('every id parser never throws, whatever the input', () => {
 
 test('a parsed pane id is the same value the throwing constructor makes', () => {
     const parsed = parsePaneId('w1:t3');
-    assert.equal(parsed.kind === 'ok' && parsed.value, paneId('w1:t3'));
+    assert.equal(parsed.kind === 'ok' && parsed.value, paneId(textOf('w1:t3')));
 });
 
 test('a parsed tab id is the same value the throwing constructor makes', () => {
     const parsed = parseTabId('w1:t3');
-    assert.equal(parsed.kind === 'ok' && parsed.value, tabId('w1:t3'));
+    assert.equal(parsed.kind === 'ok' && parsed.value, tabId(textOf('w1:t3')));
 });
 
 test('the throwing constructors keep throwing on an empty id', () => {
-    assert.throws(() => paneId(''), { name: 'NotAnIdentifierError' });
+    assert.throws(() => paneId(textOf('')), { name: 'NotAnIdentifierError' });
 });

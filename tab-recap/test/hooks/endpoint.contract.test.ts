@@ -12,7 +12,7 @@ import { createTurnEnds } from '#src/adapters/hooks/turn-ends.ts';
 import type { Line } from '#src/daemon/slots.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
