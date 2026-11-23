@@ -2,7 +2,8 @@ import { existsSync, readFileSync, rmSync, statSync, utimesSync } from 'node:fs'
 import { join } from 'node:path';
 import { must } from '#src/protocol/result.ts';
 import { parsePid, type Pid } from '#src/recap/domain/pid.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import { writeAtomically } from './atomic-file.ts';
 
 export class Pidfile {
@@ -44,8 +45,8 @@ export class Pidfile {
     }
 
     claim(pid: number, version: string | null = null): void {
-        writeAtomically(this.path, `${pid}\n`);
-        writeAtomically(this.versionPath, `${version ?? ''}\n`);
+        writeAtomically(fsPathOf(this.path), textOf(`${pid}\n`));
+        writeAtomically(fsPathOf(this.versionPath), textOf(`${version ?? ''}\n`));
     }
 
     daemonVersion(): Text | null {
@@ -73,7 +74,7 @@ export class Pidfile {
         try {
             utimesSync(this.beatPath, now, now);
         } catch {
-            writeAtomically(this.beatPath, `${now.getTime()}\n`);
+            writeAtomically(fsPathOf(this.beatPath), textOf(`${now.getTime()}\n`));
         }
     }
 
@@ -91,7 +92,7 @@ export class Pidfile {
 
     set disabled(value: boolean) {
         if (value) {
-            writeAtomically(this.switchPath, `${Date.now()}\n`);
+            writeAtomically(fsPathOf(this.switchPath), textOf(`${Date.now()}\n`));
         } else {
             rmSync(this.switchPath, { force: true });
         }

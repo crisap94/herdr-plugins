@@ -20,5 +20,5 @@ export function setValues(path: FsPath, values: ReadonlyMap<EnvironmentName, Tex
             lines.push(entry);
         }
     }
-    writeAtomically(path, `${lines.join('\n')}\n`);
+    writeAtomically(path, textOf(`${lines.join('\n')}\n`));
 }

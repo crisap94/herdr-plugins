@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { xdgPaths } from '#src/adapters/os/config/paths-xdg.ts';
 import { languageSettingOf, messagesFor, recapLanguageOfSetting } from '#src/i18n/index.ts';
 import type { LanguageSource, Locale, Messages } from '#src/i18n/index.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { duration, parseDuration } from '#src/recap/domain/time.ts';
 import { ANY_KIND, DEFAULT_POLICY, screenKindsOf } from '#src/recap/domain/policy.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
@@ -49,7 +50,7 @@ export { BACKEND_IDS } from '#src/recap/domain/backend.ts';
 export type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
 export type { CompactionSettings, Glow, Models, SettingGet, SettingReader, Settings } from './settings.ts';
 
-const defaults = xdgPaths(homedir());
+const defaults = xdgPaths(fsPathOf(homedir()));
 
 export const herdrEventsPresence = (): Presence => (loadSettings().herdrEvents === 'on' ? 'present' : 'absent');
 

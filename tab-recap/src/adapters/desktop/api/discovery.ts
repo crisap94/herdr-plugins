@@ -3,7 +3,8 @@ import { join } from 'node:path';
 import type { Count } from '#src/recap/domain/count.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
-import type { NonEmptyText } from '#src/recap/domain/text.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
+import { textOf, type NonEmptyText } from '#src/recap/domain/text.ts';
 import { API_FILE, API_VERSION } from '../constants.ts';
 import { writeAtomically } from '../../os/atomic-file.ts';
 
@@ -16,7 +17,7 @@ export interface Discovery {
 const OWNER_ONLY = 0o600;
 
 export function writeDiscovery(dir: Directory, found: Discovery): void {
-    writeAtomically(join(dir, API_FILE), JSON.stringify({ version: API_VERSION, port: found.port, token: found.token, pid: process.pid, startedAt: found.startedAt }), OWNER_ONLY);
+    writeAtomically(fsPathOf(join(dir, API_FILE)), textOf(JSON.stringify({ version: API_VERSION, port: found.port, token: found.token, pid: process.pid, startedAt: found.startedAt })), OWNER_ONLY);
 }
 
 export function removeDiscovery(dir: Directory, token: NonEmptyText): void {

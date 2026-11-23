@@ -8,9 +8,11 @@ import type { Text } from '#src/recap/domain/text.ts';
 
 export type Spawner = typeof spawn;
 
+export type Detaching = 'detached' | 'attached';
+
 export interface Flavour {
     readonly spawner: Spawner;
-    readonly detached: boolean;
+    readonly detached: Detaching;
     readonly killTree: ProcessPort['killTree'];
 }
 
@@ -20,7 +22,7 @@ const KILLED = 137;
 
 export function runIn(flavour: Flavour, command: FsPath, args: readonly Text[], options: ProcessOptions): Promise<ProcessOutcome> {
     return new Promise<ProcessOutcome>((resolve) => {
-        const child = flavour.spawner(command, [...args], { cwd: options.cwd, env: options.env, stdio: ['pipe', 'pipe', 'pipe'], detached: flavour.detached });
+        const child = flavour.spawner(command, [...args], { cwd: options.cwd, env: options.env, stdio: ['pipe', 'pipe', 'pipe'], detached: flavour.detached === 'detached' });
         let stdout = '';
         let stderr = '';
         let timedOut = false;

@@ -11,6 +11,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { BAR_TITLE, COLUMN_TITLE } from '#src/adapters/herdr/column-panes.ts';
 import { xdgPaths } from '#src/adapters/os/config/paths-xdg.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { codeVersion } from '#src/adapters/os/plugin-version.ts';
 import { stateDirectory } from '#src/daemon/config.ts';
 import { relayEnvOf, titleOf } from '#src/pane/relay-env.ts';
@@ -501,7 +502,7 @@ test('relayEnvOf reads the role, tab, pane and roll marker from the environment 
     assert.equal(version, codeVersion(ROOT));
     assert.deepEqual(relayEnvOf({ TAB_RECAP_TAB: 't7', TAB_RECAP_SHAPE: 'bar', HERDR_PANE_ID: 'p3', TAB_RECAP_PANE_ROLLED: '3.0.3', TAB_RECAP_STATE: '/s' }, root), { hello: { role: 'bar', tab: 't7', pane: 'p3', version }, facts: { rolledFor: '3.0.3' }, stateDir: new URL('file:///s/'), pluginRoot: root, opened: 'by-herdr' });
     assert.equal(relayEnvOf({ TAB_RECAP_MODE: 'modal', TAB_RECAP_SHAPE: 'bar' }, root).hello.role, 'modal');
-    assert.deepEqual(relayEnvOf({ HERDR_PANE_ID: '', TAB_RECAP_PANE_ROLLED: '' }, root, home), { hello: { role: 'column', tab: '', pane: null, version }, facts: { rolledFor: null }, stateDir: urlOf(xdgPaths(homedir()).stateDir), pluginRoot: root, opened: 'by-herdr' });
+    assert.deepEqual(relayEnvOf({ HERDR_PANE_ID: '', TAB_RECAP_PANE_ROLLED: '' }, root, home), { hello: { role: 'column', tab: '', pane: null, version }, facts: { rolledFor: null }, stateDir: urlOf(xdgPaths(fsPathOf(homedir())).stateDir), pluginRoot: root, opened: 'by-herdr' });
     assert.equal(relayEnvOf({}, urlOf(join(ROOT, 'no-such-root'))).hello.version, 'unknown');
     const saved = { state: process.env['TAB_RECAP_STATE'], herdr: process.env['HERDR_PLUGIN_STATE_DIR'] };
     try {

@@ -33,12 +33,6 @@
     "parameter": 1,
     "container": 2
   },
-  "src/adapters/os/atomic-file.ts": {
-    "parameter": 2
-  },
-  "src/adapters/os/config/paths-xdg.ts": {
-    "parameter": 1
-  },
   "src/adapters/os/pidfile.ts": {
     "parameter": 6,
     "return": 7,
@@ -47,9 +41,6 @@
   "src/adapters/os/plugin-version.ts": {
     "parameter": 5,
     "return": 3
-  },
-  "src/adapters/os/process/core.ts": {
-    "property": 1
   },
   "src/adapters/os/terminal-style.ts": {
     "parameter": 1,
