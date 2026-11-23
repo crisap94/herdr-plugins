@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { createRuntime } from '../../tab-recap/node_modules/@stateforge-labs/harness-adapters/dist/src/runtime/index.js';
-import type { Summarizer } from '../../tab-recap/src/ports/summarizer.ts';
+import type { Summarizer } from '../../packages/session-ledger/src/ports/summarizer.ts';
 import { claudeWriter, followedOf, gitRepos, languageOf, openingOf, systemClock } from './compose.ts';
 import type { Environment, HostPlugs } from './compose.ts';
 import { LOCK_DIR, processAlive, processStartOf, SessionLock } from './lock.ts';

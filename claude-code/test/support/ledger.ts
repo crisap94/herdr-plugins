@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { RestoreFacts } from '../../../tab-recap/src/recap/application/engine.ts';
+import type { RestoreFacts } from '../../../packages/session-ledger/src/recap/application/engine.ts';
 import { composeEngine, followedOf } from '../../src/compose.ts';
 import { TURNS, tempHost } from './host.ts';
 import type { TempHost } from './host.ts';

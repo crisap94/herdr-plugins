@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { FollowedSession, ScopeId } from '../../tab-recap/src/recap/application/engine.ts';
+import type { FollowedSession, ScopeId } from '../../packages/session-ledger/src/recap/application/engine.ts';
 import { composeEngine, followedOf, openingOf } from '../src/compose.ts';
 import { LOCK_DIR, SessionLock, processAlive, processStartOf } from '../src/lock.ts';
 import type { LockPlugs } from '../src/lock.ts';

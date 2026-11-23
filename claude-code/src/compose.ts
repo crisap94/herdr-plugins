@@ -1,6 +1,6 @@
 import { basename, dirname, join } from 'node:path';
-import { createEngine } from '../../tab-recap/src/recap/application/engine.ts';
-import type { Engine, FollowedSession, ScopeId } from '../../tab-recap/src/recap/application/engine.ts';
+import { createEngine } from '../../packages/session-ledger/src/recap/application/engine.ts';
+import type { Engine, FollowedSession, ScopeId } from '../../packages/session-ledger/src/recap/application/engine.ts';
 import { openStore } from '../../tab-recap/src/adapters/db/database.ts';
 import type { Store } from '../../tab-recap/src/adapters/db/database.ts';
 import { ClaudeTranscripts } from '../../tab-recap/src/adapters/transcripts/claude/transcripts.ts';
@@ -9,19 +9,19 @@ import { LIBRARY_IDS, LibraryHarness } from '../../tab-recap/src/adapters/harnes
 import type { HarnessRuntime } from '../../tab-recap/src/adapters/harness/library.ts';
 import { noticing } from '../../tab-recap/src/adapters/harness/confinement-notice.ts';
 import { RecapWriter } from '../../tab-recap/src/adapters/job/writer.ts';
-import { capabilityWording } from '../../tab-recap/src/ports/capability-reasons.ts';
-import { TranscriptRegistry } from '../../tab-recap/src/ports/transcript-registry.ts';
-import type { Clock } from '../../tab-recap/src/ports/clock.ts';
-import type { LaneRepo } from '../../tab-recap/src/ports/lane-repo.ts';
-import type { Summarizer } from '../../tab-recap/src/ports/summarizer.ts';
+import { capabilityWording } from '../../packages/session-ledger/src/ports/capability-reasons.ts';
+import { TranscriptRegistry } from '../../packages/session-ledger/src/ports/transcript-registry.ts';
+import type { Clock } from '../../packages/session-ledger/src/ports/clock.ts';
+import type { LaneRepo } from '../../packages/session-ledger/src/ports/lane-repo.ts';
+import type { Summarizer } from '../../packages/session-ledger/src/ports/summarizer.ts';
 import { recapLanguageOf } from '../../tab-recap/src/i18n/index.ts';
 import type { Locale } from '../../tab-recap/src/i18n/index.ts';
 import { effortOf } from '../../tab-recap/src/recap/domain/effort.ts';
 import { tabId } from '../../tab-recap/src/recap/domain/ids.ts';
 import { laneFrom } from '../../tab-recap/src/recap/domain/lane.ts';
-import { instant } from '../../tab-recap/src/recap/domain/time.ts';
-import type { Instant } from '../../tab-recap/src/recap/domain/time.ts';
-import { FULL_WRITER_VIEW } from '../../tab-recap/src/recap/domain/writer-view.ts';
+import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
+import type { Instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
+import { FULL_WRITER_VIEW } from '../../packages/session-ledger/src/recap/domain/writer-view.ts';
 import type { HookSession } from './payload.ts';
 
 export type Environment = Readonly<Record<string, string | undefined>>;

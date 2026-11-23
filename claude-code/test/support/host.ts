@@ -1,9 +1,9 @@
 import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { instant } from '../../../tab-recap/src/recap/domain/time.ts';
-import type { Instant } from '../../../tab-recap/src/recap/domain/time.ts';
-import type { RecapRequest } from '../../../tab-recap/src/ports/summarizer.ts';
+import { instant } from '../../../packages/session-ledger/src/recap/domain/time.ts';
+import type { Instant } from '../../../packages/session-ledger/src/recap/domain/time.ts';
+import type { RecapRequest } from '../../../packages/session-ledger/src/ports/summarizer.ts';
 import { NO_REPOS } from '../../../tab-recap/test/support.ts';
 import { writer } from '../../../tab-recap/test/fakes/golden-writer.ts';
 import type { HostPlugs } from '../../src/compose.ts';

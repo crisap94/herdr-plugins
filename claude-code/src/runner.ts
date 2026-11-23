@@ -1,6 +1,6 @@
 import { appendFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Engine } from '../../tab-recap/src/recap/application/engine.ts';
+import type { Engine } from '../../packages/session-ledger/src/recap/application/engine.ts';
 import type { Followed } from './compose.ts';
 import type { SessionLock } from './lock.ts';
 

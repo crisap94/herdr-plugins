@@ -1,13 +1,13 @@
 import { existsSync } from 'node:fs';
-import { createEngine } from '../../tab-recap/src/recap/application/engine.ts';
-import type { Engine } from '../../tab-recap/src/recap/application/engine.ts';
+import { createEngine } from '../../packages/session-ledger/src/recap/application/engine.ts';
+import type { Engine } from '../../packages/session-ledger/src/recap/application/engine.ts';
 import { connectReadOnly } from '../../tab-recap/src/adapters/db/connection.ts';
 import { storeOver } from '../../tab-recap/src/adapters/db/database.ts';
-import { capabilityWording } from '../../tab-recap/src/ports/capability-reasons.ts';
-import { TranscriptRegistry } from '../../tab-recap/src/ports/transcript-registry.ts';
-import type { Clock } from '../../tab-recap/src/ports/clock.ts';
-import type { Summarizer } from '../../tab-recap/src/ports/summarizer.ts';
-import { FULL_WRITER_VIEW } from '../../tab-recap/src/recap/domain/writer-view.ts';
+import { capabilityWording } from '../../packages/session-ledger/src/ports/capability-reasons.ts';
+import { TranscriptRegistry } from '../../packages/session-ledger/src/ports/transcript-registry.ts';
+import type { Clock } from '../../packages/session-ledger/src/ports/clock.ts';
+import type { Summarizer } from '../../packages/session-ledger/src/ports/summarizer.ts';
+import { FULL_WRITER_VIEW } from '../../packages/session-ledger/src/recap/domain/writer-view.ts';
 import { gitRepos, ledgerPathOf } from './compose.ts';
 
 export type ReadEngine = Pick<Engine, 'restore' | 'history'>;

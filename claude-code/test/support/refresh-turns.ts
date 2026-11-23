@@ -1,8 +1,8 @@
 import { setTimeout as delay } from 'node:timers/promises';
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { instant } from '../../../tab-recap/src/recap/domain/time.ts';
-import type { Instant } from '../../../tab-recap/src/recap/domain/time.ts';
+import { instant } from '../../../packages/session-ledger/src/recap/domain/time.ts';
+import type { Instant } from '../../../packages/session-ledger/src/recap/domain/time.ts';
 import { NO_REPOS } from '../../../tab-recap/test/support.ts';
 import { writer } from '../../../tab-recap/test/fakes/golden-writer.ts';
 import { composeEngine, followedOf } from '../../src/compose.ts';

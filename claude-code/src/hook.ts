@@ -1,12 +1,12 @@
-import type { RestoreFacts } from '../../tab-recap/src/recap/application/engine.ts';
+import type { RestoreFacts } from '../../packages/session-ledger/src/recap/application/engine.ts';
 import { restoreContentOf } from '../../tab-recap/src/recap/application/restore-text.ts';
 import { clean } from '../../tab-recap/src/recap/application/compaction-brief.ts';
 import { guidanceOf } from '../../tab-recap/src/recap/application/compaction-message.ts';
 import { byteBudgetOf } from '../../tab-recap/src/recap/domain/byte-budget.ts';
 import { sectionsOfOpen } from '../../tab-recap/src/recap/domain/ledger-view.ts';
-import { NO_SECTIONS } from '../../tab-recap/src/recap/domain/shape.ts';
+import { NO_SECTIONS } from '../../packages/session-ledger/src/recap/domain/shape.ts';
 import { fitRestore } from '../../tab-recap/src/recap/render/restore-markdown.ts';
-import type { Clock } from '../../tab-recap/src/ports/clock.ts';
+import type { Clock } from '../../packages/session-ledger/src/ports/clock.ts';
 import { followedOf, recordsMatchSession } from './compose.ts';
 import type { Environment } from './compose.ts';
 import { parsePayload } from './payload.ts';

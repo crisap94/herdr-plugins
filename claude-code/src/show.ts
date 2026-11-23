@@ -1,7 +1,7 @@
-import type { RestoreFacts } from '../../tab-recap/src/recap/application/engine.ts';
-import type { Clock } from '../../tab-recap/src/ports/clock.ts';
-import { SECTION_IDS } from '../../tab-recap/src/recap/domain/fact.ts';
-import type { Section } from '../../tab-recap/src/recap/domain/fact.ts';
+import type { RestoreFacts } from '../../packages/session-ledger/src/recap/application/engine.ts';
+import type { Clock } from '../../packages/session-ledger/src/ports/clock.ts';
+import { SECTION_IDS } from '../../packages/session-ledger/src/recap/domain/fact.ts';
+import type { Section } from '../../packages/session-ledger/src/recap/domain/fact.ts';
 import { followedOf } from './compose.ts';
 import { readingWith } from './read.ts';
 import { newestSessionIn, sessionNamed } from './sessions.ts';
