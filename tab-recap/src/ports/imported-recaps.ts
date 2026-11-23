@@ -5,8 +5,6 @@ import type { Instant } from '#src/recap/domain/time.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 import type { RunItem } from './run-inputs.ts';
 
-export type { ImportedChapter } from './twins/runs/legacy.ts';
-
 export interface ImportedChapterRecord {
     readonly n: Count;
     readonly at: Instant;

@@ -4,7 +4,7 @@ import { compareImported, withoutLedgers } from '#src/recap/application/compare-
 import { must } from '#src/protocol/result.ts';
 import { parseUsd, usdOf } from '#src/recap/domain/usd.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
-import type { ImportedChapter } from '#src/ports/imported-recaps.ts';
+import type { ImportedChapterRecord } from '#src/ports/imported-recaps.ts';
 import type { JudgePort, JudgeTask } from '#src/ports/judge.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
 import { comparisonText } from '#src/recap/render/compare.ts';
@@ -12,6 +12,7 @@ import { plain } from '#src/recap/render/wrap.ts';
 import { cursor, memoryStore, recordOps } from '#test/db/support.ts';
 import { oneTask } from '#test/support.ts';
 import { MIN, T0 } from './imported-fixture.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 
@@ -50,15 +51,15 @@ function judgeOf(seen: { task: JudgeTask; document: string }[]): JudgePort {
     };
 }
 
-const chapter = (n: number, minutes: number, texts: readonly string[]): ImportedChapter => ({
-    n, at: T0 + minutes * MIN,
-    items: texts.map((text, at) => ({ key: `state/t1/done/${at}`, section: 'done', text, fact: `state/t1/done/${at}`, born: false, anchor: null })),
+const chapter = (n: number, minutes: number, texts: readonly string[]): ImportedChapterRecord => ({
+    n: countOf(n), at: instant(T0 + minutes * MIN),
+    items: texts.map((text, at) => ({ key: textOf(`state/t1/done/${at}`), section: textOf('done'), text: textOf(text), fact: textOf(`state/t1/done/${at}`), born: false, anchor: null })),
 });
 
 async function compareAll(): Promise<{ readonly compared: Awaited<ReturnType<typeof compareImported>>; readonly seen: { task: JudgeTask; document: string }[] }> {
     const store = replayStore();
     const seen: { task: JudgeTask; document: string }[] = [];
-    const deps = { judge: judgeOf(seen), inputs: store.inputs, verdicts: store.verdicts, rubric: must(parseText('r')), now: (): ReturnType<typeof instant> => instant(1), label: 'replay:t1' };
+    const deps = { judge: judgeOf(seen), inputs: store.inputs, verdicts: store.verdicts, rubric: must(parseText('r')), now: (): ReturnType<typeof instant> => instant(1), label: tabId('replay:t1') };
     const compared = await compareImported(deps, [chapter(1, 21, ['Cart model written']), chapter(2, 51, ['Totals added', 'Tests pass', 'Docs written']), chapter(3, 400, ['Later work'])]);
     return { compared, seen };
 }
@@ -97,7 +98,7 @@ test('the ledgers of a writer\'s document are cut out of the evidence, however t
 
 test('the report: one row per chapter, 1.x beside the replay, the sums, and why a chapter was skipped', async () => {
     const store = replayStore();
-    const deps = { judge: judgeOf([]), inputs: store.inputs, verdicts: store.verdicts, rubric: must(parseText('r')), now: (): ReturnType<typeof instant> => instant(1), label: 'replay:t1' };
+    const deps = { judge: judgeOf([]), inputs: store.inputs, verdicts: store.verdicts, rubric: must(parseText('r')), now: (): ReturnType<typeof instant> => instant(1), label: tabId('replay:t1') };
     const compared = await compareImported(deps, [chapter(1, 21, ['Cart model written']), chapter(2, 51, ['Totals added']), chapter(3, 400, ['Later work'])]);
     const text = comparisonText(compared, textOf('w1:t1'), plain).join('\n');
     assert.match(text, /the last good 1\.x recap of each chapter of w1:t1 against the replay's ledger state at the same time/);

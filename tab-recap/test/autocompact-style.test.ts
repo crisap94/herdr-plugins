@@ -7,7 +7,9 @@ import { parseCount } from '#src/recap/domain/count.ts';
 import { must } from '#src/protocol/result.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { covered } from '#src/recap/application/brief-coverage.ts';
+import { parseProbability } from '#src/recap/domain/probability.ts';
+import { checkCoverage, probabilityRequired } from '#src/recap/application/brief-coverage.ts';
+import type { CheckedFact } from '#src/recap/domain/autocompact.ts';
 import { styleLine } from '#src/recap/application/autocompact-listing.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
@@ -30,10 +32,10 @@ function waitedMinutesAgo(w: World, minutes: number): void {
     w.store.autocompact.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - minutes * 60_000), mode: 'on', share: 12, tokens: mustParsed(parseCount(120_000)), window: mustParsed(parseCount(1_000_000)), gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: mustParsed(parseUsd(0)), tookMs: null, why: null });
 }
 
-const passes = async (style: string): Promise<boolean> => (await covered('the brief', NEEDS, keeping(0.65), tuningOf(env({ TAB_RECAP_AUTOCOMPACT_STYLE: style })).coverageAtLeast)).ok;
+const passes = async (style: string): Promise<boolean> => (await checkCoverage(textOf('the brief'), NEEDS, keeping(0.65), probabilityRequired(parseProbability(tuningOf(env({ TAB_RECAP_AUTOCOMPACT_STYLE: style })).coverageAtLeast)))).complete === 'present';
 
 const keeping = (keeps: number): Decider => ({ label: textOf('fake'), ask: (_state, questions): Promise<DecidedResult> => Promise.resolve(decidedOf(Object.fromEntries([...questions.keys()].map((id) => [id, keeps])))) });
-const NEEDS = [{ section: 'needs', text: 'Keep the token', why: null }];
+const NEEDS: readonly CheckedFact[] = [{ section: 'needs', text: textOf('Keep the token'), why: null }];
 
 test('balanced is today\'s numbers: the verdict 0.30 and 0.70 with the band 0.35–0.65, the pass mark 0.70, the ceiling 80, the cooldown ten minutes, no re-check', () => {
     assert.deepEqual(STYLE_NUMBERS.balanced, { verdict: THRESHOLDS, coverageAtLeast: 0.70, ceiling: 80, cooldownMs: 600_000, recheckIdleMs: null });

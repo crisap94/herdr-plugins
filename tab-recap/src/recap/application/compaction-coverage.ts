@@ -1,10 +1,10 @@
 import type { HistoryFact } from '#src/ports/ledger.ts';
-import { parseAnswerTally, type AnswerTally } from '#src/ports/autocompact-records.ts';
+import type { AnswerTally } from '#src/ports/autocompact-records.ts';
 import { must } from '#src/protocol/result.ts';
-import { correctionOf, factsOf } from './brief-coverage.ts';
-import type { Coverage } from './brief-coverage.ts';
+import { checkedFactsOf, correctionFor } from './brief-coverage.ts';
+import type { CheckedCoverage } from './brief-coverage.ts';
 import type { CompactionPorts } from './compaction-deps.ts';
-import { parseCheckedFact, type CheckedFact, type CoverageOutcome } from '#src/recap/domain/autocompact.ts';
+import { type CheckedFact, type CoverageOutcome } from '#src/recap/domain/autocompact.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
@@ -40,12 +40,7 @@ interface WaitingParts {
     readonly coverageCostUsd?: Usd | null;
 }
 
-const usdOrNull = (result: Coverage): Usd | null => result.costUsd === null || result.costUsd === undefined ? null : must(parseUsd(result.costUsd));
-
-const tallyOf = (result: Coverage): AnswerTally | null => {
-    const tally = parseAnswerTally(result.answers);
-    return tally.kind === 'ok' ? tally.value : null;
-};
+const usdOrNull = (result: CheckedCoverage): Usd | null => result.costUsd ?? null;
 
 const waiting = (parts: WaitingParts): Checked => ({
     brief: parts.brief, coverage: parts.coverage ?? null, outcome: parts.outcome, why: parts.why, coverageMs: parts.coverageMs ?? duration(0), coverageCostUsd: parts.coverageCostUsd ?? null,
@@ -56,7 +51,7 @@ type CoverageCheck = Pick<NonNullable<ReturnType<CompactionPorts['coverage']>>, 
 interface BestParts {
     readonly coverage: CoverageCheck;
     readonly first: Briefed;
-    readonly facts: ReturnType<typeof factsOf>;
+    readonly facts: readonly CheckedFact[];
     readonly rewrite: (correction: Text) => Promise<Briefed>;
     readonly log: (line: Text) => void;
     readonly flow: CoverageFlow;
@@ -64,19 +59,19 @@ interface BestParts {
 
 interface Best {
     readonly brief: Briefed;
-    readonly result: Coverage;
+    readonly result: CheckedCoverage;
 }
 
 async function bestBrief(parts: BestParts): Promise<Best> {
     const { coverage, first, facts, rewrite, log, flow } = parts;
     let brief = first;
     let result = await coverage.check(first.text ?? must(parseText('')), facts);
-    if (!result.ok && result.unknown === null) {
+    if (result.complete === 'absent' && result.unknown === null) {
         log(must(parseText(`autocompact: the brief misses ${result.missingFacts.length} fact(s); written again`)));
-        const again = await rewrite(must(parseText(correctionOf(result.missing))));
+        const again = await rewrite(correctionFor(result.missing));
         if (again.text !== null) {
             const rewritten = await coverage.check(again.text, facts);
-            const costUsd = (result.costUsd ?? 0) + (rewritten.costUsd ?? 0);
+            const costUsd = must(parseUsd((result.costUsd ?? 0) + (rewritten.costUsd ?? 0)));
             const keepRewrite = flow.appends === 'absent' || (rewritten.unknown === null && rewritten.missingFacts.length <= result.missingFacts.length);
             [brief, result] = keepRewrite ? [again, { ...rewritten, costUsd }] : [brief, { ...result, costUsd }];
         }
@@ -89,14 +84,14 @@ export async function checkedBrief(deps: Pick<CompactionPorts, 'coverage' | 'log
     const coverage = deps.coverage();
     if (coverage === null) return waiting({ brief: first, why: must(parseText('no decider is set up')), outcome: { kind: 'unchecked', reason: 'no-decider' } });
     if (first.text === null) return waiting({ brief: first, why: first.why ?? must(parseText('the template would be used')), outcome: { kind: 'unchecked', reason: 'no-brief' } });
-    const facts = factsOf(history);
+    const facts = checkedFactsOf(history);
     const { brief, result } = await bestBrief({ coverage, first, facts, rewrite, log: deps.log, flow });
     if (result.unknown !== null) return waiting({ brief, why: must(parseText(`brief not checked (${result.unknown})`)), outcome: { kind: 'unchecked', reason: 'decider-cannot-answer' }, coverageMs: duration(deps.now() - started), coverageCostUsd: usdOrNull(result) });
-    if (!result.ok) {
-        const missed = result.missingFacts.flatMap(({ fact }) => { const checked = parseCheckedFact(fact); return checked === null ? [] : [checked]; });
-        return waiting({ brief, why: must(parseText(`the brief still misses ${missed.length} fact(s)`)), outcome: { kind: 'missed', facts: missed }, coverage: tallyOf(result), coverageMs: duration(deps.now() - started), coverageCostUsd: usdOrNull(result) });
+    if (result.complete === 'absent') {
+        const missed = result.missingFacts.map(({ fact }) => fact);
+        return waiting({ brief, why: must(parseText(`the brief still misses ${missed.length} fact(s)`)), outcome: { kind: 'missed', facts: missed }, coverage: result.answers, coverageMs: duration(deps.now() - started), coverageCostUsd: usdOrNull(result) });
     }
-    return { brief, coverage: tallyOf(result), outcome: { kind: 'passed' }, coverageMs: duration(deps.now() - started), coverageCostUsd: usdOrNull(result), why: null };
+    return { brief, coverage: result.answers, outcome: { kind: 'passed' }, coverageMs: duration(deps.now() - started), coverageCostUsd: usdOrNull(result), why: null };
 }
 
 const APPEND_ORDER: readonly CheckedFact['section'][] = ['goal', 'rules', 'needs', 'decisions'];

@@ -125,7 +125,7 @@ function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPla
         listsPane: () => 'present',
         focused: () => Promise.resolve(focused === null ? null : paneId(focused)),
         refresh: () => { world.events.push('refresh'); return world.refreshFails ? Promise.reject(new Error('refresh failed')) : Promise.resolve('refreshed'); },
-        coverage: () => (briefing?.covered === true ? { check: () => Promise.resolve({ ok: true, missing: [], missingFacts: [], answers: {}, unknown: null }) } : null),
+        coverage: () => (briefing?.covered === true ? { check: () => Promise.resolve({ complete: 'present', missing: [], missingFacts: [], answers: new Map(), unknown: null }) } : null),
         decisions: null,
         target: () => targetOf(setting),
         messages: () => en,

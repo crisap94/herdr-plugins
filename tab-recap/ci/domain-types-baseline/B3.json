@@ -89,9 +89,6 @@
   "src/recap/application/lane-webs.ts": {
     "return": 1
   },
-  "src/recap/application/legacy.ts": {
-    "legacy": 22
-  },
   "src/recap/application/replay-judge.ts": {
     "parameter": 1,
     "container": 1,

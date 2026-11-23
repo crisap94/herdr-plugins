@@ -11,7 +11,8 @@ import type { LaneWeb } from '#src/ports/tab-views.ts';
 import type { AutocompactRecords } from '#src/ports/autocompact-records.ts';
 import type { MissedFacts } from '#src/recap/domain/autocompact.ts';
 import type { Written } from './compaction-brief.ts';
-import type { Coverage, CoverageFact } from './brief-coverage.ts';
+import type { CheckedCoverage } from './brief-coverage.ts';
+import type { CheckedFact } from '#src/recap/domain/autocompact.ts';
 import type { Records } from './compaction-trail.ts';
 import type { LaneEvents } from './lane-events.ts';
 import type { LaneClaims } from './lane-claims.ts';
@@ -27,7 +28,7 @@ import type { AnswerStage, RequestId } from '#src/protocol/primitives.ts';
 
 export interface BriefPort { enabled(): Presence; job(): Text | null; write(document: Text, own: Text, correction?: Text): Promise<Written> }
 
-export interface CoveragePort { check(brief: Text, facts: readonly CoverageFact[]): Promise<Coverage> }
+export interface CoveragePort { check(brief: Text, facts: readonly CheckedFact[]): Promise<CheckedCoverage> }
 
 export interface TypingPort { acquire(pane: PaneId): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: PaneId): Promise<void> }
 

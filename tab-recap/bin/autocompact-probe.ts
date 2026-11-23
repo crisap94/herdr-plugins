@@ -7,8 +7,8 @@ import type { Decider, DecidedResult, Noul } from '#src/ports/decider.ts';
 import { saying } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
-import { questionsFor } from '#src/recap/application/brief-coverage.ts';
-import type { CoverageFact } from '#src/recap/application/brief-coverage.ts';
+import { questionsOf } from '#src/recap/application/brief-coverage.ts';
+import { parseCheckedFact, type CheckedFact } from '#src/recap/domain/autocompact.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { pooledBy, retriedBy } from '#src/experiment/pool.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
@@ -26,14 +26,14 @@ const value = (name: string): string | null => {
 
 interface Job { readonly key: string; readonly kind: 'point' | 'brief'; readonly state: Text; readonly questions: ReadonlyMap<Text, Noul> }
 
-interface BriefRow { readonly id: string; readonly brief: string; readonly facts: readonly CoverageFact[] }
+interface BriefRow { readonly id: string; readonly brief: string; readonly facts: readonly unknown[] }
 
 export function jobsOf(dir: string): readonly Job[] {
     const points = [...readPoints(asText(join(dir, 'corpus.jsonl'))), ...readPoints(asText(join(dir, 'outcome-points.jsonl')))];
     const briefs = readJsonl(asText(join(dir, 'briefs.jsonl'))) as readonly BriefRow[];
     return [
         ...points.map((point): Job => ({ key: point.id, kind: 'point', state: must(parseText(JSON.stringify(point.state))), questions: QUESTIONS })),
-        ...briefs.map((row): Job => ({ key: row.id, kind: 'brief', state: must(parseText(JSON.stringify({ brief: row.brief, facts: row.facts }))), questions: questionsFor(row.facts) })),
+        ...briefs.map((row): Job => ({ key: row.id, kind: 'brief', state: must(parseText(JSON.stringify({ brief: row.brief, facts: row.facts }))), questions: questionsOf(row.facts.flatMap((fact): CheckedFact[] => { const checked = parseCheckedFact(fact); return checked === null ? [] : [checked]; })) })),
     ];
 }
 

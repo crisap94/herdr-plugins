@@ -7,7 +7,6 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
-import type { RunItem } from '../../run-inputs.ts';
 
 export interface PrintRequest {
     readonly from: PaneId;
@@ -22,12 +21,6 @@ export type PrintResult =
 
 export interface HandoffPrinter {
     renderForPrint(request: PrintRequest): Promise<PrintResult>;
-}
-
-export interface ImportedChapter {
-    readonly n: number;
-    readonly at: number;
-    readonly items: readonly RunItem[];
 }
 
 export type InFlightReading =

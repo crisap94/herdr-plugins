@@ -5,7 +5,8 @@ import assert from 'node:assert/strict';
 import { Compaction } from '#src/recap/application/compaction.ts';
 import type { CompactionPorts } from '#src/recap/application/compaction-deps.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import type { Coverage } from '#src/recap/application/brief-coverage.ts';
+import { checkedOf } from './fakes/coverage-fixtures.ts';
+import type { PlainCoverage as Coverage } from './fakes/coverage-fixtures.ts';
 import type { CompactRequest } from '#src/ports/requests.ts';
 import type { AgentLookup, AgentPanes } from '#src/ports/agents.ts';
 import { unknown } from '#src/ports/unknowable.ts';
@@ -58,7 +59,7 @@ function hostile(steps: Steps = {}): Hostile {
             check: () => {
                 calls.coverage += 1;
                 if (steps.closesIn === 'coverage') board.listed = false;
-                return Promise.resolve(steps.coverage ?? PASSING);
+                return Promise.resolve(checkedOf(steps.coverage ?? PASSING));
             },
         }),
         log: (line) => { logs.push(line); },

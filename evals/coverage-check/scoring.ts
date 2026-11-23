@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 import { probabilitiesOf } from '../../tab-recap/src/adapters/job/decider.ts';
-import { KEPT_AT_LEAST, missingOf } from '../../tab-recap/src/recap/application/brief-coverage.ts';
+import { KEPT_AT_LEAST } from '../../tab-recap/src/recap/application/brief-coverage.ts';
 import type { Config, Graded, Mark } from '../lib/types.ts';
-import { factsFor, idsFor } from './prompt.ts';
+import { factsFor, idsFor, unmetBy } from './prompt.ts';
 import type { CoverageItem, ExpectedQuestion } from './prompt.ts';
 import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 
@@ -45,7 +45,7 @@ export function answersOf(item: CoverageItem, text: string): Record<string, numb
 }
 
 export function verdictRight(item: CoverageItem, answers: Readonly<Record<string, number>>, mark: number): boolean {
-    return (missingOf(answers, factsFor(item), mark).length === 0) === item.expected.ok;
+    return (unmetBy(answers, factsFor(item), mark).length === 0) === item.expected.ok;
 }
 
 function applies(item: CoverageItem): Record<string, boolean> {
