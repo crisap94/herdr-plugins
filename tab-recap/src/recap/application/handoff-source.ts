@@ -81,14 +81,16 @@ export type SourceKind = keyof SourceInputs;
 
 export type SourceResolver<K extends SourceKind> = (source: SourceInputs[K]['request'], deps: SourceInputs[K]['deps']) => SourceResolution;
 
-export function isLaneOfTab(lanes: readonly SourceLane[], source: SourceRequest): boolean {
-    return lanes.some((lane) => lane.pane === source.pane && lane.tab === source.tab);
+export type LaneListing = 'listed' | 'unlisted';
+
+export function listingOf(lanes: readonly SourceLane[], source: SourceRequest): LaneListing {
+    return lanes.some((lane) => lane.pane === source.pane && lane.tab === source.tab) ? 'listed' : 'unlisted';
 }
 
 const unknownOf = (read: Unknown): SourceResolution => ({ kind: 'unknown', why: textOf(read.why.why === 'unreadable' ? read.why.detail : saying(read.why)) });
 
 const liveResolver: SourceResolver<'live'> = (source, deps): SourceResolution => {
-    if (!isLaneOfTab(deps.lanes, source)) {
+    if (listingOf(deps.lanes, source) === 'unlisted') {
         return { kind: 'source-unavailable' };
     }
     try {

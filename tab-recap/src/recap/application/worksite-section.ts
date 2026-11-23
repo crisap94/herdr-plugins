@@ -23,8 +23,10 @@ export interface WorksiteDeps {
     readonly edits: EditSource;
 }
 
-function isGone(commit: LastCommitOutcome, uncommitted: UncommittedOutcome): boolean {
-    return (isUnknown(commit) && commit.why.why === 'not-found') || (isUnknown(uncommitted) && uncommitted.why.why === 'not-found');
+type Presence = 'gone' | 'present';
+
+function presenceOf(commit: LastCommitOutcome, uncommitted: UncommittedOutcome): Presence {
+    return (isUnknown(commit) && commit.why.why === 'not-found') || (isUnknown(uncommitted) && uncommitted.why.why === 'not-found') ? 'gone' : 'present';
 }
 
 export async function worksiteOf(deps: WorksiteDeps, input: WorksiteInput): Promise<WorksiteSnapshot> {
@@ -38,7 +40,7 @@ export async function worksiteOf(deps: WorksiteDeps, input: WorksiteInput): Prom
         deps.repo.repoOf(must(parseDirectory(directory))),
         deps.edits.of(input.cursor === null ? [] : [input.cursor]),
     ]);
-    if (isGone(commit, uncommitted)) {
+    if (presenceOf(commit, uncommitted) === 'gone') {
         return { kind: 'unavailable' };
     }
     return {

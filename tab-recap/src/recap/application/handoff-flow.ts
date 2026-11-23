@@ -11,7 +11,7 @@ import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts'
 import type { LaneClaims } from './lane-claims.ts';
 import type { HandoffRender, HandoffRenderResult, RenderMetrics } from './handoff-render.ts';
 import type { HandoffSender } from './handoff-sender.ts';
-import { isLaneOfTab, resolveSource, unfoundOutcome } from './handoff-source.ts';
+import { listingOf, resolveSource, unfoundOutcome } from './handoff-source.ts';
 import type { FoundSource, SourceDeps, SourceResolution } from './handoff-source.ts';
 import { closedLaneOf } from './closed-lane-source.ts';
 import type { ClosedSourceDeps } from './closed-lane-source.ts';
@@ -115,7 +115,7 @@ export class HandoffFlow {
 
     private async early(request: HandoffAskRecord): Promise<Ready | HandoffOutcome> {
         const lanes = this.deps.lanes();
-        if (request.source.kind === 'live' && !isLaneOfTab(lanes, { tab: request.tab, pane: request.pane })) {
+        if (request.source.kind === 'live' && listingOf(lanes, { tab: request.tab, pane: request.pane }) === 'unlisted') {
             return { kind: 'refused', reason: 'source-unavailable' };
         }
         const target = await this.resolve(request);

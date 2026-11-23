@@ -1,7 +1,4 @@
 {
-  "src/recap/application/handoff-source.ts": {
-    "return": 1
-  },
   "src/recap/application/handoff-target.ts": {
     "property": 2
   },
@@ -22,9 +19,6 @@
     "property": 2
   },
   "src/recap/application/transcript-tail.ts": {
-    "return": 1
-  },
-  "src/recap/application/worksite-section.ts": {
     "return": 1
   }
 }
