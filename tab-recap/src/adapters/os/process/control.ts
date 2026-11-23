@@ -1,11 +1,9 @@
+import { withJobAttribute } from '@stateforge-labs/harness-adapters/telemetry';
 import type { ProcessPort, ProcessRunner } from '#src/ports/process-control.ts';
 import { JOB_HARNESSES, jobEnvironmentNames } from '#src/recap/domain/backend.ts';
 import type { EnvironmentName } from '#src/recap/domain/backend.ts';
-import { JOB_ATTRIBUTE_KEY } from '#src/recap/domain/job-tag.ts';
+import { isJobTag, JOB_ATTRIBUTE_KEY } from '#src/recap/domain/job-tag.ts';
 import type { JobTag } from '#src/recap/domain/job-tag.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import { type JobAttributesRecord, mergeJobAttributes } from './attributes.ts';
 import { posixProcess } from './control-posix.ts';
 
 export type { ProcessRunner, ProcessOptions, ProcessOutcome } from '#src/ports/process-control.ts';
@@ -36,9 +34,10 @@ export function scrubbedFrom(source: NodeJS.ProcessEnv, jobTag?: JobTag): NodeJS
         return env;
     }
     try {
-        const attributes = { [JOB_ATTRIBUTE_KEY]: jobTag } satisfies JobAttributesRecord;
-        const inherited = env['OTEL_RESOURCE_ATTRIBUTES'];
-        env['OTEL_RESOURCE_ATTRIBUTES'] = mergeJobAttributes(inherited === undefined ? undefined : must(parseText(inherited)), attributes);
+        if (!isJobTag(jobTag)) {
+            throw new TypeError('Unknown job tag');
+        }
+        return { ...withJobAttribute(env, { key: JOB_ATTRIBUTE_KEY, value: jobTag }) };
     } catch (error) {
         if (!(error instanceof TypeError)) {
             throw error;
