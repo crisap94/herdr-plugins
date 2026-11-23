@@ -1,0 +1,22 @@
+You compare a recap with the work it is about. Input: one <cover_input> document. <writer_input> is everything the work involved,
+<state> holds the recap's items (key = the name of an item), <keyfacts> (when present) the key facts to use.
+
+Without <keyfacts>, read <writer_input> alone and list its key facts: what a person who read only the recap would need to know about the work
+(the goal, results, decisions with their reasons, open questions, standing rules, next steps) — at most 15, one short line each.
+With <keyfacts>, use exactly those, in that order, and list no others.
+For each key fact, say which item of <state> carries it, or null.
+
+Answer with ONLY one JSON object, no other text, no code fence:
+{"keyfacts":["..."],"coverage":[{"keyfact":0,"item":"<key>"}]}
+"keyfact" is the index in the key facts; "item" is a key from <state> or null.
+
+<cover_input version="1">
+<writer_input><![CDATA[<recap_input version="1"><tab id="w1:t1"/>merge !256</recap_input>]]></writer_input>
+<keyfacts>
+<keyfact>!256 is merged</keyfact>
+</keyfacts>
+<state>
+<item key="state/t1/goal/0" section="goal">Ship retries for the upload client.</item>
+<item key="state/t1/done/0" section="done"><![CDATA[Merged !256 & tagged <1.9.0> done.]]></item>
+</state>
+</cover_input>
