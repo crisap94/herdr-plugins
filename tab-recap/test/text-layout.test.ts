@@ -8,6 +8,7 @@ import { blankRecap } from '#src/ports/recap-records.ts';
 import { oneTask } from '#test/support.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { tabId } from '#test/support/ids.ts';
+import { viewRecord } from '#test/support/tab-view-records.ts';
 
 const ESC = String.fromCodePoint(0x1b);
 const ACUTE = String.fromCodePoint(0x301);
@@ -87,7 +88,7 @@ test('wrap: a cut inside a coloured word keeps its escapes and takes no room for
 const noGlow = (): null => null;
 const lane = { cwd: '/work', pane: 'w1:t1:p1', agent: 'claude', status: 'working', title: 'work', lastPrompt: 'do 📝 things ✅' } as const;
 const view = (style?: typeof plain): Parameters<typeof present>[0] => ({
-    tab: { tab: 'w1:t1', column: null, at: 0, lanes: [lane] },
+    tab: viewRecord({ tab: 'w1:t1', column: null, at: 0, lanes: [lane] }),
     recap: { ...blankRecap(tabId('w1:t1')), at: instant(0), tasks: oneTask('## Now\n- 📝📝📝📝📝📝📝📝📝📝 ✅✅✅✅✅✅✅✅✅✅ done') },
     notes: new Map(),
     warnings: [],

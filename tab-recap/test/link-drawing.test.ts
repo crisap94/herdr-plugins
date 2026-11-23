@@ -7,7 +7,7 @@ import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
 import { en } from '#src/i18n/en.ts';
 import { LaneWebs } from '#src/recap/application/lane-webs.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
-import type { LaneWeb, TabLane, TabView } from '#src/ports/tab-views.ts';
+import type { TabLaneRecord, TabViewRecord } from '#src/ports/tab-views.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
@@ -23,6 +23,7 @@ import { tabId } from '#test/support/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { paneId } from '#test/support/ids.ts';
 import { seenLane } from '#test/support/seen.ts';
+import { laneRecord, viewRecord } from '#test/support/tab-view-records.ts';
 
 const E = String.fromCodePoint(0x1b);
 const open = (url: string): string => `${E}]8;;${url}${E}\\`;
@@ -30,9 +31,9 @@ const CLOSE = `${E}]8;;${E}\\`;
 const BASE = 'https://gitlab.example/acme/shop';
 const noGlow = (): null => null;
 
-const lane = (pane: string, web: LaneWeb | null): TabLane => ({ pane, agent: 'claude', status: 'idle', title: pane, cwd: '/w', web });
-const viewOf = (sections: Partial<RecapSections>, lanes: readonly TabLane[], style?: ColumnView['style']): ColumnView => ({
-    tab: { tab: 'w1:t1', column: null, at: 0, lanes },
+const lane = (pane: string, web: object | null): TabLaneRecord => laneRecord({ pane, agent: 'claude', status: 'idle', title: pane, cwd: '/w', web });
+const viewOf = (sections: Partial<RecapSections>, lanes: readonly TabLaneRecord[], style?: ColumnView['style']): ColumnView => ({
+    tab: viewRecord({ tab: 'w1:t1', column: null, at: 0, lanes }),
     recap: { ...blankRecap(tabId('w1:t1')), tasks: oneTask('', { ...NO_SECTIONS, ...sections }, lanes.map((each) => each.pane)), at: instant(0) },
     notes: new Map(), warnings: [], now: 0, messages: en, ...(style === undefined ? {} : { style }),
 });
@@ -112,11 +113,11 @@ test('a remote with a token: nothing stored and nothing drawn holds the secret (
         const webs = new LaneWebs(new GitLaneRepo({ now: (): Instant => instant(0) }));
         await webs.refresh(laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd: shop.root })));
         const { views, db } = memoryStore();
-        const view: TabView = { tab: 'w1:t1', column: null, at: 1, lanes: [lane('w1:p1', webs.of(paneId('w1:p1')))] };
+        const view: TabViewRecord = viewRecord({ tab: 'w1:t1', column: null, at: 1, lanes: [lane('w1:p1', webs.of(paneId('w1:p1')))] });
         views.writeTab(view);
         const stored = JSON.stringify(db.prepare('SELECT * FROM lane').all());
         assert.ok(stored.includes(BASE) && !stored.includes('s3cr3t') && !stored.includes('oauth2'), stored);
-        const read = views.readTab('w1:t1');
+        const read = views.readTab(tabId('w1:t1'));
         assert.ok(read !== null);
         const text = drawn({ ...viewOf({ done: [textOf('!3 merged'), textOf('`src/a.ts` in a1b2c3d4')] }, read.lanes) }).join('\n');
         assert.ok(text.includes(open(`${BASE}/-/merge_requests/3`)));

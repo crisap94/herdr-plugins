@@ -1,5 +1,5 @@
 import { must } from '#src/protocol/result.ts';
-import type { Note } from '#src/ports/extension.ts';
+import type { PaneNote } from '#src/ports/extension.ts';
 import type { CompactionRow } from '#src/ports/compaction-records.ts';
 import type { ExpandedData } from '#src/recap/application/expanded-view.ts';
 import type { Count } from '#src/recap/domain/count.ts';
@@ -10,7 +10,7 @@ import type { WorktreeStatus } from '#src/recap/domain/worktree.ts';
 
 export interface GuiReads {
     readonly expanded: ExpandedData | null;
-    readonly notes: (pane: PaneId) => readonly Note[];
+    readonly notes: (pane: PaneId) => readonly PaneNote[];
     readonly warnings: readonly Text[];
     readonly compactions: readonly CompactionRow[];
     readonly compactHint: Count | null;
@@ -22,7 +22,7 @@ export interface GuiReads {
 
 export const BLANK_READS: GuiReads = {
     expanded: null,
-    notes: (): readonly Note[] => [],
+    notes: (): readonly PaneNote[] => [],
     warnings: [],
     compactions: [],
     compactHint: null,

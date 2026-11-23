@@ -8,7 +8,7 @@ import type { AgentKind } from '#src/recap/domain/ids.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import type { CompactionPlanner } from '#src/ports/compaction-plans.ts';
 import { supported } from '#src/ports/capability.ts';
-import type { Capability } from '#src/ports/capability.ts';
+import type { Support } from '#src/ports/capability.ts';
 import type { CompactionWhy } from '#src/ports/capability-reasons.ts';
 import { capabilityWording } from '#src/ports/capability-reasons.ts';
 import { must } from '#src/protocol/result.ts';
@@ -38,7 +38,7 @@ export const COMPACTION_PLANS = {
     claude: supported(claude),
     codex: supported(polling('codex')),
     opencode: supported(polling('opencode')),
-} satisfies Readonly<Record<RegisteredKind, Capability<PlanFor, CompactionWhy>>>;
+} satisfies Readonly<Record<RegisteredKind, Support<PlanFor, CompactionWhy>>>;
 
 export const compactionPlanner: CompactionPlanner = {
     forKind(kind: AgentKind, guidance: Text): CompactionPlanResult {

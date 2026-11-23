@@ -12,17 +12,18 @@ import type { Transcripts } from '#src/ports/transcripts.ts';
 import type { ModelWindows } from '#src/ports/model-catalogue.ts';
 import type { CompactLimits } from '#src/ports/compact-limits.ts';
 import { memoryStore } from './db/support.ts';
-import { agentKind } from '#test/support/ids.ts';
+import { agentKind, tabId } from '#test/support/ids.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { paneId } from '#test/support/ids.ts';
 import { seenLane } from '#test/support/seen.ts';
+import { viewRecord } from '#test/support/tab-view-records.ts';
 
 const noGlow = (): null => null;
 const noLimits: CompactLimits = { limitOf: () => ({ window: null, percent: null }) };
 const view = (context: ContextUse | null, compactHint: number | null, messages: typeof en = en): string => present({
-    tab: { tab: 'w1:t1', column: null, at: 0, lanes: [{ pane: 'w1:p1', agent: 'codex', status: 'idle', title: 'Fix it', cwd: null, context }] },
+    tab: viewRecord({ tab: 'w1:t1', column: null, at: 0, lanes: [{ pane: 'w1:p1', agent: 'codex', status: 'idle', title: 'Fix it', cwd: null, context }] }),
     recap: null, notes: new Map(), warnings: [], now: 0, messages, compactHint,
 }, 60, noGlow).join('\n');
 
@@ -70,6 +71,6 @@ test('lane contexts: runtime window first, the setting overrides, a change is re
 test('a lane keeps its context use through the database: stored with the view, read back whole', () => {
     const { views } = memoryStore();
     const use: ContextUse = { tokens: countOf(450_000), window: countOf(1_000_000), source: 'observed' };
-    views.writeTab({ tab: 'w1:t1', column: null, at: 5, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: null, context: use }, { pane: 'w1:p2', agent: 'codex', status: 'idle', title: null, cwd: null }] });
-    assert.deepEqual(views.readTab('w1:t1')?.lanes.map((each) => each.context), [use, null]);
+    views.writeTab(viewRecord({ tab: 'w1:t1', column: null, at: 5, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: null, context: use }, { pane: 'w1:p2', agent: 'codex', status: 'idle', title: null, cwd: null }] }));
+    assert.deepEqual(views.readTab(tabId('w1:t1'))?.lanes.map((each) => each.context), [use, null]);
 });

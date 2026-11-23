@@ -1,5 +1,5 @@
 import { linkify } from '#src/recap/render/links.ts';
-import type { LaneWeb } from '#src/ports/tab-views.ts';
+import type { LaneWebRecord } from '#src/ports/tab-views.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
@@ -11,7 +11,7 @@ export const NOTE_LIMIT = 280;
 
 export interface Material {
     readonly sections: RecapSections;
-    readonly web: LaneWeb | null;
+    readonly web: LaneWebRecord | null;
     readonly note: Text | null;
 }
 
@@ -33,7 +33,7 @@ const RESTORE_LEAD = must(parseText('We just compacted this conversation. This i
 
 
 
-function resolved(line: Text, web: LaneWeb | null): Text {
+function resolved(line: Text, web: LaneWebRecord | null): Text {
     const joined = linkify(line, [web === null ? null : webOf(web)]).map((part) => (part.url === undefined || part.url === part.text ? part.text : `${part.text} (${part.url})`)).join('');
     return must(parseText(joined));
 }

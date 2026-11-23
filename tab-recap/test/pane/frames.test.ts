@@ -27,6 +27,7 @@ import { recapRunningOf, type TabRecap } from '#src/ports/recap-records.ts';
 import { cursor, memoryStore, storeRead } from '#test/db/support.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { viewRecord } from '#test/support/tab-view-records.ts';
 
 const NOW = 1_800_000_000_000;
 const TAB = 'w1:t1';
@@ -54,7 +55,7 @@ const recapOf = (): TabRecap => ({
 
 const fixture = (spawn: GlowSpawn): { store: Store; config: Settings; glow: GlowCache; parts: FrameParts; source: ReturnType<typeof frameSource> } => {
     const base = memoryStore();
-    base.views.writeTab({ tab: TAB, column: null, at: NOW - 3_600_000, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'orchestrator', cwd: null, web: { base: 'https://git.example/acme/shop', forge: 'gitlab', branch: 'main' } }] });
+    base.views.writeTab(viewRecord({ tab: TAB, column: null, at: NOW - 3_600_000, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'orchestrator', cwd: null, web: { base: 'https://git.example/acme/shop', forge: 'gitlab', branch: 'main' } }] }));
     const recap = recapOf();
     const store: Store = {
         ...base,
@@ -76,7 +77,7 @@ const fixture = (spawn: GlowSpawn): { store: Store; config: Settings; glow: Glow
 const instantGlow: GlowSpawn = async (): Promise<Text | null> => must(parseText(GLOW_OUTPUT));
 
 const viewOf = (store: Store, config: Settings, style: Style): ColumnView => {
-    const stored = store.views.readTab(TAB);
+    const stored = store.views.readTab(tabId(TAB));
     const extensions = [storedNotes({ statuses: store.worktrees, notes: store.paneNotes, alerts: store.paneAlerts, gitNote: worktreeSwitch })];
     return {
         tab: stored,

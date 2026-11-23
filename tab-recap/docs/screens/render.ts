@@ -9,7 +9,7 @@ import type { Messages } from '#src/i18n/messages.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import type { TabRecap } from '#src/ports/recap-records.ts';
 import { cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
-import type { TabView } from '#src/ports/tab-views.ts';
+import type { LaneWebRecord, TabViewRecord } from '#src/ports/tab-views.ts';
 import { draftFrom, initial, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Setup } from '#src/recap/application/setup-keys.ts';
 import { renderRecap } from '#src/recap/application/recap-shape.ts';
@@ -154,18 +154,18 @@ const FIXTURES: Readonly<Record<'en' | 'es', Fixture>> = {
 };
 
 /** Invented repository: references in the recap link to it (drawn underlined). */
-const WEB = { base: 'https://git.example/team/shop', forge: 'gitlab', branch: 'feat/payments-v2' } as const;
+const WEB: LaneWebRecord = { base: textOf('https://git.example/team/shop'), forge: 'gitlab', branch: textOf('feat/payments-v2') };
 const VERSION = '1.8.1';
 
 const lane = (pane: string, agent: string, prompt: string, title: string | null): TabRecap['lanes'][number] =>
     ({ pane: paneId(textOf(pane)), agent: agentKind(textOf(agent)), transcript: sourcePathOf(`${agent}.jsonl`), cursor: cursorOf(1), tail: null, title: parseTextOrNull(title), lastPrompt: textOf(prompt), claudeRecap: null });
 
 function columnView(fixture: Fixture): ColumnView {
-    const tab: TabView = {
-        tab: 'w1:t1', column: 'w1:p9', at: NOW, daemonVersion: VERSION,
+    const tab: TabViewRecord = {
+        tab: tabId(textOf('w1:t1')), column: textOf('w1:p9'), at: instant(NOW), daemonVersion: textOf(VERSION),
         lanes: [
-            { pane: 'w1:p1', agent: 'claude', status: 'blocked', title: fixture.title, cwd: null, lastPrompt: null, web: WEB, context: { tokens: countOf(520_000), window: countOf(1_000_000), source: 'catalogue' } },
-            { pane: 'w1:p2', agent: 'codex', status: 'working', title: null, cwd: null, lastPrompt: null, web: WEB, context: { tokens: countOf(61_000), window: countOf(258_400), source: 'agent' } },
+            { pane: paneIdOf('w1:p1'), agent: agentKind(textOf('claude')), status: textOf('blocked'), title: parseTextOrNull(fixture.title), cwd: null, lastPrompt: null, web: WEB, context: { tokens: countOf(520_000), window: countOf(1_000_000), source: 'catalogue' } },
+            { pane: paneIdOf('w1:p2'), agent: agentKind(textOf('codex')), status: textOf('working'), title: null, cwd: null, lastPrompt: null, web: WEB, context: { tokens: countOf(61_000), window: countOf(258_400), source: 'agent' } },
         ],
     };
     const recap: TabRecap = {

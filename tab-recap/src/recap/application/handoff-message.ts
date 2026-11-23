@@ -1,6 +1,6 @@
 import { must } from '#src/protocol/result.ts';
 import type { HandoffPrintService, PrintAnswer } from '#src/ports/handoff-print.ts';
-import type { TabViews } from '#src/ports/tab-views.ts';
+import type { TabViewStore } from '#src/ports/tab-views.ts';
 import { unknown, type Unknown, exitCodeOf } from '#src/ports/unknowable.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import type { HandoffReason } from '#src/recap/domain/handoff-outcome.ts';
@@ -15,7 +15,7 @@ export type HandoffRead =
 
 export interface HandoffMessageDeps {
     readonly printer: HandoffPrintService;
-    readonly views: Pick<TabViews, 'tabOf'>;
+    readonly views: Pick<TabViewStore, 'tabOf'>;
 }
 
 function readOf(printed: PrintAnswer): HandoffRead {

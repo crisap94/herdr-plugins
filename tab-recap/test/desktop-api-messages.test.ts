@@ -7,18 +7,20 @@ import { Briefing } from '#src/recap/application/compaction-briefing.ts';
 import type { CompactionPorts } from '#src/recap/application/compaction-deps.ts';
 import { guidanceOf } from '#src/recap/application/compaction-message.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
+import { viewRecord } from '#test/support/tab-view-records.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 import { compactPreviewOf } from '#src/recap/application/compact-preview.ts';
 import { blankRecap, type TabRecap } from '#src/ports/recap-records.ts';
 import { NO_SECTIONS, type RecapSections } from '#src/recap/domain/shape.ts';
-import type { LaneWeb, TabLane, TabView } from '#src/ports/tab-views.ts';
+import type { LaneWebRecord, TabLaneRecord, TabViewRecord } from '#src/ports/tab-views.ts';
 import { requestNoteOf } from './fakes/compact-note.ts';
 import { cursor } from '#test/db/support.ts';
 import { apiProblems } from '#test/gui-schema-support.ts';
 import { add, api, OTHER_PANE, PANE, seedOther, seedRun, startWorld, TAB, type World } from '#test/desktop-engine-world.ts';
 import { BUN_CACHE_OFF } from './support/bun-env.ts';
 import { paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { laneRecord } from '#test/support/tab-view-records.ts';
 
 const compactPath = (query: string): string => `/v1/tabs/${encodeURIComponent(TAB)}/compact-message?${query}`;
 
@@ -119,18 +121,18 @@ test('the handoff message refuses what it cannot print: an unknown lane, an unkn
     } finally { world.close(); }
 });
 
-const WEB = { base: 'https://github.com/acme/app', forge: 'github', branch: 'main' } as const;
+const WEB: LaneWebRecord = { base: textOf('https://github.com/acme/app'), forge: 'github', branch: textOf('main') };
 
 const sectionsOf = (goal: string, rest: Partial<RecapSections> = {}): RecapSections => ({ ...NO_SECTIONS, goal: textOf(goal), ...rest });
 
 interface Shape {
     readonly name: string;
     readonly recap: TabRecap | null;
-    readonly view: TabView | null;
+    readonly view: TabViewRecord | null;
     readonly note: string;
 }
 
-const lane = (pane: string, web: LaneWeb | null): TabLane => ({ pane, agent: 'claude', status: 'idle', title: 'x', cwd: '/repo', web });
+const lane = (pane: string, web: LaneWebRecord | null): TabLaneRecord => laneRecord({ pane, agent: 'claude', status: 'idle', title: 'x', cwd: '/repo', web });
 
 const SHAPES: readonly Shape[] = [
     {
@@ -139,19 +141,19 @@ const SHAPES: readonly Shape[] = [
             { id: textOf('a'), name: textOf('A'), lanes: [paneIdOf('w1:p2')], sections: sectionsOf('Other goal'), markdown: textOf('') },
             { id: textOf('b'), name: textOf('B'), lanes: [paneIdOf(PANE)], sections: sectionsOf('Ship it', { needs: [textOf('Which db?')], links: [textOf('PR #12'), textOf('src/app.ts:4')], decisions: [textOf('Use postgres: simpler ops')], now: [textOf('Wiring')], next: [textOf('Docs')], rules: [textOf('Never touch main')] }), markdown: textOf('') },
         ] },
-        view: { tab: TAB, column: null, at: 1, lanes: [lane(PANE, WEB), lane('w1:p2', null)] },
+        view: viewRecord({ tab: TAB, column: null, at: 1, lanes: [lane(PANE, WEB), lane('w1:p2', null)] }),
         note: 'keep\nthe  schema \té\u{1F600}\u0007',
     },
     {
         name: 'a closed lane: in the recap and no longer in the view; a task without sections',
         recap: { ...blankRecap(tabId(TAB)), lanes: [cursor(PANE)], tasks: [{ id: textOf('a'), name: textOf('A'), lanes: [paneIdOf(PANE)], sections: null, markdown: textOf('') }] },
-        view: { tab: TAB, column: null, at: 1, lanes: [] },
+        view: viewRecord({ tab: TAB, column: null, at: 1, lanes: [] }),
         note: '',
     },
     {
         name: 'no recap record at all: the lane is only in the view',
         recap: null,
-        view: { tab: TAB, column: null, at: 1, lanes: [lane(PANE, WEB)] },
+        view: viewRecord({ tab: TAB, column: null, at: 1, lanes: [lane(PANE, WEB)] }),
         note: '   ',
     },
 ];
@@ -159,8 +161,8 @@ const SHAPES: readonly Shape[] = [
 for (const shape of SHAPES) {
     test(`the preview is Briefing.materialOf then guidanceOf, byte for byte: ${shape.name}`, () => {
         const records = { readRecap: (): TabRecap | null => shape.recap };
-        const views = { readTab: (): TabView | null => shape.view };
-        const webs = { of: (pane: string): LaneWeb | null => shape.view?.lanes.find((each) => each.pane === pane)?.web ?? null };
+        const views = { readTab: (): TabViewRecord | null => shape.view };
+        const webs = { of: (pane: string): LaneWebRecord | null => shape.view?.lanes.find((each) => each.pane === pane)?.web ?? null };
         const briefing = new Briefing({ records, webs, brief: { enabled: (): boolean => { throw new Error('a model was asked'); }, write: (): never => { throw new Error('a model was asked'); } } } as unknown as CompactionPorts);
         const made = compactPreviewOf({ records, views }, tabId(TAB), paneId(PANE), must(parseText(shape.note)));
         const expected = guidanceOf(briefing.materialOf(tabId(TAB), paneId(PANE), requestNoteOf(shape.note)));

@@ -10,20 +10,21 @@ import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
-import type { TabView } from '#src/ports/tab-views.ts';
+import type { TabViewRecord } from '#src/ports/tab-views.ts';
 import { present, presentBar } from '#src/recap/render/present.ts';
 import { visibleLength } from '#src/recap/render/wrap.ts';
 import { oneTask } from '#test/support.ts';
 import { tabId } from '#test/support/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { textOf } from '#src/recap/domain/text.ts';
+import { viewRecord } from '#test/support/tab-view-records.ts';
 
 const noGlow = (): null => null;
 const ESC = String.fromCodePoint(0x1b);
 const plain = (lines: readonly string[]): string => lines.join('\n').replaceAll(new RegExp(`${ESC}\\[[0-9;]*m`, 'g'), '');
 const barOf = (width: number): readonly string[] => presentBar({ tab: tabWith('1.5.0'), recap, notes: new Map(), warnings: [], now: 0, messages: en, version: '1.5.0' }, width);
 const lane = { pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'x', cwd: null };
-const tabWith = (daemonVersion?: string | null): TabView => ({ tab: 'w1:t1', column: null, at: 0, lanes: [lane], ...(daemonVersion === undefined ? {} : { daemonVersion }) });
+const tabWith = (daemonVersion?: string | null): TabViewRecord => (viewRecord({ tab: 'w1:t1', column: null, at: 0, lanes: [lane], ...(daemonVersion === undefined ? {} : { daemonVersion }) }));
 const recap = { ...blankRecap(tabId('w1:t1')), at: instant(0), backend: textOf('claude'), tasks: oneTask('## Now\n- running CI') };
 
 test('the version is the manifest\'s version line; missing or garbage is null', () => {

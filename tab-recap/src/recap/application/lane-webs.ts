@@ -2,21 +2,21 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import type { LaneRepo } from '#src/ports/lane-repo.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
-import type { LaneWeb } from '#src/ports/tab-views.ts';
+import type { LaneWebRecord } from '#src/ports/tab-views.ts';
 
 const REMEMBERED = 200;
 
-const keyOf = (web: LaneWeb | null | undefined): string => (web === null || web === undefined ? '' : `${web.base} ${web.forge} ${web.branch ?? ''}`);
+const keyOf = (web: LaneWebRecord | null | undefined): string => (web === null || web === undefined ? '' : `${web.base} ${web.forge} ${web.branch ?? ''}`);
 
 export class LaneWebs {
     private readonly repos: LaneRepo;
-    private readonly known = new Map<PaneId, LaneWeb | null>();
+    private readonly known = new Map<PaneId, LaneWebRecord | null>();
 
     constructor(repos: LaneRepo) {
         this.repos = repos;
     }
 
-    of(pane: PaneId): LaneWeb | null {
+    of(pane: PaneId): LaneWebRecord | null {
         return this.known.get(pane) ?? null;
     }
 
@@ -25,7 +25,7 @@ export class LaneWebs {
         if (found?.kind === 'unknown') {
             return 'absent';
         }
-        const web: LaneWeb | null = found?.kind === 'repo' && found.web !== null ? { ...found.web, branch: found.branch } : null;
+        const web: LaneWebRecord | null = found?.kind === 'repo' && found.web !== null ? { ...found.web, branch: found.branch } : null;
         const pane = lane.pane;
         if (keyOf(this.known.get(pane)) === keyOf(web)) {
             return 'absent';

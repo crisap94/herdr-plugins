@@ -4,12 +4,12 @@ import type { PaneTokens } from '#src/ports/pane-tokens.ts';
 import type { HandoffPrintService, PrintAsk, PrintAnswer } from '#src/ports/handoff-print.ts';
 import type { ClosureReader, ClosureRuns } from '#src/ports/closed-lanes.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
-import type { TabLane, TabViews } from '#src/ports/tab-views.ts';
+import type { TabLaneRecord, TabViewStore } from '#src/ports/tab-views.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, tabId } from '#src/recap/domain/ids.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
@@ -28,7 +28,7 @@ import type { WorksiteDeps } from './worksite-section.ts';
 export interface PrintStore {
     readonly ledger: Pick<GuardedLedger, 'openOf' | 'recentlyClosed' | 'allOf'>;
     readonly records: Pick<GuardedRecapRecords, 'readRecap' | 'lastRunOf'>;
-    readonly views: Pick<TabViews, 'tabOf' | 'readTab'>;
+    readonly views: Pick<TabViewStore, 'tabOf' | 'readTab'>;
     readonly closures: ClosureReader & ClosureRuns;
     close(): void;
 }
@@ -53,9 +53,9 @@ const refusedWith = (reason: Extract<HandoffOutcome, { readonly kind: 'refused' 
 
 const transcriptOf = (cursor: LaneCursor | null): Text | null => (cursor === null || cursor.transcript === '' ? null : must(parseText(cursor.transcript)));
 
-const laneOf = (tab: TabId, lane: TabLane): HandoffLane => ({
+const laneOf = (tab: TabId, lane: TabLaneRecord): HandoffLane => ({
     tab,
-    pane: paneId(textOf(lane.pane)),
+    pane: lane.pane,
     agent: agentKind(textOf(lane.agent)),
     status: laneStatus(textOf(lane.status)),
     cwd: lane.cwd,
@@ -63,7 +63,7 @@ const laneOf = (tab: TabId, lane: TabLane): HandoffLane => ({
 
 interface Live {
     readonly tab: TabId;
-    readonly lanes: readonly TabLane[];
+    readonly lanes: readonly TabLaneRecord[];
 }
 
 interface View {
@@ -96,14 +96,14 @@ export class PrintedHandoffs implements HandoffPrintService {
         if (request.closed !== null) {
             return this.closed(store, request, request.closed);
         }
-        const tab = store.views.tabOf(String(request.from));
+        const tab = store.views.tabOf(request.from);
         if (tab === null) {
             return refusedWith('source-unavailable');
         }
-        const tabRef = tabId(textOf(tab));
+        const tabRef = tab;
         await this.deps.flush(tabRef, 'handoff print');
         const lanes = store.views.readTab(tab)?.lanes ?? [];
-        const sourceLanes: readonly SourceLane[] = lanes.map((lane) => ({ tab: tabRef, pane: paneId(textOf(lane.pane)) }));
+        const sourceLanes: readonly SourceLane[] = lanes.map((lane) => ({ tab: tabRef, pane: lane.pane }));
         const found = resolveSource('live', { tab: tabRef, pane: request.from }, { lanes: sourceLanes, records: store.records, ledger: store.ledger, now: this.deps.now() });
         return this.outcome(store, request, found, { tab: tabRef, lanes });
     }

@@ -1,7 +1,8 @@
 import { isDeepStrictEqual } from 'node:util';
 import { must } from '#src/protocol/result.ts';
 import type { TabRecap } from '#src/ports/recap-records.ts';
-import type { TabView } from '#src/ports/tab-views.ts';
+import type { LegacyViewFile } from '#src/ports/legacy-store-files.ts';
+import type { TabViewRecord } from '#src/ports/tab-views.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 import { microsOf } from '../run-write.ts';
@@ -19,7 +20,7 @@ export function canonicalRecap(file: TabRecap): TabRecap {
 export const holdingOf = (file: TabRecap): Presence =>
     file.lanes.length > 0 || file.tasks.length > 0 || file.at !== null || file.error !== null || file.costUsd > 0 || file.running || file.backend !== null ? 'present' : 'absent';
 
-export function canonicalView(file: TabView): TabView {
+export function canonicalView(file: LegacyViewFile): LegacyViewFile {
     return { ...file, column: typeof file.column === 'string' ? file.column : null, daemonVersion: file.daemonVersion ?? null };
 }
 
@@ -34,7 +35,7 @@ export function recapDifferenceLines(was: TabRecap, now: TabRecap | null): reado
     return [...new Set([...left.keys(), ...right.keys()])].filter((field) => !isDeepStrictEqual(left.get(field), right.get(field))).map((field) => must(parseText(`recap ${was.tab}: ${field} differs`)));
 }
 
-export function viewDifferenceLines(was: TabView, now: TabView | null): readonly Text[] {
+export function viewDifferenceLines(was: LegacyViewFile, now: TabViewRecord | null): readonly Text[] {
     if (now === null) {
         return [must(parseText(`view ${was.tab}: reads back as nothing`))];
     }

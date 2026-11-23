@@ -6,8 +6,6 @@ import type { ContextUse } from '@stateforge-labs/session-ledger/unstable/recap/
 import { parseText, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import { elapsed, type Duration, type Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 
-export { sessionFactsOf, type SessionInputs } from './legacy.ts';
-
 export const RUN_CAUSES = ['turn-ended', 'focused', 'requested'] as const;
 export type RunCause = (typeof RUN_CAUSES)[number];
 

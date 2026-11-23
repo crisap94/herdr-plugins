@@ -12,7 +12,7 @@ import type { SessionSourcePort } from '#src/ports/session-source.ts';
 import type { Stories } from '#src/ports/stories.ts';
 import type { RetentionPort, TabRetirement } from '#src/ports/retention.ts';
 import type { ClosureReader, ClosureRecorder, ClosureRuns, ClosureSweep } from '#src/ports/closed-lanes.ts';
-import type { LiveLanes, TabViews } from '#src/ports/tab-views.ts';
+import type { LiveLanes, TabViewStore } from '#src/ports/tab-views.ts';
 import { ClosedLanesRepository } from './closed-lanes.ts';
 import { closeDatabase } from './connection.ts';
 import { must } from '#src/protocol/result.ts';
@@ -41,7 +41,7 @@ import { VerdictRowStore } from './verdicts.ts';
 import { SessionSourceStore } from './session-source.ts';
 import { StoriesRepository } from './stories.ts';
 import { RetentionRepository } from './retention.ts';
-import { TabViewsRepository } from './tab-views/legacy.ts';
+import { TabViewRowStore } from './tab-views.ts';
 import type { HandoffAnswerStore } from '#src/ports/handoff-answers.ts';
 import { HandoffAnswerRepository } from './handoff-answers.ts';
 import type { PaneNoteReader, PaneNoteWriter, WorktreeStatusReader, WorktreeStatusWriter } from '#src/ports/worktree-status.ts';
@@ -55,7 +55,7 @@ export interface Store {
     readonly db: Database;
     readonly records: GuardedRecapRecords;
     readonly ledger: GuardedLedger;
-    readonly views: TabViews & LiveLanes;
+    readonly views: TabViewStore & LiveLanes;
     readonly visibility: ColumnVisibility;
     readonly requests: RequestPort & CompactionAskQueue;
     readonly handoffs: HandoffAnswerStore;
@@ -88,7 +88,7 @@ export interface StoreSettings {
 export function storeOver(db: Database, options: StoreSettings = {}): Store {
     const ledger = new LedgerRepository(db);
     return {
-        kind: 'ready', db, records: new RecapRecordsRepository(db), ledger, views: new TabViewsRepository(db, options.daemonVersion ?? null),
+        kind: 'ready', db, records: new RecapRecordsRepository(db), ledger, views: new TabViewRowStore(db, options.daemonVersion ?? null),
         visibility: new ColumnVisibilityRepository(db), requests: new RequestsStore(db, options.now), handoffs: new HandoffAnswerRepository(db, options.now), compactions: new CompactionLogRepository(db), asks: new AskBookRepository(db, options.log), decisions: new DecisionLedgerRepository(db), autocompactBriefs: new DecisionBriefsRepository(db),
         inputs: new RunInputStore(db), verdicts: new VerdictRowStore(db),
         stories: new StoriesRepository(db, ledger), session: new SessionSourceStore(db),

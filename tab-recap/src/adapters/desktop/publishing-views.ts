@@ -1,18 +1,18 @@
-import type { LiveLanes, LiveLanesRead, TabView, TabViews } from '#src/ports/tab-views.ts';
+import type { LiveLanes, LiveLanesRead, TabViewRecord, TabViewStore } from '#src/ports/tab-views.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
-export class PublishingViews implements TabViews, LiveLanes {
-    private readonly inner: TabViews & LiveLanes;
+export class PublishingViews implements TabViewStore, LiveLanes {
+    private readonly inner: TabViewStore & LiveLanes;
     private readonly published: (tab: TabId) => void;
 
-    constructor(inner: TabViews & LiveLanes, published: (tab: TabId) => void) {
+    constructor(inner: TabViewStore & LiveLanes, published: (tab: TabId) => void) {
         this.inner = inner;
         this.published = published;
     }
 
-    readTab(tab: TabId): TabView | null {
+    readTab(tab: TabId): TabViewRecord | null {
         return this.inner.readTab(tab);
     }
 
@@ -25,7 +25,7 @@ export class PublishingViews implements TabViews, LiveLanes {
         return this.inner.liveLanes();
     }
 
-    writeTab(view: TabView): void {
+    writeTab(view: TabViewRecord): void {
         this.inner.writeTab(view);
         this.published(tabId(textOf(view.tab)));
     }

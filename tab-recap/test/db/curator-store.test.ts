@@ -132,7 +132,7 @@ test('the real ledger stores what the view reads: a done fact is drawn when it h
     const closed = must(facts.find((each) => each.id === next.id));
     assert.deepEqual([closed.closedAt, closed.lastAt >= timeOf('14:02')], [timeOf('14:02'), true], 'a closed fact is a change: the newest change is its close');
     assert.equal(newestChange(facts), timeOf('14:02'));
-    const view = new ExpandedModel({ records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), stories: store.stories, session: store.session, boundaries: store.boundaries, requests: store.requests, edits: (): [] => [] }).read('w1:t1', null, timeOf('15:00'));
+    const view = new ExpandedModel({ records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), stories: store.stories, session: store.session, boundaries: store.boundaries, requests: store.requests, edits: (): [] => [] }).read(tabId('w1:t1'), null, instant(timeOf('15:00')));
     assert.deepEqual(view.tasks[0]?.facts.map((each) => each.text).toSorted(), ['Add a retention sweep', 'Keep the guard out', 'Merged !34']);
 });
 

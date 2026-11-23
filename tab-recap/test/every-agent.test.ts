@@ -17,7 +17,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import type { TabRecap } from '#src/ports/recap-records.ts';
-import type { TabView } from '#src/ports/tab-views.ts';
+import type { TabViewRecord } from '#src/ports/tab-views.ts';
 import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
 import type { ChunkResult, Located, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
@@ -25,6 +25,7 @@ import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { grewOf, cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { seenLane } from '#test/support/seen.ts';
+import { viewRecord } from '#test/support/tab-view-records.ts';
 
 function recording(agent: string, source: (pane: string) => string, tail: string | null = null): { reader: Transcripts; seen: Position[] } {
     const seen: Position[] = [];
@@ -88,9 +89,9 @@ const cursor = (pane: string, transcript: string): TabRecap['lanes'][number] => 
 
 test('the column says `(screen)` beside a lane read from its screen — in both languages — and nothing beside the others', () => {
     const recap = { ...blankRecap(tabId('w1:t1')), lanes: [cursor('w1:p1', 'screen:w1:p1'), cursor('w1:p2', '/t/b')], markdown: '## Goal\n- g', at: instant(0) };
-    const tab: TabView = { tab: 'w1:t1', column: null, at: 0, lanes: [
+    const tab: TabViewRecord = viewRecord({ tab: 'w1:t1', column: null, at: 0, lanes: [
         { pane: 'w1:p1', agent: 'gemini', status: 'idle', title: null, cwd: null }, { pane: 'w1:p2', agent: 'claude', status: 'idle', title: null, cwd: null },
-    ] };
+    ] });
     for (const [messages, word] of [[en, '(screen)'], [es, '(pantalla)']] as const) {
         const text = present({ tab, recap, notes: new Map(), warnings: [], now: 0, messages }, 60, () => null).join('\n');
         assert.match(text, new RegExp(`gemini w1:p1 \\${word.replace(')', '\\)')}`));

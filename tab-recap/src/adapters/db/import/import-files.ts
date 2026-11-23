@@ -2,6 +2,8 @@ import { knownOr } from '#src/ports/guarded-reads.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
+import { parseTabId } from '#src/recap/domain/ids.ts';
+import type { TabViewRecord } from '#src/ports/tab-views.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { existsSync, mkdirSync, renameSync } from 'node:fs';
@@ -32,6 +34,11 @@ export interface ImportOptions {
     readonly afterInsert?: () => void;
 }
 
+const readBack = (store: Store, tab: Text): TabViewRecord | null => {
+    const id = parseTabId(tab);
+    return id.kind === 'ok' ? store.views.readTab(id.value) : null;
+};
+
 const FILES = ['recaps', 'tabs', 'requests', 'visibility', 'hidden.json'];
 
 export function compareLegacyFiles(store: Store, legacy: LegacyStoreFiles, now: Instant): ImportReport {
@@ -50,7 +57,7 @@ export function compareLegacyFiles(store: Store, legacy: LegacyStoreFiles, now: 
     const differences = [
         ...refused,
         ...recaps.flatMap((file) => recapDifferenceLines(file, knownOr(store.records.readRecap(file.tab), null))),
-        ...views.flatMap((file) => viewDifferenceLines(file, store.views.readTab(file.tab))),
+        ...views.flatMap((file) => viewDifferenceLines(file, readBack(store, file.tab))),
         ...(hidden !== null && JSON.stringify(store.visibility.readHidden()) !== JSON.stringify(hidden) ? [must(parseText('hidden: reads back differently'))] : []),
     ];
     return {

@@ -136,7 +136,7 @@ test('the terminal screen and the expanded view read the same ledger: the need i
         const recap = storeRead(world.store.records.readRecap(tabId(TAB)));
         assert.deepEqual(recap?.tasks[0]?.sections?.needs, ['Who approves the release?']);
         const expanded = new ExpandedModel({ records: world.store.records, ledger: world.store.ledger, stories: world.store.stories, session: world.store.session, boundaries: world.store.boundaries, requests: { requestCurate: (): void => undefined }, edits: (): [] => [] });
-        const task = expanded.read(TAB, world.store.views.readTab(TAB), Date.now()).tasks[0];
+        const task = expanded.read(tabId(TAB), world.store.views.readTab(tabId(TAB)), instant(Date.now())).tasks[0];
         assert.deepEqual(task?.facts.filter((fact) => fact.id === need).map((fact) => [fact.state, fact.closedWhy]), [['closed', 'answered']]);
     } finally { world.close(); }
 });

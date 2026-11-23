@@ -16,7 +16,7 @@ import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { ColumnPanes } from '#src/ports/columns.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
-import type { TabViews } from '#src/ports/tab-views.ts';
+import type { TabViewStore } from '#src/ports/tab-views.ts';
 import type { DecidedAnswersResult } from '#src/ports/decider.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
@@ -199,7 +199,7 @@ test('dispatch: a read-prompt of a lane that is idle or done tells the settled h
     const told: string[] = [];
     const board = observe(emptyBoard(), { kind: 'reconciled', seen: reconciliation({ focusedTab: null, lanes: [seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' })], panes: ['w1:p1'], columns: [], widths: new Map() }) }, instant(0), DEFAULT_POLICY).board;
     const dispatch = new LaneDispatch({
-        columns: {} as ColumnPanes, views: { writeTab: (): void => undefined } as unknown as TabViews, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() },
+        columns: {} as ColumnPanes, views: { writeTab: (): void => undefined } as unknown as TabViewStore, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() },
         prompts: { of: (): null => null, refresh: (): Promise<Presence> => Promise.resolve('absent') }, webs: { of: (): null => null, refresh: (): Promise<Presence> => Promise.resolve('absent') }, log: (): void => undefined,
         board: (): Board => board, sizing: (): Sizing => SIZING, feedback: (): void => undefined, settled: (found): void => { told.push(`${found.pane}:${found.status}`); },
         ...silentClosures,

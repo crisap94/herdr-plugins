@@ -9,8 +9,6 @@ import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unk
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 
-export type { LaneWeb, TabLane, TabView, TabViews } from './twins/legacy.ts';
-
 export interface LaneWebRecord {
     readonly base: Text;
     readonly forge: Forge;

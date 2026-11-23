@@ -16,9 +16,10 @@ import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { blankRecap, type RecapRecords, type TabRecap } from '#src/ports/recap-records.ts';
-import type { TabView, TabViews } from '#src/ports/tab-views.ts';
+import type { TabViewRecord, TabViewStore } from '#src/ports/tab-views.ts';
 import { must as present } from '#test/db/support.ts';
 import { v2Problems } from '#test/gui-schema-support.ts';
+import { viewRecord } from '#test/support/tab-view-records.ts';
 
 const text = (raw: string): Text => must(parseText(raw));
 const count = (raw: number): Count => must(parseCount(raw));
@@ -141,8 +142,8 @@ test('a malformed lane or count inside a row is dropped or defaulted, never the 
 });
 
 const recordsOf = (recaps: Readonly<Record<string, TabRecap>>): RecapRecords => ({ readRecap: (tab): TabRecap | null => recaps[tab] ?? null }) as RecapRecords;
-const viewsOf = (views: Readonly<Record<string, TabView>>): TabViews => ({ readTab: (tab): TabView | null => views[tab] ?? null, writeTab: (): void => undefined, tabOf: (): null => null });
-const viewOf = (tab: string): TabView => ({ tab, column: null, at: 5, lanes: [{ pane: `${tab}p1`, agent: 'claude', status: 'blocked', title: 'login', cwd: '/work', since: instant(40) }, { pane: `${tab}p2`, agent: 'codex', status: 'idle', title: null, cwd: null }] });
+const viewsOf = (views: Readonly<Record<string, TabViewRecord>>): TabViewStore => ({ readTab: (tab): TabViewRecord | null => views[tab] ?? null, writeTab: (): void => undefined, tabOf: (): null => null });
+const viewOf = (tab: string): TabViewRecord => viewRecord({ tab, column: null, at: 5, lanes: [{ pane: `${tab}p1`, agent: 'claude', status: 'blocked', title: 'login', cwd: '/work', since: instant(40) }, { pane: `${tab}p2`, agent: 'codex', status: 'idle', title: null, cwd: null }] });
 
 function publisherOn(dir: Directory, at: number): GuiPublisher {
     const recaps = { a: { ...blankRecap(tabId('a')), at: instant(1) }, b: { ...blankRecap(tabId('b')), at: instant(1) } };

@@ -5,14 +5,14 @@ import type { CompactionRow as LoggedCompaction } from '#src/ports/compaction-re
 import type { BoundaryBreak } from '#src/ports/boundaries.ts';
 import type { LaneCursor, TabRecap } from '#src/ports/recap-records.ts';
 import { isScreenSource } from '#src/ports/screens.ts';
-import type { LaneWeb, TabLane, TabView } from '#src/ports/tab-views.ts';
+import type { LaneWebRecord, TabLaneRecord, TabViewRecord } from '#src/ports/tab-views.ts';
 import type { Messages } from '#src/i18n/messages.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 
 export interface PluginColumnView extends Omit<ColumnView<string>, 'rows' | 'daemonVersion' | 'recap' | 'wording' | 'compactions'> {
-    readonly tab: TabView | null;
+    readonly tab: TabViewRecord | null;
     readonly recap: TabRecap | null;
     readonly messages: Messages;
     readonly compactions?: readonly LoggedCompaction[];
@@ -28,11 +28,11 @@ export function wordingOf<Text>(wording: Wording<Text>): Wording<Text> {
     return wording;
 }
 
-export function webOf(web: LaneWeb): Web {
+export function webOf(web: LaneWebRecord): Web {
     return { base: parseWebBase(web.base), forge: web.forge, branch: maybe(web.branch, parseBranchName) };
 }
 
-function laneExtras(lane: TabLane): Partial<Row> {
+function laneExtras(lane: TabLaneRecord): Partial<Row> {
     const { context, web } = lane;
     return {
         ...(lane.lastPrompt === undefined ? {} : { lastPrompt: maybe(lane.lastPrompt, parseProse) }),
@@ -42,7 +42,7 @@ function laneExtras(lane: TabLane): Partial<Row> {
     };
 }
 
-export function rowOf(lane: TabLane, cursor: LaneCursor | undefined): Row {
+export function rowOf(lane: TabLaneRecord, cursor: LaneCursor | undefined): Row {
     return {
         ...laneExtras(lane),
         id: parsePaneId(lane.pane),
@@ -55,7 +55,7 @@ export function rowOf(lane: TabLane, cursor: LaneCursor | undefined): Row {
     };
 }
 
-function columnRowOf(lane: TabLane, cursor: LaneCursor | undefined): Row {
+function columnRowOf(lane: TabLaneRecord, cursor: LaneCursor | undefined): Row {
     return { ...rowOf(lane, cursor), title: maybe(cursor?.title ?? lane.title, parseTitle), lastPrompt: maybe(lane.lastPrompt ?? cursor?.lastPrompt ?? null, parseProse) };
 }
 

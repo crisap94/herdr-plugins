@@ -137,9 +137,6 @@
   "src/recap/application/twins/eval-stats/legacy.ts": {
     "legacy": 15
   },
-  "src/recap/application/twins/expanded-view/legacy.ts": {
-    "legacy": 12
-  },
   "src/recap/application/worksite-section.ts": {
     "return": 1,
     "property": 1

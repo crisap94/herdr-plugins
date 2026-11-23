@@ -1,9 +1,9 @@
 import type { Messages } from '#src/i18n/index.ts';
 import type { CompactionRow } from '#src/ports/compaction-records.ts';
-import { DEFAULT_MARK, type Note } from '#src/ports/extension.ts';
+import { DEFAULT_MARK, type PaneNote } from '#src/ports/extension.ts';
 import type { TabRecap } from '#src/ports/recap-records.ts';
 import { isScreenSource } from '#src/ports/screens.ts';
-import type { LaneWeb, TabLane } from '#src/ports/tab-views.ts';
+import type { LaneWebRecord, TabLaneRecord } from '#src/ports/tab-views.ts';
 import { must } from '#src/protocol/result.ts';
 import { GIT_NOTE_MARK } from '#src/extensions/stored-notes.ts';
 import { hintFor, shareOf, type ContextUse } from '#src/recap/domain/compaction.ts';
@@ -49,7 +49,7 @@ function stageOf(record: CompactionRow, draw: LaneDraw): GuiStage {
     };
 }
 
-function compactionOf(lane: TabLane, draw: LaneDraw): GuiCompaction {
+function compactionOf(lane: TabLaneRecord, draw: LaneDraw): GuiCompaction {
     const record = draw.reads.compactions.find((each) => each.pane === lane.pane);
     if (record !== undefined) { return { hint: null, stage: stageOf(record, draw) }; }
     const percent = hintFor(lane.context, draw.reads.compactHint);
@@ -58,37 +58,37 @@ function compactionOf(lane: TabLane, draw: LaneDraw): GuiCompaction {
     return { hint: share.kind === 'ok' && window.kind === 'ok' ? { percent: share.value, window: window.value } : null, stage: null };
 }
 
-function kindOf(note: Note): GuiNoteKind {
+function kindOf(note: PaneNote): GuiNoteKind {
     if (note.mark === GIT_NOTE_MARK) { return 'git'; }
     if (note.mark === undefined) { return note.at === null ? 'token' : 'alert'; }
     return note.mark === DEFAULT_MARK ? 'alert' : 'extension';
 }
 
-function noteOf(note: Note): GuiNote {
+function noteOf(note: PaneNote): GuiNote {
     return { mark: must(parseText(note.mark ?? DEFAULT_MARK)), label: must(parseText(note.label)), at: note.at === null ? null : instant(note.at), details: note.details.map(parseText).map(must), kind: kindOf(note) };
 }
 
-function gitOf(lane: TabLane, draw: LaneDraw): GuiGit | null {
+function gitOf(lane: TabLaneRecord, draw: LaneDraw): GuiGit | null {
     const pane = parsePaneId(lane.pane);
     const status = pane.kind === 'ok' ? draw.reads.git(pane.value) : null;
     return status === null ? null : { branch: status.branch, ahead: status.ahead, changed: changedOf(status) };
 }
 
-function webOf(web: LaneWeb | null | undefined): GuiWeb | null {
+function webOf(web: LaneWebRecord | null | undefined): GuiWeb | null {
     return web === null || web === undefined ? null : { base: must(parseText(web.base)), forge: web.forge, branch: orElse(parseText(web.branch), null) };
 }
 
 type Cursor = TabRecap['lanes'][number] | undefined;
 
-const promptOf = (lane: TabLane, cursor: Cursor): GuiLane['lastPrompt'] => orElse(parseText(lane.lastPrompt ?? cursor?.lastPrompt), null);
+const promptOf = (lane: TabLaneRecord, cursor: Cursor): GuiLane['lastPrompt'] => orElse(parseText(lane.lastPrompt ?? cursor?.lastPrompt), null);
 
-const headingOf = (lane: TabLane, cursor: Cursor): Text => must(parseText(cursor?.title ?? lane.title ?? lane.pane));
+const headingOf = (lane: TabLaneRecord, cursor: Cursor): Text => must(parseText(cursor?.title ?? lane.title ?? lane.pane));
 
 const fromScreenOf = (cursor: Cursor): Flag => (cursor !== undefined && isScreenSource(sourcePathOf(cursor.transcript)) ? YES : NO);
 
 const notesFor = (pane: PaneId, draw: LaneDraw): readonly GuiNote[] => draw.reads.notes(pane).map(noteOf);
 
-export function guiLaneOf(lane: TabLane, draw: LaneDraw): GuiLane | null {
+export function guiLaneOf(lane: TabLaneRecord, draw: LaneDraw): GuiLane | null {
     const pane = parsePaneId(lane.pane);
     const agent = parseAgentKind(lane.agent);
     if (pane.kind === 'err' || agent.kind === 'err') { return null; }

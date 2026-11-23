@@ -3,7 +3,8 @@ import type { HiddenState } from '#src/recap/domain/board.ts';
 import type { TabRecap } from '#src/ports/recap-records.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import type { Visibility, VisibilityRequest } from '#src/ports/requests.ts';
-import type { TabView } from '#src/ports/tab-views.ts';
+import type { LegacyViewFile } from '#src/ports/legacy-store-files.ts';
+import { parseTabViewRecord } from '#src/ports/tab-views.ts';
 import type { FactId } from '#src/recap/domain/fact.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseFactId, parseRunId } from '#src/recap/domain/run-ids.ts';
@@ -15,7 +16,7 @@ import { LedgerRows } from '../ledger-rows.ts';
 import { RequestsStore } from '../requests.ts';
 import { RunRows } from '../run-write.ts';
 import { TabStore } from '../tab-row.ts';
-import { TabViewsRepository } from '../tab-views/legacy.ts';
+import { TabViewRowStore } from '../tab-views.ts';
 import { TranscriptStore } from '../transcripts.ts';
 import { typeIdOf } from '../typeid.ts';
 import { ids } from '../uuid7.ts';
@@ -49,7 +50,7 @@ export class RowsWriter {
     private readonly transcripts: TranscriptStore;
     private readonly runs: RunRows;
     private readonly ledger: LedgerRows;
-    private readonly views: TabViewsRepository;
+    private readonly views: TabViewRowStore;
     private readonly state: Statement;
 
     constructor(db: Database) {
@@ -58,7 +59,7 @@ export class RowsWriter {
         this.transcripts = new TranscriptStore(db);
         this.runs = new RunRows(db, this.transcripts);
         this.ledger = new LedgerRows(db);
-        this.views = new TabViewsRepository(db, null);
+        this.views = new TabViewRowStore(db);
         this.state = db.prepare('UPDATE tab SET running = ?, backend = ?, error = ? WHERE id = ?');
     }
 
@@ -84,8 +85,8 @@ export class RowsWriter {
         this.state.run(file.running ? 1 : 0, file.backend, file.error, file.tab);
     }
 
-    view(view: TabView): void {
-        this.views.writeTab(view);
+    view(view: LegacyViewFile): void {
+        this.views.writeTab(must(parseTabViewRecord(view)));
     }
 
     hidden(state: HiddenState): void {

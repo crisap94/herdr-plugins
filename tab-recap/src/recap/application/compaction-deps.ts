@@ -7,7 +7,7 @@ import type { LaneSettler } from '#src/ports/lane-settling.ts';
 import type { NotifierPort } from '#src/ports/notifier.ts';
 import type { BoundaryLog } from '#src/ports/boundaries.ts';
 import type { Entry, Mark } from '#src/ports/transcripts.ts';
-import type { LaneWeb } from '#src/ports/tab-views.ts';
+import type { LaneWebRecord } from '#src/ports/tab-views.ts';
 import type { DecisionLedger } from '#src/ports/autocompact-records.ts';
 import type { MissedFacts } from '#src/recap/domain/autocompact.ts';
 import type { Written } from './compaction-brief.ts';
@@ -32,7 +32,7 @@ export interface CoveragePort { check(brief: Text, facts: readonly CheckedFact[]
 
 export interface TypingPort { acquire(pane: PaneId): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: PaneId): Promise<void> }
 
-export interface LaneWebs { of(pane: PaneId): LaneWeb | null }
+export interface LaneWebs { of(pane: PaneId): LaneWebRecord | null }
 
 export interface RestoreHandoff { offer(session: SessionId, text: Text): void; take(session: SessionId): Text | null }
 

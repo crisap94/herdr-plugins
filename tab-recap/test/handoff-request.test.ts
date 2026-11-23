@@ -6,7 +6,7 @@ import { MemoryHandoffAnswers } from './fakes/handoff-answers.ts';
 import type { HandoffAnswerRecord } from '#src/ports/handoff-answers.ts';
 import { deliverHandoff, type DeliverDeps, type DeliverRequest, type DaemonReading } from '#src/recap/application/handoff-request.ts';
 import { type HandoffId } from '#src/recap/domain/ids.ts';
-import { paneId } from '#test/support/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import { NOW } from './fakes/handoff-flow-harness.ts';
 import { HANDOFF_POLL_MS, HANDOFF_WAIT_MS, HANDOFF_WAIT_REFRESH_MS } from '#src/recap/application/handoff-limits.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -55,7 +55,7 @@ function setup(options: { tabs?: Record<string, string>; daemon?: DaemonReading;
         cliVersion: options.cli === undefined ? '2.4.0' : options.cli,
         openStore: () => {
             log.opened += 1;
-            return { views: { tabOf: (pane) => options.tabs?.[pane] ?? null }, requests, handoffs: answers, close: () => { log.closed += 1; } };
+            return { views: { tabOf: (pane) => { const tab = options.tabs?.[pane]; return tab === undefined ? null : tabId(tab); } }, requests, handoffs: answers, close: () => { log.closed += 1; } };
         },
     };
     return { deps, requests, answers, sleeps, log, elapsed: () => now - NOW };

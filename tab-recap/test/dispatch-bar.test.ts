@@ -10,7 +10,7 @@ import { paneId, tabId } from '#test/support/ids.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import type { ColumnPanes, ColumnLayoutResult } from '#src/ports/columns.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
-import type { TabViews } from '#src/ports/tab-views.ts';
+import type { TabViewStore } from '#src/ports/tab-views.ts';
 import { SIZING, placedOf, rectOf as rect, splitOf } from './fakes/layout-values.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 
@@ -46,7 +46,7 @@ function fakeColumns(): { columns: ColumnPanes; calls: string[] } {
 test('a bar is docked with a split below the tab\'s bottom pane — no swap, no focus move, and the agent panes are only ever read', async () => {
     const { columns, calls } = fakeColumns();
     const fed: Observation[] = [];
-    const views = {} as TabViews;
+    const views = {} as TabViewStore;
     const visibility = {} as ColumnVisibility;
     const dispatch = new LaneDispatch({
         columns, views, visibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() }, prompts: noPrompts, webs: noWebs, log: noop, board: noBoard,
@@ -69,7 +69,7 @@ test('a bar is docked with a split below the tab\'s bottom pane — no swap, no 
 test('a side column still docks on the right edge', async () => {
     const { columns, calls } = fakeColumns();
     const dispatch = new LaneDispatch({
-        columns, views: {} as TabViews, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() }, prompts: noPrompts, webs: noWebs, log: noop, board: noBoard,
+        columns, views: {} as TabViewStore, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() }, prompts: noPrompts, webs: noWebs, log: noop, board: noBoard,
         sizing, feedback: noop, ...silentClosures,
     });
     await dispatch.send({ kind: 'open-column', tab: tabId('w1:t1'), shape: 'side' });

@@ -20,7 +20,7 @@ import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { ColumnPanes } from '#src/ports/columns.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
-import type { TabView, TabViews } from '#src/ports/tab-views.ts';
+import type { TabViewRecord, TabViewStore } from '#src/ports/tab-views.ts';
 import type { Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
@@ -132,9 +132,9 @@ test('fold: a new lane (detected, or first seen in a reconciliation) reads its p
     assert.deepEqual(reads(steps[3] ?? []), []);
 });
 
-function dispatchWith(prompts: PaneSource<Text>): { dispatch: LaneDispatch; written: TabView[] } {
-    const written: TabView[] = [];
-    const views = { writeTab: (view: TabView): void => { written.push(view); } } as unknown as TabViews;
+function dispatchWith(prompts: PaneSource<Text>): { dispatch: LaneDispatch; written: TabViewRecord[] } {
+    const written: TabViewRecord[] = [];
+    const views = { writeTab: (view: TabViewRecord): void => { written.push(view); } } as unknown as TabViewStore;
     const board = observe(emptyBoard(), reconciled(seenLane('w1:p1')), instant(0), DEFAULT_POLICY).board;
     const dispatch = new LaneDispatch({
         columns: {} as ColumnPanes, views, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() }, prompts, webs: { of: (): null => null, refresh: (): Promise<Presence> => Promise.resolve('absent') }, log: (): void => undefined,

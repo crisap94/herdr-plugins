@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { messagesFor } from '#src/i18n/index.ts';
 import type { CompactionRow } from '#src/ports/compaction-records.ts';
 import { recapRunningOf, type LaneCursor, type TabRecap } from '#src/ports/recap-records.ts';
-import type { TabLane } from '#src/ports/tab-views.ts';
+import type { TabLaneRecord } from '#src/ports/tab-views.ts';
 import type { ColumnView } from '#src/recap/render/present.ts';
-import { sessionFactsOf } from '#src/recap/domain/session-facts.ts';
+import { factsOfBare } from '#test/support/session-readings.ts';
 import { columnTaskOf, columnViewOf, compactionRowOf, recapColumnOf, rowOf, webOf, wordingOf } from '#src/view-model/column.ts';
 import { sessionRecapOf } from '#src/view-model/expanded.ts';
 import { countOf } from '#src/recap/domain/count.ts';
@@ -17,8 +17,9 @@ import { sourcePathOf, cursorOf } from '#src/ports/transcripts.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { laneRecord, viewRecord } from '#test/support/tab-view-records.ts';
 
-const lane = (pane: string, status: string): TabLane => ({ pane, agent: 'claude', status, title: `title ${pane}`, cwd: '/repo', web: { base: 'https://gitlab.example/repo', forge: 'gitlab', branch: 'main' } });
+const lane = (pane: string, status: string): TabLaneRecord => laneRecord({ pane, agent: 'claude', status, title: `title ${pane}`, cwd: '/repo', web: { base: 'https://gitlab.example/repo', forge: 'gitlab', branch: 'main' } });
 
 const cursor = (pane: string, transcript: string): LaneCursor => ({ pane: paneId(pane), agent: agentKind('claude'), transcript: sourcePathOf(transcript), cursor: cursorOf(4), tail: null, title: null, lastPrompt: textOf('ship it'), claudeRecap: textOf('harness words') });
 
@@ -61,7 +62,7 @@ test('rowOf: a screen-source cursor gives fromScreen true; no cursor gives false
 });
 
 test('webOf: copies base, forge and branch', () => {
-    assert.deepEqual(webOf({ base: 'https://github.example/r', forge: 'github', branch: null }), { base: 'https://github.example/r', forge: 'github', branch: null });
+    assert.deepEqual(webOf({ base: textOf('https://github.example/r'), forge: 'github', branch: null }), { base: 'https://github.example/r', forge: 'github', branch: null });
 });
 
 test('columnTaskOf and recapColumnOf: task lanes become members, the run fields are copied', () => {
@@ -83,7 +84,7 @@ test('wordingOf: hands back the same messages', () => {
 test('columnViewOf: rows matched to cursors by pane, the recap mapped, messages become the wording', () => {
     const messages = messagesFor('es');
     const view: ColumnView = {
-        tab: { tab: 't1', column: null, lanes: [lane('p2', 'blocked'), lane('p3', 'done')], at: 5, daemonVersion: '1.2.0' },
+        tab: viewRecord({ tab: 't1', column: null, lanes: [lane('p2', 'blocked'), lane('p3', 'done')], at: 5, daemonVersion: '1.2.0' }),
         recap, notes: new Map(), warnings: ['careful'], now: 200, messages, version: '1.3.0', compactions: [record],
     };
     const mapped = columnViewOf(view, view.messages);
@@ -106,6 +107,6 @@ test('columnViewOf: no tab gives no rows, no recap gives no column recap', () =>
 });
 
 test('sessionRecapOf: copies every session fact', () => {
-    const facts = sessionFactsOf({ firstSeen: 1000, now: 4000, runs: { focused: 2 }, compactions: [{ tokensBefore: countOf(10), tokensAfter: countOf(4), origin: 'auto' }], lanes: [], webs: [{ base: 'https://gitlab.example/g/repo', branch: 'dev' }], edits: [{ path: 'a.ts', count: 3 }] });
+    const facts = factsOfBare({ firstSeen: 1000, now: 4000, runs: { focused: 2 }, compactions: [{ tokensBefore: countOf(10), tokensAfter: countOf(4), origin: 'auto' }], lanes: [], webs: [{ base: 'https://gitlab.example/g/repo', branch: 'dev' }], edits: [{ path: 'a.ts', count: 3 }] });
     assert.deepEqual(sessionRecapOf(facts), facts);
 });
