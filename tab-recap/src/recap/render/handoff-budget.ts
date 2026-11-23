@@ -18,7 +18,7 @@ export interface HandoffFit {
     readonly freshnessText: FreshnessBlock;
     readonly worksiteText: WorksiteBlock | null;
     readonly groups: readonly HandoffGroup[];
-    readonly withheld: number;
+    readonly withheld: Count;
 }
 
 export type FittedHandoff = { readonly kind: 'text'; readonly text: Text; readonly omitted: OmittedCounts } | { readonly kind: 'too-large' };

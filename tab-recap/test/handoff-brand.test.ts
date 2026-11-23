@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { must } from '#src/protocol/result.ts';
 import type { FactId } from '#src/recap/domain/fact.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { countOf, parseCount } from '#src/recap/domain/count.ts';
 import type { HandoffEntry } from '#src/recap/domain/handoff-content.ts';
 import { vetHandoffText } from '#src/recap/domain/handoff-vetting.ts';
 import type { HandoffFit } from '#src/recap/render/handoff-budget.ts';
@@ -76,7 +76,7 @@ const rawFit = (note: string): HandoffFit => ({
     freshnessText: freshnessTextOf({ lastRun: { at: instant(0), cause: 'imported' }, status: 'idle', newerPrompts: { kind: 'none' }, refresh: 'not-requested' }),
     worksiteText: null,
     groups: [],
-    withheld: 0,
+    withheld: countOf(0),
 });
 
 const rawForbidden = (raw: string): boolean =>
