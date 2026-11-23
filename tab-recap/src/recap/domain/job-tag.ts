@@ -16,7 +16,7 @@ export const JOB_TAG_BY_CALL: Readonly<Record<JobCall, JobTag>> = {
     coverageCheck: JOB_TAGS[5],
 };
 
-export const JOB_ATTRIBUTE_KEY = 'tab_recap.job';
+export const JOB_ATTRIBUTE_KEY = 'harness.job';
 
 export type JobAttributes = Readonly<{ [JOB_ATTRIBUTE_KEY]: JobTag }>;
 

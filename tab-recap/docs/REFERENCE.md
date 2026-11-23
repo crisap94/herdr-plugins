@@ -449,33 +449,35 @@ settings or MCP and no session left behind. The judge runs only when you run `ta
 
 ### Job telemetry tags
 
-`TAB_RECAP_TELEMETRY_TAGS=on` adds the constant OpenTelemetry resource attribute `tab_recap.job` to Claude and Codex child jobs. It defaults to `off`. Values are `recap-writer` (including enumeration), `compaction-brief`, `curator`, `judge`, `decider`, and `coverage-check`. OpenCode, custom commands, remote HTTP decisions, and experiment tools are not tagged. The attribute contains no prompt, session, path, or model data. The setup modal shows this setting and respects an environment lock.
+`TAB_RECAP_TELEMETRY_TAGS=on` adds the constant OpenTelemetry resource attribute `harness.job` to Claude and Codex child jobs. It defaults to `off`. Values are `recap-writer` (including enumeration), `compaction-brief`, `curator`, `judge`, `decider`, and `coverage-check`. OpenCode, custom commands, remote HTTP decisions, and experiment tools are not tagged. The attribute contains no prompt, session, path, or model data. The setup modal shows this setting and respects an environment lock.
+
+Before this release the attribute was `tab_recap.job`; rename saved queries.
 
 Claude's telemetry and `OTEL_*` variables must be present in the daemon environment. The Claude CLI is launched with an empty setting source list, so telemetry variables in Claude settings files are not a supported source. For Codex, configure exporters in its configuration under the inherited `CODEX_HOME`. Any Codex OTel environment variables used, such as exporter headers, must also be present in the daemon environment.
 
-Collectors determine whether resource attributes become metric labels or are exposed through a resource information metric. Prometheus-style names are illustrative: `tab_recap.job` is commonly normalized to `tab_recap_job`, and metric units and `_total` suffixes vary by exporter. If a resource attribute is promoted to a label, Claude cost and token series can be queried as:
+Collectors determine whether resource attributes become metric labels or are exposed through a resource information metric. Prometheus-style names are illustrative: `harness.job` is commonly normalized to `harness_job`, and metric units and `_total` suffixes vary by exporter. If a resource attribute is promoted to a label, Claude cost and token series can be queried as:
 
 ```promql
-sum by (tab_recap_job) (increase(claude_code_cost_usage_USD_total{tab_recap_job=~".+"}[1h]))
-sum by (tab_recap_job, type) (increase(claude_code_token_usage_tokens_total{tab_recap_job=~".+"}[1h]))
+sum by (harness_job) (increase(claude_code_cost_usage_USD_total{harness_job=~".+"}[1h]))
+sum by (harness_job, type) (increase(claude_code_token_usage_tokens_total{harness_job=~".+"}[1h]))
 ```
 
-Untagged series, such as jobs run with tagging off or other emitters, carry an empty `tab_recap_job` label. Select them by matching the empty value exactly:
+Untagged series, such as jobs run with tagging off or other emitters, carry an empty `harness_job` label. Select them by matching the empty value exactly:
 
 ```promql
-sum(increase(claude_code_cost_usage_USD_total{tab_recap_job=""}[1h]))
+sum(increase(claude_code_cost_usage_USD_total{harness_job=""}[1h]))
 ```
 
 An absent or empty label may select the whole fleet when the collector did not promote the resource attribute. If it exposes `target_info`, join the resource attribute instead; join keys depend on the collector:
 
 ```promql
-sum by (tab_recap_job) (increase(claude_code_cost_usage_USD_total[1h]) * on (job, instance) group_left (tab_recap_job) target_info{tab_recap_job=~".+"})
+sum by (harness_job) (increase(claude_code_cost_usage_USD_total[1h]) * on (job, instance) group_left (harness_job) target_info{harness_job=~".+"})
 ```
 
 Codex 0.162.1 emitted `codex.turn.token_usage` as a delta histogram with the job attribute on log and metric resources. Convert delta points to cumulative temporality before using `increase` on the cumulative sum:
 
 ```promql
-sum by (tab_recap_job, model, token_type) (increase(codex_turn_token_usage_sum{tab_recap_job=~".+"}[1h]))
+sum by (harness_job, model, token_type) (increase(codex_turn_token_usage_sum{harness_job=~".+"}[1h]))
 ```
 
 A delta-native backend needs its own range sum query. With tagging off, the fallback filter below selects the default `codex_exec` entry point, but it cannot prove a call belongs to this plugin because interactive `exec` calls can share those attributes:
