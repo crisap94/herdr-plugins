@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { runEval } from '#src/recap/application/eval-run.ts';
 import type { VerdictRecord } from '#src/ports/verdicts.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { optionsOf, rig, seed, judgeOf } from '#test/eval-rig.ts';
 import { runsOf, verdictOf } from '#test/db/support.ts';
 
@@ -20,7 +21,7 @@ test('`--label 3` shows the newest unlabelled items, asks again until it underst
     assert.ok(mine.every((v) => v.judge === 'operator'));
     assert.equal(asked.filter((prompt) => prompt.startsWith('why')).length, 1, 'a reason only for a failure');
     out.length = 0;
-    assert.equal(await runEval(optionsOf('--label', '3'), { ...deps, ask: () => Promise.resolve('quit') }), 0);
+    assert.equal(await runEval(optionsOf('--label', '3'), { ...deps, ask: () => Promise.resolve(textOf('quit')) }), 0);
     assert.doesNotMatch(out.join('\n'), /t1\/goal\/0|t1\/done\/0/, 'the labelled items are not offered again');
     assert.match(out.join('\n'), /t1\/done\/1/);
 });

@@ -9,9 +9,9 @@ import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import { plain } from '#src/recap/render/wrap.ts';
 import { cursor, memoryStore, recordOps } from '#test/db/support.ts';
 import { oneTask, withFacts } from '#test/support.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { tabId } from '#test/support/ids.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 
 export const DAY = 86_400_000;
@@ -38,10 +38,14 @@ export function rig(parts: { readonly judge?: JudgePort | null; readonly lines?:
     const [out, err, asked]: [string[], string[], string[]] = [[], [], []];
     const lines = Array.from(parts.lines ?? []);
     const deps: EvalDeps = {
-        inputs: store.inputs, verdicts: store.verdicts, now: (): number => NOW, rubric: 'RUBRIC', style: plain,
+        inputs: store.inputs, verdicts: store.verdicts, now: (): Instant => instant(NOW), rubric: textOf('RUBRIC'), style: plain,
         judge: (): JudgePort | null => (parts.judge === undefined ? scripted({ score: SCORE, readback: ANSWERS, grade: GRADES }) : parts.judge),
         out: (line): void => { out.push(line); }, err: (line): void => { err.push(line); },
-        ask: (prompt): Promise<string | null> => { asked.push(prompt); return Promise.resolve(lines.shift() ?? null); },
+        ask: (prompt): Promise<Text | null> => {
+            asked.push(prompt);
+            const next = lines.shift();
+            return Promise.resolve(next === undefined ? null : textOf(next));
+        },
     };
     return { store, deps, out, err, asked };
 }

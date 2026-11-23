@@ -128,9 +128,6 @@
   "src/recap/application/transcript-tail.ts": {
     "return": 1
   },
-  "src/recap/application/twins/eval-run/legacy.ts": {
-    "legacy": 13
-  },
   "src/recap/application/worksite-section.ts": {
     "return": 1,
     "property": 1
