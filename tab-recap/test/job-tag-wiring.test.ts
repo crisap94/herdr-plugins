@@ -98,7 +98,7 @@ async function customEnvSeenBy(site: Site, inherited: string): Promise<string> {
 for (const backend of ['claude', 'codex', 'opencode'] as const) {
     for (const site of SITES) {
         test(`${site.name} on ${backend}: the run's environment carries '${site.tag}' in OTEL_RESOURCE_ATTRIBUTES when tagging is on`, async () => {
-            assert.equal(await libraryEnvSeenBy(backend, 'on', site, undefined), `tab_recap.job=${site.tag}`);
+            assert.equal(await libraryEnvSeenBy(backend, 'on', site, undefined), `harness.job=${site.tag}`);
         });
 
         test(`${site.name} on ${backend}: the run's environment carries no job tag when tagging is off`, async () => {
@@ -113,6 +113,24 @@ test('custom: the child gets no job tag with tagging on, and an inherited OTEL_R
 
 for (const backend of ['claude', 'codex', 'opencode'] as const) {
     test(`${backend}: an inherited OTEL_RESOURCE_ATTRIBUTES is kept with the job tag appended`, async () => {
-        assert.equal(await libraryEnvSeenBy(backend, 'on', WRITE, 'service.name=parent,tab_recap.job=old'), 'service.name=parent,tab_recap.job=recap-writer');
+        assert.equal(await libraryEnvSeenBy(backend, 'on', WRITE, 'service.name=parent,harness.job=old'), 'service.name=parent,harness.job=recap-writer');
+    });
+}
+
+for (const backend of ['claude', 'codex'] as const) {
+    for (const site of SITES) {
+        test(`${site.name} on ${backend}: the tagged environment has harness.job and never tab_recap.job`, async () => {
+            const seen = await libraryEnvSeenBy(backend, 'on', site, undefined);
+            assert.ok(seen.includes(`harness.job=${site.tag}`));
+            assert.ok(!seen.includes('tab_recap.job'));
+        });
+    }
+
+    test(`${backend}: an inherited tab_recap.job entry is foreign text and passes through before harness.job`, async () => {
+        assert.equal(await libraryEnvSeenBy(backend, 'on', WRITE, 'service.name=p,tab_recap.job=old'), 'service.name=p,tab_recap.job=old,harness.job=recap-writer');
+    });
+
+    test(`${backend}: with tagging off the inherited value passes through unchanged and carries no harness.job`, async () => {
+        assert.equal(await libraryEnvSeenBy(backend, 'off', WRITE, 'service.name=p,tab_recap.job=old'), 'service.name=p,tab_recap.job=old');
     });
 }

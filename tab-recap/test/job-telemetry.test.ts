@@ -8,17 +8,17 @@ import type { JobTag } from '#src/recap/domain/job-tag.ts';
 
 test('the sole serializer encodes every closed tag', () => {
     for (const tag of JOB_TAGS) {
-        assert.equal(serializeJobAttributes({ 'tab_recap.job': tag }), `tab_recap.job=${encodeURIComponent(tag)}`);
+        assert.equal(serializeJobAttributes({ 'harness.job': tag }), `harness.job=${encodeURIComponent(tag)}`);
         assert.equal(encodeURIComponent(tag), tag);
     }
 });
 
 test('the resource merge preserves unrelated entries and replaces only the exact trimmed key', () => {
-    assert.equal(mergeJobAttributes(undefined, { 'tab_recap.job': 'judge' }), 'tab_recap.job=judge');
-    assert.equal(mergeJobAttributes(textOf(''), { 'tab_recap.job': 'judge' }), 'tab_recap.job=judge');
-    assert.equal(mergeJobAttributes(textOf(',,a=b,,'), { 'tab_recap.job': 'judge' }), 'a=b,tab_recap.job=judge');
-    assert.equal(mergeJobAttributes(textOf('x=a=b,broken,, =v, tab_recap.job =old,z=3'), { 'tab_recap.job': 'judge' }), 'x=a=b,broken, =v,z=3,tab_recap.job=judge');
-    assert.equal(mergeJobAttributes(textOf('tab_recap.job-other=x, tab_recap.job=old'), { 'tab_recap.job': 'judge' }), 'tab_recap.job-other=x,tab_recap.job=judge');
+    assert.equal(mergeJobAttributes(undefined, { 'harness.job': 'judge' }), 'harness.job=judge');
+    assert.equal(mergeJobAttributes(textOf(''), { 'harness.job': 'judge' }), 'harness.job=judge');
+    assert.equal(mergeJobAttributes(textOf(',,a=b,,'), { 'harness.job': 'judge' }), 'a=b,harness.job=judge');
+    assert.equal(mergeJobAttributes(textOf('x=a=b,broken,, =v, harness.job =old,z=3'), { 'harness.job': 'judge' }), 'x=a=b,broken, =v,z=3,harness.job=judge');
+    assert.equal(mergeJobAttributes(textOf('harness.job-other=x, harness.job=old'), { 'harness.job': 'judge' }), 'harness.job-other=x,harness.job=judge');
 });
 
 test('tagging off returns the scrubbed environment and leaves the parent unchanged', () => {
@@ -26,7 +26,7 @@ test('tagging off returns the scrubbed environment and leaves the parent unchang
     const saved = [...probes, 'OTEL_RESOURCE_ATTRIBUTES'].map((key) => [key, process.env[key]] as const);
     try {
         for (const key of probes) { process.env[key] = 'probe'; }
-        process.env['OTEL_RESOURCE_ATTRIBUTES'] = 'service.name=parent,tab_recap.job=parent';
+        process.env['OTEL_RESOURCE_ATTRIBUTES'] = 'service.name=parent,harness.job=parent';
         const before = { ...process.env };
         const expected = scrubEnvironment(process.env, SCRUBBED_ENV_NAMES);
         assert.equal(probes.every((key) => expected[key] === undefined), true);
@@ -41,9 +41,9 @@ test('tagging off returns the scrubbed environment and leaves the parent unchang
 test('tagging on leaves the parent environment unchanged', () => {
     const inherited = process.env['OTEL_RESOURCE_ATTRIBUTES'];
     try {
-        process.env['OTEL_RESOURCE_ATTRIBUTES'] = 'service.name=parent,tab_recap.job=parent';
+        process.env['OTEL_RESOURCE_ATTRIBUTES'] = 'service.name=parent,harness.job=parent';
         const before = { ...process.env };
-        assert.equal(scrubbedEnv('judge')['OTEL_RESOURCE_ATTRIBUTES'], 'service.name=parent,tab_recap.job=judge');
+        assert.equal(scrubbedEnv('judge')['OTEL_RESOURCE_ATTRIBUTES'], 'service.name=parent,harness.job=judge');
         assert.deepEqual({ ...process.env }, before);
     } finally {
         if (inherited === undefined) { delete process.env['OTEL_RESOURCE_ATTRIBUTES']; } else { process.env['OTEL_RESOURCE_ATTRIBUTES'] = inherited; }
@@ -60,7 +60,7 @@ test('the tagged library harnesses add the job resource attribute to the environ
         const env = each.options.env;
         return env?.kind === 'inherit' && env.transform !== undefined ? env.transform({ OTEL_RESOURCE_ATTRIBUTES: 'service.name=parent' })['OTEL_RESOURCE_ATTRIBUTES'] : undefined;
     });
-    assert.deepEqual(seen, ['service.name=parent,tab_recap.job=recap-writer', 'service.name=parent,tab_recap.job=judge', 'service.name=parent,tab_recap.job=curator']);
+    assert.deepEqual(seen, ['service.name=parent,harness.job=recap-writer', 'service.name=parent,harness.job=judge', 'service.name=parent,harness.job=curator']);
 });
 
 test('a serializer TypeError is logged once and leaves the job environment untagged', () => {
@@ -82,7 +82,7 @@ const scrubSource = (): NodeJS.ProcessEnv => ({
     TAB_RECAP_X: '1',
     [SCRUBBED_ENV_NAMES[0] ?? 'NONE']: '1',
     KEEP: '1',
-    OTEL_RESOURCE_ATTRIBUTES: 'service.name=p, tab_recap.job =old',
+    OTEL_RESOURCE_ATTRIBUTES: 'service.name=p, harness.job =old',
 });
 
 const captureStderr = (action: () => void): string[] => {
@@ -101,7 +101,7 @@ test('scrubbing runs before tagging and the source is left unchanged', () => {
     const source = scrubSource();
     const before = { ...source };
     const tagged = scrubbedFrom(source, 'judge');
-    assert.deepEqual(tagged, { ...scrubEnvironment(source, SCRUBBED_ENV_NAMES), OTEL_RESOURCE_ATTRIBUTES: 'service.name=p,tab_recap.job=judge' });
+    assert.deepEqual(tagged, { ...scrubEnvironment(source, SCRUBBED_ENV_NAMES), OTEL_RESOURCE_ATTRIBUTES: 'service.name=p,harness.job=judge' });
     assert.deepEqual(source, before);
 });
 
@@ -110,7 +110,7 @@ test('the job tag guard runs after scrubbing and keeps the scrubbed environment 
     let env: NodeJS.ProcessEnv = {};
     const lines = captureStderr(() => { env = scrubbedFrom(source, 'bad' as JobTag); });
     assert.deepEqual(env, scrubEnvironment(source, SCRUBBED_ENV_NAMES));
-    assert.equal(env['OTEL_RESOURCE_ATTRIBUTES'], 'service.name=p, tab_recap.job =old');
+    assert.equal(env['OTEL_RESOURCE_ATTRIBUTES'], 'service.name=p, harness.job =old');
     assert.equal(lines.length, 1);
 });
 
@@ -119,17 +119,17 @@ const baseKeyOf = (entry: string): string | null => {
     return equals < 0 ? null : entry.slice(0, equals).trim();
 };
 const baseMerge = (inherited: string | undefined, tag: JobTag): string => {
-    const kept = (inherited?.split(',') ?? []).filter((entry) => entry.length > 0 && baseKeyOf(entry) !== 'tab_recap.job');
-    return [...kept, `tab_recap.job=${encodeURIComponent(tag)}`].join(',');
+    const kept = (inherited?.split(',') ?? []).filter((entry) => entry.length > 0 && baseKeyOf(entry) !== 'harness.job');
+    return [...kept, `harness.job=${encodeURIComponent(tag)}`].join(',');
 };
 
 test('the merge matches the previous local merge for every tag and inherited value', () => {
-    const inheritedValues: (string | undefined)[] = [undefined, '', ',,a=b,,', 'x=a=b,broken,, =v, tab_recap.job =old,z=3', 'tab_recap.job-other=x, tab_recap.job=old', 'tab_recap.job', '=x', ' , ', 'a=1,tab_recap.job=x,tab_recap.job=y', 'a=%2C'];
+    const inheritedValues: (string | undefined)[] = [undefined, '', ',,a=b,,', 'x=a=b,broken,, =v, harness.job =old,z=3', 'harness.job-other=x, harness.job=old', 'harness.job', '=x', ' , ', 'a=1,harness.job=x,harness.job=y', 'a=%2C', 'tab_recap.job=old', 'harness.job =old,a=1'];
     for (const tag of JOB_TAGS) {
         for (const inherited of inheritedValues) {
             const expected = baseMerge(inherited, tag);
             const text: Text | undefined = inherited === undefined ? undefined : textOf(inherited);
-            assert.equal(mergeJobAttributes(text, { 'tab_recap.job': tag }), expected);
+            assert.equal(mergeJobAttributes(text, { 'harness.job': tag }), expected);
             const env = inherited === undefined ? {} : { OTEL_RESOURCE_ATTRIBUTES: inherited };
             assert.equal(scrubbedFrom(env, tag)['OTEL_RESOURCE_ATTRIBUTES'], expected);
         }

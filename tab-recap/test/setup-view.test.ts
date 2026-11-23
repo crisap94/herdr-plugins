@@ -77,7 +77,7 @@ test('a locked row names its variable; the recap writer row shows harness · mod
 test('the telemetry setting shows its choices and environment lock', () => {
     const choices = setupLines({ ...base, row: countOf(18), editing: { kind: 'choice', at: countOf(1) } }, catalogFor(en.locale), countOf(100)).join('\n');
     assert.ok(choices.includes('Job telemetry tags'));
-    assert.ok(choices.includes('on — add the tab_recap.job resource attribute'));
+    assert.ok(choices.includes('on — add the harness.job resource attribute'));
     assert.ok(choices.includes('off — do not add a job attribute'));
     const locked = { ...base, row: countOf(18), locks: { telemetryTags: environmentName(textOf('TAB_RECAP_TELEMETRY_TAGS')) } };
     assert.ok(setupLines(locked, catalogFor(en.locale), countOf(100)).join('\n').includes('read-only: TAB_RECAP_TELEMETRY_TAGS'));

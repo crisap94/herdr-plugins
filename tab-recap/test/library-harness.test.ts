@@ -116,7 +116,7 @@ test('opencode: does not persist because its ephemeral cell is emulated, always 
     assert.equal(first.options.persist, false);
     assert.equal(first.request.effort, 'harness-default');
     assert.equal(first.request.model, 'opencode/big-pickle');
-    assert.equal(transformOf(first)({})['OTEL_RESOURCE_ATTRIBUTES'], 'tab_recap.job=judge');
+    assert.equal(transformOf(first)({})['OTEL_RESOURCE_ATTRIBUTES'], 'harness.job=judge');
 });
 
 test('the result surfaces the confinement cells: an emulated, an unmeasured and a supported one with their axis and state', async () => {
@@ -156,7 +156,7 @@ test('the environment transform: no HERDR_ or TAB_RECAP_ names, no nested-agent 
     await libraryHarness(runtime, 'claude', 1000, 'recap-writer', true).run(call, settings);
     const seen = transformOf(firstCall(runtime))({ HERDR_PANE: 'p', TAB_RECAP_STATE: 's', CLAUDECODE: '1', CLAUDE_CODE_ENTRYPOINT: 'cli', PATH: '/bin', OTEL_RESOURCE_ATTRIBUTES: 'a=b' });
     assert.deepEqual(Object.keys(seen).toSorted(), ['OTEL_RESOURCE_ATTRIBUTES', 'PATH']);
-    assert.equal(seen['OTEL_RESOURCE_ATTRIBUTES'], 'a=b,tab_recap.job=recap-writer');
+    assert.equal(seen['OTEL_RESOURCE_ATTRIBUTES'], 'a=b,harness.job=recap-writer');
 });
 
 test('a timeout is Unknown timeout with the run\'s own time', async () => {

@@ -40,7 +40,7 @@ export const english: Catalog = {
         uiChoices: { auto: must(parseText('auto (from your locale)')), en: must(parseText('English')), es: must(parseText('Español')) },
         gitNoteChoices: { on: must(parseText('on — branch, unpushed and changed files under each agent')), off: must(parseText('off')) },
         herdrEventsChoices: { on: must(parseText('on — lanes shared on herdr: tokens, events, compaction requests answered')), off: must(parseText('off')) },
-        telemetryTagsChoices: { on: must(parseText('on — add the tab_recap.job resource attribute to Claude and Codex jobs')), off: must(parseText('off — do not add a job attribute')) },
+        telemetryTagsChoices: { on: must(parseText('on — add the harness.job resource attribute to Claude, Codex and OpenCode jobs')), off: must(parseText('off — do not add a job attribute')) },
         herdrEventsHint: must(parseText('other tools read a lane\'s tokens and ask for compactions through herdr; off writes nothing')),
         effortChoices: { low: must(parseText('low — a short rewrite needs no deliberation (cheapest)')), medium: must(parseText('medium')), high: must(parseText('high')), default: must(parseText("the agent's own setting (nothing is passed)")) },
         recapLanguageHint: must(parseText('ui (as the interface) · en · es · or a language name')),
