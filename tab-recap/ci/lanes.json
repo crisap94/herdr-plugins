@@ -52,7 +52,6 @@
       "src/ports/session-identity.ts",
       "src/ports/session-source.ts",
       "src/ports/tab-views.ts",
-      "src/ports/twins/runs/legacy.ts",
       "src/ports/verdicts.ts",
       "src/ports/worksite-reader.ts",
       "src/ports/workspace-tokens.ts",
@@ -381,6 +380,7 @@
       "test/roll-active-install.test.ts",
       "test/roll.test.ts",
       "test/run-ids.test.ts",
+      "test/run-process.test.ts",
       "test/screen-reading.test.ts",
       "test/session-facts.test.ts",
       "test/setup-view.test.ts",
@@ -864,7 +864,6 @@
       "test/recap-prompt.test.ts",
       "test/rubric.test.ts",
       "test/rubric.ts",
-      "test/run-process.test.ts",
       "test/support/frames.ts"
     ],
     "B7": [

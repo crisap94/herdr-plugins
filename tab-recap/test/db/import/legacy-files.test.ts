@@ -50,7 +50,7 @@ test('damaged sections read as null, half-damaged ones keep what is text; pendin
         assert.equal(legacy.recaps().find((recap) => recap.tab === 'bad')?.tasks.at(0)?.sections, null);
         assert.deepEqual(legacy.recaps().find((recap) => recap.tab === 'half')?.tasks.at(0)?.sections, { goal: '', now: ['a'], needs: [], done: [], decisions: [], next: [], links: [], rules: [] });
         assert.equal(legacy.recaps().length, 2, 'a file that is not JSON is not a recap');
-        assert.deepEqual([legacy.pendingRequests(), legacy.pendingVisibility()], [['w1:t1'], [{ target: 'w1:t1', hidden: false }]]);
+        assert.deepEqual([legacy.pendingRequests(), legacy.pendingVisibility()], [['w1:t1'], [{ target: 'w1:t1', visibility: 'shown' }]]);
         assert.deepEqual(legacy.pendingRequests(), ['w1:t1'], 'still there');
         put(dir, '', 'hidden.json', '{"all":"yes","hidden":[1,"w1:t5"],"shown":null}');
         assert.deepEqual(legacy.readHidden(), hiddenStateOf({ all: false, hidden: ['w1:t5'], shown: [] }));

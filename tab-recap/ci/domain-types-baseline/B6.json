@@ -58,13 +58,7 @@
     "parameter": 5,
     "return": 3
   },
-  "src/adapters/os/process/control-posix.ts": {
-    "parameter": 3,
-    "container": 1
-  },
   "src/adapters/os/process/core.ts": {
-    "parameter": 6,
-    "container": 1,
     "property": 1
   },
   "src/adapters/os/terminal-style.ts": {

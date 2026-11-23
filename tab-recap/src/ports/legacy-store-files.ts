@@ -5,9 +5,9 @@ import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import { parseTextOrNull, textOf, type Text } from '#src/recap/domain/text.ts';
 import { recapRunningOf, type LaneCursor, type TabRecap } from '#src/ports/recap-records.ts';
 import { cursorOf as positionOf, sourcePathOf } from '#src/ports/transcripts.ts';
-import type { VisibilityRequest } from '#src/ports/requests.ts';
+import type { VisibilityAsk } from '#src/ports/requests.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId, uncheckedPaneId } from '#src/recap/domain/ids.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
@@ -172,11 +172,12 @@ export function parseLegacyHidden(input: unknown): Result<HiddenState, ParseFail
     });
 }
 
-export function parseLegacyVisibility(input: unknown): Result<VisibilityRequest, ParseFailure> {
+export function parseLegacyVisibility(input: unknown): Result<VisibilityAsk, ParseFailure> {
     if (!isRow(input)) return err({ kind: 'not-a-row' });
     if (typeof input.target !== 'string') return err({ kind: 'not-a-string' });
     if (input.target === '') return err({ kind: 'empty' });
-    if (input.hidden === 'toggle') return ok({ target: input.target, hidden: 'toggle' });
+    const target = uncheckedPaneId(input.target);
+    if (input.hidden === 'toggle') return ok({ target, visibility: 'toggle' });
     if (typeof input.hidden !== 'boolean') return err({ kind: 'out-of-range' });
-    return ok({ target: input.target, hidden: input.hidden });
+    return ok({ target, visibility: input.hidden ? 'hidden' : 'shown' });
 }

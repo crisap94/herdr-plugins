@@ -1,4 +1,4 @@
-import type { ProcessControl, Runner } from '#src/ports/process-control.ts';
+import type { ProcessPort, ProcessRunner } from '#src/ports/process-control.ts';
 import { JOB_HARNESSES, jobEnvironmentNames } from '#src/recap/domain/backend.ts';
 import type { EnvironmentName } from '#src/recap/domain/backend.ts';
 import { JOB_ATTRIBUTE_KEY } from '#src/recap/domain/job-tag.ts';
@@ -8,14 +8,14 @@ import { parseText } from '#src/recap/domain/text.ts';
 import { type JobAttributesRecord, mergeJobAttributes } from './attributes.ts';
 import { posixProcess } from './control-posix.ts';
 
-export type { Runner, RunOptions, RunResult } from '#src/ports/process-control.ts';
+export type { ProcessRunner, ProcessOptions, ProcessOutcome } from '#src/ports/process-control.ts';
 export { serializeJobAttributes, type JobAttributesRecord } from './attributes.ts';
 export { mergeJobAttributes } from './attributes.ts';
 export { KILL_AFTER_MS } from './core.ts';
 
-export const hostProcess: ProcessControl = posixProcess();
+export const hostProcess: ProcessPort = posixProcess();
 
-export const run: Runner = hostProcess.run;
+export const run: ProcessRunner = hostProcess.run;
 
 export const SCRUBBED_ENV_NAMES = jobEnvironmentNames(JOB_HARNESSES);
 

@@ -4,6 +4,9 @@ import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import type { Spawner } from '#src/adapters/os/process/core.ts';
 import { posixProcess } from '#src/adapters/os/process/control-posix.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
+import { textOf } from '#src/recap/domain/text.ts';
+import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
 
 interface Call { readonly command: string; readonly args: readonly string[]; readonly options: Record<string, unknown> }
 type Fake = EventEmitter & { stdout: PassThrough; stderr: PassThrough };
@@ -26,18 +29,18 @@ function fakeSpawner(): { spawner: Spawner; calls: Call[]; program: () => Fake }
 
 test('posix: output and the exit code come through', async () => {
     const { spawner, program } = fakeSpawner();
-    const pending = posixProcess(spawner).run('git', [], { input: '', timeoutMs: 5000, cwd: '.', env: {} });
+    const pending = posixProcess(spawner).run(fsPathOf('git'), [], { input: textOf(''), timeoutMs: uncheckedMilliseconds(5000), cwd: fsPathOf('.'), env: {} });
     const child = program();
     child.stdout.write('hello');
     child.stderr.write('warn');
     await new Promise((resolve) => { setTimeout(resolve, 10); });
     child.emit('close', 3);
-    assert.deepEqual(await pending, { code: 3, stdout: 'hello', stderr: 'warn', timedOut: false });
+    assert.deepEqual(await pending, { code: 3, stdout: 'hello', stderr: 'warn', ending: 'finished' });
 });
 
 test('posix: the program runs detached, in its own process group', async () => {
     const { spawner, calls, program } = fakeSpawner();
-    const pending = posixProcess(spawner).run('git', [], { input: '', timeoutMs: 5000, cwd: '.', env: {} });
+    const pending = posixProcess(spawner).run(fsPathOf('git'), [], { input: textOf(''), timeoutMs: uncheckedMilliseconds(5000), cwd: fsPathOf('.'), env: {} });
     program().emit('close', 0);
     await pending;
     assert.deepEqual(calls.at(0)?.options['detached'], true);
