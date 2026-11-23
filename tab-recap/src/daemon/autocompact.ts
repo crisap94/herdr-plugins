@@ -24,7 +24,7 @@ import type { Store } from '#src/adapters/db/database.ts';
 import { refreshVia } from './refresh-status.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { awaitingOf } from '#src/recap/domain/coordination.ts';
-import { readPaneTokens } from '#src/adapters/herdr/fleet.ts';
+import { readPaneTokens } from '#src/adapters/herdr/snapshot-reading.ts';
 import { loadSettings, type Settings } from './config.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { TranscriptInFlight } from '#src/adapters/transcripts/in-flight.ts';

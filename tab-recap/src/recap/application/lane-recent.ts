@@ -1,6 +1,6 @@
 import { textOf } from '#src/recap/domain/text.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { sessionId } from '#src/recap/domain/ids.ts';
+import { sessionId, type PaneId, type SessionId } from '#src/recap/domain/ids.ts';
 import { UNREAD, type Entry, type Mark } from '#src/ports/transcripts.ts';
 import { isUnknown, type Unknown } from '#src/ports/unknowable.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
@@ -8,7 +8,7 @@ import { countOf } from '#src/recap/domain/count.ts';
 
 const TAIL_BYTES = countOf(256 * 1024);
 
-export type CurrentSession = (pane: string) => Promise<string | null | Unknown>;
+export type CurrentSession = (pane: PaneId) => Promise<SessionId | null | Unknown>;
 
 interface RecentTail {
     readonly entries: readonly Entry[];
@@ -25,7 +25,7 @@ export class LaneRecent {
     }
 
     private async now(lane: Lane): Promise<Lane> {
-        const current = await this.session(String(lane.pane));
+        const current = await this.session(lane.pane);
         return typeof current === 'string' ? { ...lane, session: sessionId(textOf(current)) } : lane;
     }
 

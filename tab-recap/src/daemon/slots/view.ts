@@ -54,7 +54,7 @@ const compactFor = async (context: ViewContext): Promise<CompactStart> => {
     const text = await import('#src/recap/domain/text.ts');
     return {
         askNote(tab: TabId, pane: PaneId | null): Promise<Done> {
-            return new herdr.HerdrFleet(text.textOf(context.root)).agents().askNote(tab, pane);
+            return new herdr.HerdrFleetPorts(text.textOf(context.root)).agents().askNote(tab, pane);
         },
         queue(request): Done {
             context.store.requests.requestCompact(request);
@@ -70,7 +70,7 @@ const intentsFor = async (context: ViewContext): Promise<IntentSink> => {
     const config = await import('../config.ts');
     return intents.runIntent({
         observe: context.observe,
-        show: (tab: TabId): Promise<Done> => new herdr.HerdrFleet(text.textOf(context.root)).show(tab),
+        show: (tab: TabId): Promise<Done> => new herdr.HerdrFleetPorts(text.textOf(context.root)).show(tab),
         compact: await compactFor(context),
         compactNote: () => config.loadSettings().compactNote,
         launch: await launcherFor(context),

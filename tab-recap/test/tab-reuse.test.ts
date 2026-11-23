@@ -3,7 +3,7 @@ import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Store } from '#src/adapters/db/database.ts';
-import { reconciliationOf } from '#src/adapters/herdr/json.ts';
+import { reconciliationOf } from '#src/adapters/herdr/snapshot-reading.ts';
 import { LaneDispatch } from '#src/recap/application/dispatch.ts';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';

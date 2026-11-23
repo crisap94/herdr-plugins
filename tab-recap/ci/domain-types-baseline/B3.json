@@ -74,10 +74,6 @@
   "src/recap/application/lane-facts.ts": {
     "parameter": 1
   },
-  "src/recap/application/lane-recent.ts": {
-    "parameter": 1,
-    "container": 1
-  },
   "src/recap/application/lane-tokens.ts": {
     "parameter": 4,
     "return": 1,

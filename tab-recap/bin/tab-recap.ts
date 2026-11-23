@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import type { RequestPort } from '#src/ports/requests.ts';
-import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
+import { HerdrFleetPorts } from '#src/adapters/herdr/fleet.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
@@ -133,7 +133,7 @@ function status(): number {
 async function configure(): Promise<number> {
     const tab = currentTab();
     await sleep(Number(process.env['TAB_RECAP_OPEN_DELAY_MS'] ?? 0) || 0);
-    const opened = await new HerdrFleet(textOf(stateDirectory())).setup(tab === null ? null : tabId(textOf(tab)));
+    const opened = await new HerdrFleetPorts(textOf(stateDirectory())).setup(tab === null ? null : tabId(textOf(tab)));
     if (isUnknown(opened)) {
         console.error(`tab-recap: 1 — ${m().cli.modalFailed(saying(opened.why))}`);
         return FAILED;
@@ -184,7 +184,7 @@ async function show(): Promise<number> {
         console.error(`tab-recap: 3 — ${m().cli.tabUnknown}`);
         return NOT_COVERED;
     }
-    const shown = await new HerdrFleet(textOf(stateDirectory())).show(tabId(textOf(tab)));
+    const shown = await new HerdrFleetPorts(textOf(stateDirectory())).show(tabId(textOf(tab)));
     if (isUnknown(shown)) {
         console.error(`tab-recap: 1 — ${m().cli.modalFailed(saying(shown.why))}`);
         return FAILED;

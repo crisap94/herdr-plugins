@@ -15,6 +15,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { registryWith } from './transcript-registry.ts';
 import { agentKind } from '#test/support/ids.ts';
+import { sessionId, type SessionId } from '#src/recap/domain/ids.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { seenLane } from '#test/support/seen.ts';
@@ -103,11 +104,11 @@ export function registryOf(world: World): ReturnType<typeof registryWith> {
 }
 
 export function sessionOf(world: World): CurrentSession {
-    return async (): Promise<string | null | Unknown> => {
+    return async (): Promise<SessionId | null | Unknown> => {
         if (world.faults.session) {
             throw new Error('session failed');
         }
-        return world.session;
+        return typeof world.session === 'string' ? sessionId(textOf(world.session)) : world.session;
     };
 }
 

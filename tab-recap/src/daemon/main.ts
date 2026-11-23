@@ -4,7 +4,7 @@ import { daemonTranscriptRegistry } from '#src/adapters/transcripts/registry.ts'
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import { GitLaneRepo } from '#src/adapters/git/lane-repo.ts';
-import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
+import { HerdrFleetPorts } from '#src/adapters/herdr/fleet.ts';
 import { frontendFor } from '#src/adapters/frontend.ts';
 import type { FlushTab, Frontend } from '#src/ports/frontend.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
@@ -191,7 +191,7 @@ async function boot(root: Directory, pidfile: Pidfile): Promise<Wired | ExitCode
     }
     pidfile.claim(process.pid, codeVersion());
     pidfile.beat();
-    const frontend = frontendFor(() => new HerdrFleet(textOf(root)));
+    const frontend = frontendFor(() => new HerdrFleetPorts(textOf(root)));
     const opened = await openStateAt(root, frontend.fleet, log);
     if (opened === null) {
         pidfile.release(process.pid);

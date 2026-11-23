@@ -4,13 +4,15 @@ import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { usePlugin, useAdmin } from './client.ts';
 import { subscribeTopics } from './subscriptions.ts';
 import { agentPanesIn, columnsIn, deadColumnsIn, parseOptionalPaneId } from './column-panes.ts';
-import { parseJsonList, parseJsonRect, parseJsonText, reconciliationOf } from './json.ts';
+import { parseJsonList, parseJsonRect, parseJsonText } from './json.ts';
+import { paneTokensOf, readPaneTokens, reconciliationOf } from './snapshot-reading.ts';
 import { parseJson, type JsonObject } from './json-object.ts';
 import { refusalOfTokens } from './token-refusal.ts';
+import { HerdrAgentPanes, herdrWire } from './agents.ts';
 import { OWNERS } from '#src/recap/domain/token-registry.ts';
-import { parseAgentKind, parseTabId, uncheckedPaneId, uncheckedRatio, uncheckedTokenName, uncheckedTokenValue, uncheckedWorkspaceId, type PaneId, type TabId, type WorkspaceId } from '#src/recap/domain/ids.ts';
+import { parseAgentKind, parseTabId, uncheckedPaneId, uncheckedRatio, uncheckedWorkspaceId, type PaneId, type TabId, type WorkspaceId } from '#src/recap/domain/ids.ts';
 import type { Probability } from '#src/recap/domain/probability.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { countOf, parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import type { Milliseconds } from '#src/recap/domain/time.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
@@ -19,9 +21,9 @@ import { parseTokenName, type TokenName } from '#src/protocol/primitives.ts';
 import { EVENT_TOKEN } from '#src/recap/domain/event-token.ts';
 import { must } from '#src/protocol/result.ts';
 import { unknown, exitCodeOf } from '#src/ports/unknowable.ts';
+import type { ScreenOutcome, ScreenReader } from '#src/ports/screens.ts';
 import type { ColumnLayoutResult, ClosedEvery, ColumnPanes, Done, OpenResult, ResizeDirection } from '#src/ports/columns.ts';
-import { paneTokenMapOf } from '#src/recap/application/decode.ts';
-import type { FleetFeed, FleetFrame, FleetPaneTokens, FleetSnapshotResult, FleetStreamResult, FleetTopic } from '#src/ports/fleet-source.ts';
+import type { FleetFeed, FleetFrame, FleetSnapshotResult, FleetStreamResult, FleetTopic } from '#src/ports/fleet-source.ts';
 import type { HarnessDirectory, HarnessList } from '#src/ports/harnesses.ts';
 import type { LaneTokenMap, LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import type { ModalHost, SetupOpened } from '#src/ports/modal.ts';
@@ -30,7 +32,6 @@ import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import type { WorkspaceList, WorkspaceTokenMap, WorkspaceTokenReporter } from '#src/ports/workspace-tokens.ts';
 
 export { BAR_TITLE, COLUMN_TITLE } from './column-panes.ts';
-export { HerdrFleet, readPaneSession } from './legacy.ts';
 export const PLUGIN_ID = 'tab-recap';
 export const COLUMN_ENTRYPOINT = 'column';
 export const SETUP_ENTRYPOINT = 'setup';
@@ -41,11 +42,6 @@ const RESIZE = must(parseText('resize'));
 const CLOSE = must(parseText('close'));
 
 const parseOptionalTabId = (input: unknown): TabId | null => { const found = parseTabId(input); return found.kind === 'ok' ? found.value : null; };
-
-export const paneTokensOf = (snapshot: JsonObject): ReadonlyMap<PaneId, FleetPaneTokens> => new Map(parseJsonList(snapshot['panes']).flatMap((pane) => {
-    const found = paneTokenMapOf(pane);
-    return found === null ? [] : [[found.pane, new Map([...found.tokens].map(([name, value]) => [uncheckedTokenName(name), uncheckedTokenValue(value)] as const))] as const];
-}));
 
 const frameOf = (frame: DecodedFrame): FleetFrame => ({
     event: must(parseText(frame.event)),
@@ -60,22 +56,15 @@ export function pumpFrames<T>(live: EventSubscription, queue: AsyncQueue<T>, toI
     })().catch(() => undefined).finally(() => { queue.end(); });
 }
 
-const paneInfoOf = async (pane: PaneId): Promise<JsonObject> => parseJson(parseJson(await usePlugin((client) => client.call('pane.get', { pane_id: pane })))['pane']);
-
-export async function readPaneTokens(pane: PaneId): Promise<PaneTokensResult> {
-    try {
-        const tokens = parseJson((await paneInfoOf(pane))['tokens']);
-        return { kind: 'tokens', tokens: new Map(Object.entries(tokens).flatMap(([name, raw]) => (typeof raw === 'string' ? [[must(parseText(name)), must(parseText(raw))] as const] : []))) };
-    } catch (error) {
-        return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
-    }
-}
-
-export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, HarnessDirectory, NotifierPort, LaneTokenReporter, PaneTokens, WorkspaceTokenReporter {
+export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, HarnessDirectory, NotifierPort, LaneTokenReporter, PaneTokens, ScreenReader, WorkspaceTokenReporter {
     private readonly stateDir: Text;
 
     constructor(stateDir: Text) {
         this.stateDir = stateDir;
+    }
+
+    agents(): HerdrAgentPanes {
+        return new HerdrAgentPanes(herdrWire, { id: must(parseText(PLUGIN_ID)), stateDir: this.stateDir });
     }
 
     async rawSnapshot(): Promise<JsonObject> {
@@ -183,6 +172,17 @@ export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, Harne
                     return found.kind === 'ok' ? [found.value] : [];
                 });
             return { kind: 'available', ids };
+        } catch (error) {
+            return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
+        }
+    }
+
+    async readScreen(pane: PaneId, lines: Count): Promise<ScreenOutcome> {
+        try {
+            const fields = parseJson(parseJson(await usePlugin((client) => client.call('pane.read', { pane_id: pane, source: 'recent_unwrapped', lines, format: 'text' })))['read']);
+            return typeof fields['text'] === 'string'
+                ? { kind: 'screen', text: textOf(fields['text']), revision: countOf(typeof fields['revision'] === 'number' ? fields['revision'] : 0), truncated: fields['truncated'] === true ? 'present' : 'absent' }
+                : unknown({ why: 'unreadable', detail: causeOf(must(parseText(`pane.read of ${pane} returned no text`))) });
         } catch (error) {
             return unknown({ why: 'unreachable', detail: causeOf(must(parseText(error instanceof Error ? error.message : String(error)))) });
         }

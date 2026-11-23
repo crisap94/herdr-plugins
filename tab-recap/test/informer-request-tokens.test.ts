@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import { fleetFrame } from '#test/support/frames.ts';
 import assert from 'node:assert/strict';
-import { paneTokensOf } from '#src/adapters/herdr/fleet.ts';
+import { paneTokensOf } from '#src/adapters/herdr/snapshot-reading.ts';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { CompactRequestQueue } from '#src/recap/application/compact-requests.ts';
