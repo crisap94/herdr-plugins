@@ -13,7 +13,7 @@ import type { CurrentSession } from './lane-recent.ts';
 import type { Ready } from './handoff-target.ts';
 import { HANDOFF_OBSERVATIONS, HANDOFF_OBSERVE_MS, HANDOFF_PREFIX_CODE_POINTS, HANDOFF_PROMPT_TAIL_BYTES } from './handoff-limits.ts';
 
-export type Before = { readonly kind: 'prompt'; readonly text: string | null } | { readonly kind: 'none' };
+export type Before = { readonly kind: 'prompt'; readonly text: Text | null } | { readonly kind: 'none' };
 
 export interface Baseline {
     readonly lane: Lane;
@@ -21,12 +21,12 @@ export interface Baseline {
 }
 
 interface TranscriptBefore {
-    readonly before: string | null;
+    readonly before: Text | null;
 }
 
 interface Evidence {
     readonly transcript: TranscriptBefore | null;
-    readonly status: boolean;
+    readonly status: StatusWatch;
 }
 
 interface LatestOf {
@@ -36,10 +36,14 @@ interface LatestOf {
 
 interface Observed {
     readonly lane: Lane;
-    readonly confirmed: boolean;
+    readonly confirmed: Confirmation;
 }
 
-type Latest = { readonly kind: 'prompt'; readonly text: string | null } | { readonly kind: 'unreadable' };
+type StatusWatch = 'watched' | 'unwatched';
+
+type Confirmation = 'confirmed' | 'pending';
+
+type Latest = { readonly kind: 'prompt'; readonly text: Text | null } | { readonly kind: 'unreadable' };
 
 export interface ConfirmationDeps {
     readonly agents: Pick<AgentPanes, 'status'>;
@@ -49,20 +53,20 @@ export interface ConfirmationDeps {
     readonly log: (line: Text) => void;
 }
 
-const prefixOf = (text: string): string => collapsedText(textOf(Array.from(text).slice(0, HANDOFF_PREFIX_CODE_POINTS).join('')), 'space');
+const prefixOf = (text: Text): Text => collapsedText(textOf(Array.from(text).slice(0, HANDOFF_PREFIX_CODE_POINTS).join('')), 'space');
 
 function evidenceOf(plan: HandoffEvidence, before: Before): Evidence {
     if (before.kind === 'none') {
-        return { transcript: null, status: true };
+        return { transcript: null, status: 'watched' };
     }
     const transcript = { before: before.text };
     switch (plan) {
         case 'transcript':
-            return { transcript, status: false };
+            return { transcript, status: 'unwatched' };
         case 'status':
-            return { transcript: null, status: true };
+            return { transcript: null, status: 'watched' };
         case 'either':
-            return { transcript, status: true };
+            return { transcript, status: 'watched' };
         default: {
             const exhaustive: never = plan;
             return exhaustive;
@@ -101,25 +105,25 @@ export class HandoffConfirmation {
         return { lane: read.lane, before: read.latest.kind === 'prompt' ? { kind: 'prompt', text: read.latest.text } : { kind: 'none' } };
     }
 
-    private async observe(lane: Lane, evidence: Evidence, prefix: string): Promise<Observed> {
+    private async observe(lane: Lane, evidence: Evidence, prefix: Text): Promise<Observed> {
         let current = lane;
         if (evidence.transcript !== null) {
             const read = await this.latestOf(lane);
             current = read.lane;
-            if (read.latest.kind === 'prompt' && read.latest.text !== null && read.latest.text !== evidence.transcript.before && collapsedText(textOf(read.latest.text), 'space').startsWith(prefix)) {
-                return { lane: current, confirmed: true };
+            if (read.latest.kind === 'prompt' && read.latest.text !== null && read.latest.text !== evidence.transcript.before && collapsedText(read.latest.text, 'space').startsWith(prefix)) {
+                return { lane: current, confirmed: 'confirmed' };
             }
         }
-        if (evidence.status) {
+        if (evidence.status === 'watched') {
             const state = await this.deps.agents.status(lane.pane);
             if (state.kind === 'agent' && state.status === 'working') {
-                return { lane: current, confirmed: true };
+                return { lane: current, confirmed: 'confirmed' };
             }
         }
-        return { lane: current, confirmed: false };
+        return { lane: current, confirmed: 'pending' };
     }
 
-    async confirm(target: Ready, baseline: Baseline, text: string): Promise<HandoffOutcome> {
+    async confirm(target: Ready, baseline: Baseline, text: Text): Promise<HandoffOutcome> {
         const evidence = evidenceOf(target.plan.evidence, baseline.before);
         const prefix = prefixOf(text);
         let lane = baseline.lane;
@@ -128,7 +132,7 @@ export class HandoffConfirmation {
             try {
                 const seen = await this.observe(lane, evidence, prefix);
                 lane = seen.lane;
-                if (seen.confirmed) {
+                if (seen.confirmed === 'confirmed') {
                     return { kind: 'delivered' };
                 }
             } catch (error) {

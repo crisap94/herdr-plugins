@@ -1,6 +1,8 @@
-import { textOf } from '#src/recap/domain/text.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+import type { Pid } from '#src/recap/domain/pid.ts';
+import { duration, type Duration, type Instant } from '#src/recap/domain/time.ts';
 import type { HandoffAnswerRecord, HandoffAnswerStore } from '#src/ports/handoff-answers.ts';
-import type { HandoffAsker } from '#src/ports/requests.ts';
+import type { HandoffAsker, RefreshFirst } from '#src/ports/requests.ts';
 import type { TabViewStore } from '#src/ports/tab-views.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
@@ -15,19 +17,19 @@ type Refresh = 'requested' | 'skipped';
 export interface DeliverRequest {
     readonly from: PaneId;
     readonly to: PaneId;
-    readonly note: string | null;
-    readonly refresh: boolean;
+    readonly note: Text | null;
+    readonly refresh: RefreshFirst;
     readonly closed: ClosedLaneIdentity | null;
 }
 
 export interface Pacing {
-    now(): number;
-    sleep(ms: number): Promise<void>;
+    now(): Instant;
+    sleep(span: Duration): Promise<void>;
 }
 
 export interface DaemonReading {
-    readonly pid: number | null;
-    readonly version: string | null;
+    readonly pid: Pid | null;
+    readonly version: Text | null;
 }
 
 export interface HandoffStore {
@@ -40,7 +42,7 @@ export interface HandoffStore {
 export interface DeliverDeps {
     readonly pacing: Pacing;
     readonly daemon: () => DaemonReading;
-    readonly cliVersion: string | null;
+    readonly cliVersion: Text | null;
     readonly openStore: () => HandoffStore;
 }
 
@@ -53,8 +55,8 @@ function outcomeOf(answer: HandoffAnswerRecord): HandoffOutcome {
     return parsed.kind === 'ok' ? parsed.value : failed('internal-error');
 }
 
-async function awaitAnswer(handoffs: HandoffStore['handoffs'], id: HandoffId, pacing: Pacing, waitMs: number): Promise<HandoffAnswerRecord | null> {
-    const deadline = pacing.now() + waitMs;
+async function awaitAnswer(handoffs: HandoffStore['handoffs'], id: HandoffId, pacing: Pacing, wait: Duration): Promise<HandoffAnswerRecord | null> {
+    const deadline = pacing.now() + wait;
     for (;;) {
         const answer = handoffs.handoffAnswer(id);
         if (answer !== null) {
@@ -64,7 +66,7 @@ async function awaitAnswer(handoffs: HandoffStore['handoffs'], id: HandoffId, pa
         if (left <= 0) {
             return null;
         }
-        await pacing.sleep(Math.min(HANDOFF_POLL_MS, left));
+        await pacing.sleep(duration(Math.min(HANDOFF_POLL_MS, left)));
     }
 }
 
@@ -92,7 +94,7 @@ function tabOfRequest(request: DeliverRequest, store: HandoffStore): TabId | nul
 }
 
 async function settledOutcome(id: HandoffId, store: HandoffStore, deps: DeliverDeps, refresh: Refresh): Promise<HandoffOutcome> {
-    const answer = await awaitAnswer(store.handoffs, id, deps.pacing, refresh === 'requested' ? HANDOFF_WAIT_REFRESH_MS : HANDOFF_WAIT_MS);
+    const answer = await awaitAnswer(store.handoffs, id, deps.pacing, refresh === 'requested' ? duration(HANDOFF_WAIT_REFRESH_MS) : duration(HANDOFF_WAIT_MS));
     if (answer !== null) {
         return outcomeOf(answer);
     }
@@ -104,7 +106,7 @@ async function settledOutcome(id: HandoffId, store: HandoffStore, deps: DeliverD
 }
 
 function queuedOf(request: DeliverRequest, store: HandoffStore, tab: TabId): HandoffId {
-    return store.requests.requestHandoff({ tab, pane: request.from, toPane: request.to, note: request.note === null ? null : textOf(request.note), refresh: request.refresh ? 'refresh-first' : 'as-is', source: sourceOf(request.closed) });
+    return store.requests.requestHandoff({ tab, pane: request.from, toPane: request.to, note: request.note, refresh: request.refresh, source: sourceOf(request.closed) });
 }
 
 export async function deliverHandoff(request: DeliverRequest, deps: DeliverDeps): Promise<HandoffOutcome> {
@@ -118,7 +120,7 @@ export async function deliverHandoff(request: DeliverRequest, deps: DeliverDeps)
         if (tab === null) {
             return refused('source-unavailable');
         }
-        return await settledOutcome(queuedOf(request, store, tab), store, deps, request.refresh ? 'requested' : 'skipped');
+        return await settledOutcome(queuedOf(request, store, tab), store, deps, request.refresh === 'refresh-first' ? 'requested' : 'skipped');
     } finally {
         store.close();
     }

@@ -174,7 +174,7 @@ export class HandoffFlow {
         return this.deps.render({ handoff: request.id, at: this.deps.now(), lane: { ...lane, cwd: lane.cwd === null ? null : textOf(lane.cwd) }, cursor, facts: found.facts, note: request.note, refresh });
     }
 
-    private async deliver(request: HandoffAskRecord, text: string, mark: DeliveryTracker): Promise<HandoffOutcome> {
+    private async deliver(request: HandoffAskRecord, text: Text, mark: DeliveryTracker): Promise<HandoffOutcome> {
         const first = await this.resolve(request);
         if (first.kind !== 'ready') {
             return first;

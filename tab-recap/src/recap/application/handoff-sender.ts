@@ -33,18 +33,18 @@ export class HandoffSender {
         this.deps = deps;
     }
 
-    async send(target: Ready, text: string): Promise<HandoffOutcome> {
+    async send(target: Ready, text: Text): Promise<HandoffOutcome> {
         const { pane } = target.lane;
         const { typing } = this.deps;
         const leased = await withTypingLease({ acquire: () => typing.acquire(pane, NO_WAIT), release: () => typing.release(pane) }, () => this.prompted(target, text));
         return leased.kind === 'busy' ? { kind: 'refused', reason: 'typing-lease-busy' } : leased.value;
     }
 
-    private async prompted(target: Ready, text: string): Promise<HandoffOutcome> {
+    private async prompted(target: Ready, text: Text): Promise<HandoffOutcome> {
         const baseline = await this.deps.confirmation.baseline(target);
         let sent: Prompted;
         try {
-            sent = await this.deps.agents.prompt(target.lane.pane, textOf(text), undefined, NO_STALL);
+            sent = await this.deps.agents.prompt(target.lane.pane, text, undefined, NO_STALL);
         } catch (error) {
             this.deps.log(textOf(`handoff prompt ${target.lane.pane}: ${failureCauseOf(parseThrown(error))}`));
             return { kind: 'failed', reason: 'transport' };

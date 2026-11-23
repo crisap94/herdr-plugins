@@ -1,3 +1,4 @@
+import { textOf } from '#src/recap/domain/text.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { HANDOFF_OBSERVATIONS, HANDOFF_OBSERVE_MS } from '#src/recap/application/handoff-limits.ts';
@@ -19,7 +20,7 @@ async function run(world: World, evidence: HandoffEvidence = 'either', lane: Lan
     const confirmer = confirmationOf(world);
     const target = readyOf(lane, planWith(evidence), ownTranscript);
     const baseline = await confirmer.baseline(target);
-    return confirmer.confirm(target, baseline, text);
+    return confirmer.confirm(target, baseline, textOf(text));
 }
 
 test('a transcript whose latest prompt is the handoff confirms delivery at the first observation', async () => {

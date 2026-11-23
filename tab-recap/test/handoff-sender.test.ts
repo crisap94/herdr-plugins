@@ -14,8 +14,9 @@ import type { Done } from '#src/ports/columns.ts';
 import { FakePanes } from './fakes/herdr-panes.ts';
 import { echoing, laneWith, leaseSpy, PANE, planWith, readyOf, senderOf, worldOf } from './fakes/handoff-delivery.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
-const TEXT = 'Handoff of the parser refactor.\n\nNext steps: finish the lexer.';
+const TEXT = textOf('Handoff of the parser refactor.\n\nNext steps: finish the lexer.');
 const DELIVERED: HandoffOutcome = { kind: 'delivered' };
 const UNCONFIRMED: HandoffOutcome = { kind: 'failed', reason: 'unconfirmed' };
 const TRANSPORT: HandoffOutcome = { kind: 'failed', reason: 'transport' };

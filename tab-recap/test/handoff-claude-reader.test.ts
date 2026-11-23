@@ -50,7 +50,7 @@ async function deliver(root: string, text: string, onPause: () => void): Promise
     const { confirmer, pauses } = confirmerOver(root, onPause);
     const target = readyOf(laneWith({ session: 'sess-1' }), planWith('transcript'), true);
     const baseline = await confirmer.baseline(target);
-    return { outcome: await confirmer.confirm(target, baseline, text), pauses };
+    return { outcome: await confirmer.confirm(target, baseline, textOf(text)), pauses };
 }
 
 test('a wrapped multi-line handoff in the real Claude transcript confirms delivery at the first observation', async () => {
