@@ -4,7 +4,8 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openStore } from '@stateforge-labs/session-ledger-sqlite';
-import { key, runConformance, scope, storeCases, type StoreUnderTest, type Subject } from '@stateforge-labs/session-ledger/testkit';
+import { instant } from '@stateforge-labs/session-ledger';
+import { key, runConformance, scope, storeCases, text, type StoreUnderTest, type Subject } from '@stateforge-labs/session-ledger/testkit';
 import { HISTORY, openLedgerStore, type LedgerStore } from '../src/store/index.ts';
 
 const folders: string[] = [];
@@ -58,9 +59,12 @@ runConformance({
 test('a file written by this library reopens at the same version and keeps its rows', () => {
     const path = temporaryFile();
     const first = readyAt(path);
+    first.records.beginRun(scope('tab-1'), text('codex'), instant(400));
     first.close();
     const again = readyAt(path);
     equal(again.kind, 'ready');
+    const recap = again.records.readRecap(scope('tab-1'));
+    ok(recap !== null && 'running' in recap && recap.running === true && recap.backend === 'codex');
     again.close();
 });
 
