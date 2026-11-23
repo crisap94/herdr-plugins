@@ -12,3 +12,4 @@ text	ci/gates.d/	gates/gates.d/	ci/tracks.json
 text	ci/brand-importers.json	gates/brand-importers.json	tab-recap/test/brand-importers.test.ts
 text	ci/brand-importers.json	gates/brand-importers.json	tab-recap/CLAUDE.md
 text	'ci', 'probes'	'gates', 'probes'	tab-recap/test/check-domain-types.test.ts
+text	'tab-recap', 'ci', 'gates.d'	'tab-recap', 'gates', 'gates.d'	ci/test/pipeline-rules.test.ts

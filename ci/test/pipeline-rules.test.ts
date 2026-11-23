@@ -237,7 +237,7 @@ test('the release jobs need every unit job they used to need, and the install sm
 test('the old plugin jobs and the package bridge are gone', () => {
     const { jobs } = pipeline();
     for (const name of ['lint', 'test', 'test:floor']) assert.equal(jobs.has(name), false, name);
-    assert.equal(existsSync(join(repository, 'tab-recap', 'ci', 'gates.d', '00-packages.sh')), false);
+    assert.equal(existsSync(join(repository, 'tab-recap', 'gates', 'gates.d', '00-packages.sh')), false);
     assert.equal(readFileSync(join(repository, 'tab-recap', 'ci', 'test.sh'), 'utf8').includes('packages/*/gates/run.sh'), false);
 });
 
