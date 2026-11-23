@@ -8,7 +8,8 @@ import { failureStage, INTERRUPTED_REASON } from '#src/protocol/exchange.ts';
 import type { Exchange } from '#src/protocol/exchange.ts';
 import { must } from '#src/protocol/result.ts';
 import type { TokenWrite } from '#src/protocol/tokens.ts';
-import { answer } from '#src/protocol/responder.ts';
+import { parseWireText, refuse } from '#src/protocol/primitives.ts';
+import { answerWrite } from '#src/protocol/responder.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
@@ -57,7 +58,8 @@ function answerInterrupted(deps: RestartWiring, ask: AskEntry): void {
         return;
     }
     deps.ledger.settle(ask, FAILED_INTERRUPTED);
-    const write = answer(exchange, ask.id, failureStage(INTERRUPTED_REASON));
+    const stage = parseWireText(failureStage(INTERRUPTED_REASON));
+    const write = stage.kind === 'err' ? refuse(stage.error, 'TokenValue') : answerWrite(exchange, ask.id, stage.value);
     if (write.kind === 'ok' && deps.enabled() === 'present') {
         void sendAnswer(deps, ask.pane, write.value);
     }

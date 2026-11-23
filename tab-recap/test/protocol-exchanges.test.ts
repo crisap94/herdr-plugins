@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildRegistry } from '#src/protocol/registry.ts';
-import { capabilityValue, CAPABILITY_TOKEN } from '#src/protocol/capability.ts';
+import { CAPABILITY_TOKEN } from '#src/protocol/capability.ts';
 import { EXCHANGES } from '#src/protocol/exchanges/index.ts';
 import { parseExchangeVersion } from '#src/protocol/primitives.ts';
 import { ownerTable } from '#src/protocol/owners.ts';
 import { must } from '#src/protocol/result.ts';
-import { handoffLike } from './fakes/protocol-exchanges.ts';
+import { capabilityValue, handoffLike } from './fakes/protocol-exchanges.ts';
 import { defineExchange } from '#src/protocol/exchange.ts';
 import { parseExchangeName, parseRequestPrefix } from '#src/protocol/primitives.ts';
 import { ANSWER_TOKENS, REGISTRY } from '#src/recap/domain/token-registry.ts';

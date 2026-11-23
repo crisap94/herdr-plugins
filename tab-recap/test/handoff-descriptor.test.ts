@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { capabilityValue } from '#src/protocol/capability.ts';
+import { capabilityValue } from './fakes/protocol-exchanges.ts';
 import { terminalStage, terminalsOf, parseRequest } from '#src/protocol/exchange.ts';
 import { EXCHANGES } from '#src/protocol/exchanges/index.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';

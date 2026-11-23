@@ -54,8 +54,6 @@ const offerOf = (exchange: Exchange): Offer => (EXCHANGE_NAME.test(exchange.name
 const enablementOf = (isOn: SettingCheck) => (exchange: Exchange): Enablement =>
     exchange.optIn === null || isOn(exchange.optIn) === 'on' ? 'enabled' : 'disabled';
 
-export { capabilityValue } from './legacy.ts';
-
 export function capabilityValueTyped(exchanges: readonly Exchange[], kindsVersion: ExchangeVersion, isOn: SettingCheck = ALWAYS_ON): Result<TokenValue, Refusal> {
     const offending = exchanges.find((exchange) => offerOf(exchange) === 'withheld');
     if (offending !== undefined) {

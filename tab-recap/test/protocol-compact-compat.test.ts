@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import { finalAnswerOf, noteOf, VALUE_MAX } from '#src/recap/domain/compact-request.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
 import { failureStage, answerValue } from '#src/protocol/exchange.ts';
+import { stageOf } from './fakes/wire-tokens.ts';
 import { parseIdText } from '#src/protocol/primitives.ts';
 import { compact, COMPACT_FAILURES, COMPACT_STAGES } from '#src/protocol/exchanges/compact.ts';
 import { must } from '#src/protocol/result.ts';
-import { take } from '#src/protocol/responder.ts';
+import { take } from './fakes/protocol-exchanges.ts';
 
 const readRequest = (raw: string): ReturnType<typeof take> => take(REGISTRY, { 'compact-req-coordinator': raw }, () => false);
 
@@ -46,15 +47,15 @@ test('a request value is read exactly as before: id, note and validity', () => {
 
 test('an answer is id:stage, cut at 80 characters and never refused', () => {
     assert.equal(VALUE_MAX, 80);
-    assert.equal(must(answerValue(compact, parseIdText('r7'), COMPACT_STAGES.queued)), 'r7:queued');
-    assert.equal(must(answerValue(compact, parseIdText('r7'), COMPACT_STAGES.running)), 'r7:running');
-    assert.equal(must(answerValue(compact, parseIdText('r7'), COMPACT_STAGES.done)), 'r7:done');
-    assert.equal(must(answerValue(compact, parseIdText('r7'), failureStage(COMPACT_FAILURES.interrupted))), 'r7:failed-interrupted');
-    assert.equal(must(answerValue(compact, parseIdText(''), COMPACT_STAGES.queued)), ':queued');
-    assert.equal(must(answerValue(compact, parseIdText('a'.repeat(16)), 'x'.repeat(63))), `${'a'.repeat(16)}:${'x'.repeat(63)}`, 'exactly 80 is kept');
-    assert.equal(must(answerValue(compact, parseIdText('a'.repeat(16)), 'x'.repeat(70))), `${'a'.repeat(16)}:${'x'.repeat(63)}`, 'over 80 is cut');
-    assert.equal(must(answerValue(compact, parseIdText('a'.repeat(17)), 'x'.repeat(70))), `${'a'.repeat(17)}:${'x'.repeat(62)}`, 'a 17-character id is cut too');
-    assert.equal(must(answerValue(compact, parseIdText('r7'), 'failed-' + 'z'.repeat(100))).length, 80);
+    assert.equal(must(answerValue(compact, parseIdText('r7'), stageOf(COMPACT_STAGES.queued))), 'r7:queued');
+    assert.equal(must(answerValue(compact, parseIdText('r7'), stageOf(COMPACT_STAGES.running))), 'r7:running');
+    assert.equal(must(answerValue(compact, parseIdText('r7'), stageOf(COMPACT_STAGES.done))), 'r7:done');
+    assert.equal(must(answerValue(compact, parseIdText('r7'), stageOf(failureStage(COMPACT_FAILURES.interrupted)))), 'r7:failed-interrupted');
+    assert.equal(must(answerValue(compact, parseIdText(''), stageOf(COMPACT_STAGES.queued))), ':queued');
+    assert.equal(must(answerValue(compact, parseIdText('a'.repeat(16)), stageOf('x'.repeat(63)))), `${'a'.repeat(16)}:${'x'.repeat(63)}`, 'exactly 80 is kept');
+    assert.equal(must(answerValue(compact, parseIdText('a'.repeat(16)), stageOf('x'.repeat(70)))), `${'a'.repeat(16)}:${'x'.repeat(63)}`, 'over 80 is cut');
+    assert.equal(must(answerValue(compact, parseIdText('a'.repeat(17)), stageOf('x'.repeat(70)))), `${'a'.repeat(17)}:${'x'.repeat(62)}`, 'a 17-character id is cut too');
+    assert.equal(must(answerValue(compact, parseIdText('r7'), stageOf('failed-' + 'z'.repeat(100)))).length, 80);
 });
 
 const refusedAnswer = (raw: string): string | undefined => readRequest(raw).refused[0]?.answer;

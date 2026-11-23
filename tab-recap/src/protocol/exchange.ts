@@ -65,7 +65,10 @@ export const answerToken = (exchange: Exchange): Result<TokenName, Refusal> => p
 
 export const requestName = (exchange: Exchange, tool: ToolName): Result<TokenName, Refusal> => parseTokenName(`${exchange.requestPrefix}${tool}`);
 
-export { answerValue } from './legacy.ts';
+export function answerValue(exchange: Exchange, id: IdText, stage: WireText): Result<TokenValue, Refusal> {
+    const text = `${id}${ANSWER_SEPARATOR}${stage}`;
+    return parseTokenValue(exchange.answerFit === 'truncate' ? text.slice(0, LIMITS.valueMax) : text);
+}
 
 export const badIdValue = (rawId: IdText): TokenValue => must(parseTokenValue(`${rawId.slice(0, LIMITS.idMax)}${ANSWER_SEPARATOR}${failureStage('bad-id')}`));
 

@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { answer, take } from '#src/protocol/responder.ts';
-import type { SeenCheck, Taking } from '#src/protocol/responder.ts';
+import type { Taking } from '#src/protocol/responder.ts';
 import { parseIdText, parseRequestId } from '#src/protocol/primitives.ts';
 import type { ExchangeName, RequestId, ToolName } from '#src/protocol/primitives.ts';
 import { badIdValue } from '#src/protocol/exchange.ts';
-import { compactLike, handoffLike, registryOf, unwrap } from './fakes/protocol-exchanges.ts';
+import { answer, compactLike, handoffLike, registryOf, take, unwrap } from './fakes/protocol-exchanges.ts';
+import type { SeenCheck } from './fakes/protocol-exchanges.ts';
 
 const registry = registryOf([compactLike, handoffLike]);
 

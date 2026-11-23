@@ -4,9 +4,9 @@ import type { HandoffAskQueue, HandoffAsker } from '#src/ports/requests.ts';
 import { idGrammarOf } from '#src/protocol/codec.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
 import { parseRequest, terminalStage } from '#src/protocol/exchange.ts';
-import { parseIdText, parseRequestId, parseToolName, parseWireText, type WireText } from '#src/protocol/primitives.ts';
+import { parseIdText, parseRequestId, parseToolName, parseWireText, refuse, type WireText } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
-import { answer as answerOf, takeRequests } from '#src/protocol/responder.ts';
+import { answerWrite, takeRequests } from '#src/protocol/responder.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
@@ -140,7 +140,8 @@ export class HandoffExchangeResponder {
 
     private refuse(pane: PaneId, tool: Text, id: Text, reason: HandoffRefusal): void {
         this.remember(pane, tool, id, { kind: 'settled' });
-        const write = answerOf(handoff, must(parseRequestId(id, GRAMMAR)), terminalStage({ kind: 'refused', reason }));
+        const stage = parseWireText(terminalStage({ kind: 'refused', reason }));
+        const write = stage.kind === 'err' ? refuse(stage.error, 'TokenValue') : answerWrite(handoff, must(parseRequestId(id, GRAMMAR)), stage.value);
         if (write.kind === 'ok') {
             void reportWrite(this.deps.tokens, this.deps.log, pane, write.value);
         }
