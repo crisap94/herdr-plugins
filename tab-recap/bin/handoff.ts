@@ -11,6 +11,7 @@ import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { codeVersion } from '#src/adapters/os/plugin-version.ts';
 import { loadSettings, messagesOf, stateDirectory } from '#src/daemon/config.ts';
 import type { HandoffPrintService } from '#src/ports/handoff-print.ts';
+import type { RefreshFirst } from '#src/ports/requests.ts';
 import { noteFromRequest } from '#src/recap/application/compact-start.ts';
 import { EditTally } from '#src/recap/application/edit-tally.ts';
 import { PrintedHandoffs } from '#src/recap/application/handoff-print.ts';
@@ -175,10 +176,12 @@ function listerOf(): (tab: TabId) => ClosedListing {
     };
 }
 
+export const refreshFirstOf = (refresh: DeliverArguments['refresh']): RefreshFirst => (refresh ? 'refresh-first' : 'as-is');
+
 export function productionWiring(): HandoffWiring {
     return {
         printer: printerOf(),
-        deliver: (request) => deliverHandoff({ ...request, refresh: request.refresh ? 'refresh-first' : 'as-is' }, deliverDeps()),
+        deliver: (request) => deliverHandoff({ ...request, refresh: refreshFirstOf(request.refresh) }, deliverDeps()),
         list: listerOf(),
     };
 }
