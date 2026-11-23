@@ -1,16 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-    paneId,
-    parseAgentKind,
-    parsePaneId,
-    parseSessionId,
-    parseSessionPath,
-    parseTabId,
-    parseWorkspaceId,
-    tabId,
-} from '#src/recap/domain/ids.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { parseAgentKind, parsePaneId, parseSessionId, parseSessionPath, parseTabId, parseWorkspaceId } from '#src/recap/domain/ids.ts';
 
 const PARSERS = [
     parsePaneId,
@@ -51,18 +41,4 @@ test('every id parser never throws, whatever the input', () => {
     for (const parse of PARSERS) {
         assert.doesNotThrow(() => parse(hostile));
     }
-});
-
-test('a parsed pane id is the same value the throwing constructor makes', () => {
-    const parsed = parsePaneId('w1:t3');
-    assert.equal(parsed.kind === 'ok' && parsed.value, paneId(textOf('w1:t3')));
-});
-
-test('a parsed tab id is the same value the throwing constructor makes', () => {
-    const parsed = parseTabId('w1:t3');
-    assert.equal(parsed.kind === 'ok' && parsed.value, tabId(textOf('w1:t3')));
-});
-
-test('the throwing constructors keep throwing on an empty id', () => {
-    assert.throws(() => paneId(textOf('')), { name: 'NotAnIdentifierError' });
 });

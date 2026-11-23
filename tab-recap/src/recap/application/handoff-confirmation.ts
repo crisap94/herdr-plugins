@@ -1,7 +1,8 @@
+import { must } from '#src/protocol/result.ts';
 import type { AgentPanes } from '#src/ports/agents.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
-import { sessionId } from '#src/recap/domain/ids.ts';
+import { parseSessionId } from '#src/recap/domain/ids.ts';
 import { duration, type Duration } from '#src/recap/domain/time.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffEvidence } from '#src/recap/domain/handoff-plan.ts';
@@ -83,7 +84,7 @@ export class HandoffConfirmation {
 
     private async sessionOf(lane: Lane): Promise<Lane> {
         const current = await this.deps.session(lane.pane);
-        return typeof current === 'string' && current.trim() !== '' ? { ...lane, session: sessionId(textOf(current)) } : lane;
+        return typeof current === 'string' && current.trim() !== '' ? { ...lane, session: must(parseSessionId(current)) } : lane;
     }
 
     private async latestOf(lane: Lane): Promise<LatestOf> {

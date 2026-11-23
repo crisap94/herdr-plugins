@@ -1,6 +1,7 @@
 // The README's screenshots, step one: the plugin's own views, drawn from invented data into HTML.
 // `bun docs/screens/render.ts [outDir]` writes one page per screen; `shoot.mjs` turns them into PNGs.
 // Gated like the code: it only calls the pure views (`present`, `presentBar`, `setupLines`).
+import { must } from '#src/protocol/result.ts';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { en } from '#src/i18n/en.ts';
@@ -19,7 +20,7 @@ import type { ColumnView } from '#src/recap/render/present.ts';
 import { catalogFor } from '#src/i18n/index.ts';
 import { setupLines } from '#src/recap/render/setup.ts';
 import { expandedLines } from './expanded-fixture.ts';
-import { agentKind, paneId, tabId, uncheckedAgentKind } from '#src/recap/domain/ids.ts';
+import { uncheckedAgentKind, parseAgentKind, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { textOf, parseTextOrNull } from '#src/recap/domain/text.ts';
 import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
@@ -158,18 +159,18 @@ const WEB: LaneWebRecord = { base: textOf('https://git.example/team/shop'), forg
 const VERSION = '1.8.1';
 
 const lane = (pane: string, agent: string, prompt: string, title: string | null): TabRecap['lanes'][number] =>
-    ({ pane: paneId(textOf(pane)), agent: agentKind(textOf(agent)), transcript: sourcePathOf(`${agent}.jsonl`), cursor: cursorOf(1), tail: null, title: parseTextOrNull(title), lastPrompt: textOf(prompt), claudeRecap: null });
+    ({ pane: must(parsePaneId(pane)), agent: must(parseAgentKind(agent)), transcript: sourcePathOf(`${agent}.jsonl`), cursor: cursorOf(1), tail: null, title: parseTextOrNull(title), lastPrompt: textOf(prompt), claudeRecap: null });
 
 function columnView(fixture: Fixture): ColumnView {
     const tab: TabViewRecord = {
-        tab: tabId(textOf('w1:t1')), column: textOf('w1:p9'), at: instant(NOW), daemonVersion: textOf(VERSION),
+        tab: must(parseTabId('w1:t1')), column: textOf('w1:p9'), at: instant(NOW), daemonVersion: textOf(VERSION),
         lanes: [
-            { pane: paneIdOf('w1:p1'), agent: agentKind(textOf('claude')), status: textOf('blocked'), title: parseTextOrNull(fixture.title), cwd: null, lastPrompt: null, web: WEB, context: { tokens: countOf(520_000), window: countOf(1_000_000), source: 'catalogue' } },
-            { pane: paneIdOf('w1:p2'), agent: agentKind(textOf('codex')), status: textOf('working'), title: null, cwd: null, lastPrompt: null, web: WEB, context: { tokens: countOf(61_000), window: countOf(258_400), source: 'agent' } },
+            { pane: paneIdOf('w1:p1'), agent: must(parseAgentKind('claude')), status: textOf('blocked'), title: parseTextOrNull(fixture.title), cwd: null, lastPrompt: null, web: WEB, context: { tokens: countOf(520_000), window: countOf(1_000_000), source: 'catalogue' } },
+            { pane: paneIdOf('w1:p2'), agent: must(parseAgentKind('codex')), status: textOf('working'), title: null, cwd: null, lastPrompt: null, web: WEB, context: { tokens: countOf(61_000), window: countOf(258_400), source: 'agent' } },
         ],
     };
     const recap: TabRecap = {
-        ...blankRecap(tabId(textOf('w1:t1'))), at: instant(NOW - 120_000), backend: textOf(fixture.backend), tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1'), paneIdOf('w1:p2')], sections: fixture.sections, markdown: renderRecap(fixture.sections, fixture.messages.locale) }],
+        ...blankRecap(must(parseTabId('w1:t1'))), at: instant(NOW - 120_000), backend: textOf(fixture.backend), tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1'), paneIdOf('w1:p2')], sections: fixture.sections, markdown: renderRecap(fixture.sections, fixture.messages.locale) }],
         lanes: [lane('w1:p1', 'claude', fixture.prompts[0], fixture.title), lane('w1:p2', 'codex', fixture.prompts[1], null)],
     };
     return { tab, recap, notes: new Map(), warnings: [], now: NOW, messages: fixture.messages, version: VERSION, compactHint: 40 };

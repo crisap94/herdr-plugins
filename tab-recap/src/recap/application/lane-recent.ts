@@ -1,6 +1,6 @@
-import { textOf } from '#src/recap/domain/text.ts';
+import { must } from '#src/protocol/result.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { sessionId, type PaneId, type SessionId } from '#src/recap/domain/ids.ts';
+import { type PaneId, type SessionId, parseSessionId } from '#src/recap/domain/ids.ts';
 import { UNREAD, type Entry, type Mark } from '#src/ports/transcripts.ts';
 import { isUnknown, type Unknown } from '#src/ports/unknowable.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
@@ -26,7 +26,7 @@ export class LaneRecent {
 
     private async now(lane: Lane): Promise<Lane> {
         const current = await this.session(lane.pane);
-        return typeof current === 'string' ? { ...lane, session: sessionId(textOf(current)) } : lane;
+        return typeof current === 'string' ? { ...lane, session: must(parseSessionId(current)) } : lane;
     }
 
     private async tail(lane: Lane): Promise<RecentTail> {

@@ -13,7 +13,7 @@ import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts'
 import type { HandoffOffer, HandoffRefusal, RefreshAsk } from '#src/recap/domain/handoff-ask.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
-import { paneId, parseHandoffId } from '#src/recap/domain/ids.ts';
+import { parseHandoffId, parsePaneId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
@@ -21,7 +21,6 @@ import { parseText } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { HandoffMirror, reportWrite } from './handoff-mirror.ts';
 import type { HandoffLog, Route } from './handoff-mirror.ts';
-import { textOf } from '#src/recap/domain/text.ts';
 
 export type TokenEntries = ReadonlyMap<Text, Text>;
 
@@ -89,7 +88,7 @@ export class HandoffExchangeResponder {
             if (taken.exchange.name === HANDOFF_EXCHANGE) {
                 const workspace = taken.value['workspace'];
                 const lanePane = taken.value['pane'];
-                const target = typeof workspace === 'string' && typeof lanePane === 'string' ? paneId(textOf(`${workspace}:${lanePane}`)) : null;
+                const target = typeof workspace === 'string' && typeof lanePane === 'string' ? must(parsePaneId(`${workspace}:${lanePane}`)) : null;
                 this.consider(pane, must(parseText(taken.tool)), must(parseText(taken.id)), { target, refresh: taken.value['refresh'] === true ? 'refresh' : 'plain' });
             }
         }

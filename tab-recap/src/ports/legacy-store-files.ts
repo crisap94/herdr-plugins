@@ -7,7 +7,7 @@ import { recapRunningOf, type LaneCursor, type TabRecap } from '#src/ports/recap
 import { cursorOf as positionOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import type { VisibilityAsk } from '#src/ports/requests.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
-import { agentKind, paneId, tabId, uncheckedPaneId } from '#src/recap/domain/ids.ts';
+import { uncheckedPaneId, parseAgentKind, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
@@ -77,9 +77,13 @@ const cursorOf = (input: Row): Result<LaneCursor, ParseFailure> => {
     if (typeof input.agent !== 'string') return err({ kind: 'not-a-string' });
     if (typeof input.transcript !== 'string') return err({ kind: 'not-a-string' });
     if (typeof input.cursor !== 'number') return err({ kind: 'not-a-number' });
+    const pane = parsePaneId(input.pane);
+    if (pane.kind === 'err') return pane;
+    const agent = parseAgentKind(input.agent);
+    if (agent.kind === 'err') return agent;
     return ok({
-        pane: paneId(textOf(input.pane)),
-        agent: agentKind(textOf(input.agent)),
+        pane: pane.value,
+        agent: agent.value,
         transcript: sourcePathOf(input.transcript),
         cursor: positionOf(input.cursor),
         tail: parseTextOrNull(input.tail),
@@ -145,8 +149,10 @@ export function parseLegacyRecapFile(input: unknown): Result<TabRecap, ParseFail
     if (typeof input.tab !== 'string') return err({ kind: 'not-a-string' });
     const lanes = cursorsOf(input);
     if (lanes.kind === 'err') return lanes;
+    const tab = parseTabId(input.tab);
+    if (tab.kind === 'err') return tab;
     const costUsd = typeof input.costUsd === 'number' ? input.costUsd : 0;
-    return ok({ tab: tabId(textOf(input.tab)), lanes: lanes.value, tasks: tasksOf(input), costUsd: usdOf(costUsd), ...recapMetaOf(input) });
+    return ok({ tab: tab.value, lanes: lanes.value, tasks: tasksOf(input), costUsd: usdOf(costUsd), ...recapMetaOf(input) });
 }
 
 export function parseLegacyViewFile(input: unknown): Result<LegacyViewFile, ParseFailure> {

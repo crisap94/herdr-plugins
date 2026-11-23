@@ -1,10 +1,11 @@
+import { must } from '#src/protocol/result.ts';
 import type { Database } from 'bun:sqlite';
 import { and, desc, eq } from 'drizzle-orm';
 import type { Applied } from '#src/ports/ledger.ts';
 import type { CurationRun, Stories, Story } from '#src/ports/stories.ts';
 import type { FactId, RunId } from '#src/recap/domain/fact.ts';
 import type { CloseOp, UpdateOp } from '#src/recap/domain/ops.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { parseTabId } from '#src/recap/domain/ids.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 import { writeTx } from './connection.ts';
 import { chapter, run as runs, task as tasks } from './drizzle/index.ts';
@@ -34,7 +35,7 @@ export class StoriesRepository implements Stories {
     read(tab: string, task: string): Story | null {
         return guarded((): Story | null => {
             const row = this.orm.select({ text: tasks.storyText, at: tasks.storyAt }).from(tasks)
-                .where(and(eq(tasks.tabId, tabId(textOf(tab))), eq(tasks.key, task))).get();
+                .where(and(eq(tasks.tabId, must(parseTabId(tab))), eq(tasks.key, task))).get();
             const text = row?.text ?? null;
             const at = row?.at ?? null;
             return text === null || at === null ? null : { text: textOf(text), at: instant(at) };

@@ -1,9 +1,10 @@
+import { must } from '#src/protocol/result.ts';
 import { CodexItemType, codexRolloutRoot, findRolloutByCwd, isInjectedContext, parseCodexToolCall, readRollout } from '@stateforge-labs/harness-adapters/codex';
 import type { CodexRow } from '@stateforge-labs/harness-adapters/codex';
 import { sourcePathOf, grewOf, type Chunk, type ChunkResult, type Entry, type InFlightResult, type Located, type ObservedResult, type Position, type PromptResult, type SourcePath, type Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { agentKind } from '#src/recap/domain/ids.ts';
+import { parseAgentKind } from '#src/recap/domain/ids.ts';
 import { countOf, type Count } from '#src/recap/domain/count.ts';
 import { fsPathOf, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
@@ -59,7 +60,7 @@ export function extractCodexOf(lines: readonly Text[]): Omit<Chunk, 'kind' | 'po
 }
 
 export class CodexTranscripts implements Transcripts {
-    readonly agent = agentKind(textOf('codex'));
+    readonly agent = must(parseAgentKind('codex'));
     readonly inFlight: SupportedReading = { kind: 'supported', split: { kind: 'foreground-only', why: 'codex-cells' }, read: (source, budget) => this.readInFlight(source, budget) };
     private readonly root: FsPath;
     private readonly readTail: typeof tailSpan;

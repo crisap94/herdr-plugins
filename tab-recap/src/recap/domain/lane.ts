@@ -1,11 +1,12 @@
-import { agentKind, paneId, sessionId, tabId, workspaceId } from './ids.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseAgentKind, parsePaneId, parseSessionId, parseTabId, parseWorkspaceId } from './ids.ts';
 import type { AgentKind, PaneId, SessionId, TabId, WorkspaceId } from './ids.ts';
 import { laneStatus } from './status.ts';
 import type { LaneStatus } from './status.ts';
 import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import { parseDirectory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
 import type { Directory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
-import { parseText, textOf, type Text } from './text.ts';
+import { parseText, type Text } from './text.ts';
 
 export interface SeenLane {
     readonly paneId: Text;
@@ -35,12 +36,12 @@ export function laneFrom(seen: SeenLane): Lane {
     const cwd = parseDirectory(seen.cwd);
     const title = parseText(seen.title);
     return {
-        pane: paneId(seen.paneId),
-        tab: tabId(seen.tabId),
-        workspace: workspaceId(seen.workspaceId),
-        agent: agentKind(seen.agent),
+        pane: must(parsePaneId(seen.paneId)),
+        tab: must(parseTabId(seen.tabId)),
+        workspace: must(parseWorkspaceId(seen.workspaceId)),
+        agent: must(parseAgentKind(seen.agent)),
         status: laneStatus(seen.status),
-        session: session.kind === 'ok' && session.value.trim() !== '' ? sessionId(textOf(session.value)) : null,
+        session: session.kind === 'ok' && session.value.trim() !== '' ? must(parseSessionId(session.value)) : null,
         cwd: cwd.kind === 'ok' ? cwd.value : null,
         title: title.kind === 'ok' && title.value.trim() !== '' ? title.value : null,
         since: null,

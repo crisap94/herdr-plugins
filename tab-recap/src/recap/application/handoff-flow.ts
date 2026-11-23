@@ -1,9 +1,10 @@
+import { must } from '#src/protocol/result.ts';
 import type { RecapRefresh } from './recap-wait.ts';
 import { knownOr } from '#src/ports/guarded-reads.ts';
 import type { HandoffAskRecord } from '#src/ports/requests.ts';
 import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
-import { tabId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { type PaneId, type TabId, parseTabId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { instant, type Duration, type Instant } from '#src/recap/domain/time.ts';
@@ -170,7 +171,7 @@ export class HandoffFlow {
         if (lane === undefined) {
             return { kind: 'refused', reason: 'source-unavailable' };
         }
-        const cursor = knownOr(this.deps.records.readRecap(tabId(textOf(String(request.tab)))), null)?.lanes.find((candidate) => candidate.pane === String(request.pane)) ?? null;
+        const cursor = knownOr(this.deps.records.readRecap(must(parseTabId(String(request.tab)))), null)?.lanes.find((candidate) => candidate.pane === String(request.pane)) ?? null;
         return this.deps.render({ handoff: request.id, at: this.deps.now(), lane: { ...lane, cwd: lane.cwd === null ? null : textOf(lane.cwd) }, cursor, facts: found.facts, note: request.note, refresh });
     }
 

@@ -14,7 +14,7 @@ import { HANDOFF_GROUP_IDS } from '#src/recap/domain/handoff-content.ts';
 import type { HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
 import { cleanHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import { vetHandoffText } from '#src/recap/domain/handoff-vetting.ts';
-import { handoffId } from '#src/recap/domain/ids.ts';
+import { handoffId } from '#test/support/ids.ts';
 import { parseCount, countOf } from '#src/recap/domain/count.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { freshnessTextOf } from '#src/recap/render/freshness.ts';
@@ -23,8 +23,8 @@ import { utcMinuteOf } from '#src/recap/render/utc-minute.ts';
 import type { HandoffParts, OmittedCounts, OmittedKind } from '#src/recap/render/handoff-markdown.ts';
 import { WORKSITE_UNAVAILABLE, worksiteTextOf } from '#src/recap/render/worksite.ts';
 
-const ID = handoffId(asText('hnd_01j3tt8z1efcd9tfr14d2pf2db'));
-const OTHER_ID = handoffId(asText('hnd_01j3tt8z1efcd9tfr14d2pf2dc'));
+const ID = handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2db');
+const OTHER_ID = handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2dc');
 const AT = Date.parse('2026-10-10T12:00:00Z');
 const omittedOf = (counts: Record<OmittedKind, number>): OmittedCounts => ({
     done: must(parseCount(counts.done)),

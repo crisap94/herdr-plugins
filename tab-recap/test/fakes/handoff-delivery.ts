@@ -1,3 +1,4 @@
+import { must } from '#src/protocol/result.ts';
 import { handoffPlanner } from '#src/adapters/capability/handoff-plans.ts';
 import { kindOf } from '#test/fakes/agent-kind.ts';
 import type { AgentLookup, AgentPanes, Prompted, PromptStance, PromptWaitFor } from '#src/ports/agents.ts';
@@ -15,7 +16,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { registryWith } from './transcript-registry.ts';
 import { agentKind } from '#test/support/ids.ts';
-import { sessionId, type SessionId } from '#src/recap/domain/ids.ts';
+import { type SessionId, parseSessionId } from '#src/recap/domain/ids.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { seenLane } from '#test/support/seen.ts';
@@ -108,7 +109,7 @@ export function sessionOf(world: World): CurrentSession {
         if (world.faults.session) {
             throw new Error('session failed');
         }
-        return typeof world.session === 'string' ? sessionId(textOf(world.session)) : world.session;
+        return typeof world.session === 'string' ? must(parseSessionId(world.session)) : world.session;
     };
 }
 

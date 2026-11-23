@@ -2,13 +2,13 @@ import { DESKTOP_STATE } from './desktop-env.ts';
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import { messagesOf } from '#src/daemon/config.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { parseTabId } from '#src/recap/domain/ids.ts';
 import { USAGE_EXIT } from '#src/recap/domain/handoff-outcome.ts';
 import { desktopDocumentCommand } from './desktop-document.ts';
 import { settingsCommand } from './desktop-settings.ts';
 import { enableDesktopDaemon, ensureDesktopDaemon, stopDesktopDaemon } from './desktop-daemon.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 
 const OK = 0;
@@ -26,7 +26,7 @@ function refresh(tab: string | undefined): number {
         console.error(`tab-recap: 1 — ${notReadyLine(store, m())}`);
         return FAILED;
     }
-    store.requests.request(tabId(textOf(tab)));
+    store.requests.request(must(parseTabId(tab)));
     console.log(`tab-recap: ${m().cli.requested(must(parseText(tab)))}`);
     return OK;
 }
@@ -36,7 +36,7 @@ function document(tab: string | undefined): number {
         console.error(`tab-recap: 2 — ${m().cli.tabUnknown}`);
         return USAGE_EXIT;
     }
-    return desktopDocumentCommand(tabId(textOf(tab)));
+    return desktopDocumentCommand(must(parseTabId(tab)));
 }
 
 function status(): number {

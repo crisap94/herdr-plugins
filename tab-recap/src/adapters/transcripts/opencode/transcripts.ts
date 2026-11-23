@@ -18,7 +18,7 @@ import type { SupportedReading } from '../jsonl.ts';
 import { partsOf } from './parts.ts';
 import { opencodeInFlight } from './in-flight.ts';
 import { sourcePathOf, cursorOf, grewOf } from '#src/ports/transcripts.ts';
-import { agentKind } from '#src/recap/domain/ids.ts';
+import { parseAgentKind } from '#src/recap/domain/ids.ts';
 
 const MESSAGES = must(parseCount(400));
 const PROMPT_LOOKBACK = 30;
@@ -36,7 +36,7 @@ function newest(entries: readonly Entry[], budget: Count): readonly Entry[] {
 const sessionOf = (source: Text): Text => must(parseText(sessionIdOfTranscriptPath('opencode', source) ?? ''));
 
 export class OpencodeTranscripts implements Transcripts {
-    readonly agent = agentKind(textOf('opencode'));
+    readonly agent = must(parseAgentKind('opencode'));
     readonly inFlight: SupportedReading = { kind: 'supported', split: { kind: 'foreground-only', why: 'opencode-parts' }, read: (source) => this.readInFlight(textOf(source)) };
     private readonly database: FsPath;
 

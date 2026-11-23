@@ -1,10 +1,11 @@
+import { must } from '#src/protocol/result.ts';
 import type { Database } from 'bun:sqlite';
 import { eq } from 'drizzle-orm';
 import type { Advance, FailedRun, LastRun, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
 import type { GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import { RECAP_CAUSES } from '#src/recap/domain/intent.ts';
 import type { RecapCause } from '#src/recap/domain/intent.ts';
-import { parseTabId, tabId } from '#src/recap/domain/ids.ts';
+import { parseTabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import { lastGoodRun, run as runs, tab as tabs } from './drizzle/index.ts';
@@ -17,7 +18,6 @@ import { guardedRead } from './rows.ts';
 import { RunRows } from './run-write.ts';
 import { TabStore } from './tab-row.ts';
 import { TranscriptStore } from './transcripts.ts';
-import { textOf } from '#src/recap/domain/text.ts';
 
 type LastCause = RecapCause | 'imported';
 
@@ -52,15 +52,15 @@ export class RecapRecordsRepository implements GuardedRecapRecords {
     lastRunOf(tab: string): LastRun | null | Unknown {
         return guardedRead((): LastRun | null => {
             const row = this.orm.select({ at: runs.at, cause: runs.cause }).from(runs).innerJoin(lastGoodRun, eq(lastGoodRun.runId, runs.id))
-                .where(eq(lastGoodRun.tabId, tabId(textOf(tab)))).get() ?? null;
+                .where(eq(lastGoodRun.tabId, must(parseTabId(tab)))).get() ?? null;
             return row === null || !isLastCause(row.cause) ? null : { at: instant(row.at), cause: row.cause };
         });
     }
 
     beginRun(tab: string, backend: string | null, at: number): void {
         writeTx(this.db, () => {
-            this.tabs.ensure(tabId(textOf(tab)), instant(at));
-            this.orm.update(tabs).set({ running: 1, backend }).where(eq(tabs.id, tabId(textOf(tab)))).run();
+            this.tabs.ensure(must(parseTabId(tab)), instant(at));
+            this.orm.update(tabs).set({ running: 1, backend }).where(eq(tabs.id, must(parseTabId(tab)))).run();
         });
     }
 
