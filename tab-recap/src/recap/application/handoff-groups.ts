@@ -9,6 +9,7 @@ import { parseText } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { HANDOFF_CLOSED_SHOWN, HANDOFF_CLOSED_WINDOW_MS, HANDOFF_DONE_SHOWN, HANDOFF_LINKS_SHOWN } from './handoff-limits.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 export interface GroupedFacts {
     readonly at: Instant;
@@ -62,10 +63,10 @@ const groupOf = (id: HandoffGroupId, kept: readonly Candidate[]): HandoffGroup =
     const entries = kept.filter((candidate) => candidate.group === id).map((candidate) => candidate.entry);
     const cap = CAPS[id];
     if (cap === undefined) {
-        return { id, entries: entries.toSorted(oldestFirst), capped: 0 };
+        return { id, entries: entries.toSorted(oldestFirst), capped: countOf(0) };
     }
     const shown = entries.toSorted(newestFirst).slice(0, cap);
-    return { id, entries: shown.toSorted(oldestFirst), capped: entries.length - shown.length };
+    return { id, entries: shown.toSorted(oldestFirst), capped: countOf(entries.length - shown.length) };
 };
 
 export function groupedFactsOf(facts: GroupedFacts): Grouped {
@@ -79,5 +80,5 @@ export function groupedFactsOf(facts: GroupedFacts): Grouped {
     if (groups.every((group) => group.entries.length === 0)) {
         return { kind: 'refused', reason: 'content-empty' };
     }
-    return { kind: 'groups', groups, withheld: candidates.length - kept.length };
+    return { kind: 'groups', groups, withheld: countOf(candidates.length - kept.length) };
 }

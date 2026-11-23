@@ -18,6 +18,7 @@ import { handoffTextOf } from './handoff-text.ts';
 import type { HandoffLog } from './handoff-mirror.ts';
 import { worksiteOf } from './worksite-section.ts';
 import type { WorksiteDeps } from './worksite-section.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 export interface HandoffPipelineDeps {
     readonly records: FreshnessDeps['records'];
@@ -61,7 +62,7 @@ export function renderHandoff(deps: HandoffPipelineDeps): HandoffRender {
         const fitted = handoffTextOf(body, {
             reference: referenceOf(input),
             freshnessText: freshnessTextOf(freshness.freshness, closed === undefined ? null : closed.closedAt),
-            worksiteText: worksiteTextOf(worksite, byteBudgetOf(HANDOFF_WORKSITE_BYTES)),
+            worksiteText: worksiteTextOf(worksite, byteBudgetOf(countOf(HANDOFF_WORKSITE_BYTES))),
         });
         if (fitted.kind === 'too-large') {
             return { kind: 'refused', reason: 'too-large' };

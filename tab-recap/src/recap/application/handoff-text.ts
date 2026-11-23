@@ -6,6 +6,7 @@ import type { FreshnessBlock } from '#src/recap/render/freshness.ts';
 import type { HandoffReference } from '#src/recap/render/handoff-markdown.ts';
 import type { WorksiteBlock } from '#src/recap/render/worksite.ts';
 import { HANDOFF_BUDGET_BYTES } from './handoff-limits.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 export interface RenderedBlocks {
     readonly reference: HandoffReference;
@@ -16,6 +17,6 @@ export interface RenderedBlocks {
 export function handoffTextOf(body: HandoffBody, blocks: RenderedBlocks): FittedHandoff {
     return fitHandoff(
         { reference: blocks.reference, note: body.note, freshnessText: blocks.freshnessText, worksiteText: blocks.worksiteText, groups: body.groups, withheld: body.withheld },
-        byteBudgetOf(HANDOFF_BUDGET_BYTES),
+        byteBudgetOf(countOf(HANDOFF_BUDGET_BYTES)),
     );
 }

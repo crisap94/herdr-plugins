@@ -1,8 +1,12 @@
 import type { HandoffOutcome } from './handoff-outcome.ts';
-import type { SettleEvidence } from './legacy.ts';
+import type { Count } from './count.ts';
+import type { Text } from './text.ts';
 import type { Duration } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 
-export type { SettleEvidence } from './legacy.ts';
+export interface SettleEvidence {
+    readonly trials: Count;
+    readonly source: Text;
+}
 
 export type HandoffEvidence = 'transcript' | 'status' | 'either';
 

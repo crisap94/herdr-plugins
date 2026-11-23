@@ -42,8 +42,8 @@ for (const brand of Object.keys(BRAND_MODULES) as BrandName[]) {
 
 const rawEntry = (text: string, reason: string): HandoffEntry => ({
     id: 'x' as FactId,
-    firstAt: 0,
-    lastAt: 0,
+    firstAt: instant(0),
+    lastAt: instant(0),
     // @ts-expect-error
     text,
     // @ts-expect-error

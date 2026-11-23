@@ -1,6 +1,6 @@
 {
   "src/recap/domain/legacy.ts": {
-    "legacy": 64
+    "legacy": 52
   },
   "src/recap/domain/twins/curation/legacy.ts": {
     "legacy": 15
