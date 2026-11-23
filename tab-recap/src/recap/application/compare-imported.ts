@@ -148,7 +148,7 @@ async function compareChapter(deps: CompareDeps, chapter: ImportedChapterRecord,
 }
 
 const NONE: Share = { passed: must(parseCount(0)), total: must(parseCount(0)) };
-const passes = (side: Side): Share => ({ passed: must(parseCount(side.readback?.filter((grade) => grade.pass).length ?? 0)), total: must(parseCount(side.readback === null ? 0 : 6)) });
+const passes = (side: Side): Share => ({ passed: must(parseCount(side.readback?.filter((grade) => grade.pass === 'pass').length ?? 0)), total: must(parseCount(side.readback === null ? 0 : 6)) });
 
 function totalOf(results: readonly ChapterResult[], pick: (result: ComparedChapter) => Side): SideTotal {
     const compared = results.flatMap((result) => (result.kind === 'compared' ? [pick(result)] : []));

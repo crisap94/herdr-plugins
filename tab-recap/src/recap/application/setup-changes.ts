@@ -5,7 +5,7 @@ import type { RequestPort } from '#src/ports/requests.ts';
 import type { LiveLanes } from '#src/ports/tab-views.ts';
 import { tabId, type TabId } from '#src/recap/domain/ids.ts';
 import type { DeciderBy, JobBy } from '#src/recap/domain/job.ts';
-import type { Draft, FieldId, Locks, Setup } from './setup-state.ts';
+import type { Draft, DraftState, EnvironmentReader, FieldId, Locks, Setup } from './setup-state.ts';
 import { FIELDS } from './setup-state.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 
@@ -41,10 +41,10 @@ const LOCK_KEYS: Readonly<Record<FieldId, readonly EnvironmentName[]>> = {
     herdrEvents: [environmentName(textOf('TAB_RECAP_HERDR_EVENTS'))],
 };
 
-export function locksOf(env: Readonly<Record<string, string | undefined>>): Locks {
+export function locksOf(read: EnvironmentReader): Locks {
     const locks: Partial<Record<FieldId, EnvironmentName>> = {};
     for (const row of FIELDS) {
-        const found = LOCK_KEYS[row].find((key) => (env[key] ?? '') !== '');
+        const found = LOCK_KEYS[row].find((key) => (read(key) ?? '') !== '');
         if (found !== undefined) {
             locks[row] = found;
         }
@@ -82,7 +82,7 @@ export function changes(state: Setup): ReadonlyMap<EnvironmentName, Text> {
     return new Map(entriesOf(state.draft).flatMap(([row, key, now]): [EnvironmentName, Text][] => (now !== was.get(key) && state.locks[row] === undefined ? [[key, now]] : [])));
 }
 
-export const dirty = (state: Setup): boolean => changes(state).size > 0;
+export const dirty = (state: Setup): DraftState => (changes(state).size > 0 ? 'dirty' : 'clean');
 
 export interface RewriteStore {
     readonly views: LiveLanes;

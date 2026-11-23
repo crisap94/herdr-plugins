@@ -5,6 +5,7 @@ import { herdrEventsFrom } from '#src/recap/domain/herdr-events.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { changes, draftFrom, initial, locksOf } from '#src/recap/application/setup-keys.ts';
 import type { Draft } from '#src/recap/application/setup-keys.ts';
+import { readerOf } from '#test/fakes/environment.ts';
 
 const models = { claude: textOf(''), codex: textOf(''), opencode: textOf(''), custom: textOf('') };
 const draft: Draft = draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined });
@@ -21,6 +22,6 @@ test('off unless set to on: a fresh install shares nothing on herdr', () => {
 test('the modal writes TAB_RECAP_HERDR_EVENTS when the row changes, and a locked row is never written', () => {
     const state = initial({ ...draft, herdrEvents: 'on' }, {});
     assert.deepEqual([...changes({ ...state, stored: draft })], [['TAB_RECAP_HERDR_EVENTS', 'on']]);
-    assert.deepEqual(locksOf({ TAB_RECAP_HERDR_EVENTS: 'on' }), { herdrEvents: 'TAB_RECAP_HERDR_EVENTS' });
+    assert.deepEqual(locksOf(readerOf({ TAB_RECAP_HERDR_EVENTS: 'on' })), { herdrEvents: 'TAB_RECAP_HERDR_EVENTS' });
     assert.equal(changes({ ...state, stored: draft, locks: { herdrEvents: environmentName(textOf('TAB_RECAP_HERDR_EVENTS')) } }).size, 0);
 });

@@ -98,7 +98,7 @@ export class HandoffConfirmation {
     }
 
     async baseline(target: Ready): Promise<Baseline> {
-        if (!target.ownTranscript) {
+        if (target.transcript === 'shared') {
             return { lane: target.lane, before: { kind: 'none' } };
         }
         const read = await this.latestOf(target.lane);

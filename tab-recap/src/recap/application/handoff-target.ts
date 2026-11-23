@@ -14,13 +14,13 @@ export type ReadinessRefusal = Extract<HandoffOutcome, { readonly kind: 'refused
 
 export type Unsupported = Extract<HandoffOutcome, { readonly kind: 'unsupported' }>;
 
-export type Readiness = { readonly kind: 'ready'; readonly ownTranscript: boolean } | ReadinessRefusal;
+export type Readiness = { readonly kind: 'ready'; readonly transcript: TranscriptHold } | ReadinessRefusal;
 
 export interface Ready {
     readonly kind: 'ready';
     readonly lane: Lane;
     readonly plan: HandoffPlan;
-    readonly ownTranscript: boolean;
+    readonly transcript: TranscriptHold;
 }
 
 export type TargetResolution = Ready | TargetRefusal | Unsupported;
@@ -32,7 +32,7 @@ export interface TargetDeps {
     readonly awaiting: (pane: PaneId) => Promise<Waiting>;
 }
 
-type TranscriptHold = 'own' | 'shared';
+export type TranscriptHold = 'own' | 'shared';
 
 type Flight = 'idle' | 'busy';
 
@@ -62,7 +62,7 @@ export async function readinessOf(lane: Lane, plan: HandoffPlan, deps: Pick<Targ
     if (hold === 'own' && (await flightOf(deps.inFlight, lane)) === 'busy') {
         return { kind: 'refused', reason: 'in-flight' };
     }
-    return { kind: 'ready', ownTranscript: hold === 'own' };
+    return { kind: 'ready', transcript: hold };
 }
 
 export async function resolveTarget(source: PaneId | null, target: PaneId, deps: TargetDeps): Promise<TargetResolution> {

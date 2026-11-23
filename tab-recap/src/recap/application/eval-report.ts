@@ -112,7 +112,7 @@ export function totalsOf(results: readonly RunResult[]): Totals {
     return {
         coverage: judged.reduce((sum, run) => plus(sum, run.coverage), NONE), filler: judged.reduce((sum, run) => plus(sum, run.filler), NONE),
         added: { coverage: judged.reduce((sum, run) => plus(sum, run.added.coverage), NONE), filler: judged.reduce((sum, run) => plus(sum, run.added.filler), NONE) },
-        readback: medianOf(judged.flatMap((run) => (run.readback === null ? [] : [countOf(run.readback.filter((grade) => grade.pass).length)]))),
+        readback: medianOf(judged.flatMap((run) => (run.readback === null ? [] : [countOf(run.readback.filter((grade) => grade.pass === 'pass').length)]))),
     };
 }
 

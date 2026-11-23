@@ -44,7 +44,7 @@ function runLine(line: RunLine, style: Style): Text {
     if (line.kind === 'not-judged') {
         return must(parseText(`${head}  ${style.red('not judged')}: ${line.why}`));
     }
-    const back = line.readback === null ? 'read-back n/a' : `read-back ${line.readback.filter((grade) => grade.pass).length}/6`;
+    const back = line.readback === null ? 'read-back n/a' : `read-back ${line.readback.filter((grade) => grade.pass === 'pass').length}/6`;
     const note = line.note === null ? '' : style.yellow(` — ${line.note}`);
     return must(parseText(`${head}  ${share(must(parseText('coverage')), tally(line.coverage), tally(line.added.coverage))} · ${share(must(parseText('no-filler')), tally(line.filler), tally(line.added.filler))} · ${back}${note}`));
 }

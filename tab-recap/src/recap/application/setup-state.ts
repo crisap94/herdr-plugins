@@ -73,6 +73,7 @@ export interface Draft {
 }
 
 export type Locks = Readonly<Partial<Record<FieldId, EnvironmentName>>>;
+export type EnvironmentReader = (key: EnvironmentName) => Text | undefined;
 
 export type TestState =
     | { readonly kind: 'idle' }
@@ -100,13 +101,19 @@ export interface Setup {
     readonly editing: Editing | null;
     readonly test: TestState;
     readonly note: Note | null;
-    readonly asked: boolean;
+    readonly asked: LeaveAsk;
 }
+
+export type LeaveAsk = 'asked' | 'not-asked';
+
+export type LanguageChange = 'changed' | 'kept';
+
+export type DraftState = 'dirty' | 'clean';
 
 export interface SaveEffect {
     readonly kind: 'save';
     readonly values: ReadonlyMap<EnvironmentName, Text>;
-    readonly languageChanged: boolean;
+    readonly language: LanguageChange;
 }
 
 export interface TestEffect {
@@ -168,7 +175,7 @@ export function draftFrom(config: Pick<Draft, 'backend' | 'models'>, raw: RawSet
 }
 
 export function initial(draft: Draft, locks: Locks): Setup {
-    return { draft, stored: draft, locks, available: null, row: countOf(0), part: countOf(0), editing: null, test: { kind: 'idle' }, note: null, asked: false };
+    return { draft, stored: draft, locks, available: null, row: countOf(0), part: countOf(0), editing: null, test: { kind: 'idle' }, note: null, asked: 'not-asked' };
 }
 
 export const rowOf = (state: Setup): RowId => ROWS[state.row] ?? 'recapJob';

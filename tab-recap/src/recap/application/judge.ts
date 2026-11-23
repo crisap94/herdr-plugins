@@ -81,7 +81,7 @@ export async function judgeRun(deps: JudgeDeps, run: RunRecord): Promise<RunResu
     const rows: readonly Row[] = [
         ...scored.value.verdicts.map((verdict): Row => ({ item: verdict.item, check: verdict.check, pass: verdict.pass, critique: critique(verdict.critique) })),
         ...measured.rows,
-        ...(back.grades ?? []).map((grade): Row => ({ item: null, check: textOf(`readback-${grade.question}`), pass: grade.pass ? 'pass' : 'fail', critique: critique(grade.critique) })),
+        ...(back.grades ?? []).map((grade): Row => ({ item: null, check: textOf(`readback-${grade.question}`), pass: grade.pass, critique: critique(grade.critique) })),
     ];
     const verdicts = rows.map((row): VerdictRecord => verdictOf(deps, run, row));
     deps.verdicts.add(verdicts);

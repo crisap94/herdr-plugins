@@ -5,5 +5,12 @@
     "function": "store",
     "parameter": "named",
     "reason": "callback: the facts map that curatorInput of packages/session-ledger/src/recap/application/curator-input.ts (session-ledger, frozen) returns fixes ReadonlyMap<string, Fact>"
+  },
+  {
+    "class": "callback",
+    "file": "src/recap/application/transcript-tail.ts",
+    "function": "<anonymous>",
+    "parameter": null,
+    "reason": "callback: the comparator of Array.prototype.toSorted must answer number, the library contract of the sort callback in tailOf"
   }
 ]

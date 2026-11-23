@@ -41,7 +41,11 @@ export interface EvalDeps {
 
 const reportJson = (report: EvalReport, missing: Count): Text => textOf(JSON.stringify({
     ...report,
-    runs: report.runs.map((line) => ({ ...line, run: { id: line.run.id, tab: line.run.tab, at: line.run.at, language: line.run.language, backend: line.run.backend, hasInput: line.run.input === 'present', gateStats: line.run.gateStats } })),
+    runs: report.runs.map((line) => ({
+        ...line,
+        run: { id: line.run.id, tab: line.run.tab, at: line.run.at, language: line.run.language, backend: line.run.backend, hasInput: line.run.input === 'present', gateStats: line.run.gateStats },
+        ...(line.kind === 'judged' ? { readback: line.readback === null ? null : line.readback.map((grade) => ({ question: grade.question, pass: grade.pass === 'pass', critique: grade.critique })) } : {}),
+    })),
     missingInput: missing,
 }));
 

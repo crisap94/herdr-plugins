@@ -7,7 +7,7 @@ import { causeOf } from './cause.ts';
 import type { Acquired } from '#src/recap/application/typing-lease.ts';
 import type { CurrentSession } from '#src/recap/application/lane-recent.ts';
 import type { HandoffTyping } from '#src/recap/application/handoff-sender.ts';
-import type { Ready } from '#src/recap/application/handoff-target.ts';
+import type { Ready, TranscriptHold } from '#src/recap/application/handoff-target.ts';
 import type { HandoffEvidence, HandoffPlan, LocatedBy } from '#src/recap/domain/handoff-plan.ts';
 import { HandoffConfirmation } from '#src/recap/application/handoff-confirmation.ts';
 import { HandoffSender } from '#src/recap/application/handoff-sender.ts';
@@ -181,8 +181,8 @@ export function laneWith(over: Partial<BareLane> = {}): Lane {
     return laneFrom(seenLane({ paneId: PANE, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', session: 'sess-1', cwd: '/repo', ...over }));
 }
 
-export function readyOf(lane: Lane, plan: HandoffPlan, ownTranscript = true): Ready {
-    return { kind: 'ready', lane, plan, ownTranscript };
+export function readyOf(lane: Lane, plan: HandoffPlan, transcript: TranscriptHold = 'own'): Ready {
+    return { kind: 'ready', lane, plan, transcript };
 }
 
 export function echoing(world: World): World {
