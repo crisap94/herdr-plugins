@@ -15,13 +15,6 @@
   },
   {
     "class": "callback",
-    "file": "src/adapters/transcripts/screen.ts",
-    "function": "<anonymous>",
-    "parameter": null,
-    "reason": "callback: the ScreenWants predicate, a boolean callback supplied by the daemon wantsScreen(agent: string) and the tests"
-  },
-  {
-    "class": "callback",
     "file": "src/adapters/git/lane-repo.ts",
     "function": "repoOf",
     "parameter": "cwd",

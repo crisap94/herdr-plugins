@@ -5,8 +5,9 @@ import { xdgPaths } from '#src/adapters/os/config/paths-xdg.ts';
 import { languageSettingOf, messagesFor, recapLanguageOfSetting } from '#src/i18n/index.ts';
 import type { LanguageSource, Locale, Messages } from '#src/i18n/index.ts';
 import { duration, parseDuration } from '#src/recap/domain/time.ts';
-import { DEFAULT_POLICY, screenKindsOf } from '#src/recap/domain/policy.ts';
+import { ANY_KIND, DEFAULT_POLICY, screenKindsOf } from '#src/recap/domain/policy.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
 import type { JobReader } from '#src/recap/domain/job.ts';
 import { compactSettingOf, coverageSettingOf, curateSettingOf, deciderSettingOf, judgeSettingOf, keepDaysCountOf } from '#src/recap/domain/job.ts';
 import { parseBriefRetention, parseCoverageBy, jevFrom, policyFrom as autocompactPolicyFrom } from '#src/recap/domain/autocompact.ts';
@@ -34,7 +35,11 @@ import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import { err, must, ok, type Result } from '#src/protocol/result.ts';
 import { parseText, textOf as uncheckedText, type Text } from '#src/recap/domain/text.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
-import { parseAgentKind, type AgentKind } from '#src/recap/domain/ids.ts';
+import { parseAgentKind, uncheckedAgentKind, type AgentKind } from '#src/recap/domain/ids.ts';
+import { capabilityOf } from '#src/recap/domain/lane-tokens.ts';
+import { handoff } from '#src/protocol/exchanges/handoff.ts';
+import type { OptIn, TokenValue } from '#src/protocol/primitives.ts';
+import type { Setting } from '#src/protocol/capability.ts';
 import { numberIn, type NumberRange } from '#src/recap/domain/number-in.ts';
 import type { CompactionSettings, Glow, Models, SettingGet, SettingName, SettingReader, Settings } from './settings.ts';
 
@@ -46,6 +51,17 @@ export { parseEnv } from './legacy.ts';
 export type { CompactionSettings, Glow, Models, SettingGet, SettingReader, Settings } from './settings.ts';
 
 const defaults = xdgPaths(homedir());
+
+export const herdrEventsPresence = (): Presence => (loadSettings().herdrEvents === 'on' ? 'present' : 'absent');
+
+const switchOn = (setting: OptIn): Setting => ((setting === handoff.optIn ? loadSettings().handoffRequests === 'on' : herdrEventsFrom(settingReader()(environmentName(uncheckedText(setting)))) === 'on') ? 'on' : 'off');
+
+export const advertisedCapability = (): TokenValue => capabilityOf(switchOn);
+
+export const screenWanted = (agent: AgentKind): Presence => {
+    const { screenAgents } = loadSettings();
+    return screenAgents.includes(uncheckedAgentKind(ANY_KIND)) || screenAgents.includes(agent) ? 'present' : 'absent';
+};
 
 const keyOf = (name: SettingName): EnvironmentName => environmentName(must(parseText(name)));
 

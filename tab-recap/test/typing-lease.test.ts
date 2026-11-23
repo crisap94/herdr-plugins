@@ -6,17 +6,17 @@ import { LEASE, LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
 import { saying, unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import type { Done } from '#src/ports/columns.ts';
-import type { LaneTokens } from '#src/ports/lane-tokens.ts';
+import type { LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import { FakePanes } from './fakes/herdr-panes.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
 import { paneId } from '#test/support/ids.ts';
 
-function herdrAt(clock: { at: number }): { herdr: FakePanes; tokens: LaneTokens; panes: PaneTokens } {
+function herdrAt(clock: { at: number }): { herdr: FakePanes; tokens: LaneTokenReporter; panes: PaneTokens } {
     const herdr = new FakePanes(() => clock.at);
-    const tokens: LaneTokens = {
-        report: async (pane, values, ttlMs): Promise<Done> => (herdr.report(pane, 'tab-recap', values, ttlMs).ok ? { kind: 'done' } : unknown({ why: 'unreachable', detail: causeOf('fake') })),
+    const tokens: LaneTokenReporter = {
+        report: async (pane, values, ttlMs): Promise<Done> => (herdr.report(pane, 'tab-recap', Object.fromEntries(values), Number(ttlMs)).ok ? { kind: 'done' } : unknown({ why: 'unreachable', detail: causeOf('fake') })),
     };
     const panes: PaneTokens = {
         read: async (pane): Promise<PaneTokensResult> => ({ kind: 'tokens', tokens: tokenEntries(herdr.read(pane)) }),
@@ -75,7 +75,7 @@ test('after typing, tab-recap clears its lease', async () => {
 test('herdr cannot take or read tokens: the lease is unavailable at once, typing goes on without it, and one line says so per outage', async () => {
     const clock = { at: 1000 };
     const logged: string[] = [];
-    const broken: LaneTokens = { report: async (): Promise<Done> => unknown({ why: 'unreachable', detail: causeOf('no pane.report_metadata') }) };
+    const broken: LaneTokenReporter = { report: async (): Promise<Done> => unknown({ why: 'unreachable', detail: causeOf('no pane.report_metadata') }) };
     const panes: PaneTokens = { read: async (): Promise<PaneTokensResult> => unknown({ why: 'unreachable', detail: causeOf('no pane.get') }) };
     const lease = new PaneTypingLease({ tokens: broken, panes, now: (): Instant => instant(clock.at), pause: async (ms: number): Promise<void> => { clock.at += ms; }, log: (line: string): void => { logged.push(line); } });
     assert.equal(await lease.acquire(paneId('w1:p1')), 'unavailable');

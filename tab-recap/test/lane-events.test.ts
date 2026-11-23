@@ -6,7 +6,8 @@ import type { EventKind } from '#src/recap/domain/event-token.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import type { Done } from '#src/ports/columns.ts';
-import type { LaneTokens } from '#src/ports/lane-tokens.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
+import type { LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import type { WorkspaceList, WorkspaceTokenReporter } from '#src/ports/workspace-tokens.ts';
 import { parseTokenName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
@@ -25,9 +26,9 @@ interface Rig {
 
 function rigAt(startedAt: number, workspaces: readonly string[] = ['w1', 'w2']): Rig {
     const rig: Rig = { stream: undefined as unknown as EventStream, panes: [], spaces: [], logged: [], on: true, failing: false };
-    const tokens: LaneTokens = {
+    const tokens: LaneTokenReporter = {
         report: async (pane, values): Promise<Done> => {
-            rig.panes.push({ target: pane, value: values[EVENT_TOKEN] ?? null });
+            rig.panes.push({ target: pane, value: Object.fromEntries(values)[EVENT_TOKEN] ?? null });
             return rig.failing ? unknown({ why: 'unreachable', detail: causeOf('fake') }) : { kind: 'done' };
         },
     };
@@ -39,7 +40,7 @@ function rigAt(startedAt: number, workspaces: readonly string[] = ['w1', 'w2']):
         },
         workspaces: async (): Promise<WorkspaceList> => ({ kind: 'workspaces', ids: workspaces.map((id) => uncheckedWorkspaceId(id)) }),
     };
-    rig.stream = new EventStream({ tokens, workspaces: ws, enabled: (): boolean => rig.on, startedAt, log: (line: string): void => { rig.logged.push(line); } });
+    rig.stream = new EventStream({ tokens, workspaces: ws, enabled: (): Presence => (rig.on ? 'present' : 'absent'), startedAt, log: (line: string): void => { rig.logged.push(line); } });
     return rig;
 }
 
@@ -160,7 +161,7 @@ test('a workspace that cannot be listed is logged, and nothing is written for it
         reportWorkspace: async (): Promise<Done> => ({ kind: 'done' }),
         workspaces: async (): Promise<WorkspaceList> => unknown({ why: 'unreachable', detail: causeOf('fake') }),
     };
-    const stream = new EventStream({ tokens: { report: async (): Promise<Done> => ({ kind: 'done' }) }, workspaces: ws, enabled: (): boolean => true, startedAt: 1, log: (line: string): void => { logged.push(line); } });
+    const stream = new EventStream({ tokens: { report: async (): Promise<Done> => ({ kind: 'done' }) }, workspaces: ws, enabled: (): Presence => 'present', startedAt: 1, log: (line: string): void => { logged.push(line); } });
     await stream.daemon('daemon-started', '2.2.1');
     assert.equal(logged.length, 1);
 });

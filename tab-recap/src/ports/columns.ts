@@ -6,8 +6,6 @@ import type { Probability } from '#src/recap/domain/probability.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
-export type { Columns } from './legacy.ts';
-
 export type OpenResult = { readonly kind: 'opened'; readonly pane: PaneId } | Unknown;
 
 export type Done = { readonly kind: 'done' } | Unknown;

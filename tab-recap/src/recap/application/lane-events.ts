@@ -1,13 +1,14 @@
 import type { EventKind } from '#src/recap/domain/event-token.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
+import type { Presence } from '#src/recap/domain/presence.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { EVENT_TOKEN, EVENT_TTL_MS, eventValue, seqOf } from '#src/recap/domain/event-token.ts';
-import type { LaneTokens } from '#src/ports/lane-tokens.ts';
+import type { LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import type { WorkspaceTokenMap, WorkspaceTokenReporter } from '#src/ports/workspace-tokens.ts';
 import { parseTokenName, parseTokenValue } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
-import { uncheckedWorkspaceId } from '#src/recap/domain/ids.ts';
+import { uncheckedMilliseconds, uncheckedPaneId, uncheckedTokenValue, uncheckedWorkspaceId } from '#src/recap/domain/ids.ts';
 import { parseMilliseconds } from '#src/recap/domain/time.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 
@@ -17,11 +18,11 @@ export interface LaneEvents {
 }
 
 export interface EventDeps {
-    readonly tokens: LaneTokens;
+    readonly tokens: LaneTokenReporter;
     readonly workspaces: WorkspaceTokenReporter;
-    readonly enabled: () => boolean;
+    readonly enabled: () => Presence;
     readonly startedAt: number;
-    readonly log: (line: string) => void;
+    readonly log: (line: Text) => void;
 }
 
 type Target = 'pane' | 'workspace';
@@ -31,6 +32,7 @@ interface Carried { readonly target: Target; readonly id: string }
 const KEEP_MS = 3_600_000;
 const EVENT_NAME = must(parseTokenName(EVENT_TOKEN));
 const WORKSPACE_TTL = must(parseMilliseconds(EVENT_TTL_MS));
+const PANE_TTL = uncheckedMilliseconds(EVENT_TTL_MS);
 
 export class EventStream implements LaneEvents {
     private readonly deps: EventDeps;
@@ -52,19 +54,19 @@ export class EventStream implements LaneEvents {
     }
 
     async daemon(kind: DaemonKind, version: string): Promise<void> {
-        if (!this.deps.enabled()) {
+        if (this.deps.enabled() === 'absent') {
             return;
         }
         const found = await this.deps.workspaces.workspaces();
         if (isUnknown(found)) {
-            this.deps.log(`event ${kind}: no workspace listed (${saying(found.why)})`);
+            this.deps.log(textOf(`event ${kind}: no workspace listed (${saying(found.why)})`));
             return;
         }
         await Promise.all(found.ids.map((workspace) => this.write('workspace', workspace, kind, this.nextFor('workspace', workspace), version)));
     }
 
     tick(): void {
-        if (this.deps.enabled()) {
+        if (this.deps.enabled() === 'present') {
             this.wasOn = true;
         } else if (this.wasOn) {
             this.wasOn = false;
@@ -81,7 +83,7 @@ export class EventStream implements LaneEvents {
     }
 
     private emit(target: Target, id: string, kind: EventKind, detail?: string | null): void {
-        if (!this.deps.enabled()) {
+        if (this.deps.enabled() === 'absent') {
             return;
         }
         this.carrying.set(keyOf(target, id), { target, id });
@@ -90,9 +92,9 @@ export class EventStream implements LaneEvents {
 
     private async write(target: Target, id: string, kind: EventKind, seq: string, detail: string | null): Promise<void> {
         const value = eventValue(textOf(seq), kind, detail === null ? null : textOf(detail));
-        const done = target === 'pane' ? await this.deps.tokens.report(id, { [EVENT_TOKEN]: value }, EVENT_TTL_MS) : await this.deps.workspaces.reportWorkspace(uncheckedWorkspaceId(id), new Map([[EVENT_NAME, must(parseTokenValue(value))]]), WORKSPACE_TTL);
+        const done = target === 'pane' ? await this.deps.tokens.report(uncheckedPaneId(id), new Map([[EVENT_NAME, uncheckedTokenValue(value)]]), PANE_TTL) : await this.deps.workspaces.reportWorkspace(uncheckedWorkspaceId(id), new Map([[EVENT_NAME, must(parseTokenValue(value))]]), WORKSPACE_TTL);
         if (isUnknown(done)) {
-            this.deps.log(`event ${kind} on ${id}: not written (${saying(done.why)})`);
+            this.deps.log(textOf(`event ${kind} on ${id}: not written (${saying(done.why)})`));
         }
     }
 
@@ -108,9 +110,9 @@ export class EventStream implements LaneEvents {
 
     private async clear(target: Target, id: string): Promise<void> {
         const cleared: WorkspaceTokenMap = new Map([[EVENT_NAME, null]]);
-        const done = target === 'pane' ? await this.deps.tokens.report(id, { [EVENT_TOKEN]: null }, EVENT_TTL_MS) : await this.deps.workspaces.reportWorkspace(uncheckedWorkspaceId(id), cleared, WORKSPACE_TTL);
+        const done = target === 'pane' ? await this.deps.tokens.report(uncheckedPaneId(id), new Map([[EVENT_NAME, null]]), PANE_TTL) : await this.deps.workspaces.reportWorkspace(uncheckedWorkspaceId(id), cleared, WORKSPACE_TTL);
         if (isUnknown(done)) {
-            this.deps.log(`event token on ${id}: not cleared (${saying(done.why)})`);
+            this.deps.log(textOf(`event token on ${id}: not cleared (${saying(done.why)})`));
         }
     }
 

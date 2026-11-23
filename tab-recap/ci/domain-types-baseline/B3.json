@@ -41,7 +41,7 @@
   },
   "src/recap/application/informer.ts": {
     "parameter": 5,
-    "return": 2,
+    "return": 1,
     "container": 4,
     "property": 6
   },
@@ -67,8 +67,8 @@
     "return": 3
   },
   "src/recap/application/lane-events.ts": {
-    "parameter": 20,
-    "return": 3,
+    "parameter": 19,
+    "return": 2,
     "container": 3,
     "property": 7
   },
@@ -80,9 +80,8 @@
     "container": 1
   },
   "src/recap/application/lane-tokens.ts": {
-    "parameter": 8,
-    "return": 2,
-    "container": 2,
+    "parameter": 4,
+    "return": 1,
     "property": 3
   },
   "src/recap/application/lane-webs.ts": {
@@ -107,10 +106,8 @@
     "return": 3
   },
   "src/recap/application/settle-hub.ts": {
-    "parameter": 11,
-    "return": 2,
-    "container": 2,
-    "property": 3
+    "parameter": 2,
+    "container": 2
   },
   "src/recap/application/setup-changes.ts": {
     "parameter": 1,

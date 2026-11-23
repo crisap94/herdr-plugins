@@ -1,7 +1,7 @@
 import { LOCAL_REQUESTER } from '#src/ports/ask-ledger.ts';
 import type { AskEntry, AskBook } from '#src/ports/ask-ledger.ts';
 import type { CompactionLog } from '#src/ports/compaction-records.ts';
-import type { LaneTokens } from '#src/ports/lane-tokens.ts';
+import type { LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import type { RequestPort } from '#src/ports/requests.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { failureStage, INTERRUPTED_REASON } from '#src/protocol/exchange.ts';
@@ -16,6 +16,7 @@ import type { Presence } from '#src/recap/domain/presence.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { ANSWER_TTL_MS } from '#src/recap/domain/compact-request.ts';
+import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 
 export interface RestartWiring {
@@ -23,7 +24,7 @@ export interface RestartWiring {
     readonly ledger: AskBook;
     readonly requests: Pick<RequestPort, 'takeAnswered'>;
     readonly compactions: Pick<CompactionLog, 'interrupted'>;
-    readonly tokens: Pick<LaneTokens, 'report'>;
+    readonly tokens: Pick<LaneTokenReporter, 'report'>;
     readonly enabled: () => Presence;
     readonly local: (ask: AskEntry) => void;
     readonly handoff: (ask: AskEntry) => void;
@@ -33,6 +34,7 @@ export interface RestartWiring {
     readonly restartedWhy: Text;
 }
 
+const ANSWER_TTL = uncheckedMilliseconds(ANSWER_TTL_MS);
 const INTERRUPTED: AskOutcome = { kind: 'interrupted' };
 const FAILED_INTERRUPTED: AskOutcome = { kind: 'failed', reason: INTERRUPTED_REASON };
 
@@ -41,7 +43,7 @@ export function purgeAnsweredCompactions(requests: Pick<RequestPort, 'takeAnswer
 }
 
 async function sendAnswer(deps: RestartWiring, pane: PaneId, write: TokenWrite): Promise<void> {
-    const done = await deps.tokens.report(pane, { [write.name]: write.value }, ANSWER_TTL_MS);
+    const done = await deps.tokens.report(pane, new Map([[write.name, write.value]]), ANSWER_TTL);
     if (isUnknown(done)) {
         deps.log(must(parseText(`ask on ${pane}: not answered (${saying(done.why)})`)));
     }

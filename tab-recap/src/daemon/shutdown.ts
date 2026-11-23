@@ -1,4 +1,4 @@
-import type { Columns } from '#src/ports/columns.ts';
+import type { ColumnPanes } from '#src/ports/columns.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { duration, type Duration } from '#src/recap/domain/time.ts';
 import { withinBy } from './bounded.ts';
@@ -10,7 +10,7 @@ export interface StoppableInformer {
     stop(): void;
 }
 
-export async function shutDownWithin(columns: Pick<Columns, 'closeEvery'>, informer: StoppableInformer, log: (line: Line) => void, limit: Duration = duration(SHUTDOWN_MS)): Promise<void> {
+export async function shutDownWithin(columns: Pick<ColumnPanes, 'closeEvery'>, informer: StoppableInformer, log: (line: Line) => void, limit: Duration = duration(SHUTDOWN_MS)): Promise<void> {
     log(parseLine('stopping: closing every column'));
     informer.stop();
     const result = await withinBy(columns.closeEvery(), limit, null);

@@ -1,11 +1,11 @@
 import type { DecodedFrame } from '@stateforge-labs/herdr-sdk';
-import type { ClosedEvery, Columns, Done, ColumnLayoutResult, OpenResult, ResizeDirection } from '#src/ports/columns.ts';
+import type { ClosedEvery, ColumnPanes, Done, ColumnLayoutResult, OpenResult, ResizeDirection } from '#src/ports/columns.ts';
 import type { HarnessDirectory, HarnessList } from '#src/ports/harnesses.ts';
 import type { ModalHost, SetupOpened } from '#src/ports/modal.ts';
 import type { Notice, NotifierPort } from '#src/ports/notifier.ts';
 import type { ScreenOutcome, ScreenReader } from '#src/ports/screens.ts';
 import type { Frame, FleetSource, SnapshotResult, StreamResult, Topic } from '#src/ports/fleet-source.ts';
-import type { LaneTokenMap, LaneTokens } from '#src/ports/lane-tokens.ts';
+import type { LaneTokenMap, LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import type { WorkspaceList, WorkspaceTokenMap, WorkspaceTokenReporter } from '#src/ports/workspace-tokens.ts';
 import { unknown, type Unknown } from '#src/ports/unknowable.ts';
@@ -14,14 +14,14 @@ import type { TokenMap } from '#src/protocol/tokens.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import type { Probability } from '#src/recap/domain/probability.ts';
 import { countOf, type Count } from '#src/recap/domain/count.ts';
-import { uncheckedPaneId, uncheckedRatio, uncheckedTokenName, uncheckedTokenValue } from '#src/recap/domain/ids.ts';
+import { uncheckedPaneId, uncheckedRatio } from '#src/recap/domain/ids.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
 import type { Reconciliation } from '#src/recap/domain/fold.ts';
 import { agentKind, tabId, type PaneId, type TabId, type WorkspaceId } from '#src/recap/domain/ids.ts';
 import type { Placed, Split } from '#src/recap/domain/layout.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
-import { parseMilliseconds, type Milliseconds } from '#src/recap/domain/time.ts';
+import { type Milliseconds } from '#src/recap/domain/time.ts';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { paneTokenMapOf, seenFrom, sessionOf } from '#src/recap/application/decode.ts';
 import { agentPanesIn, columnsIn, deadColumnsIn } from './column-panes.ts';
@@ -72,7 +72,7 @@ export async function readPaneSession(pane: string): Promise<string | null | Unk
     }
 }
 
-export class HerdrFleet implements FleetSource, Columns, ModalHost, HarnessDirectory, NotifierPort, ScreenReader, LaneTokens, PaneTokens, WorkspaceTokenReporter {
+export class HerdrFleet implements FleetSource, ColumnPanes, ModalHost, HarnessDirectory, NotifierPort, ScreenReader, LaneTokenReporter, PaneTokens, WorkspaceTokenReporter {
     private readonly stateDir: Text;
     private readonly ports: HerdrFleetPorts;
 
@@ -149,9 +149,8 @@ export class HerdrFleet implements FleetSource, Columns, ModalHost, HarnessDirec
         }
     }
 
-    async report(pane: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done> {
-        const named: LaneTokenMap = new Map(Object.entries(tokens).map(([name, value]) => [uncheckedTokenName(name), value === null ? null : uncheckedTokenValue(value)]));
-        return this.ports.report(uncheckedPaneId(pane), named, must(parseMilliseconds(ttlMs)));
+    async report(pane: PaneId, tokens: LaneTokenMap, ttlMs: Milliseconds): Promise<Done> {
+        return this.ports.report(pane, tokens, ttlMs);
     }
 
     async read(pane: PaneId): Promise<PaneTokensResult> {

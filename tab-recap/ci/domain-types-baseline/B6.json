@@ -34,7 +34,7 @@
     "container": 3
   },
   "src/adapters/herdr/legacy.ts": {
-    "legacy": 7
+    "legacy": 4
   },
   "src/adapters/job/prompts/recap-instructions.ts": {
     "parameter": 3,

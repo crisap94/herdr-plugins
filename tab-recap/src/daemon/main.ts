@@ -42,7 +42,7 @@ import { SLOT_TABLE } from './slot-table.ts';
 import { contextOf, parseRoot, parseSwitch, parseVersion, startSlots, taps, type Slots, type SlotKey, type StatusEvent, type Switch, type Version } from './slots.ts';
 import { Backends } from './backends.ts';
 import { boundedBy } from './bounded.ts';
-import { capabilityNow, failureLog, herdrEventsOn, herdrEventsPresence, logVia, paneTokensTo, wantsScreen } from './legacy.ts';
+import { failureLog, logVia, paneTokensTo } from './legacy.ts';
 import { SHUTDOWN_MS, shutDownWithin } from './shutdown.ts';
 import { openStateAt } from './state.ts';
 import type { Autocompact } from '#src/recap/application/autocompact.ts';
@@ -50,7 +50,7 @@ import { candidateOf, candidatesOf, wireAutocompact } from './autocompact.ts';
 import { AutocompactSweep } from './autocompact-sweep.ts';
 import { wireCompaction } from './compaction.ts';
 import { createPreCompacts } from '#src/adapters/hooks/pre-compacts.ts';
-import { settingGetter, loadSettings, messagesOf, stateDirectory } from './config.ts';
+import { advertisedCapability, herdrEventsPresence, screenWanted, settingGetter, loadSettings, messagesOf, stateDirectory } from './config.ts';
 import { wireCurate } from './curate.ts';
 import type { CurateTasks } from '#src/recap/application/curate.ts';
 import { InputRetention } from '#src/recap/application/input-retention.ts';
@@ -115,9 +115,9 @@ const handoffRequestsOn = (): HandoffRequests => loadSettings().handoffRequests;
 
 function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wired {
     const clock = new SystemClock();
-    const events = new EventStream({ tokens: fleet, workspaces: fleet, enabled: herdrEventsOn, startedAt: Date.now() - process.uptime() * 1000, log });
+    const events = new EventStream({ tokens: fleet, workspaces: fleet, enabled: herdrEventsPresence, startedAt: Date.now() - process.uptime() * 1000, log });
     const backends = new Backends(root, { herdr: fleet, path: new PathHarnessDirectory(AUTO_PATH_KINDS) }, fleet, log, createRuntime());
-    const transcripts = daemonTranscriptRegistry(fleet, wantsScreen);
+    const transcripts = daemonTranscriptRegistry(fleet, screenWanted);
     const repos = new GitLaneRepo(clock);
     const curate = wireCurate({ store, curator: () => backends.curator(), transcripts, log });
     const box: Box = { informer: null, autocompact: null };
@@ -129,8 +129,8 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
     const hub = new SettleHub({ agents: fleet.agents(), listening: listeningOf(box), pause: sleep, now: nowInstant });
     const webs = new LaneWebs(repos);
     const contexts = new LaneContexts(transcripts, agentWindows(new CatalogueWindows()), systemCompactLimits(), () => loadSettings().compaction.window);
-    const laneTokens = new LaneTokenPublisher({ tokens: fleet, enabled: herdrEventsOn, board, facts: (lane): LaneTokenFacts => factsOf(lane, { contexts, records: store.records, ledger: store.ledger }), capability: capabilityNow, now: nowInstant, log, events });
-    const dispatch = dispatchFor(box, { fleet, store, recaps, transcripts, webs, contexts, events, sharing: (): Sharing => (herdrEventsOn() ? 'on' : 'off') }, log);
+    const laneTokens = new LaneTokenPublisher({ tokens: fleet, enabled: herdrEventsPresence, board, facts: (lane): LaneTokenFacts => factsOf(lane, { contexts, records: store.records, ledger: store.ledger }), capability: advertisedCapability, now: nowInstant, log, events });
+    const dispatch = dispatchFor(box, { fleet, store, recaps, transcripts, webs, contexts, events, sharing: (): Sharing => (herdrEventsPresence() === 'present' ? 'on' : 'off') }, log);
     const turns = laneTurns({ hub, compactions: store.compactions, board: (): Board => box.informer?.current ?? emptyBoard(), now: nowInstant, statused: statusTaps.emit });
     const informer = new Informer(fleet, clock, loadSettings().policy, {
         onIntents: async (intents: readonly Intent[]): Promise<void> => {

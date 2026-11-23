@@ -6,7 +6,7 @@ import { PaneTypingLease } from '#src/recap/application/typing-lease.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { Ready } from '#src/recap/application/handoff-target.ts';
 import { LEASE, LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
-import type { LaneTokens } from '#src/ports/lane-tokens.ts';
+import type { LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
@@ -37,8 +37,8 @@ test('an available lease is taken without waiting, the plan runs once and the le
 test('an earlier live lease of another tool returns typing-lease-busy without pausing and types nothing', async () => {
     const clock = { at: 1000 };
     const herdr = new FakePanes(() => clock.at);
-    const tokens: LaneTokens = {
-        report: async (pane, values, ttlMs): Promise<Done> => (herdr.report(pane, 'tab-recap', values, ttlMs).ok ? { kind: 'done' } : unknown({ why: 'unreachable', detail: causeOf('fake') })),
+    const tokens: LaneTokenReporter = {
+        report: async (pane, values, ttlMs): Promise<Done> => (herdr.report(pane, 'tab-recap', Object.fromEntries(values), Number(ttlMs)).ok ? { kind: 'done' } : unknown({ why: 'unreachable', detail: causeOf('fake') })),
     };
     const panes: PaneTokens = { read: async (pane): Promise<PaneTokensResult> => ({ kind: 'tokens', tokens: tokenEntries(herdr.read(pane)) }) };
     const leasePauses: number[] = [];

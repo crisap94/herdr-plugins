@@ -146,7 +146,7 @@ function rows(): Row[] {
 
     const screens: ScreenReader = { readScreen: (pane): Promise<ScreenOutcome> => Promise.resolve({ kind: 'screen', text: textOf(pane === 'w1:p8' ? '' : 'I fixed the parser and the tests pass.'), revision: countOf(1), truncated: 'absent' }) };
     out.push({
-        kind: 'gemini', reader: new ScreenTranscripts(screens, (agent) => agent === 'gemini'),
+        kind: 'gemini', reader: new ScreenTranscripts(screens, (agent) => (agent === 'gemini' ? 'present' : 'absent')),
         empty: lane('gemini', { pane: 'w1:p8' }), recorded: lane('gemini', { pane: 'w1:p3' }), unplaced: lane('zed'),
         observed: 'absent',
         marks: 'absent',
@@ -293,7 +293,7 @@ test('gemini history and compaction lookups refuse with their established wordin
 
 test('unavailable reasons name the kind for the modal and the daemon registries alike', () => {
     const screens: ScreenReader = { readScreen: (): Promise<ScreenOutcome> => Promise.resolve({ kind: 'screen', text: textOf(''), revision: countOf(1), truncated: 'absent' }) };
-    const daemon = daemonTranscriptRegistry(screens, () => true);
+    const daemon = daemonTranscriptRegistry(screens, () => 'present');
     assert.equal(modalTranscriptRegistry().unavailableReason(agentKind('gemini')), 'no reader for gemini');
     assert.equal(modalTranscriptRegistry().unavailableReason(agentKind('zed')), 'no reader for zed');
     assert.equal(daemon.unavailableReason(agentKind('gemini')), 'no reader for gemini');

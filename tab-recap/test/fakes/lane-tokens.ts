@@ -1,5 +1,7 @@
 import type { Done } from '#src/ports/columns.ts';
-import type { LaneTokens } from '#src/ports/lane-tokens.ts';
+import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { Milliseconds } from '#src/recap/domain/time.ts';
+import type { LaneTokenMap, LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './cause.ts';
 
@@ -9,12 +11,12 @@ export interface Report {
     readonly ttlMs: number;
 }
 
-export class RecordingTokens implements LaneTokens {
+export class RecordingTokens implements LaneTokenReporter {
     readonly reports: Report[] = [];
     failing = false;
 
-    async report(pane: string, tokens: Readonly<Record<string, string | null>>, ttlMs: number): Promise<Done> {
-        this.reports.push({ pane, tokens, ttlMs });
+    async report(pane: PaneId, tokens: LaneTokenMap, ttlMs: Milliseconds): Promise<Done> {
+        this.reports.push({ pane: String(pane), tokens: Object.fromEntries(tokens), ttlMs: Number(ttlMs) });
         return this.failing ? unknown({ why: 'unreachable', detail: causeOf('fake') }) : { kind: 'done' };
     }
 }

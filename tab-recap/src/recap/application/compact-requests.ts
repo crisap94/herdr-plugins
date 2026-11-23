@@ -1,12 +1,12 @@
 import type { Board } from '#src/recap/domain/board.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import { uncheckedMilliseconds, type PaneId } from '#src/recap/domain/ids.ts';
 import { ANSWER_TTL_MS, COMPACT_EXCHANGE, NOT_ACTED, noteOf } from '#src/recap/domain/compact-request.ts';
 import { outcomeOf } from '#src/recap/domain/ask-outcome.ts';
 import { COMPACT_TOKEN } from '#src/recap/domain/lane-tokens.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
 import type { AskBook } from '#src/ports/ask-ledger.ts';
 import type { RequestPort } from '#src/ports/requests.ts';
-import type { LaneTokens } from '#src/ports/lane-tokens.ts';
+import type { LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { failureStage, isFailureStage } from '#src/protocol/exchange.ts';
@@ -19,6 +19,7 @@ import type { Presence } from '#src/recap/domain/presence.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 
+const ANSWER_TTL = uncheckedMilliseconds(ANSWER_TTL_MS);
 const PENDING_MAX = 200;
 const BAD_MAX = 500;
 
@@ -27,7 +28,7 @@ export interface CompactRequestQueueDeps {
     readonly board: () => Board;
     readonly requests: Pick<RequestPort, 'requestCompact'>;
     readonly asks: AskBook;
-    readonly tokens: LaneTokens;
+    readonly tokens: LaneTokenReporter;
     readonly now: () => Instant;
     readonly log: (line: Text) => void;
 }
@@ -148,7 +149,7 @@ export class CompactRequestQueue {
     }
 
     private async write(pane: PaneId, write: TokenWrite): Promise<void> {
-        const done = await this.deps.tokens.report(pane, { [write.name]: write.value }, ANSWER_TTL_MS);
+        const done = await this.deps.tokens.report(pane, new Map([[write.name, write.value]]), ANSWER_TTL);
         if (isUnknown(done)) {
             this.deps.log(must(parseText(`compaction request on ${pane}: not answered (${saying(done.why)})`)));
         }

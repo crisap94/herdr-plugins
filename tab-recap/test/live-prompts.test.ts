@@ -18,7 +18,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane, SeenLane } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import type { Columns } from '#src/ports/columns.ts';
+import type { ColumnPanes } from '#src/ports/columns.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { TabView, TabViews } from '#src/ports/tab-views.ts';
 import type { Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
@@ -68,7 +68,7 @@ test('LivePrompts: a lane that cannot be read, has no prompt or no reader keeps 
 
 test('LivePrompts: an agent without a store of its own goes through the any-agent reader, a screen yields none', async () => {
     const screens = { readScreen: (): Promise<never> => Promise.reject(new Error('never')) };
-    const prompts = new LivePrompts(registryWith({}, new ScreenTranscripts(screens, () => true)));
+    const prompts = new LivePrompts(registryWith({}, new ScreenTranscripts(screens, () => 'present')));
     assert.equal(await prompts.refresh(lane('w1:p1', 'gemini')), 'absent');
     assert.equal(prompts.of(paneId('w1:p1')), null);
 });
@@ -137,7 +137,7 @@ function dispatchWith(prompts: PaneSource<Text>): { dispatch: LaneDispatch; writ
     const views = { writeTab: (view: TabView): void => { written.push(view); } } as unknown as TabViews;
     const board = observe(emptyBoard(), reconciled(seenLane('w1:p1')), instant(0), DEFAULT_POLICY).board;
     const dispatch = new LaneDispatch({
-        columns: {} as Columns, views, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() }, prompts, webs: { of: (): null => null, refresh: (): Promise<Presence> => Promise.resolve('absent') }, log: (): void => undefined,
+        columns: {} as ColumnPanes, views, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() }, prompts, webs: { of: (): null => null, refresh: (): Promise<Presence> => Promise.resolve('absent') }, log: (): void => undefined,
         board: (): Board => board, sizing: (): Sizing => SIZING, feedback: (): void => undefined, ...silentClosures,
     });
     return { dispatch, written };

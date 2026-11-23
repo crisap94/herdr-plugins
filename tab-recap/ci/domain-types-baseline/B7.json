@@ -1,6 +1,6 @@
 {
   "src/daemon/legacy.ts": {
-    "legacy": 20
+    "legacy": 16
   },
   "src/setup/main.ts": {
     "parameter": 2,

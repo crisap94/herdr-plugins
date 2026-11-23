@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import type { Presence } from '#src/recap/domain/presence.ts';
 import assert from 'node:assert/strict';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
@@ -80,7 +81,7 @@ function publisher(board: { current: Board }, recap: { value: LaneTokenFacts }, 
     let now = 0;
     const logged: string[] = [];
     const lane = new LaneTokenPublisher({
-        tokens, enabled: (): boolean => enabled.on, board: (): Board => board.current, facts: (): LaneTokenFacts => recap.value, now: (): number => now, log: (line: string): void => { logged.push(line); },
+        tokens, enabled: (): Presence => (enabled.on ? 'present' : 'absent'), board: (): Board => board.current, facts: (): LaneTokenFacts => recap.value, now: (): number => now, log: (line: string): void => { logged.push(line); },
     });
     return { tokens, logged, at: (ms: number): void => { now = ms; lane.tick(); }, flush: (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); }) };
 }
@@ -171,7 +172,7 @@ test('a change of needs is an event on the lane: raised when it grows, cleared w
     const tokens = new RecordingTokens();
     let now = 0;
     const lane = new LaneTokenPublisher({
-        tokens, enabled: (): boolean => true, board: (): Board => board.current, facts: (): LaneTokenFacts => recap.value, now: (): number => now, log: (): void => undefined,
+        tokens, enabled: (): Presence => 'present', board: (): Board => board.current, facts: (): LaneTokenFacts => recap.value, now: (): number => now, log: (): void => undefined,
         events: { lane: (pane: string, kind: string, detail?: string | null): void => { events.push(`${pane} ${kind} ${detail ?? ''}`.trim()); }, inWorkspace: (workspace: string, kind: string, detail?: string | null): void => { events.push(`${workspace} ${kind} ${detail ?? ''}`.trim()); } },
     });
     lane.tick();
