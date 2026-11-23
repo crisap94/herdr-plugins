@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { productionWiring, type DeliverArguments } from '../bin/handoff.ts';
@@ -15,10 +15,20 @@ const PANE = paneId('w1:p1');
 
 const request = (refresh: boolean): DeliverArguments => ({ from: PANE, to: PANE, note: null, refresh, closed: { tab: tabId('w1:t1'), pane: PANE, closedAt: instant(1_000) } });
 
+function restore(key: string, value: string | undefined): void {
+    if (value === undefined) {
+        delete process.env[key];
+    } else {
+        process.env[key] = value;
+    }
+}
+
 async function refreshReaching(refresh: boolean): Promise<RefreshFirst> {
     const root = mkdtempSync(join(tmpdir(), 'tab-recap-handoff-refresh-'));
-    const saved = process.env['TAB_RECAP_STATE'];
+    const saved = { state: process.env['TAB_RECAP_STATE'], config: process.env['HERDR_PLUGIN_CONFIG_DIR'] };
     process.env['TAB_RECAP_STATE'] = root;
+    process.env['HERDR_PLUGIN_CONFIG_DIR'] = join(root, 'config');
+    mkdirSync(join(root, 'config'));
     try {
         const store = openStoreAt(databaseFile(root as Directory));
         assert.equal(store.kind, 'ready');
@@ -26,24 +36,23 @@ async function refreshReaching(refresh: boolean): Promise<RefreshFirst> {
         writeFileSync(join(root, 'daemon.version'), `${codeVersion() ?? 'unknown'}\n`);
         const delivering = productionWiring().deliver(request(refresh));
         let seen: RefreshFirst | null = null;
-        while (seen === null) {
+        for (let tries = 0; seen === null && tries < 1_000; tries += 1) {
             const [row] = store.requests.takeHandoffs();
-            if (row !== undefined) {
-                seen = row.refresh;
-                store.handoffs.answerHandoff(row.id, { kind: 'failed', reason: 'interrupted' });
-            } else {
+            if (row === undefined) {
                 await new Promise((resolve) => setTimeout(resolve, 10));
+                continue;
             }
+            seen = row.refresh;
+            store.handoffs.answerHandoff(row.id, { kind: 'failed', reason: 'interrupted' });
         }
-        assert.equal((await delivering).kind, 'failed');
+        const outcome = await delivering;
         store.close();
-        return seen;
+        assert.notEqual(seen, null, `deliver settled as ${outcome.kind} before queueing a request`);
+        assert.equal(outcome.kind, 'failed');
+        return seen ?? 'as-is';
     } finally {
-        if (saved === undefined) {
-            delete process.env['TAB_RECAP_STATE'];
-        } else {
-            process.env['TAB_RECAP_STATE'] = saved;
-        }
+        restore('TAB_RECAP_STATE', saved.state);
+        restore('HERDR_PLUGIN_CONFIG_DIR', saved.config);
         rmSync(root, { recursive: true, force: true });
     }
 }
