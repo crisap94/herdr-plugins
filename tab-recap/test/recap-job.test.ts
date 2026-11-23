@@ -285,6 +285,35 @@ test('the rewrite line stays while an open fact is still in the old language, an
     assert.equal(storeRead(store.records.readRecap(tabId('w1:t1')))?.language, 'es');
 });
 
+test('the writer request names the shown open facts that are not in the tab language, in ledger order, and none once they are rewritten', async () => {
+    const calls: RecapRequest[] = [];
+    const answers = [answer(), answer({ op: 'update', id: 'f1', text: 'migrar la base de datos' }), answer()];
+    const summarizer: Summarizer = {
+        backend: textOf('fake'),
+        contract: 'strict',
+        write: (request: RecapRequest): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: textOf(answers[calls.length - 1] ?? answer()), costUsd: brand<number, 'Usd'>(0) }); },
+    };
+    const store = memoryStore();
+    const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' }));
+    seed(store, {
+        ...blankRecap(tabId('w1:t1')), tasks: oneTask('## Goal\n- migrate', { goal: textOf('migrate'), now: [], needs: [], done: [], decisions: [], next: [], links: [], rules: [] }), at: instant(1), language: textOf('en'),
+        lanes: [{ pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t/w1:p1'), cursor: cursorOf(100), tail: null, title: null, lastPrompt: null, claudeRecap: null }],
+    });
+    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS,
+        transcripts: registryWith({ claude: transcriptsOf('claude') }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(9) }, summarizer: (): Summarizer => summarizer,
+        language: (): Text => brand<string, 'Text'>('es'), log: (): void => undefined,
+    });
+    const once = async (): Promise<void> => {
+        job.request(tabId('w1:t1'), [lane], 'requested');
+        await new Promise((resolve) => { setTimeout(resolve, 20); });
+    };
+    await once();
+    await once();
+    await once();
+    assert.deepEqual(calls.map((request) => request.notInLanguage?.map((fact) => fact.id)), [['f1'], ['f1'], undefined], 'the switch run, a run that left f1 in English, then a run after f1 was rewritten');
+    assert.equal(Object.hasOwn(calls[2] ?? {}, 'notInLanguage'), false, 'with every fact in the tab language the request carries no list');
+});
+
 test('a recap already stamped in the wanted language but holding an open fact in the old one is rewritten on request, and a quiet focus does not call the writer', async () => {
     const calls: RecapRequest[] = [];
     const summarizer: Summarizer = {

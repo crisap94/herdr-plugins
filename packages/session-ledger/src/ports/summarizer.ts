@@ -12,7 +12,7 @@ export interface RefusedOperation { readonly task: Text; readonly operation: Ope
 
 export interface Correction { readonly refused: readonly RefusedOperation[]; readonly problems: readonly Text[]; readonly facts: readonly InputFact[]; readonly tasks: Several; }
 
-export interface RecapRequest { readonly input: RecapInput; readonly language: Text; readonly previousLanguage: Text; readonly correction?: Text; readonly retry?: Correction; readonly closeEvidence?: CloseEvidence; }
+export interface RecapRequest { readonly input: RecapInput; readonly language: Text; readonly previousLanguage: Text; readonly notInLanguage?: readonly InputFact[]; readonly correction?: Text; readonly retry?: Correction; readonly closeEvidence?: CloseEvidence; }
 
 export type Written = { readonly kind: 'written'; readonly text: Text; readonly costUsd: Usd } | Unknown;
 

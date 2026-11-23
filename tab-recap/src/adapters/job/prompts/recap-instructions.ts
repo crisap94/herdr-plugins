@@ -8,12 +8,16 @@ import { WHY_WORDS } from '#src/recap/application/ops-answer.ts';
 import { RECONCILE_LINES } from './reconcile-instructions.ts';
 import { RUBRIC } from './rubric.ts';
 
-function languageLines(language: Text, previous: Text): readonly Text[] {
+function languageLines(request: Pick<RecapRequest, 'language' | 'previousLanguage' | 'notInLanguage'>): readonly Text[] {
+    const { language, previousLanguage: previous } = request;
+    const ids = (request.notInLanguage ?? []).map((fact) => fact.id);
     const own = language === 'es'
         ? 'Write every text and why in Spanish (neutral Latin American, informal "tú"). Keep the JSON keys and the words add, update, close in English.'
         : `Write every text and why in ${languageNameOf(language)}. Keep the JSON keys and the words add, update, close in English.`;
     const carried = previous === language ? [] : [
-        `The facts in <ledger> are in ${languageNameOf(previous)}: update every open fact that is still relevant, rewritten in ${languageNameOf(language)}.`,
+        ids.length === 0
+            ? `The facts in <ledger> are in ${languageNameOf(previous)}: update every open fact that is still relevant, rewritten in ${languageNameOf(language)}.`
+            : `Some open facts in <ledger> are still in ${languageNameOf(previous)}: update every open fact that is not in ${languageNameOf(language)}, rewritten in ${languageNameOf(language)} with the same meaning, even when nothing else changed. These open facts are not in ${languageNameOf(language)}: ${ids.join(', ')}.`,
     ];
     return [textOf(own), ...carried.map(textOf), textOf('')];
 }
@@ -31,7 +35,7 @@ const sectionLine = (section: Section): Text => {
     return textOf(`${section.id.padEnd(10)}— ${section.hint} (${size})`);
 };
 
-export function instructions(request: Pick<RecapRequest, 'language' | 'previousLanguage' | 'input' | 'retry' | 'closeEvidence'>): Text {
+export function instructions(request: Pick<RecapRequest, 'language' | 'previousLanguage' | 'notInLanguage' | 'input' | 'retry' | 'closeEvidence'>): Text {
     if (request.retry !== undefined) {
         return correctionInstructions(request);
     }
@@ -65,7 +69,7 @@ export function instructions(request: Pick<RecapRequest, 'language' | 'previousL
         ...SECTIONS.map(sectionLine),
         `rules      — standing constraints the operator stated and still wants kept, never drawn (the column shows the newest ${CAPS.rules})`,
         '',
-        ...languageLines(request.language, request.previousLanguage),
+        ...languageLines(request),
         'How to write:',
         `- Plain everyday words. Short sentences in the present tense, ${MAX_WORDS} words or fewer per text, ${WHY_WORDS} per why.`,
         '- Name real things: file names, branch names, merge request numbers, commands, error messages.',
@@ -101,7 +105,7 @@ function correctionInstructions(request: Pick<RecapRequest, 'language' | 'previo
         '- when a fact the refusal names is already in the ledger, update it instead of adding it again.',
         '- when none is worth keeping, answer {"ops": []}.',
         '',
-        ...languageLines(request.language, request.previousLanguage),
+        ...languageLines({ language: request.language, previousLanguage: request.previousLanguage }),
         `Plain everyday words, ${MAX_WORDS} words or fewer per text, ${WHY_WORDS} per why. Never invent facts.`,
     ].join('\n'));
 }
