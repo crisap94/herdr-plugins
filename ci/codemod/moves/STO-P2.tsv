@@ -1,0 +1,9 @@
+path	tab-recap/src/adapters/db/connection.ts	packages/session-ledger-sqlite/src/connection.ts
+path	tab-recap/src/adapters/db/migrate.ts	packages/session-ledger-sqlite/src/migrate.ts
+path	tab-recap/src/adapters/db/backup.ts	packages/session-ledger-sqlite/src/backup.ts
+path	tab-recap/src/adapters/db/rebuild.ts	packages/session-ledger-sqlite/src/rebuild.ts
+path	tab-recap/src/adapters/db/schema/migration.ts	packages/session-ledger-sqlite/src/migration.ts
+stub	tab-recap/src/adapters/db/backup.ts	export { backupPath, backupsOf, backUp } from '@stateforge-labs/session-ledger-sqlite/unstable/backup.ts';
+stub	tab-recap/src/adapters/db/rebuild.ts	export { rebuildTable, type Rebuild } from '@stateforge-labs/session-ledger-sqlite/unstable/rebuild.ts';
+stub	tab-recap/src/adapters/db/schema/migration.ts	export type { Migration } from '@stateforge-labs/session-ledger-sqlite/unstable/migration.ts';
+specifier	../../../../packages/session-ledger-sqlite/src	@stateforge-labs/session-ledger-sqlite/unstable

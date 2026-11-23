@@ -1,6 +1,17 @@
 {
+  "src/backup.ts": {
+    "parameter": 8,
+    "return": 4,
+    "container": 1
+  },
   "src/connection.ts": {
     "parameter": 2
+  },
+  "src/migrate.ts": {
+    "return": 2
+  },
+  "src/migration.ts": {
+    "property": 3
   },
   "src/rebuild.ts": {
     "container": 1,
