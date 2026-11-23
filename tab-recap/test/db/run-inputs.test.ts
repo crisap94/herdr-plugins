@@ -83,7 +83,7 @@ test('retention: the daily upkeep deletes a 15-day-old input and keeps the run, 
     recordOps(store, run(now - 15 * DAY, { input: textOf('<old/>') }));
     recordOps(store, run(now - 13 * DAY, { input: textOf('<recent/>') }));
     const decision = store.autocompact.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(now - 15 * DAY), mode: 'shadow', share: 50, tokens: must(parseCount(5)), window: must(parseCount(10)), gate: 'ask', verdict: 'compact', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null });
-    store.autocompactBriefs.put(decision, 'old brief', [], [], now - 15 * DAY);
+    store.autocompactBriefs.put(decision, textOf('old brief'), [], [], instant(now - 15 * DAY));
     let clock = now;
     const lines: string[] = [];
     const days = { value: 14 };
@@ -132,7 +132,7 @@ test('retention: a brief retention of none deletes every checked brief at the da
     store.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 2)");
     const now = 100 * DAY;
     const decision = store.autocompact.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(now), mode: 'shadow', share: 50, tokens: must(parseCount(5)), window: must(parseCount(10)), gate: 'ask', verdict: 'compact', askedVerdict: 'compact', answers: {}, coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null });
-    store.autocompactBriefs.put(decision, 'fresh brief', [], [], now);
+    store.autocompactBriefs.put(decision, textOf('fresh brief'), [], [], instant(now));
     const clock = now;
     const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock: { now: (): ReturnType<typeof instant> => instant(clock) }, days: (): number => 14, briefRetention: (): BriefRetention => ({ kind: 'none' }), log: (): void => undefined });
     retention.tick();

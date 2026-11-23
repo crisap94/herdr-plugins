@@ -16,8 +16,7 @@
     "container": 1
   },
   "src/recap/application/handoff-print.ts": {
-    "return": 1,
-    "container": 1
+    "return": 1
   },
   "src/recap/application/handoff-render.ts": {
     "property": 7

@@ -1,7 +1,7 @@
 import { knownOr, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import { BACKEND_IDS, LEGACY_MODEL_KEYS } from '#src/recap/domain/backend.ts';
 import { blankRecap, hasRecap } from '#src/ports/recap-records.ts';
-import type { Requests } from '#src/ports/requests.ts';
+import type { RequestPort } from '#src/ports/requests.ts';
 import type { LiveLanes } from '#src/ports/tab-views.ts';
 import { tabId, type TabId } from '#src/recap/domain/ids.ts';
 import type { Draft, FieldId, Locks, Setup } from './setup-state.ts';
@@ -84,7 +84,7 @@ export const dirty = (state: Setup): boolean => changes(state).size > 0;
 export interface RewriteStore {
     readonly views: LiveLanes;
     readonly records: GuardedRecapRecords;
-    readonly requests: Requests;
+    readonly requests: RequestPort;
 }
 
 export function requestRewrites(opener: TabId | null, store: RewriteStore): readonly TabId[] {
@@ -92,6 +92,6 @@ export function requestRewrites(opener: TabId | null, store: RewriteStore): read
     const seen = live.kind === 'read' ? live.lanes.map((lane) => lane.tab) : [];
     const tabs = [...new Set([...(opener === null ? [] : [opener]), ...seen])]
         .filter((tab) => tab === opener || hasRecap(knownOr(store.records.readRecap(tabId(String(tab))), null) ?? blankRecap(tabId(String(tab)))));
-    tabs.forEach((tab) => { store.requests.request(String(tab)); });
+    tabs.forEach((tab) => { store.requests.request(tab); });
     return tabs;
 }

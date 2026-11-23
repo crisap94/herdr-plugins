@@ -1,28 +1,30 @@
-import type { Ask, AskIdentity, AskKey, AskLedger, NewAsk, Requester } from '#src/ports/ask-ledger.ts';
+import type { AskEntry, AskIdentity, AskKey, AskBook, AskDraft, AskSighting, Requester } from '#src/ports/ask-ledger.ts';
 import { parseRequestId } from '#src/protocol/primitives.ts';
 import type { ExchangeName, RequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
+import type { Text } from '#src/recap/domain/text.ts';
+import type { Instant } from '#src/recap/domain/time.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 
 export const rid = (raw: string): RequestId => must(parseRequestId(raw, 'legacy-length'));
 
 const keyOf = (exchange: ExchangeName, requester: Requester, id: string): string => `${exchange}\u0000${requester}\u0000${id}`;
 
-export class MemoryAskLedger implements AskLedger {
-    private readonly rows = new Map<string, Ask>();
+export class MemoryAskLedger implements AskBook {
+    private readonly rows = new Map<string, AskEntry>();
 
-    seen(exchange: ExchangeName, requester: Requester, id: RequestId): boolean {
-        return this.rows.has(keyOf(exchange, requester, id));
+    seen(exchange: ExchangeName, requester: Requester, id: RequestId): AskSighting {
+        return this.rows.has(keyOf(exchange, requester, id)) ? 'seen' : 'unseen';
     }
 
-    record(ask: NewAsk): void {
+    record(ask: AskDraft): void {
         const key = keyOf(ask.exchange, ask.requester, ask.id);
         if (!this.rows.has(key)) {
             this.rows.set(key, { ...ask, outcome: null });
         }
     }
 
-    attach(match: AskKey, ref: string): void {
+    attach(match: AskKey, ref: Text): void {
         for (const [key, ask] of this.rows) {
             if (ask.exchange === match.exchange && ask.id === match.id && ask.pane === match.pane && ask.ref === null) {
                 this.rows.set(key, { ...ask, ref });
@@ -45,11 +47,11 @@ export class MemoryAskLedger implements AskLedger {
         }
     }
 
-    unfinished(): readonly Ask[] {
+    unfinished(): readonly AskEntry[] {
         return [...this.rows.values()].filter((ask) => ask.outcome === null).toSorted((a, b) => a.at - b.at || a.requester.localeCompare(b.requester) || a.id.localeCompare(b.id));
     }
 
-    prune(before: number): void {
+    prune(before: Instant): void {
         for (const [key, ask] of this.rows) {
             if (ask.at < before && ask.outcome !== null) {
                 this.rows.delete(key);

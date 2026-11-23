@@ -1,5 +1,5 @@
 import type { GuardedLedger, GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
-import type { HandoffPrinter } from '#src/ports/handoff-print.ts';
+import type { HandoffPrintService } from '#src/ports/handoff-print.ts';
 import type { Stories } from '#src/ports/stories.ts';
 import type { TabViews } from '#src/ports/tab-views.ts';
 import { compactPreviewOf, type CompactPreview } from '#src/recap/application/compact-preview.ts';
@@ -14,7 +14,7 @@ export interface EngineParts {
     readonly stories: Pick<Stories, 'keep'>;
     readonly records: Pick<GuardedRecapRecords, 'readRecap'>;
     readonly views: Pick<TabViews, 'readTab' | 'tabOf'>;
-    readonly printer: HandoffPrinter;
+    readonly printer: HandoffPrintService;
     readonly now: () => Instant;
     readonly republish: (tab: TabId) => void;
 }

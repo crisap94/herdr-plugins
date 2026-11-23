@@ -1,3 +1,4 @@
+import { textOf } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -14,8 +15,8 @@ import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { writeTx } from '#src/adapters/db/connection.ts';
 import { LOCAL_REQUESTER } from '#src/ports/ask-ledger.ts';
-import type { Ask } from '#src/ports/ask-ledger.ts';
-import type { HandoffRequestRow } from '#src/ports/requests.ts';
+import type { AskEntry } from '#src/ports/ask-ledger.ts';
+import type { HandoffAskRecord } from '#src/ports/requests.ts';
 import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { parseRequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
@@ -29,8 +30,8 @@ const NOW = Date.parse('2026-10-11T10:00:00Z');
 const SOURCE = paneId('w1:p1');
 const TARGET = paneId('w1:p2');
 
-const row = (over: Partial<HandoffRequestRow> = {}): HandoffRequestRow => ({
-    id: handoffIdOf(ids.next()), at: NOW, tab: tabId('w1:t1'), pane: SOURCE, toPane: TARGET, refreshFirst: false, note: null, source: { kind: 'live' }, ...over,
+const row = (over: Partial<HandoffAskRecord> = {}): HandoffAskRecord => ({
+    id: handoffIdOf(ids.next()), at: instant(NOW), tab: tabId('w1:t1'), pane: SOURCE, toPane: TARGET, refresh: 'as-is', note: null, source: { kind: 'live' }, ...over,
 });
 
 interface Probe {
@@ -48,7 +49,7 @@ interface Runner {
 }
 
 function runnerOf(
-    flowRun: (request: HandoffRequestRow, probe: Probe) => Promise<HandoffOutcome>,
+    flowRun: (request: HandoffAskRecord, probe: Probe) => Promise<HandoffOutcome>,
     over: Partial<HandoffRunnerDeps> = {},
 ): Runner {
     const asks = new MemoryAskLedger();
@@ -73,7 +74,7 @@ test('a taken row is recorded as a local handoff ask before the flow runs, then 
 });
 
 test('the recorded ask names the handoff exchange, the local requester, the source pane and the handoff id', async () => {
-    let seen: readonly Ask[] = [];
+    let seen: readonly AskEntry[] = [];
     const { runner, asks } = runnerOf(async () => { seen = asks.unfinished(); return { kind: 'delivered' }; });
     const taken = row();
     await runner.take([taken]);
@@ -90,14 +91,14 @@ test('each taken row gets exactly one answer row', async () => {
 
 test('a row older than the take bound is answered expired without running the flow and records no ask', async () => {
     const { runner, asks, answers, probe } = runnerOf(delivered);
-    const stale = row({ at: NOW - HANDOFF_TAKE_MAX_AGE_MS - 1 });
+    const stale = row({ at: instant(NOW - HANDOFF_TAKE_MAX_AGE_MS - 1) });
     await runner.take([stale]);
     assert.deepEqual([probe.flowRuns, asks.unfinished(), answers.handoffAnswer(stale.id)?.reason], [[], [], 'expired']);
 });
 
 test('a row exactly at the take bound still runs', async () => {
     const { runner, answers, probe } = runnerOf(delivered);
-    const edge = row({ at: NOW - HANDOFF_TAKE_MAX_AGE_MS });
+    const edge = row({ at: instant(NOW - HANDOFF_TAKE_MAX_AGE_MS) });
     await runner.take([edge]);
     assert.deepEqual([probe.flowRuns.length, answers.handoffAnswer(edge.id)?.kind], [1, 'delivered']);
 });
@@ -143,7 +144,7 @@ test('on the SQLite store the restart finds the ask again (its id parses) and wr
     void runner.take([taken]);
     const unfinished = store.asks.unfinished();
     assert.deepEqual(unfinished.map((ask) => [ask.exchange, ask.requester, ask.pane, ask.ref]), [[HANDOFF_EXCHANGE, LOCAL_REQUESTER, SOURCE, taken.id]]);
-    runner.interrupted(unfinished[0] as Ask);
+    runner.interrupted(unfinished[0] as AskEntry);
     assert.deepEqual([store.handoffs.handoffAnswer(taken.id)?.reason, store.asks.unfinished()], ['interrupted', []]);
 });
 
@@ -255,7 +256,7 @@ test('a restart sweep that fails on one ask logs it, leaves that ask open and se
     const { answers } = flakyAnswers((id) => id === broken);
     const { runner, asks, probe } = runnerOf(delivered, { answers });
     for (const [hex, id] of [['0123456789abcdef', broken], ['fedcba9876543210', healthy]] as const) {
-        asks.record({ exchange: HANDOFF_EXCHANGE, requester: LOCAL_REQUESTER, id: must(parseRequestId(hex, 'legacy-length')), pane: SOURCE, at: NOW, ref: String(id) });
+        asks.record({ exchange: HANDOFF_EXCHANGE, requester: LOCAL_REQUESTER, id: must(parseRequestId(hex, 'legacy-length')), pane: SOURCE, at: instant(NOW), ref: textOf(String(id)) });
     }
     for (const ask of asks.unfinished()) {
         assert.doesNotThrow(() => { runner.interrupted(ask); });

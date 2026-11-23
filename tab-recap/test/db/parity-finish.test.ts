@@ -2,10 +2,10 @@ import { runIdOf, verdictOf } from './support.ts';
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import type { Database } from 'bun:sqlite';
-import { BoundaryRepository } from '#src/adapters/db/legacy.ts';
+import { BoundaryLogRepository } from '#src/adapters/db/boundary-read.ts';
 import { BoundaryRows } from '#src/adapters/db/boundaries.ts';
 import { RetentionRepository } from '#src/adapters/db/retention.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { SessionSourceRepository } from '#src/adapters/db/session-source/legacy.ts';
 import { StoriesRepository } from '#src/adapters/db/stories.ts';
@@ -89,22 +89,22 @@ describe('parity: finish (boundaries, reads, retention, session source, stories,
 
     test('boundary reads: breaksOf joins the chapters and compactions like the raw query', () => {
         withParity(seedAll, (parity) => {
-            const produced = new BoundaryRepository(parity.raw).breaksOf('t1');
+            const produced = new BoundaryLogRepository(parity.raw).breaksOf(tabId('t1'));
             expectSameRows(parity, { sql: BREAKS, params: ['t1'] }, produced, (row) => ({
-                kind: row.kind, at: row.at, trigger: row.trigger, tokensBefore: row.tokens_before, tokensAfter: row.tokens_after, tookMs: row.took_ms,
+                kind: row.kind, at: row.at, trigger: row.trigger, tokensBefore: row.tokens_before, tokensAfter: row.tokens_after, took: row.took_ms,
             }));
         });
     });
 
     test('boundary reads: chapterCount counts the tab chapters', () => {
         withParity(seedAll, (parity) => {
-            expectSameRows(parity, { sql: CHAPTER_COUNT, params: ['t1'] }, [{ n: new BoundaryRepository(parity.raw).chapterCount('t1') }]);
+            expectSameRows(parity, { sql: CHAPTER_COUNT, params: ['t1'] }, [{ n: new BoundaryLogRepository(parity.raw).chapterCount(tabId('t1')) }]);
         });
     });
 
     test('boundary reads: lastBreakAt takes the newest boundary of the pane', () => {
         withParity(seedAll, (parity) => {
-            expectSameRows(parity, { sql: LAST_BREAK, params: ['t1', 'p1'] }, [{ at: new BoundaryRepository(parity.raw).lastBreakAt(tabId('t1'), 'p1') }]);
+            expectSameRows(parity, { sql: LAST_BREAK, params: ['t1', 'p1'] }, [{ at: new BoundaryLogRepository(parity.raw).lastBreakAt(tabId('t1'), paneId('p1')) }]);
         });
     });
 

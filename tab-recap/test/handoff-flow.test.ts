@@ -36,21 +36,21 @@ test('a target whose kind has no handoff plan is unsupported no-plan', async () 
 
 test('a target that is not ready is refused and starts no refresh, reads nothing and takes no claim', async () => {
     const h = harness({ targetStatus: 'working' });
-    assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'refused', reason: 'status-not-ready' });
+    assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'refused', reason: 'status-not-ready' });
     assert.deepEqual(h.calls, []);
     assert.equal(bothFree(h.claims), true);
 });
 
 test('a target with work in flight is refused in-flight before any refresh', async () => {
     const h = harness({ awaiting: { kind: 'waiting', value: must(parseText('a question')) } });
-    assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'refused', reason: 'in-flight' });
+    assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'refused', reason: 'in-flight' });
     assert.equal(h.calls.some((call) => call.startsWith('refresh')), false);
 });
 
 test('a compaction already holding the source lane refuses lane-busy before any refresh', async () => {
     const h = harness();
     h.claims.claim(String(SOURCE), 'compaction');
-    assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'refused', reason: 'lane-busy' });
+    assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'refused', reason: 'lane-busy' });
     assert.equal(h.calls.some((call) => call.startsWith('refresh')), false);
     assert.equal(h.claims.kindOf(String(SOURCE)), 'compaction');
 });
@@ -58,7 +58,7 @@ test('a compaction already holding the source lane refuses lane-busy before any 
 test('a compaction already holding the target lane refuses lane-busy before any refresh', async () => {
     const h = harness();
     h.claims.claim(String(TARGET), 'compaction');
-    assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'refused', reason: 'lane-busy' });
+    assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'refused', reason: 'lane-busy' });
     assert.equal(h.calls.some((call) => call.startsWith('refresh')), false);
     assert.equal(h.claims.kindOf(String(TARGET)), 'compaction');
 });
@@ -72,7 +72,7 @@ test('without the flag no refresh runs and the render sees not-requested', async
 
 test('the flow runs its steps in the spec order: checks, refresh, render, claims, hold, send', async () => {
     const h = harness();
-    assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'delivered' });
+    assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'delivered' });
     assert.deepEqual(h.calls, [
         'awaiting', 'flight',
         `refresh ${String(TAB)}`, 'render',
@@ -83,20 +83,20 @@ test('the flow runs its steps in the spec order: checks, refresh, render, claims
 
 test('a requested refresh records its status for the render', async () => {
     const h = harness({ refreshed: 'timed-out' });
-    assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'delivered' });
+    assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'delivered' });
     assert.deepEqual(h.renders.map((input) => input.refresh), ['timed-out']);
 });
 
 test('a refresh that throws is recorded as failed and does not stop the flow', async () => {
     const h = harness({ refreshThrows: true });
-    assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'delivered' });
+    assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'delivered' });
     assert.deepEqual(h.renders.map((input) => input.refresh), ['failed']);
 });
 
 test('a refresh that creates the ledger of a lane that had none is rendered from the facts it produced', async () => {
     const f = fact('f1', 'goal', 'Ship the parser', NOW - 1000, { task: T1 });
     const h = harness({ recap: recapOf(), facts: [f], onRefresh: (): void => { h.world.recap = SOURCE_LISTED(); } });
-    assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'delivered' });
+    assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'delivered' });
     assert.deepEqual(h.renders.map((input) => input.lane.pane), [SOURCE]);
     assert.deepEqual(h.renders.map((input) => input.facts), [[f]]);
 });
@@ -143,7 +143,7 @@ test('a render that throws is failed internal-error with nothing typed', async (
 
 test('a compaction that takes the target during the refresh makes the claim refuse lane-busy, types nothing, and keeps that compaction claim', async () => {
     const h = harness({ onRefresh: (): void => { h.claims.claim(String(TARGET), 'compaction'); } });
-    assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'refused', reason: 'lane-busy' });
+    assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'refused', reason: 'lane-busy' });
     assert.equal(h.calls.includes('send'), false);
     assert.equal(h.claims.kindOf(String(TARGET)), 'compaction');
     assert.equal(h.claims.has(SOURCE), false);
@@ -151,7 +151,7 @@ test('a compaction that takes the target during the refresh makes the claim refu
 
 test('a target that becomes working during the refresh is refused status-not-ready and nothing is typed', async () => {
     const h = harness({ onRefresh: (): void => { h.world.targetStatus = 'working'; } });
-    assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'refused', reason: 'status-not-ready' });
+    assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'refused', reason: 'status-not-ready' });
     assert.equal(h.calls.includes('send'), false);
     assert.equal(bothFree(h.claims), true);
 });
@@ -206,7 +206,7 @@ test('a working source is handed over: only the target must be idle', async () =
 
 test('a refresh that throws is logged once with its error name and the flow still delivers', async () => {
     const h = harness({ refreshThrows: true });
-    assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'delivered' });
+    assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'delivered' });
     assert.deepEqual(h.logs, [`handoff refresh ${String(TAB)}: Error`]);
 });
 
@@ -238,7 +238,7 @@ test('a run abandoned while it waits for the settle hold keeps its claims for th
 
 test('the flow flushes the source tab\'s pending recap after its checks and before it refreshes or renders', async () => {
     const h = harness();
-    assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'delivered' });
+    assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'delivered' });
     assert.deepEqual(h.flushes, [`${String(TAB)} handoff at 2`]);
     assert.deepEqual(h.calls.slice(0, 3), ['awaiting', 'flight', `refresh ${String(TAB)}`]);
 });

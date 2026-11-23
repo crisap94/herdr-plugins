@@ -7,7 +7,7 @@ import { COMPACT_EXCHANGE, finalAnswerOf, noteOf, VALUE_MAX } from '#src/recap/d
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
 import { CompactRequestQueue } from '#src/recap/application/compact-requests.ts';
 import { askOf, stageOf, wireOf } from './fakes/wire-tokens.ts';
-import type { CompactRequest } from '#src/ports/requests.ts';
+import type { CompactAsk } from '#src/ports/requests.ts';
 import { Trail } from '#src/recap/application/compaction-trail.ts';
 import type { Records } from '#src/recap/application/compaction-trail.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -26,11 +26,11 @@ import { paneId, uncheckedPaneId } from '#src/recap/domain/ids.ts';
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
 const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) });
 
-const seen = (asks: MemoryAskLedger, tool: string, id: string): boolean => asks.seen(COMPACT_EXCHANGE, must(parseToolName(tool)), rid(id));
+const seen = (asks: MemoryAskLedger, tool: string, id: string): boolean => asks.seen(COMPACT_EXCHANGE, must(parseToolName(tool)), rid(id)) === 'seen';
 
 
 interface Harness {
-    readonly asked: CompactRequest[];
+    readonly asked: CompactAsk[];
     readonly asks?: MemoryAskLedger;
     readonly tokens: RecordingTokens;
     readonly compact: CompactRequestQueue;
@@ -38,9 +38,9 @@ interface Harness {
 }
 
 function setup(on = true, asks = new MemoryAskLedger()): Harness {
-    const asked: CompactRequest[] = [];
+    const asked: CompactAsk[] = [];
     const tokens = new RecordingTokens();
-    const requests = { requestCompact: (request: CompactRequest): void => { asked.push(request); } };
+    const requests = { requestCompact: (request: CompactAsk): void => { asked.push(request); } };
     const compact = new CompactRequestQueue({ enabled: (): Presence => (on ? 'present' : 'absent'), board, requests, asks, tokens, now: (): Instant => instant(1000), log: (): void => undefined });
     return { asked, asks, tokens, compact, flush: (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); }) };
 }
@@ -160,10 +160,10 @@ test('an id that is empty or overlong is answered failed-bad-id once, and the an
 test('a request that comes before the board exists waits for it, and is then acted on', async () => {
     const asks = new MemoryAskLedger();
     let seeded = false;
-    const asked: CompactRequest[] = [];
+    const asked: CompactAsk[] = [];
     const tokens = new RecordingTokens();
     const handler = new CompactRequestQueue({
-        enabled: (): Presence => 'present', board: (): Board => ({ ...board(), seeded }), requests: { requestCompact: (request: CompactRequest): void => { asked.push(request); } }, asks, tokens, now: (): Instant => instant(1000), log: (): void => undefined,
+        enabled: (): Presence => 'present', board: (): Board => ({ ...board(), seeded }), requests: { requestCompact: (request: CompactAsk): void => { asked.push(request); } }, asks, tokens, now: (): Instant => instant(1000), log: (): void => undefined,
     });
     handler.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r9' }));
     assert.deepEqual([asked, tokens.reports, seen(asks, 'coordinator', rid('r9'))], [[], [], false], 'not decided, not remembered, before the board');

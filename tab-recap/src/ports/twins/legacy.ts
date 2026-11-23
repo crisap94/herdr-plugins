@@ -1,7 +1,4 @@
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
-import type { CheckedFact } from '#src/recap/domain/autocompact.ts';
-import type { BoundaryKind, Trigger } from '#src/recap/domain/boundary.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { Locale } from '#src/i18n/messages.ts';
@@ -10,26 +7,6 @@ import type { Reconciliation } from '#src/recap/domain/fold.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 import type { Forge } from '@stateforge-labs/session-ledger/unstable/ports/lane-repo.ts';
-
-export interface AutocompactBriefs {
-    put(decisionId: string, brief: string, appended: readonly number[], checked: readonly CheckedFact[], briefedAt: number): void;
-    clearBefore(cutoff: number): number;
-}
-
-export interface Break {
-    readonly kind: BoundaryKind;
-    readonly at: number;
-    readonly trigger: Trigger | null;
-    readonly tokensBefore: number | null;
-    readonly tokensAfter: number | null;
-    readonly tookMs: number | null;
-}
-
-export interface Boundaries {
-    breaksOf(tab: string): readonly Break[];
-    chapterCount(tab: string): number;
-    lastBreakAt(tab: TabId, pane: string): number | null;
-}
 
 export type Capability<Value, Why extends string> =
     | { readonly kind: 'supported'; readonly value: Value }

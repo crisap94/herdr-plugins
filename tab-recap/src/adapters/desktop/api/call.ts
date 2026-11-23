@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { Requests } from '#src/ports/requests.ts';
+import type { RequestPort } from '#src/ports/requests.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { Text } from '#src/recap/domain/text.ts';
@@ -11,7 +11,7 @@ export interface ApiContext {
     readonly dir: Directory;
     readonly bus: DesktopBus;
     readonly leases: OpenLeases;
-    readonly requests: Pick<Requests, 'request'>;
+    readonly requests: Pick<RequestPort, 'request'>;
     readonly now: () => Instant;
     readonly engine?: DesktopEngine;
 }

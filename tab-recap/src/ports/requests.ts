@@ -1,5 +1,5 @@
 import { err, ok, type Result } from '#src/protocol/result.ts';
-import type { NewAsk } from '#src/ports/ask-ledger.ts';
+import type { AskDraft } from '#src/ports/ask-ledger.ts';
 import { parseHandoffId, parsePaneId, parseTabId, type HandoffId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
@@ -7,18 +7,7 @@ import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 
-export type {
-    AnswerRow,
-    CompactRequest,
-    CompactionQueue,
-    HandoffRequestRow,
-    HandoffRequester,
-    HandoffResponder,
-    NewHandoffRequest,
-    Requests,
-    VisibilityRequest,
-} from './twins/runs/legacy.ts';
-export type { HandoffQueue } from './legacy.ts';
+export type { VisibilityRequest } from './twins/runs/legacy.ts';
 
 export type Visibility = 'hidden' | 'shown' | 'toggle';
 
@@ -69,7 +58,7 @@ export interface HandoffAsker {
 }
 
 export interface HandoffAskQueue {
-    queueHandoff(ask: NewAsk, request: HandoffAsk): void;
+    queueHandoff(ask: AskDraft, request: HandoffAsk): void;
 }
 
 export interface HandoffTaker {

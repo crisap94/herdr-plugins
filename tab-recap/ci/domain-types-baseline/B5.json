@@ -1,6 +1,6 @@
 {
   "src/adapters/db/legacy.ts": {
-    "legacy": 38
+    "legacy": 19
   },
   "src/adapters/db/rows/legacy.ts": {
     "legacy": 33

@@ -3,8 +3,6 @@ import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 
-export type { HandoffPrinter, PrintRequest, PrintResult } from './twins/runs/legacy.ts';
-
 export interface PrintAsk {
     readonly from: PaneId;
     readonly to: PaneId | null;

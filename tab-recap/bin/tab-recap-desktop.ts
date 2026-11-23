@@ -23,7 +23,7 @@ function refresh(tab: string | undefined): number {
         console.error(`tab-recap: 1 — ${notReadyLine(store, m())}`);
         return FAILED;
     }
-    store.requests.request(tab);
+    store.requests.request(tabId(tab));
     console.log(`tab-recap: ${m().cli.requested(tab)}`);
     return OK;
 }

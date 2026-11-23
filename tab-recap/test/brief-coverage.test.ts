@@ -119,7 +119,7 @@ function decided(world: World, gate: 'ask' | 'ceiling' = 'ask'): string {
 test('an automatic compaction whose brief misses a fact is written again once with the correction, then typed when it is covered', async () => {
     const { world, compaction } = flow([MISSING, OK]);
     decided(world);
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.equal(world.briefs.length, 2);
     assert.match(world.briefs[1] ?? '', /did not keep these.*decisions: Keep SQLite/s);
     assert.equal(world.typed.length, 1);
@@ -130,7 +130,7 @@ test('an automatic compaction whose brief misses a fact is written again once wi
 test('a ceiling lane types its rewrite and appends the missing fact, keeping the compact ceiling decision', async () => {
     const { world, compaction } = flow([MISSING]);
     const id = decided(world, 'ceiling');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.equal(world.typed.length, 1);
     assert.match(world.typed[0] ?? '', /Facts not carried into the brief/);
     assert.match(world.typed[0] ?? '', /decisions: Keep SQLite/);
@@ -143,7 +143,7 @@ test('a codex ceiling lane types only /compact and restores the appended brief b
     const { world, compaction } = flow([MISSING]);
     world.harness.agent = 'codex';
     decided(world, 'ceiling');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.deepEqual(world.typed, ['/compact']);
     assert.equal(world.prompts.length, 1);
     assert.match(world.prompts[0] ?? '', /second brief\. Facts not carried into the brief \(1 missed; 0 left out\): \(1\) decisions: Keep SQLite/);
@@ -152,7 +152,7 @@ test('a codex ceiling lane types only /compact and restores the appended brief b
 test('a ceiling lane with no decider types the writer brief and records the unchecked outcome', async () => {
     const { world, compaction } = flow([], false);
     decided(world, 'ceiling');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.equal(world.typed.length, 1);
     assert.equal(world.store.autocompact.newest(mustParsed(parseCount(1)))[0]?.coverageOutcome?.kind, 'unchecked');
 });
@@ -160,7 +160,7 @@ test('a ceiling lane with no decider types the writer brief and records the unch
 test('the ceiling switch off keeps the failed check blocking', async () => {
     const { world, compaction } = flow([MISSING], true, null, false, { history: HISTORY, missedFacts: 'wait' });
     decided(world, 'ceiling');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.deepEqual([world.typed.length, world.store.autocompact.newest(mustParsed(parseCount(1)))[0]?.gate, world.store.autocompact.newest(mustParsed(parseCount(1)))[0]?.verdict], [0, 'coverage', 'wait']);
 });
 
@@ -176,7 +176,7 @@ test('the ceiling appendix follows the section order and remains within its char
     const result: Coverage = { ok: false, missing, missingFacts: history.map((entry, index) => ({ index, fact: { section: entry.section, text: entry.text, why: entry.why }, parts: ['text'] })), answers: {}, unknown: null };
     const { world, compaction } = flow([result], true, null, true, { history });
     decided(world, 'ceiling');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     const text = world.typed[0] ?? '';
     const appendix = text.slice(text.indexOf('Facts not carried into the brief'));
     assert.ok(appendix.length <= 1500);
@@ -189,7 +189,7 @@ test('the ceiling appendix follows the section order and remains within its char
 test('the covered automatic compaction is an `auto` record, and its decision points at it with the coverage', async () => {
     const { world, compaction } = flow([MISSING, OK]);
     const id = decided(world);
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     const record = must(world.store.compactions.shownFor('w1:t1')[0]);
     assert.deepEqual([record.origin, record.stage, record.brief], ['auto', 'compacted', 'written']);
     const row = must(world.store.autocompact.newest(mustParsed(parseCount(1)))[0]);
@@ -199,7 +199,7 @@ test('the covered automatic compaction is an `auto` record, and its decision poi
 test('still missing after the rewrite: nothing is typed, the record is skipped with `coverage`, the decision is a coverage wait pointing at it', async () => {
     const { world, compaction } = flow([MISSING], true, null, true, { history: HISTORY, missedFacts: 'wait' });
     decided(world);
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.deepEqual(world.typed, []);
     assert.equal(world.briefs.length, 2, 'one rewrite, no more');
     const [record] = world.store.compactions.shownFor('w1:t1');
@@ -212,21 +212,21 @@ test('still missing after the rewrite: nothing is typed, the record is skipped w
 test('a decider that cannot be reached leaves the brief unchecked: no rewrite, no typing, a coverage wait', async () => {
     const { world, compaction } = flow([{ ok: false, missing: [], missingFacts: [], answers: {}, unknown: 'timed out after 10000 ms' }], true, null, true, { history: HISTORY, missedFacts: 'wait' });
     decided(world);
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.deepEqual([world.typed.length, world.briefs.length, world.store.autocompact.newest(mustParsed(parseCount(1)))[0]?.gate], [0, 1, 'coverage'], 'unchecked: no rewrite, and the decision waits');
     assert.equal(world.store.compactions.shownFor('w1:t1')[0]?.stage, 'skipped');
 });
 
 test('the operator\'s compaction runs no coverage and records the operator as its origin', async () => {
     const operator = flow([MISSING]);
-    await operator.compaction.run({ tab: 'w1:t1', pane: null, note: null });
+    await operator.compaction.run({ tab: tabId('w1:t1'), pane: null, note: null });
     assert.deepEqual([operator.world.typed.length, operator.world.briefs.length, operator.world.store.compactions.shownFor('w1:t1')[0]?.origin], [1, 1, 'operator']);
 });
 
 test('an automatic compaction with no decider fails closed: nothing typed, the decision waits for coverage with the reason', async () => {
     const unchecked = flow([MISSING], false);
     decided(unchecked.world);
-    await unchecked.compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await unchecked.compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.deepEqual([unchecked.world.typed.length, unchecked.world.briefs.length], [0, 1]);
     assert.equal(unchecked.world.store.compactions.shownFor('w1:t1')[0]?.stage, 'skipped');
     const [row] = unchecked.world.store.autocompact.newest(mustParsed(parseCount(1)));
@@ -236,7 +236,7 @@ test('an automatic compaction with no decider fails closed: nothing typed, the d
 test('an automatic compaction whose brief is the template (no brief written) fails closed: nothing typed, the decision waits with the brief\'s reason', async () => {
     const template = flow([OK], true, { why: 'the brief job is off' });
     decided(template.world);
-    await template.compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await template.compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.deepEqual([template.world.typed.length, template.world.briefs.length], [0, 1], 'the template is not typed for an automatic compaction');
     const [row] = template.world.store.autocompact.newest(mustParsed(parseCount(1)));
     assert.deepEqual([row?.verdict, row?.gate, row?.why], ['wait', 'coverage', 'the brief job is off']);
@@ -244,7 +244,7 @@ test('an automatic compaction whose brief is the template (no brief written) fai
 
 test('the operator\'s template compaction is typed as before, unchecked, with the operator as origin', async () => {
     const operator = flow([MISSING], true, { why: 'the brief job is off' });
-    await operator.compaction.run({ tab: 'w1:t1', pane: null, note: null });
+    await operator.compaction.run({ tab: tabId('w1:t1'), pane: null, note: null });
     assert.deepEqual([operator.world.typed.length, operator.world.store.compactions.shownFor('w1:t1')[0]?.origin], [1, 'operator']);
 });
 
@@ -261,21 +261,21 @@ const cause = (world: World): string => world.logs.join('\n');
 test('at the ceiling a rewrite that misses as many facts as the first brief is typed: the tie goes to the rewrite', async () => {
     const { world, compaction } = flow([MISSING, MISSING]);
     decided(world, 'ceiling');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.match(world.typed[0] ?? '', /^\/compact second brief/);
 });
 
 test('at the ceiling the first brief is typed when its rewrite misses more facts', async () => {
     const { world, compaction } = flow([MISSING, TWO_MISSING]);
     decided(world, 'ceiling');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.match(world.typed[0] ?? '', /^\/compact first brief/);
 });
 
 test('at the ceiling a rewrite that cannot be checked loses to the checked first brief', async () => {
     const { world, compaction } = flow([MISSING, UNCHECKED]);
     decided(world, 'ceiling');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.match(world.typed[0] ?? '', /^\/compact first brief/);
     assert.deepEqual(world.store.autocompact.newest(mustParsed(parseCount(1)))[0]?.coverageOutcome, { kind: 'missed', count: 1 });
 });
@@ -285,7 +285,7 @@ test('the ceiling appendix is capped at 1 500 characters and says how many facts
     const history = texts.map((text, n) => ({ ...HISTORY[1]!, text: textOf(text), why: null, lastAt: instant(n) }));
     const { world, compaction } = flow([manyMissing(texts), manyMissing(texts)], true, null, true, { history });
     decided(world, 'ceiling');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     const text = world.typed[0] ?? '';
     const appendix = text.slice(text.indexOf('Facts not carried into the brief'));
     const heading = /\((\d+) missed; (\d+) left out\)/.exec(appendix);
@@ -302,7 +302,7 @@ test('a ceiling lane whose brief still misses a fact sends its appended line thr
     const { world, compaction } = flow([MISSING]);
     world.harness.typeLine = (pane, line, behavior): Promise<Prompted> => adapter.typeLine(pane, line, behavior);
     decided(world, 'ceiling');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.deepEqual(calls, [
         { method: 'pane.send_text', params: { pane_id: 'w1:p1', text: '/compact ' } },
         { method: 'pane.send_text', params: { pane_id: 'w1:p1', text: 'second brief. Facts not carried into the brief (1 missed; 0 left out): (1) decisions: Keep SQLite' } },
@@ -322,7 +322,7 @@ test('the appended block is one line whatever the facts hold: line breaks and ru
 test('a ceiling decision names its missed count in why, and its one log line says so', async () => {
     const { world, compaction } = flow([MISSING]);
     decided(world, 'ceiling');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     const row = must(world.store.autocompact.newest(mustParsed(parseCount(1)))[0]);
     assert.match(row.why ?? '', /1 fact/);
     assert.deepEqual([row.coverageOutcome, world.logs.filter((line) => line.startsWith('autocompact ceiling: ')).length], [{ kind: 'missed', count: 1 }, 1]);
@@ -331,7 +331,7 @@ test('a ceiling decision names its missed count in why, and its one log line say
 test('a ceiling lane whose brief is the template types the operator\'s text, records unchecked with no brief, and logs it', async () => {
     const { world, compaction } = flow([OK], true, { why: 'no brief' });
     decided(world, 'ceiling');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     const row = must(world.store.autocompact.newest(mustParsed(parseCount(1)))[0]);
     assert.deepEqual([world.typed.length, row.gate, row.verdict, row.coverageOutcome, cause(world).includes('autocompact ceiling: ')], [1, 'ceiling', 'compact', { kind: 'unchecked', reason: 'no-brief' }, true]);
     assert.doesNotMatch(world.typed[0] ?? '', /Facts not carried/);
@@ -340,21 +340,21 @@ test('a ceiling lane whose brief is the template types the operator\'s text, rec
 test('at the ceiling both checks are summed into the recorded cost', async () => {
     const { world, compaction } = flow([costed(MISSING, 0.01), costed(MISSING, 0.02)]);
     decided(world, 'ceiling');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.ok(Math.abs((world.store.autocompact.newest(mustParsed(parseCount(1)))[0]?.coverageCostUsd ?? 0) - 0.03) < 1e-9);
 });
 
 test('the recorded check duration is measured on the injected clock: two checks, two steps', async () => {
     const { world, compaction } = flow([MISSING, MISSING]);
     decided(world, 'ceiling');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.equal(world.store.autocompact.newest(mustParsed(parseCount(1)))[0]?.coverageMs, 80);
 });
 
 test('off the ceiling a failed check waits, keeps the asked verdict, says how many facts it misses, and stores the brief', async () => {
     const { world, compaction } = flow([MISSING, MISSING], true, null, true, { history: HISTORY, missedFacts: 'wait' });
     decided(world, 'ask');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     const row = must(world.store.autocompact.newest(mustParsed(parseCount(1)))[0]);
     assert.deepEqual([row.gate, row.verdict, row.askedVerdict, row.why], ['coverage', 'wait', 'compact', 'the brief still misses 1 fact(s)']);
     assert.equal(world.store.db.prepare('SELECT COUNT(*) AS count FROM autocompact_brief').get()?.['count'], 1);
@@ -364,7 +364,7 @@ test('off the ceiling an unchecked rewrite still replaces the first brief, as on
     const UNREACHABLE: Coverage = { ok: false, missing: [], missingFacts: [], answers: {}, unknown: 'timed out after 10000 ms' };
     const { world, compaction } = flow([MISSING, UNREACHABLE], true, null, true, { history: HISTORY, missedFacts: 'wait' });
     decided(world, 'ask');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     const row = must(world.store.autocompact.newest(mustParsed(parseCount(1)))[0]);
     assert.deepEqual([row.gate, row.why, row.coverageOutcome], ['coverage', 'brief not checked (timed out after 10000 ms)', { kind: 'unchecked', reason: 'decider-cannot-answer' }]);
 });
@@ -372,7 +372,7 @@ test('off the ceiling an unchecked rewrite still replaces the first brief, as on
 test('off the ceiling a rewrite that misses more facts still replaces the first brief: the wait counts the rewrite\'s misses', async () => {
     const { world, compaction } = flow([MISSING, TWO_MISSING], true, null, true, { history: HISTORY, missedFacts: 'wait' });
     decided(world, 'ask');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     const row = must(world.store.autocompact.newest(mustParsed(parseCount(1)))[0]);
     assert.deepEqual([row.why, row.coverageOutcome], ['the brief still misses 2 fact(s)', { kind: 'missed', count: 2 }]);
 });
@@ -380,14 +380,14 @@ test('off the ceiling a rewrite that misses more facts still replaces the first 
 test('a fact missing both its text and its reason is one missed fact, in why and in the count', async () => {
     const { world, compaction } = flow([BOTH_PARTS, BOTH_PARTS], true, null, true, { history: HISTORY, missedFacts: 'wait' });
     decided(world, 'ask');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.equal(world.store.autocompact.newest(mustParsed(parseCount(1)))[0]?.why, 'the brief still misses 1 fact(s)');
 });
 
 test('A failed check below the ceiling: the better brief is typed with the missed facts appended, and the decision keeps its gate and verdict', async () => {
     const { world, compaction } = flow([manyMissing(['a', 'b', 'c']), TWO_MISSING]);
     const id = decided(world, 'ask');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.equal(world.typed.length, 1);
     assert.match(world.typed[0] ?? '', /^\/compact second brief\. Facts not carried into the brief \(2 missed; 0 left out\): \(1\) goal: Ship the cart rewrite; \(2\) decisions: Keep SQLite — one file$/);
     const row = must(world.store.autocompact.newest(mustParsed(parseCount(1)))[0]);
@@ -400,14 +400,14 @@ test('A failed check below the ceiling: the better brief is typed with the misse
 test('below the ceiling the first brief is typed when its rewrite misses more facts', async () => {
     const { world, compaction } = flow([MISSING, TWO_MISSING]);
     decided(world, 'ask');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.match(world.typed[0] ?? '', /^\/compact first brief\. Facts not carried into the brief \(1 missed; 0 left out\): \(1\) decisions: Keep SQLite$/);
 });
 
 test('A check that cannot answer below the ceiling: the written brief is typed unchanged, the decision is a compact ask', async () => {
     const { world, compaction } = flow([UNCHECKED]);
     const id = decided(world, 'ask');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.equal(world.typed.length, 1);
     assert.match(world.typed[0] ?? '', /^\/compact first brief$/);
     assert.equal(world.briefs.length, 1, 'no rewrite when the check cannot answer');
@@ -418,7 +418,7 @@ test('A check that cannot answer below the ceiling: the written brief is typed u
 test('No brief below the ceiling: nothing is typed, the decision waits for coverage with the unchecked reason', async () => {
     const { world, compaction } = flow([OK], true, { why: 'the brief job is off' });
     decided(world, 'ask');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.deepEqual(world.typed, []);
     const row = must(world.store.autocompact.newest(mustParsed(parseCount(1)))[0]);
     assert.deepEqual([row.verdict, row.gate, row.coverageOutcome], ['wait', 'coverage', { kind: 'unchecked', reason: 'no-brief' }]);
@@ -427,7 +427,7 @@ test('No brief below the ceiling: nothing is typed, the decision waits for cover
 test('The missed facts key set to wait: nothing is typed, the decision is a coverage wait, and the brief is kept', async () => {
     const { world, compaction } = flow([MISSING, MISSING], true, null, true, { history: HISTORY, missedFacts: 'wait' });
     decided(world, 'ask');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.deepEqual(world.typed, []);
     const row = must(world.store.autocompact.newest(mustParsed(parseCount(1)))[0]);
     assert.deepEqual([row.verdict, row.gate, row.askedVerdict, row.why], ['wait', 'coverage', 'compact', 'the brief still misses 1 fact(s)']);
@@ -437,7 +437,7 @@ test('The missed facts key set to wait: nothing is typed, the decision is a cove
 test('A decision without its reason below the ceiling: the better brief is typed with the reason appended, the decision is a compact ask', async () => {
     const { world, compaction } = flow([BOTH_PARTS, BOTH_PARTS]);
     decided(world, 'ask');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.match(world.typed[0] ?? '', /\(1\) decisions: Keep SQLite — one file$/);
     const row = must(world.store.autocompact.newest(mustParsed(parseCount(1)))[0]);
     assert.deepEqual([row.gate, row.verdict, row.askedVerdict], ['ask', 'compact', 'compact']);
@@ -446,7 +446,7 @@ test('A decision without its reason below the ceiling: the better brief is typed
 test('The ceiling override switched off with the key append: a lane at the ceiling is treated as a lane below it', async () => {
     const { world, compaction } = flow([MISSING, MISSING], true, null, false);
     decided(world, 'ceiling');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.match(world.typed[0] ?? '', /^\/compact second brief\. Facts not carried/);
     assert.ok(world.logs.includes('autocompact: 1 fact missed; missed fact appended'));
     assert.equal(world.logs.some((line) => line.startsWith('autocompact ceiling: ')), false);
@@ -456,10 +456,10 @@ test('The missed facts key is read for each compaction: a change applies to the 
     const setting: FlowOptions = { missedFacts: 'wait' };
     const { world, compaction } = flow([MISSING, MISSING, MISSING, MISSING], true, null, true, setting);
     decided(world, 'ask');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.deepEqual(world.typed, []);
     setting.missedFacts = 'append';
     decided(world, 'ask');
-    await compaction.run({ tab: 'w1:t1', pane: null, note: null, origin: 'auto' });
+    await compaction.run({ tab: tabId('w1:t1'), pane: null, note: null, origin: 'auto' });
     assert.equal(world.typed.length, 1);
 });

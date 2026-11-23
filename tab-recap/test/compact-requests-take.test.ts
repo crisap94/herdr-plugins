@@ -5,7 +5,7 @@ import type { Board } from '#src/recap/domain/board.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { CompactRequestQueue } from '#src/recap/application/compact-requests.ts';
 import { wireOf } from './fakes/wire-tokens.ts';
-import type { CompactRequest } from '#src/ports/requests.ts';
+import type { CompactAsk } from '#src/ports/requests.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { MemoryAskLedger } from './fakes/ask-ledger.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
@@ -16,11 +16,11 @@ const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agen
 const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) });
 const flush = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
 
-function setup(): { readonly asked: CompactRequest[]; readonly tokens: RecordingTokens; readonly compact: CompactRequestQueue } {
-    const asked: CompactRequest[] = [];
+function setup(): { readonly asked: CompactAsk[]; readonly tokens: RecordingTokens; readonly compact: CompactRequestQueue } {
+    const asked: CompactAsk[] = [];
     const tokens = new RecordingTokens();
     const compact = new CompactRequestQueue({
-        enabled: (): Presence => 'present', board, requests: { requestCompact: (request: CompactRequest): void => { asked.push(request); } }, asks: new MemoryAskLedger(), tokens, now: (): Instant => instant(1000), log: (): void => undefined,
+        enabled: (): Presence => 'present', board, requests: { requestCompact: (request: CompactAsk): void => { asked.push(request); } }, asks: new MemoryAskLedger(), tokens, now: (): Instant => instant(1000), log: (): void => undefined,
     });
     return { asked, tokens, compact };
 }

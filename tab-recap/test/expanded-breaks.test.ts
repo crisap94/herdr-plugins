@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { stripVTControlCharacters } from 'node:util';
-import type { Break } from '#src/ports/boundaries.ts';
+import type { BoundaryBreak } from '#src/ports/boundaries.ts';
 import { sessionFactsOf } from '#src/recap/domain/session-facts.ts';
 import { expanded } from '#src/recap/render/expanded.ts';
 import type { ExpandedView } from '#src/recap/render/expanded.ts';
@@ -14,13 +14,13 @@ import { parseCurating, parseTaskName } from '@stateforge-labs/recap-view';
 import { viewBreakOf } from '#src/view-model/column.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { duration, instant } from '#src/recap/domain/time.ts';
 
 const at = (clock: string, day = '2026-10-07'): number => Date.parse(`${day}T${clock}:00Z`);
-const BREAKS: readonly Break[] = [
-    { kind: 'compacted', at: at('12:00'), trigger: 'auto', tokensBefore: 39_000, tokensAfter: countOf(3000), tookMs: null },
-    { kind: 'compacted', at: at('15:20'), trigger: 'manual', tokensBefore: 800_000, tokensAfter: 14_000, tookMs: 15_588 },
-    { kind: 'switched', at: at('18:00', '2026-10-06'), trigger: null, tokensBefore: null, tokensAfter: null, tookMs: null },
+const BREAKS: readonly BoundaryBreak[] = [
+    { kind: 'compacted', at: instant(at('12:00')), trigger: 'auto', tokensBefore: countOf(39_000), tokensAfter: countOf(3000), took: null },
+    { kind: 'compacted', at: instant(at('15:20')), trigger: 'manual', tokensBefore: countOf(800_000), tokensAfter: countOf(14_000), took: duration(15_588) },
+    { kind: 'switched', at: instant(at('18:00', '2026-10-06')), trigger: null, tokensBefore: null, tokensAfter: null, took: null },
 ];
 
 const withBreaks = (width: number, locale: 'en' | 'es'): ExpandedView => sampleView(width, locale, {

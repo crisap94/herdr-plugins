@@ -1,7 +1,7 @@
 import type { GuardedLedger, GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import { setTimeout as sleep } from 'node:timers/promises';
-import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
-import type { AskLedger } from '#src/ports/ask-ledger.ts';
+import type { DecisionBriefs } from '#src/ports/autocompact-briefs.ts';
+import type { AskBook } from '#src/ports/ask-ledger.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
 import { parseProbability } from '#src/recap/domain/probability.ts';
 import { checkCoverage, probabilityRequired } from '#src/recap/application/brief-coverage.ts';
@@ -29,7 +29,7 @@ import { parseWireText, type AnswerStage, type RequestId, type WireText } from '
 import { must } from '#src/protocol/result.ts';
 import type { CompactionRecords } from '#src/ports/compaction-records.ts';
 import type { LaneSettling } from '#src/ports/lane-settling.ts';
-import type { Boundaries } from '#src/ports/boundaries.ts';
+import type { BoundaryLog } from '#src/ports/boundaries.ts';
 import type { LaneWeb } from '#src/ports/tab-views.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
@@ -59,7 +59,7 @@ interface CompactionParts {
     readonly compactions: CompactionRecords;
     readonly settling: LaneSettling;
     readonly ledger: GuardedLedger;
-    readonly boundaries: Boundaries;
+    readonly boundaries: BoundaryLog;
     readonly webs: CompactionWebs;
     readonly recaps: Pick<TabRecaps, 'refresh'>;
     readonly informer: Informer;
@@ -67,9 +67,9 @@ interface CompactionParts {
     readonly recent: LaneRecent;
     readonly coverageDecider: () => Decider | null;
     readonly decisions: AutocompactRecords;
-    readonly checkedBriefs: AutocompactBriefs;
+    readonly checkedBriefs: DecisionBriefs;
     readonly answers: CompactionAnswers;
-    readonly asks: AskLedger;
+    readonly asks: AskBook;
     readonly typing: CompactionTyping;
     readonly events: LaneEvents;
     readonly claims: LaneClaims;

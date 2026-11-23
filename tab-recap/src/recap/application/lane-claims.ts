@@ -1,8 +1,8 @@
-import type { CompactRequest } from '#src/ports/requests.ts';
+import type { CompactAsk } from '#src/ports/requests.ts';
 import type { ClaimKind } from '#src/recap/domain/lane-claim.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
 
-type Held = { readonly kind: 'compaction'; readonly joined: CompactRequest[] } | { readonly kind: 'handoff' };
+type Held = { readonly kind: 'compaction'; readonly joined: CompactAsk[] } | { readonly kind: 'handoff' };
 
 export interface PaneClaim {
     readonly pane: string;
@@ -39,14 +39,14 @@ export class LaneClaims {
         return this.held.get(pane)?.kind ?? null;
     }
 
-    join(pane: string, request: CompactRequest): void {
+    join(pane: string, request: CompactAsk): void {
         const claim = this.held.get(pane);
         if (claim?.kind === 'compaction') {
             claim.joined.push(request);
         }
     }
 
-    joinedOf(pane: string): readonly CompactRequest[] {
+    joinedOf(pane: string): readonly CompactAsk[] {
         const claim = this.held.get(pane);
         return claim?.kind === 'compaction' ? claim.joined : [];
     }

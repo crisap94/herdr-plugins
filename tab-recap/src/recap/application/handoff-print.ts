@@ -1,7 +1,7 @@
 import { knownOr, type GuardedLedger, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import type { AgentLookup } from '#src/ports/agents.ts';
 import type { PaneTokens } from '#src/ports/pane-tokens.ts';
-import type { HandoffPrinter, PrintRequest, PrintResult } from '#src/ports/handoff-print.ts';
+import type { HandoffPrintService, PrintAsk, PrintAnswer } from '#src/ports/handoff-print.ts';
 import type { ClosureReader, ClosureRuns } from '#src/ports/closed-lanes.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import type { TabLane, TabViews } from '#src/ports/tab-views.ts';
@@ -49,7 +49,7 @@ export interface PrintDeps {
     readonly log: (line: Text) => void;
 }
 
-const refusedWith = (reason: Extract<HandoffOutcome, { readonly kind: 'refused' }>['reason']): PrintResult => ({ kind: 'refused', reason });
+const refusedWith = (reason: Extract<HandoffOutcome, { readonly kind: 'refused' }>['reason']): PrintAnswer => ({ kind: 'refused', reason });
 
 const transcriptOf = (cursor: LaneCursor | null): Text | null => (cursor === null || cursor.transcript === '' ? null : must(parseText(cursor.transcript)));
 
@@ -73,14 +73,14 @@ interface View {
     readonly closed: ClosedView | undefined;
 }
 
-export class PrintedHandoffs implements HandoffPrinter {
+export class PrintedHandoffs implements HandoffPrintService {
     private readonly deps: PrintDeps;
 
     constructor(deps: PrintDeps) {
         this.deps = deps;
     }
 
-    async renderForPrint(request: PrintRequest): Promise<PrintResult> {
+    async renderForPrint(request: PrintAsk): Promise<PrintAnswer> {
         if (request.closed === null && request.to === request.from) {
             return refusedWith('source-equals-target');
         }
@@ -92,7 +92,7 @@ export class PrintedHandoffs implements HandoffPrinter {
         }
     }
 
-    private async printed(store: PrintStore, request: PrintRequest): Promise<PrintResult> {
+    private async printed(store: PrintStore, request: PrintAsk): Promise<PrintAnswer> {
         if (request.closed !== null) {
             return this.closed(store, request, request.closed);
         }
@@ -108,13 +108,13 @@ export class PrintedHandoffs implements HandoffPrinter {
         return this.outcome(store, request, found, { tab: tabRef, lanes });
     }
 
-    private async closed(store: PrintStore, request: PrintRequest, identity: ClosedLaneIdentity): Promise<PrintResult> {
+    private async closed(store: PrintStore, request: PrintAsk, identity: ClosedLaneIdentity): Promise<PrintAnswer> {
         await this.deps.flush(identity.tab, 'handoff print');
         const deps = { closures: store.closures, ledger: store.ledger, runs: store.closures, closedDays: this.deps.closedDays, now: instant(this.deps.now()) };
         return this.outcome(store, request, resolveSource('closed', identity, deps), null);
     }
 
-    private async outcome(store: PrintStore, request: PrintRequest, found: SourceResolution, live: Live | null): Promise<PrintResult> {
+    private async outcome(store: PrintStore, request: PrintAsk, found: SourceResolution, live: Live | null): Promise<PrintAnswer> {
         if (found.kind === 'found') {
             return this.viewed(store, request, found.source === 'closed' ? this.closedView(found) : this.liveView(store, request, found.facts, live));
         }
@@ -124,7 +124,7 @@ export class PrintedHandoffs implements HandoffPrinter {
         return unfoundOutcome(found);
     }
 
-    private liveView(store: PrintStore, request: PrintRequest, facts: readonly Fact[], live: Live | null): View | null {
+    private liveView(store: PrintStore, request: PrintAsk, facts: readonly Fact[], live: Live | null): View | null {
         const source = live?.lanes.find((lane) => lane.pane === String(request.from));
         if (live === null || source === undefined) {
             return null;
@@ -137,7 +137,7 @@ export class PrintedHandoffs implements HandoffPrinter {
         return { lane: closedLaneOf(found.identity, found.view), cursor: null, facts: found.facts, closed: found.view };
     }
 
-    private async viewed(store: PrintStore, request: PrintRequest, view: View | null): Promise<PrintResult> {
+    private async viewed(store: PrintStore, request: PrintAsk, view: View | null): Promise<PrintAnswer> {
         if (view === null) {
             return refusedWith('source-unavailable');
         }
@@ -150,14 +150,14 @@ export class PrintedHandoffs implements HandoffPrinter {
             tokens: this.deps.tokens,
         });
         const result = await render({ handoff: null, at: this.deps.now(), lane: view.lane, cursor: view.cursor, facts: view.facts, note: request.note, refresh: 'not-requested', ...(view.closed === undefined ? {} : { closed: view.closed }) });
-        return result.kind === 'text' ? { kind: 'text', text: result.text, info: await this.targetInfo(request.to) } : result;
+        return result.kind === 'text' ? { kind: 'text', text: textOf(result.text), info: await this.targetInfo(request.to) } : result;
     }
 
-    private async targetInfo(to: PaneId | null): Promise<string | null> {
+    private async targetInfo(to: PaneId | null): Promise<Text | null> {
         if (to === null) {
             return null;
         }
         const state = await this.deps.target.status(to);
-        return state.kind === 'agent' ? `target ${String(to)}: ${state.status}` : null;
+        return state.kind === 'agent' ? textOf(`target ${String(to)}: ${state.status}`) : null;
     }
 }

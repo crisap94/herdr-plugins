@@ -334,7 +334,7 @@ test('gemini refuses: not compactable, `no reader for gemini` in the recap, and 
     const gemini = lane('gemini', { pane: 'w1:p5', cwd: '/repo', session: 'h1' });
     assert.deepEqual(targetsOf([gemini], { kind: 'all' }, { pane: null, focused: null }), []);
     const world = typingFleet({ 'w1:p5': 'idle' });
-    await compactionFlow(world, 'all', null, [[]], [gemini]).run({ tab: 'w1:t1', pane: null, note: null });
+    await compactionFlow(world, 'all', null, [[]], [gemini]).run({ tab: tabId('w1:t1'), pane: null, note: null });
     assert.deepEqual(world.typed, [], 'nothing is typed into gemini');
     assert.match(world.toasts.join('\n'), /No agent here can be compacted/);
 
@@ -457,7 +457,7 @@ function handoffRows(kind: RegisteredKind, pin: HandoffPin): void {
 
     test(`${kind} handoff: a target that is not ready starts no refresh, reads nothing and takes no claim`, async () => {
         const h = handoffHarness({ targetAgent: kind, targetStatus: 'working' });
-        assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'refused', reason: 'status-not-ready' });
+        assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'refused', reason: 'status-not-ready' });
         assert.deepEqual(h.calls, []);
         assert.equal(h.claims.has(TARGET), false);
     });
@@ -465,21 +465,21 @@ function handoffRows(kind: RegisteredKind, pin: HandoffPin): void {
     test(`${kind} handoff: a compaction already holding the target starts no refresh`, async () => {
         const h = handoffHarness({ targetAgent: kind });
         h.claims.claim(String(TARGET), 'compaction');
-        assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'refused', reason: 'lane-busy' });
+        assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'refused', reason: 'lane-busy' });
         assert.equal(h.calls.some((call) => call.startsWith('refresh')), false);
     });
 
     test(`${kind} handoff: a refresh that gives a lane its first ledger renders the facts it produced`, async () => {
         const f = fact('f1', 'goal', 'Ship the parser', NOW - 1000, { task: T1 });
         const h = handoffHarness({ targetAgent: kind, recap: recapOf(), facts: [f], onRefresh: (): void => { h.world.recap = SOURCE_LISTED(); } });
-        assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'delivered' });
+        assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'delivered' });
         assert.deepEqual(h.renders.map((input) => input.facts), [[f]]);
     });
 
     test(`${kind} handoff: a refresh that moves the source lane to another task renders that task`, async () => {
         const f = fact('f2', 'goal', 'Ship the writer', NOW - 1000, { task: { tab: TAB, key: textOf('t2') } });
         const h = handoffHarness({ targetAgent: kind, facts: [f], onRefresh: (): void => { h.world.recap = recapOf(task('t2', ['w1:p1'])); } });
-        assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'delivered' });
+        assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'delivered' });
         assert.deepEqual(h.renders.map((input) => input.facts), [[f]]);
     });
 
@@ -487,7 +487,7 @@ function handoffRows(kind: RegisteredKind, pin: HandoffPin): void {
         const world = deliveryOf({ latest: 'older' });
         const typing = leaseSpy('taken');
         const h = handoffHarness({ targetAgent: kind, onRefresh: (): void => { h.world.targetStatus = 'working'; } }, senderOf(world, typing.port));
-        assert.deepEqual(await h.flow.run(request({ refreshFirst: true })), { kind: 'refused', reason: 'status-not-ready' });
+        assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'refused', reason: 'status-not-ready' });
         assert.deepEqual(world.sent, []);
         assert.deepEqual(typing.acquired, []);
     });

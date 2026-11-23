@@ -16,8 +16,6 @@ export const LOCAL_REQUESTER = 'cli';
 
 export type Requester = ToolName | typeof LOCAL_REQUESTER;
 
-export type { Ask, AskLedger, NewAsk } from './legacy.ts';
-
 export interface AskEntry {
     readonly exchange: ExchangeName;
     readonly requester: Requester;

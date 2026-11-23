@@ -10,8 +10,8 @@ import { CompactRequestQueue } from '#src/recap/application/compact-requests.ts'
 import { askOf, stageOf, wireOf } from './fakes/wire-tokens.ts';
 import { restartAnswers } from '#src/recap/application/ask-restart.ts';
 import type { RestartWiring } from '#src/recap/application/ask-restart.ts';
-import type { CompactRequest } from '#src/ports/requests.ts';
-import type { Ask } from '#src/ports/ask-ledger.ts';
+import type { AnsweredPane, CompactAsk } from '#src/ports/requests.ts';
+import type { AskEntry } from '#src/ports/ask-ledger.ts';
 import { parseExchangeName, parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
@@ -29,14 +29,14 @@ const coordinator = must(parseToolName('coordinator'));
 const flush = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
 
 interface Daemon {
-    readonly asked: CompactRequest[];
+    readonly asked: CompactAsk[];
     readonly handler: CompactRequestQueue;
 }
 
 function daemon(asks: MemoryAskLedger, tokens: RecordingTokens, on = true): Daemon {
-    const asked: CompactRequest[] = [];
+    const asked: CompactAsk[] = [];
     const handler = new CompactRequestQueue({
-        enabled: (): Presence => (on ? 'present' : 'absent'), board, requests: { requestCompact: (request: CompactRequest): void => { asked.push(request); } }, asks, tokens, now: (): Instant => instant(1000), log: (): void => undefined,
+        enabled: (): Presence => (on ? 'present' : 'absent'), board, requests: { requestCompact: (request: CompactAsk): void => { asked.push(request); } }, asks, tokens, now: (): Instant => instant(1000), log: (): void => undefined,
     });
     return { asked, handler };
 }
@@ -45,12 +45,12 @@ function restartDeps(asks: MemoryAskLedger, tokens: RecordingTokens, localAsks: 
     return {
         exchanges: [...REGISTRY.exchanges, handoffLike],
         ledger: asks,
-        requests: { takeAnswered: (): readonly { readonly pane: string; readonly answer: string }[] => [] },
+        requests: { takeAnswered: (): readonly AnsweredPane[] => [] },
         compactions: { interrupted: (): Count => must(parseCount(0)) },
         tokens,
         enabled: (): Presence => (on ? 'present' : 'absent'),
-        local: (ask: Ask): void => { localAsks.push(ask.id); },
-        handoff: (ask: Ask): void => { handoffAsks.push(ask.id); },
+        local: (ask: AskEntry): void => { localAsks.push(ask.id); },
+        handoff: (ask: AskEntry): void => { handoffAsks.push(ask.id); },
         withdraw: (): void => undefined,
         log: (): void => undefined,
         now: (): Instant => instant(1000),
@@ -121,7 +121,7 @@ test('joined requests are never left queued: every one of them is answered faile
 test('a local requester\'s ask is interrupted with no token: the local channel hears it and the ask is settled', () => {
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
-    asks.record({ exchange: COMPACT_EXCHANGE, requester: 'cli', id: rid('l1'), pane: paneId('w1:p1'), at: 1, ref: null });
+    asks.record({ exchange: COMPACT_EXCHANGE, requester: 'cli', id: rid('l1'), pane: paneId('w1:p1'), at: instant(1), ref: null });
     const localAsks: string[] = [];
     restart(asks, tokens, true, localAsks);
     assert.deepEqual([localAsks, tokens.reports, asks.unfinished()], [['l1'], [], []]);
@@ -130,7 +130,7 @@ test('a local requester\'s ask is interrupted with no token: the local channel h
 test('a local handoff ask goes to the handoff channel, not the local stub, and writes no token', () => {
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
-    asks.record({ exchange: HANDOFF_EXCHANGE, requester: 'cli', id: rid('h9'), pane: paneId('w1:p1'), at: 1, ref: 'hnd_handoff' });
+    asks.record({ exchange: HANDOFF_EXCHANGE, requester: 'cli', id: rid('h9'), pane: paneId('w1:p1'), at: instant(1), ref: textOf('hnd_handoff') });
     const localAsks: string[] = [];
     const handoffAsks: string[] = [];
     restart(asks, tokens, true, localAsks, handoffAsks);
@@ -140,7 +140,7 @@ test('a local handoff ask goes to the handoff channel, not the local stub, and w
 test('an unfinished ask of an exchange with no descriptor here is settled interrupted and writes no token', () => {
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
-    asks.record({ exchange: must(parseExchangeName('orphan')), requester: coordinator, id: rid('o1'), pane: paneId('w1:p1'), at: 1, ref: null });
+    asks.record({ exchange: must(parseExchangeName('orphan')), requester: coordinator, id: rid('o1'), pane: paneId('w1:p1'), at: instant(1), ref: null });
     restart(asks, tokens, true, []);
     assert.deepEqual([tokens.reports, asks.unfinished()], [[], []]);
 });
@@ -148,7 +148,7 @@ test('an unfinished ask of an exchange with no descriptor here is settled interr
 test('an unfinished ask of a second exchange is answered under that exchange\'s own answer token', async () => {
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
-    asks.record({ exchange: handoffLike.name, requester: coordinator, id: rid('h1'), pane: paneId('w1:p1'), at: 1, ref: null });
+    asks.record({ exchange: handoffLike.name, requester: coordinator, id: rid('h1'), pane: paneId('w1:p1'), at: instant(1), ref: null });
     restart(asks, tokens);
     await flush();
     assert.deepEqual(tokens.reports.map((report) => report.tokens), [{ 'tab-recap-handoff': 'h1:failed-interrupted' }]);
@@ -158,8 +158,8 @@ test('an unfinished ask of a second exchange is answered under that exchange\'s 
 test('a restart interrupts what was asked on every pane: each unfinished request is answered failed-interrupted, and none is run', async () => {
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
-    asks.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: 1, ref: null });
-    asks.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r8'), pane: paneId('w1:p2'), at: 2, ref: null });
+    asks.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: instant(1), ref: null });
+    asks.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r8'), pane: paneId('w1:p2'), at: instant(2), ref: null });
     restart(asks, tokens);
     await flush();
     assert.deepEqual(tokens.reports.map((report) => [report.pane, report.tokens]), [
@@ -172,7 +172,7 @@ test('a restart interrupts what was asked on every pane: each unfinished request
 test('off: an interrupted request is not answered either', async () => {
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
-    asks.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: 1, ref: null });
+    asks.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: instant(1), ref: null });
     restart(asks, tokens, false);
     await flush();
     assert.deepEqual(tokens.reports, []);
@@ -181,7 +181,7 @@ test('off: an interrupted request is not answered either', async () => {
 test('a restart interrupts each ask once: a second restart writes nothing', () => {
     const asks = new MemoryAskLedger();
     const tokens = new RecordingTokens();
-    asks.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: 1, ref: null });
+    asks.record({ exchange: COMPACT_EXCHANGE, requester: coordinator, id: rid('r7'), pane: paneId('w1:p1'), at: instant(1), ref: null });
     restart(asks, tokens);
     const afterFirst = tokens.reports.length;
     restart(asks, tokens);

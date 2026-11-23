@@ -1,5 +1,5 @@
-import type { AskKey, AskLedger } from '#src/ports/ask-ledger.ts';
-import type { HandoffRequestRow } from '#src/ports/requests.ts';
+import type { AskKey, AskBook } from '#src/ports/ask-ledger.ts';
+import type { HandoffAskRecord } from '#src/ports/requests.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { handoff, HANDOFF_EVENTS, HANDOFF_STAGES } from '#src/protocol/exchanges/handoff.ts';
@@ -15,7 +15,7 @@ import { parseStoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts'
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
 import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { LaneEvents } from './lane-events.ts';
 import { HANDOFF_ANSWER_TTL_MS } from './handoff-limits.ts';
@@ -48,7 +48,7 @@ export function handoffStageOf(outcome: HandoffOutcome): Text {
 }
 
 export interface HandoffMirrorDeps {
-    readonly asks: AskLedger;
+    readonly asks: AskBook;
     readonly tokens: LaneTokens;
     readonly events: LaneEvents;
     readonly sharing: () => HerdrEvents;
@@ -90,8 +90,8 @@ export class HandoffMirror {
         this.deps = deps;
     }
 
-    routeOf(row: HandoffRequestRow): Route | null {
-        const ask = this.deps.asks.unfinished().find((each) => each.exchange === HANDOFF_EXCHANGE && each.ref === row.id);
+    routeOf(row: HandoffAskRecord): Route | null {
+        const ask = this.deps.asks.unfinished().find((each) => each.exchange === HANDOFF_EXCHANGE && each.ref === textOf(row.id));
         return ask === undefined ? null : { source: row.pane, target: row.toPane, id: must(parseText(ask.id)) };
     }
 

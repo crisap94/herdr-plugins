@@ -5,7 +5,7 @@ import { restartAnswers } from '#src/recap/application/ask-restart.ts';
 import { handoffStageOf, HandoffMirror } from '#src/recap/application/handoff-mirror.ts';
 import type { Route } from '#src/recap/application/handoff-mirror.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
-import type { HandoffRequestRow } from '#src/ports/requests.ts';
+import type { HandoffAskRecord } from '#src/ports/requests.ts';
 import { handoff, HANDOFF_EVENTS, HANDOFF_STAGES } from '#src/protocol/exchanges/handoff.ts';
 import { terminalsOf, terminalStage } from '#src/protocol/exchange.ts';
 import { must } from '#src/protocol/result.ts';
@@ -127,8 +127,8 @@ test('with sharing off the mirror writes no token and no event', () => {
 
 test('the mirror finds the exchange ask by its handoff id, and returns the route the requester asked for', () => {
     const run = setup();
-    run.asks.record({ exchange: HANDOFF_EXCHANGE, requester: must(parseToolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: 1, ref: HID });
-    const row: HandoffRequestRow = { id: HID, at: 1000, tab: tabId('w1:t1'), pane: paneId('w1:p1'), toPane: paneId('w1:p2'), refreshFirst: false, note: null, source: { kind: 'live' }, answer: must(parseText('h1')) };
+    run.asks.record({ exchange: HANDOFF_EXCHANGE, requester: must(parseToolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: instant(1), ref: textOf(HID) });
+    const row: HandoffAskRecord = { id: HID, at: instant(1000), tab: tabId('w1:t1'), pane: paneId('w1:p1'), toPane: paneId('w1:p2'), refresh: 'as-is', note: null, source: { kind: 'live' }, answer: must(parseText('h1')) };
     assert.deepEqual(run.mirror.routeOf(row), route);
     assert.equal(run.mirror.routeOf({ ...row, id: handoffIdOf(new Uint8Array(16).fill(8)) }), null);
 });
@@ -137,7 +137,7 @@ test('restart: an unsettled exchange ask is answered failed-interrupted on the s
     const tokens = new RecordingTokens();
     const asks = new MemoryAskLedger();
     const withdrawn: string[] = [];
-    asks.record({ exchange: HANDOFF_EXCHANGE, requester: must(parseToolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: 1, ref: HID });
+    asks.record({ exchange: HANDOFF_EXCHANGE, requester: must(parseToolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: instant(1), ref: textOf(HID) });
     restartAnswers({
         exchanges: REGISTRY.exchanges, ledger: asks, requests: { takeAnswered: () => [] }, compactions: { interrupted: (): Count => must(parseCount(0)) }, tokens, enabled: (): Presence => 'present',
         local: (): void => undefined, handoff: (): void => undefined, withdraw: (ask): void => { withdrawn.push(ask.ref ?? ''); }, log: (): void => undefined, now: (): Instant => instant(1000), restartedWhy: textOf('restarted'),

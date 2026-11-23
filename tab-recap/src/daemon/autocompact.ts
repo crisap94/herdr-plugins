@@ -87,7 +87,7 @@ const emitTo = (events: LaneEvents, event: SafePointEvent): void => {
 
 const activityOf = (parts: AutocompactParts): Pick<CompactionActivity, 'activeFor' | 'automaticInProgress'> => {
     function activeFor(scope: ScopeId, key: SessionKey): boolean {
-        return parts.store.compactions.shownFor(tabId(scope)).some((record) => record.pane === key && ACTIVE.has(record.stage)) || parts.claims.has(paneId(key)) || parts.store.requests.compactQueued(tabId(scope), paneId(key));
+        return parts.store.compactions.shownFor(tabId(scope)).some((record) => record.pane === key && ACTIVE.has(record.stage)) || parts.claims.has(paneId(key)) || parts.store.requests.compactQueued(tabId(scope), paneId(key)) === 'queued';
     }
     function automaticInProgress(): boolean {
         return parts.store.compactions.autoInProgress();
@@ -125,7 +125,7 @@ export function wireAutocompact(parts: AutocompactParts): Autocompact {
     const read = parts.config ?? loadSettings;
     return new Autocompact({
         policy: () => read().autocompact, tuning: (): CompactTuning => compactTuningOf(read().tuning), idleHold: () => read().holdIdle, decider: parts.decider, contexts: parts.contexts, inFlight: (candidate) => inFlightOf(flight, candidate), awaiting: parts.awaiting ?? awaitingPane, emit: (event) => { emitTo(parts.events, event); }, recent: (candidate) => { const lane = lanesBehind.get(candidate); return lane === undefined ? Promise.resolve([]) : parts.recent.of(lane); }, statusOf: (candidate) => parseLaneStatusAtDecision(lanesBehind.get(candidate)?.status), startedAt: instant(Date.now() - process.uptime() * 1000),
-        ledger: store.ledger, sessions: signalsOf(store), activity: activityOf(parts), decisions: store.decisions, request: (ask) => { store.requests.requestCompact({ tab: tabId(ask.scope), pane: paneId(ask.key), note: ask.note, origin: 'auto' }); },
+        ledger: store.ledger, sessions: signalsOf(store), activity: activityOf(parts), decisions: store.decisions, request: (ask) => { store.requests.requestCompact({ tab: tabId(ask.scope), pane: paneId(ask.key), note: ask.note === null ? null : textOf(ask.note), origin: 'auto' }); },
         recaps: readinessOf(parts),
         now: () => instant(Date.now()), log: (line) => { parts.log(line); },
     });

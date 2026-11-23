@@ -1,6 +1,6 @@
 import { loadSettings, stateDirectory } from '#src/daemon/config.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
-import type { HandoffPrinter } from '#src/ports/handoff-print.ts';
+import type { HandoffPrintService } from '#src/ports/handoff-print.ts';
 import type { FlushTab } from '#src/ports/frontend.ts';
 import { EditTally } from '#src/recap/application/edit-tally.ts';
 import { PrintedHandoffs } from '#src/recap/application/handoff-print.ts';
@@ -11,7 +11,7 @@ import { GitWorksite } from '../git/worksite.ts';
 import { SystemClock } from '../os/system-clock.ts';
 import { modalTranscriptRegistry } from '../transcripts/registry.ts';
 
-export function desktopPrinter(fleet: Pick<Fleet, 'read' | 'agents'>, flush: FlushTab): HandoffPrinter {
+export function desktopPrinter(fleet: Pick<Fleet, 'read' | 'agents'>, flush: FlushTab): HandoffPrintService {
     const transcripts = modalTranscriptRegistry();
     return new PrintedHandoffs({
         openStore: () => openPrintStore(databaseFile(stateDirectory()), loadSettings().closedLaneDays),

@@ -1,54 +1,17 @@
 import type { AgentKind, CompactionId, DecisionId, PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Duration, Instant } from '#src/recap/domain/time.ts';
-import type { ExchangeName, RequestId } from '#src/protocol/primitives.ts';
-import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import type { CoverageOutcome, LaneStatusAtDecision, SkipGate } from '#src/recap/domain/autocompact.ts';
 import type { Usd } from '#src/recap/domain/usd.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
-import type { NewHandoffRequest } from './twins/runs/legacy.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 import type { ClosedEvery, ColumnLayoutResult, Done, OpenResult, ResizeDirection } from './columns.ts';
-import type { AskIdentity, AskKey, Requester } from './ask-ledger.ts';
 import type { DecisionCounts, DecisionGate, DecisionMode, DecisionVerdict, LinkedDecision, PaneKey, PassedCoverage, UncheckedCoverage } from './autocompact-records.ts';
 import type { ActiveStage, BriefOrigin, EndStage, Stage } from './compaction-records.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import type { Probability } from '#src/recap/domain/probability.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Noul } from './decider.ts';
-
-export interface Ask {
-    readonly exchange: ExchangeName;
-    readonly requester: Requester;
-    readonly id: RequestId;
-    readonly pane: PaneId;
-    readonly at: number;
-    readonly ref: string | null;
-    readonly outcome: AskOutcome | null;
-}
-
-export interface NewAsk {
-    readonly exchange: ExchangeName;
-    readonly requester: Requester;
-    readonly id: RequestId;
-    readonly pane: PaneId;
-    readonly at: number;
-    readonly ref: string | null;
-}
-
-export interface AskLedger {
-    seen(exchange: ExchangeName, requester: Requester, id: RequestId): boolean;
-    record(ask: NewAsk): void;
-    attach(match: AskKey, ref: string): void;
-    withdraw(identity: AskIdentity): void;
-    settle(match: AskKey, outcome: AskOutcome): void;
-    unfinished(): readonly Ask[];
-    prune(before: number): void;
-}
-
-export interface HandoffQueue {
-    queueHandoff(ask: NewAsk, request: NewHandoffRequest): void;
-}
 
 export interface MissedCoverage {
     readonly kind: 'missed';

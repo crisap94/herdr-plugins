@@ -1,13 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
-import type { NewHandoffRequest } from '#src/ports/requests.ts';
+import type { HandoffAsk, Withdrawal } from '#src/ports/requests.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import type { EventKind } from '#src/recap/domain/event-token.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { paneId } from '#src/recap/domain/ids.ts';
-import type { Ask, NewAsk } from '#src/ports/ask-ledger.ts';
+import type { AskEntry, AskDraft } from '#src/ports/ask-ledger.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
 import { parseToolName } from '#src/protocol/primitives.ts';
@@ -16,7 +16,7 @@ import { HandoffExchangeResponder, withdrawAsked, type TokenEntries } from '#src
 import type { HandoffOffer } from '#src/recap/domain/handoff-ask.ts';
 import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { HandoffMirror } from '#src/recap/application/handoff-mirror.ts';
 import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
@@ -24,7 +24,7 @@ import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 
 const HID = handoffIdOf(new Uint8Array(16).fill(7));
 
-const ask = (ref: string | null): Ask => ({ exchange: HANDOFF_EXCHANGE, requester: must(parseToolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: 1, ref, outcome: null });
+const ask = (held: HandoffId | null): AskEntry => ({ exchange: HANDOFF_EXCHANGE, requester: must(parseToolName('coordinator')), id: rid('h1'), pane: paneId('w1:p1'), at: instant(1), ref: held === null ? null : textOf(held), outcome: null });
 
 const lanes = ['w1:p1', 'w1:p2', 'w2:p7'].map((pane) => laneFrom({ paneId: pane, tabId: pane.replace(':p', ':t'), workspaceId: pane.split(':')[0] ?? '', agent: 'claude', status: 'idle' }));
 const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map(lanes.map((lane) => [lane.pane, lane])) });
@@ -45,7 +45,7 @@ class RecordingEvents implements LaneEvents {
 
 interface Harness {
     readonly responder: HandoffExchangeResponder;
-    readonly queued: NewHandoffRequest[];
+    readonly queued: HandoffAsk[];
     readonly tokens: RecordingTokens;
     readonly events: RecordingEvents;
     readonly asks: MemoryAskLedger;
@@ -54,11 +54,11 @@ interface Harness {
 
 function setup(offer: HandoffOffer = 'offered', asks = new MemoryAskLedger()): Harness {
     const current = { value: offer };
-    const queued: NewHandoffRequest[] = [];
+    const queued: HandoffAsk[] = [];
     const tokens = new RecordingTokens();
     const events = new RecordingEvents();
     const mirror = new HandoffMirror({ asks, tokens, events, sharing: (): HerdrEvents => (current.value !== 'sharing-off' ? 'on' : 'off'), log: (): void => undefined });
-    const queue = { queueHandoff: (newAsk: NewAsk, request: NewHandoffRequest): void => { asks.record(newAsk); queued.push(request); asks.attach(newAsk, HID); } };
+    const queue = { queueHandoff: (newAsk: AskDraft, request: HandoffAsk): void => { asks.record(newAsk); queued.push(request); asks.attach(newAsk, textOf(HID)); } };
     const responder = new HandoffExchangeResponder({ offer: (): HandoffOffer => current.value, board, queue, asks, mirror, tokens, now: (): Instant => instant(1000), log: (): void => undefined });
     return { responder, queued, tokens, events, asks, offer: current };
 }
@@ -109,7 +109,7 @@ test('a target outside the source workspace, or not a lane, is refused-target-el
 test('asked and queued: one handoff row from the source to the target, answered queued, with the ask holding the handoff id', () => {
     const run = setup();
     run.responder.onPaneTokens(paneId('w1:p1'), request('h1:w1:p2'));
-    assert.deepEqual(run.queued, [{ tab: 'w1:t1', pane: 'w1:p1', toPane: 'w1:p2', note: null, refreshFirst: false, source: { kind: 'live' }, answer: 'h1' }]);
+    assert.deepEqual(run.queued, [{ tab: 'w1:t1', pane: 'w1:p1', toPane: 'w1:p2', note: null, refresh: 'as-is', source: { kind: 'live' }, answer: 'h1' }]);
     assert.deepEqual(answered(run), [['w1:p1', { 'tab-recap-handoff': 'h1:queued' }]]);
     assert.deepEqual(run.events.seen, [
         { kind: 'handoff-queued', pane: 'w1:p1', detail: 'h1' },
@@ -121,7 +121,7 @@ test('asked and queued: one handoff row from the source to the target, answered 
 test('a refresh is asked by the flag', () => {
     const run = setup();
     run.responder.onPaneTokens(paneId('w1:p1'), request('h2:w1:p2:refresh'));
-    assert.deepEqual(run.queued.map((row) => row.refreshFirst), [true]);
+    assert.deepEqual(run.queued.map((row) => row.refresh), ['refresh-first']);
 });
 
 test('the same id is queued once, also after a restart over the same asks; a rewrite is announced by no event', () => {
@@ -137,7 +137,7 @@ test('the same id is queued once, also after a restart over the same asks; a rew
 
 test('restart withdraws the queued row of an exchange ask, and only one that carries a handoff id', () => {
     const withdrawn: HandoffId[] = [];
-    const requests = { withdrawHandoff: (id: HandoffId): boolean => { withdrawn.push(id); return true; } };
+    const requests = { withdrawHandoff: (id: HandoffId): Withdrawal => { withdrawn.push(id); return 'withdrawn'; } };
     withdrawAsked(requests, ask(HID));
     withdrawAsked(requests, ask(null));
     assert.deepEqual(withdrawn, [HID]);

@@ -6,7 +6,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
 import { parseText } from '#src/recap/domain/text.ts';
-import { paneId, parseCompactionId } from '#src/recap/domain/ids.ts';
+import { paneId, parseCompactionId, tabId } from '#src/recap/domain/ids.ts';
 import { must } from '#src/protocol/result.ts';
 import { compacted, compactionDeps, compactionFlow, failed, lane, NOW, typingFleet } from '#test/fakes/compaction-fleet.ts';
 
@@ -16,7 +16,7 @@ const trailOf = (ends: unknown[] = []): Trail => new Trail({ begin: () => 'cmp_t
 
 test('opencode: its own /compact is confirmed on the second look, then restored; pins today: four reads per look and a one second gap', async () => {
     const world = typingFleet({ 'w1:p4': 'idle' });
-    await compactionFlow(world, 'focused', 'w1:p4', [[], [], [], [], [compacted]], [lane('w1:p4', 'opencode')]).run({ tab: 'w1:t1', pane: null, note: must(parseText('keep the schema')) });
+    await compactionFlow(world, 'focused', 'w1:p4', [[], [], [], [], [compacted]], [lane('w1:p4', 'opencode')]).run({ tab: tabId('w1:t1'), pane: null, note: must(parseText('keep the schema')) });
     assert.deepEqual(world.events, ['refresh', 'type w1:p4', 'prompt w1:p4']);
     assert.equal(world.typed.length, 2, 'one command, one restore message');
     const [command, restore] = world.typed;

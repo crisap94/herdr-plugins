@@ -3,8 +3,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { handoffRestartOf, pollHandoffs, pruneHandoffAnswers } from '#src/daemon/handoff.ts';
 import { LOCAL_REQUESTER } from '#src/ports/ask-ledger.ts';
-import type { Ask } from '#src/ports/ask-ledger.ts';
-import type { HandoffRequestRow } from '#src/ports/requests.ts';
+import type { AskEntry } from '#src/ports/ask-ledger.ts';
+import type { HandoffAskRecord } from '#src/ports/requests.ts';
 import { parseRequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { HANDOFF_ANSWER_TTL_MS } from '#src/recap/application/handoff-limits.ts';
@@ -14,12 +14,12 @@ import { paneId } from '#src/recap/domain/ids.ts';
 const NOW = 1_000_000_000;
 
 test('the poll hands the taken rows to the runner, and a rejected take is logged once with its name', async () => {
-    const rows: readonly HandoffRequestRow[] = [];
-    const seen: (readonly HandoffRequestRow[])[] = [];
+    const rows: readonly HandoffAskRecord[] = [];
+    const seen: (readonly HandoffAskRecord[])[] = [];
     const logs: string[] = [];
     pollHandoffs({
-        runner: { take: (taken: readonly HandoffRequestRow[]): Promise<void> => { seen.push(taken); return Promise.reject(new Error('store locked')); } },
-        requests: { takeHandoffs: (): readonly HandoffRequestRow[] => rows },
+        runner: { take: (taken: readonly HandoffAskRecord[]): Promise<void> => { seen.push(taken); return Promise.reject(new Error('store locked')); } },
+        requests: { takeHandoffs: (): readonly HandoffAskRecord[] => rows },
         log: (line: string): void => { logs.push(line); },
     });
     await new Promise((resolve) => setImmediate(resolve));
@@ -35,8 +35,8 @@ test('the answer prune cuts at the answer time-to-live before now', () => {
 });
 
 test('the restart hook hands each unfinished handoff ask to the runner, as interrupted', () => {
-    const seen: Ask[] = [];
-    const ask: Ask = { exchange: HANDOFF_EXCHANGE, requester: LOCAL_REQUESTER, id: must(parseRequestId('0123456789abcdef', 'legacy-length')), pane: paneId('w1:p1'), at: 1, ref: null, outcome: null };
-    handoffRestartOf({ interrupted: (taken: Ask): void => { seen.push(taken); } })(ask);
+    const seen: AskEntry[] = [];
+    const ask: AskEntry = { exchange: HANDOFF_EXCHANGE, requester: LOCAL_REQUESTER, id: must(parseRequestId('0123456789abcdef', 'legacy-length')), pane: paneId('w1:p1'), at: instant(1), ref: null, outcome: null };
+    handoffRestartOf({ interrupted: (taken: AskEntry): void => { seen.push(taken); } })(ask);
     assert.deepEqual(seen, [ask]);
 });

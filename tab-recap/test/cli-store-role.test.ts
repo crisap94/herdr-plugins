@@ -1,3 +1,4 @@
+import { tabId } from '#src/recap/domain/ids.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { test } from 'node:test';
@@ -108,7 +109,7 @@ test('R5: the CLI on a current store writes a request that the daemon takes', as
         if (reader.kind !== 'ready') {
             assert.fail(`expected ready, got ${reader.kind}`);
         }
-        reader.requests.request('w1:t1');
+        reader.requests.request(tabId('w1:t1'));
         reader.close();
         const again = await daemonStore(state);
         assert.deepEqual(again.requests.takeRequests(), ['w1:t1']);

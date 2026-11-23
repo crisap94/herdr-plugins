@@ -1,13 +1,12 @@
-import type { Ask, AskLedger } from '#src/ports/ask-ledger.ts';
+import type { AskEntry, AskBook } from '#src/ports/ask-ledger.ts';
 import type { LaneTokens } from '#src/ports/lane-tokens.ts';
-import type { HandoffQueue, HandoffRequester } from '#src/ports/requests.ts';
+import type { HandoffAskQueue, HandoffAsker } from '#src/ports/requests.ts';
 import { idGrammarOf } from '#src/protocol/codec.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
 import { parseRequest, terminalStage } from '#src/protocol/exchange.ts';
-import { parseIdText, parseRequestId, parseToolName, parseWireText } from '#src/protocol/primitives.ts';
+import { parseIdText, parseRequestId, parseToolName, parseWireText, type WireText } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
-import { answer as answerOf, take } from '#src/protocol/responder.ts';
-import type { TokenMap } from '#src/protocol/tokens.ts';
+import { answer as answerOf, takeRequests } from '#src/protocol/responder.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
@@ -42,28 +41,28 @@ const PREFIX = handoff.requestPrefix;
 export interface HandoffExchangeDeps {
     readonly offer: () => HandoffOffer;
     readonly board: () => Board;
-    readonly queue: HandoffQueue;
-    readonly asks: AskLedger;
+    readonly queue: HandoffAskQueue;
+    readonly asks: AskBook;
     readonly mirror: HandoffMirror;
     readonly tokens: LaneTokens;
     readonly now: () => Instant;
     readonly log: HandoffLog;
 }
 
-function unparsedOf(tokens: TokenEntries, asks: AskLedger): readonly Unparsed[] {
+function unparsedOf(tokens: TokenEntries, asks: AskBook): readonly Unparsed[] {
     return [...tokens].flatMap(([name, raw]): Unparsed[] => {
         const tool = name.startsWith(PREFIX) ? parseToolName(name.slice(PREFIX.length)) : null;
         const id = parseRequestId(parseIdText(raw), GRAMMAR);
         const wire = parseWireText(raw);
         const parsed = wire.kind === 'ok' && parseRequest(handoff, wire.value).kind === 'ok';
-        if (tool === null || tool.kind === 'err' || id.kind === 'err' || parsed || asks.seen(HANDOFF_EXCHANGE, tool.value, id.value)) {
+        if (tool === null || tool.kind === 'err' || id.kind === 'err' || parsed || asks.seen(HANDOFF_EXCHANGE, tool.value, id.value) === 'seen') {
             return [];
         }
         return [{ tool: must(parseText(tool.value)), id: must(parseText(id.value)) }];
     });
 }
 
-export function withdrawAsked(requests: Pick<HandoffRequester, 'withdrawHandoff'>, ask: Ask): void {
+export function withdrawAsked(requests: Pick<HandoffAsker, 'withdrawHandoff'>, ask: AskEntry): void {
     const id = parseHandoffId(ask.ref);
     if (id !== null) {
         requests.withdrawHandoff(id);
@@ -78,8 +77,13 @@ export class HandoffExchangeResponder {
     }
 
     onPaneTokens(pane: PaneId, tokens: TokenEntries): void {
-        const record: TokenMap = Object.fromEntries(tokens);
-        const taking = take(REGISTRY, record, this.deps.asks.seen.bind(this.deps.asks));
+        const wire = new Map<WireText, WireText>();
+        for (const [name, raw] of tokens) {
+            const key = parseWireText(name);
+            const value = parseWireText(raw);
+            if (key.kind === 'ok' && value.kind === 'ok') wire.set(key.value, value.value);
+        }
+        const taking = takeRequests(REGISTRY, wire, (exchange, requester, request) => (this.deps.asks.seen(exchange, requester, request) === 'seen' ? 'seen' : 'fresh'));
         for (const taken of taking.taken) {
             if (taken.exchange.name === HANDOFF_EXCHANGE) {
                 const workspace = taken.value['workspace'];
@@ -125,7 +129,7 @@ export class HandoffExchangeResponder {
         const requester = must(parseToolName(tool));
         const route: Route = { source: source.pane, target, id };
         try {
-            this.deps.queue.queueHandoff({ ...key, requester, at: this.deps.now(), ref: null }, { tab: source.tab, pane: source.pane, toPane: target, note: null, refreshFirst: refresh === 'refresh', source: { kind: 'live' }, answer: id });
+            this.deps.queue.queueHandoff({ ...key, requester, at: this.deps.now(), ref: null }, { tab: source.tab, pane: source.pane, toPane: target, note: null, refresh: refresh === 'refresh' ? 'refresh-first' : 'as-is', source: { kind: 'live' }, answer: id });
         } catch (error) {
             this.deps.log(must(parseText(`handoff request ${id} on ${source.pane}: not queued (${failureCauseOf(parseThrown(error))})`)));
             return;

@@ -1,3 +1,4 @@
+import { parseFactIndex } from '#src/recap/domain/fact-index.ts';
 import { parseUsd } from '#src/recap/domain/usd.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { must as mustParsed } from '#src/protocol/result.ts';
@@ -162,12 +163,12 @@ test('a checked brief is stored with its exact checked fact wording and pruned b
     const store = seeded();
     const id = store.autocompact.record(decision());
     const checked = [{ section: 'needs' as const, text: brand<string, 'Text'>('keep the title'), why: null }];
-    store.autocompactBriefs.put(id, 'brief body', [0], checked, 100);
+    store.autocompactBriefs.put(id, textOf('brief body'), [mustParsed(parseFactIndex(0))], checked, instant(100));
     const row = must(store.db.prepare('SELECT briefed_at, body FROM autocompact_brief WHERE decision_id = ?').get(idOf('decision', id)) as { briefed_at: number; body: Uint8Array } | null);
     assert.equal(row.briefed_at, 100);
     assert.deepEqual(decode(row.body), { brief: 'brief body', appended: [0], checked });
-    assert.equal(store.autocompactBriefs.clearBefore(101), 1);
-    assert.equal(store.autocompactBriefs.clearBefore(101), 0);
+    assert.equal(store.autocompactBriefs.clearBefore(instant(101)), 1);
+    assert.equal(store.autocompactBriefs.clearBefore(instant(101)), 0);
 });
 
 test('the asked verdict is stored as the decider asked it: a wait the check makes of a compact keeps compact', () => {

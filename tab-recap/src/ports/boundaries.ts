@@ -3,8 +3,6 @@ import type { Count } from '#src/recap/domain/count.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { Duration, Instant } from '#src/recap/domain/time.ts';
 
-export type { Boundaries, Break } from './twins/legacy.ts';
-
 export interface BoundaryBreak {
     readonly kind: BoundaryKind;
     readonly at: Instant;

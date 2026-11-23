@@ -38,7 +38,7 @@ test('claude compacts on its own: a compacted, auto boundary at the record\'s ti
         [{ kind: 'compacted', at, trigger: 'auto', cursor: 200, tokens_before: 800_000, tokens_after: 14_000, took_ms: 15_588 }]);
     assert.deepEqual(rows(store.db, 'SELECT n, started_at, sealed_at, cause FROM chapter_span ORDER BY n'),
         [{ n: 1, started_at: T0, sealed_at: at, cause: 'start' }, { n: 2, started_at: at, sealed_at: null, cause: 'compacted' }]);
-    assert.equal(store.boundaries.chapterCount('w1:t1'), 2);
+    assert.equal(store.boundaries.chapterCount(tabId('w1:t1')), 2);
 });
 
 test('the run that follows a boundary belongs to the new chapter; the one before stays in the old', () => {
@@ -106,7 +106,7 @@ test('a mark already recorded (the cursor did not move on) is not recorded twice
     store.records.failRun({ tab: tabId('w1:t1'), at: instant(at + 2), cause: 'turn-ended', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: textOf('bad'), lanes: [cursor('w1:p1', 100)], marks: [claude(at)] });
     recordOps(store, run({ at: instant(at + 3), marks: [claude(at - MIN)] }));
     assert.equal(rows(store.db, 'SELECT * FROM boundary').length, 1);
-    assert.equal(store.boundaries.chapterCount('w1:t1'), 2);
+    assert.equal(store.boundaries.chapterCount(tabId('w1:t1')), 2);
 });
 
 test('two compactions in one read are two boundaries, oldest first, two new chapters', () => {
@@ -148,8 +148,8 @@ test('the timeline reads: the breaks oldest first with the mark\'s tokens, else 
     compaction(store.db, T0 + MIN);
     store.db.exec('UPDATE compaction SET tokens_before = 39000, tokens_after = 3000, took_ms = 16000');
     recordOps(store, run({ at: instant(T0 + 3 * MIN), marks: [{ pane: paneIdOf('w1:p1'), at: instant(T0 + 2 * MIN), cursor: countOf(200) }] }));
-    assert.deepEqual(store.boundaries.breaksOf('w1:t1'), [{ kind: 'compacted', at: T0 + 2 * MIN, trigger: 'plugin', tokensBefore: 39_000, tokensAfter: countOf(3000), tookMs: 16_000 }]);
-    assert.equal(store.boundaries.lastBreakAt(tabId('w1:t1'), 'w1:p1'), T0 + 2 * MIN);
-    assert.equal(store.boundaries.lastBreakAt(tabId('w1:t1'), 'w1:p2'), null);
-    assert.deepEqual([memoryStore().boundaries.breaksOf('w9:t9'), memoryStore().boundaries.chapterCount('w9:t9')], [[], 0]);
+    assert.deepEqual(store.boundaries.breaksOf(tabId('w1:t1')), [{ kind: 'compacted', at: T0 + 2 * MIN, trigger: 'plugin', tokensBefore: 39_000, tokensAfter: countOf(3000), took: 16_000 }]);
+    assert.equal(store.boundaries.lastBreakAt(tabId('w1:t1'), paneIdOf('w1:p1')), T0 + 2 * MIN);
+    assert.equal(store.boundaries.lastBreakAt(tabId('w1:t1'), paneIdOf('w1:p2')), null);
+    assert.deepEqual([memoryStore().boundaries.breaksOf(tabId('w9:t9')), memoryStore().boundaries.chapterCount(tabId('w9:t9'))], [[], 0]);
 });

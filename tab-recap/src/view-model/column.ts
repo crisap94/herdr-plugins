@@ -2,7 +2,7 @@ import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/te
 import type { Break, ColumnTask, ColumnView, CompactionRow, RecapColumn, Row, Style, Web, Wording } from '@stateforge-labs/recap-view';
 import { parseAgentName, parseBranchName, parseDirectory, parseDuration, parseFromScreen, parseInstant, parsePaneId, parseProse, parseQueued, parseRunning, parseTaskName, parseTitle, parseTokens, parseWebBase } from '@stateforge-labs/recap-view';
 import type { CompactionRecord } from '#src/ports/compaction-records.ts';
-import type { Break as LedgerBreak } from '#src/ports/boundaries.ts';
+import type { BoundaryBreak } from '#src/ports/boundaries.ts';
 import type { LaneCursor, TabRecap } from '#src/ports/recap-records.ts';
 import { isScreenSource } from '#src/ports/screens.ts';
 import type { LaneWeb, TabLane, TabView } from '#src/ports/tab-views.ts';
@@ -67,8 +67,8 @@ export function recapColumnOf(recap: TabRecap): RecapColumn {
     return { tasks: recap.tasks.map(columnTaskOf), at: maybe(recap.at, parseInstant), running: parseRunning(recap.running), backend: maybe(recap.backend, parseAgentName), error: maybe(recap.error, parseProse) };
 }
 
-export function viewBreakOf(found: LedgerBreak): Break {
-    return { kind: found.kind, at: parseInstant(found.at), trigger: found.trigger, tokensBefore: maybe(found.tokensBefore, parseTokens), tokensAfter: maybe(found.tokensAfter, parseTokens), tookMs: maybe(found.tookMs, parseDuration) };
+export function viewBreakOf(found: BoundaryBreak): Break {
+    return { kind: found.kind, at: parseInstant(found.at), trigger: found.trigger, tokensBefore: maybe(found.tokensBefore, parseTokens), tokensAfter: maybe(found.tokensAfter, parseTokens), tookMs: maybe(found.took, parseDuration) };
 }
 
 export function compactionRowOf(record: CompactionRecord): CompactionRow {

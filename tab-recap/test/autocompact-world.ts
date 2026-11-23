@@ -17,7 +17,7 @@ import { tuningFrom } from '#src/recap/domain/autocompact-style.ts';
 import type { CompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import type { DecidedAnswersResult, DeciderPort, DecidedResult } from '#src/ports/decider.ts';
 import { parseTokenAmount } from '#src/recap/domain/token-amount.ts';
-import type { CompactRequest } from '#src/ports/requests.ts';
+import type { CompactAsk } from '#src/ports/requests.ts';
 import { memoryStore } from './db/support.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
@@ -52,12 +52,12 @@ export interface LaneService {
     claimIdle(seen: Lane): IdleClaim;
 }
 
-export interface World { breakAt: number | null; readonly service: LaneService; readonly watch: Autocompact; readonly claims: LaneClaims; readonly queued: Set<string>;readonly events: string[]; awaiting: string | null; lateAwaiting: string | null; awaitingUnknown: boolean; known: boolean; gate: Promise<void> | null; byPane: Record<string, number>; readonly store: ReturnType<typeof memoryStore>; readonly requests: CompactRequest[]; readonly logs: string[]; readonly asked: number[]; readonly refreshed: string[]; readonly flushed: string[]; readonly reads: number[]; readonly clock: { at: number }; idleHold: IdleHold; policy: AutocompactPolicy; inFlight: number | 'unknown'; background: readonly BackgroundItem[]; share: number; decide: () => DecidedResult }
+export interface World { breakAt: number | null; readonly service: LaneService; readonly watch: Autocompact; readonly claims: LaneClaims; readonly queued: Set<string>;readonly events: string[]; awaiting: string | null; lateAwaiting: string | null; awaitingUnknown: boolean; known: boolean; gate: Promise<void> | null; byPane: Record<string, number>; readonly store: ReturnType<typeof memoryStore>; readonly requests: CompactAsk[]; readonly logs: string[]; readonly asked: number[]; readonly refreshed: string[]; readonly flushed: string[]; readonly reads: number[]; readonly clock: { at: number }; idleHold: IdleHold; policy: AutocompactPolicy; inFlight: number | 'unknown'; background: readonly BackgroundItem[]; share: number; decide: () => DecidedResult }
 
 export function world(over: Partial<AutocompactPolicy> = {}, recap = true, startedAt = 0, tuning: Partial<CompactTuning> = {}): World {
     const store = memoryStore();
     store.db.prepare('INSERT INTO tab (id, first_seen, last_seen) VALUES (?, 1, 1)').run(SCOPE);
-    const [requests, logs, asked, refreshed, reads, events] = [[] as CompactRequest[], [] as string[], [] as number[], [] as string[], [] as number[], [] as string[]];
+    const [requests, logs, asked, refreshed, reads, events] = [[] as CompactAsk[], [] as string[], [] as number[], [] as string[], [] as number[], [] as string[]];
     const flushed: string[] = [];
     const clock = { at: NOW };
     const state = { breakAt: null as number | null, policy: { ...policyOf(() => undefined), mode: 'on' as const, ...over }, tuning: { ...tuningFrom(() => undefined), ...tuning }, inFlight: 0 as number | 'unknown', background: [] as readonly BackgroundItem[], awaiting: null as string | null, lateAwaiting: null as string | null, awaitingReads: 0, awaitingUnknown: false, known: true, gate: null as Promise<void> | null, byPane: {} as Record<string, number>, share: 62, idleHold: 'on' as IdleHold, decide: (): DecidedResult => decidedOf(SAFE, { tokens: 700, costUsd: 0.00003, tookMs: duration(550) }) };
@@ -68,7 +68,7 @@ export function world(over: Partial<AutocompactPolicy> = {}, recap = true, start
     const deps: AutocompactDeps = {
         policy: () => state.policy, tuning: () => state.tuning, decider: () => decider, contexts: { of: (pane) => (state.known ? { tokens: countOf((state.byPane[pane] ?? state.share) * 10_000), window: countOf(1_000_000), source: 'observed' } : null) }, inFlight: () => { reads.push(1); return Promise.resolve(state.inFlight === 'unknown' ? unreadable(flightReason(textOf('test'))) : observedFrom(runningCount(countOf(state.inFlight)), state.background, flightReason(textOf(`${state.inFlight} running`)))); },
         recent: () => Promise.resolve([{ role: 'user', text: textOf('publish it') }, { role: 'agent', text: textOf('Published.') }]), ledger: store.ledger, sessions: { lastBreakAt: (scope, key) => state.breakAt ?? store.boundaries.lastBreakAt(tabId(scope), paneId(key)) }, activity: { activeFor: (scope, key) => store.compactions.shownFor(tabId(scope)).some((record) => record.pane === key && ACTIVE.has(record.stage)) || claims.has(paneId(key)) || queued.has(key), automaticInProgress: () => store.compactions.autoInProgress() }, decisions: store.decisions,
-        request: (ask) => { requests.push({ tab: tabId(ask.scope), pane: paneId(ask.key), note: ask.note, origin: 'auto' }); }, statusOf: (found) => parseLaneStatusAtDecision(statuses.get(found)), recaps: { ensure: (scope): Promise<void> => { flushed.push(`${String(scope)} autocompact asked ${asked.length}`); if (!recap) refreshed.push(scope); return Promise.resolve(); } }, idleHold: () => state.idleHold, now: () => instant(clock.at), log: (line) => { logs.push(line); }, startedAt: instant(startedAt),
+        request: (ask) => { requests.push({ tab: tabId(ask.scope), pane: paneId(ask.key), note: ask.note === null ? null : textOf(ask.note), origin: 'auto' }); }, statusOf: (found) => parseLaneStatusAtDecision(statuses.get(found)), recaps: { ensure: (scope): Promise<void> => { flushed.push(`${String(scope)} autocompact asked ${asked.length}`); if (!recap) refreshed.push(scope); return Promise.resolve(); } }, idleHold: () => state.idleHold, now: () => instant(clock.at), log: (line) => { logs.push(line); }, startedAt: instant(startedAt),
         awaiting: () => { state.awaitingReads += 1; return Promise.resolve(awaitingOf(state)); },
         emit: (event) => { if (event.kind === 'session-skipped') events.push(`${event.key} autocompact-skipped ${event.gate}`); else if (event.kind === 'safe-point-decided') events.push(`${event.key} autocompact-decided ${event.verdict}-${event.share}`); },
     };

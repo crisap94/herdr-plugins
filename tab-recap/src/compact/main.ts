@@ -1,6 +1,6 @@
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
-import { parsePaneId } from '#src/recap/domain/ids.ts';
+import { paneId, parsePaneId, tabId } from '#src/recap/domain/ids.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { HerdrFleet } from '#src/adapters/herdr/fleet.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
@@ -34,7 +34,7 @@ function perform(effect: NoteEffect): never {
     if (effect.kind === 'send') {
         const store = openCliStore();
         if (store.kind === 'ready') {
-            store.requests.requestCompact({ tab, pane: pane === '' ? null : pane, note: effect.note });
+            store.requests.requestCompact({ tab: tabId(tab), pane: pane === '' ? null : paneId(pane), note: effect.note });
             store.close();
         }
     }

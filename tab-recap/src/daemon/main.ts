@@ -180,7 +180,7 @@ function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compa
         curate.run(tab).catch(failureLog(log, `curator ${tab}`));
     }
     for (const asked of store.requests.takeVisibility()) {
-        informer.push({ kind: 'visibility', target: asked.target === 'all' ? 'all' : { tab: tabId(asked.target) }, hidden: asked.hidden });
+        informer.push({ kind: 'visibility', target: asked.target === 'all' ? 'all' : { tab: tabId(asked.target) }, hidden: asked.visibility === 'toggle' ? 'toggle' : asked.visibility === 'hidden' });
     }
 }
 
@@ -240,7 +240,7 @@ async function start(): Promise<ExitCode> {
             forgetClosedTabs(store, log);
         }
         informer.tick();
-        store.asks.prune(Date.now() - ASK_KEEP_MS);
+        store.asks.prune(instant(Date.now() - ASK_KEEP_MS));
         pruneHandoffAnswers({ answers: store.handoffs, now: nowInstant });
         events.prune(Date.now());
         sweep.tick();

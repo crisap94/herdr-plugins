@@ -11,7 +11,7 @@ import { wireOf } from './fakes/wire-tokens.ts';
 import { PaneTypingLease } from '#src/recap/application/typing-lease.ts';
 import { MemoryAskLedger } from './fakes/ask-ledger.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
-import type { CompactRequest } from '#src/ports/requests.ts';
+import type { CompactAsk } from '#src/ports/requests.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import type { Done } from '#src/ports/columns.ts';
 import type { WorkspaceList, WorkspaceTokenMap } from '#src/ports/workspace-tokens.ts';
@@ -53,11 +53,11 @@ test('the four writers write only tab-recap\'s names, on panes and on workspaces
 });
 
 test('the request answers are not the tool\'s token: the answer is written under tab-recap-compact only', async () => {
-    const requests: CompactRequest[] = [];
+    const requests: CompactAsk[] = [];
     const tokens = new RecordingTokens();
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
     const board: Board = { ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) };
-    new CompactRequestQueue({ enabled: (): Presence => 'present', board: (): Board => board, requests: { requestCompact: (request: CompactRequest): void => { requests.push(request); } }, asks: new MemoryAskLedger(), tokens, now: (): Instant => instant(1000), log: (): void => undefined })
+    new CompactRequestQueue({ enabled: (): Presence => 'present', board: (): Board => board, requests: { requestCompact: (request: CompactAsk): void => { requests.push(request); } }, asks: new MemoryAskLedger(), tokens, now: (): Instant => instant(1000), log: (): void => undefined })
         .onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
     await new Promise<void>((resolve) => { setImmediate(resolve); });
     assert.deepEqual(tokens.reports.map((report) => Object.keys(report.tokens)), [['tab-recap-compact']]);

@@ -1,6 +1,6 @@
 import type { Clock } from '#src/ports/clock.ts';
 import type { RunInputReader } from '#src/ports/run-inputs.ts';
-import type { AutocompactBriefs } from '#src/ports/autocompact-briefs.ts';
+import type { DecisionBriefs } from '#src/ports/autocompact-briefs.ts';
 import type { BriefRetention } from '#src/recap/domain/autocompact.ts';
 import { instant } from '#src/recap/domain/time.ts';
 
@@ -8,7 +8,7 @@ const DAY_MS = 86_400_000;
 
 interface RetentionParts {
     readonly inputs: RunInputReader;
-    readonly briefs: AutocompactBriefs;
+    readonly briefs: DecisionBriefs;
     readonly clock: Clock;
     readonly days: () => number;
     readonly briefRetention: () => BriefRetention;
@@ -17,7 +17,7 @@ interface RetentionParts {
 
 export class InputRetention {
     private readonly inputs: RunInputReader;
-    private readonly briefs: AutocompactBriefs;
+    private readonly briefs: DecisionBriefs;
     private readonly clock: Clock;
     private readonly days: () => number;
     private readonly briefRetention: () => BriefRetention;
@@ -42,7 +42,7 @@ export class InputRetention {
         const retention = this.briefRetention();
         const cutoff = retention.kind === 'none' ? Number.MAX_SAFE_INTEGER : now - retention.value * DAY_MS;
         try {
-            this.briefs.clearBefore(cutoff);
+            this.briefs.clearBefore(instant(cutoff));
         } catch (error) {
             this.log(`could not delete old autocompact briefs: ${error instanceof Error ? error.message : String(error)}`);
         }

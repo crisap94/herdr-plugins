@@ -10,7 +10,7 @@ import { modalTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { codeVersion } from '#src/adapters/os/plugin-version.ts';
 import { loadSettings, messagesOf, stateDirectory } from '#src/daemon/config.ts';
-import type { HandoffPrinter } from '#src/ports/handoff-print.ts';
+import type { HandoffPrintService } from '#src/ports/handoff-print.ts';
 import { noteFromRequest } from '#src/recap/application/compact-start.ts';
 import { EditTally } from '#src/recap/application/edit-tally.ts';
 import { PrintedHandoffs } from '#src/recap/application/handoff-print.ts';
@@ -33,7 +33,7 @@ export type HandoffArguments =
     | ListingArguments;
 
 export interface HandoffWiring {
-    readonly printer: HandoffPrinter;
+    readonly printer: HandoffPrintService;
     readonly deliver: (request: DeliverRequest) => Promise<HandoffOutcome>;
     readonly list: (tab: TabId) => ClosedListing;
 }
@@ -66,7 +66,7 @@ export async function handoffReport(args: HandoffArguments, wiring: HandoffWirin
         return listingReportOf(wiring.list(args.tab));
     }
     if (args.mode === 'print') {
-        const printed = await wiring.printer.renderForPrint({ from: args.from, to: args.to, note: args.note, closed: args.closed });
+        const printed = await wiring.printer.renderForPrint({ from: args.from, to: args.to, note: args.note === null ? null : textOf(args.note), closed: args.closed });
         return printed.kind === 'text' ? { exit: OK, out: printed.text, err: printed.info === null ? null : `tab-recap: ${printed.info}` } : reportOf(printed);
     }
     return reportOf(await wiring.deliver(args));
@@ -144,7 +144,7 @@ function deliverDeps(): DeliverDeps {
     };
 }
 
-function printerOf(): HandoffPrinter {
+function printerOf(): HandoffPrintService {
     const transcripts = modalTranscriptRegistry();
     const fleet = new HerdrFleet(textOf(stateDirectory()));
     return new PrintedHandoffs({
