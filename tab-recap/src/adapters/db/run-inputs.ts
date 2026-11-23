@@ -50,7 +50,7 @@ export class RunInputStore implements RunInputReader {
             const gateStats: unknown = typeof row['gate_stats'] === 'string' ? JSON.parse(row['gate_stats']) : null;
             return must(parseRunRecord({
                 id: typeIdOf('run', blob(row, 'id')), tab: text(row, 'tab_id'), at: whole(row, 'at'), language: text(row, 'language'),
-                backend: maybeText(row, 'backend'), input: flag(row, 'has_input') ? 'present' : 'absent', gateStats,
+                backend: maybeText(row, 'backend'), input: flag(row, 'has_input') === 'set' ? 'present' : 'absent', gateStats,
             }));
         }), []);
     }
@@ -80,7 +80,7 @@ export class RunInputStore implements RunInputReader {
           ORDER BY COALESCE(rt.position, 0), ${SECTION_ORDER}, f.id`;
         return guarded(() => this.orm.all<Record<string, unknown>>(rows).map((row) => must(parseRunEntry({
             key: `${prefix}${text(row, 'task')}/${text(row, 'section')}/${whole(row, 'position')}`, section: text(row, 'section'), text: text(row, 'text'),
-            fact: typeIdOf('fact', blob(row, 'fact')), birth: flag(row, 'born') ? 'born' : 'carried', anchor: maybeText(row, 'anchor'),
+            fact: typeIdOf('fact', blob(row, 'fact')), birth: flag(row, 'born') === 'set' ? 'born' : 'carried', anchor: maybeText(row, 'anchor'),
         }))), []);
     }
 

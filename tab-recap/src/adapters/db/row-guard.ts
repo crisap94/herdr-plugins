@@ -1,7 +1,9 @@
 import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import { unreadableOf, type Unknown } from '#src/ports/unknowable.ts';
 
-export type Row = Readonly<Record<string, unknown>>;
+export interface Row {
+    readonly [column: string]: unknown;
+}
 
 export type Column = 'agent' | 'all_hidden' | 'anchor' | 'at' | 'backend' | 'born' | 'claude_note' | 'closed_at' | 'closed_why' | 'cursor' | 'error' | 'fact' | 'first_at' | 'good' | 'has_input' | 'id' | 'key' | 'language' | 'last_at' | 'last_prompt' | 'legacy_markdown' | 'micro' | 'n' | 'name' | 'pane' | 'position' | 'ref' | 'run' | 'run_id' | 'running' | 'section' | 'source' | 'state' | 'tab_id' | 'tail' | 'task' | 'task_id' | 'text' | 'title' | 'why';
 

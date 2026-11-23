@@ -1,5 +1,6 @@
 import type { Statement } from 'bun:sqlite';
 import { countOf, type Count } from '#src/recap/domain/count.ts';
+import type { TabId } from '#src/recap/domain/ids.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 import { BadRow, type Column, type Row } from '../row-guard.ts';
 
@@ -34,10 +35,12 @@ export function blob(row: Row, key: Column): Uint8Array {
     return value.constructor === Uint8Array ? value : Uint8Array.from(value);
 }
 
-export const flag = (row: Row, key: Column): boolean => whole(row, key) === 1;
+export type Flag = 'set' | 'unset';
 
-type Param = string | number | bigint | Uint8Array | null;
+export const flag = (row: Row, key: Column): Flag => (whole(row, key) === 1 ? 'set' : 'unset');
 
-export const all = (statement: Statement, ...params: readonly Param[]): readonly Row[] => statement.all(...params);
+export type Bound = TabId | Uint8Array;
 
-export const one = (statement: Statement, ...params: readonly Param[]): Row | null => statement.get(...params) ?? null;
+export const all = (statement: Statement, ...params: readonly Bound[]): readonly Row[] => statement.all(...params);
+
+export const one = (statement: Statement, ...params: readonly Bound[]): Row | null => statement.get(...params) ?? null;

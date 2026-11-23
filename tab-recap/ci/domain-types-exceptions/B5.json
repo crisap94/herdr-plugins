@@ -102,19 +102,5 @@
     "function": "read",
     "parameter": "task",
     "reason": "callback: signature of Stories.read in src/ports/stories.ts (lane ENG, frozen); typed when ENG moves to packages/session-ledger (roadmap E2b)"
-  },
-  {
-    "class": "callback",
-    "file": "src/adapters/db/recap-read.ts",
-    "function": "cursorOf",
-    "parameter": "row",
-    "reason": "callback: cursorOf builds LaneCursor of src/ports/recap-records.ts (packages/session-ledger, lane ENG, frozen), whose fields are string and number and which exports no parser; typed when ENG types LaneCursor"
-  },
-  {
-    "class": "callback",
-    "file": "src/adapters/db/recap-read.ts",
-    "function": "cursorOf",
-    "parameter": "row",
-    "reason": "callback: cursorOf builds LaneCursor of src/ports/recap-records.ts (packages/session-ledger, lane ENG, frozen), whose fields are string and number and which exports no parser; typed when ENG types LaneCursor"
   }
 ]
