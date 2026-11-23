@@ -33,15 +33,6 @@
     "parameter": 1,
     "container": 2
   },
-  "src/adapters/os/pidfile.ts": {
-    "parameter": 6,
-    "return": 7,
-    "property": 1
-  },
-  "src/adapters/os/plugin-version.ts": {
-    "parameter": 5,
-    "return": 3
-  },
   "src/adapters/os/terminal-style.ts": {
     "parameter": 1,
     "return": 1

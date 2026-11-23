@@ -7,10 +7,13 @@ import { must } from '#src/protocol/result.ts';
 import type { NotifierPort } from '#src/ports/notifier.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
+import { parsePid, type Pid } from '#src/recap/domain/pid.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { loadSettings, messagesOf } from './config.ts';
 import { parseLine, type Line } from './slots.ts';
+
+export const OWN_PID: Pid = must(parsePid(process.pid));
 
 async function refuse(notifier: NotifierPort, log: (line: Line) => void, why: Line): Promise<null> {
     log(why);
@@ -21,7 +24,7 @@ async function refuse(notifier: NotifierPort, log: (line: Line) => void, why: Li
 export async function openStateAt(root: Directory, notifier: NotifierPort, log: (line: Line) => void): Promise<Store | null> {
     const version = codeVersion();
     const say = parseLineSink.bind(undefined, log);
-    const store = openStoreAt(databaseFile(root), { daemonVersion: version === null ? null : textOf(version), log: say, closedDays: loadSettings().closedLaneDays });
+    const store = openStoreAt(databaseFile(root), { daemonVersion: version, log: say, closedDays: loadSettings().closedLaneDays });
     if (store.kind === 'newer-db') {
         store.db.close();
         return refuse(notifier, log, parseLine(`tab-recap: ${messagesOf().database.newer(store.backup)}`));

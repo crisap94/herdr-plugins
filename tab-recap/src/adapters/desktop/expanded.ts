@@ -85,7 +85,7 @@ export class DesktopReads {
 
     private pluginVersion(): GuiReads['plugin'] {
         const found = codeVersion();
-        return found === null ? null : must(parseText(found));
+        return found;
     }
 
     private settledAt(now: Instant): Settled {

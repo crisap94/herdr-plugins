@@ -4,17 +4,19 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { messagesOf, stateDirectory } from '#src/daemon/config.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
+import { duration } from '#src/recap/domain/time.ts';
 
 const OK = 0;
-const WEDGED_MS = 180_000;
+const WEDGED_MS = duration(180_000);
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const LAUNCHER = join(root, 'src', 'daemon', 'launch-desktop.mjs');
 
 export function startDesktopDaemon(): number {
-    const pidfile = new Pidfile(stateDirectory());
+    const pidfile = new Pidfile(fsPathOf(stateDirectory()));
     const t = messagesOf().cli;
     let running = pidfile.alive();
-    if (running !== null && pidfile.wedged(WEDGED_MS)) {
+    if (running !== null && pidfile.wedged(WEDGED_MS) === 'wedged') {
         process.kill(running, 'SIGKILL');
         pidfile.release(running);
         running = null;
@@ -32,8 +34,8 @@ export function startDesktopDaemon(): number {
 }
 
 export function stopDesktopDaemon(): number {
-    const pidfile = new Pidfile(stateDirectory());
-    pidfile.disabled = true;
+    const pidfile = new Pidfile(fsPathOf(stateDirectory()));
+    pidfile.disabled = 'disabled';
     const running = pidfile.alive();
     if (running === null) {
         console.log(`tab-recap: ${messagesOf().cli.offIdle}`);
@@ -45,11 +47,11 @@ export function stopDesktopDaemon(): number {
 }
 
 export function ensureDesktopDaemon(): number {
-    const pidfile = new Pidfile(stateDirectory());
-    return pidfile.disabled || pidfile.alive() !== null ? OK : startDesktopDaemon();
+    const pidfile = new Pidfile(fsPathOf(stateDirectory()));
+    return pidfile.disabled === 'disabled' || pidfile.alive() !== null ? OK : startDesktopDaemon();
 }
 
 export function enableDesktopDaemon(): number {
-    new Pidfile(stateDirectory()).disabled = false;
+    new Pidfile(fsPathOf(stateDirectory())).disabled = 'enabled';
     return startDesktopDaemon();
 }

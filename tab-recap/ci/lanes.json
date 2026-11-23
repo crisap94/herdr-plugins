@@ -104,7 +104,6 @@
       "test/summarizers.test.ts",
       "test/support/tab-view-records.ts",
       "test/tab-views-live-lanes.test.ts",
-      "test/version.test.ts",
       "test/worksite-reader.test.ts"
     ],
     "B2": [
@@ -392,6 +391,7 @@
       "test/type-id.test.ts",
       "test/typing-lease.test.ts",
       "test/unknown-read-paths.test.ts",
+      "test/version.test.ts",
       "test/visibility.test.ts",
       "test/watchdog.test.ts",
       "test/worksite-text.test.ts",

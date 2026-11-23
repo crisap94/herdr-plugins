@@ -19,6 +19,7 @@ import { listClosedLanes, type ClosedListing } from '#src/recap/application/hand
 import { serializeClosedListing } from '#src/recap/render/closed-listing.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import { exitCodeOf, messageKeyOf, type HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { closedOf, listingOf, paneOf, problem, sourceProblem, targetProblem } from './handoff-closed.ts';
@@ -129,7 +130,7 @@ export function handoffArgumentsOf(values: HandoffValues, positionals: readonly 
 }
 
 function deliverDeps(): DeliverDeps {
-    const pidfile = new Pidfile(stateDirectory());
+    const pidfile = new Pidfile(fsPathOf(stateDirectory()));
     return {
         pacing: { now: Date.now, sleep },
         daemon: () => ({ pid: pidfile.alive(), version: pidfile.daemonVersion() }),

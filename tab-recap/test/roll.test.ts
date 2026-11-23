@@ -1,3 +1,4 @@
+import { textOf } from '#src/recap/domain/text.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,13 +12,13 @@ import { countOf } from '#src/recap/domain/count.ts';
 const pause = (ms: number): Promise<void> => new Promise((resolve) => { setTimeout(resolve, ms); });
 
 test('shouldRoll: only a different version, seen twice in a row, replaces a process', () => {
-    assert.equal(shouldRoll('1.5.0', '1.5.0', '1.5.0'), false, 'nothing changed');
-    assert.equal(shouldRoll('1.5.0', '1.5.1', null), false, 'first look at the new version: wait');
-    assert.equal(shouldRoll('1.5.0', '1.5.1', '1.5.0'), false, 'the previous look still saw the old one');
-    assert.equal(shouldRoll('1.5.0', '1.5.1', '1.5.1'), true, 'the same new version twice');
-    assert.equal(shouldRoll('1.5.0', '1.5.2', '1.5.1'), false, 'still changing: wait');
-    assert.equal(shouldRoll(null, '1.5.1', '1.5.1'), false, 'it never knew its own version');
-    assert.equal(shouldRoll('1.5.0', null, null), false, 'an unreadable manifest is not a new version');
+    assert.equal(shouldRoll(textOf('1.5.0'), textOf('1.5.0'), textOf('1.5.0')) === 'roll', false, 'nothing changed');
+    assert.equal(shouldRoll(textOf('1.5.0'), textOf('1.5.1'), null) === 'roll', false, 'first look at the new version: wait');
+    assert.equal(shouldRoll(textOf('1.5.0'), textOf('1.5.1'), textOf('1.5.0')) === 'roll', false, 'the previous look still saw the old one');
+    assert.equal(shouldRoll(textOf('1.5.0'), textOf('1.5.1'), textOf('1.5.1')) === 'roll', true, 'the same new version twice');
+    assert.equal(shouldRoll(textOf('1.5.0'), textOf('1.5.2'), textOf('1.5.1')) === 'roll', false, 'still changing: wait');
+    assert.equal(shouldRoll(null, textOf('1.5.1'), textOf('1.5.1')) === 'roll', false, 'it never knew its own version');
+    assert.equal(shouldRoll(textOf('1.5.0'), null, null) === 'roll', false, 'an unreadable manifest is not a new version');
 });
 
 function fakeColumns(closeEvery: () => Promise<ClosedEvery>): { columns: { closeEvery: () => Promise<ClosedEvery> }; order: string[] } {

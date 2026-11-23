@@ -15,11 +15,11 @@ import { supportOf } from '#src/host/policy.mjs';
 import { codeVersion } from '#src/adapters/os/plugin-version.ts';
 import { STORED_NOTES_ID } from '#src/extensions/stored-notes.ts';
 import { AUTO_ORDER } from '#src/daemon/backends.ts';
-import type { BackendChoice } from '#src/daemon/config.ts';
 import type { Messages } from '#src/i18n/index.ts';
-import { BACKEND_IDS, configDirectory, settingGetter, loadSettings, messagesOf, parseSettingsFile, recapLanguageSource, stateDirectory } from '#src/daemon/config.ts';
+import { BACKEND_IDS, type BackendChoice, configDirectory, settingGetter, loadSettings, messagesOf, parseSettingsFile, recapLanguageSource, stateDirectory } from '#src/daemon/config.ts';
 import { environmentName, hasModel, type EnvironmentName } from '#src/recap/domain/backend.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
+import { duration } from '#src/recap/domain/time.ts';
 import { USAGE_EXIT } from '#src/recap/domain/handoff-outcome.ts';
 import { autocompactCommand } from './autocompact.ts';
 import { compactCommand } from './compact.ts';
@@ -39,14 +39,13 @@ const NOT_COVERED = 3;
 const m = (): Messages => messagesOf();
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const pidfile = new Pidfile(stateDirectory());
-
-const WEDGED_MS = 180_000;
+const pidfile = new Pidfile(fsPathOf(stateDirectory()));
+const WEDGED_MS = duration(180_000);
 
 async function launch(): Promise<number> {
     if (await stillStopping(stateDirectory())) { console.error(`tab-recap: 1 — ${m().cli.daemonStillStopping}`); return FAILED; }
     let running = pidfile.alive();
-    if (running !== null && pidfile.wedged(WEDGED_MS)) {
+    if (running !== null && pidfile.wedged(WEDGED_MS) === 'wedged') {
         console.log(`tab-recap: ${m().cli.daemonWedged(running)}`);
         process.kill(running, 'SIGKILL');
         pidfile.release(running);
@@ -66,7 +65,7 @@ async function launch(): Promise<number> {
 }
 
 function stop(): number {
-    pidfile.disabled = true;
+    pidfile.disabled = 'disabled';
     const running = pidfile.alive();
     if (running === null) {
         console.log(`tab-recap: ${m().cli.offIdle}`);
@@ -121,7 +120,7 @@ function status(): number {
         t.statusRuntime(host.execPath, host.bunVersion),
         ...(support.ok ? [] : [t.hostRefusal(support, host.execPath)]),
         t.statusKeys(boundKeysIn(), herdrConfigPathOf()),
-        t.statusDaemon(running, pidfile.disabled, pidfile.daemonVersion()),
+        t.statusDaemon(running, pidfile.disabled === 'disabled', pidfile.daemonVersion()),
         t.statusBackend(`${config.backend}${config.backend === 'auto' ? ` (${AUTO_ORDER.join(' → ')})` : modelSuffix(config.models[config.backend])}`),
         `${t.statusLanguage} ${config.recapLanguage} (${t.statusSources[recapLanguageSource()]})`,
         t.statusExtensions(STORED_NOTES_ID),
@@ -198,11 +197,11 @@ const commands: Readonly<Record<string, (arg: string | undefined) => number | Pr
     compact,
     handoff: () => (handoffArgs === null ? USAGE : handoffCommand(handoffArgs, productionWiring())),
     configure,
-    start: () => { pidfile.disabled = false; return launch(); },
-    startup: () => (pidfile.disabled ? OK : launch()),
-    ensure: () => (pidfile.disabled || pidfile.alive() !== null ? OK : launch()),
+    start: () => { pidfile.disabled = 'enabled'; return launch(); },
+    startup: () => (pidfile.disabled === 'disabled' ? OK : launch()),
+    ensure: () => (pidfile.disabled === 'disabled' || pidfile.alive() !== null ? OK : launch()),
     stop,
-    toggle: () => (pidfile.disabled || pidfile.alive() === null ? commands['start']?.(undefined) ?? FAILED : stop()),
+    toggle: () => (pidfile.disabled === 'disabled' || pidfile.alive() === null ? commands['start']?.(undefined) ?? FAILED : stop()),
     status,
     column: () => toggle(false),
     columns: () => toggle(true),

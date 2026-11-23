@@ -1,3 +1,6 @@
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
+import { parsePid } from '#src/recap/domain/pid.ts';
+import { must } from '#src/protocol/result.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -28,24 +31,24 @@ const tabWith = (daemonVersion?: string | null): TabViewRecord => (viewRecord({ 
 const recap = { ...blankRecap(tabId('w1:t1')), at: instant(0), backend: textOf('claude'), tasks: oneTask('## Now\n- running CI') };
 
 test('the version is the manifest\'s version line; missing or garbage is null', () => {
-    assert.equal(parseVersion('id = "tab-recap"\nversion = "1.4.1"\nmin_herdr_version = "0.9.0"\n'), '1.4.1');
-    assert.equal(parseVersion('id = "x"\nmin_herdr_version = "0.9.0"\n'), null, 'only the exact key counts');
-    assert.equal(parseVersion('id = "x"\n'), null);
-    assert.equal(parseVersion('version = banana\n'), null);
-    assert.equal(parseVersion('version = "1.4"\n'), null);
-    assert.equal(parseVersion('version = "1.4.1-rc1"\n'), null);
-    assert.equal(parseVersion(''), null);
-    assert.equal(parseVersion('# head\nversion = "2.0.1" # bumped\n[meta]\nx = 1\n'), '2.0.1', 'a trailing comment and a later table still parse');
-    assert.equal(parseVersion('version = [\n'), null, 'invalid TOML is null');
+    assert.equal(parseVersion(textOf('id = "tab-recap"\nversion = "1.4.1"\nmin_herdr_version = "0.9.0"\n')), '1.4.1');
+    assert.equal(parseVersion(textOf('id = "x"\nmin_herdr_version = "0.9.0"\n')), null, 'only the exact key counts');
+    assert.equal(parseVersion(textOf('id = "x"\n')), null);
+    assert.equal(parseVersion(textOf('version = banana\n')), null);
+    assert.equal(parseVersion(textOf('version = "1.4"\n')), null);
+    assert.equal(parseVersion(textOf('version = "1.4.1-rc1"\n')), null);
+    assert.equal(parseVersion(textOf('')), null);
+    assert.equal(parseVersion(textOf('# head\nversion = "2.0.1" # bumped\n[meta]\nx = 1\n')), '2.0.1', 'a trailing comment and a later table still parse');
+    assert.equal(parseVersion(textOf('version = [\n')), null, 'invalid TOML is null');
 });
 
 test('codeVersion reads the manifest next to the code; no manifest is null', () => {
     assert.match(codeVersion() ?? '', /^\d+\.\d+\.\d+$/);
     const dir = mkdtempSync(join(tmpdir(), 'tab-recap-version-'));
     try {
-        assert.equal(codeVersion(dir), null);
+        assert.equal(codeVersion(fsPathOf(dir)), null);
         writeFileSync(join(dir, 'herdr-plugin.toml'), 'version = "9.8.7"\n');
-        assert.equal(codeVersion(dir), '9.8.7');
+        assert.equal(codeVersion(fsPathOf(dir)), '9.8.7');
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }
@@ -84,16 +87,16 @@ test('the bar shows the version when it fits and never wraps or overflows', () =
 test('status prints the code version and the running daemon\'s pid and version', () => {
     const dir = mkdtempSync(join(tmpdir(), 'tab-recap-version-'));
     try {
-        new Pidfile(dir).claim(process.pid, '1.2.3');
+        new Pidfile(fsPathOf(dir)).claim(must(parsePid(process.pid)), textOf('1.2.3'));
         const run = (locale: string): string => spawnSync(process.execPath, ['bin/tab-recap.ts', 'status'], {
             encoding: 'utf8', env: { ...process.env, TAB_RECAP_STATE: dir, HERDR_PLUGIN_CONFIG_DIR: dir, TAB_RECAP_LOCALE: locale },
         }).stdout;
         const manifest = readFileSync('herdr-plugin.toml', 'utf8');
-        const code = parseVersion(manifest) ?? '';
+        const code = parseVersion(textOf(manifest)) ?? '';
         assert.match(run('en'), new RegExp(`^version  ${code.replaceAll('.', '\\.')}$`, 'm'));
         assert.match(run('en'), new RegExp(`^daemon   pid ${process.pid} v1\\.2\\.3$`, 'm'));
         assert.match(run('es'), new RegExp(`^versión  ${code.replaceAll('.', '\\.')}$`, 'm'));
-        assert.equal(new Pidfile(dir).daemonVersion(), '1.2.3');
+        assert.equal(new Pidfile(fsPathOf(dir)).daemonVersion(), '1.2.3');
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }

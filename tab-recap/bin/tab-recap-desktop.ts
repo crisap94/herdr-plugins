@@ -7,6 +7,7 @@ import { USAGE_EXIT } from '#src/recap/domain/handoff-outcome.ts';
 import { desktopDocumentCommand } from './desktop-document.ts';
 import { settingsCommand } from './desktop-settings.ts';
 import { enableDesktopDaemon, ensureDesktopDaemon, stopDesktopDaemon } from './desktop-daemon.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
 const OK = 0;
@@ -38,8 +39,8 @@ function document(tab: string | undefined): number {
 }
 
 function status(): number {
-    const pidfile = new Pidfile(DESKTOP_STATE);
-    console.log(`tab-recap: ${m().cli.statusDaemon(pidfile.alive(), pidfile.disabled, pidfile.daemonVersion())}\n${m().cli.statusState} ${DESKTOP_STATE}`);
+    const pidfile = new Pidfile(fsPathOf(DESKTOP_STATE));
+    console.log(`tab-recap: ${m().cli.statusDaemon(pidfile.alive(), pidfile.disabled === 'disabled', pidfile.daemonVersion())}\n${m().cli.statusState} ${DESKTOP_STATE}`);
     return OK;
 }
 
