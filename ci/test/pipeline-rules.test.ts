@@ -161,16 +161,26 @@ function conditionHolds(expression: string, env: Env): boolean {
     return expression.split(' || ').some((alternative) => alternative.split(' && ').every((atom) => atomHolds(atom, env)));
 }
 
-function ruleMatches(rule: Rule, env: Env, files: readonly string[]): boolean {
+type Present = (path: string) => boolean;
+
+const onDisk: Present = (path) => {
+    if (!path.includes('*')) return existsSync(join(repository, path));
+    const folder = dirname(path);
+    if (!existsSync(join(repository, folder))) return false;
+    const pattern = globToRegExp(path);
+    return readdirSync(join(repository, folder)).some((name) => pattern.test(`${folder}/${name}`));
+};
+
+function ruleMatches(rule: Rule, env: Env, files: readonly string[], present: Present): boolean {
     if (rule.if !== undefined && !conditionHolds(rule.if, env)) return false;
     if (rule.changes !== undefined && !rule.changes.some((glob) => files.some((file) => globToRegExp(glob).test(file)))) return false;
-    if (rule.exists !== undefined && !rule.exists.every((path) => existsSync(join(repository, path)))) return false;
+    if (rule.exists !== undefined && !rule.exists.every((path) => present(path))) return false;
     return true;
 }
 
-function jobsThatRun(env: Env, files: readonly string[]): readonly string[] {
+function jobsThatRun(env: Env, files: readonly string[], present: Present = onDisk): readonly string[] {
     return [...pipeline().jobs]
-        .filter(([, entry]) => entry.rules === undefined || entry.rules.some((rule) => ruleMatches(rule, env, files)))
+        .filter(([, entry]) => entry.rules === undefined || entry.rules.some((rule) => ruleMatches(rule, env, files, present)))
         .map(([name]) => name)
         .toSorted();
 }
@@ -178,8 +188,8 @@ function jobsThatRun(env: Env, files: readonly string[]): readonly string[] {
 const MERGE_REQUEST_JOBS: readonly string[] = ['domain-baseline', 'merge-request-notes', 'track-scope'];
 const CHECKED_JOBS: ReadonlySet<string> = new Set([...UNIT_JOBS, 'install-smoke', 'track-scope', 'lane-scope', 'domain-baseline', 'merge-request-notes']);
 
-function checked(env: Env, files: readonly string[]): readonly string[] {
-    return jobsThatRun(env, files).filter((name) => CHECKED_JOBS.has(name));
+function checked(env: Env, files: readonly string[], present: Present = onDisk): readonly string[] {
+    return jobsThatRun(env, files, present).filter((name) => CHECKED_JOBS.has(name));
 }
 
 function sorted(...groups: readonly (readonly string[])[]): readonly string[] {
@@ -252,6 +262,32 @@ test('path rules 3: a plugin source file runs the plugin only, and lane-scope on
         checked({ ...MERGE_REQUEST, CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: 'lane/B3-example' }, files),
         sorted(PLUGIN_JOBS, MERGE_REQUEST_JOBS, ['lane-scope']),
     );
+});
+
+test('the lane-scope and domain-baseline rules carry their exists: guards', () => {
+    const jobs = pipeline().jobs;
+    assert.deepEqual(jobs.get('lane-scope')?.rules, [
+        {
+            if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^lane\\/B[1-8]-/',
+            exists: ['tab-recap/ci/lanes.json'],
+        },
+    ]);
+    assert.deepEqual(jobs.get('domain-baseline')?.rules, [
+        { if: '$CI_PIPELINE_SOURCE == "merge_request_event"', exists: ['tab-recap/ci/domain-types-baseline/*.json'] },
+    ]);
+});
+
+test('path rules 11: with the baseline folder and lane map gone, domain-baseline and lane-scope switch themselves off', () => {
+    const present: Present = (path) => !path.startsWith('tab-recap/ci/domain-types-baseline/') && path !== 'tab-recap/ci/lanes.json';
+    assert.deepEqual(
+        checked({ ...MERGE_REQUEST, CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: 'lane/B3-example' }, ['tab-recap/src/daemon/main.ts'], present),
+        sorted(PLUGIN_JOBS, ['merge-request-notes', 'track-scope']),
+    );
+});
+
+test('the glob guard matches the folder on disk today', () => {
+    assert.equal(onDisk('tab-recap/ci/domain-types-baseline/*.json'), true);
+    assert.equal(onDisk('tab-recap/ci/no-such-folder/*.json'), false);
 });
 
 test('path rules 4: a root ci file runs the root unit, the plugin lint that exercises the ci scripts, and track-scope', () => {

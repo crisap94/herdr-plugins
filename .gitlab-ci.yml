@@ -275,6 +275,8 @@ lane-scope:
     GIT_DEPTH: "0"
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^lane\/B[1-8]-/
+      exists:
+        - tab-recap/ci/lanes.json
   script:
     - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
     - |
@@ -289,6 +291,8 @@ domain-baseline:
     GIT_DEPTH: "0"
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      exists:
+        - tab-recap/ci/domain-types-baseline/*.json
   script:
     - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
     - BASELINE_BASE="origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" bash ci/check-domain-baseline.sh
