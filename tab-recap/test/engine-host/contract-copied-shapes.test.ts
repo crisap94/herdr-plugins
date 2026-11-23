@@ -24,6 +24,9 @@ const NAME_MAP: Readonly<Record<string, string>> = {
     CoverageRevision: 'CoverageAmendment',
     CoverageVerdict: 'CoverageOutcome',
     DecidedAnswers: 'Decided',
+    AnswerTally: 'ReadonlyMap<Text, Probability>',
+    CoverageBlock: "'blocks' | 'allows'",
+    TokenAmount: "Brand<number, 'TokenAmount'>",
 };
 
 interface Row {

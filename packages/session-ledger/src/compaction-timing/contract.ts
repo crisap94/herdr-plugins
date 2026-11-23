@@ -92,10 +92,6 @@ export interface LinkedDecision {
     readonly gate: DecisionGate;
 }
 
-export type AnswerTally = ReadonlyMap<Text, Probability>;
-export type CoverageBlock = 'blocks' | 'allows';
-export type TokenAmount = Brand<number, 'TokenAmount'>;
-
 export interface Skip {
     readonly tab: TabId;
     readonly pane: PaneId;
@@ -126,8 +122,8 @@ export interface Decision {
     readonly gate: DecisionGate;
     readonly verdict: Verdict;
     readonly askedVerdict: Verdict | null;
-    readonly answers: AnswerTally;
-    readonly coverage: AnswerTally | null;
+    readonly answers: ReadonlyMap<Text, Probability>;
+    readonly coverage: ReadonlyMap<Text, Probability> | null;
     readonly decider: Text | null;
     readonly costUsd: Usd;
     readonly tookMs: Duration | null;
@@ -139,12 +135,12 @@ export interface Decision {
 }
 
 export interface CoverageAmendment {
-    readonly coverage: AnswerTally | null;
+    readonly coverage: ReadonlyMap<Text, Probability> | null;
     readonly outcome: CoverageOutcome;
     readonly coverageMs: Duration;
     readonly coverageCostUsd: Usd | null;
     readonly why: Text | null;
-    readonly block: CoverageBlock;
+    readonly block: 'blocks' | 'allows';
 }
 
 export interface QuestionCriteria {
@@ -160,7 +156,7 @@ export interface Question {
 export interface Decided {
     readonly kind: 'decided';
     readonly answers: ReadonlyMap<Text, Probability>;
-    readonly tokens: TokenAmount;
+    readonly tokens: Brand<number, 'TokenAmount'>;
     readonly costUsd: Usd;
     readonly tookMs: Duration;
     readonly model: Text;
