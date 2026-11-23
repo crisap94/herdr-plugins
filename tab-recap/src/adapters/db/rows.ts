@@ -1,2 +1,3 @@
-export type { Row } from './rows/legacy.ts';
-export { BadRow, all, blob, flag, guarded, guardedRead, isRow, maybeText, maybeWhole, one, text, whole } from './rows/legacy.ts';
+export { all, blob, flag, maybeText, maybeWhole, one, text, whole } from './rows/legacy.ts';
+export { BadRow, guarded, guardedRead, isRow } from './row-guard.ts';
+export type { Column, Row } from './row-guard.ts';

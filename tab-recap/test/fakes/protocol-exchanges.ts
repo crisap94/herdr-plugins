@@ -1,10 +1,14 @@
 import { buildRegistry } from '#src/protocol/registry.ts';
+import { wireOf } from './wire-tokens.ts';
 import type { Registry } from '#src/protocol/registry.ts';
 import { defineExchange, parseRequest } from '#src/protocol/exchange.ts';
 import type { Exchange } from '#src/protocol/exchange.ts';
-import { CAPABILITY_TOKEN } from '#src/protocol/capability.ts';
-import { parseAnswerStage, parseExchangeName, parseExchangeVersion, parseFieldName, parseFlagText, parseRequestPrefix, parseTimingMs, parseTimingName, parseTokenName, parseToolName, parseTokenValue } from '#src/protocol/primitives.ts';
-import type { TokenName, ToolName } from '#src/protocol/primitives.ts';
+import { CAPABILITY_TOKEN, capabilityValueTyped } from '#src/protocol/capability.ts';
+import { answerWrite, takeRequests } from '#src/protocol/responder.ts';
+import type { Taking } from '#src/protocol/responder.ts';
+import type { TokenMap, TokenWrite } from '#src/protocol/tokens.ts';
+import { parseAnswerStage, parseExchangeName, parseExchangeVersion, parseFieldName, parseFlagText, parseRequestPrefix, parseTimingMs, parseTimingName, parseTokenName, parseToolName, parseTokenValue, parseWireText, refuse } from '#src/protocol/primitives.ts';
+import type { ExchangeName, ExchangeVersion, OptIn, Refusal, RequestId, TokenName, TokenValue, ToolName } from '#src/protocol/primitives.ts';
 import type { Result } from '#src/protocol/result.ts';
 import type { ParsedValue } from '#src/protocol/codec.ts';
 
@@ -13,6 +17,21 @@ export function unwrap<T, E>(result: Result<T, E>): T {
         throw new Error(`refused: ${JSON.stringify(result.error)}`);
     }
     return result.value;
+}
+
+export type SeenCheck = (exchange: ExchangeName, tool: ToolName, id: RequestId) => boolean;
+
+export function take(registry: Registry, tokens: TokenMap, seen: SeenCheck): Taking {
+    return takeRequests(registry, wireOf(tokens), (exchange, tool, id) => (seen(exchange, tool, id) ? 'seen' : 'fresh'));
+}
+
+export function answer(exchange: Exchange, id: RequestId, stage: string): Result<TokenWrite, Refusal> {
+    const text = parseWireText(stage);
+    return text.kind === 'err' ? refuse(text.error, 'TokenValue') : answerWrite(exchange, id, text.value);
+}
+
+export function capabilityValue(exchanges: readonly Exchange[], kindsVersion: ExchangeVersion, isOn: (setting: OptIn) => boolean = () => true): Result<TokenValue, Refusal> {
+    return capabilityValueTyped(exchanges, kindsVersion, (setting) => (isOn(setting) ? 'on' : 'off'));
 }
 
 export const nameOf = (raw: string): TokenName => unwrap(parseTokenName(raw));

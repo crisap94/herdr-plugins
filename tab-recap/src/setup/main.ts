@@ -1,7 +1,8 @@
 import { catalogFor } from '#src/i18n/index.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { parseInstant } from '#src/recap/domain/time.ts';
 import { parseAgentKind, parsePaneId, uncheckedAgentKind } from '#src/recap/domain/ids.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
@@ -13,14 +14,14 @@ import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import { BEL, FRAME_END, FRAME_HOME, LINE_END, RESET_SGR, SCREEN_OFF, SCREEN_ON, TITLE_OSC } from '#src/adapters/os/tui.ts';
 import type { RecapRequest } from '#src/ports/summarizer.ts';
 import { availableIn, intersect, summarizerFor } from '#src/daemon/backends.ts';
-import { configDirectory, environmentReader, localeFrom, loadSettings, settingGetter, parseEnv, stateDirectory } from '#src/daemon/config.ts';
+import { configDirectory, environmentReader, localeFrom, loadSettings, settingGetter, parseSettingsFile, stateDirectory } from '#src/daemon/config.ts';
 import { requestRewrites } from '#src/recap/application/setup-changes.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { messagesFor } from '#src/i18n/index.ts';
 import { draftFrom, initial, locksOf, saved, step, tested, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Draft, Effect, Setup } from '#src/recap/application/setup-keys.ts';
 import { coloured } from '#src/recap/render/wrap.ts';
-import { harnessLabels } from '#src/recap/domain/backend.ts';
+import { harnessLabels, type EnvironmentName } from '#src/recap/domain/backend.ts';
 import { setupFooterLine, setupLines } from '#src/recap/render/setup.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { join } from 'node:path';
@@ -99,9 +100,9 @@ async function runTest(draft: Draft, ids: readonly string[]): Promise<void> {
     draw();
 }
 
-function save(values: ReadonlyMap<string, string>, languageChanged: boolean): void {
+function save(values: ReadonlyMap<EnvironmentName, Text>, languageChanged: boolean): void {
     try {
-        setValues(join(configDirectory(), 'config.env'), values, parseEnv);
+        setValues(fsPathOf(join(configDirectory(), 'config.env')), values, parseSettingsFile);
         if (languageChanged) {
             const store = openCliStore();
             if (store.kind !== 'ready') {

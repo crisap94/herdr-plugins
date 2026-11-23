@@ -24,7 +24,7 @@ const run = (at: number, ops: readonly Operation[]): RunInput => ({
 });
 const ref = (db: ReturnType<typeof memoryStore>['db'], at: number): RunRef => {
     const row = db.prepare('SELECT id FROM run ORDER BY id DESC LIMIT 1').get() as { id: Uint8Array };
-    return { id: typeIdOf('run', row.id) as RunId, task: TASK, at: instant(at), language: textOf('en'), mint: mintFactId };
+    return { id: typeIdOf('run', row.id) as string as RunId, task: TASK, at: instant(at), language: textOf('en'), mint: mintFactId };
 };
 
 test('open facts come newest last seen first, the order of adding breaking a tie; closed ones leave openOf and show in recentlyClosed and allOf', () => {

@@ -1,3 +1,4 @@
+import { uncheckedTypeId } from '#src/recap/domain/type-id.ts';
 import { parseCompactionId, type CompactionId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import type { Database } from 'bun:sqlite';
 import { and, eq, isNull, lt, sql } from 'drizzle-orm';
@@ -46,7 +47,7 @@ export class CompactionLogRepository implements CompactionLog {
     }
 
     advance(id: CompactionId, stage: ActiveStage, facts: StageNote): void {
-        const key = idOf('compaction', id);
+        const key = idOf('compaction', uncheckedTypeId(id));
         const queued = facts.queue === undefined ? null : Number(facts.queue === 'queued');
         if (key !== null) {
             writeTx(this.db, () => {
@@ -62,7 +63,7 @@ export class CompactionLogRepository implements CompactionLog {
     }
 
     finish(id: CompactionId, end: CompactionFinish): void {
-        const key = idOf('compaction', id);
+        const key = idOf('compaction', uncheckedTypeId(id));
         if (key !== null) {
             writeTx(this.db, () => {
                 this.orm.update(compaction).set({

@@ -1,12 +1,12 @@
 import { knownOr, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
-import { BACKEND_IDS, LEGACY_MODEL_KEYS } from '#src/recap/domain/backend.ts';
+import { BACKEND_IDS, environmentName, LEGACY_MODEL_KEYS, type EnvironmentName } from '#src/recap/domain/backend.ts';
 import { blankRecap, hasRecap } from '#src/ports/recap-records.ts';
 import type { RequestPort } from '#src/ports/requests.ts';
 import type { LiveLanes } from '#src/ports/tab-views.ts';
 import { tabId, type TabId } from '#src/recap/domain/ids.ts';
 import type { Draft, FieldId, Locks, Setup } from './setup-state.ts';
 import { FIELDS } from './setup-state.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 
 const LOCK_KEYS: Readonly<Record<FieldId, readonly string[]>> = {
     harness: ['TAB_RECAP_BACKEND'],
@@ -75,9 +75,9 @@ export function entriesOf(draft: Draft): readonly Entry[] {
     ];
 }
 
-export function changes(state: Setup): ReadonlyMap<string, string> {
+export function changes(state: Setup): ReadonlyMap<EnvironmentName, Text> {
     const was = new Map(entriesOf(state.stored).map(([, key, value]) => [key, value]));
-    return new Map(entriesOf(state.draft).flatMap(([row, key, now]): [string, string][] => (now !== was.get(key) && state.locks[row] === undefined ? [[key, now]] : [])));
+    return new Map(entriesOf(state.draft).flatMap(([row, key, now]): [EnvironmentName, Text][] => (now !== was.get(key) && state.locks[row] === undefined ? [[environmentName(textOf(key)), textOf(now)]] : [])));
 }
 
 export const dirty = (state: Setup): boolean => changes(state).size > 0;

@@ -5,12 +5,13 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { EXCHANGES } from '../src/protocol/exchanges/index.ts';
 import type { Exchange } from '../src/protocol/exchange.ts';
+import { stageOf } from './fakes/wire-tokens.ts';
 import { answerToken, answerValue, badIdValue, parseRequest, serializeRequest } from '../src/protocol/exchange.ts';
 import { buildRegistry } from '../src/protocol/registry.ts';
 import type { Registry } from '../src/protocol/registry.ts';
 import { observe } from '../src/protocol/requester.ts';
-import { answer, take } from '../src/protocol/responder.ts';
-import type { SeenCheck } from '../src/protocol/responder.ts';
+import { answer, take } from './fakes/protocol-exchanges.ts';
+import type { SeenCheck } from './fakes/protocol-exchanges.ts';
 import { idGrammarOf } from '../src/protocol/codec.ts';
 import type { ParsedValue } from '../src/protocol/codec.ts';
 import { parseIdText, parseRequestId, parseTokenValue } from '../src/protocol/primitives.ts';
@@ -136,7 +137,7 @@ for (const exchange of EXCHANGES) {
 
     test(`${exchange.name}: answers are id and stage, cut and refused as published`, () => {
         for (const item of vector.answers) {
-            assert.deepEqual(valueOf(answerValue(exchange, parseIdText(item.id), item.stage)), item.expect, JSON.stringify(item));
+            assert.deepEqual(valueOf(answerValue(exchange, parseIdText(item.id), stageOf(item.stage))), item.expect, JSON.stringify(item));
         }
     });
 

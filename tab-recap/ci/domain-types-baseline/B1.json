@@ -1,8 +1,1 @@
-{
-  "src/ports/twins/runs/legacy.ts": {
-    "legacy": 16
-  },
-  "src/protocol/legacy.ts": {
-    "legacy": 5
-  }
-}
+{}

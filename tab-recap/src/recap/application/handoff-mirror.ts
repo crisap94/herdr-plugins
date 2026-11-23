@@ -4,9 +4,9 @@ import type { LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { handoff, HANDOFF_EVENTS, HANDOFF_STAGES } from '#src/protocol/exchanges/handoff.ts';
 import { failureStage, terminalStage } from '#src/protocol/exchange.ts';
-import { parseRequestId } from '#src/protocol/primitives.ts';
+import { parseRequestId, parseWireText, refuse } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
-import { answer as answerOf } from '#src/protocol/responder.ts';
+import { answerWrite } from '#src/protocol/responder.ts';
 import type { TokenWrite } from '#src/protocol/tokens.ts';
 import type { EventKind } from '#src/recap/domain/event-token.ts';
 import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
@@ -112,7 +112,8 @@ export class HandoffMirror {
         if (this.deps.sharing() !== 'on') {
             return;
         }
-        const write = answerOf(handoff, must(parseRequestId(route.id, 'token-safe')), stage);
+        const staged = parseWireText(stage);
+        const write = staged.kind === 'err' ? refuse(staged.error, 'TokenValue') : answerWrite(handoff, must(parseRequestId(route.id, 'token-safe')), staged.value);
         if (write.kind === 'ok') {
             this.report(route.source, write.value);
         }

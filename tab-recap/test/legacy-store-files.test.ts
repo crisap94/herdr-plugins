@@ -46,8 +46,8 @@ test('a hidden file keeps only string entries and reads all as a true flag', () 
 });
 
 test('a visibility ask keeps a boolean or toggle request and refuses an empty target', () => {
-    assert.deepEqual(parseLegacyVisibility({ target: 'w1:t1', hidden: 'toggle' }), { kind: 'ok', value: { target: 'w1:t1', hidden: 'toggle' } });
-    assert.deepEqual(parseLegacyVisibility({ target: 'w1:t1', hidden: false }), { kind: 'ok', value: { target: 'w1:t1', hidden: false } });
+    assert.deepEqual(parseLegacyVisibility({ target: 'w1:t1', hidden: 'toggle' }), { kind: 'ok', value: { target: 'w1:t1', visibility: 'toggle' } });
+    assert.deepEqual(parseLegacyVisibility({ target: 'w1:t1', hidden: false }), { kind: 'ok', value: { target: 'w1:t1', visibility: 'shown' } });
     assert.deepEqual(parseLegacyVisibility({ target: '', hidden: true }), { kind: 'err', error: { kind: 'empty' } });
     assert.deepEqual(parseLegacyVisibility({ target: 'w1:t1', hidden: 'maybe' }), { kind: 'err', error: { kind: 'out-of-range' } });
 });

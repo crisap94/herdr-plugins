@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CAPABILITY_TOKEN, capabilityValue, parseCapability } from '#src/protocol/capability.ts';
+import { CAPABILITY_TOKEN, parseCapability } from '#src/protocol/capability.ts';
 import { ownerTable } from '#src/protocol/owners.ts';
 import { parseExchangeName, parseExchangeVersion, parseOptIn, parseTokenName } from '#src/protocol/primitives.ts';
 import type { ExchangeVersion } from '#src/protocol/primitives.ts';
 import type { Exchange } from '#src/protocol/exchange.ts';
-import { compactLike, handoffLike, nameOf, registryOf, unwrap } from './fakes/protocol-exchanges.ts';
+import { capabilityValue, compactLike, handoffLike, nameOf, registryOf, unwrap } from './fakes/protocol-exchanges.ts';
 
 const version = (n: number): ExchangeVersion => unwrap(parseExchangeVersion(n));
 

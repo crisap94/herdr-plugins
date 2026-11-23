@@ -3,8 +3,6 @@ import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Milliseconds } from '#src/recap/domain/time.ts';
 
-export type { ProcessControl, RunOptions, RunResult, Runner } from './twins/runs/legacy.ts';
-
 export type RunEnding = 'finished' | 'timed-out';
 
 export type KillMode = 'gentle' | 'force';

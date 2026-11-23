@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { TranscriptInFlight } from '#src/adapters/transcripts/in-flight.ts';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { flightOf } from '#src/recap/application/in-flight.ts';
-import type { InFlight, InFlightReading } from '#src/ports/in-flight.ts';
+import type { InFlightReader, InFlightRead } from '#src/ports/in-flight.ts';
 import type { Located, InFlightResult } from '#src/ports/transcripts.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
@@ -30,7 +30,7 @@ function fakeReader(agent: string, located: Located, flight: InFlightResult): Tr
     };
 }
 
-const adapterFor = (reader: Transcripts): InFlight => new TranscriptInFlight(registryWith({ [reader.agent]: reader }));
+const adapterFor = (reader: Transcripts): InFlightReader => new TranscriptInFlight(registryWith({ [reader.agent]: reader }));
 
 test('a transcript that does not exist yet is not-started for a lane whose locating key is known', async () => {
     const reader = fakeReader('claude', unknown({ why: 'not-found', what: textOf('the transcript of sess-1') }), { kind: 'in-flight', count: runningOf(9), background: [] });
@@ -60,7 +60,7 @@ test('a transcript that cannot be read is unknown, never not-started', async () 
 
 test('a located transcript reports its count of unfinished work', async () => {
     const reader = fakeReader('claude', { kind: 'located', source: sourcePathOf('/t/sess-1.jsonl') }, { kind: 'in-flight', count: runningOf(2), background: [] });
-    assert.deepEqual(await adapterFor(reader).read(claude), { kind: 'count', count: 2, background: [] });
+    assert.deepEqual(await adapterFor(reader).read(claude), { kind: 'count', count: countOf(2), background: [] });
 });
 
 test('a read that fails is unknown', async () => {
@@ -75,11 +75,11 @@ test('an agent with no reader of its own is unknown', async () => {
 });
 
 test('autocompact folds a not-started reading into unknown with the same words', async () => {
-    const port: InFlight = { read: (): Promise<InFlightReading> => Promise.resolve({ kind: 'not-started', why: 'the transcript of sess-1 not found' }) };
+    const port: InFlightReader = { read: (): Promise<InFlightRead> => Promise.resolve({ kind: 'not-started', why: textOf('the transcript of sess-1 not found') }) };
     assert.deepEqual(await flightOf(port, claude), unreadable(flightReason(textOf('the transcript of sess-1 not found'))));
 });
 
 test('autocompact states a count as running', async () => {
-    const port: InFlight = { read: (): Promise<InFlightReading> => Promise.resolve({ kind: 'count', count: 3, background: [] }) };
+    const port: InFlightReader = { read: (): Promise<InFlightRead> => Promise.resolve({ kind: 'count', count: countOf(3), background: [] }) };
     assert.deepEqual(await flightOf(port, claude), observedFrom(runningCount(countOf(3)), [], flightReason(textOf('3 running'))));
 });

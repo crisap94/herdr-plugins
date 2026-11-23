@@ -5,7 +5,7 @@ import { unknown, exitCodeOf } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { uncheckedBackendText } from '#src/recap/domain/ids.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import type { FsPath } from '#src/recap/domain/fs-path.ts';
+import { fsPathOf, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { duration, type Milliseconds } from '#src/recap/domain/time.ts';
 import { parseUsd } from '#src/recap/domain/usd.ts';
@@ -60,9 +60,9 @@ export class CustomHarnessPort implements BackendHarness {
             return unknown({ why: 'not-found', what: textOf('TAB_RECAP_CUSTOM_CMD (it is empty)') });
         }
         mkdirSync(this.workDir, { recursive: true });
-        const input = `${call.input}\n\n${call.instructions}`;
-        const ran = await run(program, args, { input, timeoutMs: this.timeoutMs, cwd: this.workDir, env: scrubbedEnv() });
-        if (ran.timedOut) {
+        const input = textOf(`${call.input}\n\n${call.instructions}`);
+        const ran = await run(fsPathOf(program), args, { input, timeoutMs: this.timeoutMs, cwd: this.workDir, env: scrubbedEnv() });
+        if (ran.ending === 'timed-out') {
             return unknown({ why: 'timeout', after: duration(this.timeoutMs) });
         }
         if (ran.code !== 0 || ran.stdout.trim() === '') {

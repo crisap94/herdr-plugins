@@ -2,12 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { observe, request } from '#src/protocol/requester.ts';
 import type { AnswerState } from '#src/protocol/requester.ts';
-import { answer, take } from '#src/protocol/responder.ts';
-import type { SeenCheck, Taken } from '#src/protocol/responder.ts';
+import type { Taken } from '#src/protocol/responder.ts';
 import { parseRequestId } from '#src/protocol/primitives.ts';
 import type { ExchangeName, RequestId, ToolName } from '#src/protocol/primitives.ts';
 import type { Registry } from '#src/protocol/registry.ts';
-import { handoffLike, parsedOf, registryOf, toolOf, unwrap } from './fakes/protocol-exchanges.ts';
+import { answer, handoffLike, parsedOf, registryOf, take, toolOf, unwrap } from './fakes/protocol-exchanges.ts';
+import type { SeenCheck } from './fakes/protocol-exchanges.ts';
 import { FakeTokenMap } from './fakes/token-map.ts';
 
 const registry: Registry = registryOf([handoffLike]);

@@ -1,3 +1,4 @@
+import { uncheckedTypeId } from '#src/recap/domain/type-id.ts';
 import type { Database } from 'bun:sqlite';
 import { and, asc, desc, eq, gte, or } from 'drizzle-orm';
 import type { Applied } from '#src/ports/ledger.ts';
@@ -15,7 +16,7 @@ import { fact as factTable, task as taskTable } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { typeIdOf, idOf } from './typeid.ts';
 import { ids } from './uuid7.ts';
-import { textOf, parseTextOrNull } from '#src/recap/domain/text.ts';
+import { textOf, parseTextOrNull, type Text } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { sweepOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/ops.ts';
 
@@ -28,7 +29,7 @@ type SweepNow = 'sweep' | 'keep';
 export const mintFactId = (): FactId => must(parseFactId(typeIdOf('fact', ids.next())));
 
 const factIdOf = (f: Fact): Uint8Array => {
-    const id = idOf('fact', f.id);
+    const id = idOf('fact', uncheckedTypeId(f.id));
     if (id === null) {
         throw new Error(`${f.id} is not a fact id`);
     }
@@ -46,12 +47,20 @@ export type LedgerFactId = FactId;
 
 export const isLedgerFactId = (input: unknown): input is LedgerFactId => typeof input === 'string' && input.startsWith('fct_');
 
+function phaseOf(stored: Text): typeof OPEN | typeof CLOSED | null {
+    if (stored === OPEN) {
+        return OPEN;
+    }
+    return stored === CLOSED ? CLOSED : null;
+}
+
 export function parseLedgerFact(input: unknown, task: TaskId): LedgerFact {
     if (!isRow(input)) {
         throw new BadRow('a fact is not a row');
     }
-    const [id, section, closedWhy, state] = [typeIdOf('fact', blob(input, 'id')), text(input, 'section'), maybeText(input, 'closed_why'), text(input, 'state')];
-    if (!isLedgerFactId(id) || !isSection(section) || (state !== OPEN && state !== CLOSED)) {
+    const [id, section, closedWhy, stored] = [typeIdOf('fact', blob(input, 'id')), text(input, 'section'), maybeText(input, 'closed_why'), text(input, 'state')];
+    const state = phaseOf(stored);
+    if (!isLedgerFactId(id) || !isSection(section) || state === null) {
         throw new BadRow('a fact is not what the schema promises');
     }
     if (closedWhy !== null && !isClosedWhy(closedWhy)) {

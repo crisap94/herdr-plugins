@@ -9,10 +9,6 @@ import type { ParsedValue } from './codec.ts';
 import type { Registry } from './registry.ts';
 import type { TokenWrite } from './tokens.ts';
 
-export type { SeenCheck } from './legacy.ts';
-
-export { answer, take } from './legacy.ts';
-
 export type Seen = 'seen' | 'fresh';
 
 export type SeenProbe = (exchange: ExchangeName, tool: ToolName, id: RequestId) => Seen;

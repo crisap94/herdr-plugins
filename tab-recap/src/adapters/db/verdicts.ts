@@ -1,3 +1,4 @@
+import { uncheckedTypeId } from '#src/recap/domain/type-id.ts';
 import type { Database } from 'bun:sqlite';
 import { and, asc, eq, isNotNull, sql } from 'drizzle-orm';
 import { must } from '#src/protocol/result.ts';
@@ -38,7 +39,7 @@ export class VerdictRowStore implements VerdictStore {
     add(rows: readonly VerdictRecord[]): void {
         writeTx(this.db, () => {
             for (const verdict of rows) {
-                const run = idOf('run', verdict.run);
+                const run = idOf('run', uncheckedTypeId(verdict.run));
                 if (run === null) {
                     throw new Error(`not a run id: ${verdict.run}`);
                 }
@@ -51,7 +52,7 @@ export class VerdictRowStore implements VerdictStore {
     }
 
     ofRun(run: RunId): readonly VerdictRecord[] {
-        const id = idOf('run', run);
+        const id = idOf('run', uncheckedTypeId(run));
         return id === null ? [] : guarded(() => this.orm.select({
             item: verdicts.itemKey, check: verdicts.checkId, pass: verdicts.pass, critique: verdicts.critique,
             judge: verdicts.judge, at: verdicts.at, source: verdicts.source,

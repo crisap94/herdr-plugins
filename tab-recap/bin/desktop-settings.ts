@@ -1,8 +1,10 @@
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { environmentName, type EnvironmentName } from '#src/recap/domain/backend.ts';
+import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { join } from 'node:path';
 import { setValues } from '#src/adapters/os/config/file.ts';
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
-import { configDirectory, environmentReader, localeFrom, loadSettings, messagesOf, settingGetter, parseEnv } from '#src/daemon/config.ts';
+import { configDirectory, environmentReader, localeFrom, loadSettings, messagesOf, settingGetter, parseSettingsFile } from '#src/daemon/config.ts';
 import { apply, rawSettingsFrom, settingIds, settingsOf } from './desktop-settings-model.ts';
 import { requestRewrites } from '#src/recap/application/setup-changes.ts';
 import { changes, draftFrom, initial, locksOf } from '#src/recap/application/setup-keys.ts';
@@ -12,7 +14,7 @@ import { USAGE_EXIT } from '#src/recap/domain/handoff-outcome.ts';
 const OK = 0;
 const FAILED = 1;
 const SET = 'set';
-const LANGUAGE_KEYS = ['TAB_RECAP_RECAP_LANG', 'TAB_RECAP_LOCALE'];
+const LANGUAGE_KEYS = [environmentName(textOf('TAB_RECAP_RECAP_LANG')), environmentName(textOf('TAB_RECAP_LOCALE'))];
 
 interface Loaded {
     readonly draft: Draft;
@@ -37,8 +39,8 @@ function assignmentsOf(words: readonly string[]): ReadonlyMap<string, string> | 
     return pairs.length === 0 || pairs.some((pair) => pair === null) ? null : new Map(pairs.flatMap((pair) => (pair === null ? [] : [pair])));
 }
 
-function persist(values: ReadonlyMap<string, string>): Readonly<Record<string, unknown>> {
-    setValues(join(configDirectory(), 'config.env'), values, parseEnv);
+function persist(values: ReadonlyMap<EnvironmentName, Text>): Readonly<Record<string, unknown>> {
+    setValues(fsPathOf(join(configDirectory(), 'config.env')), values, parseSettingsFile);
     if (!LANGUAGE_KEYS.some((key) => values.has(key))) {
         return {};
     }

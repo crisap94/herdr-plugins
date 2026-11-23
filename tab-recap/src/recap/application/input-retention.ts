@@ -3,6 +3,7 @@ import type { RunInputReader } from '#src/ports/run-inputs.ts';
 import type { DecisionBriefs } from '#src/ports/autocompact-briefs.ts';
 import type { BriefRetention } from '#src/recap/domain/autocompact.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 
 const DAY_MS = 86_400_000;
 
@@ -12,7 +13,7 @@ interface RetentionParts {
     readonly clock: Clock;
     readonly days: () => number;
     readonly briefRetention: () => BriefRetention;
-    readonly log: (line: string) => void;
+    readonly log: (line: Text) => void;
 }
 
 export class InputRetention {
@@ -21,7 +22,7 @@ export class InputRetention {
     private readonly clock: Clock;
     private readonly days: () => number;
     private readonly briefRetention: () => BriefRetention;
-    private readonly log: (line: string) => void;
+    private readonly log: (line: Text) => void;
     private last: number | null = null;
 
     constructor(parts: RetentionParts) {
@@ -44,16 +45,16 @@ export class InputRetention {
         try {
             this.briefs.clearBefore(instant(cutoff));
         } catch (error) {
-            this.log(`could not delete old autocompact briefs: ${error instanceof Error ? error.message : String(error)}`);
+            this.log(textOf(`could not delete old autocompact briefs: ${error instanceof Error ? error.message : String(error)}`));
         }
         let gone = 0;
         try {
             gone = this.inputs.prune(instant(now - this.days() * DAY_MS));
         } catch (error) {
-            this.log(`could not delete old run inputs: ${error instanceof Error ? error.message : String(error)}`);
+            this.log(textOf(`could not delete old run inputs: ${error instanceof Error ? error.message : String(error)}`));
         }
         if (gone > 0) {
-            this.log(`deleted ${gone} stored run input${gone === 1 ? '' : 's'} older than ${this.days()} days`);
+            this.log(textOf(`deleted ${gone} stored run input${gone === 1 ? '' : 's'} older than ${this.days()} days`));
         }
         return gone;
     }

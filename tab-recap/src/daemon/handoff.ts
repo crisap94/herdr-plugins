@@ -37,7 +37,7 @@ import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { duration, instant, type Duration, type Instant } from '#src/recap/domain/time.ts';
 import { textOf, parseText, type Text } from '#src/recap/domain/text.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
-import { awaitingNow, logVia, pauseVia } from './legacy.ts';
+import { awaitingPane } from './autocompact.ts';
 import { refreshVia } from './refresh-status.ts';
 import { withinBy } from './bounded.ts';
 
@@ -251,12 +251,11 @@ async function sourceOf(transcripts: TranscriptRegistry, board: () => Board, lan
 
 export function wireHandoffs(parts: HandoffWiring): HandoffRunner {
     const { store, fleet, transcripts, repos, claims, recaps, board, mirror } = parts;
-    const pause = pauseVia(parts.pause);
-    const log = logVia(parts.log);
+    const { pause, log } = parts;
     const flow = new HandoffFlow({
         lanes: (): readonly Lane[] => [...board().lanes.values()], records: store.records, ledger: store.ledger,
         closed: { closures: store.closedLanes, ledger: store.ledger, runs: store.closedLanes, closedDays: (): ClosedLaneDays => store.closedDays },
-        target: { plans: handoffPlanner, inFlight: new TranscriptInFlight(transcripts), awaiting: awaitingNow },
+        target: { plans: handoffPlanner, inFlight: new TranscriptInFlight(transcripts), awaiting: awaitingPane },
         claims, refresh: refreshVia(recaps, store.records), flush: (tab, why): Promise<void> => recaps.flush(tab, why),
         render: renderHandoff({
             records: store.records,

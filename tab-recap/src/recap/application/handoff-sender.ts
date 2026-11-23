@@ -8,7 +8,7 @@ import { withTypingLease } from './typing-scope.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
 import { parseMilliseconds, type Milliseconds } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 
 export interface HandoffTyping {
     acquire(pane: PaneId, waitMs: Milliseconds): Promise<Acquired>;
@@ -19,7 +19,7 @@ export interface HandoffSenderDeps {
     readonly agents: Pick<AgentPanes, 'prompt'>;
     readonly typing: HandoffTyping;
     readonly confirmation: HandoffConfirmation;
-    readonly log: (line: string) => void;
+    readonly log: (line: Text) => void;
 }
 
 const NO_WAIT = must(parseMilliseconds(0));
@@ -46,7 +46,7 @@ export class HandoffSender {
         try {
             sent = await this.deps.agents.prompt(target.lane.pane, textOf(text), undefined, NO_STALL);
         } catch (error) {
-            this.deps.log(`handoff prompt ${target.lane.pane}: ${failureCauseOf(parseThrown(error))}`);
+            this.deps.log(textOf(`handoff prompt ${target.lane.pane}: ${failureCauseOf(parseThrown(error))}`));
             return { kind: 'failed', reason: 'transport' };
         }
         if (sent.kind === 'blocked') {

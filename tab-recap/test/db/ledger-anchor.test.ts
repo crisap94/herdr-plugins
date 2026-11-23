@@ -20,7 +20,7 @@ const run = (at: number, ops: readonly Operation[]): RunInput => ({
 });
 const ref = (db: ReturnType<typeof memoryStore>['db'], at: number): RunRef => {
     const row = db.prepare('SELECT id FROM run ORDER BY id DESC LIMIT 1').get() as { id: Uint8Array };
-    return { id: typeIdOf('run', row.id) as RunId, task: TASK, at: instant(at), language: textOf('en'), mint: () => typeIdOf('fact', ids.next()) as FactId };
+    return { id: typeIdOf('run', row.id) as string as RunId, task: TASK, at: instant(at), language: textOf('en'), mint: () => typeIdOf('fact', ids.next()) as string as FactId };
 };
 
 test('the anchor an add carries is stored and read back; an update may replace it, one without keeps it; a fact added without one has none', () => {

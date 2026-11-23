@@ -1,3 +1,4 @@
+import { uncheckedTypeId } from '#src/recap/domain/type-id.ts';
 import type { Database } from 'bun:sqlite';
 import { lt, sql } from 'drizzle-orm';
 import type { DecisionBriefs } from '#src/ports/autocompact-briefs.ts';
@@ -24,7 +25,7 @@ export class DecisionBriefsRepository implements DecisionBriefs {
     }
 
     put(decisionId: DecisionId, brief: Text, appended: readonly FactIndex[], checked: readonly CheckedFact[], briefedAt: Instant): void {
-        const id = idOf('decision', decisionId);
+        const id = idOf('decision', uncheckedTypeId(decisionId));
         if (id !== null) {
             writeTx(this.db, () => {
                 this.orm.insert(autocompactBrief).values({ decisionId: id, briefedAt, body: encode({ brief, appended, checked }) })

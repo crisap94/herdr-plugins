@@ -19,7 +19,7 @@ import { parseIdText, parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { answerValue } from '#src/protocol/exchange.ts';
 import { compact as compactExchange, COMPACT_FAILURES, COMPACT_STAGES } from '#src/protocol/exchanges/compact.ts';
-import { take } from '#src/protocol/responder.ts';
+import { take } from './fakes/protocol-exchanges.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { type Instant } from '#src/recap/domain/time.ts';
 import { uncheckedPaneId } from '#src/recap/domain/ids.ts';
@@ -60,7 +60,7 @@ test('a request value is `<id>` or `<id>:<note>`; the note is everything after t
     assert.deepEqual(askedIn(''), []);
     assert.deepEqual(readRequest('x'.repeat(17)).refused.map((each) => each.answer), [`${'x'.repeat(16)}:failed-bad-id`]);
     assert.deepEqual(readRequest(':note').refused.map((each) => each.answer), [':failed-bad-id']);
-    assert.ok(must(answerValue(compactExchange, parseIdText('r7'), COMPACT_STAGES.running)).length <= VALUE_MAX);
+    assert.ok(must(answerValue(compactExchange, parseIdText('r7'), stageOf(COMPACT_STAGES.running))).length <= VALUE_MAX);
     assert.ok((askedIn(`r7:${'n'.repeat(200)}`)[0]?.note?.length ?? 0) + 3 <= VALUE_MAX, 'the note fits the rest of the value');
 });
 

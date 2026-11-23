@@ -1,5 +1,7 @@
 import { changes, dirty } from './setup-changes.ts';
 import { CHOICES, TEXTS } from './setup-fields.ts';
+import { environmentName } from '#src/recap/domain/backend.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { fieldOf, JOB_FIELDS, modelTarget, rowOf, ROWS } from './setup-state.ts';
 import type { Editing, FieldId, Setup, Stepped, TestState } from './setup-state.ts';
 
@@ -89,12 +91,14 @@ function leave(state: Setup): Stepped {
     return { state, effects: [{ kind: 'close' }] };
 }
 
+const LANGUAGE_KEYS = [environmentName(textOf('TAB_RECAP_RECAP_LANG')), environmentName(textOf('TAB_RECAP_LOCALE'))];
+
 function save(state: Setup): Stepped {
     const values = changes(state);
     if (values.size === 0) {
         return { state: { ...state, note: 'nothing' }, effects: [] };
     }
-    const languageChanged = values.has('TAB_RECAP_RECAP_LANG') || values.has('TAB_RECAP_LOCALE');
+    const languageChanged = LANGUAGE_KEYS.some((key) => values.has(key));
     return { state, effects: [{ kind: 'save', values, languageChanged }] };
 }
 

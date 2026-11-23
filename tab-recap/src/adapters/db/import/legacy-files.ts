@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseLegacyHidden, parseLegacyRecapFile, parseLegacyViewFile, parseLegacyVisibility, type LegacyViewFile } from '#src/ports/legacy-store-files.ts';
 import type { TabRecap } from '#src/ports/recap-records.ts';
-import type { VisibilityRequest } from '#src/ports/requests.ts';
+import type { VisibilityAsk } from '#src/ports/requests.ts';
 import { must, type Result } from '#src/protocol/result.ts';
 import type { HiddenState } from '#src/recap/domain/board.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
@@ -85,7 +85,7 @@ export class LegacyStoreFiles {
         return this.names('requests').flatMap((name) => readRequest(this.file('requests', name)));
     }
 
-    pendingVisibility(): readonly VisibilityRequest[] {
+    pendingVisibility(): readonly VisibilityAsk[] {
         return this.names('visibility')
             .filter((name) => name.endsWith('.json'))
             .flatMap((name) => {

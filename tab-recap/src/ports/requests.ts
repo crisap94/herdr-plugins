@@ -7,8 +7,6 @@ import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 
-export type { VisibilityRequest } from './twins/runs/legacy.ts';
-
 export type Visibility = 'hidden' | 'shown' | 'toggle';
 
 export type RefreshFirst = 'refresh-first' | 'as-is';
