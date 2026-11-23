@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { uncheckedAgentKind } from '#src/recap/domain/ids.ts';
+import { environmentName } from '#src/recap/domain/backend.ts';
 import assert from 'node:assert/strict';
 import { changes, dirty, draftFrom, initial, locksOf, modelTarget, saved, step, tested, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Draft, Effect, Locks, Setup } from '#src/recap/application/setup-keys.ts';
@@ -12,7 +14,7 @@ import { textOf } from '#src/recap/domain/text.ts';
 import { viewRecord } from '#test/support/tab-view-records.ts';
 
 const ESC = String.fromCodePoint(0x1b);
-const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
+const models = { claude: textOf(''), codex: textOf('gpt-6-luna'), opencode: textOf(''), custom: textOf('') };
 const draft: Draft = draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined });
 
 function typed(state: Setup, keys: readonly string[]): { state: Setup; effects: Effect[] } {
@@ -26,7 +28,7 @@ function typed(state: Setup, keys: readonly string[]): { state: Setup; effects: 
     return { state: now, effects };
 }
 
-const start = (locks: Locks = {}): Setup => withAvailable(initial(draft, locks), ['claude', 'codex']);
+const start = (locks: Locks = {}): Setup => withAvailable(initial(draft, locks), [uncheckedAgentKind('claude'), uncheckedAgentKind('codex')]);
 const down = (n: number): string[] => Array.from({ length: n }, () => 'j');
 
 test('the draft starts from the configuration: auto UI, recap language follows the UI', () => {
@@ -55,11 +57,11 @@ test('model: edits the model of the harness in force; with auto that is the firs
     const edited = typed(start(), ['l', '\r', '\u0015', 'g', 'p', 't', '-', '6', '\r']).state;
     assert.equal(edited.draft.models.codex, 'gpt-6');
     assert.deepEqual([...changes(edited)], [['TAB_RECAP_MODEL_CODEX', 'gpt-6']]);
-    const auto = withAvailable(initial({ ...draft, backend: 'auto' }, {}), ['opencode', 'codex']);
+    const auto = withAvailable(initial({ ...draft, backend: 'auto' }, {}), [uncheckedAgentKind('opencode'), uncheckedAgentKind('codex')]);
     assert.equal(modelTarget(auto.draft, auto.available), 'codex');
     const none = withAvailable(initial({ ...draft, backend: 'auto' }, {}), []);
     assert.equal(typed(none, ['l', '\r']).state.note, 'no-agent');
-    assert.equal(modelTarget({ ...draft, backend: 'custom' }, ['claude']), null);
+    assert.equal(modelTarget({ ...draft, backend: 'custom' }, [uncheckedAgentKind('claude')]), null);
 });
 
 test('text rows: backspace and ctrl-u; typing ‘q’, ‘s’ or ‘t’ is text while editing, not a command', () => {
@@ -84,7 +86,7 @@ test('a row an environment variable overrides is read-only and says which variab
     const locked = typed(start(locks), ['l', '\r']).state;
     assert.equal(locked.editing, null);
     assert.equal(locked.note, 'locked');
-    const forced = { ...start(locks), draft: { ...draft, models: { ...draft.models, codex: 'other' } } };
+    const forced = { ...start(locks), draft: { ...draft, models: { ...draft.models, codex: textOf('other') } } };
     assert.equal(changes(forced).size, 0, 'a locked row is never written');
 assert.deepEqual(locksOf({ TAB_RECAP_LOCALE: 'es', TAB_RECAP_RECAP_LANG: 'es' }), {});
 });
@@ -142,53 +144,53 @@ test('screen agents: the fifth row takes a list or `all`, keeps only plain names
     assert.equal(all.draft.screenAgents, 'all');
     const cleared = typed({ ...typedList, stored: typedList.draft }, ['\r', '\u0015', '\r']).state;
     assert.deepEqual([...changes(cleared)], [['TAB_RECAP_SCREEN_AGENTS', '']], 'emptying it writes an empty value (none)');
-    const locked = typed(start({ screenAgents: 'TAB_RECAP_SCREEN_AGENTS' }), [...down(4), '\r']).state;
+    const locked = typed(start({ screenAgents: environmentName(textOf('TAB_RECAP_SCREEN_AGENTS')) }), [...down(4), '\r']).state;
     assert.equal(locked.note, 'locked');
     assert.deepEqual(locksOf({ TAB_RECAP_SCREEN_AGENTS: 'all' }), { screenAgents: 'TAB_RECAP_SCREEN_AGENTS' });
 });
 
 test('the git note row: on by default, a choice list, saved as TAB_RECAP_GIT_NOTE, read-only when the variable is set', () => {
     assert.equal(draft.gitNote, 'on');
-    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, gitNote: ' OFF ' }).gitNote, 'off');
-    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, gitNote: 'maybe' }).gitNote, 'on');
+    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, gitNote: textOf(' OFF ') }).gitNote, 'off');
+    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, gitNote: textOf('maybe') }).gitNote, 'on');
     const off = typed(start(), [...down(5), '\r', 'j', '\r']);
     assert.equal(off.state.draft.gitNote, 'off');
     assert.deepEqual([...changes(off.state)], [['TAB_RECAP_GIT_NOTE', 'off']]);
     assert.deepEqual(locksOf({ TAB_RECAP_GIT_NOTE: 'off' }), { gitNote: 'TAB_RECAP_GIT_NOTE' });
-    assert.equal(typed(start({ gitNote: 'TAB_RECAP_GIT_NOTE' }), [...down(5), '\r']).state.note, 'locked');
+    assert.equal(typed(start({ gitNote: environmentName(textOf('TAB_RECAP_GIT_NOTE')) }), [...down(5), '\r']).state.note, 'locked');
 });
 
 test('job telemetry tags: off by default, saved as TAB_RECAP_TELEMETRY_TAGS, read-only when the variable is set', () => {
     assert.equal(draft.telemetryTags, 'off');
-    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, telemetryTags: ' ON ' }).telemetryTags, 'on');
-    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, telemetryTags: 'maybe' }).telemetryTags, 'off');
+    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, telemetryTags: textOf(' ON ') }).telemetryTags, 'on');
+    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, telemetryTags: textOf('maybe') }).telemetryTags, 'off');
     const on = typed(start(), [...down(18), '\r', 'k', '\r']);
     assert.equal(on.state.draft.telemetryTags, 'on');
     assert.deepEqual([...changes(on.state)], [['TAB_RECAP_TELEMETRY_TAGS', 'on']]);
     assert.deepEqual(locksOf({ TAB_RECAP_TELEMETRY_TAGS: 'on' }), { telemetryTags: 'TAB_RECAP_TELEMETRY_TAGS' });
-    const locked = typed(start({ telemetryTags: 'TAB_RECAP_TELEMETRY_TAGS' }), [...down(18), '\r']).state;
+    const locked = typed(start({ telemetryTags: environmentName(textOf('TAB_RECAP_TELEMETRY_TAGS')) }), [...down(18), '\r']).state;
     assert.equal(locked.note, 'locked');
     assert.deepEqual([...changes(locked)], []);
 });
 
 test('the effort row: medium by default, a choice list, saved as TAB_RECAP_EFFORT, read-only when the variable is set', () => {
     assert.equal(draft.effort, 'medium');
-    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, effort: ' HIGH ' }).effort, 'high');
-    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, effort: 'max' }).effort, 'medium');
+    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, effort: textOf(' HIGH ') }).effort, 'high');
+    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, effort: textOf('max') }).effort, 'medium');
     const high = typed(start(), ['l', 'l', '\r', 'j', '\r']);
     assert.equal(high.state.draft.effort, 'high');
     assert.deepEqual([...changes(high.state)], [['TAB_RECAP_EFFORT', 'high']]);
     assert.deepEqual(locksOf({ TAB_RECAP_EFFORT: 'high' }), { effort: 'TAB_RECAP_EFFORT' });
-    assert.equal(typed(start({ effort: 'TAB_RECAP_EFFORT' }), ['l', 'l', '\r']).state.note, 'locked');
+    assert.equal(typed(start({ effort: environmentName(textOf('TAB_RECAP_EFFORT')) }), ['l', 'l', '\r']).state.note, 'locked');
 });
 
 test('the compaction rows: target, hint (40 by default, 10–95 or off) and window (empty = found at runtime), each saved under its variable and read-only when it is set', () => {
     assert.deepEqual([draft.compactTarget, draft.compactHint, draft.contextWindow], ['focused', '40', '']);
     const raw = { locale: undefined, recapLanguage: undefined };
-    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, compactTarget: ' Claude, codex ', compactHint: '60%', contextWindow: '1_000_000' }).compactTarget, 'claude,codex');
-    assert.equal(draftFrom({ backend: 'codex', models }, { ...raw, compactHint: '5' }).compactHint, '40', 'out of range is the default');
-    assert.equal(draftFrom({ backend: 'codex', models }, { ...raw, compactHint: 'OFF' }).compactHint, 'off');
-    assert.equal(draftFrom({ backend: 'codex', models }, { ...raw, contextWindow: '1_000_000' }).contextWindow, '1000000');
+    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, compactTarget: textOf(' Claude, codex '), compactHint: textOf('60%'), contextWindow: textOf('1_000_000') }).compactTarget, 'claude,codex');
+    assert.equal(draftFrom({ backend: 'codex', models }, { ...raw, compactHint: textOf('5') }).compactHint, '40', 'out of range is the default');
+    assert.equal(draftFrom({ backend: 'codex', models }, { ...raw, compactHint: textOf('OFF') }).compactHint, 'off');
+    assert.equal(draftFrom({ backend: 'codex', models }, { ...raw, contextWindow: textOf('1_000_000') }).contextWindow, '1000000');
     const target = typed(start(), [...down(6), '\r', '\u0015', 'a', 'l', 'l', '\r']).state;
     assert.deepEqual([...changes(target)], [['TAB_RECAP_COMPACT_TARGET', 'all']]);
     const hint = typed(start(), [...down(8),'\r', '\u0015', '5', '5', '\r']).state;
@@ -199,7 +201,7 @@ test('the compaction rows: target, hint (40 by default, 10–95 or off) and wind
     assert.deepEqual([...changes(window)], [['TAB_RECAP_CONTEXT_WINDOW', '300000']]);
     assert.equal(typed(window, ['\r', '\u0015', '\r']).state.draft.contextWindow, '', 'emptied: detect at runtime');
     assert.deepEqual(locksOf({ TAB_RECAP_COMPACT_TARGET: 'all', TAB_RECAP_COMPACT_HINT: 'off', TAB_RECAP_CONTEXT_WINDOW: '1' }), { compactTarget: 'TAB_RECAP_COMPACT_TARGET', compactHint: 'TAB_RECAP_COMPACT_HINT', contextWindow: 'TAB_RECAP_CONTEXT_WINDOW' });
-    assert.equal(typed(start({ compactHint: 'TAB_RECAP_COMPACT_HINT' }), [...down(8),'\r']).state.note, 'locked');
+    assert.equal(typed(start({ compactHint: environmentName(textOf('TAB_RECAP_COMPACT_HINT')) }), [...down(8),'\r']).state.note, 'locked');
 });
 
 test('the Models group: ←/→ walk the harness · model · effort of a job row, and do nothing elsewhere', () => {
@@ -213,8 +215,8 @@ test('the Models group: ←/→ walk the harness · model · effort of a job row
 test('the compact brief job: as the recap writer, no model of its own and high effort until set; each part is edited and saved under its variable', () => {
     assert.deepEqual(draft.compact, { by: 'recap', model: '', effort: 'high' });
     const raw = { locale: undefined, recapLanguage: undefined };
-    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, compactBy: ' Claude ', compactModel: ' sonnet ', compactEffort: 'MEDIUM' }).compact, { by: 'claude', model: 'sonnet', effort: 'medium' });
-    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, compactBy: 'nonsense', compactEffort: 'max' }).compact, { by: 'recap', model: '', effort: 'high' }, 'invalid values are the defaults');
+    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, compactBy: textOf(' Claude '), compactModel: textOf(' sonnet '), compactEffort: textOf('MEDIUM') }).compact, { by: 'claude', model: 'sonnet', effort: 'medium' });
+    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, compactBy: textOf('nonsense'), compactEffort: textOf('max') }).compact, { by: 'recap', model: '', effort: 'high' }, 'invalid values are the defaults');
     const by = typed(start(), ['j', '\r', 'j', 'j', '\r']).state;
     assert.equal(by.draft.compact.by, 'claude', 'recap → auto → claude');
     assert.deepEqual([...changes(by)], [['TAB_RECAP_COMPACT_BY', 'claude']]);
@@ -226,15 +228,15 @@ test('the compact brief job: as the recap writer, no model of its own and high e
     const effort = typed(start(), ['j', 'l', 'l', '\r', 'k', '\r']).state;
     assert.deepEqual([...changes(effort)], [['TAB_RECAP_COMPACT_EFFORT', 'medium']]);
     assert.deepEqual(locksOf({ TAB_RECAP_COMPACT_BY: 'off', TAB_RECAP_COMPACT_MODEL: 'x', TAB_RECAP_COMPACT_EFFORT: 'low' }), { compactBy: 'TAB_RECAP_COMPACT_BY', compactModel: 'TAB_RECAP_COMPACT_MODEL', compactEffort: 'TAB_RECAP_COMPACT_EFFORT' });
-    assert.equal(typed(start({ compactModel: 'TAB_RECAP_COMPACT_MODEL' }), ['j', 'l', '\r']).state.note, 'locked');
-    assert.equal(typed(start({ compactModel: 'TAB_RECAP_COMPACT_MODEL' }), ['j', 'l', 'l', '\r']).state.editing?.kind, 'choice', 'only the locked part is read-only');
+    assert.equal(typed(start({ compactModel: environmentName(textOf('TAB_RECAP_COMPACT_MODEL')) }), ['j', 'l', '\r']).state.note, 'locked');
+    assert.equal(typed(start({ compactModel: environmentName(textOf('TAB_RECAP_COMPACT_MODEL')) }), ['j', 'l', 'l', '\r']).state.editing?.kind, 'choice', 'only the locked part is read-only');
 });
 
 test('the judge job: as the recap writer, no model of its own and medium effort until set; each part is edited and saved under its variable, read-only when set', () => {
     assert.deepEqual(draft.judge, { by: 'recap', model: '', effort: 'medium' });
     const raw = { locale: undefined, recapLanguage: undefined };
-    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, judgeBy: ' Codex ', judgeModel: ' gpt-6-luna ', judgeEffort: 'HIGH' }).judge, { by: 'codex', model: 'gpt-6-luna', effort: 'high' });
-    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, judgeBy: 'nonsense', judgeEffort: 'max' }).judge, { by: 'recap', model: '', effort: 'medium' }, 'invalid values are the defaults');
+    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, judgeBy: textOf(' Codex '), judgeModel: textOf(' gpt-6-luna '), judgeEffort: textOf('HIGH') }).judge, { by: 'codex', model: 'gpt-6-luna', effort: 'high' });
+    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, judgeBy: textOf('nonsense'), judgeEffort: textOf('max') }).judge, { by: 'recap', model: '', effort: 'medium' }, 'invalid values are the defaults');
     const toJudge = down(10);
     const by = typed(start(), [...toJudge, '\r', 'j', 'j', '\r']).state;
     assert.equal(by.draft.judge.by, 'claude', 'recap → auto → claude');
@@ -244,15 +246,15 @@ test('the judge job: as the recap writer, no model of its own and medium effort 
     const effort = typed(start(), [...toJudge, 'l', 'l', '\r', 'j', '\r']).state;
     assert.deepEqual([...changes(effort)], [['TAB_RECAP_JUDGE_EFFORT', 'high']]);
     assert.deepEqual(locksOf({ TAB_RECAP_JUDGE_BY: 'off', TAB_RECAP_JUDGE_MODEL: 'x', TAB_RECAP_JUDGE_EFFORT: 'low' }), { judgeBy: 'TAB_RECAP_JUDGE_BY', judgeModel: 'TAB_RECAP_JUDGE_MODEL', judgeEffort: 'TAB_RECAP_JUDGE_EFFORT' });
-    assert.equal(typed(start({ judgeModel: 'TAB_RECAP_JUDGE_MODEL' }), [...toJudge, 'l', '\r']).state.note, 'locked');
-    assert.equal(typed(start({ judgeModel: 'TAB_RECAP_JUDGE_MODEL' }), [...toJudge, 'l', 'l', '\r']).state.editing?.kind, 'choice', 'only the locked part is read-only');
+    assert.equal(typed(start({ judgeModel: environmentName(textOf('TAB_RECAP_JUDGE_MODEL')) }), [...toJudge, 'l', '\r']).state.note, 'locked');
+    assert.equal(typed(start({ judgeModel: environmentName(textOf('TAB_RECAP_JUDGE_MODEL')) }), [...toJudge, 'l', 'l', '\r']).state.editing?.kind, 'choice', 'only the locked part is read-only');
 });
 
 test('the autocompact rows: mode (shadow by default), the minimum (10, 10–95) and the decider job (as the recap writer, low; jev among the choices), saved under their variables and read-only when set', () => {
     const raw = { locale: undefined, recapLanguage: undefined };
     assert.deepEqual([draft.autocompact, draft.autocompactAt, draft.decide], ['shadow', '10', { by: 'recap', model: '', effort: 'low' }]);
-    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, autocompact: 'ON', autocompactAt: '55%', decideBy: 'jev', decideModel: ' x ', decideEffort: 'high' }).decide, { by: 'jev', model: 'x', effort: 'high' });
-    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, autocompact: 'maybe', autocompactAt: '5' }).autocompactAt, '10');
+    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, autocompact: textOf('ON'), autocompactAt: textOf('55%'), decideBy: textOf('jev'), decideModel: textOf(' x '), decideEffort: textOf('high') }).decide, { by: 'jev', model: 'x', effort: 'high' });
+    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, autocompact: textOf('maybe'), autocompactAt: textOf('5') }).autocompactAt, '10');
     const mode = typed(start(), [...down(12),'\r', 'j', '\r']).state;
     assert.deepEqual([...changes(mode)], [['TAB_RECAP_AUTOCOMPACT', 'on']]);
     const at = typed(start(), [...down(13),'\r', '\u0015', '6', '0', '\r']).state;
@@ -263,7 +265,7 @@ test('the autocompact rows: mode (shadow by default), the minimum (10, 10–95) 
     const model = typed(start(), [...down(16),'l', '\r', 'm', '\r', 'l', '\r', 'j', '\r']).state;
     assert.deepEqual([...changes(model)], [['TAB_RECAP_AUTOCOMPACT_MODEL', 'm'], ['TAB_RECAP_AUTOCOMPACT_EFFORT', 'medium']]);
     assert.deepEqual(locksOf({ TAB_RECAP_AUTOCOMPACT: 'on', TAB_RECAP_AUTOCOMPACT_AT: '50', TAB_RECAP_AUTOCOMPACT_BY: 'jev' }), { autocompact: 'TAB_RECAP_AUTOCOMPACT', autocompactAt: 'TAB_RECAP_AUTOCOMPACT_AT', decideBy: 'TAB_RECAP_AUTOCOMPACT_BY' });
-    assert.equal(typed(start({ autocompact: 'TAB_RECAP_AUTOCOMPACT' }), [...down(12),'\r']).state.note, 'locked');
+    assert.equal(typed(start({ autocompact: environmentName(textOf('TAB_RECAP_AUTOCOMPACT')) }), [...down(12),'\r']).state.note, 'locked');
 });
 
 test('the key and the endpoint of the TypeSafe API are never a row or a config entry the modal writes', () => {

@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { environmentName } from '#src/recap/domain/backend.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -10,7 +12,7 @@ import { apply, modelBackends, settingIds, settingsOf } from '../bin/desktop-set
 import { changes, draftFrom, FIELDS, initial, ROWS } from '#src/recap/application/setup-keys.ts';
 import type { Draft } from '#src/recap/application/setup-keys.ts';
 
-const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
+const models = { claude: textOf(''), codex: textOf('gpt-6-luna'), opencode: textOf(''), custom: textOf('') };
 const draft: Draft = draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined });
 const byId = (id: string): ReturnType<typeof settingsOf>[number] | undefined => settingsOf(draft, {}).find((each) => each.id === id);
 
@@ -46,7 +48,7 @@ test('applying a value goes through the terminal keep functions and the same cha
 });
 
 test('an unknown field, a value outside the choices and a locked field are rejected, the rest still applies', () => {
-    const applied = apply(draft, { gitNote: 'TAB_RECAP_GIT_NOTE' }, new Map([['nope', 'x'], ['locale', 'fr'], ['gitNote', 'off'], ['effort', 'high']]));
+    const applied = apply(draft, { gitNote: environmentName(textOf('TAB_RECAP_GIT_NOTE')) }, new Map([['nope', 'x'], ['locale', 'fr'], ['gitNote', 'off'], ['effort', 'high']]));
     assert.deepEqual(applied.rejected.map((each) => [each.id, each.why]), [['nope', 'unknown'], ['locale', 'unknown'], ['gitNote', 'locked']]);
     assert.equal(applied.draft.effort, 'high');
     assert.equal(applied.draft.gitNote, 'on');

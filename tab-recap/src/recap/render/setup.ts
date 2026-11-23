@@ -7,6 +7,7 @@ import { COMPACT_NOTE_CHOICES } from '#src/recap/domain/compact-note.ts';
 import { AUTO_ORDER, hasAvailabilityMark, JOB_HARNESSES, MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
 import type { BackendChoice, BackendId } from '#src/recap/domain/backend.ts';
 import type { Count } from '#src/recap/domain/count.ts';
+import { uncheckedAgentKind } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { parseUsd, type Usd } from '#src/recap/domain/usd.ts';
 import { coloured, visibleLength, wrap } from '@stateforge-labs/recap-view/unstable/wrap.ts';
@@ -108,7 +109,7 @@ function markOf(choice: BackendChoice, state: Setup): Text {
     if (choice === 'auto' || !hasAvailabilityMark(choice) || state.available === null) {
         return SPACE;
     }
-    return must(parseText(state.available.includes(choice) ? '●' : '○'));
+    return must(parseText(state.available.includes(uncheckedAgentKind(choice)) ? '●' : '○'));
 }
 
 function harnessChoices(state: Setup, catalog: SetupCatalog, width: Count, style: Style): Text[] {

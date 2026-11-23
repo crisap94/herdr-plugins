@@ -4,44 +4,45 @@ import { blankRecap, hasRecap } from '#src/ports/recap-records.ts';
 import type { RequestPort } from '#src/ports/requests.ts';
 import type { LiveLanes } from '#src/ports/tab-views.ts';
 import { tabId, type TabId } from '#src/recap/domain/ids.ts';
+import type { DeciderBy, JobBy } from '#src/recap/domain/job.ts';
 import type { Draft, FieldId, Locks, Setup } from './setup-state.ts';
 import { FIELDS } from './setup-state.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 
-const LOCK_KEYS: Readonly<Record<FieldId, readonly string[]>> = {
-    harness: ['TAB_RECAP_BACKEND'],
-    model: ['TAB_RECAP_MODEL', ...BACKEND_IDS.map((id) => `TAB_RECAP_MODEL_${id.toUpperCase()}`), ...LEGACY_MODEL_KEYS],
+const LOCK_KEYS: Readonly<Record<FieldId, readonly EnvironmentName[]>> = {
+    harness: [environmentName(textOf('TAB_RECAP_BACKEND'))],
+    model: [environmentName(textOf('TAB_RECAP_MODEL')), ...BACKEND_IDS.map((id) => environmentName(textOf(`TAB_RECAP_MODEL_${id.toUpperCase()}`))), ...LEGACY_MODEL_KEYS],
     locale: [],
     recapLanguage: [],
-    screenAgents: ['TAB_RECAP_SCREEN_AGENTS'],
-    gitNote: ['TAB_RECAP_GIT_NOTE'],
-    telemetryTags: ['TAB_RECAP_TELEMETRY_TAGS'],
-    effort: ['TAB_RECAP_EFFORT'],
-    compactBy: ['TAB_RECAP_COMPACT_BY'],
-    compactModel: ['TAB_RECAP_COMPACT_MODEL'],
-    compactEffort: ['TAB_RECAP_COMPACT_EFFORT'],
-    judgeBy: ['TAB_RECAP_JUDGE_BY'],
-    judgeModel: ['TAB_RECAP_JUDGE_MODEL'],
-    judgeEffort: ['TAB_RECAP_JUDGE_EFFORT'],
-    curateBy: ['TAB_RECAP_CURATE_BY'],
-    curateModel: ['TAB_RECAP_CURATE_MODEL'],
-    curateEffort: ['TAB_RECAP_CURATE_EFFORT'],
-    compactTarget: ['TAB_RECAP_COMPACT_TARGET'],
-    compactNote: ['TAB_RECAP_COMPACT_NOTE'],
-    compactHint: ['TAB_RECAP_COMPACT_HINT'],
-    contextWindow: ['TAB_RECAP_CONTEXT_WINDOW'],
-    autocompact: ['TAB_RECAP_AUTOCOMPACT'],
-    autocompactAt: ['TAB_RECAP_AUTOCOMPACT_AT'],
-    autocompactStyle: ['TAB_RECAP_AUTOCOMPACT_STYLE'],
-    autocompactMissed: ['TAB_RECAP_AUTOCOMPACT_MISSED_FACTS'],
-    decideBy: ['TAB_RECAP_AUTOCOMPACT_BY'],
-    decideModel: ['TAB_RECAP_AUTOCOMPACT_MODEL'],
-    decideEffort: ['TAB_RECAP_AUTOCOMPACT_EFFORT'],
-    herdrEvents: ['TAB_RECAP_HERDR_EVENTS'],
+    screenAgents: [environmentName(textOf('TAB_RECAP_SCREEN_AGENTS'))],
+    gitNote: [environmentName(textOf('TAB_RECAP_GIT_NOTE'))],
+    telemetryTags: [environmentName(textOf('TAB_RECAP_TELEMETRY_TAGS'))],
+    effort: [environmentName(textOf('TAB_RECAP_EFFORT'))],
+    compactBy: [environmentName(textOf('TAB_RECAP_COMPACT_BY'))],
+    compactModel: [environmentName(textOf('TAB_RECAP_COMPACT_MODEL'))],
+    compactEffort: [environmentName(textOf('TAB_RECAP_COMPACT_EFFORT'))],
+    judgeBy: [environmentName(textOf('TAB_RECAP_JUDGE_BY'))],
+    judgeModel: [environmentName(textOf('TAB_RECAP_JUDGE_MODEL'))],
+    judgeEffort: [environmentName(textOf('TAB_RECAP_JUDGE_EFFORT'))],
+    curateBy: [environmentName(textOf('TAB_RECAP_CURATE_BY'))],
+    curateModel: [environmentName(textOf('TAB_RECAP_CURATE_MODEL'))],
+    curateEffort: [environmentName(textOf('TAB_RECAP_CURATE_EFFORT'))],
+    compactTarget: [environmentName(textOf('TAB_RECAP_COMPACT_TARGET'))],
+    compactNote: [environmentName(textOf('TAB_RECAP_COMPACT_NOTE'))],
+    compactHint: [environmentName(textOf('TAB_RECAP_COMPACT_HINT'))],
+    contextWindow: [environmentName(textOf('TAB_RECAP_CONTEXT_WINDOW'))],
+    autocompact: [environmentName(textOf('TAB_RECAP_AUTOCOMPACT'))],
+    autocompactAt: [environmentName(textOf('TAB_RECAP_AUTOCOMPACT_AT'))],
+    autocompactStyle: [environmentName(textOf('TAB_RECAP_AUTOCOMPACT_STYLE'))],
+    autocompactMissed: [environmentName(textOf('TAB_RECAP_AUTOCOMPACT_MISSED_FACTS'))],
+    decideBy: [environmentName(textOf('TAB_RECAP_AUTOCOMPACT_BY'))],
+    decideModel: [environmentName(textOf('TAB_RECAP_AUTOCOMPACT_MODEL'))],
+    decideEffort: [environmentName(textOf('TAB_RECAP_AUTOCOMPACT_EFFORT'))],
+    herdrEvents: [environmentName(textOf('TAB_RECAP_HERDR_EVENTS'))],
 };
 
 export function locksOf(env: Readonly<Record<string, string | undefined>>): Locks {
-    const locks: Partial<Record<FieldId, string>> = {};
+    const locks: Partial<Record<FieldId, EnvironmentName>> = {};
     for (const row of FIELDS) {
         const found = LOCK_KEYS[row].find((key) => (env[key] ?? '') !== '');
         if (found !== undefined) {
@@ -51,33 +52,34 @@ export function locksOf(env: Readonly<Record<string, string | undefined>>): Lock
     return locks;
 }
 
-type Entry = readonly [FieldId, string, string];
+type Entry = readonly [FieldId, EnvironmentName, Text];
 
-type JobSettings = Pick<Draft['compact'], 'model' | 'effort'> & { readonly by: string };
+type JobSettings = Pick<Draft['compact'], 'model' | 'effort'> & { readonly by: JobBy | DeciderBy };
 
-const jobs = (by: FieldId, model: FieldId, effort: FieldId, prefix: string, job: JobSettings): readonly Entry[] => [[by, `${prefix}_BY`, job.by], [model, `${prefix}_MODEL`, job.model], [effort, `${prefix}_EFFORT`, job.effort]];
+const entry = (field: FieldId, key: Text, value: Text): Entry => [field, environmentName(key), value];
 
+const jobs = (by: FieldId, model: FieldId, effort: FieldId, prefix: Text, job: JobSettings): readonly Entry[] => [entry(by, textOf(`${prefix}_BY`), textOf(job.by)), entry(model, textOf(`${prefix}_MODEL`), job.model), entry(effort, textOf(`${prefix}_EFFORT`), textOf(job.effort))];
 
 export function entriesOf(draft: Draft): readonly Entry[] {
     return [
-        ['harness', 'TAB_RECAP_BACKEND', draft.backend],
-        ...BACKEND_IDS.map((id): readonly [FieldId, string, string] => ['model', `TAB_RECAP_MODEL_${id.toUpperCase()}`, draft.models[id]]),
-        ['locale', 'TAB_RECAP_LOCALE', draft.locale], ['recapLanguage', 'TAB_RECAP_RECAP_LANG', draft.recapLanguage], ['screenAgents', 'TAB_RECAP_SCREEN_AGENTS', draft.screenAgents],
-        ['gitNote', 'TAB_RECAP_GIT_NOTE', draft.gitNote], ['telemetryTags', 'TAB_RECAP_TELEMETRY_TAGS', draft.telemetryTags], ['effort', 'TAB_RECAP_EFFORT', draft.effort], ['compactTarget', 'TAB_RECAP_COMPACT_TARGET', draft.compactTarget],
-        ['compactNote', 'TAB_RECAP_COMPACT_NOTE', draft.compactNote],
-        ['compactHint', 'TAB_RECAP_COMPACT_HINT', draft.compactHint], ['contextWindow', 'TAB_RECAP_CONTEXT_WINDOW', draft.contextWindow],
-        ['autocompact', 'TAB_RECAP_AUTOCOMPACT', draft.autocompact], ['autocompactAt', 'TAB_RECAP_AUTOCOMPACT_AT', draft.autocompactAt], ['autocompactStyle', 'TAB_RECAP_AUTOCOMPACT_STYLE', draft.autocompactStyle], ['autocompactMissed', 'TAB_RECAP_AUTOCOMPACT_MISSED_FACTS', draft.autocompactMissed],
-        ['herdrEvents', 'TAB_RECAP_HERDR_EVENTS', draft.herdrEvents],
-        ...jobs('compactBy', 'compactModel', 'compactEffort', 'TAB_RECAP_COMPACT', draft.compact),
-        ...jobs('judgeBy', 'judgeModel', 'judgeEffort', 'TAB_RECAP_JUDGE', draft.judge),
-        ...jobs('curateBy', 'curateModel', 'curateEffort', 'TAB_RECAP_CURATE', draft.curate),
-        ...jobs('decideBy', 'decideModel', 'decideEffort', 'TAB_RECAP_AUTOCOMPACT', draft.decide),
+        entry('harness', textOf('TAB_RECAP_BACKEND'), textOf(draft.backend)),
+        ...BACKEND_IDS.map((id): Entry => entry('model', textOf(`TAB_RECAP_MODEL_${id.toUpperCase()}`), draft.models[id])),
+        entry('locale', textOf('TAB_RECAP_LOCALE'), textOf(draft.locale)), entry('recapLanguage', textOf('TAB_RECAP_RECAP_LANG'), draft.recapLanguage), entry('screenAgents', textOf('TAB_RECAP_SCREEN_AGENTS'), draft.screenAgents),
+        entry('gitNote', textOf('TAB_RECAP_GIT_NOTE'), textOf(draft.gitNote)), entry('telemetryTags', textOf('TAB_RECAP_TELEMETRY_TAGS'), textOf(draft.telemetryTags)), entry('effort', textOf('TAB_RECAP_EFFORT'), textOf(draft.effort)), entry('compactTarget', textOf('TAB_RECAP_COMPACT_TARGET'), draft.compactTarget),
+        entry('compactNote', textOf('TAB_RECAP_COMPACT_NOTE'), textOf(draft.compactNote)),
+        entry('compactHint', textOf('TAB_RECAP_COMPACT_HINT'), draft.compactHint), entry('contextWindow', textOf('TAB_RECAP_CONTEXT_WINDOW'), draft.contextWindow),
+        entry('autocompact', textOf('TAB_RECAP_AUTOCOMPACT'), textOf(draft.autocompact)), entry('autocompactAt', textOf('TAB_RECAP_AUTOCOMPACT_AT'), draft.autocompactAt), entry('autocompactStyle', textOf('TAB_RECAP_AUTOCOMPACT_STYLE'), textOf(draft.autocompactStyle)), entry('autocompactMissed', textOf('TAB_RECAP_AUTOCOMPACT_MISSED_FACTS'), textOf(draft.autocompactMissed)),
+        entry('herdrEvents', textOf('TAB_RECAP_HERDR_EVENTS'), textOf(draft.herdrEvents)),
+        ...jobs('compactBy', 'compactModel', 'compactEffort', textOf('TAB_RECAP_COMPACT'), draft.compact),
+        ...jobs('judgeBy', 'judgeModel', 'judgeEffort', textOf('TAB_RECAP_JUDGE'), draft.judge),
+        ...jobs('curateBy', 'curateModel', 'curateEffort', textOf('TAB_RECAP_CURATE'), draft.curate),
+        ...jobs('decideBy', 'decideModel', 'decideEffort', textOf('TAB_RECAP_AUTOCOMPACT'), draft.decide),
     ];
 }
 
 export function changes(state: Setup): ReadonlyMap<EnvironmentName, Text> {
     const was = new Map(entriesOf(state.stored).map(([, key, value]) => [key, value]));
-    return new Map(entriesOf(state.draft).flatMap(([row, key, now]): [EnvironmentName, Text][] => (now !== was.get(key) && state.locks[row] === undefined ? [[environmentName(textOf(key)), textOf(now)]] : [])));
+    return new Map(entriesOf(state.draft).flatMap(([row, key, now]): [EnvironmentName, Text][] => (now !== was.get(key) && state.locks[row] === undefined ? [[key, now]] : [])));
 }
 
 export const dirty = (state: Setup): boolean => changes(state).size > 0;

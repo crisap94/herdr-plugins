@@ -103,25 +103,14 @@
     "container": 2
   },
   "src/recap/application/setup-changes.ts": {
-    "container": 5,
-    "parameter": 1,
-    "return": 1,
-    "property": 1
-  },
-  "src/recap/application/setup-fields.ts": {
-    "parameter": 13,
-    "return": 9,
-    "property": 1
+    "container": 1,
+    "return": 1
   },
   "src/recap/application/setup-keys.ts": {
-    "parameter": 14,
-    "return": 2,
-    "container": 1
+    "parameter": 3
   },
   "src/recap/application/setup-state.ts": {
-    "assertion": 2,
-    "container": 6,
-    "property": 43
+    "property": 5
   },
   "src/recap/application/transcript-tail.ts": {
     "return": 1

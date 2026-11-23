@@ -1,4 +1,7 @@
 import { catalogFor } from '#src/i18n/index.ts';
+import { uncheckedAgentKind } from '#src/recap/domain/ids.ts';
+import { environmentName } from '#src/recap/domain/backend.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -9,12 +12,12 @@ import type { Draft, Locks, Setup } from '#src/recap/application/setup-keys.ts';
 import { setupLines } from '#src/recap/render/setup.ts';
 import type { AutocompactStyle } from '#src/recap/domain/autocompact-style.ts';
 
-const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
+const models = { claude: textOf(''), codex: textOf('gpt-6-luna'), opencode: textOf(''), custom: textOf('') };
 const draft: Draft = draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined });
-const start = (locks: Locks = {}): Setup => withAvailable(initial(draft, locks), ['claude', 'codex']);
+const start = (locks: Locks = {}): Setup => withAvailable(initial(draft, locks), [uncheckedAgentKind('claude'), uncheckedAgentKind('codex')]);
 const down = (n: number): string[] => Array.from({ length: n }, () => 'j');
 
-const readStyle = (autocompactStyle: string | undefined): AutocompactStyle => draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, autocompactStyle }).autocompactStyle;
+const readStyle = (autocompactStyle: string | undefined): AutocompactStyle => draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, autocompactStyle: autocompactStyle === undefined ? undefined : textOf(autocompactStyle) }).autocompactStyle;
 
 function typed(state: Setup, keys: readonly string[]): Setup {
     return keys.reduce((now, key) => step(now, key).state, state);
@@ -28,7 +31,7 @@ test('the row starts at balanced, and choosing eager writes TAB_RECAP_AUTOCOMPAC
 });
 
 test('a locked row is never written: the row names its variable and a change is not saved', () => {
-    const locked = start({ autocompactStyle: 'TAB_RECAP_AUTOCOMPACT_STYLE' });
+    const locked = start({ autocompactStyle: environmentName(textOf('TAB_RECAP_AUTOCOMPACT_STYLE')) });
     const attempted = typed(locked, [...down(14), '\r', 'j', '\r']);
     assert.equal(typed(locked, [...down(14), '\r']).note, 'locked');
     assert.deepEqual([...changes(attempted)], [], 'a locked row produces no change');
@@ -40,7 +43,7 @@ test('the file\'s value: gentle and eager are read as they are; anything else is
 });
 
 test('the row shows its value and its three choices in English and Spanish, with its hint while focused', () => {
-    const focused = typed(withAvailable(initial(draft, {}), ['claude']), down(14));
+    const focused = typed(withAvailable(initial(draft, {}), [uncheckedAgentKind('claude')]), down(14));
     const text = setupLines(focused, catalogFor(en.locale), countOf(140)).join('\n');
     assert.match(text, /Autocompact style\s+balanced — today's numbers/);
     assert.match(text, /how eagerly it acts/);
@@ -48,5 +51,5 @@ test('the row shows its value and its three choices in English and Spanish, with
     assert.match(choosing, /eager — acts sooner; asks an idle lane again every 30 min/);
     const spanish = setupLines(typed(focused, ['\r']), catalogFor(es.locale), countOf(140)).join('\n');
     assert.match(spanish, /eager — actúa antes; vuelve a mirar un agente libre cada 30 min/);
-    assert.match(setupLines(typed(withAvailable(initial(draft, {}), ['claude']), down(14)), catalogFor(es.locale), countOf(140)).join('\n'), /Estilo autocomp\.\s+balanced — los números de siempre/);
+    assert.match(setupLines(typed(withAvailable(initial(draft, {}), [uncheckedAgentKind('claude')]), down(14)), catalogFor(es.locale), countOf(140)).join('\n'), /Estilo autocomp\.\s+balanced — los números de siempre/);
 });

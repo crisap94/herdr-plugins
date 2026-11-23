@@ -1,4 +1,5 @@
 import { catalogFor } from '#src/i18n/index.ts';
+import { uncheckedAgentKind } from '#src/recap/domain/ids.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -18,8 +19,8 @@ import type { Setup } from '#src/recap/application/setup-keys.ts';
 import { setupFooterLine, setupLines } from '#src/recap/render/setup.ts';
 import { plain, visibleLength } from '#src/recap/render/wrap.ts';
 
-const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
-const base = initial(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined }), { locale: 'TAB_RECAP_LOCALE' });
+const models = { claude: textOf(''), codex: textOf('gpt-6-luna'), opencode: textOf(''), custom: textOf('') };
+const base = initial(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined }), { locale: environmentName(textOf('TAB_RECAP_LOCALE')) });
 
 function typed(state: Setup, keys: readonly string[]): Setup {
     return keys.reduce((now, key) => step(now, key).state, state);
@@ -27,18 +28,18 @@ function typed(state: Setup, keys: readonly string[]): Setup {
 
 const states: readonly [string, Setup][] = [
     ['loading', base],
-    ['available', withAvailable(base, ['claude', 'codex', 'opencode'])],
+    ['available', withAvailable(base, [uncheckedAgentKind('claude'), uncheckedAgentKind('codex'), uncheckedAgentKind('opencode')])],
     ['no agent', typed(withAvailable({ ...base, draft: { ...base.draft, backend: 'auto' } }, []), ['j'])],
-    ['choosing', typed(withAvailable(base, ['claude']), ['\r', 'j'])],
-    ['editing', typed(withAvailable(base, ['claude']), ['l', '\r', 'x', 'y'])],
-    ['locked', typed(withAvailable(base, ['claude']), ['j', 'j', '\r'])],
-    ['language', typed(withAvailable(base, ['claude']), ['j', 'j', 'j'])],
-    ['locale choices', typed(withAvailable({ ...base, locks: {} }, ['claude']), ['j', 'j', '\r'])],
-    ['unsaved', typed(withAvailable(base, ['claude']), ['\r', 'j', '\r', 'q'])],
-    ['test ok', tested(withAvailable(base, ['claude']), { kind: 'ok', seconds: 3.24, costUsd: 0.0008 })],
-    ['test failed', tested(withAvailable(base, ['claude']), { kind: 'failed', why: 'exited 127: opencode not found, a rather long explanation' })],
-    ['autocompact rows', typed(withAvailable(base, ['claude']), [...Array.from({ length: 16 }, () => 'j'), '\r'])],
-    ['save failed', { ...withAvailable(base, ['claude']), note: { failed: 'EACCES: permission denied, open config.env' } }],
+    ['choosing', typed(withAvailable(base, [uncheckedAgentKind('claude')]), ['\r', 'j'])],
+    ['editing', typed(withAvailable(base, [uncheckedAgentKind('claude')]), ['l', '\r', 'x', 'y'])],
+    ['locked', typed(withAvailable(base, [uncheckedAgentKind('claude')]), ['j', 'j', '\r'])],
+    ['language', typed(withAvailable(base, [uncheckedAgentKind('claude')]), ['j', 'j', 'j'])],
+    ['locale choices', typed(withAvailable({ ...base, locks: {} }, [uncheckedAgentKind('claude')]), ['j', 'j', '\r'])],
+    ['unsaved', typed(withAvailable(base, [uncheckedAgentKind('claude')]), ['\r', 'j', '\r', 'q'])],
+    ['test ok', tested(withAvailable(base, [uncheckedAgentKind('claude')]), { kind: 'ok', seconds: 3.24, costUsd: 0.0008 })],
+    ['test failed', tested(withAvailable(base, [uncheckedAgentKind('claude')]), { kind: 'failed', why: 'exited 127: opencode not found, a rather long explanation' })],
+    ['autocompact rows', typed(withAvailable(base, [uncheckedAgentKind('claude')]), [...Array.from({ length: 16 }, () => 'j'), '\r'])],
+    ['save failed', { ...withAvailable(base, [uncheckedAgentKind('claude')]), note: { failed: textOf('EACCES: permission denied, open config.env') } }],
 ];
 
 function assertFits(messages: typeof en, width: number, name: string, state: Setup): void {
@@ -57,7 +58,7 @@ test('the settings modal fits 40, 60 and 100 columns in both languages, in every
 });
 
 test('the harness list marks the current one ✓, the available ones ● and the missing ones ○', () => {
-    const text = setupLines(withAvailable(base, ['claude', 'opencode']), catalogFor(en.locale), countOf(80)).join('\n');
+    const text = setupLines(withAvailable(base, [uncheckedAgentKind('claude'), uncheckedAgentKind('opencode')]), catalogFor(en.locale), countOf(80)).join('\n');
     assert.match(text, /✓ codex/);
     assert.match(text, /● claude/);
     assert.match(text, /● opencode/);
@@ -66,23 +67,23 @@ test('the harness list marks the current one ✓, the available ones ● and the
 
 test('a locked row names its variable; the recap writer row shows harness · model · effort; both languages say so', () => {
     for (const [messages, expected] of [[en, 'read-only: TAB_RECAP_LOCALE'], [es, 'solo lectura: TAB_RECAP_LOCALE']] as const) {
-        const text = setupLines(withAvailable(base, ['codex']), catalogFor(messages.locale), countOf(80)).join('\n');
+        const text = setupLines(withAvailable(base, [uncheckedAgentKind('codex')]), catalogFor(messages.locale), countOf(80)).join('\n');
         assert.ok(text.includes(expected));
         assert.match(text, new RegExp(`${messages.setup.rows.recapJob}\\s+\\[codex\\] · gpt-6-luna · medium`));
     }
 });
 
 test('the telemetry setting shows its choices and environment lock', () => {
-    const choices = setupLines({ ...base, row: 18, editing: { kind: 'choice', at: 1 } }, catalogFor(en.locale), countOf(100)).join('\n');
+    const choices = setupLines({ ...base, row: countOf(18), editing: { kind: 'choice', at: countOf(1) } }, catalogFor(en.locale), countOf(100)).join('\n');
     assert.ok(choices.includes('Job telemetry tags'));
     assert.ok(choices.includes('on — add the tab_recap.job resource attribute'));
     assert.ok(choices.includes('off — do not add a job attribute'));
-    const locked = { ...base, row: 18, locks: { telemetryTags: 'TAB_RECAP_TELEMETRY_TAGS' } };
+    const locked = { ...base, row: countOf(18), locks: { telemetryTags: environmentName(textOf('TAB_RECAP_TELEMETRY_TAGS')) } };
     assert.ok(setupLines(locked, catalogFor(en.locale), countOf(100)).join('\n').includes('read-only: TAB_RECAP_TELEMETRY_TAGS'));
 });
 
 test('Spanish: rows, legend, hints and test results are Spanish', () => {
-    const text = setupLines(tested(withAvailable(base, ['claude']), { kind: 'ok', seconds: 3.24, costUsd: 0.0008 }), catalogFor(es.locale), countOf(80)).join('\n');
+    const text = setupLines(tested(withAvailable(base, [uncheckedAgentKind('claude')]), { kind: 'ok', seconds: 3.24, costUsd: 0.0008 }), catalogFor(es.locale), countOf(80)).join('\n');
     for (const expected of ['ajustes', 'Redactor del resumen', 'Idioma del resumen', 'disponible', 'no está en el PATH', '✓ funciona — 3.2 s · $0.0008']) {
         assert.ok(text.includes(expected), expected);
     }
@@ -106,7 +107,7 @@ test('config-file: a save changes only its keys and keeps every comment and othe
 });
 
 const rowText = (state: Setup, messages: typeof en): string => setupLines(state, catalogFor(messages.locale), countOf(80)).find((line) => line.includes(messages.setup.rows.recapLanguage)) ?? '';
-const withLanguage = (recapLanguage: string): Setup => ({ ...base, draft: { ...base.draft, recapLanguage } });
+const withLanguage = (recapLanguage: string): Setup => ({ ...base, draft: { ...base.draft, recapLanguage: textOf(recapLanguage) } });
 
 test('the recap language row says what the stored value means, in the interface language', () => {
     assert.match(rowText(withLanguage('ui'), en), /same as interface \(English\)/);
@@ -122,7 +123,7 @@ test('the recap language row says what the stored value means, in the interface 
 test('the git note row is drawn with its value and, while choosing, both choices', () => {
     const onRow = setupLines(base, catalogFor(en.locale), countOf(80)).join('\n');
     assert.match(onRow, /Git note\s+on — branch/);
-    const choosing = setupLines(step(step({ ...base, row: 5 }, '\r').state, 'j').state, catalogFor(es.locale), countOf(80)).join('\n');
+    const choosing = setupLines(step(step({ ...base, row: countOf(5) }, '\r').state, 'j').state, catalogFor(es.locale), countOf(80)).join('\n');
     assert.match(choosing, /Nota de git/);
     assert.match(choosing, /▸ no/);
 });
@@ -132,21 +133,21 @@ test('the compaction rows are drawn in both languages: 40% by default, the windo
     assert.match(english, /Compact\s+focused/);
     assert.match(english, /Compact hint\s+40%/);
     assert.match(english, /Context window/);
-    const spanish = setupLines({ ...base, row: 8 }, catalogFor(es.locale), countOf(90)).join('\n');
+    const spanish = setupLines({ ...base, row: countOf(8) }, catalogFor(es.locale), countOf(90)).join('\n');
     assert.match(spanish, /Aviso de compactar\s+40%/);
     assert.match(spanish, /Ventana de contexto/);
     assert.match(spanish, /muestra «compactar\?»/, 'the focused row explains itself');
     assert.match(spanish, /Ventana de contexto\s+se detecta/);
     assert.match(english, /Context window\s+found at runtime/);
-    assert.match(setupLines({ ...base, draft: { ...base.draft, compactHint: 'off' } }, catalogFor(en.locale), countOf(90)).join('\n'), /Compact hint\s+off/);
+    assert.match(setupLines({ ...base, draft: { ...base.draft, compactHint: textOf('off') } }, catalogFor(en.locale), countOf(90)).join('\n'), /Compact hint\s+off/);
 });
 
 test('the Models group: a heading, one row per job showing harness · model · effort, the focused part bracketed, in both languages', () => {
-    const english = setupLines(withAvailable(base, ['codex']), catalogFor(en.locale), countOf(100)).join('\n');
+    const english = setupLines(withAvailable(base, [uncheckedAgentKind('codex')]), catalogFor(en.locale), countOf(100)).join('\n');
     assert.match(english, /Models — harness · model · effort/);
     assert.match(english, /Recap writer\s+\[codex\] · gpt-6-luna · medium/);
     assert.match(english, /Compact brief\s+as the recap writer · the recap writer's model · high/);
-    const second = setupLines(typed(withAvailable(base, ['codex']), ['j', 'l']), catalogFor(en.locale), countOf(100)).join('\n');
+    const second = setupLines(typed(withAvailable(base, [uncheckedAgentKind('codex')]), ['j', 'l']), catalogFor(en.locale), countOf(100)).join('\n');
     assert.match(second, /Compact brief\s+as the recap writer · \[the recap writer's model\] · high/);
     assert.match(second, /writes what the agent keeps when it is compacted/, 'the focused job explains itself');
     const spanish = setupLines(base, catalogFor(es.locale), countOf(100)).join('\n');
@@ -154,32 +155,32 @@ test('the Models group: a heading, one row per job showing harness · model · e
     assert.match(spanish, /Guion de compactar\s+como el redactor · el modelo del redactor · high/);
     const set = { ...base, draft: { ...base.draft, compact: { by: 'claude' as const, model: textOf('sonnet'), effort: 'medium' as const } } };
     assert.match(setupLines(set, catalogFor(en.locale), countOf(100)).join('\n'), /Compact brief\s+claude · sonnet · medium/);
-    const choosing = setupLines(typed(withAvailable(base, ['codex']), ['j', '\r']), catalogFor(en.locale), countOf(100)).join('\n');
+    const choosing = setupLines(typed(withAvailable(base, [uncheckedAgentKind('codex')]), ['j', '\r']), catalogFor(en.locale), countOf(100)).join('\n');
     assert.match(choosing, /▸ as the recap writer — the same harness/);
     assert.match(choosing, /off — compact with the template/);
-    const typing = setupLines(typed(withAvailable(base, ['codex']), ['j', 'l', '\r', 'x']), catalogFor(en.locale), countOf(100)).join('\n');
+    const typing = setupLines(typed(withAvailable(base, [uncheckedAgentKind('codex')]), ['j', 'l', '\r', 'x']), catalogFor(en.locale), countOf(100)).join('\n');
     assert.match(typing, /\[x█\]/);
 });
 
 test('the judge row closes the Models group: harness · model · effort in both languages, its hint while focused, the off choice says what off means', () => {
-    const at = typed(withAvailable(base, ['claude']), Array.from({ length: 10 }, () => 'j'));
+    const at = typed(withAvailable(base, [uncheckedAgentKind('claude')]), Array.from({ length: 10 }, () => 'j'));
     for (const [messages, label, hint, off] of [[en, 'Recap judge', 'scores stored recaps', 'off — no judge'], [es, 'Juez del resumen', 'puntúa los resúmenes', 'off — sin juez']] as const) {
         const view = setupLines(at, catalogFor(messages.locale), countOf(100), plain).join('\n');
         assert.match(view, new RegExp(`▸ ${label} +\\[${messages.setup.jobBy['recap']}\\] · ${messages.setup.compactModelSame} · medium`));
         assert.ok(view.includes(hint));
         assert.ok(setupLines(typed(at, ['\r']), catalogFor(messages.locale), countOf(100), plain).join('\n').includes(off));
     }
-    assert.doesNotMatch(setupLines(withAvailable(base, ['claude']), catalogFor(en.locale), countOf(100), plain).join('\n'), /scores stored recaps/, 'the hint shows only while the row is focused');
+    assert.doesNotMatch(setupLines(withAvailable(base, [uncheckedAgentKind('claude')]), catalogFor(en.locale), countOf(100), plain).join('\n'), /scores stored recaps/, 'the hint shows only while the row is focused');
 });
 
 test('the autocompact rows show their value, the focused one its hint, and the decider offers jev without a key', () => {
-    const rows = typed(withAvailable(base, ['claude']), Array.from({ length: 12 }, () => 'j'));
+    const rows = typed(withAvailable(base, [uncheckedAgentKind('claude')]), Array.from({ length: 12 }, () => 'j'));
     const text = setupLines(rows, catalogFor(en.locale), countOf(120)).join('\n');
     assert.match(text, /Autocompact\s+shadow — decides and records, never compacts/);
     assert.match(text, /Autocompact from\s+10%/);
     assert.match(text, /Autocompact decider\s+as the recap writer · the recap writer's model · low/);
     assert.match(text, /compacts an idle agent by itself/);
-    const choosing = setupLines(typed(withAvailable(base, ['claude']), [...Array.from({ length: 16 }, () => 'j'), '\r']), catalogFor(en.locale), countOf(140)).join('\n');
+    const choosing = setupLines(typed(withAvailable(base, [uncheckedAgentKind('claude')]), [...Array.from({ length: 16 }, () => 'j'), '\r']), catalogFor(en.locale), countOf(140)).join('\n');
     assert.match(choosing, /jev — the TypeSafe API; the key is read from the environment or ~\/\.config\/typesafe-api-key, never shown here/);
     assert.doesNotMatch(choosing, /Bearer|sk-|SENTINEL/u);
     assert.match(setupLines(rows, catalogFor(es.locale), countOf(120)).join('\n'), /Autocompactar\s+shadow — decide y registra, nunca compacta/);

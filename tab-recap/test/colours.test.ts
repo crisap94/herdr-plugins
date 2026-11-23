@@ -1,4 +1,7 @@
 import { catalogFor } from '#src/i18n/index.ts';
+import { uncheckedAgentKind } from '#src/recap/domain/ids.ts';
+import { environmentName } from '#src/recap/domain/backend.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -49,11 +52,11 @@ test('colours: with the plain table the column has no escape sequence and the sa
     assert.ok(presentBar(view(plain), 30).every((line) => !line.includes(ESC)));
 });
 
-const models = { claude: '', codex: '', opencode: '', custom: '' };
-const setup = initial(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined }), { locale: 'TAB_RECAP_LOCALE' });
+const models = { claude: textOf(''), codex: textOf(''), opencode: textOf(''), custom: textOf('') };
+const setup = initial(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined }), { locale: environmentName(textOf('TAB_RECAP_LOCALE')) });
 
 test('colours: the setup screen takes the plain table too', () => {
-    const lines = setupLines(withAvailable(setup, ['claude']), catalogFor(en.locale), countOf(60), plain);
+    const lines = setupLines(withAvailable(setup, [uncheckedAgentKind('claude')]), catalogFor(en.locale), countOf(60), plain);
     assert.ok(lines.every((line) => !line.includes(ESC)));
 });
 
