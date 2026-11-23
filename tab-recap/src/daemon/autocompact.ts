@@ -73,8 +73,8 @@ export function candidatesOf(board: Board, log: (line: Text) => void): readonly 
 }
 
 const emitTo = (events: LaneEvents, event: SafePointEvent): void => {
-    if (event.kind === 'session-skipped') events.lane(paneId(textOf(event.key)), 'autocompact-skipped', event.gate);
-    else if (event.kind === 'safe-point-decided') events.lane(paneId(textOf(event.key)), 'autocompact-decided', `${event.verdict}-${event.share}`);
+    if (event.kind === 'session-skipped') events.lane(paneId(textOf(event.key)), 'autocompact-skipped', textOf(event.gate));
+    else if (event.kind === 'safe-point-decided') events.lane(paneId(textOf(event.key)), 'autocompact-decided', textOf(`${event.verdict}-${event.share}`));
 };
 
 const activityOf = (parts: AutocompactParts): Pick<CompactionActivity, 'activeFor' | 'automaticInProgress'> => {

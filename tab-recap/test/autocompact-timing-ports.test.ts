@@ -18,7 +18,7 @@ import { decidedOf, textOf } from './fakes/decider-fixtures.ts';
 import { SAFE, candidateFor } from './autocompact-world.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
-import { agentKind } from '#test/support/ids.ts';
+import { agentKind, paneId } from '#test/support/ids.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { runningOf } from '#src/recap/domain/in-flight.ts';
 import { seenLane } from '#test/support/seen.ts';
@@ -69,7 +69,7 @@ test('wireAutocompact over fake store, claims and events: a safe lane flushes th
 
 test('wireAutocompact: a claimed lane is skipped as busy through the activity port and emits the skipped gate', async () => {
     const claims = new LaneClaims();
-    claims.claim('w1:p1', 'compaction');
+    claims.claim(paneId('w1:p1'), 'compaction');
     const world = scripted(claims);
     await world.service.consider(candidateFor(world.lane));
     assert.deepEqual(world.store.requests.takeCompactions(), []);

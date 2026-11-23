@@ -42,7 +42,7 @@ import { handoffPlanner, SETTLE_SOURCE } from '#src/adapters/capability/handoff-
 import type { LocatedBy } from '#src/recap/domain/handoff-plan.ts';
 import { HANDOFF_OBSERVATIONS, HANDOFF_OBSERVE_MS } from '#src/recap/application/handoff-limits.ts';
 import type { Observed } from '#src/recap/domain/compaction.ts';
-import { tabId, agentKind } from '#test/support/ids.ts';
+import { tabId, agentKind, paneId } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
@@ -465,7 +465,7 @@ function handoffRows(kind: RegisteredKind, pin: HandoffPin): void {
 
     test(`${kind} handoff: a compaction already holding the target starts no refresh`, async () => {
         const h = handoffHarness({ targetAgent: kind });
-        h.claims.claim(String(TARGET), 'compaction');
+        h.claims.claim(paneId(String(TARGET)), 'compaction');
         assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'refused', reason: 'lane-busy' });
         assert.equal(h.calls.some((call) => call.startsWith('refresh')), false);
     });

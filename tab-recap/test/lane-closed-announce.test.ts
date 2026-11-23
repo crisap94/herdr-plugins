@@ -14,7 +14,7 @@ import type { LaneTokenFacts } from '#src/recap/domain/lane-tokens.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
 import { silentClosures } from './fakes/silent-closures.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '#src/recap/domain/time.ts';
 import type { ColumnPanes } from '#src/ports/columns.ts';
 import type { ClosureRecorder } from '#src/ports/closed-lanes.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
@@ -80,7 +80,7 @@ test('a closure seen by dispatch and by the token publisher announces lane-close
     let now = 0;
     const publisher = new LaneTokenPublisher({
         tokens: new RecordingTokens(), enabled: (): Presence => 'present', board: (): Board => board.current, facts: (): LaneTokenFacts => ({ share: null, recapAt: null, needs: countOf(0) }),
-        now: (): number => now, log: noop, events: port,
+        now: (): Instant => instant(now), log: noop, events: port,
     });
     publisher.tick();
     board.current = emptyBoard();

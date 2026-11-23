@@ -7,7 +7,8 @@ import type { PaneId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { parseCount, countOf } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
+import type { Text } from '#src/recap/domain/text.ts';
 import type { ObservedResult } from '#src/ports/transcripts.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
@@ -15,7 +16,7 @@ import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 const TAIL_BYTES = countOf(256 * 1024);
 const REMEMBERED = 200;
 
-const keyOf = (use: ContextUse | null | undefined): string => (use === null || use === undefined ? '' : `${use.tokens} ${use.window} ${use.source}`);
+const keyOf = (use: ContextUse | null | undefined): Text => textOf(use === null || use === undefined ? '' : `${use.tokens} ${use.window} ${use.source}`);
 
 type ObservedOutcome = ObservedResult | null;
 
@@ -31,10 +32,10 @@ export class LaneContexts {
     private readonly transcripts: TranscriptRegistry;
     private readonly windows: ContextWindowLookup;
     private readonly limits: CompactLimits;
-    private readonly setting: () => number | null;
+    private readonly setting: () => Count | null;
     private readonly known = new Map<PaneId, ContextUse | null>();
 
-    constructor(transcripts: TranscriptRegistry, windows: ContextWindowLookup, limits: CompactLimits, setting: () => number | null) {
+    constructor(transcripts: TranscriptRegistry, windows: ContextWindowLookup, limits: CompactLimits, setting: () => Count | null) {
         this.transcripts = transcripts;
         this.windows = windows;
         this.limits = limits;
@@ -42,8 +43,7 @@ export class LaneContexts {
     }
 
     private settingCount(): Count | null {
-        const value = this.setting();
-        return value === null ? null : countOf(value);
+        return this.setting();
     }
 
     of(pane: PaneId): ContextUse | null {

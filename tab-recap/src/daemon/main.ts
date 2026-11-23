@@ -72,6 +72,7 @@ import type { HandoffRequests } from '#src/recap/domain/handoff-requests.ts';
 import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import { routePaneTokens, wireWorktrees, type Worktrees } from './worktrees.ts';
 import { ASK_KEEP_MS, CHECKPOINT_EVERY, EVENT_STOP_MS, FLUSH_STOP_MS, INTENT_MS, REQUEST_POLL_MS, RESYNC_MS, RETENTION_EVERY } from './timing.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 type ExitCode = 0 | 1;
 
@@ -114,7 +115,7 @@ const handoffRequestsOn = (): HandoffRequests => loadSettings().handoffRequests;
 
 function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wired {
     const clock = new SystemClock();
-    const events = new EventStream({ tokens: fleet, workspaces: fleet, enabled: herdrEventsPresence, startedAt: Date.now() - process.uptime() * 1000, log });
+    const events = new EventStream({ tokens: fleet, workspaces: fleet, enabled: herdrEventsPresence, startedAt: instant(Date.now() - process.uptime() * 1000), log });
     const backends = new Backends(root, { herdr: fleet, path: new PathHarnessDirectory(AUTO_PATH_KINDS) }, fleet, log, createRuntime());
     const transcripts = daemonTranscriptRegistry(fleet, screenWanted);
     const repos = new GitLaneRepo(clock);
@@ -127,7 +128,7 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
     const exchange = handoffExchangeOf({ store, tokens: fleet, events, board, sharing: (): HerdrEvents => loadSettings().herdrEvents, requests: handoffRequestsOn, log });
     const hub = new SettleHub({ agents: fleet.agents(), listening: listeningOf(box), pause: sleep, now: nowInstant });
     const webs = new LaneWebs(repos);
-    const contexts = new LaneContexts(transcripts, agentWindows(new CatalogueWindows()), systemCompactLimits(), () => loadSettings().compaction.window);
+    const contexts = new LaneContexts(transcripts, agentWindows(new CatalogueWindows()), systemCompactLimits(), () => { const size = loadSettings().compaction.window; return size === null ? null : countOf(size); });
     const laneTokens = new LaneTokenPublisher({ tokens: fleet, enabled: herdrEventsPresence, board, facts: (lane): LaneTokenFacts => factsOf(lane, { contexts, records: store.records, ledger: store.ledger }), capability: advertisedCapability, now: nowInstant, log, events });
     const dispatch = dispatchFor(box, { fleet, store, recaps, transcripts, webs, contexts, events, sharing: (): Sharing => (herdrEventsPresence() === 'present' ? 'on' : 'off') }, log);
     const turns = laneTurns({ hub, compactions: store.compactions, board: (): Board => box.informer?.current ?? emptyBoard(), now: nowInstant, statused: statusTaps.emit });
@@ -216,7 +217,7 @@ async function start(): Promise<ExitCode> {
             return;
         }
         stopping = true;
-        void boundedBy(events.daemon('daemon-stopping', codeVersion() ?? 'unknown'), duration(EVENT_STOP_MS)).then(() => shutDownWithin(fleet, informer, log, duration(SHUTDOWN_MS))).then(() => boundedBy(slots?.stop() ?? Promise.resolve(), duration(EVENT_STOP_MS))).then(() => boundedBy(recaps.flushAll(), duration(FLUSH_STOP_MS))).finally(() => { store.close(); pidfile.release(OWN_PID); process.exit(0); });
+        void boundedBy(events.daemon('daemon-stopping', textOf(codeVersion() ?? 'unknown')), duration(EVENT_STOP_MS)).then(() => shutDownWithin(fleet, informer, log, duration(SHUTDOWN_MS))).then(() => boundedBy(slots?.stop() ?? Promise.resolve(), duration(EVENT_STOP_MS))).then(() => boundedBy(recaps.flushAll(), duration(FLUSH_STOP_MS))).finally(() => { store.close(); pidfile.release(OWN_PID); process.exit(0); });
     };
     process.on('SIGTERM', stop).on('SIGINT', stop);
     const restarted = restartAnswers({
@@ -240,7 +241,7 @@ async function start(): Promise<ExitCode> {
         informer.tick();
         store.asks.prune(instant(Date.now() - ASK_KEEP_MS));
         pruneHandoffAnswers({ answers: store.handoffs, now: nowInstant });
-        events.prune(Date.now());
+        events.prune(nowInstant());
         sweep.tick();
         retention.tick();
         worktrees.registry.tick(informer.current);
@@ -251,7 +252,7 @@ async function start(): Promise<ExitCode> {
     await backends.refresh();
     slots = await startSlots(SLOT_TABLE, contextOf({ root: parseRoot(root), store, fleet, engine, recaps, transcripts, events, board: (): Board => informer.current, observe: (observation): void => { informer.push(observation); }, statuses, ledger, candidates: () => candidatesOf(informer.current, log), consider: (candidate) => booted.autocompact.consider(candidate), clock, viewers, preCompacts, claimIdle: (lane) => { const found = candidateOf(lane); return found === null ? 'declined' : booted.autocompact.claimIdle(found); }, log }, versionOf(), (key: SlotKey): Switch => parseSwitch(settingGetter()(key))));
     log(textOf(`daemon ${process.pid} up, state in ${root}`));
-    void events.daemon('daemon-started', codeVersion() ?? 'unknown');
+    void events.daemon('daemon-started', textOf(codeVersion() ?? 'unknown'));
     await informer.enterSubscription();
     await informer.run();
     pidfile.release(OWN_PID);

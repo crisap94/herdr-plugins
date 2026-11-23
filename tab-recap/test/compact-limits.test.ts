@@ -51,7 +51,7 @@ const claudeAt = (home: string, setting: number | null = null): LaneContexts => 
     registryWith({ claude: reader('claude', 'claude-opus-5-5', 240_000, null) }),
     agentWindows(catalogue({ 'claude-opus-5-5': 1_000_000 })),
     new CompactLimitFiles({ home: must(parseFsPath(home)), managed: [must(parseFsPath(join(home, 'managed-settings.json')))] }),
-    () => setting,
+    () => (setting === null ? null : countOf(setting)),
 );
 
 test('a user autoCompactWindow caps the 1M Claude window to the window the agent compacts at', async () => {

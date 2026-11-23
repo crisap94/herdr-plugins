@@ -14,7 +14,7 @@ import { RecordingTokens } from './fakes/lane-tokens.ts';
 import type { Report } from './fakes/lane-tokens.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { uncheckedTokenName } from '#src/recap/domain/ids.ts';
-import { instant, parseMilliseconds } from '#src/recap/domain/time.ts';
+import { instant, parseMilliseconds, type Instant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import { seenLane } from '#test/support/seen.ts';
 
@@ -81,7 +81,7 @@ function publisher(board: { current: Board }, recap: { value: LaneTokenFacts }, 
     let now = 0;
     const logged: string[] = [];
     const lane = new LaneTokenPublisher({
-        tokens, enabled: (): Presence => (enabled.on ? 'present' : 'absent'), board: (): Board => board.current, facts: (): LaneTokenFacts => recap.value, now: (): number => now, log: (line: string): void => { logged.push(line); },
+        tokens, enabled: (): Presence => (enabled.on ? 'present' : 'absent'), board: (): Board => board.current, facts: (): LaneTokenFacts => recap.value, now: (): Instant => instant(now), log: (line: string): void => { logged.push(line); },
     });
     return { tokens, logged, at: (ms: number): void => { now = ms; lane.tick(); }, flush: (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); }) };
 }
@@ -172,7 +172,7 @@ test('a change of needs is an event on the lane: raised when it grows, cleared w
     const tokens = new RecordingTokens();
     let now = 0;
     const lane = new LaneTokenPublisher({
-        tokens, enabled: (): Presence => 'present', board: (): Board => board.current, facts: (): LaneTokenFacts => recap.value, now: (): number => now, log: (): void => undefined,
+        tokens, enabled: (): Presence => 'present', board: (): Board => board.current, facts: (): LaneTokenFacts => recap.value, now: (): Instant => instant(now), log: (): void => undefined,
         events: { lane: (pane: string, kind: string, detail?: string | null): void => { events.push(`${pane} ${kind} ${detail ?? ''}`.trim()); }, inWorkspace: (workspace: string, kind: string, detail?: string | null): void => { events.push(`${workspace} ${kind} ${detail ?? ''}`.trim()); } },
     });
     lane.tick();

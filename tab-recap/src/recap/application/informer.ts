@@ -1,11 +1,11 @@
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import { duration, type Duration, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
 import { observe } from '#src/recap/domain/fold.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import { emptyBoard, watchSet } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
-import { uncheckedTokenName, uncheckedTokenValue, type PaneId } from '#src/recap/domain/ids.ts';
+import { uncheckedMilliseconds, uncheckedTokenName, uncheckedTokenValue, type PaneId } from '#src/recap/domain/ids.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
@@ -16,7 +16,7 @@ import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { AsyncQueue } from './async-queue.ts';
 import { dataOf, decode, paneSessionRefOf, paneTokenMapOf, type JsonObject } from './decode.ts';
 import { specsFor } from './watch-set.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 
 interface PaneTokens {
     readonly kind: 'tokens';
@@ -28,15 +28,15 @@ type Step = Observation | PaneTokens;
 
 export interface Blindness {
     readonly at: 'snapshot' | 'subscribe';
-    readonly saying: string;
+    readonly saying: Text;
 }
 
 export interface InformerHooks {
     onIntents(intents: readonly Intent[]): Promise<void>;
     onBlind(blindness: Blindness): void;
-    onUnknownKind(rawKind: string): void;
+    onUnknownKind(rawKind: Text): void;
     onBeat(): void;
-    onStatus?(pane: string, status: string): void;
+    onStatus?(pane: PaneId, status: Text): void;
     onPaneTokens?(pane: PaneId, tokens: FleetPaneTokens): void;
     sessionIdentity: SessionOf;
 }
@@ -44,13 +44,13 @@ export interface InformerHooks {
 const RESYNC_DEBOUNCE_MS = 400;
 
 export interface Retry {
-    readonly retryBaseMs: number;
-    readonly retryMaxMs: number;
-    readonly resyncDebounceMs?: number;
-    readonly watchdogMs?: number;
+    readonly retryBaseMs: Milliseconds;
+    readonly retryMaxMs: Milliseconds;
+    readonly resyncDebounceMs?: Milliseconds;
+    readonly watchdogMs?: Milliseconds;
 }
 
-const DEFAULT_RETRY: Retry = { retryBaseMs: 1000, retryMaxMs: 60_000 };
+const DEFAULT_RETRY: Retry = { retryBaseMs: uncheckedMilliseconds(1000), retryMaxMs: uncheckedMilliseconds(60_000) };
 const WATCHDOG_MS = 300_000;
 
 export const RESUBSCRIBE_EVERY = 10;
@@ -168,7 +168,7 @@ export class Informer {
     tick(): void {
         this.ticks = must(parseCount(this.ticks + 1));
         if (this.silentFor() > (this.retry.watchdogMs ?? WATCHDOG_MS)) {
-            this.hooks.onBlind({ at: 'subscribe', saying: `no frame and no snapshot from herdr for ${Math.round(this.silentFor() / 60_000)} min: subscribing afresh` });
+            this.hooks.onBlind({ at: 'subscribe', saying: textOf(`no frame and no snapshot from herdr for ${Math.round(this.silentFor() / 60_000)} min: subscribing afresh`) });
             this.lastLife = this.clock.now();
             void this.enterSubscription();
         } else if (this.ticks % RESUBSCRIBE_EVERY === 0) {
@@ -178,8 +178,8 @@ export class Informer {
         }
     }
 
-    private silentFor(): number {
-        return this.clock.now() - this.lastLife;
+    private silentFor(): Duration {
+        return duration(this.clock.now() - this.lastLife);
     }
 
     private retire(): void {
@@ -201,13 +201,13 @@ export class Informer {
                 this.resync();
             } else {
                 if (decoded.kind === 'status') {
-                    this.hooks.onStatus?.(String(decoded.pane), decoded.status);
+                    this.hooks.onStatus?.(decoded.pane, decoded.status);
                 }
                 this.queue.push(decoded);
             }
         }
         if (this.stream === stream) {
-            this.hooks.onBlind({ at: 'subscribe', saying: 'the subscription ended' });
+            this.hooks.onBlind({ at: 'subscribe', saying: textOf('the subscription ended') });
             this.stream = null;
             this.resync();
         }

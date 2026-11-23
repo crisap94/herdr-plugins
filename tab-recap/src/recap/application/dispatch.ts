@@ -135,7 +135,7 @@ export class LaneDispatch {
             return;
         }
         try {
-            this.deps.events.inWorkspace(String(workspace), 'lane-closed', String(closed.pane));
+            this.deps.events.inWorkspace(workspace, 'lane-closed', textOf(closed.pane));
         } catch (error) {
             this.deps.log(must(parseText(`lane ${closed.pane}: closure not announced (${failureCauseOf(parseThrown(error))})`)));
         }

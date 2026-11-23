@@ -130,19 +130,19 @@ test('a refused request records its compaction as the ask\'s ref, so the ask nam
 
 test('a request for a lane a handoff holds is answered failed-lane-busy at once, types nothing, and the handoff keeps the lane', async () => {
     const claims = new LaneClaims();
-    claims.claim('w1:p1', 'handoff');
+    claims.claim(paneId('w1:p1'), 'handoff');
     const run = world([{ kind: 'agent', agent: agentKind('claude'), status: 'idle' }], true, claims);
     await run.compaction.run({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), note: null, origin: 'request', answer: textOf('r7') });
     await flush();
     assert.deepEqual(run.tokens.reports.map((report) => report.tokens), [{ 'tab-recap-compact': 'r7:failed-lane-busy' }]);
     assert.deepEqual(run.typed, []);
     assert.deepEqual(run.asks.unfinished(), []);
-    assert.deepEqual([claims.kindOf('w1:p1'), claims.joinedOf('w1:p1')], ['handoff', []]);
+    assert.deepEqual([claims.kindOf(paneId('w1:p1')), claims.joinedOf(paneId('w1:p1'))], ['handoff', []]);
 });
 
 test('the lane-busy refusal is recorded as a failed compaction with why "lane busy", and shows the failed toast', async () => {
     const claims = new LaneClaims();
-    claims.claim('w1:p1', 'handoff');
+    claims.claim(paneId('w1:p1'), 'handoff');
     const run = world([{ kind: 'agent', agent: agentKind('claude'), status: 'idle' }], true, claims);
     await run.compaction.run({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), note: null, origin: 'request', answer: textOf('r7') });
     await flush();

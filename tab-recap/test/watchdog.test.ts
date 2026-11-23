@@ -2,6 +2,7 @@ import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { parsePid } from '#src/recap/domain/pid.ts';
 import { must } from '#src/protocol/result.ts';
 import { test } from 'node:test';
+import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -45,7 +46,7 @@ test('watchdog: after N minutes with no frame and no snapshot the tick says so a
         onIntents: (): Promise<void> => Promise.resolve(),
         onBlind: (blindness): void => { blind.push(blindness); }, onUnknownKind: (): void => undefined, onBeat: (): void => undefined,
         sessionIdentity: sessionOfForKind,
-    }, { retryBaseMs: 10, retryMaxMs: 40, resyncDebounceMs: 5, watchdogMs: 5 * 60_000 });
+    }, { retryBaseMs: uncheckedMilliseconds(10), retryMaxMs: uncheckedMilliseconds(40), resyncDebounceMs: uncheckedMilliseconds(5), watchdogMs: uncheckedMilliseconds(5 * 60_000) });
     try {
         await informer.enterSubscription();
         await pause(20);
@@ -81,7 +82,7 @@ test('watchdog: a frame, or a snapshot, counts as a sign of life', async () => {
         onIntents: (): Promise<void> => Promise.resolve(),
         onBlind: (): void => undefined, onUnknownKind: (): void => undefined, onBeat: (): void => undefined,
         sessionIdentity: sessionOfForKind,
-    }, { retryBaseMs: 10, retryMaxMs: 40, resyncDebounceMs: 5, watchdogMs: 5 * 60_000 });
+    }, { retryBaseMs: uncheckedMilliseconds(10), retryMaxMs: uncheckedMilliseconds(40), resyncDebounceMs: uncheckedMilliseconds(5), watchdogMs: uncheckedMilliseconds(5 * 60_000) });
     try {
         await informer.enterSubscription();
         void informer.run();

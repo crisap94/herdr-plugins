@@ -38,11 +38,6 @@
     "container": 1,
     "property": 2
   },
-  "src/recap/application/informer.ts": {
-    "parameter": 3,
-    "return": 1,
-    "property": 5
-  },
   "src/recap/application/input-retention.ts": {
     "return": 3,
     "property": 1
@@ -55,30 +50,7 @@
     "property": 3
   },
   "src/recap/application/lane-claims.ts": {
-    "parameter": 6,
-    "return": 3,
-    "container": 1,
-    "property": 1
-  },
-  "src/recap/application/lane-contexts.ts": {
     "return": 3
-  },
-  "src/recap/application/lane-events.ts": {
-    "parameter": 19,
-    "return": 2,
-    "container": 3,
-    "property": 7
-  },
-  "src/recap/application/lane-facts.ts": {
-    "parameter": 1
-  },
-  "src/recap/application/lane-tokens.ts": {
-    "parameter": 4,
-    "return": 1,
-    "property": 3
-  },
-  "src/recap/application/lane-webs.ts": {
-    "return": 1
   },
   "src/recap/application/replay-judge.ts": {
     "parameter": 1,
@@ -97,10 +69,6 @@
   "src/recap/application/screen-text.ts": {
     "parameter": 4,
     "return": 3
-  },
-  "src/recap/application/settle-hub.ts": {
-    "parameter": 2,
-    "container": 2
   },
   "src/recap/application/setup-changes.ts": {
     "container": 1,

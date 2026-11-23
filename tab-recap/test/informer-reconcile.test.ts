@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
 import { fleetFrame } from '#test/support/frames.ts';
 import assert from 'node:assert/strict';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
@@ -53,7 +54,7 @@ async function settled(): Promise<{ herdr: CountingHerdr; informer: Informer }> 
         onUnknownKind: (): void => undefined,
         onBeat: (): void => undefined,
         sessionIdentity: sessionOfForKind,
-    }, { retryBaseMs: 10, retryMaxMs: 40, resyncDebounceMs: 5 });
+    }, { retryBaseMs: uncheckedMilliseconds(10), retryMaxMs: uncheckedMilliseconds(40), resyncDebounceMs: uncheckedMilliseconds(5) });
     await informer.enterSubscription();
     void informer.run();
     await until(() => herdr.subscribes >= 2 && watchSet(informer.current).length === 1);
@@ -139,7 +140,7 @@ async function recoversFrom(endAt: 'before-snapshot' | 'during-snapshot' | 'righ
         onIntents: (): Promise<void> => Promise.resolve(),
         onBlind: (): void => undefined, onUnknownKind: (): void => undefined, onBeat: (): void => undefined,
         sessionIdentity: sessionOfForKind,
-    }, { retryBaseMs: 10, retryMaxMs: 40, resyncDebounceMs: 5 });
+    }, { retryBaseMs: uncheckedMilliseconds(10), retryMaxMs: uncheckedMilliseconds(40), resyncDebounceMs: uncheckedMilliseconds(5) });
     await informer.enterSubscription();
     void informer.run();
     if (endAt === 'right-after') {
