@@ -2,7 +2,7 @@ import type { Database } from 'bun:sqlite';
 import { and, asc, desc, eq, exists, gte, isNotNull, or, sql } from 'drizzle-orm';
 import { renderRecap } from '#src/recap/application/recap-shape.ts';
 import { sectionsOfOpen } from '#src/recap/domain/ledger-view.ts';
-import { agentKind, paneId, type TabId } from '#src/recap/domain/ids.ts';
+import { type TabId, parseAgentKind, parsePaneId } from '#src/recap/domain/ids.ts';
 import { recapRunningOf } from '#src/ports/recap-records.ts';
 import { cursorOf as positionOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
@@ -27,7 +27,7 @@ interface LatestRun {
 }
 
 const cursorOf = (row: Row): LaneCursor => ({
-    pane: paneId(textOf(text(row, 'pane'))), agent: agentKind(textOf(text(row, 'agent'))), transcript: sourcePathOf(text(row, 'source')), cursor: positionOf(whole(row, 'cursor')),
+    pane: must(parsePaneId(text(row, 'pane'))), agent: must(parseAgentKind(text(row, 'agent'))), transcript: sourcePathOf(text(row, 'source')), cursor: positionOf(whole(row, 'cursor')),
     tail: parseTextOrNull(maybeText(row, 'tail')), title: parseTextOrNull(maybeText(row, 'title')), lastPrompt: parseTextOrNull(maybeText(row, 'last_prompt')), claudeRecap: parseTextOrNull(maybeText(row, 'claude_note')),
 });
 

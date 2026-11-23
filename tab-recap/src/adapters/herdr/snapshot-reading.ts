@@ -10,7 +10,7 @@ import type { PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import { paneTokenMapOf, seenFrom, sessionOf } from '#src/recap/application/decode.ts';
 import type { Reconciliation } from '#src/recap/domain/fold.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { tabId, uncheckedTokenName, uncheckedTokenValue, type PaneId, type SessionId } from '#src/recap/domain/ids.ts';
+import { uncheckedTokenName, uncheckedTokenValue, type PaneId, type SessionId, parseTabId } from '#src/recap/domain/ids.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 
@@ -25,7 +25,7 @@ export function reconciliationOf(snapshot: JsonObject): Reconciliation {
     const lanes = parseJsonList(snapshot['agents']).map((agent) => seenFrom(agent, sessionOfForKind)).filter((lane): lane is SeenLane => lane !== null);
     const widths = new Map(parseJsonList(snapshot['layouts']).map((layout) => [parseJsonText(layout['tab_id']), parseJsonRect(layout['area']).width]));
     const focused = parseJsonText(snapshot['focused_tab_id']);
-    const tabs = Array.isArray(snapshot['tabs']) ? { tabs: parseJsonList(snapshot['tabs']).map((tab) => parseJsonText(tab['tab_id'])).filter((tab) => tab !== '').map((tab) => tabId(tab)) } : {};
+    const tabs = Array.isArray(snapshot['tabs']) ? { tabs: parseJsonList(snapshot['tabs']).map((tab) => parseJsonText(tab['tab_id'])).filter((tab) => tab !== '').map((tab) => must(parseTabId(tab))) } : {};
     return { focusedTab: focused === '' ? null : focused, lanes, panes: panes.map((pane) => parseJsonText(pane['pane_id'])), columns: columnsIn(panes, agents), dead: deadColumnsIn(panes, agents), widths, ...tabs };
 }
 

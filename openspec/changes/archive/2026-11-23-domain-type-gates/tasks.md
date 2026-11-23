@@ -98,8 +98,9 @@ and `src/adapters/db/schema/migration.ts`) and the 12 files of lane `VIEW` (the 
 
 ## 5. Phase C: the hard gate (lead)
 
-- [ ] 5.1 Move every remaining caller off the legacy exports and delete every `legacy.ts`. Verify: no `legacy.ts` exists under
-      `src/`, no exported function throws `NotAnIdentifierError`, and the test suite passes.
+- [x] 5.1 Move every remaining caller off the legacy exports and delete every `legacy.ts`. Verify: no `legacy.ts` exists under
+      `src/`, no exported function throws `NotAnIdentifierError`, and the test suite passes (`find tab-recap/src -name legacy.ts` is empty,
+      `NotAnIdentifierError` has no match under `tab-recap` or `packages`, `ci/test.sh` 3927 pass 0 fail).
 - [x] 5.2 Move `recap-one-brand-cast` from `rules/pending/` into `rules/` and delete `ci/domain-types-baseline/`; the check and the
       rule now fail on any finding. Verify: a probe adding one primitive parameter, and one adding `as PaneId`, each fail
       `ci/lint.sh`. If `ENG.json`, `STO.json` or `VIEW.json` still has rows, those files stay; the folder is deleted by the step
@@ -109,5 +110,5 @@ and `src/adapters/db/schema/migration.ts`) and the 12 files of lane `VIEW` (the 
 
 ## 6. Archive
 
-- [ ] 6.1 Once every other task is checked, run `openspec archive domain-type-gates` in the same merge request as the last task.
+- [x] 6.1 Once every other task is checked, run `openspec archive domain-type-gates` in the same merge request as the last task.
       Verify: `openspec validate --specs --strict` passes and `openspec/specs/tab-recap/code-gates/spec.md` exists.

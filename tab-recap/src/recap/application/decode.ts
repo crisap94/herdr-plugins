@@ -1,6 +1,6 @@
 import { textOf, parseText, type Text } from '#src/recap/domain/text.ts';
-import { paneId, sessionIdFromAgentValue, sessionPathFromAgentValue, tabId } from '#src/recap/domain/ids.ts';
-import type { AgentSession, PaneId, SessionId } from '#src/recap/domain/ids.ts';
+import { isUncheckedSessionId, isUncheckedSessionPath, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
+import type { AgentSession, PaneId, SessionId, TabId } from '#src/recap/domain/ids.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import type { FleetFrame } from '#src/ports/fleet-source.ts';
@@ -87,9 +87,9 @@ function agentSessionOf(info: JsonObject): AgentSession | null {
         return null;
     }
     if (info['kind'] === 'id') {
-        return { kind: 'id', value: sessionIdFromAgentValue(textOf(value)) };
+        return isUncheckedSessionId(value) ? { kind: 'id', value } : null;
     }
-    return info['kind'] === 'path' ? { kind: 'path', value: sessionPathFromAgentValue(textOf(value)) } : null;
+    return info['kind'] === 'path' && isUncheckedSessionPath(value) ? { kind: 'path', value } : null;
 }
 
 export function sessionOf(data: JsonObject, identity: SessionOf): SessionId | null {
@@ -106,7 +106,8 @@ export function sessionOf(data: JsonObject, identity: SessionOf): SessionId | nu
 export function paneSessionRefOf(data: JsonObject, identity: SessionOf): PaneSessionRef | null {
     const pane = field(data, 'pane_id');
     const session = sessionOf(data, identity);
-    return pane === null || session === null ? null : { pane: paneId(pane), session };
+    const parsed = pane === null ? null : parsePaneId(pane);
+    return parsed === null || parsed.kind === 'err' || session === null ? null : { pane: parsed.value, session };
 }
 
 export function paneTokenMapOf(data: JsonObject): PaneTokenMap | null {
@@ -123,25 +124,38 @@ export function paneTokenMapOf(data: JsonObject): PaneTokenMap | null {
             tokens.set(key.value, text.value);
         }
     }
-    return { pane: paneId(pane), tokens };
+    const parsed = parsePaneId(pane);
+    return parsed.kind === 'ok' ? { pane: parsed.value, tokens } : null;
+}
+
+function paneKnownIn(data: JsonObject): PaneId | null {
+    const pane = field(data, 'pane_id');
+    const parsed = pane === null ? null : parsePaneId(pane);
+    return parsed !== null && parsed.kind === 'ok' ? parsed.value : null;
+}
+
+function tabKnownIn(data: JsonObject): TabId | null {
+    const tab = textAt(data, 'tab_id');
+    const parsed = tab === null ? null : parseTabId(tab);
+    return parsed !== null && parsed.kind === 'ok' ? parsed.value : null;
 }
 
 function decodeKnown(kind: Text, data: JsonObject, identity: SessionOf): Decoded | null {
-    const pane = field(data, 'pane_id');
-    if (kind === 'pane_closed' && pane !== null) {
-        return { kind: 'closed', pane: paneId(pane) };
+    const paneKnown = paneKnownIn(data);
+    if (kind === 'pane_closed' && paneKnown !== null) {
+        return { kind: 'closed', pane: paneKnown };
     }
     const status = field(data, 'agent_status');
-    if (kind === 'pane_agent_status_changed' && pane !== null && status !== null) {
-        return { kind: 'status', pane: paneId(pane), status };
+    if (kind === 'pane_agent_status_changed' && paneKnown !== null && status !== null) {
+        return { kind: 'status', pane: paneKnown, status };
     }
     if (kind === 'pane_agent_detected') {
         const seen = seenFrom(data, identity);
         return seen === null ? { kind: 'resync' } : { kind: 'detected', lane: seen };
     }
-    const tab = textAt(data, 'tab_id');
-    if (kind === 'tab_focused' && tab !== null) {
-        return { kind: 'focused', tab: tabId(tab) };
+    const tabKnown = tabKnownIn(data);
+    if (kind === 'tab_focused' && tabKnown !== null) {
+        return { kind: 'focused', tab: tabKnown };
     }
     return null;
 }

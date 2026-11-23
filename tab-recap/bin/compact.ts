@@ -10,7 +10,7 @@ import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { textOf } from '#src/recap/domain/text.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
 
 const OK = 0;
 const FAILED = 1;
@@ -30,7 +30,7 @@ export async function compactCommand(tab: string, pane: string | null, note: str
     const setting = loadSettings().compactNote;
     const text = note === undefined ? undefined : noteFromRequest(textOf(note));
     const m = messagesOf();
-    const started = await beginCompact(tabId(textOf(tab)), pane === null ? null : paneId(textOf(pane)), text, setting, {
+    const started = await beginCompact(must(parseTabId(tab)), pane === null ? null : must(parsePaneId(pane)), text, setting, {
         askNote: async (asked, shown) => {
             await sleep(Number(process.env['TAB_RECAP_COMPACT_DELAY_MS'] ?? 0) || 0);
             return new HerdrFleetPorts(textOf(stateDirectory())).agents().askNote(asked, shown);

@@ -16,7 +16,7 @@ import type { Pacing } from '#src/recap/domain/pacing.ts';
 import { viewersOf, visibleOf, type Viewers } from './view/viewers.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { lanesOf, type Board } from '#src/recap/domain/board.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { parseTabId } from '#src/recap/domain/ids.ts';
 import type { Backends } from './backends.ts';
 import { loadSettings } from './config.ts';
 import { parseLine, parseMessage } from './slots.ts';
@@ -25,7 +25,6 @@ import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { restoreTextOf } from '#src/recap/application/restore-text.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { textOf } from '#src/recap/domain/text.ts';
 
 type EngineLog = Parameters<typeof pluginEngine>[0]['environment']['log'];
 type EngineRepos = Parameters<typeof pluginEngine>[0]['environment']['repos'];
@@ -94,7 +93,7 @@ export function wireEngine({ store, backends, transcripts, clock, repos, curate,
         },
         on: (event): void => {
             if (event.kind === 'recap-written') {
-                ranRun(curate, events, board, { tab: tabId(textOf(event.scope)), turns: event.turns, boundary: event.boundary, ...(event.cause === undefined ? {} : { cause: must(parseText(event.cause)) }) }, log);
+                ranRun(curate, events, board, { tab: must(parseTabId(event.scope)), turns: event.turns, boundary: event.boundary, ...(event.cause === undefined ? {} : { cause: must(parseText(event.cause)) }) }, log);
             }
             ledger(event);
         },

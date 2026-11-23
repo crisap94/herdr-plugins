@@ -4,7 +4,7 @@ import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import { UNREAD, type ChunkResult, type InFlightResult, type Located, type ObservedResult, type Position, type PromptResult, type SourcePath, type Transcripts, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { agentKind } from '#src/recap/domain/ids.ts';
+import { parseAgentKind } from '#src/recap/domain/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
@@ -73,7 +73,7 @@ export class ClaudeReader {
 }
 
 export class ClaudeTranscripts implements Transcripts {
-    readonly agent = agentKind(textOf(CLAUDE_KIND));
+    readonly agent = must(parseAgentKind(CLAUDE_KIND));
     private readonly root: FsPath;
     private readonly reader = new ClaudeReader();
     readonly inFlight: SupportedReading = { kind: 'supported', split: CLAUDE_SPLIT, read: (source, budget) => this.readInFlight(source, budget) };

@@ -4,7 +4,7 @@ import { must } from '#src/protocol/result.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { parseInstant } from '#src/recap/domain/time.ts';
-import { parseAgentKind, parsePaneId, uncheckedAgentKind } from '#src/recap/domain/ids.ts';
+import { parseAgentKind, parsePaneId, uncheckedAgentKind, parseTabId } from '#src/recap/domain/ids.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { setValues } from '#src/adapters/os/config/file.ts';
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
@@ -16,7 +16,6 @@ import type { RecapRequest } from '#src/ports/summarizer.ts';
 import { availableIn, intersect, summarizerFor } from '#src/daemon/backends.ts';
 import { configDirectory, environmentReader, localeFrom, loadSettings, settingGetter, parseSettingsFile, stateDirectory } from '#src/daemon/config.ts';
 import { requestRewrites } from '#src/recap/application/setup-changes.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
 import { messagesFor } from '#src/i18n/index.ts';
 import { draftFrom, initial, locksOf, saved, step, tested, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Effect, SaveEffect, Setup, TestEffect } from '#src/recap/application/setup-keys.ts';
@@ -110,7 +109,7 @@ function save(effect: SaveEffect): void {
             if (store.kind !== 'ready') {
                 throw new Error(notReadyLine(store, messages()));
             }
-            requestRewrites(tab === '' ? null : tabId(textOf(tab)), store);
+            requestRewrites(tab === '' ? null : must(parseTabId(tab)), store);
         }
         state = saved(state, null, language);
     } catch (error) {

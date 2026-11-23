@@ -6,7 +6,7 @@ import { replayKindOfPath, replayTranscriptRegistry } from '#src/adapters/transc
 import { databaseFile } from '#src/adapters/db/database.ts';
 import { factsOfTabAt } from '#src/adapters/db/imported.ts';
 import { importedChaptersAt } from '#src/adapters/db/imported-chapters.ts';
-import { parseSessionPath, parseTabId } from '#src/recap/domain/ids.ts';
+import { parseSessionPath, parseTabId, parseAgentKind } from '#src/recap/domain/ids.ts';
 import { parseCount, parsePositiveCount } from '#src/recap/domain/count.ts';
 import { operatorAnchors } from '#src/adapters/db/operator-anchors.ts';
 import { scratchStore } from '#src/adapters/db/scratch.ts';
@@ -40,7 +40,6 @@ import { countedWriter } from '#src/recap/application/counted-writer.ts';
 import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
-import { agentKind } from '#src/recap/domain/ids.ts';
 
 export function viewOf(options: Pick<EvalRequest, 'prune'>, config: Pick<Settings, 'writerViewSettings'>): WriterView {
     return options.prune === 'present' ? config.writerViewSettings : FULL_WRITER_VIEW;
@@ -124,7 +123,7 @@ export function replayCommand(options: EvalRequest): Promise<number> {
     const readers = replayTranscriptRegistry();
     const file = options.replay ?? '';
     const kind = replayKindOfPath(options.kind === null ? null : textOf(options.kind), fsPathOf(file));
-    const reader = kind === null ? undefined : readers.exact(agentKind(textOf(kind)));
+    const reader = kind === null ? undefined : readers.exact(must(parseAgentKind(kind)));
     if (reader === undefined) {
         console.error('tab-recap: 2 — --kind takes claude or codex');
         return Promise.resolve(2);

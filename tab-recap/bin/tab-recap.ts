@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import type { RequestPort } from '#src/ports/requests.ts';
 import { HerdrFleetPorts } from '#src/adapters/herdr/fleet.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import type { Messages } from '#src/i18n/index.ts';
@@ -108,7 +108,7 @@ function choiceOf(arg: string | undefined, model: string | undefined): BackendCh
 async function configure(): Promise<number> {
     const tab = currentTab();
     await sleep(Number(process.env['TAB_RECAP_OPEN_DELAY_MS'] ?? 0) || 0);
-    const opened = await new HerdrFleetPorts(textOf(stateDirectory())).setup(tab === null ? null : tabId(textOf(tab)));
+    const opened = await new HerdrFleetPorts(textOf(stateDirectory())).setup(tab === null ? null : must(parseTabId(tab)));
     if (isUnknown(opened)) {
         console.error(`tab-recap: 1 — ${m().cli.modalFailed(saying(opened.why))}`);
         return FAILED;
@@ -139,7 +139,7 @@ function toggle(all: boolean): number {
     if (queue === null) {
         return FAILED;
     }
-    queue.requestVisibility({ target: paneId(textOf(tab)), visibility: 'toggle' });
+    queue.requestVisibility({ target: must(parsePaneId(tab)), visibility: 'toggle' });
     console.log(`tab-recap: ${all ? m().cli.columnsToggled : m().cli.columnToggled(must(parseText(tab)))}`);
     return OK;
 }
@@ -159,7 +159,7 @@ async function show(): Promise<number> {
         console.error(`tab-recap: 3 — ${m().cli.tabUnknown}`);
         return NOT_COVERED;
     }
-    const shown = await new HerdrFleetPorts(textOf(stateDirectory())).show(tabId(textOf(tab)));
+    const shown = await new HerdrFleetPorts(textOf(stateDirectory())).show(must(parseTabId(tab)));
     if (isUnknown(shown)) {
         console.error(`tab-recap: 1 — ${m().cli.modalFailed(saying(shown.why))}`);
         return FAILED;
@@ -190,7 +190,7 @@ const commands: Readonly<Record<string, (arg: string | undefined) => number | Pr
         if (queue === null) {
             return FAILED;
         }
-        queue.request(tabId(textOf(tab)));
+        queue.request(must(parseTabId(tab)));
         console.log(`tab-recap: ${m().cli.requested(must(parseText(tab)))}`);
         return OK;
     },

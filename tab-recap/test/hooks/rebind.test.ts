@@ -1,3 +1,4 @@
+import { must } from '#src/protocol/result.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -20,8 +21,7 @@ import type { HookAnswer, HookCall, HookHarness, HookKind } from '#src/wire/hook
 import { causeOf } from '#test/fakes/cause.ts';
 import { readHookCases, postHook, type HookCase, type HookEffect } from '#test/contracts/wire/fakes/fake-harness.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
-import { sessionId } from '#src/recap/domain/ids.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { parseSessionId } from '#src/recap/domain/ids.ts';
 import { reconciliation, seenLane, sessionObservation } from '#test/support/seen.ts';
 
 const noop = (): void => {};
@@ -320,8 +320,8 @@ test('two session starts on one pane rebind in the order they arrived, even when
         observe: (observation) => { observed.push(observation); },
         log: noop,
     });
-    const first = rebind.rebind('claude', sessionId(textOf('session-a')));
-    const second = rebind.rebind('claude', sessionId(textOf('session-b')));
+    const first = rebind.rebind('claude', must(parseSessionId('session-a')));
+    const second = rebind.rebind('claude', must(parseSessionId('session-b')));
     await Promise.resolve();
     assert.equal(answers.length, 1);
     answers[0]?.(snapshotOf([laneAt('w1:p1', 'claude', 'session-a')]));

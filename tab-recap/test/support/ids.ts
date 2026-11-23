@@ -1,11 +1,19 @@
-import { agentKind as agentKindOf, paneId as paneIdOf, tabId as tabIdOf, workspaceId as workspaceIdOf } from '#src/recap/domain/ids.ts';
-import type { AgentKind, PaneId, TabId, WorkspaceId } from '#src/recap/domain/ids.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseAgentKind, parseHandoffId, parsePaneId, parseTabId, parseWorkspaceId } from '#src/recap/domain/ids.ts';
+import type { AgentKind, HandoffId, PaneId, TabId, WorkspaceId } from '#src/recap/domain/ids.ts';
 
-export const paneId = (raw: string): PaneId => paneIdOf(textOf(raw));
+export const paneId = (raw: string): PaneId => must(parsePaneId(raw));
 
-export const tabId = (raw: string): TabId => tabIdOf(textOf(raw));
+export const tabId = (raw: string): TabId => must(parseTabId(raw));
 
-export const workspaceId = (raw: string): WorkspaceId => workspaceIdOf(textOf(raw));
+export const workspaceId = (raw: string): WorkspaceId => must(parseWorkspaceId(raw));
 
-export const agentKind = (raw: string): AgentKind => agentKindOf(textOf(raw));
+export const agentKind = (raw: string): AgentKind => must(parseAgentKind(raw));
+
+export const handoffId = (raw: string): HandoffId => {
+    const parsed = parseHandoffId(raw);
+    if (parsed === null) {
+        throw new Error(`not a handoff id: ${raw}`);
+    }
+    return parsed;
+};

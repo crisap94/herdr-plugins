@@ -1,3 +1,4 @@
+import { must } from '#src/protocol/result.ts';
 import { textOf } from './text.ts';
 import type { Count } from './count.ts';
 import { lanesOf, seededOf, put, removed, tabOfColumn, tabsWithLanes, without } from './board.ts';
@@ -7,7 +8,7 @@ import type { ClosedLane, RestoredLane } from './closures.ts';
 import { deadColumnsAfter } from './dead-columns.ts';
 import type { PaneId, TabId } from './ids.ts';
 import type { Intent, RecapCause } from './intent.ts';
-import { parsePaneId, parseTabId, sessionId } from './ids.ts';
+import { parsePaneId, parseTabId, parseSessionId } from './ids.ts';
 import type { ColumnOpenedObservation, Reconciliation, SessionObservation, StatusObservation, SwitchedObservation } from './seen.ts';
 import { laneFrom, withStatus } from './lane.ts';
 import type { Lane, SeenLane } from './lane.ts';
@@ -105,7 +106,7 @@ function onSession(board: Board, seen: SessionObservation): Step {
     if (lane === undefined || String(lane.session) === seen.session) {
         return step(board);
     }
-    return step({ ...board, lanes: put(board.lanes, seen.pane, { ...lane, session: sessionId(seen.session) }) });
+    return step({ ...board, lanes: put(board.lanes, seen.pane, { ...lane, session: must(parseSessionId(seen.session)) }) });
 }
 
 function onStatus(board: Board, seen: StatusObservation): Step {

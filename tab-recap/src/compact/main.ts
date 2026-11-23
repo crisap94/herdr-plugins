@@ -1,6 +1,7 @@
+import { must } from '#src/protocol/result.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
-import { paneId, parsePaneId, tabId } from '#src/recap/domain/ids.ts';
+import { parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
 import { HerdrFleetPorts } from '#src/adapters/herdr/fleet.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
@@ -34,7 +35,7 @@ function perform(effect: NoteEffect): never {
     if (effect.kind === 'send') {
         const store = openCliStore();
         if (store.kind === 'ready') {
-            store.requests.requestCompact({ tab: tabId(textOf(tab)), pane: pane === '' ? null : paneId(textOf(pane)), note: effect.note });
+            store.requests.requestCompact({ tab: must(parseTabId(tab)), pane: pane === '' ? null : must(parsePaneId(pane)), note: effect.note });
             store.close();
         }
     }

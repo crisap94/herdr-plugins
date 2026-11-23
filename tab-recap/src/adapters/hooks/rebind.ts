@@ -1,7 +1,8 @@
+import { must } from '#src/protocol/result.ts';
 import { parseLine, parseMessage, type Line } from '#src/daemon/slots.ts';
 import type { FleetSnapshotResult } from '#src/ports/fleet-source.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
-import { paneId, type SessionId } from '#src/recap/domain/ids.ts';
+import { type SessionId, parsePaneId } from '#src/recap/domain/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import type { HookHarness } from '#src/wire/hooks/contract.ts';
 
@@ -35,7 +36,7 @@ export function createRebind(deps: RebindDeps): Rebind {
                 deps.log(parseLine(`hook rebind ${harness}: ${matches.length} panes report one session`));
                 return;
             }
-            deps.observe({ kind: 'session', pane: paneId(match.paneId), session: wanted });
+            deps.observe({ kind: 'session', pane: must(parsePaneId(match.paneId)), session: wanted });
             deps.log(parseLine(`hook rebind ${harness} ${match.paneId}`));
         } catch (error) {
             deps.log(parseLine(`hook rebind: ${parseMessage(error)}`));

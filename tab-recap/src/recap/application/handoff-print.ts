@@ -9,7 +9,7 @@ import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
-import { agentKind, tabId } from '#src/recap/domain/ids.ts';
+import { parseAgentKind, parseTabId } from '#src/recap/domain/ids.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
@@ -57,7 +57,7 @@ const transcriptOf = (cursor: LaneCursor | null): FsPath | null => (cursor === n
 const laneOf = (tab: TabId, lane: TabLaneRecord): HandoffLane => ({
     tab,
     pane: lane.pane,
-    agent: agentKind(textOf(lane.agent)),
+    agent: must(parseAgentKind(lane.agent)),
     status: laneStatus(textOf(lane.status)),
     cwd: lane.cwd,
 });
@@ -130,7 +130,7 @@ export class PrintedHandoffs implements HandoffPrintService {
         if (live === null || source === undefined) {
             return null;
         }
-        const cursor = knownOr(store.records.readRecap(tabId(textOf(String(live.tab)))), null)?.lanes.find((lane) => lane.pane === String(request.from)) ?? null;
+        const cursor = knownOr(store.records.readRecap(must(parseTabId(String(live.tab)))), null)?.lanes.find((lane) => lane.pane === String(request.from)) ?? null;
         return { lane: laneOf(live.tab, source), cursor, facts, closed: undefined };
     }
 

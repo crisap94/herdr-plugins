@@ -4,7 +4,7 @@ import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { cleanScreen, screenEntries, steady } from '#src/recap/application/screen-text.ts';
 import type { ScreenChrome } from '#src/recap/application/screen-text.ts';
-import { parsePaneId, type AgentKind, agentKind } from '#src/recap/domain/ids.ts';
+import { parsePaneId, type AgentKind, parseAgentKind } from '#src/recap/domain/ids.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
@@ -23,7 +23,7 @@ export type ScreenWants = (agent: AgentKind) => Presence;
 const hashOf = (text: Text): Text => must(parseText(createHash('sha1').update(text).digest('hex').slice(0, 16)));
 
 export class ScreenTranscripts implements Transcripts {
-    readonly agent = agentKind(textOf(SCREEN_READER_ID));
+    readonly agent = must(parseAgentKind(SCREEN_READER_ID));
     readonly inFlight: InFlightCapability = { kind: 'unsupported', why: 'screen' };
     private readonly screens: ScreenReader;
     private readonly wants: ScreenWants;

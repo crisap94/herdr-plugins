@@ -1,3 +1,4 @@
+import { must } from '#src/protocol/result.ts';
 import { setTimeout as sleep } from 'node:timers/promises';
 import type { BriefRetention } from '#src/recap/domain/autocompact.ts';
 import { daemonTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
@@ -29,7 +30,7 @@ import { SettleHub } from '#src/recap/application/settle-hub.ts';
 import { laneTurns, parseStatusPush } from './lane-turns.ts';
 import { Informer, type Blindness } from '#src/recap/application/informer.ts';
 import { emptyBoard, type Board } from '#src/recap/domain/board.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { parseTabId } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { wireEngine } from './engine-wire.ts';
@@ -168,9 +169,7 @@ function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compa
     laneTokens.tick();
     answers.tick();
     events.tick();
-    for (const tab of store.requests.takeRequests()) {
-        informer.push({ kind: 'requested', tab });
-    }
+    store.requests.takeRequests().forEach((tab) => { informer.push({ kind: 'requested', tab }); });
     for (const asked of store.requests.takeCompactions()) {
         void failureLog(log, textOf(`compaction ${asked.tab}`), compaction.run(asked));
     }
@@ -179,7 +178,7 @@ function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compa
         void failureLog(log, textOf(`curator ${tab}`), curate.run(tab));
     }
     for (const asked of store.requests.takeVisibility()) {
-        informer.push({ kind: 'visibility', target: asked.target === 'all' ? 'all' : { tab: tabId(textOf(asked.target)) }, hidden: asked.visibility === 'toggle' ? 'toggle' : asked.visibility === 'hidden' });
+        informer.push({ kind: 'visibility', target: asked.target === 'all' ? 'all' : { tab: must(parseTabId(asked.target)) }, hidden: asked.visibility === 'toggle' ? 'toggle' : asked.visibility === 'hidden' });
     }
 }
 

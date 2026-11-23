@@ -32,7 +32,7 @@ import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import { storedOf, type HandoffOutcome, type StoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
-import { parseHandoffId, sessionId, type HandoffId } from '#src/recap/domain/ids.ts';
+import { parseHandoffId, type HandoffId, parseSessionId } from '#src/recap/domain/ids.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { duration, instant, type Duration, type Instant } from '#src/recap/domain/time.ts';
 import { textOf, parseText, type Text } from '#src/recap/domain/text.ts';
@@ -243,7 +243,7 @@ async function sourceOf(transcripts: TranscriptRegistry, board: () => Board, lan
     const reader = transcripts.readerFor(lane.agent);
     const session = await readPaneSession(lane.pane);
     if (reader === undefined || typeof session !== 'string') { return null; }
-    const located = await reader.locate({ ...full, session: sessionId(textOf(session)) });
+    const located = await reader.locate({ ...full, session: must(parseSessionId(session)) });
     if (isUnknown(located)) { return null; }
     const parsed = parseFsPath(located.source);
     return parsed.kind === 'ok' ? parsed.value : null;

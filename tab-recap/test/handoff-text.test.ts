@@ -15,7 +15,7 @@ import type { HandoffBody, HandoffContent, HandoffEntry, HandoffGroup, HandoffGr
 import { byteBudgetOf } from '#src/recap/domain/byte-budget.ts';
 import type { ByteBudget } from '#src/recap/domain/byte-budget.ts';
 import { cleanHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
-import { handoffId } from '#src/recap/domain/ids.ts';
+import { handoffId } from '#test/support/ids.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
@@ -31,7 +31,7 @@ import { brand } from '#src/recap/domain/brand.ts';
 
 type ShownHandoff = Extract<FittedHandoff, { readonly kind: 'text' }>;
 
-const ID = handoffId(asText('hnd_01j3tt8z1efcd9tfr14d2pf2db'));
+const ID = handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2db');
 const AT = Date.parse('2026-10-10T12:00:00Z');
 const TASK: TaskId = { tab: tabIdOf('w1:t1'), key: brand<string, 'Text'>('t1') };
 const NEVER_CUT: ReadonlySet<HandoffGroupId> = new Set(['goal', 'needs', 'decisions', 'rules']);
@@ -309,7 +309,7 @@ test('the handoff text is identical for identical inputs and changes only its re
     const content = contentOf([fact('g1', 'goal', 'the goal', AT - 1_000)], [], 'a note');
     const first = renderOf(content);
     assert.deepEqual(first, renderOf(content));
-    const other = handoffTextOf(bodyOf(content), { ...BLOCKS, reference: { kind: 'handoff', id: handoffId(asText('hnd_01j3tt8z1efcd9tfr14d2pf2dc')), at: instant(AT) } });
+    const other = handoffTextOf(bodyOf(content), { ...BLOCKS, reference: { kind: 'handoff', id: handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2dc'), at: instant(AT) } });
     const firstLines = shownOf(first).text.split('\n');
     const otherLines = shownOf(other).text.split('\n');
     assert.deepEqual(firstLines.flatMap((line, index) => (line === otherLines[index] ? [] : [index])), [2]);

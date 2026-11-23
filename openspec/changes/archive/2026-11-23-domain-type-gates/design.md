@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | `src/` size | 712 TypeScript files, 35 663 lines (2026-11-23, `b60f2a2f`) | `find tab-recap/src -name '*.ts'` |
 | `test/` size | 263 `.ts` and `.mjs` files, flat, plus `test/fakes/`, `test/db/`, `test/fixtures/`; by their `#src/*` imports 78 touch one lane, 19 none, 166 two or more | review of 2026-10-11 |
-| Brands today | `Brand<Carrier, Name>` in `src/recap/domain/brand.ts` (private `unique symbol` marker); the brand is applied by each value's own parser. `ids.ts` still exports eight wrappers that throw `NotAnIdentifierError` (`paneId`, `tabId`, `workspaceId`, `agentKind`, `sessionId`, `sessionIdFromAgentValue`, `sessionPathFromAgentValue`, `handoffId`); task 5.1 is open | `src/recap/domain/ids.ts:98-158` |
+| Brands today | `Brand<Carrier, Name>` in `src/recap/domain/brand.ts` (private `unique symbol` marker); the brand is applied by each value's own parser. `ids.ts` exports only parsers: the eight wrappers that threw `NotAnIdentifierError` and the error class are deleted (task 5.1) | `src/recap/domain/ids.ts` |
 | One result union | `Result<T, E>` in `src/protocol/result.ts`, held by `recap-single-result` | `rules/recap-single-result.yml` |
 | Package imports | `#src/*` and `#test/*` in `package.json` `imports` | `package.json` |
 | Import rules today | six ast-grep rules, each a `string_fragment` inside `import_statement` (so they also see `import type`): `recap-domain-pure`, `recap-domain-pure-gates`, `recap-layers-no-io`, `recap-protocol-self-contained`, `recap-protocol-exchanges-self-contained`, `recap-transport-boundary` | `rules/*.yml` |
@@ -189,7 +189,7 @@ the same way, by the two file lists in `ci/lanes-generate.ts`. The three keys co
 - **Phase B** (lanes): B1 (protocol, ports) and B2 (domain) start at once. B3 to B8 may start at the same time, because D7 keeps the
   old exports compiling; each moves to the new B1 and B2 exports as they land.
 - **Phase C** (the lead): remove every `legacy.ts`, move `recap-one-brand-cast` into `rules/`, delete the baseline folder, final counts.
-- The change is archived when the plugin is clean. The package's remaining findings are tracked by its own baseline (roadmap step
+- The change is archived when the plugin is clean (D7 accepted by the owner: the legacy-file route ended with no `legacy.ts` left under `src/`). The package's remaining findings are tracked by its own baseline (roadmap step
   ENG-7), not by this change.
 
 The three in-flight `lane-handoff*` changes: slice 1 lands before Phase A merges, and Phase A's baselines are generated on the merge

@@ -10,7 +10,7 @@ const SESSION_OF = {
     claude: supported(sessionFromAgentSession),
     codex: supported(sessionFromAgentSession),
     opencode: supported(sessionFromAgentSession),
-} satisfies Readonly<Record<RegisteredKind, Support<(agentSession: AgentSession) => SessionId, never>>>;
+} satisfies Readonly<Record<RegisteredKind, Support<(agentSession: AgentSession) => SessionId | null, never>>>;
 
 export function sessionOfForKind(kind: Text, agentSession: AgentSession): SessionId | null {
     const registered = registeredKindOf(kind);
