@@ -1,9 +1,5 @@
 import type { MigrationHistory } from '@stateforge-labs/session-ledger-sqlite';
 
-/**
- * The migration history of the agent-sdk ledger file. It is this library's own: it shares no version number with the
- * history of the tab-recap plugin, and the file it creates is never `tab-recap.db`.
- */
 export const HISTORY: MigrationHistory = [
     {
         version: 1,

@@ -21,5 +21,5 @@ each of them code.
 `src/store/` is this library's own row store: `Records` and `FactStore` over `openStore`, with its own migration history
 (`src/store/history.ts`). Its version numbers are not those of the tab-recap plugin. The path is a required argument of
 `openLedgerStore`; it has no default, it is never the plugin's `tab-recap.db`, and the file is opened as `owner`. A file from a
-newer library is returned as `newer-store`, never thrown. The suggested place is
+newer library is returned as `newer-store`, and one too old to migrate as `stale-store`; neither is thrown. The compaction marks kept for a scope come back oldest first. The suggested place is
 `$XDG_STATE_HOME/agent-sdk-session-ledger/ledger.db`.

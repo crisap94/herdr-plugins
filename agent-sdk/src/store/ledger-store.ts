@@ -212,7 +212,6 @@ const factsOf = (db: Handle): FactStore => ({
 export interface LedgerRows {
     readonly records: Records;
     readonly facts: FactStore;
-    /** The time of every compaction mark kept for a scope, oldest first. */
     marksOf(scope: ScopeId): readonly Pick<SessionMark, 'at'>[];
 }
 
