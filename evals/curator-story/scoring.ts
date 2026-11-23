@@ -1,6 +1,6 @@
 import { unfencedText } from '../../tab-recap/src/adapters/job/prompts/recap-prompt.ts';
 import { curationOf, STORY_WORDS, storyOf } from '../../tab-recap/src/recap/domain/curation.ts';
-import type { Curation, Merge } from '../../tab-recap/src/recap/domain/curation.ts';
+import type { Curation } from '../../tab-recap/src/recap/domain/curation.ts';
 import { languageOfLine } from '../../packages/session-ledger/src/recap/domain/gates/language.ts';
 import { unparsed } from '../lib/scoring.ts';
 import type { Graded, Mark } from '../lib/types.ts';
@@ -8,6 +8,7 @@ import { openIds } from './prompt.ts';
 import type { StoryItem } from './prompt.ts';
 import { outsideOf } from './tokens.ts';
 import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
+import { factIdOf } from '../../packages/session-ledger/src/recap/domain/fact.ts';
 
 export const CODE_CRITERIA = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10', 'S11'] as const;
 
@@ -20,7 +21,7 @@ export interface Read {
 
 export function readAnswer(item: StoryItem, text: string): Read | null {
     const body = unfencedText(textOf(text));
-    const curation = curationOf(body, openIds(item));
+    const curation = curationOf(body, new Set([...openIds(item)].map(factIdOf)));
     if (curation.refused.some((why) => NOT_PARSED.includes(why))) return null;
     const raw = (JSON.parse(body) as Readonly<Record<string, unknown>>)['story'];
     return { curation, story: typeof raw === 'string' && storyOf(raw) !== null ? raw : null };
@@ -42,7 +43,7 @@ export function languageMark(story: string, language: string): Mark {
     return language === 'es' ? es > en : en > es;
 }
 
-export const joins = (merge: Merge, first: string, second: string): boolean => (merge.id === first && merge.into === second) || (merge.id === second && merge.into === first);
+export const joins = (merge: { readonly id: string; readonly into: string }, first: string, second: string): boolean => (merge.id === first && merge.into === second) || (merge.id === second && merge.into === first);
 
 export function copyClasses(pairs: StoryItem['expected']['merge_pairs']): (id: string) => string {
     const parent = new Map<string, string>();
@@ -68,7 +69,7 @@ export function grade(item: StoryItem, text: string): Graded {
     const pairs = item.expected.merge_pairs;
     const nearPairs = item.expected.no_merge;
     const classOf = copyClasses(pairs);
-    const links = (merge: Merge, first: string, second: string): boolean => joins({ id: classOf(merge.id), into: classOf(merge.into) }, classOf(first), classOf(second));
+    const links = (merge: { readonly id: string; readonly into: string }, first: string, second: string): boolean => joins({ id: classOf(merge.id), into: classOf(merge.into) }, classOf(first), classOf(second));
     const merged = (first: string, second: string): boolean => merges.some((merge) => joins(merge, first, second));
     const pairMerged = (first: string, second: string): boolean => merges.some((merge) => links(merge, first, second));
     const rewordedMerged = pairs.filter((pair) => pair.kind === 'reworded' && pairMerged(pair.ids[0], pair.ids[1]));

@@ -7,6 +7,7 @@ import type { ReconcilingDeps } from '../../packages/session-ledger/src/recap/ap
 import { storyAnswerOf, type StoryReading } from '../../tab-recap/src/recap/application/job-kit/story-repair.ts';
 import type { RepairMode } from '../../packages/session-ledger/src/recap/application/job-kit/repair.ts';
 import { curationOf } from '../../tab-recap/src/recap/domain/curation.ts';
+import { factIdOf, type FactId } from '../../packages/session-ledger/src/recap/domain/fact.ts';
 import { parseText, textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import { plainOf, type ArmCounters } from '../lib/arm.ts';
 import { joinedCalled, type ArmedAnswer, type ArmRecord, type Asker, type Rounded } from '../lib/runner.ts';
@@ -38,13 +39,13 @@ export function storyRound(mode: RepairMode): (raw: Item, ask: Asker) => Promise
             return { called: joinedCalled(calls, null), arm: { mode, repair_calls: 0, repair_input_tokens: 0, repair_output_tokens: 0, applied_ops: 0 } };
         }
         const reading: StoryReading = (answer) => {
-            const open = new Set<string>();
+            const open = new Set<FactId>();
             for (const [id, fact] of named) {
-                if (fact.state === 'open') open.add(id);
+                if (fact.state === 'open') open.add(factIdOf(id));
             }
             const text = answer.kind === 'curated' ? answer.text : '';
             const read = parseText(text);
-            return curationOf(read.kind === 'ok' ? answerTextOf(read.value) : text, open);
+            return curationOf(read.kind === 'ok' ? answerTextOf(read.value) : textOf(text), open);
         };
         const run: CurationRun = { task: { tab: tabIdOf('t'), key: textOf('k') }, at: item.input.clock.now, language: textOf(item.input.language) };
         const kept = await storyAnswerOf({ repair: () => mode, log: (line: string) => { lines.push(line); } } as unknown as ReconcilingDeps, { writer, run, sent: parseText(document), first, reading });

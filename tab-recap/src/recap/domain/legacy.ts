@@ -7,7 +7,6 @@ import type { Origin } from './origin.ts';
 import { RUN_CAUSES, sessionFactsFrom, type AutocompactCounts, type RunCounts, type SessionFacts } from './session-facts.ts';
 import type { Shape } from './board.ts';
 import type { RestoredLane } from './closures.ts';
-import { STORY_TOO_LONG, STORY_WORDS, storyOf } from './curation.ts';
 import type { PaneId, TabId } from './ids.ts';
 import type { Lane, SeenLane } from './lane.ts';
 
@@ -26,39 +25,6 @@ export interface Board { readonly lanes: ReadonlyMap<PaneId, Lane>; readonly col
 
 export function listsPane(board: Board, pane: PaneId): boolean { return board.lanes.has(pane); }
 
-import { isObject, verdictOf, type Merge } from './twins/curation/legacy.ts';
-
-export interface Curation { readonly merges: readonly Merge[]; readonly story: string | null; readonly refused: readonly string[]; }
-
-export function curationOf(answer: string, open: ReadonlySet<string>): Curation {
-    let parsed: unknown;
-    try {
-        parsed = JSON.parse(answer);
-    } catch {
-        return { merges: [], story: null, refused: ['the answer is not JSON'] };
-    }
-    if (!isObject(parsed)) {
-        return { merges: [], story: null, refused: ['the answer is not an object'] };
-    }
-    const ops: readonly unknown[] = Array.isArray(parsed['ops']) ? parsed['ops'] : [];
-    const merges: Merge[] = [];
-    const refused: string[] = [];
-    for (const op of ops) {
-        const verdict = verdictOf(op, open, { ids: new Set(merges.map((merge) => merge.id)), targets: new Set(merges.map((merge) => merge.into)) });
-        if (typeof verdict === 'string') {
-            refused.push(verdict);
-        } else {
-            merges.push(verdict);
-        }
-    }
-    const said = parsed['story'];
-    const count = typeof said === 'string' ? said.trim().split(/\s+/u).length : 0;
-    if (count > STORY_WORDS) {
-        refused.push(`${STORY_TOO_LONG}: ${count} words, at most ${STORY_WORDS}`);
-    }
-    return { merges, story: storyOf(said), refused };
-}
-
 export interface SeenColumn { readonly tabId: string; readonly paneId: string; readonly shape: Shape; }
 
 export interface DeadColumn { readonly tab: TabId; readonly pane: PaneId }
@@ -71,8 +37,6 @@ export interface ColumnOpenedObservation { readonly kind: 'column-opened'; reado
 export interface SwitchedObservation { readonly kind: 'switched'; readonly enabled: boolean; }
 
 function okOrNull<T, E>(parsed: Result<T, E>): T | null { return parsed.kind === 'ok' ? parsed.value : null; }
-
-export { parseMerge, type Merge } from './twins/curation/legacy.ts';
 
 interface SessionCompactionInput { readonly tokensBefore: number | null; readonly tokensAfter: number | null; readonly origin: Origin; }
 interface SessionLaneInput { readonly agent: string; readonly label: string | null; readonly context: ContextUse | null; }

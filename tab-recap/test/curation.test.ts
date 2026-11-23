@@ -6,25 +6,27 @@ import { curationOf } from '#src/recap/domain/curation.ts';
 import { facts, NOW } from '#test/fakes/curated-facts.ts';
 import { dtdTest, validate } from '#test/xmllint.ts';
 import { brand } from '#src/recap/domain/brand.ts';
+import { factIdOf } from '#src/recap/domain/fact.ts';
 import { instant } from '#src/recap/domain/time.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const text = brand<string, 'Text'>;
 
-const open = new Set(['f1', 'f2', 'f3']);
+const open = new Set(['f1', 'f2', 'f3'].map(factIdOf));
 
 function words(count: number): string {
     return Array.from({ length: count }, (_, at) => `w${at}`).join(' ');
 }
 
 test('the curator may close an open fact as merged into another open one — and nothing else', () => {
-    const merged = curationOf('{"ops":[{"op":"close","id":"f2","why":"merged","into":"f1"}],"story":"All is well."}', open);
+    const merged = curationOf(textOf('{"ops":[{"op":"close","id":"f2","why":"merged","into":"f1"}],"story":"All is well."}'), open);
     assert.deepEqual(merged.merges, [{ id: 'f2', into: 'f1' }]);
     assert.equal(merged.story, 'All is well.');
     assert.deepEqual(merged.refused, []);
-    const refused = curationOf(JSON.stringify({ ops: [
+    const refused = curationOf(textOf(JSON.stringify({ ops: [
         { op: 'add', section: 'done', text: 'x' }, { op: 'update', id: 'f1', text: 'y' }, { op: 'close', id: 'f1', why: 'wrong' }, { op: 'close', id: 'f1', why: 'merged' },
         { op: 'close', id: 'f9', why: 'merged', into: 'f1' }, { op: 'close', id: 'f1', why: 'merged', into: 'f1' }, { op: 'close', id: 'f1', why: 'merged', into: 'f9' }, 'nonsense',
-    ], story: 'Still stored.' }), open);
+    ], story: 'Still stored.' })), open);
     assert.deepEqual(refused.merges, []);
     assert.equal(refused.refused.length, 8);
     assert.match(refused.refused[0] ?? '', /add is not allowed/u);
@@ -34,7 +36,7 @@ test('the curator may close an open fact as merged into another open one — and
 
 test('a fact merges once, and a fact other facts were merged into stays open', () => {
     const answer = '{"ops":[{"op":"close","id":"f1","why":"merged","into":"f2"},{"op":"close","id":"f2","why":"merged","into":"f3"},{"op":"close","id":"f1","why":"merged","into":"f3"}]}';
-    const result = curationOf(answer, open);
+    const result = curationOf(textOf(answer), open);
     assert.deepEqual(result.merges, [{ id: 'f1', into: 'f2' }]);
     assert.equal(result.refused.length, 2);
     assert.match(result.refused[0] ?? '', /f2 is where another fact was merged/u);
@@ -42,38 +44,38 @@ test('a fact merges once, and a fact other facts were merged into stays open', (
 });
 
 test('the paragraph is one line of at most 120 words; a longer one is refused with its word count; none is none', () => {
-    const long = curationOf(JSON.stringify({ ops: [], story: words(200) }), open);
+    const long = curationOf(textOf(JSON.stringify({ ops: [], story: words(200) })), open);
     assert.equal(long.story, null);
     assert.deepEqual(long.refused, ['the paragraph is too long: 200 words, at most 120']);
-    assert.equal(curationOf('{"story":"two\\n\\nlines   here"}', open).story, 'two lines here');
-    assert.equal(curationOf('{"ops":[]}', open).story, null);
-    assert.equal(curationOf('{"story":"  "}', open).story, null);
-    assert.deepEqual(curationOf('not json', open).refused, ['the answer is not JSON']);
-    assert.deepEqual(curationOf('[1]', open).refused, ['the answer is not an object']);
+    assert.equal(curationOf(textOf('{"story":"two\\n\\nlines   here"}'), open).story, 'two lines here');
+    assert.equal(curationOf(textOf('{"ops":[]}'), open).story, null);
+    assert.equal(curationOf(textOf('{"story":"  "}'), open).story, null);
+    assert.deepEqual(curationOf(textOf('not json'), open).refused, ['the answer is not JSON']);
+    assert.deepEqual(curationOf(textOf('[1]'), open).refused, ['the answer is not an object']);
 });
 
 test('a paragraph of exactly 120 words is kept as it is', () => {
-    const exact = curationOf(JSON.stringify({ ops: [], story: words(120) }), open);
+    const exact = curationOf(textOf(JSON.stringify({ ops: [], story: words(120) })), open);
     assert.equal(exact.story, words(120));
     assert.deepEqual(exact.refused, []);
 });
 
 test('a paragraph of 121 words is refused with its word count and stored as none', () => {
-    const over = curationOf(JSON.stringify({ ops: [], story: words(121) }), open);
+    const over = curationOf(textOf(JSON.stringify({ ops: [], story: words(121) })), open);
     assert.equal(over.story, null);
     assert.deepEqual(over.refused, ['the paragraph is too long: 121 words, at most 120']);
 });
 
 test('the word count ignores newlines, double spaces and the edges of the paragraph', () => {
     const spaced = `  ${words(121).replaceAll(' w6', '\n\n w6')}   `;
-    const over = curationOf(JSON.stringify({ ops: [], story: spaced }), open);
+    const over = curationOf(textOf(JSON.stringify({ ops: [], story: spaced })), open);
     assert.equal(over.story, null);
     assert.deepEqual(over.refused, ['the paragraph is too long: 121 words, at most 120']);
 });
 
 test('a too-long paragraph is refused after the merge refusals, and the clean merge is kept', () => {
     const answer = JSON.stringify({ ops: [{ op: 'close', id: 'f2', why: 'merged', into: 'f1' }, { op: 'close', id: 'f9', why: 'merged', into: 'f1' }], story: words(121) });
-    const result = curationOf(answer, open);
+    const result = curationOf(textOf(answer), open);
     assert.deepEqual(result.merges, [{ id: 'f2', into: 'f1' }]);
     assert.equal(result.refused.length, 2);
     assert.match(result.refused[0] ?? '', /f9 is not an open fact \(or is already merged\)/u);
