@@ -41,7 +41,7 @@ export const spanish: Catalog = {
         uiChoices: { auto: must(parseText('auto (según tu idioma)')), en: must(parseText('English')), es: must(parseText('Español')) },
         gitNoteChoices: { on: must(parseText('sí — rama, commits sin subir y archivos cambiados bajo cada agente')), off: must(parseText('no')) },
         herdrEventsChoices: { on: must(parseText('sí — carriles compartidos en herdr: marcas, eventos, peticiones de compactar atendidas')), off: must(parseText('no')) },
-        telemetryTagsChoices: { on: must(parseText('sí — añade el atributo harness.job a los trabajos de Claude y Codex')), off: must(parseText('no — no añade el atributo del trabajo')) },
+        telemetryTagsChoices: { on: must(parseText('sí — añade el atributo harness.job a los trabajos de Claude, Codex y OpenCode')), off: must(parseText('no — no añade el atributo del trabajo')) },
         herdrEventsHint: must(parseText('otras herramientas leen las marcas de un carril y piden compactar por herdr; no escribe nada')),
         effortChoices: { low: must(parseText('bajo — reescribir en corto no pide deliberar (lo más barato)')), medium: must(parseText('medio')), high: must(parseText('alto')), default: must(parseText('el ajuste propio del agente (no se pasa nada)')) },
         recapLanguageHint: must(parseText('ui (como la interfaz) · en · es · o el nombre de un idioma')),

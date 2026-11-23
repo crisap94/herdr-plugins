@@ -61,3 +61,39 @@ The README SHALL document illustrative Claude queries, collector label behavior,
 
 - **WHEN** a query looks for an empty `harness_job` label but the collector has not promoted that resource attribute
 - **THEN** the documentation SHALL warn that the whole fleet may match the untagged query and SHALL show an illustrative resource-info join with `group_left(harness_job)`
+
+### Requirement: Supported child harnesses receive tags through their supported mechanisms
+
+Claude, Codex and OpenCode children SHALL receive the serialized Job tag when enabled. The README SHALL document their separate environment and exporter configuration. Remote deciders, Hermes, and custom harnesses SHALL remain untagged.
+
+#### Scenario: A Claude child is built with telemetry enabled
+
+- **WHEN** the supported Claude child is built with tagging on
+- **THEN** the child environment SHALL contain the merged `OTEL_RESOURCE_ATTRIBUTES` value with the Job tag
+- **AND** the README SHALL identify daemon process environment variables as the supported path for Claude telemetry configuration
+
+#### Scenario: A Codex child is built with telemetry enabled
+
+- **WHEN** a supported Codex child is built with tagging on
+- **THEN** its child environment SHALL contain the merged `OTEL_RESOURCE_ATTRIBUTES` value with the Job tag
+- **AND** the README SHALL describe the Codex exporter configuration locations and daemon environment variables it relies on
+
+#### Scenario: An OpenCode child is built with telemetry enabled
+
+- **WHEN** a supported OpenCode child is built with tagging on
+- **THEN** its child environment SHALL contain the merged `OTEL_RESOURCE_ATTRIBUTES` value with the Job tag
+
+#### Scenario: A remote decider does not launch a harness child
+
+- **WHEN** a decider or brief coverage check uses a remote HTTP service
+- **THEN** it SHALL remain untagged because it launches no child harness
+
+#### Scenario: A custom command inherits resource attributes
+
+- **WHEN** a custom harness is launched with tagging enabled
+- **THEN** it SHALL receive the daemon's `OTEL_RESOURCE_ATTRIBUTES` unchanged and SHALL receive no plugin Job tag
+
+#### Scenario: A harness without a verified mechanism is used
+
+- **WHEN** a job launches through Hermes with tagging enabled
+- **THEN** its environment and invocation SHALL remain unchanged and it SHALL receive no plugin Job tag

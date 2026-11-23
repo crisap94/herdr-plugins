@@ -449,7 +449,7 @@ settings or MCP and no session left behind. The judge runs only when you run `ta
 
 ### Job telemetry tags
 
-`TAB_RECAP_TELEMETRY_TAGS=on` adds the constant OpenTelemetry resource attribute `harness.job` to Claude and Codex child jobs. It defaults to `off`. Values are `recap-writer` (including enumeration), `compaction-brief`, `curator`, `judge`, `decider`, and `coverage-check`. OpenCode, custom commands, remote HTTP decisions, and experiment tools are not tagged. The attribute contains no prompt, session, path, or model data. The setup modal shows this setting and respects an environment lock.
+`TAB_RECAP_TELEMETRY_TAGS=on` adds the constant OpenTelemetry resource attribute `harness.job` to Claude, Codex and OpenCode child jobs. It defaults to `off`. Values are `recap-writer` (including enumeration), `compaction-brief`, `curator`, `judge`, `decider`, and `coverage-check`. custom commands, remote HTTP decisions, and experiment tools are not tagged. The attribute contains no prompt, session, path, or model data. The setup modal shows this setting and respects an environment lock.
 
 Before this release the attribute was `tab_recap.job`; rename saved queries.
 
