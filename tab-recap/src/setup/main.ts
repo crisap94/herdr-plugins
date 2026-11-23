@@ -1,7 +1,7 @@
 import { catalogFor } from '#src/i18n/index.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf, type Count } from '#src/recap/domain/count.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { parseInstant } from '#src/recap/domain/time.ts';
 import { parseAgentKind, parsePaneId, uncheckedAgentKind } from '#src/recap/domain/ids.ts';
@@ -19,14 +19,17 @@ import { requestRewrites } from '#src/recap/application/setup-changes.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { messagesFor } from '#src/i18n/index.ts';
 import { draftFrom, initial, locksOf, saved, step, tested, withAvailable } from '#src/recap/application/setup-keys.ts';
-import type { Draft, Effect, Setup } from '#src/recap/application/setup-keys.ts';
+import type { Effect, Setup } from '#src/recap/application/setup-keys.ts';
 import { coloured } from '#src/recap/render/wrap.ts';
-import { harnessLabels, type EnvironmentName } from '#src/recap/domain/backend.ts';
+import { harnessLabels } from '#src/recap/domain/backend.ts';
 import { setupFooterLine, setupLines } from '#src/recap/render/setup.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { join } from 'node:path';
 import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import { stripVTControlCharacters } from 'node:util';
+
+type SaveEffect = Extract<Effect, { readonly kind: 'save' }>;
+type TestEffect = Extract<Effect, { readonly kind: 'test' }>;
 
 const style = styleFor(process.stdout);
 const RESET = style === coloured ? RESET_SGR : '';
@@ -55,12 +58,12 @@ let scroll = 0;
 
 const messages = (): ReturnType<typeof messagesFor> => messagesFor(localeFrom(textOf(state.draft.locale), environmentReader));
 
-function size(): [number, number] {
+function size(): readonly [Count, Count] {
     try {
         const [columns, rows] = process.stdout.getWindowSize();
-        return [columns, rows];
+        return [countOf(columns), countOf(rows)];
     } catch {
-        return [process.stdout.columns || 40, process.stdout.rows || 24];
+        return [countOf(process.stdout.columns || 40), countOf(process.stdout.rows || 24)];
     }
 }
 
@@ -86,7 +89,8 @@ async function available(): Promise<void> {
     draw();
 }
 
-async function runTest(draft: Draft, ids: readonly string[]): Promise<void> {
+async function runTest(effect: TestEffect): Promise<void> {
+    const { draft, available: ids } = effect;
     const summarizer = summarizerFor({ ...loadSettings(), backend: draft.backend, models: harnessLabels((id) => textOf(draft.models[id])), effort: draft.effort }, availableIn(ids.map(uncheckedAgentKind)), must(parseDirectory(join(stateDirectory(), 'summarizer'))), createRuntime());
     const began = Date.now();
     try {
@@ -100,7 +104,8 @@ async function runTest(draft: Draft, ids: readonly string[]): Promise<void> {
     draw();
 }
 
-function save(values: ReadonlyMap<EnvironmentName, Text>, languageChanged: boolean): void {
+function save(effect: SaveEffect): void {
+    const { values, languageChanged } = effect;
     try {
         setValues(fsPathOf(join(configDirectory(), 'config.env')), values, parseSettingsFile);
         if (languageChanged) {
@@ -121,9 +126,9 @@ function perform(effect: Effect): void {
         process.exit(0);
     }
     if (effect.kind === 'save') {
-        save(effect.values, effect.languageChanged);
+        save(effect);
     } else {
-        void runTest(effect.draft, effect.available);
+        void runTest(effect);
     }
 }
 
@@ -140,8 +145,8 @@ process.stdout.on('resize', draw);
 if (process.stdin.isTTY) {
     process.stdin.setRawMode(true);
     process.stdin.setEncoding('utf8');
-    process.stdin.on('data', (key: string) => {
-        const stepped = step(state, key);
+    process.stdin.on('data', (key) => {
+        const stepped = step(state, String(key));
         state = stepped.state;
         stepped.effects.forEach(perform);
         draw();
