@@ -4,18 +4,18 @@
 
 | Fact | Measured | Where |
 | --- | --- | --- |
-| `src/` size | 442 TypeScript files, 22 718 lines (2026-10-11, `origin/main`) | `find src -name '*.ts'` |
+| `src/` size | 712 TypeScript files, 35 663 lines (2026-11-23, `b60f2a2f`) | `find tab-recap/src -name '*.ts'` |
 | `test/` size | 263 `.ts` and `.mjs` files, flat, plus `test/fakes/`, `test/db/`, `test/fixtures/`; by their `#src/*` imports 78 touch one lane, 19 none, 166 two or more | review of 2026-10-11 |
-| Brands today | `Brand<Carrier, Name>` in `src/recap/domain/brand.ts` (private `unique symbol` marker), used in 9 files; constructors such as `paneId(raw: string)` cast with `as PaneId` and throw `NotAnIdentifierError` | `src/recap/domain/ids.ts` |
+| Brands today | `Brand<Carrier, Name>` in `src/recap/domain/brand.ts` (private `unique symbol` marker); the brand is applied by each value's own parser. `ids.ts` still exports eight wrappers that throw `NotAnIdentifierError` (`paneId`, `tabId`, `workspaceId`, `agentKind`, `sessionId`, `sessionIdFromAgentValue`, `sessionPathFromAgentValue`, `handoffId`); task 5.1 is open | `src/recap/domain/ids.ts:98-158` |
 | One result union | `Result<T, E>` in `src/protocol/result.ts`, held by `recap-single-result` | `rules/recap-single-result.yml` |
 | Package imports | `#src/*` and `#test/*` in `package.json` `imports` | `package.json` |
 | Import rules today | six ast-grep rules, each a `string_fragment` inside `import_statement` (so they also see `import type`): `recap-domain-pure`, `recap-domain-pure-gates`, `recap-layers-no-io`, `recap-protocol-self-contained`, `recap-protocol-exchanges-self-contained`, `recap-transport-boundary` | `rules/*.yml` |
 | Released migrations | 20 files frozen byte for byte at `tab-recap-v2.4.0` by `ci/check-migrations.sh`; 11 of the 22 files in `src/adapters/db/schema/` carry primitive helper signatures such as `(column: string): string` | `ci/check-migrations.sh` |
-| Findings, exact | 5 588 findings in 422 files of `src/`: 1 916 `parameter`, 1 239 `return`, 906 `container`, 1 401 `property`, 126 `assertion`, 0 `legacy`. Per key of `ci/lanes.json` (parameter / return / container / property / assertion = total): B1 143 / 39 / 66 / 261 / 6 = 515; B2 175 / 205 / 59 / 139 / 33 = 611; B3 353 / 202 / 205 / 285 / 7 = 1 052; B4 334 / 272 / 67 / 144 / 3 = 820; B5 152 / 89 / 121 / 62 / 25 = 449; B6 277 / 92 / 118 / 64 / 10 = 561; B7 104 / 46 / 27 / 17 / 1 = 195; B8 50 / 40 / 48 / 76 / 8 = 222; ENG 230 / 190 / 147 / 312 / 30 = 909; STO 14 / 6 / 2 / 6 / 0 = 28; VIEW 84 / 58 / 46 / 35 / 3 = 226; lead 0. Each key's sum equals its file in `ci/domain-types-baseline/` | `bun bin/check-domain-types.ts --json`, `counts` summed per category and per key, 2026-11-13, after the carve-out of lanes `ENG`, `STO` and `VIEW` |
-| Gate run times | the check over the tree with the baselines 3.4 s; the cruise of `src` and `bin` 0.8 s, and `ci/gate-graph.sh` (the cruise, every fixture and the module-count probe) 8.0 s; `ci/gate-domain-types.sh` (the check's probes) 12.5 s. Together the check, `ci/gate-graph.sh` and `ci/gate-domain-types.sh` add 23.9 s to `ci/lint.sh` (31 s in all), under 60 s, so the check stays in `ci/lint.sh` and has no CI job of its own | bash `time`, median of three warm runs, 16 cores, Bun 1.4.4, 2026-11-13 |
-| Graph measured | dependency-cruiser 18.5 with `tsPreCompilationDeps: true` resolves `#src/*`; 482 modules, 2 269 dependencies, zero cycles, zero orphans; about 1 s | review of 2026-10-11 |
+| Findings, exact | 0 in every category (`parameter`, `return`, `container`, `property`, `assertion`, `legacy`): `"findings": []`, `"counts": {}`; no baseline file and no `legacy.ts` exists. Exceptions by class and file: callback 18 (B3 2, B4 3, B5 7, B6 3, ENG 3), migration 11 (B5), wire 71 (FND), brand 0 | `bun bin/check-domain-types.ts --json` and `ci/domain-types-exceptions/*.json`, 2026-11-23 |
+| Gate run times | the check over the tree 9.3 s (there is no baseline any more); `ci/gate-graph.sh` 18.0 s; `ci/gate-domain-types.sh` 29.2 s. Together they add 56.5 s to `ci/lint.sh`, under 60 s but close, so the check stays in `ci/lint.sh` and has no CI job of its own | bash wall clock, median of three warm runs, 16 cores, Bun 1.4.4, 2026-11-23 |
+| Graph measured | dependency-cruiser with `tsPreCompilationDeps: true` over `src` and `bin`: 975 modules, 6 245 dependencies, zero violations | `ci/gate-graph.sh`'s cruise, 2026-11-23 |
 
-The rows "Findings, exact" and "Gate run times" are measured (task 3.7); the other rows are estimates of the review of 2026-10-11. Task 5.3 brings the table to the final state.
+This table is the final state (task 5.3, 2026-11-23). The rows "`src/` size", "Brands today", "Findings, exact", "Gate run times" and "Graph measured" were re-measured then; the others are carried from the review of 2026-10-11.
 
 ## Decisions
 
@@ -72,12 +72,13 @@ columns to the domain field names in its query or select map, so no adapter func
 
 **Exceptions** are per symbol, never per file or folder. Each entry is `file + function + parameter or return`, with its reason,
 in one exception file per lane (`ci/domain-types-exceptions/<lane>.json`). The check fails on an entry that no finding hits.
-Three classes exist, and nothing else:
+Four classes exist, and nothing else:
 
 1. a Node or third-party callback, or a signature declared by a frozen lane (ENG, STO, VIEW) that a B lane implements, that forces a primitive, including the container of that parameter or return; converted at once where it is received; the entry goes stale and is removed when that lane leaves the plugin;
 2. the released migrations, frozen by `ci/check-migrations.sh`: the list names each released migration file, derived from the
    latest `tab-recap-v*` tag the same way that script derives it, and a new migration must comply;
-3. `src/recap/domain/brand.ts`, whose one brand function takes the primitive carrier by necessity.
+3. `src/recap/domain/brand.ts`, whose one brand function takes the primitive carrier by necessity;
+4. a plain field of a wire contract under `src/wire/`, keyed by file, symbol and field, each with its approval reason (added by `648a64f6`, approved as WC 4.4; the checker's union is at `tab-recap/bin/domain-exceptions.ts:14-16`).
 
 Existing constructors that throw `NotAnIdentifierError` become parsers. Callers in other lanes keep compiling through D7.
 
@@ -150,6 +151,8 @@ category: `parameter`, `return`, `container`, `property`, `assertion`, `legacy`.
 
 Phase C deletes the baseline folder; from then on any finding fails the build.
 
+BCb (`f6d31f2b`) deleted the folder and the gate is now hard: the check reads no baseline. The rules above stay as history.
+
 ### D7. Lanes stay parallel through a legacy file, not shared edits
 
 A lane that changes an exported signature used outside its folders adds the new, domain-typed export and moves the old export into
@@ -201,19 +204,19 @@ resolves inside the fixture, not against the repository.
 
 ## Module map
 
-| Lane | Folders | Files |
-| --- | --- | --- |
-| B1 protocol and ports | `src/protocol/`, `src/ports/` | 14 + 50 |
-| B2 domain | `src/recap/domain/` (gates included) | 69 |
-| B3 application | `src/recap/application/` | 105 |
-| B4 render and text | `src/recap/render/`, `src/i18n/`, `src/column/` | 10 + 6 + 5 |
-| B5 database | `src/adapters/db/` | 89 |
-| B6 other adapters | `src/adapters/` except `db/` | 118 |
-| B7 daemon and edges | `src/daemon/`, `src/extensions/`, `src/compact/`, `src/setup/`, `src/transport/` | 25 + 2 + 2 + 2 + 0 |
-| B8 experiments | `src/experiment/` | 17 |
-| ENG engine | the files of `ci/engine-files.json` key `engine`: typed in `packages/session-ledger` | 89 |
-| STO store mechanism | `src/adapters/db/{connection,open,migrate,backup,rebuild}.ts`, `src/adapters/db/schema/migration.ts`: typed in `packages/session-ledger-sqlite` | 6 |
-| VIEW view | the 12 `src/recap/render/` files listed in `ci/lanes-generate.ts`: typed in `packages/recap-view` | 12 |
+| Lane | Folders | Files at Phase A | Final |
+| --- | --- | --- | --- |
+| B1 protocol and ports | `src/protocol/`, `src/ports/` | 14 + 50 | 0 findings, no legacy.ts |
+| B2 domain | `src/recap/domain/` (gates included) | 69 | 0 findings, no legacy.ts |
+| B3 application | `src/recap/application/` | 105 | 0 findings, no legacy.ts |
+| B4 render and text | `src/recap/render/`, `src/i18n/`, `src/column/` | 10 + 6 + 5 | 0 findings, no legacy.ts |
+| B5 database | `src/adapters/db/` | 89 | 0 findings, no legacy.ts |
+| B6 other adapters | `src/adapters/` except `db/` | 118 | 0 findings, no legacy.ts |
+| B7 daemon and edges | `src/daemon/`, `src/extensions/`, `src/compact/`, `src/setup/`, `src/transport/` | 25 + 2 + 2 + 2 + 0 | 0 findings, no legacy.ts |
+| B8 experiments | `src/experiment/` | 17 | 0 findings, no legacy.ts |
+| ENG engine | the files of `ci/engine-files.json` key `engine`: typed in `packages/session-ledger` | 89 | files moved; plugin keeps shims (E2b) |
+| STO store mechanism | `src/adapters/db/{connection,open,migrate,backup,rebuild}.ts`, `src/adapters/db/schema/migration.ts`: typed in `packages/session-ledger-sqlite` | 6 | files moved; plugin keeps shims (P2) |
+| VIEW view | the 12 `src/recap/render/` files listed in `ci/lanes-generate.ts`: typed in `packages/recap-view` | 12 | files moved; plugin keeps shims (P1b-2) |
 
 A lane edits only the `src/` files and the `test/` files that `ci/lanes.json` gives it, plus its own `legacy.ts`, baseline file and
 exception file. New shared vocabulary goes through the lead.
