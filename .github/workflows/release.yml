@@ -36,11 +36,13 @@ jobs:
       - name: The tag is a release we can publish
         run: |
           plugin="${TAG%-v*}"
-          bash "$plugin/ci/check-release.sh" "$TAG"
+          script=ci/check-release.sh; [ -f "$script" ] || script="$plugin/ci/check-release.sh"
+          bash "$script" "$TAG"
       - name: Release notes
         run: |
           plugin="${TAG%-v*}"
-          bash "$plugin/ci/release-notes.sh" "$plugin" "${TAG##*-v}" > notes.md
+          script=ci/release-notes.sh; [ -f "$script" ] || script="$plugin/ci/release-notes.sh"
+          bash "$script" "$plugin" "${TAG##*-v}" > notes.md
           cat notes.md
       - name: Create the release
         env:
