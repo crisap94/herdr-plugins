@@ -3,7 +3,6 @@ import type { LaneSettler, Settling } from '#src/ports/lane-settling.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { uncheckedMilliseconds, type PaneId } from '#src/recap/domain/ids.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import { textOf } from '#src/recap/domain/text.ts';
 import { laneStatus, READY, type LaneStatus } from '#src/recap/domain/status.ts';
 import type { Instant, Milliseconds } from '#src/recap/domain/time.ts';
 
@@ -31,22 +30,22 @@ interface Heard {
 
 export class SettleHub implements LaneSettler {
     private readonly deps: SettleHubDeps;
-    private readonly waiters = new Map<string, Set<Waiter>>();
-    private readonly last = new Map<string, Heard>();
+    private readonly waiters = new Map<PaneId, Set<Waiter>>();
+    private readonly last = new Map<PaneId, Heard>();
 
     constructor(deps: SettleHubDeps) {
         this.deps = deps;
     }
 
-    heard(pane: string, status: string): void {
+    heard(pane: PaneId, status: LaneStatus): void {
         const at = this.deps.now();
-        this.last.set(pane, { status: laneStatus(textOf(status)), at });
+        this.last.set(pane, { status: laneStatus(status), at });
         if (!READY.has(status)) {
             return;
         }
         for (const waiter of this.waiters.get(pane) ?? []) {
             if (at >= waiter.since) {
-                waiter.resolve({ kind: 'settled', status: laneStatus(textOf(status)) });
+                waiter.resolve({ kind: 'settled', status: laneStatus(status) });
             }
         }
     }

@@ -34,13 +34,13 @@ function hub(options: { listening: boolean; statuses?: string[]; clock?: { at: n
 test('a push settles the waiter at once: the first idle/done after `since`, with no status poll; working does not', async () => {
     const { hub: waiting, polls } = hub({ listening: true });
     const settled = waiting.settled(paneId('w1:p1'), instant(1000), uncheckedMilliseconds(60_000));
-    waiting.heard('w1:p1', 'working');
-    waiting.heard('w1:p2', 'done');
+    waiting.heard(paneId('w1:p1'), 'working');
+    waiting.heard(paneId('w1:p2'), 'done');
     let resolved = false;
     void settled.then((done) => { resolved = true; return done; });
     await new Promise<void>((resolve) => { setImmediate(resolve); });
     assert.equal(resolved, false, 'neither a working push nor another lane\'s done settles it');
-    waiting.heard('w1:p1', 'done');
+    waiting.heard(paneId('w1:p1'), 'done');
     assert.deepEqual(await settled, { kind: 'settled', status: 'done' });
     assert.deepEqual(polls, [], 'push → confirmed without polls');
 });
@@ -48,10 +48,10 @@ test('a push settles the waiter at once: the first idle/done after `since`, with
 test('a push that came between the typing and the wait is not lost; one from before `since` does not count', async () => {
     const clock = { at: 900 };
     const { hub: early } = hub({ listening: true, clock });
-    early.heard('w1:p1', 'idle');
+    early.heard(paneId('w1:p1'), 'idle');
     clock.at = 1200;
     assert.deepEqual(await early.settled(paneId('w1:p1'), instant(1000), uncheckedMilliseconds(5)), { kind: 'timeout' }, 'an idle push from before the command says nothing about it');
-    early.heard('w1:p1', 'done');
+    early.heard(paneId('w1:p1'), 'done');
     assert.deepEqual(await early.settled(paneId('w1:p1'), instant(1000), uncheckedMilliseconds(5)), { kind: 'settled', status: 'done' });
 });
 

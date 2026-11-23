@@ -86,10 +86,6 @@
     "parameter": 4,
     "return": 3
   },
-  "src/recap/application/settle-hub.ts": {
-    "parameter": 2,
-    "container": 2
-  },
   "src/recap/application/setup-changes.ts": {
     "container": 1,
     "return": 1
