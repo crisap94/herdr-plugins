@@ -80,21 +80,21 @@ and `src/adapters/db/schema/migration.ts`) and the 12 files of lane `VIEW` (the 
 `ci/lanes-generate.ts`) are carved out the same way: they get their domain types in `packages/session-ledger-sqlite` and
 `packages/recap-view` (roadmap tracks STO and VIEW).
 
-- [ ] 4.1 B1 `src/protocol/`, `src/ports/`, except the files of lane `ENG`. Verify: B1's baseline holds only `legacy` counts.
+- [x] 4.1 B1 `src/protocol/`, `src/ports/`, except the files of lane `ENG`. Verify: B1's baseline holds only `legacy` counts. (baseline `{}` at f6d31f2b^, no `legacy.ts`; folder deleted by BCb)
   B1 runs B1-4 (`src/protocol`) first, then B1-1 to B1-3; B1-1 and B1-2 add the `parse<Name>` of every port record lane B5 maps.
-- [ ] 4.2 B2 `src/recap/domain/` (gates included), except the files of lane `ENG`, including the throwing constructors of `ids.ts`, whose wrappers move to
-      `src/recap/domain/legacy.ts`. Verify: B2's baseline holds only `legacy` counts.
-- [ ] 4.3 B3 `src/recap/application/`, except the files of lane `ENG`. Verify: B3's baseline holds only `legacy` counts.
-- [ ] 4.4 B4 `src/recap/render/`, `src/i18n/`, `src/column/`, except the files of lanes `ENG` and `VIEW`. Verify: B4's baseline holds only `legacy` counts.
-- [ ] 4.5 B5 `src/adapters/db/`, except the files of lane `STO`; the released migrations stay listed as exceptions. Verify: B5's baseline holds only `legacy`
+- [x] 4.2 B2 `src/recap/domain/` (gates included), except the files of lane `ENG`, including the throwing constructors of `ids.ts`, whose wrappers move to
+      `src/recap/domain/legacy.ts`. Verify: B2's baseline holds only `legacy` counts. (baseline `{}` at f6d31f2b^, no `legacy.ts`; folder deleted by BCb; the eight throwing wrappers stay in `ids.ts` until 5.1)
+- [x] 4.3 B3 `src/recap/application/`, except the files of lane `ENG`. Verify: B3's baseline holds only `legacy` counts. (baseline `{}` at f6d31f2b^, no `legacy.ts`; folder deleted by BCb)
+- [x] 4.4 B4 `src/recap/render/`, `src/i18n/`, `src/column/`, except the files of lanes `ENG` and `VIEW`. Verify: B4's baseline holds only `legacy` counts. (baseline `{}` at f6d31f2b^, no `legacy.ts`; folder deleted by BCb)
+- [x] 4.5 B5 `src/adapters/db/`, except the files of lane `STO`; the released migrations stay listed as exceptions. Verify: B5's baseline holds only `legacy`
       counts.
-- [ ] 4.6 B6 `src/adapters/` except `db/`. Verify: B6's baseline holds only `legacy` counts.
-- [ ] 4.7 B7 `src/daemon/`, `src/extensions/`, `src/compact/`, `src/setup/`, `src/transport/`. Verify: B7's baseline holds only
-      `legacy` counts.
-- [ ] 4.8 B8 `src/experiment/`. Verify: B8's baseline holds only `legacy` counts.
-- [ ] 4.9 ENG: the engine files leave the plugin (roadmap step E2b). Verify: `ci/domain-types-baseline/ENG.json` is `{}` or absent.
-- [ ] 4.10 STO and VIEW: their files leave the plugin (roadmap steps P2, P1b-1 and P1b-2). Verify:
-      `ci/domain-types-baseline/STO.json` and `ci/domain-types-baseline/VIEW.json` are `{}` or absent.
+- [x] 4.6 B6 `src/adapters/` except `db/`. Verify: B6's baseline holds only `legacy` counts. (baseline `{}` at f6d31f2b^, no `legacy.ts`; folder deleted by BCb)
+- [x] 4.7 B7 `src/daemon/`, `src/extensions/`, `src/compact/`, `src/setup/`, `src/transport/`. Verify: B7's baseline holds only
+      `legacy` counts. (baseline `{}` at f6d31f2b^, no `legacy.ts`; folder deleted by BCb)
+- [x] 4.8 B8 `src/experiment/`. Verify: B8's baseline holds only `legacy` counts. (baseline `{}` at f6d31f2b^, no `legacy.ts`; folder deleted by BCb)
+- [x] 4.9 ENG: the engine files leave the plugin (roadmap step E2b). Verify: `ci/domain-types-baseline/ENG.json` is `{}` or absent (`{}` at f6d31f2b^, now absent; E2b `ea258dcc`).
+- [x] 4.10 STO and VIEW: their files leave the plugin (roadmap steps P2, P1b-1 and P1b-2). Verify:
+      `ci/domain-types-baseline/STO.json` and `ci/domain-types-baseline/VIEW.json` are `{}` or absent (both `{}` at f6d31f2b^, now absent; P2 `86e5e84c`, P1b-1 `6b676939`, P1b-2 `dcd9743b`).
 
 ## 5. Phase C: the hard gate (lead)
 
@@ -104,8 +104,8 @@ and `src/adapters/db/schema/migration.ts`) and the 12 files of lane `VIEW` (the 
       rule now fail on any finding. Verify: a probe adding one primitive parameter, and one adding `as PaneId`, each fail
       `ci/lint.sh`. If `ENG.json`, `STO.json` or `VIEW.json` still has rows, those files stay; the folder is deleted by the step
       that empties the last of them.
-- [ ] 5.3 Update the module map and the Context table in design.md to the final state. Verify: every count is zero except the
-      listed exceptions.
+- [x] 5.3 Update the module map and the Context table in design.md to the final state. Verify: every count is zero except the
+      listed exceptions (done 2026-11-23, measured at `b60f2a2f`).
 
 ## 6. Archive
 

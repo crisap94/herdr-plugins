@@ -2,23 +2,20 @@
 
 Gates that make the build fail when code leaves its domain: a value crosses a function boundary only as a domain type, raw input
 is parsed once at its edge, a brand is applied only by its value's own parser, no directive silences a gate, the module graph
-follows its declared edges, every gate proves that it bites, and a ratchet holds the count until the gate is hard.
+follows its declared edges, every gate proves that it bites, and any finding fails the build.
 
 ## ADDED Requirements
 
 ### Requirement: Signatures carry domain types only
 
-The lint gate SHALL fail when a parameter or return of any function, method, arrow function, constructor, accessor or
-function-typed property in `tab-recap/src/`, a property of a type declared in `src/` that such a signature uses, or a type
-parameter constraint, resolves to `string`, `number`, `boolean`, `bigint`, `symbol`, `any`, `object`, `Object` or `Function`, to
-a container of those, to an anonymous object-literal type, or to an alias of a primitive without the brand of
-`src/recap/domain/brand.ts`. The message SHALL begin with `not supported:`, name the file, line, function and parameter, return or
-property, and say to use a value object or domain type. A callback parameter with no annotation, whose type is inferred from a
-library declaration, SHALL be skipped.
+The lint gate SHALL fail when a parameter, return, declared-type property or type parameter constraint in `tab-recap/src/` resolves
+to a primitive, `any`, `object`, `Function`, a container of those, an anonymous object-literal type, or an unbranded alias of a
+primitive. The message SHALL begin with `not supported:`, name the file, line and symbol, and say to use a value object or domain
+type. An unannotated callback parameter inferred from a library declaration SHALL be skipped.
 
 #### Scenario: A primitive parameter
 
-- **WHEN** a function in `src/` declares a parameter of type `string`
+- **WHEN** a function, method, arrow function, constructor, accessor or function-typed property in `src/` declares a parameter of type `string`, `number`, `boolean`, `bigint` or `symbol`
 - **THEN** `bash ci/lint.sh` SHALL exit 1 with a line that begins `not supported:` and names that parameter
 
 #### Scenario: An alias of a primitive
@@ -53,11 +50,9 @@ library declaration, SHALL be skipped.
 
 ### Requirement: Raw input is unknown and parsed at one edge per value
 
-`unknown` SHALL appear in a parameter only in a parser (a function named `parse<Name>`, exported from the file that declares
-`<Name>`, returning `Result<Name, E>`) or a type guard in that same file. Exceptions SHALL be keyed by file, function and parameter
-or return, held per lane, and limited to three classes: a Node or third-party callback that forces a primitive; each released
-migration file, as `ci/check-migrations.sh` derives the released set; and the brand function of `brand.ts`. The check SHALL fail on
-an exception that no finding hits.
+`unknown` SHALL appear in a parameter only in a parser (`parse<Name>` exported from the file that declares `<Name>`, returning
+`Result<Name, E>`) or a type guard in that same file. Exceptions SHALL be keyed by file and symbol, held per lane, and limited to
+four classes. The check SHALL fail on an exception that no finding hits.
 
 #### Scenario: unknown outside a parser
 
@@ -73,6 +68,11 @@ an exception that no finding hits.
 
 - **WHEN** a migration added after the latest release declares a helper `(column: string): string`
 - **THEN** the check SHALL fail on it, because only released migrations are excepted
+
+#### Scenario: The four exception classes
+
+- **WHEN** an exception is listed
+- **THEN** it SHALL be (1) a library callback, or a signature fixed by a frozen package, that forces a primitive; (2) a released migration file, as `ci/check-migrations.sh` derives the released set; (3) the brand function of `brand.ts`; or (4) a plain field of a wire contract under `src/wire/`, keyed by symbol and field
 
 ### Requirement: A brand is applied only by its value's own parser
 
@@ -108,11 +108,14 @@ in `tab-recap/src/` or `tab-recap/bin/`.
 
 ### Requirement: The module graph is one checked rule set
 
-dependency-cruiser, counting type-only imports, SHALL be the one source for import boundaries in `tab-recap/`: the domain imports
-only its own files and the protocol; application, render and i18n import no input or output module; the protocol is
-self-contained; only the herdr fleet adapter imports the transport; only the listed files import `brand.ts`; the graph has no
-cycle, no orphan and no unresolvable import. The lint gate SHALL fail when the cruise sees fewer modules than the TypeScript files
-of `src/` and `bin/`. The ast-grep rules that stated these boundaries one by one SHALL no longer exist.
+dependency-cruiser, counting type-only imports, SHALL be the one source for import boundaries in `tab-recap/`, and the graph SHALL
+have no cycle, no orphan and no unresolvable import. The lint gate SHALL fail when the cruise sees fewer modules than the
+TypeScript files of `src/` and `bin/`. The ast-grep rules that stated these boundaries one by one SHALL no longer exist.
+
+#### Scenario: The declared edges hold
+
+- **WHEN** the cruise runs over `src/` and `bin/`
+- **THEN** the domain SHALL import only its own files and the protocol, application, render and i18n SHALL import no input or output module, the protocol SHALL be self-contained, only the herdr fleet adapter SHALL import the transport, and only the listed files SHALL import `brand.ts`
 
 #### Scenario: A type-only import across a boundary
 
@@ -136,42 +139,29 @@ of `src/` and `bin/`. The ast-grep rules that stated these boundaries one by one
 
 ### Requirement: Every gate proves that it bites
 
-Each gate SHALL keep a bad probe that must fail it and a good probe that must pass it, run by `ci/lint.sh`, including a gate that
-waits outside the rule set until its count reaches zero; `ci/lint.sh` SHALL fail when a bad probe passes or a good probe fails.
+Each gate SHALL keep a bad probe that must fail it and a good probe that must pass it, run by `ci/lint.sh`;
+`ci/lint.sh` SHALL fail when a bad probe passes or a good probe fails.
 
 #### Scenario: A gate that stopped biting
 
 - **WHEN** the signature check is changed so that its `string` parameter probe passes
 - **THEN** `bash ci/lint.sh` SHALL exit 1 and name the probe
 
-#### Scenario: A pending rule still bites
+#### Scenario: The brand-cast rule still bites
 
-- **WHEN** `recap-one-brand-cast` is still in `rules/pending/` and its bad probe stops triggering it
+- **WHEN** the bad probe of `recap-one-brand-cast` stops triggering it
 - **THEN** `bash ci/lint.sh` SHALL exit 1
 
-### Requirement: A ratchet holds the count until the gate is hard
+### Requirement: Any finding fails the build
 
-While the per-lane baseline files exist, the check SHALL keep one count per category per file and SHALL fail when a count is above
-its entry, when it is below its entry (a stale baseline), or when a file without an entry has a finding. A CI guard SHALL fail when,
-against the merge base, a baseline entry rises or a new entry appears. Once the baseline files are removed, any finding SHALL fail
-the build.
-
-#### Scenario: A file gets worse during the cleanup
-
-- **WHEN** a lane adds a primitive parameter to a file whose parameter count is 3
-- **THEN** the check SHALL fail and report 4 against 3
-
-#### Scenario: A baseline stale after a fix
-
-- **WHEN** a lane fixes one assertion in a file and leaves its assertion entry unchanged
-- **THEN** the check SHALL fail and ask for the entry to be lowered
-
-#### Scenario: A baseline raised
-
-- **WHEN** a merge request raises a baseline entry or adds a new one
-- **THEN** the merge-base guard SHALL fail
+The check SHALL fail the build on any finding that no exception covers, and no baseline file SHALL exist.
 
 #### Scenario: The hard gate
 
-- **WHEN** the baseline files no longer exist and one finding remains
+- **WHEN** one finding remains
 - **THEN** the check SHALL fail
+
+#### Scenario: A baseline file is added
+
+- **WHEN** a merge request adds `tab-recap/ci/domain-types-baseline/`
+- **THEN** `bash ci/lint.sh` SHALL still fail on the finding, because the check reads no baseline
