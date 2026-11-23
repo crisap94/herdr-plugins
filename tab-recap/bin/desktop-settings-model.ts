@@ -1,6 +1,7 @@
 import type { SettingGet } from '#src/daemon/settings.ts';
 import { BACKEND_IDS, hasModel } from '#src/recap/domain/backend.ts';
 import type { BackendId } from '#src/recap/domain/backend.ts';
+import { textOf, type Text } from '#src/recap/domain/text.ts';
 import { entriesOf } from '#src/recap/application/setup-changes.ts';
 import { CHOICES, TEXTS } from '#src/recap/application/setup-fields.ts';
 import { draftFrom, FIELDS } from '#src/recap/application/setup-state.ts';
@@ -43,7 +44,10 @@ const RAW_KEYS = {
 export type RawSettings = Parameters<typeof draftFrom>[1];
 
 export const rawSettingsFrom = (get: SettingGet): RawSettings => {
-    const raw = (field: keyof typeof RAW_KEYS): string | undefined => get(RAW_KEYS[field]);
+    const raw = (field: keyof typeof RAW_KEYS): Text | undefined => {
+        const value = get(RAW_KEYS[field]);
+        return value === undefined ? undefined : textOf(value);
+    };
     return {
         locale: raw('locale'), recapLanguage: raw('recapLanguage'), screenAgents: raw('screenAgents'), gitNote: raw('gitNote'), telemetryTags: raw('telemetryTags'),
         effort: raw('effort'), compactTarget: raw('compactTarget'), compactHint: raw('compactHint'), contextWindow: raw('contextWindow'),
@@ -94,7 +98,7 @@ export const settingsOf = (draft: Draft, locks: Locks): readonly SettingView[] =
 function withValue(draft: Draft, id: string, value: string): Draft | undefined {
     const backend = backendOfModel(id);
     if (backend !== undefined) {
-        return { ...draft, models: { ...draft.models, [backend]: value.trim() } };
+        return { ...draft, models: { ...draft.models, [backend]: textOf(value.trim()) } };
     }
     const field = FIELDS.find((each) => each === id);
     const choice = field === undefined ? undefined : CHOICES[field];
@@ -105,7 +109,7 @@ function withValue(draft: Draft, id: string, value: string): Draft | undefined {
         const at = Array.from({ length: choice.size }, (_, index) => entryOf(choice.keep(draft, index), field)?.[2]).indexOf(value);
         return at < 0 ? undefined : choice.keep(draft, at);
     }
-    return TEXTS[field]?.keep(draft, value);
+    return TEXTS[field]?.keep(draft, textOf(value));
 }
 
 export function apply(draft: Draft, locks: Locks, assignments: ReadonlyMap<string, string>): Applied {

@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { textOf } from '#src/recap/domain/text.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -10,7 +11,7 @@ import { apply, modelBackends, settingIds, settingsOf } from '../bin/desktop-set
 import { changes, draftFrom, FIELDS, initial, ROWS } from '#src/recap/application/setup-keys.ts';
 import type { Draft } from '#src/recap/application/setup-keys.ts';
 
-const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
+const models = { claude: textOf(''), codex: textOf('gpt-6-luna'), opencode: textOf(''), custom: textOf('') };
 const draft: Draft = draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined });
 const byId = (id: string): ReturnType<typeof settingsOf>[number] | undefined => settingsOf(draft, {}).find((each) => each.id === id);
 

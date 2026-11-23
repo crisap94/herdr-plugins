@@ -12,7 +12,7 @@ import { textOf } from '#src/recap/domain/text.ts';
 import { viewRecord } from '#test/support/tab-view-records.ts';
 
 const ESC = String.fromCodePoint(0x1b);
-const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
+const models = { claude: textOf(''), codex: textOf('gpt-6-luna'), opencode: textOf(''), custom: textOf('') };
 const draft: Draft = draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined });
 
 function typed(state: Setup, keys: readonly string[]): { state: Setup; effects: Effect[] } {
@@ -84,7 +84,7 @@ test('a row an environment variable overrides is read-only and says which variab
     const locked = typed(start(locks), ['l', '\r']).state;
     assert.equal(locked.editing, null);
     assert.equal(locked.note, 'locked');
-    const forced = { ...start(locks), draft: { ...draft, models: { ...draft.models, codex: 'other' } } };
+    const forced = { ...start(locks), draft: { ...draft, models: { ...draft.models, codex: textOf('other') } } };
     assert.equal(changes(forced).size, 0, 'a locked row is never written');
 assert.deepEqual(locksOf({ TAB_RECAP_LOCALE: 'es', TAB_RECAP_RECAP_LANG: 'es' }), {});
 });
@@ -149,8 +149,8 @@ test('screen agents: the fifth row takes a list or `all`, keeps only plain names
 
 test('the git note row: on by default, a choice list, saved as TAB_RECAP_GIT_NOTE, read-only when the variable is set', () => {
     assert.equal(draft.gitNote, 'on');
-    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, gitNote: ' OFF ' }).gitNote, 'off');
-    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, gitNote: 'maybe' }).gitNote, 'on');
+    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, gitNote: textOf(' OFF ') }).gitNote, 'off');
+    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, gitNote: textOf('maybe') }).gitNote, 'on');
     const off = typed(start(), [...down(5), '\r', 'j', '\r']);
     assert.equal(off.state.draft.gitNote, 'off');
     assert.deepEqual([...changes(off.state)], [['TAB_RECAP_GIT_NOTE', 'off']]);
@@ -160,8 +160,8 @@ test('the git note row: on by default, a choice list, saved as TAB_RECAP_GIT_NOT
 
 test('job telemetry tags: off by default, saved as TAB_RECAP_TELEMETRY_TAGS, read-only when the variable is set', () => {
     assert.equal(draft.telemetryTags, 'off');
-    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, telemetryTags: ' ON ' }).telemetryTags, 'on');
-    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, telemetryTags: 'maybe' }).telemetryTags, 'off');
+    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, telemetryTags: textOf(' ON ') }).telemetryTags, 'on');
+    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, telemetryTags: textOf('maybe') }).telemetryTags, 'off');
     const on = typed(start(), [...down(18), '\r', 'k', '\r']);
     assert.equal(on.state.draft.telemetryTags, 'on');
     assert.deepEqual([...changes(on.state)], [['TAB_RECAP_TELEMETRY_TAGS', 'on']]);
@@ -173,8 +173,8 @@ test('job telemetry tags: off by default, saved as TAB_RECAP_TELEMETRY_TAGS, rea
 
 test('the effort row: medium by default, a choice list, saved as TAB_RECAP_EFFORT, read-only when the variable is set', () => {
     assert.equal(draft.effort, 'medium');
-    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, effort: ' HIGH ' }).effort, 'high');
-    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, effort: 'max' }).effort, 'medium');
+    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, effort: textOf(' HIGH ') }).effort, 'high');
+    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, effort: textOf('max') }).effort, 'medium');
     const high = typed(start(), ['l', 'l', '\r', 'j', '\r']);
     assert.equal(high.state.draft.effort, 'high');
     assert.deepEqual([...changes(high.state)], [['TAB_RECAP_EFFORT', 'high']]);
@@ -185,10 +185,10 @@ test('the effort row: medium by default, a choice list, saved as TAB_RECAP_EFFOR
 test('the compaction rows: target, hint (40 by default, 10–95 or off) and window (empty = found at runtime), each saved under its variable and read-only when it is set', () => {
     assert.deepEqual([draft.compactTarget, draft.compactHint, draft.contextWindow], ['focused', '40', '']);
     const raw = { locale: undefined, recapLanguage: undefined };
-    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, compactTarget: ' Claude, codex ', compactHint: '60%', contextWindow: '1_000_000' }).compactTarget, 'claude,codex');
-    assert.equal(draftFrom({ backend: 'codex', models }, { ...raw, compactHint: '5' }).compactHint, '40', 'out of range is the default');
-    assert.equal(draftFrom({ backend: 'codex', models }, { ...raw, compactHint: 'OFF' }).compactHint, 'off');
-    assert.equal(draftFrom({ backend: 'codex', models }, { ...raw, contextWindow: '1_000_000' }).contextWindow, '1000000');
+    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, compactTarget: textOf(' Claude, codex '), compactHint: textOf('60%'), contextWindow: textOf('1_000_000') }).compactTarget, 'claude,codex');
+    assert.equal(draftFrom({ backend: 'codex', models }, { ...raw, compactHint: textOf('5') }).compactHint, '40', 'out of range is the default');
+    assert.equal(draftFrom({ backend: 'codex', models }, { ...raw, compactHint: textOf('OFF') }).compactHint, 'off');
+    assert.equal(draftFrom({ backend: 'codex', models }, { ...raw, contextWindow: textOf('1_000_000') }).contextWindow, '1000000');
     const target = typed(start(), [...down(6), '\r', '\u0015', 'a', 'l', 'l', '\r']).state;
     assert.deepEqual([...changes(target)], [['TAB_RECAP_COMPACT_TARGET', 'all']]);
     const hint = typed(start(), [...down(8),'\r', '\u0015', '5', '5', '\r']).state;
@@ -213,8 +213,8 @@ test('the Models group: ←/→ walk the harness · model · effort of a job row
 test('the compact brief job: as the recap writer, no model of its own and high effort until set; each part is edited and saved under its variable', () => {
     assert.deepEqual(draft.compact, { by: 'recap', model: '', effort: 'high' });
     const raw = { locale: undefined, recapLanguage: undefined };
-    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, compactBy: ' Claude ', compactModel: ' sonnet ', compactEffort: 'MEDIUM' }).compact, { by: 'claude', model: 'sonnet', effort: 'medium' });
-    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, compactBy: 'nonsense', compactEffort: 'max' }).compact, { by: 'recap', model: '', effort: 'high' }, 'invalid values are the defaults');
+    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, compactBy: textOf(' Claude '), compactModel: textOf(' sonnet '), compactEffort: textOf('MEDIUM') }).compact, { by: 'claude', model: 'sonnet', effort: 'medium' });
+    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, compactBy: textOf('nonsense'), compactEffort: textOf('max') }).compact, { by: 'recap', model: '', effort: 'high' }, 'invalid values are the defaults');
     const by = typed(start(), ['j', '\r', 'j', 'j', '\r']).state;
     assert.equal(by.draft.compact.by, 'claude', 'recap → auto → claude');
     assert.deepEqual([...changes(by)], [['TAB_RECAP_COMPACT_BY', 'claude']]);
@@ -233,8 +233,8 @@ test('the compact brief job: as the recap writer, no model of its own and high e
 test('the judge job: as the recap writer, no model of its own and medium effort until set; each part is edited and saved under its variable, read-only when set', () => {
     assert.deepEqual(draft.judge, { by: 'recap', model: '', effort: 'medium' });
     const raw = { locale: undefined, recapLanguage: undefined };
-    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, judgeBy: ' Codex ', judgeModel: ' gpt-6-luna ', judgeEffort: 'HIGH' }).judge, { by: 'codex', model: 'gpt-6-luna', effort: 'high' });
-    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, judgeBy: 'nonsense', judgeEffort: 'max' }).judge, { by: 'recap', model: '', effort: 'medium' }, 'invalid values are the defaults');
+    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, judgeBy: textOf(' Codex '), judgeModel: textOf(' gpt-6-luna '), judgeEffort: textOf('HIGH') }).judge, { by: 'codex', model: 'gpt-6-luna', effort: 'high' });
+    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, judgeBy: textOf('nonsense'), judgeEffort: textOf('max') }).judge, { by: 'recap', model: '', effort: 'medium' }, 'invalid values are the defaults');
     const toJudge = down(10);
     const by = typed(start(), [...toJudge, '\r', 'j', 'j', '\r']).state;
     assert.equal(by.draft.judge.by, 'claude', 'recap → auto → claude');
@@ -251,8 +251,8 @@ test('the judge job: as the recap writer, no model of its own and medium effort 
 test('the autocompact rows: mode (shadow by default), the minimum (10, 10–95) and the decider job (as the recap writer, low; jev among the choices), saved under their variables and read-only when set', () => {
     const raw = { locale: undefined, recapLanguage: undefined };
     assert.deepEqual([draft.autocompact, draft.autocompactAt, draft.decide], ['shadow', '10', { by: 'recap', model: '', effort: 'low' }]);
-    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, autocompact: 'ON', autocompactAt: '55%', decideBy: 'jev', decideModel: ' x ', decideEffort: 'high' }).decide, { by: 'jev', model: 'x', effort: 'high' });
-    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, autocompact: 'maybe', autocompactAt: '5' }).autocompactAt, '10');
+    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, autocompact: textOf('ON'), autocompactAt: textOf('55%'), decideBy: textOf('jev'), decideModel: textOf(' x '), decideEffort: textOf('high') }).decide, { by: 'jev', model: 'x', effort: 'high' });
+    assert.deepEqual(draftFrom({ backend: 'codex', models }, { ...raw, autocompact: textOf('maybe'), autocompactAt: textOf('5') }).autocompactAt, '10');
     const mode = typed(start(), [...down(12),'\r', 'j', '\r']).state;
     assert.deepEqual([...changes(mode)], [['TAB_RECAP_AUTOCOMPACT', 'on']]);
     const at = typed(start(), [...down(13),'\r', '\u0015', '6', '0', '\r']).state;

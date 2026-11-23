@@ -18,7 +18,7 @@ import type { Setup } from '#src/recap/application/setup-keys.ts';
 import { setupFooterLine, setupLines } from '#src/recap/render/setup.ts';
 import { plain, visibleLength } from '#src/recap/render/wrap.ts';
 
-const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
+const models = { claude: textOf(''), codex: textOf('gpt-6-luna'), opencode: textOf(''), custom: textOf('') };
 const base = initial(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined }), { locale: 'TAB_RECAP_LOCALE' });
 
 function typed(state: Setup, keys: readonly string[]): Setup {
@@ -106,7 +106,7 @@ test('config-file: a save changes only its keys and keeps every comment and othe
 });
 
 const rowText = (state: Setup, messages: typeof en): string => setupLines(state, catalogFor(messages.locale), countOf(80)).find((line) => line.includes(messages.setup.rows.recapLanguage)) ?? '';
-const withLanguage = (recapLanguage: string): Setup => ({ ...base, draft: { ...base.draft, recapLanguage } });
+const withLanguage = (recapLanguage: string): Setup => ({ ...base, draft: { ...base.draft, recapLanguage: textOf(recapLanguage) } });
 
 test('the recap language row says what the stored value means, in the interface language', () => {
     assert.match(rowText(withLanguage('ui'), en), /same as interface \(English\)/);
@@ -138,7 +138,7 @@ test('the compaction rows are drawn in both languages: 40% by default, the windo
     assert.match(spanish, /muestra «compactar\?»/, 'the focused row explains itself');
     assert.match(spanish, /Ventana de contexto\s+se detecta/);
     assert.match(english, /Context window\s+found at runtime/);
-    assert.match(setupLines({ ...base, draft: { ...base.draft, compactHint: 'off' } }, catalogFor(en.locale), countOf(90)).join('\n'), /Compact hint\s+off/);
+    assert.match(setupLines({ ...base, draft: { ...base.draft, compactHint: textOf('off') } }, catalogFor(en.locale), countOf(90)).join('\n'), /Compact hint\s+off/);
 });
 
 test('the Models group: a heading, one row per job showing harness · model · effort, the focused part bracketed, in both languages', () => {

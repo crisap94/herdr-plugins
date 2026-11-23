@@ -176,8 +176,8 @@ function columnView(fixture: Fixture): ColumnView {
 }
 
 function setupState(locale: 'en' | 'es'): Setup {
-    const models = { claude: 'haiku', codex: '', opencode: '', custom: '' };
-    const draft = draftFrom({ backend: 'claude', models }, { locale, recapLanguage: 'ui' });
+    const models = { claude: textOf('haiku'), codex: textOf(''), opencode: textOf(''), custom: textOf('') };
+    const draft = draftFrom({ backend: 'claude', models }, { locale: textOf(locale), recapLanguage: textOf('ui') });
     return withAvailable(initial(draft, {}), ['claude', 'codex', 'opencode']);
 }
 

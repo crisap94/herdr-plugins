@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { textOf } from '#src/recap/domain/text.ts';
 import assert from 'node:assert/strict';
 import { apply, rawSettingsFrom, settingIds, settingsOf } from '../../bin/desktop-settings-model.ts';
 import { draftFrom, type Draft } from '#src/recap/application/setup-keys.ts';
@@ -8,7 +9,7 @@ import { mount, type Mounted } from './support/mount.ts';
 import { settle } from './support/register.ts';
 import { byId, click, hasId, idsOf, inputState, press, text } from './support/tree.ts';
 
-const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
+const models = { claude: textOf(''), codex: textOf('gpt-6-luna'), opencode: textOf(''), custom: textOf('') };
 let draft: Draft = draftFrom({ backend: 'codex', models }, rawSettingsFrom(() => undefined));
 let failing = false;
 

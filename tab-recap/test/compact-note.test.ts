@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { textOf } from '#src/recap/domain/text.ts';
 import assert from 'node:assert/strict';
 import { compactNoteOf } from '#src/recap/domain/compact-note.ts';
 import { beginCompact } from '#src/recap/application/compact-start.ts';
@@ -15,7 +16,7 @@ import { causeOf } from './fakes/cause.ts';
 
 const TAB = 'w1:t1';
 const PANE = 'w1:p2';
-const models = { claude: '', codex: '', opencode: '', custom: '' };
+const models = { claude: textOf(''), codex: textOf(''), opencode: textOf(''), custom: textOf('') };
 
 function recorder(done: Done = { kind: 'done' }): { asked: [string, string | null][]; queued: CompactAsk[]; start: CompactStart } {
     const asked: [string, string | null][] = [];

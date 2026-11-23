@@ -109,8 +109,8 @@
     "property": 1
   },
   "src/recap/application/setup-fields.ts": {
-    "parameter": 13,
-    "return": 9,
+    "parameter": 2,
+    "return": 2,
     "property": 1
   },
   "src/recap/application/setup-keys.ts": {
@@ -120,8 +120,8 @@
   },
   "src/recap/application/setup-state.ts": {
     "assertion": 2,
-    "container": 6,
-    "property": 43
+    "container": 5,
+    "property": 10
   },
   "src/recap/application/transcript-tail.ts": {
     "return": 1

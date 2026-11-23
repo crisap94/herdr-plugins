@@ -19,7 +19,7 @@ import { setupLines } from '#src/recap/render/setup.ts';
 import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 
-const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
+const models = { claude: textOf(''), codex: textOf('gpt-6-luna'), opencode: textOf(''), custom: textOf('') };
 const raw = { locale: undefined, recapLanguage: undefined };
 const draft = draftFrom({ backend: 'codex', models }, raw);
 const given = (key: string): string | undefined => ({ TAB_RECAP_CURATE_BY: ' Codex ', TAB_RECAP_CURATE_MODEL: ' gpt-6-luna ', TAB_RECAP_CURATE_EFFORT: 'HIGH' })[key];

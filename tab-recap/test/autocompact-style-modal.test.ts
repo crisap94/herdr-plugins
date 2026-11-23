@@ -1,4 +1,5 @@
 import { catalogFor } from '#src/i18n/index.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -9,12 +10,12 @@ import type { Draft, Locks, Setup } from '#src/recap/application/setup-keys.ts';
 import { setupLines } from '#src/recap/render/setup.ts';
 import type { AutocompactStyle } from '#src/recap/domain/autocompact-style.ts';
 
-const models = { claude: '', codex: 'gpt-6-luna', opencode: '', custom: '' };
+const models = { claude: textOf(''), codex: textOf('gpt-6-luna'), opencode: textOf(''), custom: textOf('') };
 const draft: Draft = draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined });
 const start = (locks: Locks = {}): Setup => withAvailable(initial(draft, locks), ['claude', 'codex']);
 const down = (n: number): string[] => Array.from({ length: n }, () => 'j');
 
-const readStyle = (autocompactStyle: string | undefined): AutocompactStyle => draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, autocompactStyle }).autocompactStyle;
+const readStyle = (autocompactStyle: string | undefined): AutocompactStyle => draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, autocompactStyle: autocompactStyle === undefined ? undefined : textOf(autocompactStyle) }).autocompactStyle;
 
 function typed(state: Setup, keys: readonly string[]): Setup {
     return keys.reduce((now, key) => step(now, key).state, state);

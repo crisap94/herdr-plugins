@@ -1,4 +1,5 @@
 import { catalogFor } from '#src/i18n/index.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -49,7 +50,7 @@ test('colours: with the plain table the column has no escape sequence and the sa
     assert.ok(presentBar(view(plain), 30).every((line) => !line.includes(ESC)));
 });
 
-const models = { claude: '', codex: '', opencode: '', custom: '' };
+const models = { claude: textOf(''), codex: textOf(''), opencode: textOf(''), custom: textOf('') };
 const setup = initial(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined }), { locale: 'TAB_RECAP_LOCALE' });
 
 test('colours: the setup screen takes the plain table too', () => {

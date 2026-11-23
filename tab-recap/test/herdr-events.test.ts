@@ -5,7 +5,7 @@ import { textOf } from '#src/recap/domain/text.ts';
 import { changes, draftFrom, initial, locksOf } from '#src/recap/application/setup-keys.ts';
 import type { Draft } from '#src/recap/application/setup-keys.ts';
 
-const models = { claude: '', codex: '', opencode: '', custom: '' };
+const models = { claude: textOf(''), codex: textOf(''), opencode: textOf(''), custom: textOf('') };
 const draft: Draft = draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined });
 
 test('off unless set to on: a fresh install shares nothing on herdr', () => {
@@ -14,7 +14,7 @@ test('off unless set to on: a fresh install shares nothing on herdr', () => {
     assert.equal(herdrEventsFrom(textOf('maybe')), 'off');
     assert.equal(herdrEventsFrom(textOf(' ON ')), 'on');
     assert.equal(draft.herdrEvents, 'off');
-    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, herdrEvents: 'on' }).herdrEvents, 'on');
+    assert.equal(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined, herdrEvents: textOf('on') }).herdrEvents, 'on');
 });
 
 test('the modal writes TAB_RECAP_HERDR_EVENTS when the row changes, and a locked row is never written', () => {

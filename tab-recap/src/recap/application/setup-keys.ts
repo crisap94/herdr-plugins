@@ -37,10 +37,10 @@ function confirmText(state: Setup, buffer: string): Setup {
     const done = { ...state, editing: null, note: null };
     const text = TEXTS[row];
     if (text !== undefined) {
-        return { ...done, draft: text.keep(draft, buffer) };
+        return { ...done, draft: text.keep(draft, textOf(buffer)) };
     }
     const target = modelTarget(draft, state.available);
-    return target === null ? done : { ...done, draft: { ...draft, models: { ...draft.models, [target]: buffer.trim() } } };
+    return target === null ? done : { ...done, draft: { ...draft, models: { ...draft.models, [target]: textOf(buffer.trim()) } } };
 }
 
 function confirmChoice(state: Setup, at: number): Setup {

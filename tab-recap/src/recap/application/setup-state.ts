@@ -44,10 +44,10 @@ export const SWITCH_CHOICES: readonly SwitchSetting[] = ['on', 'off'];
 
 export interface Draft {
     readonly backend: BackendChoice;
-    readonly models: Readonly<Record<BackendId, string>>;
+    readonly models: Readonly<Record<BackendId, Text>>;
     readonly locale: LocaleSetting;
-    readonly recapLanguage: string;
-    readonly screenAgents: string;
+    readonly recapLanguage: Text;
+    readonly screenAgents: Text;
     readonly gitNote: SwitchSetting;
     readonly telemetryTags: TelemetryTags;
     readonly effort: Effort;
@@ -55,14 +55,14 @@ export interface Draft {
     readonly judge: JobSetting;
     readonly curate: JobSetting;
     readonly autocompact: AutocompactMode;
-    readonly autocompactAt: string;
+    readonly autocompactAt: Text;
     readonly autocompactStyle: AutocompactStyle;
     readonly autocompactMissed: MissedFacts;
     readonly decide: DeciderSetting;
-    readonly compactTarget: string;
+    readonly compactTarget: Text;
     readonly compactNote: CompactNote;
-    readonly compactHint: string;
-    readonly contextWindow: string;
+    readonly compactHint: Text;
+    readonly contextWindow: Text;
     readonly herdrEvents: HerdrEvents;
 }
 
@@ -108,44 +108,44 @@ export interface Stepped {
 }
 
 interface RawSettings {
-    readonly locale: string | undefined;
-    readonly recapLanguage: string | undefined;
-    readonly screenAgents?: string | undefined;
-    readonly gitNote?: string | undefined;
-    readonly telemetryTags?: string | undefined;
-    readonly effort?: string | undefined;
-    readonly compactTarget?: string | undefined;
-    readonly compactHint?: string | undefined;
-    readonly contextWindow?: string | undefined;
-    readonly compactBy?: string | undefined;
-    readonly compactModel?: string | undefined;
-    readonly compactEffort?: string | undefined;
-    readonly judgeBy?: string | undefined;
-    readonly judgeModel?: string | undefined;
-    readonly judgeEffort?: string | undefined;
-    readonly curateBy?: string | undefined;
-    readonly curateModel?: string | undefined;
-    readonly curateEffort?: string | undefined;
-    readonly autocompact?: string | undefined;
-    readonly autocompactAt?: string | undefined;
-    readonly autocompactStyle?: string | undefined;
-    readonly autocompactMissed?: string | undefined;
-    readonly decideBy?: string | undefined;
-    readonly decideModel?: string | undefined;
-    readonly decideEffort?: string | undefined;
-    readonly herdrEvents?: string | undefined;
-    readonly compactNote?: string | undefined;
+    readonly locale: Text | undefined;
+    readonly recapLanguage: Text | undefined;
+    readonly screenAgents?: Text | undefined;
+    readonly gitNote?: Text | undefined;
+    readonly telemetryTags?: Text | undefined;
+    readonly effort?: Text | undefined;
+    readonly compactTarget?: Text | undefined;
+    readonly compactHint?: Text | undefined;
+    readonly contextWindow?: Text | undefined;
+    readonly compactBy?: Text | undefined;
+    readonly compactModel?: Text | undefined;
+    readonly compactEffort?: Text | undefined;
+    readonly judgeBy?: Text | undefined;
+    readonly judgeModel?: Text | undefined;
+    readonly judgeEffort?: Text | undefined;
+    readonly curateBy?: Text | undefined;
+    readonly curateModel?: Text | undefined;
+    readonly curateEffort?: Text | undefined;
+    readonly autocompact?: Text | undefined;
+    readonly autocompactAt?: Text | undefined;
+    readonly autocompactStyle?: Text | undefined;
+    readonly autocompactMissed?: Text | undefined;
+    readonly decideBy?: Text | undefined;
+    readonly decideModel?: Text | undefined;
+    readonly decideEffort?: Text | undefined;
+    readonly herdrEvents?: Text | undefined;
+    readonly compactNote?: Text | undefined;
 }
 
 function recapLanguageSettingOf(raw: RawSettings): Text {
-    return languageSettingOf(raw.recapLanguage === undefined ? undefined : textOf(raw.recapLanguage));
+    return languageSettingOf(raw.recapLanguage);
 }
 
 export function draftFrom(config: Pick<Draft, 'backend' | 'models'>, raw: RawSettings): Draft {
     const locale = LOCALE_CHOICES.find((choice) => choice === raw.locale) ?? 'auto';
     const gitNote = raw.gitNote?.trim().toLowerCase() === 'off' ? 'off' : 'on';
-    const telemetryTags = telemetryTagsOf(raw.telemetryTags === undefined ? undefined : textOf(raw.telemetryTags));
-    return { ...config, telemetryTags, herdrEvents: herdrEventsFrom(raw.herdrEvents === undefined ? undefined : textOf(raw.herdrEvents)), compactNote: compactNoteOf(raw.compactNote), locale, recapLanguage: recapLanguageSettingOf(raw), screenAgents: screenSetting(raw.screenAgents === undefined ? undefined : textOf(raw.screenAgents)), gitNote, effort: effortOf(raw.effort), compactTarget: targetSetting(raw.compactTarget === undefined ? undefined : textOf(raw.compactTarget)), compactHint: hintSetting(raw.compactHint === undefined ? undefined : textOf(raw.compactHint)), contextWindow: windowSetting(raw.contextWindow === undefined ? undefined : textOf(raw.contextWindow)), compact: compactSettingOf((key) => { const value = new Map(Object.entries({ TAB_RECAP_COMPACT_BY: raw.compactBy, TAB_RECAP_COMPACT_MODEL: raw.compactModel, TAB_RECAP_COMPACT_EFFORT: raw.compactEffort })).get(key); return value === undefined ? undefined : textOf(value); }), judge: judgeSettingOf((key) => { const value = new Map(Object.entries({ TAB_RECAP_JUDGE_BY: raw.judgeBy, TAB_RECAP_JUDGE_MODEL: raw.judgeModel, TAB_RECAP_JUDGE_EFFORT: raw.judgeEffort })).get(key); return value === undefined ? undefined : textOf(value); }), curate: curateSettingOf((key) => { const value = new Map(Object.entries({ TAB_RECAP_CURATE_BY: raw.curateBy, TAB_RECAP_CURATE_MODEL: raw.curateModel, TAB_RECAP_CURATE_EFFORT: raw.curateEffort })).get(key); return value === undefined ? undefined : textOf(value); }), autocompact: parseAutocompactMode(raw.autocompact), autocompactAt: String(parseAutocompactPercent(raw.autocompactAt, MINIMUM_DEFAULT)), autocompactStyle: styleOf(raw.autocompactStyle), autocompactMissed: parseMissedFacts(raw.autocompactMissed), decide: deciderSettingOf((key) => { const value = new Map(Object.entries({ TAB_RECAP_AUTOCOMPACT_BY: raw.decideBy, TAB_RECAP_AUTOCOMPACT_MODEL: raw.decideModel, TAB_RECAP_AUTOCOMPACT_EFFORT: raw.decideEffort })).get(key); return value === undefined ? undefined : textOf(value); }) };
+    const telemetryTags = telemetryTagsOf(raw.telemetryTags);
+    return { ...config, telemetryTags, herdrEvents: herdrEventsFrom(raw.herdrEvents), compactNote: compactNoteOf(raw.compactNote), locale, recapLanguage: recapLanguageSettingOf(raw), screenAgents: screenSetting(raw.screenAgents), gitNote, effort: effortOf(raw.effort), compactTarget: targetSetting(raw.compactTarget), compactHint: hintSetting(raw.compactHint), contextWindow: windowSetting(raw.contextWindow), compact: compactSettingOf((key) => { const value = new Map(Object.entries({ TAB_RECAP_COMPACT_BY: raw.compactBy, TAB_RECAP_COMPACT_MODEL: raw.compactModel, TAB_RECAP_COMPACT_EFFORT: raw.compactEffort })).get(key); return value; }), judge: judgeSettingOf((key) => { const value = new Map(Object.entries({ TAB_RECAP_JUDGE_BY: raw.judgeBy, TAB_RECAP_JUDGE_MODEL: raw.judgeModel, TAB_RECAP_JUDGE_EFFORT: raw.judgeEffort })).get(key); return value; }), curate: curateSettingOf((key) => { const value = new Map(Object.entries({ TAB_RECAP_CURATE_BY: raw.curateBy, TAB_RECAP_CURATE_MODEL: raw.curateModel, TAB_RECAP_CURATE_EFFORT: raw.curateEffort })).get(key); return value; }), autocompact: parseAutocompactMode(raw.autocompact), autocompactAt: textOf(String(parseAutocompactPercent(raw.autocompactAt, MINIMUM_DEFAULT))), autocompactStyle: styleOf(raw.autocompactStyle), autocompactMissed: parseMissedFacts(raw.autocompactMissed), decide: deciderSettingOf((key) => { const value = new Map(Object.entries({ TAB_RECAP_AUTOCOMPACT_BY: raw.decideBy, TAB_RECAP_AUTOCOMPACT_MODEL: raw.decideModel, TAB_RECAP_AUTOCOMPACT_EFFORT: raw.decideEffort })).get(key); return value; }) };
 }
 
 export function initial(draft: Draft, locks: Locks): Setup {
