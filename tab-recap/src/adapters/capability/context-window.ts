@@ -8,7 +8,7 @@ import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import type { ContextWindowLookup } from '#src/ports/context-windows.ts';
 import type { ModelWindows } from '#src/ports/model-catalogue.ts';
 import { supported } from '#src/ports/capability.ts';
-import type { Capability } from '#src/ports/capability.ts';
+import type { Support } from '#src/ports/capability.ts';
 import type { ContextWindowWhy } from '#src/ports/capability-reasons.ts';
 
 import { countOf } from '#src/recap/domain/count.ts';
@@ -44,7 +44,7 @@ const WINDOW_SOURCES = {
     claude: supported(claudeWindow),
     codex: supported(exactWindow),
     opencode: supported(exactWindow),
-} satisfies Readonly<Record<RegisteredKind, Capability<Source, ContextWindowWhy>>>;
+} satisfies Readonly<Record<RegisteredKind, Support<Source, ContextWindowWhy>>>;
 
 export function windowOfAgent(kind: AgentKind | null, catalogue: ModelWindows): WindowOf {
     const registered = kind === null ? null : registeredKindOf(textOf(kind));

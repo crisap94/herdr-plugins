@@ -5,12 +5,6 @@ import type { Locale } from '#src/i18n/messages.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 import type { Forge } from '@stateforge-labs/session-ledger/unstable/ports/lane-repo.ts';
 
-export type Capability<Value, Why extends string> =
-    | { readonly kind: 'supported'; readonly value: Value }
-    | { readonly kind: 'unsupported'; readonly why: Why };
-
-export const unsupportedCapability = <Why extends string>(why: Why): Capability<never, Why> => ({ kind: 'unsupported', why });
-
 export interface Note {
     readonly label: string;
     readonly at: number | null;

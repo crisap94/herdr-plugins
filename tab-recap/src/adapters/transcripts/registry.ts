@@ -8,7 +8,7 @@ import { TranscriptRegistry, type TranscriptReaders } from '#src/ports/transcrip
 import { agentKind, type AgentKind } from '#src/recap/domain/ids.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
 import { supported } from '#src/ports/capability.ts';
-import type { Capability } from '#src/ports/capability.ts';
+import type { Support } from '#src/ports/capability.ts';
 import type { HistoryWhy, InFlightWhy } from '#src/ports/capability-reasons.ts';
 import { capabilityWording } from '#src/ports/capability-reasons.ts';
 import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
@@ -26,7 +26,7 @@ export function replayKindOfPath(flag: Text | null, file: FsPath): RegisteredKin
     return registeredKindOf(textOf(flag ?? harnessOfTranscriptPath(file) ?? (file.includes(CODEX_HOME_MARKER) ? 'codex' : 'claude')));
 }
 
-type ReaderSet = Readonly<Record<RegisteredKind, Capability<() => Transcripts, HistoryWhy>>>;
+type ReaderSet = Readonly<Record<RegisteredKind, Support<() => Transcripts, HistoryWhy>>>;
 
 
 const READERS = {
@@ -39,7 +39,7 @@ export const IN_FLIGHT_CAPABILITIES = {
     claude: supported('reader'),
     codex: supported('reader'),
     opencode: supported('reader'),
-} satisfies Readonly<Record<RegisteredKind, Capability<'reader', InFlightWhy>>>;
+} satisfies Readonly<Record<RegisteredKind, Support<'reader', InFlightWhy>>>;
 
 function readersOf(readers: ReaderSet): TranscriptReaders {
     return new Map(Object.entries(readers).flatMap(([kind, capability]): [AgentKind, Transcripts][] => capability.kind === 'supported' ? [[agentKind(textOf(kind)), capability.value()]] : []));
