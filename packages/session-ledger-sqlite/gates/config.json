@@ -6,6 +6,7 @@
   "probes": "rules/gate-probes",
   "exceptions": "gates/domain-types-exceptions.json",
   "baseline": "gates/domain-types-baseline.json",
+  "inheritBaseline": "../../tab-recap/ci/domain-types-baseline",
   "brandFile": null,
   "brandImporters": null,
   "migrations": null,

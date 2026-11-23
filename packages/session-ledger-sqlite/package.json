@@ -10,7 +10,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./driver": "./src/driver.ts",
-    "./testkit": "./testkit/index.ts"
+    "./testkit": "./testkit/index.ts",
+    "./unstable/*": "./src/*"
   },
   "imports": {
     "#src/*": "./src/*",
