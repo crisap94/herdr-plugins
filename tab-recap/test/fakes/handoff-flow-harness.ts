@@ -161,4 +161,4 @@ export function request(over: Partial<HandoffAskRecord> = {}): HandoffAskRecord 
     return { id: handoffIdOf(ids.next()), at: instant(NOW), tab: TAB, pane: SOURCE, toPane: TARGET, refresh: 'as-is', note: null, source: { kind: 'live' }, ...over };
 }
 
-export const bothFree = (claims: LaneClaims): boolean => !claims.has(SOURCE) && !claims.has(TARGET);
+export const bothFree = (claims: LaneClaims): boolean => claims.has(SOURCE) === 'free' && claims.has(TARGET) === 'free';

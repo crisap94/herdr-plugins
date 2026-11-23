@@ -79,7 +79,7 @@ const emitTo = (events: LaneEvents, event: SafePointEvent): void => {
 
 const activityOf = (parts: AutocompactParts): Pick<CompactionActivity, 'activeFor' | 'automaticInProgress'> => {
     function activeFor(scope: ScopeId, key: SessionKey): boolean {
-        return parts.store.compactions.shownFor(tabId(textOf(scope))).some((record) => record.pane === paneId(textOf(key)) && ACTIVE.has(record.stage)) || parts.claims.has(paneId(textOf(key))) || parts.store.requests.compactQueued(tabId(textOf(scope)), paneId(textOf(key))) === 'queued';
+        return parts.store.compactions.shownFor(tabId(textOf(scope))).some((record) => record.pane === paneId(textOf(key)) && ACTIVE.has(record.stage)) || parts.claims.has(paneId(textOf(key))) === 'held' || parts.store.requests.compactQueued(tabId(textOf(scope)), paneId(textOf(key))) === 'queued';
     }
     function automaticInProgress(): boolean {
         return parts.store.compactions.autoInProgress() === 'auto-in-progress';

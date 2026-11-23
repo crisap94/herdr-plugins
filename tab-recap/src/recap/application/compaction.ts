@@ -107,7 +107,7 @@ export class Compactor {
     }
 
     private claimed(lane: Lane, request: CompactAsk): Presence {
-        if (this.deps.claims.claim(lane.pane, 'compaction')) {
+        if (this.deps.claims.claim(lane.pane, 'compaction') === 'claimed') {
             return 'present';
         }
         this.joinRunning(lane, request);
