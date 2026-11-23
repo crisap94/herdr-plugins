@@ -75,10 +75,10 @@
     "return": 1
   },
   "src/recap/application/setup-keys.ts": {
-    "parameter": 3
+    "parameter": 1
   },
   "src/recap/application/setup-state.ts": {
-    "property": 5
+    "property": 2
   },
   "src/recap/application/transcript-tail.ts": {
     "return": 1

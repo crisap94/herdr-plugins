@@ -134,9 +134,9 @@ const COMMANDS: Readonly<Record<string, (state: Setup) => Stepped>> = {
     ...Object.fromEntries([...RIGHT].map((key) => [key, (state: Setup): Stepped => stay(across(state, 1))])),
 };
 
-export function step(state: Setup, key: string): Stepped {
+export function step(state: Setup, key: Text): Stepped {
     if (state.editing !== null) {
-        return editKey({ ...state, asked: false }, state.editing, textOf(key));
+        return editKey({ ...state, asked: false }, state.editing, key);
     }
     if (QUIT.has(key)) {
         return leave(state);
@@ -148,8 +148,8 @@ export const withAvailable = (state: Setup, available: readonly AgentKind[]): Se
 
 export const tested = (state: Setup, test: TestState): Setup => ({ ...state, test });
 
-export function saved(state: Setup, failure: string | null, rewriting: boolean): Setup {
+export function saved(state: Setup, failure: Text | null, rewriting: boolean): Setup {
     return failure === null
         ? { ...state, stored: state.draft, note: rewriting ? 'rewriting' : 'saved', asked: false }
-        : { ...state, note: { failed: textOf(failure) } };
+        : { ...state, note: { failed: failure } };
 }

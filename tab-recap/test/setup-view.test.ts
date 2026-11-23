@@ -1,6 +1,7 @@
 import { catalogFor } from '#src/i18n/index.ts';
 import { uncheckedAgentKind } from '#src/recap/domain/ids.ts';
 import { countOf } from '#src/recap/domain/count.ts';
+import { usdOf } from '#src/recap/domain/usd.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { must } from '#src/protocol/result.ts';
@@ -23,7 +24,7 @@ const models = { claude: textOf(''), codex: textOf('gpt-6-luna'), opencode: text
 const base = initial(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined }), { locale: environmentName(textOf('TAB_RECAP_LOCALE')) });
 
 function typed(state: Setup, keys: readonly string[]): Setup {
-    return keys.reduce((now, key) => step(now, key).state, state);
+    return keys.reduce((now, key) => step(now, textOf(key)).state, state);
 }
 
 const states: readonly [string, Setup][] = [
@@ -36,8 +37,8 @@ const states: readonly [string, Setup][] = [
     ['language', typed(withAvailable(base, [uncheckedAgentKind('claude')]), ['j', 'j', 'j'])],
     ['locale choices', typed(withAvailable({ ...base, locks: {} }, [uncheckedAgentKind('claude')]), ['j', 'j', '\r'])],
     ['unsaved', typed(withAvailable(base, [uncheckedAgentKind('claude')]), ['\r', 'j', '\r', 'q'])],
-    ['test ok', tested(withAvailable(base, [uncheckedAgentKind('claude')]), { kind: 'ok', seconds: 3.24, costUsd: 0.0008 })],
-    ['test failed', tested(withAvailable(base, [uncheckedAgentKind('claude')]), { kind: 'failed', why: 'exited 127: opencode not found, a rather long explanation' })],
+    ['test ok', tested(withAvailable(base, [uncheckedAgentKind('claude')]), { kind: 'ok', seconds: countOf(3.24), costUsd: usdOf(0.0008) })],
+    ['test failed', tested(withAvailable(base, [uncheckedAgentKind('claude')]), { kind: 'failed', why: textOf('exited 127: opencode not found, a rather long explanation') })],
     ['autocompact rows', typed(withAvailable(base, [uncheckedAgentKind('claude')]), [...Array.from({ length: 16 }, () => 'j'), '\r'])],
     ['save failed', { ...withAvailable(base, [uncheckedAgentKind('claude')]), note: { failed: textOf('EACCES: permission denied, open config.env') } }],
 ];
@@ -83,7 +84,7 @@ test('the telemetry setting shows its choices and environment lock', () => {
 });
 
 test('Spanish: rows, legend, hints and test results are Spanish', () => {
-    const text = setupLines(tested(withAvailable(base, [uncheckedAgentKind('claude')]), { kind: 'ok', seconds: 3.24, costUsd: 0.0008 }), catalogFor(es.locale), countOf(80)).join('\n');
+    const text = setupLines(tested(withAvailable(base, [uncheckedAgentKind('claude')]), { kind: 'ok', seconds: countOf(3.24), costUsd: usdOf(0.0008) }), catalogFor(es.locale), countOf(80)).join('\n');
     for (const expected of ['ajustes', 'Redactor del resumen', 'Idioma del resumen', 'disponible', 'no está en el PATH', '✓ funciona — 3.2 s · $0.0008']) {
         assert.ok(text.includes(expected), expected);
     }
@@ -123,7 +124,7 @@ test('the recap language row says what the stored value means, in the interface 
 test('the git note row is drawn with its value and, while choosing, both choices', () => {
     const onRow = setupLines(base, catalogFor(en.locale), countOf(80)).join('\n');
     assert.match(onRow, /Git note\s+on — branch/);
-    const choosing = setupLines(step(step({ ...base, row: countOf(5) }, '\r').state, 'j').state, catalogFor(es.locale), countOf(80)).join('\n');
+    const choosing = setupLines(step(step({ ...base, row: countOf(5) }, textOf('\r')).state, textOf('j')).state, catalogFor(es.locale), countOf(80)).join('\n');
     assert.match(choosing, /Nota de git/);
     assert.match(choosing, /▸ no/);
 });

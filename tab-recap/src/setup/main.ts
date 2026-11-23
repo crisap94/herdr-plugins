@@ -19,7 +19,7 @@ import { requestRewrites } from '#src/recap/application/setup-changes.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
 import { messagesFor } from '#src/i18n/index.ts';
 import { draftFrom, initial, locksOf, saved, step, tested, withAvailable } from '#src/recap/application/setup-keys.ts';
-import type { Effect, Setup } from '#src/recap/application/setup-keys.ts';
+import type { Effect, SaveEffect, Setup, TestEffect } from '#src/recap/application/setup-keys.ts';
 import { coloured } from '#src/recap/render/wrap.ts';
 import { harnessLabels } from '#src/recap/domain/backend.ts';
 import { setupFooterLine, setupLines } from '#src/recap/render/setup.ts';
@@ -27,9 +27,6 @@ import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { join } from 'node:path';
 import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import { stripVTControlCharacters } from 'node:util';
-
-type SaveEffect = Extract<Effect, { readonly kind: 'save' }>;
-type TestEffect = Extract<Effect, { readonly kind: 'test' }>;
 
 const style = styleFor(process.stdout);
 const RESET = style === coloured ? RESET_SGR : '';
@@ -96,10 +93,10 @@ async function runTest(effect: TestEffect): Promise<void> {
     try {
         const written = await summarizer.write(TINY);
         state = tested(state, written.kind === 'written'
-            ? { kind: 'ok', seconds: (Date.now() - began) / 1000, costUsd: written.costUsd }
-            : { kind: 'failed', why: saying(written.why) });
+            ? { kind: 'ok', seconds: countOf((Date.now() - began) / 1000), costUsd: written.costUsd }
+            : { kind: 'failed', why: textOf(saying(written.why)) });
     } catch (error) {
-        state = tested(state, { kind: 'failed', why: error instanceof Error ? error.message : String(error) });
+        state = tested(state, { kind: 'failed', why: textOf(error instanceof Error ? error.message : String(error)) });
     }
     draw();
 }
@@ -117,7 +114,7 @@ function save(effect: SaveEffect): void {
         }
         state = saved(state, null, languageChanged);
     } catch (error) {
-        state = saved(state, error instanceof Error ? error.message : String(error), false);
+        state = saved(state, textOf(error instanceof Error ? error.message : String(error)), false);
     }
 }
 
@@ -146,7 +143,7 @@ if (process.stdin.isTTY) {
     process.stdin.setRawMode(true);
     process.stdin.setEncoding('utf8');
     process.stdin.on('data', (key) => {
-        const stepped = step(state, String(key));
+        const stepped = step(state, textOf(String(key)));
         state = stepped.state;
         stepped.effects.forEach(perform);
         draw();
