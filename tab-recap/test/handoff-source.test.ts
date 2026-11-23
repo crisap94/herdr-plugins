@@ -11,7 +11,7 @@ import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { fact } from '#test/fakes/fact-at.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import type { GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';

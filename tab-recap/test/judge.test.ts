@@ -12,7 +12,7 @@ import type { RunRecord } from '#src/ports/run-inputs.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
 import { cursor, memoryStore, recordOps, runsOf } from '#test/db/support.ts';
 import { oneTask, withFacts } from '#test/support.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 
 const SECTIONS = { goal: textOf('Ship retries for the upload client.'), now: [], needs: [], done: [textOf('Merged !256 after both pipelines went green.'), textOf('Spent the morning on it.')], decisions: [textOf('Keep three retries because the API limits bursts.')], next: [], links: [textOf('!256')], rules: [] };

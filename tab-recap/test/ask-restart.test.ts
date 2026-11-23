@@ -15,7 +15,7 @@ import type { AskEntry } from '#src/ports/ask-ledger.ts';
 import { parseExchangeName, parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import { handoffLike } from './fakes/protocol-exchanges.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';

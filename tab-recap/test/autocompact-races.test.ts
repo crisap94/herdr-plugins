@@ -1,10 +1,11 @@
 import { instant } from '#src/recap/domain/time.ts';
-import { parseCompactionId, agentKind } from '#src/recap/domain/ids.ts';
+import { parseCompactionId } from '#src/recap/domain/ids.ts';
+import { agentKind } from '#test/support/ids.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { must } from '#src/protocol/result.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import { AutocompactSweep } from '#src/daemon/autocompact-sweep.ts';
 import type { Candidate } from '@stateforge-labs/session-ledger/compaction-timing';
 import { candidatesOf } from '#src/daemon/autocompact.ts';

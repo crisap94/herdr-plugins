@@ -5,7 +5,7 @@ import { SCREEN_READER_ID } from '#src/adapters/transcripts/screen.ts';
 import type { ScreenReader } from '#src/ports/screens.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
-import { agentKind } from '#src/recap/domain/ids.ts';
+import { agentKind } from '#test/support/ids.ts';
 import { readerKindOf } from './fakes/transcript-lines.ts';
 
 test('exact lookup returns the reader for each registered kind', () => {

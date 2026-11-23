@@ -3,11 +3,11 @@ import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { LaneCursor } from '#src/ports/recap-records.ts';
 import type { CurationRun } from '#src/ports/stories.ts';
 import { curationOf } from '#src/recap/domain/curation.ts';
-import type { Fact } from '#src/recap/domain/fact.ts';
+import type { Fact, FactId } from '#src/recap/domain/fact.ts';
 import type { CloseOp } from '#src/recap/domain/ops.ts';
-import { parseText, parseTextOrNull } from '#src/recap/domain/text.ts';
+import { parseText, parseTextOrNull, textOf } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import { parseTabId, paneId } from '#src/recap/domain/ids.ts';
+import { parseTabId } from '#src/recap/domain/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
@@ -69,7 +69,7 @@ export class CurateTasks {
 
     private async one(tab: TabId, task: RecapTask, how: CurateScope): Promise<Presence> {
         try {
-            const reconciled = await this.reconciling.task(tab, { id: must(parseText(task.id)), name: must(parseText(task.name)), lanes: task.lanes.map((member) => paneId(member)) }, how.lanes, how.why);
+            const reconciled = await this.reconciling.task(tab, { id: must(parseText(task.id)), name: must(parseText(task.name)), lanes: task.lanes.map((member) => member) }, how.lanes, how.why);
             if (how.why === 'open') {
                 await this.curate(tab, task);
             }
@@ -110,15 +110,15 @@ export class CurateTasks {
             }
             const run: CurationRun = { task: { tab, key: task.id }, at: now, language: deps.language() };
             const reading: StoryReading = (answer) => {
-                const open = new Set<string>();
+                const open = new Set<FactId>();
                 for (const [id, fact] of named) {
                     if (fact.state === 'open') {
-                        open.add(id);
+                        open.add(factIdOf(id));
                     }
                 }
                 const text = answer.kind === 'curated' ? answer.text : '';
                 const read = parseText(text);
-                return curationOf(read.kind === 'ok' ? answerTextOf(read.value) : text, open);
+                return curationOf(read.kind === 'ok' ? answerTextOf(read.value) : textOf(text), open);
             };
             const kept = await storyAnswerOf(this.plain, { writer, run, sent: parseText(document), first: answered, reading });
             this.store(run, must(parseText(kept.kind === 'curated' ? kept.text : answered.text)), named);
@@ -128,7 +128,7 @@ export class CurateTasks {
     }
 
     private store(run: CurationRun, answer: Text, named: ReadonlyMap<string, Fact>): void {
-        const [open, where] = [new Set([...named].filter(([, fact]) => fact.state === 'open').map(([id]) => id)), `curator ${run.task.tab} ${run.task.key}`];
+        const [open, where] = [new Set([...named].filter(([, fact]) => fact.state === 'open').map(([id]) => factIdOf(id))), `curator ${run.task.tab} ${run.task.key}`];
         const checked = curationOf(answerTextOf(answer), open);
         checked.refused.forEach((why) => { this.deps.log(must(parseText(`${where}: refused — ${why}`))); });
         const merges = checked.merges.map((merge): CloseOp => ({ op: 'close', id: named.get(merge.id)?.id ?? factIdOf(''), why: 'merged' }));

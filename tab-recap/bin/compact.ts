@@ -30,7 +30,7 @@ export async function compactCommand(tab: string, pane: string | null, note: str
     const setting = loadSettings().compactNote;
     const text = note === undefined ? undefined : noteFromRequest(textOf(note));
     const m = messagesOf();
-    const started = await beginCompact(tabId(tab), pane === null ? null : paneId(pane), text, setting, {
+    const started = await beginCompact(tabId(textOf(tab)), pane === null ? null : paneId(textOf(pane)), text, setting, {
         askNote: async (asked, shown) => {
             await sleep(Number(process.env['TAB_RECAP_COMPACT_DELAY_MS'] ?? 0) || 0);
             return new HerdrFleet(textOf(stateDirectory())).agents().askNote(asked, shown);

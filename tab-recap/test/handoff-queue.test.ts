@@ -9,7 +9,7 @@ import type { HandoffAsk } from '#src/ports/requests.ts';
 import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { memoryStore } from './db/support.ts';
 import { rid } from './fakes/ask-ledger.ts';

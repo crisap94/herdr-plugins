@@ -4,7 +4,7 @@ import { viewOf } from '#src/recap/application/dispatch.ts';
 import { LaneWebs } from '#src/recap/application/lane-webs.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import { observe } from '#src/recap/domain/fold.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
@@ -14,7 +14,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 
 const WEB = { base: must(parseText('https://gitlab.example/acme/shop')), forge: 'gitlab' } as const;
 const dir = (path: string): Directory => must(parseDirectory(path));

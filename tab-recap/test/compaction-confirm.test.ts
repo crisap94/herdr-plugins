@@ -12,7 +12,7 @@ import { UNREAD, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { countOf } from '#src/recap/domain/count.ts';
-import { agentKind } from '#src/recap/domain/ids.ts';
+import { agentKind } from '#test/support/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
 const SINCE = Date.parse('2026-10-10T02:21:48Z');

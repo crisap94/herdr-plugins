@@ -5,7 +5,8 @@ import type { Presence } from '#src/recap/domain/presence.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 import type { CompactRequestQueue } from '#src/recap/application/compact-requests.ts';
-import { parseWireText, type WireText } from '#src/protocol/primitives.ts';
+import { parseWireText, type OptIn, type TokenValue, type WireText } from '#src/protocol/primitives.ts';
+import type { Setting } from '#src/protocol/capability.ts';
 import { herdrEventsFrom } from '#src/recap/domain/herdr-events.ts';
 import { capabilityOf } from '#src/recap/domain/lane-tokens.ts';
 import { notesOf } from '#src/recap/domain/coordination.ts';
@@ -29,14 +30,14 @@ export function pauseVia(pause: (span: Duration) => Promise<void>): (ms: number)
 }
 
 export function awaitingNow(pane: string): Promise<Waiting> {
-    return awaitingPane(paneId(pane));
+    return awaitingPane(paneId(textOf(pane)));
 }
 
-function switchOn(setting: string): boolean {
-    return setting === handoff.optIn ? loadSettings().handoffRequests === 'on' : herdrEventsFrom(settingReader()(environmentName(textOf(setting)))) === 'on';
+function switchOn(setting: OptIn): Setting {
+    return (setting === handoff.optIn ? loadSettings().handoffRequests === 'on' : herdrEventsFrom(settingReader()(environmentName(textOf(setting)))) === 'on') ? 'on' : 'off';
 }
 
-export function capabilityNow(): string {
+export function capabilityNow(): TokenValue {
     return capabilityOf(switchOn);
 }
 
@@ -58,9 +59,10 @@ const wireMap = (tokens: TokenMap): ReadonlyMap<WireText, WireText> => {
 
 export function paneTokensTo(worktrees: Worktrees, answers: CompactRequestQueue, exchange: HandoffExchangeWiring): (pane: string, tokens: TokenMap) => void {
     return (pane, tokens) => {
-        worktrees.feed.update(paneId(pane), notesOf(tokens));
-        answers.onPaneTokens(paneId(pane), wireMap(tokens));
-        exchange.responder.onPaneTokens(paneId(pane), new Map(Object.entries(tokens).map(([name, raw]): [Text, Text] => [must(parseText(name)), must(parseText(raw))])));
+        const text = new Map(Object.entries(tokens).map(([name, raw]): [Text, Text] => [must(parseText(name)), must(parseText(raw))]));
+        worktrees.feed.update(paneId(textOf(pane)), notesOf(text));
+        answers.onPaneTokens(paneId(textOf(pane)), wireMap(tokens));
+        exchange.responder.onPaneTokens(paneId(textOf(pane)), text);
     };
 }
 

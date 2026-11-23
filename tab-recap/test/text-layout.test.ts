@@ -7,7 +7,7 @@ import { plain, visibleLength, wrap } from '#src/recap/render/wrap.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { oneTask } from '#test/support.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 
 const ESC = String.fromCodePoint(0x1b);
 const ACUTE = String.fromCodePoint(0x301);

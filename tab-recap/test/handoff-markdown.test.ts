@@ -15,7 +15,7 @@ import type { HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/doma
 import { cleanHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import { vetHandoffText } from '#src/recap/domain/handoff-vetting.ts';
 import { handoffId } from '#src/recap/domain/ids.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { parseCount, countOf } from '#src/recap/domain/count.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { freshnessTextOf } from '#src/recap/render/freshness.ts';
 import { HANDOFF_PREAMBLE, serializeHandoff } from '#src/recap/render/handoff-markdown.ts';
@@ -42,12 +42,12 @@ const prefixOf = (text: string): string => Array.from(text).slice(0, HANDOFF_PRE
 const entryOf = (id: string, text: string, lastAt: number, reason: string | null = null): HandoffEntry => ({
     id: id as FactId,
     text: cleanHandoffText(asText(text)),
-    firstAt: lastAt,
-    lastAt,
+    firstAt: instant(lastAt),
+    lastAt: instant(lastAt),
     reason: reason === null ? null : cleanHandoffText(asText(reason)),
 });
 
-const groupOf = (id: HandoffGroupId, entries: readonly HandoffEntry[], capped = 0): HandoffGroup => ({ id, entries, capped });
+const groupOf = (id: HandoffGroupId, entries: readonly HandoffEntry[], capped = countOf(0)): HandoffGroup => ({ id, entries, capped });
 
 const partsOf = (groups: readonly HandoffGroup[] = [], more: Partial<HandoffParts> = {}): HandoffParts => ({
     reference: { kind: 'handoff', id: ID, at: instant(AT) },
@@ -126,7 +126,7 @@ test('the freshness text is rendered under its heading, and the unavailable work
 });
 
 test('a known worksite block is appended exactly as given', () => {
-    const block = worksiteTextOf({ kind: 'known', directory: brand<string, 'Directory'>('/work/repo'), repository: null, lastCommit: null, uncommitted: null, edited: [], tokens: [] }, byteBudgetOf(2_048));
+    const block = worksiteTextOf({ kind: 'known', directory: brand<string, 'Directory'>('/work/repo'), repository: null, lastCommit: null, uncommitted: null, edited: [], tokens: [] }, byteBudgetOf(countOf(2_048)));
     const text = serializeHandoff(partsOf([groupOf('goal', [entryOf('g1', 'goal', AT)])], { worksiteText: block }));
     assert.ok(text.endsWith(`\n\n${block}`));
 });
@@ -193,7 +193,7 @@ process.stdout.write(utcMinuteOf(${millis}));`;
 });
 
 test('forbidden words are absent from the fixed text and from every template, whatever the facts', () => {
-    const groups = HANDOFF_GROUP_IDS.map((id) => groupOf(id, [entryOf(`${id}1`, `${id} the plain text`, AT, id === 'decisions' ? 'a plain reason' : null)], 1));
+    const groups = HANDOFF_GROUP_IDS.map((id) => groupOf(id, [entryOf(`${id}1`, `${id} the plain text`, AT, id === 'decisions' ? 'a plain reason' : null)], countOf(1)));
     const text = serializeHandoff(partsOf(groups, { note: cleanHandoffText(asText('a plain note')), omitted: omittedOf({ done: 1, links: 1, closed: 1, now: 1, next: 1, withheld: 1 }) }));
     assert.equal((vetHandoffText(cleanHandoffText(asText(text))).kind === 'err'), false);
     assert.equal((vetHandoffText(cleanHandoffText(asText(HANDOFF_PREAMBLE))).kind === 'err'), false);

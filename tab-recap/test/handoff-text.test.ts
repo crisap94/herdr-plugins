@@ -9,7 +9,7 @@ import type { RenderedBlocks } from '#src/recap/application/handoff-text.ts';
 import { taskFactsOf } from '#src/recap/application/ledger-input.ts';
 import type { FactId, Fact, TaskId } from '#src/recap/domain/fact.ts';
 import type { Freshness } from '#src/recap/domain/freshness.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { parseCount, countOf as bytesCount } from '#src/recap/domain/count.ts';
 import { HANDOFF_GROUP_IDS } from '#src/recap/domain/handoff-content.ts';
 import type { HandoffBody, HandoffContent, HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
 import { byteBudgetOf } from '#src/recap/domain/byte-budget.ts';
@@ -37,7 +37,7 @@ const TASK: TaskId = { tab: tabIdOf('w1:t1'), key: brand<string, 'Text'>('t1') }
 const NEVER_CUT: ReadonlySet<HandoffGroupId> = new Set(['goal', 'needs', 'decisions', 'rules']);
 const NEWER_POOL: readonly HandoffGroupId[] = ['now', 'next'];
 const OLDER_POOL: readonly HandoffGroupId[] = ['done', 'links', 'closed'];
-const BIG = byteBudgetOf(10_000_000);
+const BIG = byteBudgetOf(bytesCount(10_000_000));
 const FRESHNESS: Freshness = { lastRun: { at: instant(AT - 60_000), cause: 'turn-ended' }, status: 'idle', newerPrompts: { kind: 'none' }, refresh: 'not-requested' };
 const WORKSITE: WorksiteSnapshot = { kind: 'unavailable' };
 const BLOCKS: RenderedBlocks = { reference: { kind: 'handoff', id: ID, at: instant(AT) }, freshnessText: freshnessTextOf(FRESHNESS), worksiteText: null };
@@ -47,12 +47,12 @@ const bytesOf = (text: string): number => new TextEncoder().encode(text).byteLen
 const entryOf = (id: string, text: string, lastAt: number, firstAt = lastAt, reason: string | null = null): HandoffEntry => ({
     id: id as FactId,
     text: cleanHandoffText(asText(text)),
-    firstAt,
-    lastAt,
+    firstAt: instant(firstAt),
+    lastAt: instant(lastAt),
     reason: reason === null ? null : cleanHandoffText(asText(reason)),
 });
 
-const groupOf = (id: HandoffGroupId, entries: readonly HandoffEntry[], capped = 0): HandoffGroup => ({ id, entries, capped });
+const groupOf = (id: HandoffGroupId, entries: readonly HandoffEntry[], capped = bytesCount(0)): HandoffGroup => ({ id, entries, capped });
 
 const fitOf = (groups: readonly HandoffGroup[], more: Partial<HandoffFit> = {}): HandoffFit => ({
     reference: BLOCKS.reference,
@@ -81,7 +81,7 @@ const filler = (size: number): string => 'x'.repeat(size);
 
 const WORKSITE_BLOCK = worksiteTextOf(
     { kind: 'known', directory: brand<string, 'Directory'>('w'.repeat(HANDOFF_WORKSITE_BYTES - '## Worksite\n- directory: '.length)), repository: null, lastCommit: null, uncommitted: null, edited: [], tokens: [] },
-    byteBudgetOf(HANDOFF_WORKSITE_BYTES),
+    byteBudgetOf(bytesCount(HANDOFF_WORKSITE_BYTES)),
 );
 
 const countOf = (fit: HandoffFit, id: HandoffGroupId): number => fit.groups.filter((group) => group.id === id).reduce((sum, group) => sum + group.capped + group.entries.length, 0);
@@ -128,7 +128,7 @@ const randomFit = (random: () => number): HandoffFit => {
             return entryOf(key, padding === '' ? `[${key}]` : `[${key}] ${padding}`, lastAt, firstAt, reason);
         });
         const capped = id === 'done' || id === 'links' || id === 'closed' ? below(3) : 0;
-        return groupOf(id, entries, capped);
+        return groupOf(id, entries, bytesCount(capped));
     });
     return fitOf(groups, { note: random() < 0.5 ? cleanHandoffText(asText('focus on the parser')) : null, withheld: below(5) });
 };
@@ -192,15 +192,15 @@ test('the budget is counted in UTF-8 bytes, not in code units', () => {
     const full = textOf(fit);
     const bytes = bytesOf(full);
     assert.ok(full.length < bytes);
-    assert.equal(fitHandoff(fit, byteBudgetOf(bytes)).kind, 'text');
-    assert.equal(shownOf(fitHandoff(fit, byteBudgetOf(bytes - 1))).omitted.now, 1);
+    assert.equal(fitHandoff(fit, byteBudgetOf(bytesCount(bytes))).kind, 'text');
+    assert.equal(shownOf(fitHandoff(fit, byteBudgetOf(bytesCount(bytes - 1)))).omitted.now, 1);
 });
 
 test('the omitted line counts toward the budget, so a text that only fits without it is pruned', () => {
-    const fit = fitOf([groupOf('goal', [entryOf('g1', 'goal', AT)]), groupOf('done', [entryOf('d1', 'done one', AT - 1)], 1)]);
+    const fit = fitOf([groupOf('goal', [entryOf('g1', 'goal', AT)]), groupOf('done', [entryOf('d1', 'done one', AT - 1)], bytesCount(1))]);
     const full = textOf(fit);
     assert.ok(omittedLineOf(full) !== null);
-    const pruned = shownOf(fitHandoff(fit, byteBudgetOf(bytesOf(full) - 1)));
+    const pruned = shownOf(fitHandoff(fit, byteBudgetOf(bytesCount(bytesOf(full) - 1))));
     assert.equal(pruned.omitted.done, 2);
     assert.equal(pruned.text.includes('done one'), false);
 });
@@ -212,7 +212,7 @@ test('the oldest now and next facts go first, one at a time and whole, before an
         groupOf('now', [entryOf('n-old', `now old ${filler(400)}`, AT - 400), entryOf('n-new', 'now new', AT - 10)]),
         groupOf('next', [entryOf('x-1', `next one ${filler(400)}`, AT - 300)]),
     ]);
-    const result = shownOf(fitHandoff(fit, byteBudgetOf(bytesOf(textOf(fit)) - 1)));
+    const result = shownOf(fitHandoff(fit, byteBudgetOf(bytesCount(bytesOf(textOf(fit)) - 1))));
     assert.equal(result.omitted.now, 1);
     assert.equal(result.omitted.next, 0);
     assert.equal(result.omitted.done, 0);
@@ -227,11 +227,11 @@ test('when no now or next fact is left, the oldest done, links and closed facts 
         groupOf('done', [entryOf('d1', `d1 ${filler(400)}`, AT - 300), entryOf('d2', `d2 ${filler(400)}`, AT - 200)]),
         groupOf('links', [entryOf('l1', `l1 ${filler(400)}`, AT - 100)]),
     ]);
-    const first = shownOf(fitHandoff(fit, byteBudgetOf(bytesOf(textOf(fit)) - 1)));
+    const first = shownOf(fitHandoff(fit, byteBudgetOf(bytesCount(bytesOf(textOf(fit)) - 1))));
     assert.equal(first.omitted.done, 1);
     assert.equal(first.text.includes('d1 '), false);
     assert.ok(first.text.includes('d2 ') && first.text.includes('l1 '));
-    const second = shownOf(fitHandoff(fit, byteBudgetOf(bytesOf(first.text) - 1)));
+    const second = shownOf(fitHandoff(fit, byteBudgetOf(bytesCount(bytesOf(first.text) - 1))));
     assert.equal(second.omitted.done, 2);
     assert.equal(second.text.includes('d2 '), false);
     assert.ok(second.text.includes('l1 '));
@@ -239,12 +239,12 @@ test('when no now or next fact is left, the oldest done, links and closed facts 
 
 test('a never-cut part alone over the budget is too-large, with or without droppable facts', () => {
     const big = groupOf('goal', [entryOf('g1', filler(HANDOFF_BUDGET_BYTES), AT)]);
-    assert.deepEqual(fitHandoff(fitOf([big]), byteBudgetOf(HANDOFF_BUDGET_BYTES)), { kind: 'too-large' });
-    assert.deepEqual(fitHandoff(fitOf([big, groupOf('now', [entryOf('n1', 'now one', AT)])]), byteBudgetOf(HANDOFF_BUDGET_BYTES)), { kind: 'too-large' });
+    assert.deepEqual(fitHandoff(fitOf([big]), byteBudgetOf(bytesCount(HANDOFF_BUDGET_BYTES))), { kind: 'too-large' });
+    assert.deepEqual(fitHandoff(fitOf([big, groupOf('now', [entryOf('n1', 'now one', AT)])]), byteBudgetOf(bytesCount(HANDOFF_BUDGET_BYTES))), { kind: 'too-large' });
 });
 
 test('a never-cut part that fits the budget is rendered whole', () => {
-    const text = textOf(fitOf([groupOf('goal', [entryOf('g1', filler(15_000), AT)])]), byteBudgetOf(HANDOFF_BUDGET_BYTES));
+    const text = textOf(fitOf([groupOf('goal', [entryOf('g1', filler(15_000), AT)])]), byteBudgetOf(bytesCount(HANDOFF_BUDGET_BYTES)));
     assert.ok(text.includes(filler(15_000)));
 });
 
@@ -253,7 +253,7 @@ test('a worksite block of the full 2048 bytes counts toward the budget, so a now
     assert.equal(bytesOf(WORKSITE_BLOCK), HANDOFF_WORKSITE_BYTES);
     const withoutWorksite = textOf(fitOf(groups));
     const withWorksite = textOf(fitOf(groups, { worksiteText: WORKSITE_BLOCK }));
-    const budget = byteBudgetOf(bytesOf(withWorksite) - 1);
+    const budget = byteBudgetOf(bytesCount(bytesOf(withWorksite) - 1));
     assert.ok(bytesOf(withoutWorksite) <= budget, 'the text without the worksite block fits, so only the block makes it too big');
     const result = shownOf(fitHandoff(fitOf(groups, { worksiteText: WORKSITE_BLOCK }), budget));
     assert.equal(result.omitted.now, 1);
@@ -265,7 +265,7 @@ test('a worksite block of the full 2048 bytes counts toward the budget, so a now
 test('never-cut parts plus a full worksite block that do not fit give too-large, with a now fact to drop', () => {
     const groups = [groupOf('goal', [entryOf('g1', 'goal', AT)]), groupOf('now', [entryOf('n1', 'now one', AT - 1)])];
     const goalOnly = textOf(fitOf([groupOf('goal', [entryOf('g1', 'goal', AT)])]));
-    const budget = byteBudgetOf(bytesOf(goalOnly) + HANDOFF_WORKSITE_BYTES - 1);
+    const budget = byteBudgetOf(bytesCount(bytesOf(goalOnly) + HANDOFF_WORKSITE_BYTES - 1));
     assert.ok(bytesOf(goalOnly) <= budget);
     assert.deepEqual(fitHandoff(fitOf(groups, { worksiteText: WORKSITE_BLOCK }), budget), { kind: 'too-large' });
 });
@@ -343,7 +343,7 @@ test('any budget terminates: the text fits with every never-cut part whole and a
     const random = prng(20261011);
     for (let run = 0; run < 400; run += 1) {
         const fit = randomFit(random);
-        const budget = byteBudgetOf(1 + Math.floor(random() * 20_000));
+        const budget = byteBudgetOf(bytesCount(1 + Math.floor(random() * 20_000)));
         assertFitted(run, fit, budget, fitHandoff(fit, budget));
     }
 });
@@ -351,12 +351,12 @@ test('any budget terminates: the text fits with every never-cut part whole and a
 test('a sweep of budgets never returns a text over its budget', () => {
     const fit = fitOf([
         groupOf('goal', [entryOf('g1', `[g1] ${filler(120)}`, AT)]),
-        groupOf('done', [entryOf('d1', `[d1] ${filler(300)}`, AT - 3), entryOf('d2', `[d2] ${filler(300)}`, AT - 2)], 2),
+        groupOf('done', [entryOf('d1', `[d1] ${filler(300)}`, AT - 3), entryOf('d2', `[d2] ${filler(300)}`, AT - 2)], bytesCount(2)),
         groupOf('now', [entryOf('n1', `[n1] ${filler(300)}`, AT - 1)]),
     ]);
     const full = bytesOf(textOf(fit));
     for (let budget = 1; budget <= full + 5; budget += 7) {
-        const result = fitHandoff(fit, byteBudgetOf(budget));
+        const result = fitHandoff(fit, byteBudgetOf(bytesCount(budget)));
         if (result.kind === 'text') {
             assert.ok(bytesOf(result.text) <= budget, `budget ${budget}`);
         }

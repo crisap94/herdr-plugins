@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { notesByPaneOf, warningTextsOf } from '#src/extensions/load.ts';
 import type { Extension, Note, NotesResult } from '#src/ports/extension.ts';
 import { unknown } from '#src/ports/unknowable.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
 const note = (label: string): Note => ({ label, at: null, details: [] });

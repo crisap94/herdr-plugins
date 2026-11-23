@@ -7,7 +7,7 @@ import { parseCount, countOf } from '#src/recap/domain/count.ts';
 import { test } from 'node:test';
 import type { Text } from '#src/recap/domain/text.ts';
 import assert from 'node:assert/strict';
-import { paneId, tabId, agentKind } from '#src/recap/domain/ids.ts';
+import { paneId, tabId, agentKind } from '#test/support/ids.ts';
 import { en } from '#src/i18n/en.ts';
 import { KEPT_AT_LEAST, checkCoverage, checkedFactsOf, correctionFor, questionsOf, unmetLinesOf, unmetOf } from '#src/recap/application/brief-coverage.ts';
 import type { CheckedCoverage } from '#src/recap/application/brief-coverage.ts';

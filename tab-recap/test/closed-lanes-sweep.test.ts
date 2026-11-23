@@ -4,7 +4,7 @@ import { forgetClosedTabs } from '#src/recap/application/retention.ts';
 import type { SweepDeps } from '#src/recap/application/retention.ts';
 import type { ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { RemovedCounts, RetentionPort } from '#src/ports/retention.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Count } from '#src/recap/domain/count.ts';

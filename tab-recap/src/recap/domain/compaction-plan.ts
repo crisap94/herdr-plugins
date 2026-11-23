@@ -2,7 +2,6 @@ import { err, must, ok, type Result } from '#src/protocol/result.ts';
 import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 import type { Duration } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { CompactionPlan } from './legacy.ts';
 import type { Text } from './text.ts';
 
 export type CompactionPiece = Brand<string, 'CompactionPiece'>;
@@ -53,7 +52,24 @@ export type Confirmation =
 
 export type CompactionPlanResult = { readonly kind: 'supported'; readonly plan: CompactionPlan } | Unsupported;
 
-export type { CompactionPlan, CompactionPlanFactory, FollowUp } from './legacy.ts';
+export type AcceptsStall = Brand<boolean, 'AcceptsStall'>;
+
+export type RetriesOnSelfFailure = Brand<boolean, 'RetriesOnSelfFailure'>;
+
+export const acceptsStall = brand<boolean, 'AcceptsStall'>;
+
+export const retriesOnSelfFailure = brand<boolean, 'RetriesOnSelfFailure'>;
+
+export type FollowUp = { readonly kind: 'restore-message'; readonly acceptsStall: AcceptsStall } | { readonly kind: 'none' };
+
+export interface CompactionPlan {
+    readonly lines: readonly CompactionLine[];
+    readonly enterDelay: Duration;
+    readonly confirm: Confirmation;
+    readonly retryOnSelfFailure: RetriesOnSelfFailure;
+    readonly followUp: FollowUp;
+    readonly whileWorking: WhileWorking;
+}
 
 export type Unsupported = { readonly kind: 'unsupported'; readonly why: Text };
 

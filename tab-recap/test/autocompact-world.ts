@@ -8,7 +8,7 @@ import type { AutocompactDeps, IdleClaim } from '#src/recap/application/autocomp
 import { candidateOf } from '#src/daemon/autocompact.ts';
 import { ACTIVE } from '#src/recap/application/autocompact-gates.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { parseLaneStatusAtDecision } from '#src/recap/domain/autocompact.ts';
 import type { AutocompactPolicy } from '#src/recap/domain/autocompact.ts';

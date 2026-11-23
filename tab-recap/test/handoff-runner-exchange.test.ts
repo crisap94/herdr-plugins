@@ -11,7 +11,7 @@ import type { LaneEvents } from '#src/recap/application/lane-events.ts';
 import type { StoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';

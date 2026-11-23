@@ -14,7 +14,7 @@ import type { EventKind } from '#src/recap/domain/event-token.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import { HANDOFF_OUTCOME_ROWS } from '#src/recap/domain/handoff-outcome.ts';
 import { handoffOutcomeOf } from './fakes/handoff-outcome-readers.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';

@@ -1,5 +1,5 @@
 import { compactCommand } from '@stateforge-labs/harness-adapters';
-import { compactionLine, needsIdle, parseCompactionPiece, parseConfirmationReads, QUEUES, unsupported } from '#src/recap/domain/compaction-plan.ts';
+import { acceptsStall, compactionLine, needsIdle, retriesOnSelfFailure, parseCompactionPiece, parseConfirmationReads, QUEUES, unsupported } from '#src/recap/domain/compaction-plan.ts';
 import type { CompactionPlanResult } from '#src/recap/domain/compaction-plan.ts';
 import { duration } from '#src/recap/domain/time.ts';
 import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
@@ -20,7 +20,7 @@ const claude = (guidance: Text): CompactionPlanResult => ({ kind: 'supported', p
     lines: [compactionLine(must(parseCompactionPiece(`${compactCommand('claude')} `)), must(parseCompactionPiece(guidance)))],
     enterDelay: duration(300),
     confirm: { kind: 'turn-end' },
-    retryOnSelfFailure: true,
+    retryOnSelfFailure: retriesOnSelfFailure(true),
     followUp: { kind: 'none' },
     whileWorking: QUEUES,
 } });
@@ -29,8 +29,8 @@ const polling = (harness: HarnessKind): PlanFor => (_guidance: Text): Compaction
     lines: [compactionLine(must(parseCompactionPiece(compactCommand(harness))))],
     enterDelay: duration(300),
     confirm: { kind: 'poll', reads: must(parseConfirmationReads(20)), every: duration(1000) },
-    retryOnSelfFailure: false,
-    followUp: { kind: 'restore-message', acceptsStall: true },
+    retryOnSelfFailure: retriesOnSelfFailure(false),
+    followUp: { kind: 'restore-message', acceptsStall: acceptsStall(true) },
     whileWorking: needsIdle(textOf('queued input is not measured for this kind')),
 } });
 

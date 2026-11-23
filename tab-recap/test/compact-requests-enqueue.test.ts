@@ -15,7 +15,7 @@ import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 

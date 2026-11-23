@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { ADVANCED, marksOf, NOT_ADVANCED } from '#src/recap/application/boundaries.ts';
 import type { Read } from '#src/recap/application/boundaries.ts';
 import { compactedFrom, settledBefore, triggerOf } from '#src/recap/domain/boundary.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 import type { Chunk, Mark } from '#src/ports/transcripts.ts';
 import { instant, duration } from '#src/recap/domain/time.ts';
 import { grewOf, cursorOf } from '#src/ports/transcripts.ts';

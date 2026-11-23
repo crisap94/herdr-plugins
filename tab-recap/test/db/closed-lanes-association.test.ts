@@ -10,7 +10,7 @@ import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import type { ClosedLaneRead } from '#src/ports/closed-lanes.ts';
 import type { ClosedLane } from '#src/recap/domain/closures.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { closedDaysOf as closedLaneDaysOf } from '../fakes/closed-days.ts';
 import { directoryOf } from '../fakes/closed-values.ts';
 import { instant } from '#src/recap/domain/time.ts';

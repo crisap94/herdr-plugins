@@ -15,11 +15,12 @@ import type { CompactAsk } from '#src/ports/requests.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import type { Done } from '#src/ports/columns.ts';
 import type { WorkspaceList, WorkspaceTokenMap } from '#src/ports/workspace-tokens.ts';
-import { uncheckedMilliseconds, uncheckedWorkspaceId, type WorkspaceId } from '#src/recap/domain/ids.ts';
-import type { LaneFacts } from '#src/recap/domain/lane-tokens.ts';
+import { uncheckedMilliseconds, uncheckedTokenName, uncheckedWorkspaceId, type WorkspaceId } from '#src/recap/domain/ids.ts';
+import type { LaneTokenFacts } from '#src/recap/domain/lane-tokens.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { countOf } from '#src/recap/domain/count.ts';
+import { paneId } from '#test/support/ids.ts';
 
 test('the four writers write only tab-recap\'s names, on panes and on workspaces; a foreign name is refused by the adapter\'s rule', async () => {
     const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
@@ -34,7 +35,7 @@ test('the four writers write only tab-recap\'s names, on panes and on workspaces
         },
         enabled: (): boolean => true, startedAt: 1, log: (): void => undefined,
     });
-    const publisher = new LaneTokenPublisher({ tokens: paneWrites, enabled: (): boolean => true, board: (): Board => board, facts: (): LaneFacts => ({ share: 40, recapAt: 1, needs: 2 }), now: (): number => 0, log: (): void => undefined, events });
+    const publisher = new LaneTokenPublisher({ tokens: paneWrites, enabled: (): boolean => true, board: (): Board => board, facts: (): LaneTokenFacts => ({ share: countOf(40), recapAt: instant(1), needs: countOf(2) }), now: (): number => 0, log: (): void => undefined, events });
     publisher.tick();
     events.lane('w1:p1', 'recap-written', 'turn-ended');
     const answers = new CompactRequestQueue({ enabled: (): Presence => 'present', board: (): Board => board, requests: { requestCompact: (): void => undefined }, asks: new MemoryAskLedger(), tokens: paneWrites, now: (): Instant => instant(1000), log: (): void => undefined });
@@ -48,8 +49,8 @@ test('the four writers write only tab-recap\'s names, on panes and on workspaces
     assert.ok(names.size > 4, 'every writer wrote');
     assert.deepEqual([...names].filter((name) => !PANE_WRITABLE.includes(name)), []);
     assert.deepEqual(spaces.filter((space) => !WORKSPACE_WRITABLE.includes(space.split(':')[1] ?? '')), []);
-    assert.equal(unownedName(['tab-recap-api', 'coordinator-token'], PANE_WRITABLE), 'coordinator-token', 'a foreign name is refused');
-    assert.equal(unownedName(['typing-tab-recap', 'tab-recap-event'], PANE_WRITABLE), null);
+    assert.equal(unownedName(['tab-recap-api', 'coordinator-token'].map(uncheckedTokenName), PANE_WRITABLE.map(uncheckedTokenName)), 'coordinator-token', 'a foreign name is refused');
+    assert.equal(unownedName(['typing-tab-recap', 'tab-recap-event'].map(uncheckedTokenName), PANE_WRITABLE.map(uncheckedTokenName)), null);
 });
 
 test('the request answers are not the tool\'s token: the answer is written under tab-recap-compact only', async () => {

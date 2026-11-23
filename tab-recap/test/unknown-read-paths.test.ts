@@ -11,7 +11,7 @@ import type { LastRun } from '#src/ports/recap-records.ts';
 import type { Stories } from '#src/ports/stories.ts';
 import type { TabView } from '#src/ports/tab-views.ts';
 import { unknown } from '#src/ports/unknowable.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import type { TaskId } from '#src/recap/domain/fact.ts';
 import { cursor, memoryStore, recordOps, storeRead } from './db/support.ts';
 import { causeOf } from './fakes/cause.ts';

@@ -14,7 +14,7 @@ import { textOf } from '#src/recap/domain/text.ts';
 
 export const SETTLE_SOURCE = 'experiments/EXP-003-handoff-live/runs/R01-settle-and-handoff-proof/m4-trials.jsonl';
 
-const settleOf = (after: Duration, trials: Count): SettleTime => ({ after, evidence: { trials, source: SETTLE_SOURCE } });
+const settleOf = (after: Duration, trials: Count): SettleTime => ({ after, evidence: { trials, source: textOf(SETTLE_SOURCE) } });
 
 const promptPlan = (settle: SettleTime, locatedBy: LocatedBy): HandoffPlan => ({ delivery: 'prompt', evidence: 'either', retry: 'none', settle, locatedBy });
 

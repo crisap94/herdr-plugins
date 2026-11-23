@@ -4,7 +4,7 @@ import { MemoryRequests } from './fakes/requests.ts';
 import { MemoryHandoffAnswers } from './fakes/handoff-answers.ts';
 import { deliverHandoff, type DaemonReading, type DeliverDeps } from '#src/recap/application/handoff-request.ts';
 import type { HandoffAskRecord } from '#src/ports/requests.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { NOW } from './fakes/handoff-flow-harness.ts';
 

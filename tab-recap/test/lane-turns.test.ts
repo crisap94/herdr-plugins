@@ -7,7 +7,7 @@ import { Informer } from '#src/recap/application/informer.ts';
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { emptyBoard, withLanes } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
-import { paneId, tabId, agentKind } from '#src/recap/domain/ids.ts';
+import { paneId, tabId, agentKind } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';

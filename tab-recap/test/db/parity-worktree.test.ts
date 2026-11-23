@@ -4,7 +4,7 @@ import type { Database } from 'bun:sqlite';
 import { parseWorktreeStatusRow, WorktreeStatusRepository } from '#src/adapters/db/worktree-status.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 import type { WorktreeStatus } from '#src/recap/domain/worktree.ts';
 import { expectSameEffect, expectSameRows, withParity } from './parity.ts';
 

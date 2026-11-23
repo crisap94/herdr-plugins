@@ -1,6 +1,7 @@
 import type { LiveLanes, LiveLanesRead, TabView, TabViews } from '#src/ports/tab-views.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { tabId } from '#src/recap/domain/ids.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 export class PublishingViews implements TabViews, LiveLanes {
     private readonly inner: TabViews & LiveLanes;
@@ -17,7 +18,7 @@ export class PublishingViews implements TabViews, LiveLanes {
 
     tabOf(pane: PaneId): TabId | null {
         const found = this.inner.tabOf(pane);
-        return found === null ? null : tabId(found);
+        return found === null ? null : tabId(textOf(found));
     }
 
     liveLanes(): LiveLanesRead {
@@ -26,6 +27,6 @@ export class PublishingViews implements TabViews, LiveLanes {
 
     writeTab(view: TabView): void {
         this.inner.writeTab(view);
-        this.published(tabId(view.tab));
+        this.published(tabId(textOf(view.tab)));
     }
 }

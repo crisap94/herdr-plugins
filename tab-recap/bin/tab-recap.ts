@@ -133,7 +133,7 @@ function status(): number {
 async function configure(): Promise<number> {
     const tab = currentTab();
     await sleep(Number(process.env['TAB_RECAP_OPEN_DELAY_MS'] ?? 0) || 0);
-    const opened = await new HerdrFleet(textOf(stateDirectory())).setup(tab === null ? null : tabId(tab));
+    const opened = await new HerdrFleet(textOf(stateDirectory())).setup(tab === null ? null : tabId(textOf(tab)));
     if (isUnknown(opened)) {
         console.error(`tab-recap: 1 — ${m().cli.modalFailed(saying(opened.why))}`);
         return FAILED;
@@ -164,7 +164,7 @@ function toggle(all: boolean): number {
     if (queue === null) {
         return FAILED;
     }
-    queue.requestVisibility({ target: paneId(tab), visibility: 'toggle' });
+    queue.requestVisibility({ target: paneId(textOf(tab)), visibility: 'toggle' });
     console.log(`tab-recap: ${all ? m().cli.columnsToggled : m().cli.columnToggled(tab)}`);
     return OK;
 }
@@ -184,7 +184,7 @@ async function show(): Promise<number> {
         console.error(`tab-recap: 3 — ${m().cli.tabUnknown}`);
         return NOT_COVERED;
     }
-    const shown = await new HerdrFleet(textOf(stateDirectory())).show(tabId(tab));
+    const shown = await new HerdrFleet(textOf(stateDirectory())).show(tabId(textOf(tab)));
     if (isUnknown(shown)) {
         console.error(`tab-recap: 1 — ${m().cli.modalFailed(saying(shown.why))}`);
         return FAILED;
@@ -215,7 +215,7 @@ const commands: Readonly<Record<string, (arg: string | undefined) => number | Pr
         if (queue === null) {
             return FAILED;
         }
-        queue.request(tabId(tab));
+        queue.request(tabId(textOf(tab)));
         console.log(`tab-recap: ${m().cli.requested(tab)}`);
         return OK;
     },

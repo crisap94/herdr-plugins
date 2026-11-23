@@ -19,7 +19,7 @@ interface Plain {
 
 const directoryOf = brand<string, 'Directory'>;
 
-const LIMIT = byteBudgetOf(2_048);
+const LIMIT = byteBudgetOf(countOf(2_048));
 const encoder = new TextEncoder();
 const bytes = (text: string): number => encoder.encode(text).byteLength;
 const paths = (count: number): string[] => Array.from({ length: count }, (_, index) => `src/module-${String(index).padStart(2, '0')}.ts`);
@@ -75,7 +75,7 @@ test('a value that cannot be known is omitted: no repository, no commit, no unco
 
 test('the section never exceeds its budget, at every size from 1 to the whole budget', () => {
     for (let size = 1; size <= 2_048; size += 37) {
-        const budget = byteBudgetOf(size);
+        const budget = byteBudgetOf(countOf(size));
         const text = worksiteTextOf(known(full), budget);
         assert.ok(bytes(text) <= size, `${size} bytes allowed, got ${bytes(text)}`);
         assert.equal(text.includes('�'), false);
@@ -83,7 +83,7 @@ test('the section never exceeds its budget, at every size from 1 to the whole bu
 });
 
 test('a budget that fits everything but the token names drops the token names first', () => {
-    const budget = byteBudgetOf(bytes(worksiteTextOf(known(withoutTokens), LIMIT)));
+    const budget = byteBudgetOf(countOf(bytes(worksiteTextOf(known(withoutTokens), LIMIT))));
     const text = worksiteTextOf(known(full), budget);
     assert.equal(text.includes('tokens:'), false);
     assert.match(text, /most edited files/);
@@ -91,7 +91,7 @@ test('a budget that fits everything but the token names drops the token names fi
 });
 
 test('then the edited files go before any uncommitted path', () => {
-    const budget = byteBudgetOf(bytes(worksiteTextOf(known(withoutEdits), LIMIT)));
+    const budget = byteBudgetOf(countOf(bytes(worksiteTextOf(known(withoutEdits), LIMIT))));
     const text = worksiteTextOf(known(full), budget);
     assert.equal(text.includes('most edited files'), false);
     assert.equal(text.includes('tokens:'), false);
@@ -101,7 +101,7 @@ test('then the edited files go before any uncommitted path', () => {
 
 test('then uncommitted paths are dropped from the end while the count stays', () => {
     const shorter = { ...withoutEdits, uncommitted: { count: 31, paths: paths(12) } };
-    const budget = byteBudgetOf(bytes(worksiteTextOf(known(shorter), LIMIT)));
+    const budget = byteBudgetOf(countOf(bytes(worksiteTextOf(known(shorter), LIMIT))));
     const text = worksiteTextOf(known(full), budget);
     assert.match(text, /31 uncommitted paths/);
     assert.match(text, /src\/module-00\.ts/);
@@ -113,7 +113,7 @@ test('then uncommitted paths are dropped from the end while the count stays', ()
 test('then the commit subject is cut at a code-point boundary, with the directory and repository lines kept', () => {
     const multibyte = { ...full, lastCommit: { hash: 'a1b2c3d', subject: 'añadir ✓ 🚀 mucho texto después' }, uncommitted: { count: 0, paths: [] }, edited: [], tokens: [] };
     const floor = bytes(worksiteTextOf(known({ ...multibyte, lastCommit: { hash: 'a1b2c3d', subject: '' } }), LIMIT));
-    const budget = byteBudgetOf(floor + 9);
+    const budget = byteBudgetOf(countOf(floor + 9));
     const text = worksiteTextOf(known(multibyte), budget);
     assert.ok(bytes(text) <= floor + 9);
     assert.match(text, /- directory: \/work\/project/);
@@ -126,7 +126,7 @@ test('then the commit subject is cut at a code-point boundary, with the director
 test('the last cut keeps the first lines and cuts by code points only', () => {
     const wide = { ...full, directory: '/trabajo/proyecto/ñandú/🚀'.repeat(12) };
     for (const size of [12, 40, 61, 97]) {
-        const text = worksiteTextOf(known(wide), byteBudgetOf(size));
+        const text = worksiteTextOf(known(wide), byteBudgetOf(countOf(size)));
         assert.ok(bytes(text) <= size);
         assert.equal(text.includes('�'), false);
         assert.equal(Buffer.from(text, 'utf8').toString('utf8'), text);

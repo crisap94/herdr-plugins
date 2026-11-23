@@ -9,7 +9,7 @@ import { duration } from '#src/recap/domain/time.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { confirmationOf, laneWith, planWith, readyOf, worldOf } from './fakes/handoff-delivery.ts';
 import type { World } from './fakes/handoff-delivery.ts';
-import { agentKind } from '#src/recap/domain/ids.ts';
+import { agentKind } from '#test/support/ids.ts';
 
 const TEXT = 'Handoff of the parser refactor.\n\nNext steps:\n  - finish the lexer\n  - run the suite';
 const FAILED: HandoffOutcome = { kind: 'failed', reason: 'unconfirmed' };

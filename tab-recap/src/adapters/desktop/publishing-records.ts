@@ -4,7 +4,6 @@ import type { Text } from '#src/recap/domain/text.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { Advance, FailedRun, LastRun, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
 
 export class PublishingRecords implements GuardedRecapRecords {
     private readonly inner: GuardedRecapRecords;
@@ -30,12 +29,12 @@ export class PublishingRecords implements GuardedRecapRecords {
 
     recordRun(run: RecordedRun): void {
         this.inner.recordRun(run);
-        this.published(tabId(run.tab));
+        this.published(run.tab);
     }
 
     failRun(run: FailedRun): void {
         this.inner.failRun(run);
-        this.published(tabId(run.tab));
+        this.published(run.tab);
     }
 
     advance(move: Advance): void {

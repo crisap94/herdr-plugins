@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import type { Database } from 'bun:sqlite';
 import { RequestsStore } from '#src/adapters/db/requests.ts';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import { expectSameEffect } from './parity.ts';
 
 const keyOf = (n: number): Uint8Array => Uint8Array.from({ length: 16 }, () => n);

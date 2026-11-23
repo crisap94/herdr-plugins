@@ -1,5 +1,5 @@
 import { instant } from '#src/recap/domain/time.ts';
-import { tabId, paneId, agentKind } from '#src/recap/domain/ids.ts';
+import { tabId, paneId, agentKind } from '#test/support/ids.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { laneFrom } from '#src/recap/domain/lane.ts';

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { LaneDispatch } from '#src/recap/application/dispatch.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { ClosedLane } from '#src/recap/domain/closures.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
 import { silentClosures } from './fakes/silent-closures.ts';
 import { instant } from '#src/recap/domain/time.ts';

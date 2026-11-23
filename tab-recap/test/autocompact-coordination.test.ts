@@ -2,7 +2,7 @@ import { parseUsd } from '#src/recap/domain/usd.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseAutocompactPercent } from '#src/recap/domain/autocompact.ts';
 import { parseCount, countOf } from '#src/recap/domain/count.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { detailOf } from '#src/recap/application/autocompact-gates.ts';

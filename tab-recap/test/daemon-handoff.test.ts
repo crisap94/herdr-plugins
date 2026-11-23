@@ -17,7 +17,7 @@ import { writeTx } from '#src/adapters/db/connection.ts';
 import { LOCAL_REQUESTER } from '#src/ports/ask-ledger.ts';
 import type { AskEntry } from '#src/ports/ask-ledger.ts';
 import type { HandoffAskRecord } from '#src/ports/requests.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import { parseRequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import type { HandoffAnswerStore } from '#src/ports/handoff-answers.ts';

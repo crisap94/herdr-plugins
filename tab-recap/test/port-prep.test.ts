@@ -5,7 +5,7 @@ import { en } from '#src/i18n/en.ts';
 import { viewOf } from '#src/recap/application/dispatch.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import { observe } from '#src/recap/domain/fold.ts';
-import { paneId as paneOf, tabId } from '#src/recap/domain/ids.ts';
+import { paneId as paneOf, tabId } from '#test/support/ids.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';

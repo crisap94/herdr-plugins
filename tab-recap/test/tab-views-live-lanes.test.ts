@@ -4,7 +4,7 @@ import { MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { TabViewsRepository } from '#src/adapters/db/tab-views/legacy.ts';
 import type { LiveLanes, TabLane, TabView, TabViews } from '#src/ports/tab-views.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { MemoryTabViews } from './fakes/tab-views-memory.ts';
 

@@ -36,7 +36,7 @@ function positionOf(input: FreshnessInput): Position {
 
 async function newerPromptCount(transcripts: TranscriptRegistry, input: FreshnessInput): Promise<number | null> {
     const source = input.source;
-    const reader = source === null || isScreenSource(sourcePathOf(source)) ? undefined : transcripts.readerFor(agentKind(input.agent));
+    const reader = source === null || isScreenSource(sourcePathOf(source)) ? undefined : transcripts.readerFor(agentKind(textOf(input.agent)));
     if (source === null || reader === undefined) {
         return null;
     }
@@ -52,7 +52,7 @@ export function closedFreshnessOf(view: ClosedView): FreshnessOutcome {
 }
 
 export async function freshnessOf(deps: FreshnessDeps, input: FreshnessInput): Promise<FreshnessOutcome> {
-    const lastRun = deps.records.lastRunOf(tabId(input.tab));
+    const lastRun = deps.records.lastRunOf(tabId(textOf(input.tab)));
     if (lastRun === null) {
         return { kind: 'ledger-empty' };
     }

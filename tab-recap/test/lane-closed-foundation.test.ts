@@ -5,7 +5,7 @@ import type { Wire } from '#src/adapters/herdr/agents.ts';
 import { emptyBoard, listsPane } from '#src/recap/domain/board.ts';
 import { observe } from '#src/recap/domain/fold.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { LANE_STATUSES, parseLaneStatusAtDecision } from '#src/recap/domain/autocompact.ts';

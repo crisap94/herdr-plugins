@@ -29,7 +29,7 @@ export function unparsedOf(evalName: UnparsedEval, text: string, reader: Reader)
     if (!READERS.includes(reader)) throw new Error(`unknown reader ${String(reader)}`);
     const body = bodyOf(text, reader);
     if (evalName === 'curator-reconcile') return reconciliationOf(textOf(body), new Map(), textOf('')).refused.includes(textOf(NOT_JSON));
-    return curationOf(body, new Set()).refused.some((why) => why === NOT_JSON || why === NOT_OBJECT);
+    return curationOf(textOf(body), new Set()).refused.some((why) => why === NOT_JSON || why === NOT_OBJECT);
 }
 
 interface AnswerRow {

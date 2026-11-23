@@ -7,7 +7,7 @@ import { parseProbability } from '#src/recap/domain/probability.ts';
 import { checkCoverage, probabilityRequired } from '#src/recap/application/brief-coverage.ts';
 import type { CheckedCoverage } from '#src/recap/application/brief-coverage.ts';
 import type { CheckedFact } from '#src/recap/domain/autocompact.ts';
-import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
+import type { CompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { BriefDesk } from '#src/recap/application/compaction-brief.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import type { DecisionLedger } from '#src/ports/autocompact-records.ts';
@@ -20,7 +20,6 @@ import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { lanesOf, listsPane } from '#src/recap/domain/board.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Text } from '#src/recap/domain/text.ts';
@@ -77,7 +76,7 @@ interface CompactionParts {
     log(line: Text): void;
 }
 
-export function coverageOf(decider: DeciderPort | null, tuning: () => AutocompactTuning): CoverageCheck | null {
+export function coverageOf(decider: DeciderPort | null, tuning: () => CompactTuning): CoverageCheck | null {
     return decider === null ? null : { check: (text, facts) => checkCoverage(text, facts, decider, probabilityRequired(parseProbability(tuning().coverageAtLeast))) };
 }
 
@@ -92,7 +91,7 @@ export function wireCompaction(parts: CompactionParts): Compaction {
         listsPane: (pane: PaneId): Presence => (listsPane(informer.current, pane) ? 'present' : 'absent'),
         focused: async (tab: TabId): Promise<PaneId | null> => {
             const layout = await fleet.layout(tab);
-            return isUnknown(layout) || layout.focused === null ? null : paneId(layout.focused);
+            return isUnknown(layout) || layout.focused === null ? null : layout.focused;
         },
         refresh: refreshVia(recaps, parts.records),
         coverage: () => coverageOf(parts.coverageDecider(), () => loadSettings().tuning),

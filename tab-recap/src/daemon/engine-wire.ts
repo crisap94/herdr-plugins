@@ -25,6 +25,7 @@ import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { restoreTextOf } from '#src/recap/application/restore-text.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 type EngineLog = Parameters<typeof pluginEngine>[0]['environment']['log'];
 type EngineRepos = Parameters<typeof pluginEngine>[0]['environment']['repos'];
@@ -67,7 +68,7 @@ async function runCurator(curate: CurateTasks, event: RunEvent, say: EngineLog):
 
 function ranRun(curate: CurateTasks, events: EventStream, board: () => Board, event: RunEvent, say: EngineLog): void {
     void runCurator(curate, event, say);
-    recapWritten(events, lanesOf(board(), tabId(event.tab)), event.cause);
+    recapWritten(events, lanesOf(board(), event.tab), event.cause);
 }
 
 export function wireEngine({ store, backends, transcripts, clock, repos, curate, events, board, ledger, log }: EngineParts): WiredEngine {
@@ -93,7 +94,7 @@ export function wireEngine({ store, backends, transcripts, clock, repos, curate,
         },
         on: (event): void => {
             if (event.kind === 'recap-written') {
-                ranRun(curate, events, board, { tab: tabId(event.scope), turns: event.turns, boundary: event.boundary, ...(event.cause === undefined ? {} : { cause: must(parseText(event.cause)) }) }, log);
+                ranRun(curate, events, board, { tab: tabId(textOf(event.scope)), turns: event.turns, boundary: event.boundary, ...(event.cause === undefined ? {} : { cause: must(parseText(event.cause)) }) }, log);
             }
             ledger(event);
         },

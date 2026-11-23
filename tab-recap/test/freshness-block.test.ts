@@ -11,7 +11,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { SCREEN_PREFIX } from '#src/ports/screens.ts';
 import { textOf } from '#src/recap/domain/text.ts';
-import { agentKind, paneId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId } from '#test/support/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 
 const TAB = 'w1:t1';

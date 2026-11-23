@@ -14,7 +14,7 @@ import type { TabView } from '#src/ports/tab-views.ts';
 import { present, presentBar } from '#src/recap/render/present.ts';
 import { visibleLength } from '#src/recap/render/wrap.ts';
 import { oneTask } from '#test/support.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 

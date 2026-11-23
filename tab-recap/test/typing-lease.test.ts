@@ -10,7 +10,8 @@ import type { LaneTokens } from '#src/ports/lane-tokens.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import { FakePanes } from './fakes/herdr-panes.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { paneId, uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
+import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 
 function herdrAt(clock: { at: number }): { herdr: FakePanes; tokens: LaneTokens; panes: PaneTokens } {
     const herdr = new FakePanes(() => clock.at);

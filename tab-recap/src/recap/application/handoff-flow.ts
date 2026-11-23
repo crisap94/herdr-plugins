@@ -18,6 +18,7 @@ import type { ClosedSourceDeps } from './closed-lane-source.ts';
 import { DeliveryTracker } from './delivery-tracker.ts';
 import { resolveTarget } from './handoff-target.ts';
 import type { Ready, TargetDeps, TargetResolution } from './handoff-target.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 export interface ClosedFlowDeps {
     readonly closures: ClosedSourceDeps['closures'];
@@ -169,7 +170,7 @@ export class HandoffFlow {
         if (lane === undefined) {
             return { kind: 'refused', reason: 'source-unavailable' };
         }
-        const cursor = knownOr(this.deps.records.readRecap(tabId(String(request.tab))), null)?.lanes.find((candidate) => candidate.pane === String(request.pane)) ?? null;
+        const cursor = knownOr(this.deps.records.readRecap(tabId(textOf(String(request.tab)))), null)?.lanes.find((candidate) => candidate.pane === String(request.pane)) ?? null;
         return this.deps.render({ handoff: request.id, at: this.deps.now(), lane, cursor, facts: found.facts, note: request.note, refresh });
     }
 

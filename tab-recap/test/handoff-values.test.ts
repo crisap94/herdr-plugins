@@ -74,10 +74,10 @@ test('the refresh statuses are the four the spec names, in the same words', () =
 });
 
 test('a byte budget is a positive whole number of bytes, and fits is a bound on it', () => {
-    const budget = byteBudgetOf(16_384);
-    assert.equal(fits(budget, 16_384), true);
-    assert.equal(fits(budget, 16_385), false);
+    const budget = byteBudgetOf(countOf(16_384));
+    assert.equal(fits(budget, countOf(16_384)), true);
+    assert.equal(fits(budget, countOf(16_385)), false);
     for (const bad of [0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
-        assert.throws(() => byteBudgetOf(bad), RangeError, String(bad));
+        assert.throws(() => byteBudgetOf(countOf(bad)), RangeError, String(bad));
     }
 });

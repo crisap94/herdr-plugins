@@ -4,7 +4,7 @@ import { changes, dirty, draftFrom, initial, locksOf, modelTarget, saved, step, 
 import type { Draft, Effect, Locks, Setup } from '#src/recap/application/setup-keys.ts';
 import { requestRewrites } from '#src/recap/application/setup-changes.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { memoryStore, seed } from '#test/db/support.ts';
 import { oneTask } from '#test/support.ts';
 import { instant } from '#src/recap/domain/time.ts';

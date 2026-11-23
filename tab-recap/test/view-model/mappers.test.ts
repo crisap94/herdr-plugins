@@ -10,7 +10,8 @@ import { columnTaskOf, columnViewOf, compactionRowOf, recapColumnOf, rowOf, webO
 import { sessionRecapOf } from '#src/view-model/expanded.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { must } from '#src/protocol/result.ts';
-import { agentKind, paneId, parseCompactionId, tabId } from '#src/recap/domain/ids.ts';
+import { parseCompactionId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { sourcePathOf, cursorOf } from '#src/ports/transcripts.ts';
 import { textOf } from '#src/recap/domain/text.ts';

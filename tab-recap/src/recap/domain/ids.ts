@@ -1,6 +1,6 @@
 import { ok, type Result } from '#src/protocol/result.ts';
 import type { BackendId } from './backend.ts';
-import type { TabId } from './timing-ids.ts';
+import { parseAgentKind, parsePaneId, parseTabId, type AgentKind, type PaneId, type TabId } from './timing-ids.ts';
 import type { Text } from './text.ts';
 import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import { parseNonEmptyText } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
@@ -94,7 +94,38 @@ export const uncheckedTokenName = brand<string, 'TokenName'>;
 export const uncheckedTokenValue = brand<string, 'TokenValue'>;
 
 export { parseAgentKind, parseCompactionId, parseDecisionId, parsePaneId, parseTabId } from './timing-ids.ts';
-export { agentKind, paneId, tabId, workspaceId } from './legacy.ts';
+
+export function paneId(raw: Text): PaneId {
+    const parsed = parsePaneId(raw);
+    if (parsed.kind === 'err') {
+        throw new NotAnIdentifierError('a pane id cannot be empty');
+    }
+    return parsed.value;
+}
+
+export function tabId(raw: Text): TabId {
+    const parsed = parseTabId(raw);
+    if (parsed.kind === 'err') {
+        throw new NotAnIdentifierError('a tab id cannot be empty');
+    }
+    return parsed.value;
+}
+
+export function workspaceId(raw: Text): WorkspaceId {
+    const parsed = parseWorkspaceId(raw);
+    if (parsed.kind === 'err') {
+        throw new NotAnIdentifierError('a workspace id cannot be empty');
+    }
+    return parsed.value;
+}
+
+export function agentKind(raw: Text): AgentKind {
+    const parsed = parseAgentKind(raw);
+    if (parsed.kind === 'err') {
+        throw new NotAnIdentifierError('an agent kind cannot be empty');
+    }
+    return parsed.value;
+}
 
 export function sessionId(raw: Text): SessionId {
     const parsed = parseSessionId(raw);

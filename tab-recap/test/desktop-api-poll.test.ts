@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { apiProblems } from '#test/gui-schema-support.ts';
 import { call, json, startRig, type Rig } from '#test/desktop-api-support.ts';
 import { readFileSync } from 'node:fs';

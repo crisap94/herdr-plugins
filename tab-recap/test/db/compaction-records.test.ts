@@ -10,7 +10,8 @@ import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { memoryStore, newId, openFixture, scratchDir } from './support.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
-import { agentKind, paneId, parseCompactionId, tabId } from '#src/recap/domain/ids.ts';
+import { parseCompactionId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { must } from '#src/protocol/result.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 

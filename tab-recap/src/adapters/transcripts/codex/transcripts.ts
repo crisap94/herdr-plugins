@@ -59,7 +59,7 @@ export function extractCodexOf(lines: readonly Text[]): Omit<Chunk, 'kind' | 'po
 }
 
 export class CodexTranscripts implements Transcripts {
-    readonly agent = agentKind('codex');
+    readonly agent = agentKind(textOf('codex'));
     readonly inFlight: SupportedReading = { kind: 'supported', split: { kind: 'foreground-only', why: 'codex-cells' }, read: (source, budget) => this.readInFlight(source, budget) };
     private readonly root: FsPath;
     private readonly readTail: typeof tailSpan;

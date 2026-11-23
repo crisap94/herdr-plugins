@@ -6,7 +6,8 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
 import { parseText } from '#src/recap/domain/text.ts';
-import { paneId, parseCompactionId, tabId } from '#src/recap/domain/ids.ts';
+import { parseCompactionId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import { must } from '#src/protocol/result.ts';
 import { compacted, compactionDeps, compactionFlow, failed, lane, NOW, typingFleet } from '#test/fakes/compaction-fleet.ts';
 

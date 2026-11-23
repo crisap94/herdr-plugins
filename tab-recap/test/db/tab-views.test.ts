@@ -9,7 +9,7 @@ import { openStoreAt } from '#src/adapters/db/database.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { TabViewsRepository } from '#src/adapters/db/tab-views/legacy.ts';
 import type { TabLane, TabView } from '#src/ports/tab-views.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { memoryStore, must, openFixture, scratchDir } from './support.ts';

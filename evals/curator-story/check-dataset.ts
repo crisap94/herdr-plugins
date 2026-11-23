@@ -4,7 +4,7 @@ import { RUBRIC } from '../../tab-recap/src/adapters/job/prompts/rubric.ts';
 import { curatorInput } from '../../packages/session-ledger/src/recap/application/curator-input.ts';
 import type { CuratorMaterial } from '../../packages/session-ledger/src/recap/application/curator-input.ts';
 import { curationOf } from '../../tab-recap/src/recap/domain/curation.ts';
-import { CLOSED_WHY, SECTION_IDS } from '../../packages/session-ledger/src/recap/domain/fact.ts';
+import { CLOSED_WHY, SECTION_IDS, factIdOf } from '../../packages/session-ledger/src/recap/domain/fact.ts';
 import { checkedTokens, outsideOf } from './tokens.ts';
 import { guardOf, overlapOf } from '../lib/fresh.ts';
 import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
@@ -109,17 +109,18 @@ for (const row of rows) {
     const invented = outsideOf(allowed, `In f${facts.size + 1} the build zz-invented-9731 ran on qx.example.dev at 25:61 with fakeName and 987654 rows, see f1.`);
     if (invented.join(' ') !== ['25:61', '987654', 'fakename', `f${facts.size + 1}`, 'qx.example.dev', 'zz-invented-9731'].sort().join(' ')) bad(`the token check gave ${invented.join(' ')}`);
     const ops = row.expected.merge_pairs.map((pair) => ({ op: 'close', id: pair.keep === null ? pair.ids[1] : pair.ids.find((id) => id !== pair.keep), why: 'merged', into: pair.keep ?? pair.ids[0] }));
-    const perfect = curationOf(JSON.stringify({ ops, story: 'A story.' }), open);
+    const openFacts = new Set([...open].map(factIdOf));
+    const perfect = curationOf(textOf(JSON.stringify({ ops, story: 'A story.' })), openFacts);
     if (perfect.refused.length > 0 || perfect.merges.length !== ops.length || perfect.story === null) bad(`the expected merges are refused by curationOf: ${perfect.refused.join('; ')}`);
     const closedOne = [...facts].find(([, fact]) => fact.state === 'closed')?.[0];
-    if (closedOne !== undefined && curationOf(JSON.stringify({ ops: [{ op: 'close', id: closedOne, why: 'merged', into: [...open][0] }], story: 'A story.' }), open).refused.length !== 1) bad('curationOf accepted a merge of a closed fact');
+    if (closedOne !== undefined && curationOf(textOf(JSON.stringify({ ops: [{ op: 'close', id: closedOne, why: 'merged', into: [...open][0] }], story: 'A story.' })), openFacts).refused.length !== 1) bad('curationOf accepted a merge of a closed fact');
     if (row.fresh !== undefined) {
         const freshTraps = row.fresh.traps;
         if (!freshTraps.some((trap) => trap.expect === 'refused')) bad('no refused trap');
         freshTraps.forEach((trap, index) => {
             traps[trap.expect] += 1;
             if (!row.plants.includes(trap.kind)) bad(`trap ${index} kind ${trap.kind} is not a plant of the item`);
-            const parsed = curationOf(JSON.stringify({ ops: trap.ops, story: 'A story.' }), open);
+            const parsed = curationOf(textOf(JSON.stringify({ ops: trap.ops, story: 'A story.' })), openFacts);
             const refused = parsed.refused.length > 0;
             if (trap.expect === 'refused' && !refused) bad(`trap ${index} (${trap.kind}) is kept, expected refused`);
             if (trap.expect === 'kept' && (refused || parsed.merges.length !== trap.ops.length)) bad(`trap ${index} (${trap.kind}) is refused, expected kept`);

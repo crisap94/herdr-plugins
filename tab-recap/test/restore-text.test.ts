@@ -18,7 +18,7 @@ import { SECTION_IDS } from '#src/recap/domain/fact.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import { cleanHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import { vetHandoffText } from '#src/recap/domain/handoff-vetting.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
@@ -36,6 +36,7 @@ import { parseText } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { fsPathOf } from './fakes/transcript-lines.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 const AT = Date.parse('2026-10-10T12:00:00Z');
 const MINUTE = 60_000;
@@ -123,7 +124,7 @@ test('the restore template names no plugin word and no hand-over to another agen
     const more = Array.from({ length: 16 }, (_, at) => fact(`d${at}`, 'done', `finished step ${at}`, AT - (20 + at) * MINUTE));
     const closed = [fact('c1', 'now', 'a closed plain text', AT - MINUTE, { state: 'closed', closedWhy: 'answered', closedAt: instant(AT) })];
     const withheld = fact('w1', 'next', 'Show the recap in a tab', AT);
-    const fitted = fitRestore(bodyOf(restoreContentOf(factsOf([...open, ...more, withheld], closed))), byteBudgetOf(HANDOFF_BUDGET_BYTES));
+    const fitted = fitRestore(bodyOf(restoreContentOf(factsOf([...open, ...more, withheld], closed))), byteBudgetOf(countOf(HANDOFF_BUDGET_BYTES)));
     const text = fitted.kind === 'text' ? fitted.text : assert.fail('expected a text');
     for (const section of ['## Goal', '## Now', '## Needs', '## Done', '## Decisions', '## Next', '## Links', '## Rules', '## Recently closed']) {
         assert.ok(text.includes(section), section);
@@ -151,7 +152,7 @@ test('the restore text stays within the handoff budget, dropping the oldest of n
     assert.ok(text.includes('the goal'));
     assert.match(text, /\d+ older notes left out$/u);
     assert.ok(text.includes(`${long} 0`), 'the newest is kept');
-    assert.equal(fitRestore(bodyOf(restoreContentOf(factsOf([fact('g', 'goal', long, AT)]))), byteBudgetOf(10)).kind, 'too-large');
+    assert.equal(fitRestore(bodyOf(restoreContentOf(factsOf([fact('g', 'goal', long, AT)]))), byteBudgetOf(countOf(10))).kind, 'too-large');
 });
 
 test('the restore path runs on the engine\'s store and a scope and followed session only: no tab view, no pane token, no same-lane refusal', async () => {

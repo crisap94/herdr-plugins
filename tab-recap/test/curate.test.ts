@@ -26,7 +26,7 @@ import { NO_REPOS, oneTask, requestOf } from '#test/support.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { must } from '#src/protocol/result.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const [textOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Instant'>];
@@ -270,10 +270,10 @@ test('the repair document names a too-long paragraph by its count and does not s
     const said = parseText('{}');
     const docText = doc.kind === 'ok' ? doc.value : assert.fail('the document parses');
     const saidText = said.kind === 'ok' ? said.value : assert.fail('the answer parses');
-    const tooLong = storyRepair(docText, saidText, { merges: [], story: null, refused: ['the paragraph is too long: 121 words, at most 120'] });
+    const tooLong = storyRepair(docText, saidText, { merges: [], story: null, refused: [textOf('the paragraph is too long: 121 words, at most 120')] });
     assert.ok(tooLong.includes('- the paragraph is too long: 121 words, at most 120'));
     assert.ok(!tooLong.includes('- no paragraph'));
-    const missing = storyRepair(docText, saidText, { merges: [], story: null, refused: ['f9 is not an open fact (or is already merged)'] });
+    const missing = storyRepair(docText, saidText, { merges: [], story: null, refused: [textOf('f9 is not an open fact (or is already merged)')] });
     assert.ok(missing.includes('- f9 is not an open fact (or is already merged)'));
     assert.ok(missing.includes('- no paragraph'));
 });

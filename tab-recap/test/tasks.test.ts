@@ -14,7 +14,7 @@ import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { touchedFiles } from '#src/recap/application/lane-hints.ts';
 import { RecapJob } from '#src/recap/application/recap-job.ts';
-import { tabId, agentKind } from '#src/recap/domain/ids.ts';
+import { tabId, agentKind } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import { keptGrouping } from '#src/recap/domain/grouping.ts';

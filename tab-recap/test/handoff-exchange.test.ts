@@ -6,7 +6,7 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import type { EventKind } from '#src/recap/domain/event-token.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 import type { AskEntry, AskDraft } from '#src/ports/ask-ledger.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';

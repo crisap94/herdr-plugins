@@ -12,7 +12,7 @@ import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
 import { HEADLINE_MAX, INDEX_LANES_MAX, encodeGuiTab, parseGuiIndex, type GuiLane, type GuiTab, type GuiTask } from '#src/recap/domain/gui-tab.ts';
 import type { GuiFact } from '#src/recap/domain/gui-tab-parts.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { blankRecap, type RecapRecords, type TabRecap } from '#src/ports/recap-records.ts';

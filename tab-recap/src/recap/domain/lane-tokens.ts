@@ -1,16 +1,13 @@
-import { CAPABILITY_TOKEN } from '#src/protocol/capability.ts';
+import { CAPABILITY_TOKEN, type SettingCheck } from '#src/protocol/capability.ts';
 import { compact } from '#src/protocol/exchanges/compact.ts';
 import { parseTokenName, parseTokenValue, type TokenName, type TokenValue } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import type { Milliseconds, Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import type { Count } from './count.ts';
 import { ANSWER_TOKENS, OWNERS, answerNameOf } from './token-registry.ts';
-import { CAPABILITY_VALUE, PROTOCOL_VERSION } from './lane-capability.ts';
+import { CAPABILITY_VALUE, PROTOCOL_VERSION, capabilityValueOf } from './lane-capability.ts';
 import { API_TOKEN, NEEDS_TOKEN, RECAP_TOKEN, SHARE_TOKEN } from './lane-token-names.ts';
 import { EVENT_TOKEN } from './event-token.ts';
-
-export { capabilityOf, clearing, unownedName, valuesOf, writeDue } from './legacy.ts';
-export type { LaneFacts, TokenValues, Written } from './legacy.ts';
 
 export { CAPABILITY_VALUE, PROTOCOL_VERSION, capabilityValueOf } from './lane-capability.ts';
 
@@ -65,3 +62,9 @@ export function writeDueOf(previous: LaneWrite | null, values: TokenMap, now: In
     const unchanged = previous.values.size === values.size && [...values].every(([name, value]) => previous.values.get(name) === value);
     return !unchanged || now - previous.at >= ttl / 2 ? values : null;
 }
+
+export const capabilityOf = (isOn: SettingCheck): TokenValue => capabilityValueOf(isOn);
+
+export const clearing = (names: readonly TokenName[]): ReadonlyMap<TokenName, null> => new Map(names.map((name) => [name, null]));
+
+export const unownedName = (names: readonly TokenName[], allowed: readonly TokenName[]): TokenName | null => names.find((name) => !allowed.includes(name)) ?? null;

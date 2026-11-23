@@ -1,7 +1,7 @@
 import { parseUsd } from '#src/recap/domain/usd.ts';
 import { policyOf, tuningOf } from './fakes/settings-readers.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { must as mustParsed } from '#src/protocol/result.ts';
 import { parseCount, countOf } from '#src/recap/domain/count.ts';
 import { must } from '#src/protocol/result.ts';

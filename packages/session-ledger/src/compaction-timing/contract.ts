@@ -56,17 +56,17 @@ export interface GateInput {
     readonly kind: LaneKind;
     readonly kinds: AutocompactKinds;
     readonly shadowKinds: readonly RegisteredKind[];
-    readonly busy: boolean;
+    readonly busy: 'busy' | 'free';
     readonly flight: Flight | null;
-    readonly share: number;
-    readonly minimum: number;
-    readonly ceiling: number;
-    readonly now: number;
-    readonly lastBreakAt: number | null;
+    readonly share: AutocompactPercent;
+    readonly minimum: AutocompactPercent;
+    readonly ceiling: AutocompactPercent;
+    readonly now: Instant;
+    readonly lastBreakAt: Instant | null;
     readonly lastDecisionAt: Instant | null;
-    readonly cooldownMs: number;
-    readonly unchanged: boolean;
-    readonly coverageBackoff?: boolean;
+    readonly cooldownMs: Duration;
+    readonly unchanged: 'same' | 'changed';
+    readonly coverageBackoff?: 'backing-off' | 'open';
 }
 
 export type Threshold = Probability;
@@ -78,8 +78,8 @@ export type DecisionStyle = 'gentle' | 'balanced' | 'eager';
 export interface Tuning {
     readonly style: DecisionStyle;
     readonly verdict: Thresholds;
-    readonly coverageAtLeast: number;
-    readonly recheckIdleMs: number | null;
+    readonly coverageAtLeast: Probability;
+    readonly recheckIdleMs: Milliseconds | null;
 }
 
 export type Effect = 'record-only' | 'may-act';

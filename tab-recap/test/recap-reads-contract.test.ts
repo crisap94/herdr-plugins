@@ -7,7 +7,7 @@ import { memoryStore } from './db/support.ts';
 import { MemoryRunHistory } from './fakes/run-history.ts';
 import { MemoryTabViews } from './fakes/tab-views-memory.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 

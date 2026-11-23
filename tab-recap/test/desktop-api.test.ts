@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { apiProblems } from '#test/gui-schema-support.ts';
 import { call, json, publishIndex, startRig } from '#test/desktop-api-support.ts';

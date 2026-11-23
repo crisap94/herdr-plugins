@@ -3,7 +3,7 @@ import { fits } from '#src/recap/domain/byte-budget.ts';
 import type { ByteBudget } from '#src/recap/domain/byte-budget.ts';
 import { compareIds } from '#src/recap/domain/handoff-content.ts';
 import type { HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { parseCount, countOf as bytesCount } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import type { HandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import type { FreshnessBlock } from '#src/recap/render/freshness.ts';
@@ -67,7 +67,7 @@ export function fitGroups(fit: GroupsFit, budget: ByteBudget, textOf: GroupsText
     const dropped: Dropped = {};
     for (;;) {
         const shown = textOf({ groups, omitted: omittedOf(fit, dropped) });
-        if (shown.kind === 'text' && fits(budget, byteLength(shown.text))) {
+        if (shown.kind === 'text' && fits(budget, bytesCount(byteLength(shown.text)))) {
             return shown;
         }
         const victim = victimOf(groups);

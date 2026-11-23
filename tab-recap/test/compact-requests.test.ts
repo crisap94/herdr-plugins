@@ -22,7 +22,8 @@ import { compact as compactExchange, COMPACT_FAILURES, COMPACT_STAGES } from '#s
 import { take } from '#src/protocol/responder.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { type Instant } from '#src/recap/domain/time.ts';
-import { paneId, uncheckedPaneId } from '#src/recap/domain/ids.ts';
+import { uncheckedPaneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 
 const lane = laneFrom({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
 const board = (): Board => ({ ...emptyBoard(), seeded: true, lanes: new Map([[lane.pane, lane]]) });

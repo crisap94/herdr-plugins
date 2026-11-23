@@ -5,7 +5,7 @@ import type { Result } from '#src/protocol/result.ts';
 import type { Curation } from '#src/recap/domain/curation.ts';
 import { STORY_TOO_LONG } from '#src/recap/domain/curation.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { ReconcilingDeps } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-reconcile.ts';
 
@@ -39,7 +39,7 @@ function acceptedOf(round: StoryRound, repair: Curated): Curated {
         return round.first;
     }
     const rechecked = round.reading(repair).refused;
-    return rechecked.includes('the answer is not JSON') || rechecked.includes('the answer is not an object') ? round.first : repair;
+    return rechecked.includes(textOf('the answer is not JSON')) || rechecked.includes(textOf('the answer is not an object')) ? round.first : repair;
 }
 
 export async function storyAnswerOf(deps: ReconcilingDeps, round: StoryRound): Promise<Curated> {

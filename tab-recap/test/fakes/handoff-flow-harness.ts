@@ -21,7 +21,7 @@ import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import { MemoryLedger } from './memory-ledger.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';

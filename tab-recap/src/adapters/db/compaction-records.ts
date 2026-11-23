@@ -1,4 +1,4 @@
-import { paneId, parseCompactionId, tabId, type CompactionId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { parseCompactionId, type CompactionId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import type { Database } from 'bun:sqlite';
 import { and, eq, isNull, lt, sql } from 'drizzle-orm';
 import { parseCompactionRow } from '#src/ports/compaction-records.ts';
@@ -37,7 +37,7 @@ export class CompactionLogRepository implements CompactionLog {
         const finished = ENDED.has(start.stage) ? start.at : null;
         writeTx(this.db, () => {
             this.orm.insert(compaction).values({
-                id, tabId: tabId(start.tab), pane: paneId(start.pane), agent: start.agent, stage: start.stage, writer: start.writer ?? null,
+                id, tabId: start.tab, pane: start.pane, agent: start.agent, stage: start.stage, writer: start.writer ?? null,
                 startedAt: start.at, stageAt: start.at, finishedAt: finished, why: start.why ?? null, origin: start.origin ?? 'operator', answer: start.answer ?? null,
                 retried: NOT_RETRIED, queued: NOT_QUEUED,
             }).run();
@@ -76,7 +76,7 @@ export class CompactionLogRepository implements CompactionLog {
     dismissTurn(tab: TabId, pane: PaneId, at: Instant): void {
         writeTx(this.db, () => {
             this.orm.update(compaction).set({ dismissedAt: at })
-                .where(and(eq(compaction.tabId, tabId(tab)), eq(compaction.pane, paneId(pane)), lt(compaction.finishedAt, at), isNull(compaction.dismissedAt)))
+                .where(and(eq(compaction.tabId, tab), eq(compaction.pane, pane), lt(compaction.finishedAt, at), isNull(compaction.dismissedAt)))
                 .run();
         });
     }

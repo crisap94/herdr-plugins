@@ -1,31 +1,35 @@
 import type { Board } from '#src/recap/domain/board.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { CAPABILITY_VALUE, OWNED_TOKENS, STATE_TOKENS, clearing, valuesOf, writeDue } from '#src/recap/domain/lane-tokens.ts';
+import { CAPABILITY_VALUE, OWNED_TOKENS, STATE_TOKENS, clearing, tokenValuesOf, writeDueOf } from '#src/recap/domain/lane-tokens.ts';
 import { NEEDS_TOKEN } from '#src/recap/domain/lane-token-names.ts';
-import type { LaneFacts, TokenValues } from '#src/recap/domain/lane-tokens.ts';
+import type { LaneTokenFacts, LaneWrite, TokenMap } from '#src/recap/domain/lane-tokens.ts';
+import { uncheckedTokenName } from '#src/recap/domain/ids.ts';
+import { instant, parseMilliseconds } from '#src/recap/domain/time.ts';
+import { must } from '#src/protocol/result.ts';
 import { backoffMs } from '#src/recap/domain/backoff.ts';
 import { countOf } from '#src/recap/domain/count.ts';
-import type { LaneTokens } from '#src/ports/lane-tokens.ts';
+import type { LaneTokenMap, LaneTokens } from '#src/ports/lane-tokens.ts';
+import type { TokenName, TokenValue } from '#src/protocol/primitives.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { LaneEvents } from './lane-events.ts';
 
 export const TICK_MS = 2_000;
 export const TTL_MS = 120_000;
 
+const TTL = must(parseMilliseconds(TTL_MS));
+const NEEDS = uncheckedTokenName(NEEDS_TOKEN);
+const STATE_NAMES: readonly TokenName[] = STATE_TOKENS.map(uncheckedTokenName);
+const OWNED_NAMES: readonly TokenName[] = OWNED_TOKENS.map(uncheckedTokenName);
+
 export interface LaneTokenDeps {
     readonly tokens: LaneTokens;
     readonly enabled: () => boolean;
     readonly board: () => Board;
-    readonly facts: (lane: Lane) => LaneFacts;
-    readonly capability?: () => string;
+    readonly facts: (lane: Lane) => LaneTokenFacts;
+    readonly capability?: () => TokenValue;
     readonly now: () => number;
     readonly log: (line: string) => void;
     readonly events?: LaneEvents;
-}
-
-interface Held {
-    readonly values: TokenValues;
-    readonly at: number;
 }
 
 interface Failing {
@@ -35,7 +39,7 @@ interface Failing {
 
 export class LaneTokenPublisher {
     private readonly deps: LaneTokenDeps;
-    private readonly written = new Map<string, Held>();
+    private readonly written = new Map<string, LaneWrite>();
     private readonly failing = new Map<string, Failing>();
     private lastTick = Number.NEGATIVE_INFINITY;
 
@@ -67,19 +71,19 @@ export class LaneTokenPublisher {
             return;
         }
         const previous = this.written.get(pane);
-        const values = valuesOf(this.deps.facts(lane), this.deps.capability?.() ?? CAPABILITY_VALUE);
-        const due = writeDue(previous === undefined ? null : { values: previous.values, at: previous.at }, values, now, TTL_MS);
+        const values = tokenValuesOf(this.deps.facts(lane), this.deps.capability?.() ?? CAPABILITY_VALUE);
+        const due = writeDueOf(previous ?? null, values, instant(now), TTL);
         if (due === null) {
             return;
         }
         this.announceNeeds(lane, previous?.values, due);
-        this.written.set(pane, { values: due, at: now });
-        void this.send(pane, { ...due, ...clearing(STATE_TOKENS.filter((name) => !(name in due))) }, now);
+        this.written.set(pane, { values: due, at: instant(now) });
+        void this.send(pane, new Map([...due, ...clearing(STATE_NAMES.filter((name) => !due.has(name)))]), now);
     }
 
-    private announceNeeds(lane: Lane, was: TokenValues | undefined, now: TokenValues): void {
-        const before = was?.[NEEDS_TOKEN];
-        const count = now[NEEDS_TOKEN];
+    private announceNeeds(lane: Lane, was: TokenMap | undefined, now: TokenMap): void {
+        const before = was?.get(NEEDS);
+        const count = now.get(NEEDS);
         if (before !== undefined && count !== undefined && before !== count) {
             this.deps.events?.lane(String(lane.pane), Number(count) > Number(before) ? 'needs-raised' : 'needs-cleared', count);
         }
@@ -87,11 +91,11 @@ export class LaneTokenPublisher {
 
     private clear(pane: string): void {
         this.written.delete(pane);
-        void this.send(pane, clearing(OWNED_TOKENS), this.deps.now());
+        void this.send(pane, clearing(OWNED_NAMES), this.deps.now());
     }
 
-    private async send(pane: string, tokens: Readonly<Record<string, string | null>>, now: number): Promise<void> {
-        const done = await this.deps.tokens.report(pane, tokens, TTL_MS);
+    private async send(pane: string, tokens: LaneTokenMap, now: number): Promise<void> {
+        const done = await this.deps.tokens.report(pane, Object.fromEntries(tokens), TTL_MS);
         if (isUnknown(done)) {
             this.written.delete(pane);
             this.fail(pane, now, saying(done.why));

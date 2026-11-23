@@ -5,7 +5,7 @@ import { opsOfSections } from '#src/adapters/db/import/sections-to-ops.ts';
 import type { RemovedCounts } from '#src/ports/retention.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import { removeExpiredTabs } from '#src/recap/application/retention.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { cursor, memoryStore, recordOps } from './support.ts';

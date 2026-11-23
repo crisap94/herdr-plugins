@@ -2,7 +2,7 @@ import type { Database } from 'bun:sqlite';
 import { and, desc, eq, max, ne, sql } from 'drizzle-orm';
 import { chapterStart, compactedFrom } from '#src/recap/domain/boundary.ts';
 import type { LaneMark, Planned } from '#src/recap/domain/boundary.ts';
-import { paneId, tabId, type TabId } from '#src/recap/domain/ids.ts';
+import { type TabId } from '#src/recap/domain/ids.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { boundary, chapter, compaction, transcript } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
@@ -44,12 +44,12 @@ export class BoundaryRows {
         return [...new Set(found.marks.map((mark) => mark.pane))].flatMap((pane) => {
             const last = this.orm.select({ at: max(boundary.at) }).from(boundary)
                 .innerJoin(transcript, eq(transcript.id, boundary.transcriptId))
-                .where(and(eq(boundary.kind, 'compacted'), eq(transcript.tabId, tabId(tab)), eq(transcript.pane, paneId(pane)))).get()?.at ?? null;
+                .where(and(eq(boundary.kind, 'compacted'), eq(transcript.tabId, tab), eq(transcript.pane, pane))).get()?.at ?? null;
             const asked = this.orm.select({ startedAt: compaction.startedAt }).from(compaction)
-                .where(and(eq(compaction.tabId, tabId(tab)), eq(compaction.pane, paneId(pane)), ne(compaction.stage, 'skipped'))).all()
+                .where(and(eq(compaction.tabId, tab), eq(compaction.pane, pane), ne(compaction.stage, 'skipped'))).all()
                 .map((row) => instant(row.startedAt));
             const planned = compactedFrom(found.marks.filter((mark) => mark.pane === pane), last === null ? null : instant(last), asked);
-            return planned.map((each) => Object.assign({}, each, { transcript: this.transcripts.ofPane(tab, paneId(pane), found.at), replaces: null }));
+            return planned.map((each) => Object.assign({}, each, { transcript: this.transcripts.ofPane(tab, pane, found.at), replaces: null }));
         });
     }
 
@@ -62,10 +62,10 @@ export class BoundaryRows {
 
     private open(tab: TabId, row: Row): void {
         const sealed = this.orm.select({ n: chapter.n, startedAt: chapter.startedAt }).from(chapter)
-            .where(eq(chapter.tabId, tabId(tab))).orderBy(desc(chapter.n)).limit(1).get();
+            .where(eq(chapter.tabId, tab)).orderBy(desc(chapter.n)).limit(1).get();
         const chapterRow = ids.next();
         this.orm.insert(chapter).values({
-            id: chapterRow, tabId: tabId(tab), n: (sealed?.n ?? 1) + 1, startedAt: chapterStart(row.at, instant(sealed?.startedAt ?? row.at)),
+            id: chapterRow, tabId: tab, n: (sealed?.n ?? 1) + 1, startedAt: chapterStart(row.at, instant(sealed?.startedAt ?? row.at)),
         }).run();
         this.orm.insert(boundary).values({
             id: ids.next(), chapterId: chapterRow, transcriptId: row.transcript, kind: row.kind, at: row.at, trigger: row.trigger, cursor: row.cursor,
@@ -74,7 +74,7 @@ export class BoundaryRows {
     }
 
     record(tab: TabId, found: Found): void {
-        this.orm.insert(chapter).values({ id: ids.next(), tabId: tabId(tab), n: 1, startedAt: found.at }).onConflictDoNothing().run();
+        this.orm.insert(chapter).values({ id: ids.next(), tabId: tab, n: 1, startedAt: found.at }).onConflictDoNothing().run();
         for (const row of [...this.compacted(tab, found), ...this.switched(found)].toSorted(byTime)) {
             this.open(tab, row);
         }

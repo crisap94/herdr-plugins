@@ -124,7 +124,7 @@ export function replayCommand(options: EvalRequest): Promise<number> {
     const readers = replayTranscriptRegistry();
     const file = options.replay ?? '';
     const kind = replayKindOfPath(options.kind === null ? null : textOf(options.kind), fsPathOf(file));
-    const reader = kind === null ? undefined : readers.exact(agentKind(kind));
+    const reader = kind === null ? undefined : readers.exact(agentKind(textOf(kind)));
     if (reader === undefined) {
         console.error('tab-recap: 2 — --kind takes claude or codex');
         return Promise.resolve(2);

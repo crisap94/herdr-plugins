@@ -15,7 +15,7 @@ import { storedNotes } from '#src/extensions/stored-notes.ts';
 import { messagesFor } from '#src/i18n/index.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { footer, present, presentBar } from '#src/recap/render/present.ts';

@@ -1,5 +1,5 @@
 import { test } from 'node:test';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';

@@ -12,7 +12,7 @@ import { openStateAt } from '#src/daemon/state.ts';
 import type { Notice, NotifierPort } from '#src/ports/notifier.ts';
 import { openFixture, scratchDir } from './support.ts';
 import { everyShape, put, sections } from './import/support.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 
 const recorder = (): { notifier: NotifierPort; told: string[]; lines: string[] } => {
     const told: string[] = [];

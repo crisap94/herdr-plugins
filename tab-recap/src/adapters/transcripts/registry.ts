@@ -42,7 +42,7 @@ export const IN_FLIGHT_CAPABILITIES = {
 } satisfies Readonly<Record<RegisteredKind, Capability<'reader', InFlightWhy>>>;
 
 function readersOf(readers: ReaderSet): TranscriptReaders {
-    return new Map(Object.entries(readers).flatMap(([kind, capability]): [AgentKind, Transcripts][] => capability.kind === 'supported' ? [[agentKind(kind), capability.value()]] : []));
+    return new Map(Object.entries(readers).flatMap(([kind, capability]): [AgentKind, Transcripts][] => capability.kind === 'supported' ? [[agentKind(textOf(kind)), capability.value()]] : []));
 }
 
 function unavailableReason(kind: AgentKind): Text {
@@ -65,5 +65,5 @@ export function replayTranscriptRegistry(): TranscriptRegistry {
     const claude = READERS.claude;
     const codex = READERS.codex;
     if (claude.kind !== 'supported' || codex.kind !== 'supported') throw new Error('Replay readers are unavailable');
-    return new TranscriptRegistry(new Map<AgentKind, Transcripts>([[agentKind('claude'), claude.value()], [agentKind('codex'), codex.value()]]), null, unavailableReason);
+    return new TranscriptRegistry(new Map<AgentKind, Transcripts>([[agentKind(textOf('claude')), claude.value()], [agentKind(textOf('codex')), codex.value()]]), null, unavailableReason);
 }

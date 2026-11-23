@@ -2,7 +2,7 @@ import { parseUsd, usdOf } from '#src/recap/domain/usd.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, countOf } from '#src/recap/domain/count.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import type { BriefRetention } from '#src/recap/domain/autocompact.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

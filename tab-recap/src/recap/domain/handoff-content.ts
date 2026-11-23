@@ -1,12 +1,37 @@
 import { SECTION_IDS } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
 import type { FactId } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
 import type { HandoffReason } from './handoff-outcome.ts';
-import type { HandoffBody } from './legacy.ts';
-
-export type { HandoffBody, HandoffEntry, HandoffGroup } from './legacy.ts';
+import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import type { Count } from './count.ts';
+import type { Freshness } from './freshness.ts';
+import type { HandoffText } from './handoff-sanitize.ts';
+import type { WorksiteSnapshot } from './worksite.ts';
 
 export const HANDOFF_GROUP_IDS = [...SECTION_IDS, 'closed'] as const;
 export type HandoffGroupId = (typeof HANDOFF_GROUP_IDS)[number];
+
+export interface HandoffEntry {
+    readonly id: FactId;
+    readonly text: HandoffText;
+    readonly firstAt: Instant;
+    readonly lastAt: Instant;
+    readonly reason: HandoffText | null;
+}
+
+export interface HandoffGroup {
+    readonly id: HandoffGroupId;
+    readonly entries: readonly HandoffEntry[];
+    readonly capped: Count;
+}
+
+export interface HandoffBody {
+    readonly kind: 'content';
+    readonly note: HandoffText | null;
+    readonly freshness: Freshness;
+    readonly worksite: WorksiteSnapshot;
+    readonly groups: readonly HandoffGroup[];
+    readonly withheld: Count;
+}
 
 type Ordering = -1 | 0 | 1;
 

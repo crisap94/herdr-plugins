@@ -1,6 +1,6 @@
 import { parseUsd } from '#src/recap/domain/usd.ts';
 import { brand } from '#src/recap/domain/brand.ts';
-import { agentKind, paneId, tabId } from '#src/recap/domain/ids.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { must as mustParsed } from '#src/protocol/result.ts';
 import { parseCount, countOf } from '#src/recap/domain/count.ts';
 import { test } from 'node:test';

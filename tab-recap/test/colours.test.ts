@@ -13,7 +13,7 @@ import { blankRecap } from '#src/ports/recap-records.ts';
 import { draftFrom, initial, withAvailable } from '#src/recap/application/setup-keys.ts';
 import { oneTask } from '#test/support.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import { tabId } from '#src/recap/domain/ids.ts';
+import { tabId } from '#test/support/ids.ts';
 
 const ESC = String.fromCodePoint(0x1b);
 

@@ -5,7 +5,7 @@ import type { NotesResult } from '#src/ports/extension.ts';
 import type { PaneAlertReader } from '#src/ports/pane-alerts.ts';
 import { parseAlertSource } from '#src/recap/domain/pane-alert.ts';
 import type { PaneAlert } from '#src/recap/domain/pane-alert.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 import type { TabLane } from '#src/ports/tab-views.ts';
 import type { PaneNoteReader, WorktreeStatusReader } from '#src/ports/worktree-status.ts';
 import { must } from '#src/protocol/result.ts';
@@ -13,7 +13,8 @@ import { parseCount } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import type { PaneId } from '#src/recap/domain/ids.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
+import type { NoteToken } from '#src/recap/domain/coordination.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { WorktreeStatus, WorktreeSwitch } from '#src/recap/domain/worktree.ts';
 
@@ -37,7 +38,7 @@ const alertAt = (pane: string, label: string, at: number, details: string[]): Pa
     source: must(parseAlertSource('bridge')), pane: paneId(pane), label: must(parseText(label)), at: instant(at), details: details.map((detail) => must(parseText(detail))),
 });
 
-function stored(known: Record<string, WorktreeStatus>, tokens: Record<string, { label: string; value: string }[]>, mode: { gitNote: WorktreeSwitch }, alerts: Record<string, PaneAlert[]> = {}): ReturnType<typeof storedNotes> {
+function stored(known: Record<string, WorktreeStatus>, tokens: Record<string, NoteToken[]>, mode: { gitNote: WorktreeSwitch }, alerts: Record<string, PaneAlert[]> = {}): ReturnType<typeof storedNotes> {
     const statuses: WorktreeStatusReader = { statusOf: (pane: PaneId): WorktreeStatus | null => known[pane] ?? null };
     const notes: PaneNoteReader = { notesOf: (pane: PaneId) => tokens[pane] ?? [] };
     const raised: PaneAlertReader = { alertsOf: (pane: PaneId): readonly PaneAlert[] => alerts[pane] ?? [] };
@@ -46,7 +47,7 @@ function stored(known: Record<string, WorktreeStatus>, tokens: Record<string, { 
 
 test('an alert a source raised is drawn first, with its own time and details, then the git note and the pane\'s notes', () => {
     const mode = { gitNote: 'on' as WorktreeSwitch };
-    const extension = stored({ 'w1:p1': status(0, 0, 0) }, { 'w1:p1': [{ label: 'note', value: 'hold' }] }, mode, { 'w1:p1': [alertAt('w1:p1', 'unmerged', 5, ['feat/x', '3 unmerged'])] });
+    const extension = stored({ 'w1:p1': status(0, 0, 0) }, { 'w1:p1': [{ label: textOf('note'), value: textOf('hold') }] }, mode, { 'w1:p1': [alertAt('w1:p1', 'unmerged', 5, ['feat/x', '3 unmerged'])] });
     const result = extension.notes?.([lane('w1:p1')]) ?? { kind: 'notes', byPane: new Map() };
     assert.deepEqual(labels(result), [['w1:p1', '⚑ unmerged feat/x|3 unmerged ; ⎇ main  ; ⚑ note hold']]);
     assert.equal(result.kind === 'notes' && result.byPane.get('w1:p1')?.[0]?.at, 5);
@@ -54,14 +55,14 @@ test('an alert a source raised is drawn first, with its own time and details, th
 
 test('the git note and the pane\'s note tokens are drawn under their lane, git first; nothing for a lane with neither', () => {
     const mode = { gitNote: 'on' as WorktreeSwitch };
-    const extension = stored({ 'w1:p1': status(1, 2, 0) }, { 'w1:p1': [{ label: 'note', value: 'hold' }], 'w1:p3': [{ label: 'review', value: 'waiting' }] }, mode);
+    const extension = stored({ 'w1:p1': status(1, 2, 0) }, { 'w1:p1': [{ label: textOf('note'), value: textOf('hold') }], 'w1:p3': [{ label: textOf('review'), value: textOf('waiting') }] }, mode);
     const result = extension.notes?.([lane('w1:p1'), lane('w1:p2'), lane('w1:p3')], 'en') ?? { kind: 'notes', byPane: new Map() };
     assert.deepEqual(labels(result), [['w1:p1', '⎇ main 1 unpushed|2 changed ; ⚑ note hold'], ['w1:p3', '⚑ review waiting']]);
 });
 
 test('TAB_RECAP_GIT_NOTE=off hides the git note at call time and keeps the pane\'s notes', () => {
     const mode = { gitNote: 'off' as WorktreeSwitch };
-    const extension = stored({ 'w1:p1': status(1, 2, 0) }, { 'w1:p1': [{ label: 'note', value: 'hold' }] }, mode);
+    const extension = stored({ 'w1:p1': status(1, 2, 0) }, { 'w1:p1': [{ label: textOf('note'), value: textOf('hold') }] }, mode);
     assert.deepEqual(labels(extension.notes?.([lane('w1:p1')]) ?? { kind: 'notes', byPane: new Map() }), [['w1:p1', '⚑ note hold']]);
     mode.gitNote = 'on';
     assert.match(labels(extension.notes?.([lane('w1:p1')]) ?? { kind: 'notes', byPane: new Map() })[0]?.[1] ?? '', /^⎇ main/);

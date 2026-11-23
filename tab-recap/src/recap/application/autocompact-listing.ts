@@ -1,7 +1,7 @@
 import { parseArgs } from 'node:util';
 import type { SkipRow, StoredDecisionRow } from '#src/ports/autocompact-records.ts';
 import type { AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
-import type { AutocompactTuning } from '#src/recap/domain/autocompact-style.ts';
+import type { CompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { moneyOf } from './autocompact-line.ts';
 import type { Messages } from '#src/i18n/index.ts';
 import { must, type Result } from '#src/protocol/result.ts';
@@ -63,7 +63,7 @@ function skippedRow(found: SkipRow, zone: Text): ListingRow {
 
 const everyOf = (ms: Milliseconds): Text => must(parseText(ms % 60_000 === 0 ? `${ms / 60_000} min` : `${Math.round(ms / 1000)} s`));
 
-export function styleLine(policy: AutocompactPolicy, tuning: AutocompactTuning, settings: Messages['autocompactSettings']): Text {
+export function styleLine(policy: AutocompactPolicy, tuning: CompactTuning, settings: Messages['autocompactSettings']): Text {
     const { verdict } = tuning;
     return must(parseText([
         `style ${tuning.style}`,

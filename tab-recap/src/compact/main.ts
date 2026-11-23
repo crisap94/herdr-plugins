@@ -34,7 +34,7 @@ function perform(effect: NoteEffect): never {
     if (effect.kind === 'send') {
         const store = openCliStore();
         if (store.kind === 'ready') {
-            store.requests.requestCompact({ tab: tabId(tab), pane: pane === '' ? null : paneId(pane), note: effect.note });
+            store.requests.requestCompact({ tab: tabId(textOf(tab)), pane: pane === '' ? null : paneId(textOf(pane)), note: effect.note });
             store.close();
         }
     }

@@ -11,13 +11,14 @@ import { ClaudeLaunchPosix } from '#src/adapters/capability/claude-launch-posix.
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
-import { parseSessionId, agentKind } from '#src/recap/domain/ids.ts';
+import { parseSessionId } from '#src/recap/domain/ids.ts';
+import { agentKind } from '#test/support/ids.ts';
 import type { Transcripts } from '#src/ports/transcripts.ts';
 import type { ModelWindows } from '#src/ports/model-catalogue.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { textOf } from '#src/recap/domain/text.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 
 const SESSION = 'session-1';
 const PID = 4242;

@@ -7,6 +7,7 @@ import { USAGE_EXIT } from '#src/recap/domain/handoff-outcome.ts';
 import { desktopDocumentCommand } from './desktop-document.ts';
 import { settingsCommand } from './desktop-settings.ts';
 import { enableDesktopDaemon, ensureDesktopDaemon, stopDesktopDaemon } from './desktop-daemon.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 const OK = 0;
 const FAILED = 1;
@@ -23,7 +24,7 @@ function refresh(tab: string | undefined): number {
         console.error(`tab-recap: 1 — ${notReadyLine(store, m())}`);
         return FAILED;
     }
-    store.requests.request(tabId(tab));
+    store.requests.request(tabId(textOf(tab)));
     console.log(`tab-recap: ${m().cli.requested(tab)}`);
     return OK;
 }
@@ -33,7 +34,7 @@ function document(tab: string | undefined): number {
         console.error(`tab-recap: 2 — ${m().cli.tabUnknown}`);
         return USAGE_EXIT;
     }
-    return desktopDocumentCommand(tabId(tab));
+    return desktopDocumentCommand(tabId(textOf(tab)));
 }
 
 function status(): number {

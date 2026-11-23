@@ -10,6 +10,7 @@ import type { LastRun } from '#src/ports/recap-records.ts';
 import { fitRestore } from '#src/recap/render/restore-markdown.ts';
 import { groupedFactsOf } from './handoff-groups.ts';
 import { HANDOFF_BUDGET_BYTES } from './handoff-limits.ts';
+import { countOf } from '#src/recap/domain/count.ts';
 
 export interface RestoreFacts {
     readonly at: Instant;
@@ -31,6 +32,6 @@ export function restoreContentOf(facts: RestoreFacts): RestoreContent {
 
 export function restoreTextOf(facts: RestoreFacts): Text {
     const content = restoreContentOf(facts);
-    const fitted = content.kind === 'content' ? fitRestore(content, byteBudgetOf(HANDOFF_BUDGET_BYTES)) : null;
+    const fitted = content.kind === 'content' ? fitRestore(content, byteBudgetOf(countOf(HANDOFF_BUDGET_BYTES))) : null;
     return must(parseText(fitted?.kind === 'text' ? fitted.text : ''));
 }

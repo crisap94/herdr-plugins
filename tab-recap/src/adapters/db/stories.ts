@@ -34,7 +34,7 @@ export class StoriesRepository implements Stories {
     read(tab: string, task: string): Story | null {
         return guarded((): Story | null => {
             const row = this.orm.select({ text: tasks.storyText, at: tasks.storyAt }).from(tasks)
-                .where(and(eq(tasks.tabId, tabId(tab)), eq(tasks.key, task))).get();
+                .where(and(eq(tasks.tabId, tabId(textOf(tab))), eq(tasks.key, task))).get();
             const text = row?.text ?? null;
             const at = row?.at ?? null;
             return text === null || at === null ? null : { text: textOf(text), at: instant(at) };
@@ -45,7 +45,7 @@ export class StoriesRepository implements Stories {
         return writeTx(this.db, () => {
             const latest = this.orm.select({ id: runs.id }).from(runs)
                 .innerJoin(chapter, eq(chapter.id, runs.chapterId))
-                .where(eq(chapter.tabId, tabId(run.task.tab)))
+                .where(eq(chapter.tabId, run.task.tab))
                 .orderBy(desc(runs.id)).limit(1).get();
             if (latest === undefined) {
                 throw new Error(`${run.task.tab} has no run: a curator has nothing to attribute its merges to`);
@@ -58,7 +58,7 @@ export class StoriesRepository implements Stories {
             const applied = this.ledger.apply(ref, [...change.merges, ...(change.reconciled ?? [])]);
             if (change.story !== null) {
                 this.orm.update(tasks).set({ storyText: change.story, storyAt: run.at })
-                    .where(and(eq(tasks.tabId, tabId(run.task.tab)), eq(tasks.key, run.task.key))).run();
+                    .where(and(eq(tasks.tabId, run.task.tab), eq(tasks.key, run.task.key))).run();
             }
             return applied;
         });

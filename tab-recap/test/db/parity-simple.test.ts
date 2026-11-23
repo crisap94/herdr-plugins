@@ -6,10 +6,10 @@ import { PaneAlertsRepository } from '#src/adapters/db/pane-alerts.ts';
 import { PaneNotesRepository } from '#src/adapters/db/pane-notes.ts';
 import { TabStore } from '#src/adapters/db/tab-row.ts';
 import type { HiddenState } from '#src/recap/domain/board.ts';
-import { paneId, tabId } from '#src/recap/domain/ids.ts';
+import { paneId, tabId } from '#test/support/ids.ts';
 import { parseAlertSource } from '#src/recap/domain/pane-alert.ts';
 import type { PaneAlert } from '#src/recap/domain/pane-alert.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { instant, parseInstant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import { expectSameEffect, expectSameRows, withParity } from './parity.ts';
@@ -142,7 +142,7 @@ describe('pane notes move to Drizzle with the same effect', () => {
                 db.prepare('DELETE FROM pane_note WHERE pane = ?').run('p1');
                 notes.forEach((note) => { db.prepare('INSERT OR REPLACE INTO pane_note (pane, label, value) VALUES (?, ?, ?)').run('p1', note.label, note.value); });
             },
-            builder: (db) => { new PaneNotesRepository(db).replace(paneId('p1'), notes); },
+            builder: (db) => { new PaneNotesRepository(db).replace(paneId('p1'), notes.map((note) => ({ label: textOf(note.label), value: textOf(note.value) }))); },
             dump: NOTES_DUMP,
         });
     });

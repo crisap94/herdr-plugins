@@ -4,22 +4,27 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { clearing, OWNED_TOKENS, STATE_TOKENS, valuesOf, writeDue } from '#src/recap/domain/lane-tokens.ts';
-import type { LaneFacts } from '#src/recap/domain/lane-tokens.ts';
+import { clearing, OWNED_TOKENS, STATE_TOKENS, tokenValuesOf, writeDueOf } from '#src/recap/domain/lane-tokens.ts';
+import type { LaneTokenFacts } from '#src/recap/domain/lane-tokens.ts';
 import { CAPABILITY_TOKEN } from '#src/protocol/capability.ts';
 import { LaneTokenPublisher, TICK_MS, TTL_MS } from '#src/recap/application/lane-tokens.ts';
 import { factsOf } from '#src/recap/application/lane-facts.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import type { Report } from './fakes/lane-tokens.ts';
 import { countOf } from '#src/recap/domain/count.ts';
+import { uncheckedTokenName } from '#src/recap/domain/ids.ts';
+import { instant, parseMilliseconds } from '#src/recap/domain/time.ts';
+import { must } from '#src/protocol/result.ts';
 
-const facts = (over: Partial<LaneFacts> = {}): LaneFacts => ({ share: 40, recapAt: 1000, needs: 0, ...over });
+const facts = (over: Partial<LaneTokenFacts> = {}): LaneTokenFacts => ({ share: countOf(40), recapAt: instant(1000), needs: countOf(0), ...over });
+const TTL = must(parseMilliseconds(TTL_MS));
+const OWNED_NAMES = OWNED_TOKENS.map(uncheckedTokenName);
 const laneOf = (pane: string): Lane => laneFrom({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' });
 const boardOf = (...lanes: Lane[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((lane) => [lane.pane, lane])) });
 
 test('a lane carries the protocol version, its share, the last recap and the open needs; a fact unknown is left out', () => {
-    assert.deepEqual(valuesOf(facts()), { 'tab-recap-api': '1', 'tab-recap-share': '40', 'tab-recap-recap': '1000', 'tab-recap-needs': '0', 'tab-recap-x': 'compact1,kinds2' });
-    assert.deepEqual(valuesOf(facts({ share: null, recapAt: null, needs: 2 })), { 'tab-recap-api': '1', 'tab-recap-needs': '2', 'tab-recap-x': 'compact1,kinds2' });
+    assert.deepEqual(Object.fromEntries(tokenValuesOf(facts())), { 'tab-recap-api': '1', 'tab-recap-share': '40', 'tab-recap-recap': '1000', 'tab-recap-needs': '0', 'tab-recap-x': 'compact1,kinds2' });
+    assert.deepEqual(Object.fromEntries(tokenValuesOf(facts({ share: null, recapAt: null, needs: countOf(2) }))), { 'tab-recap-api': '1', 'tab-recap-needs': '2', 'tab-recap-x': 'compact1,kinds2' });
 });
 
 test('the capability token is a state token: a lane advertises it with its other tokens, and it is rewritten only as they are', async () => {
@@ -49,16 +54,16 @@ test('switching sharing off clears the capability token with the other names', a
 });
 
 test('a write is due when nothing was written, when a value changed, or when half the time to live has passed', () => {
-    const values = valuesOf(facts());
-    assert.deepEqual(writeDue(null, values, 0, TTL_MS), values);
-    assert.equal(writeDue({ values, at: 0 }, values, 1, TTL_MS), null, 'nothing changed: nothing written');
-    assert.deepEqual(writeDue({ values, at: 0 }, valuesOf(facts({ recapAt: 2000 })), 1, TTL_MS), valuesOf(facts({ recapAt: 2000 })), 'a recap changed: written');
-    assert.deepEqual(writeDue({ values, at: 0 }, values, TTL_MS / 2, TTL_MS), values, 'half the time to live: written again');
+    const values = tokenValuesOf(facts());
+    assert.deepEqual(writeDueOf(null, values, instant(0), TTL), values);
+    assert.equal(writeDueOf({ values, at: instant(0) }, values, instant(1), TTL), null, 'nothing changed: nothing written');
+    assert.deepEqual(writeDueOf({ values, at: instant(0) }, tokenValuesOf(facts({ recapAt: instant(2000) })), instant(1), TTL), tokenValuesOf(facts({ recapAt: instant(2000) })), 'a recap changed: written');
+    assert.deepEqual(writeDueOf({ values, at: instant(0) }, values, instant(TTL_MS / 2), TTL), values, 'half the time to live: written again');
 });
 
 test('clearing names only the names tab-recap owns, each set to null', () => {
-    assert.deepEqual(Object.keys(clearing(OWNED_TOKENS)).toSorted(), [...OWNED_TOKENS].toSorted());
-    assert.deepEqual(new Set(Object.values(clearing(OWNED_TOKENS))), new Set([null]));
+    assert.deepEqual([...clearing(OWNED_NAMES).keys()].toSorted(), [...OWNED_TOKENS].toSorted());
+    assert.deepEqual(new Set(clearing(OWNED_NAMES).values()), new Set([null]));
     assert.ok(OWNED_TOKENS.every((name) => name.startsWith('tab-recap-')), 'no name outside tab-recap-* is ever written or cleared');
 });
 
@@ -69,12 +74,12 @@ interface Run {
     flush(): Promise<void>;
 }
 
-function publisher(board: { current: Board }, recap: { value: LaneFacts }, enabled = { on: true }): Run {
+function publisher(board: { current: Board }, recap: { value: LaneTokenFacts }, enabled = { on: true }): Run {
     const tokens = new RecordingTokens();
     let now = 0;
     const logged: string[] = [];
     const lane = new LaneTokenPublisher({
-        tokens, enabled: (): boolean => enabled.on, board: (): Board => board.current, facts: (): LaneFacts => recap.value, now: (): number => now, log: (line: string): void => { logged.push(line); },
+        tokens, enabled: (): boolean => enabled.on, board: (): Board => board.current, facts: (): LaneTokenFacts => recap.value, now: (): number => now, log: (line: string): void => { logged.push(line); },
     });
     return { tokens, logged, at: (ms: number): void => { now = ms; lane.tick(); }, flush: (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); }) };
 }
@@ -91,11 +96,11 @@ test('a lane gets its tokens once; an unchanged lane gets nothing; a changed rec
     const run = publisher(board, recap);
     run.at(0);
     await run.flush();
-    assert.deepEqual(run.tokens.reports, [{ pane: 'w1:p1', tokens: valuesOf(facts()), ttlMs: TTL_MS }]);
+    assert.deepEqual(run.tokens.reports, [{ pane: 'w1:p1', tokens: Object.fromEntries(tokenValuesOf(facts())), ttlMs: TTL_MS }]);
     run.at(TICK_MS);
     await run.flush();
     assert.equal(run.tokens.reports.length, 1, 'no change: nothing written');
-    recap.value = facts({ recapAt: 5000 });
+    recap.value = facts({ recapAt: instant(5000) });
     run.at(2 * TICK_MS);
     await run.flush();
     assert.equal(run.tokens.reports.length, 2);
@@ -160,19 +165,19 @@ test('a lane\'s facts: its share from its context, the tab\'s last recap, and th
 
 test('a change of needs is an event on the lane: raised when it grows, cleared when it shrinks; a lane that leaves the board is cleared without a closure event', async () => {
     const board = { current: boardOf(laneOf('w1:p1')) };
-    const recap = { value: facts({ needs: 0 }) };
+    const recap = { value: facts({ needs: countOf(0) }) };
     const events: string[] = [];
     const tokens = new RecordingTokens();
     let now = 0;
     const lane = new LaneTokenPublisher({
-        tokens, enabled: (): boolean => true, board: (): Board => board.current, facts: (): LaneFacts => recap.value, now: (): number => now, log: (): void => undefined,
+        tokens, enabled: (): boolean => true, board: (): Board => board.current, facts: (): LaneTokenFacts => recap.value, now: (): number => now, log: (): void => undefined,
         events: { lane: (pane: string, kind: string, detail?: string | null): void => { events.push(`${pane} ${kind} ${detail ?? ''}`.trim()); }, inWorkspace: (workspace: string, kind: string, detail?: string | null): void => { events.push(`${workspace} ${kind} ${detail ?? ''}`.trim()); } },
     });
     lane.tick();
-    recap.value = facts({ needs: 2 });
+    recap.value = facts({ needs: countOf(2) });
     now = TICK_MS;
     lane.tick();
-    recap.value = facts({ needs: 1 });
+    recap.value = facts({ needs: countOf(1) });
     now = 2 * TICK_MS;
     lane.tick();
     board.current = emptyBoard();

@@ -20,7 +20,7 @@ import { causeOf } from './fakes/cause.ts';
 import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { memoryStore } from './db/support.ts';
-import { paneId, tabId, agentKind } from '#src/recap/domain/ids.ts';
+import { paneId, tabId, agentKind } from '#test/support/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';

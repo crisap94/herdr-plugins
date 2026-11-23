@@ -5,7 +5,7 @@ import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
 import { countOf, type Count } from '#src/recap/domain/count.ts';
-import { paneId, tabId, type TabId } from '#src/recap/domain/ids.ts';
+import { type TabId } from '#src/recap/domain/ids.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import type { Usd } from '#src/recap/domain/usd.ts';
 import { chapter as chapters, run as runs, runRead as reads, runTask as runTasks, runTaskLane as laneRows, task as tasks } from '../drizzle/index.ts';
@@ -44,7 +44,7 @@ export class RunRows {
     }
 
     insertRun(facts: RunFacts, error: string | null, gateStats: GateStats | null = null): Uint8Array {
-        const chapter = this.currentChapter(tabId(facts.tab), instant(facts.at));
+        const chapter = this.currentChapter(facts.tab, instant(facts.at));
         const id = ids.next();
         this.orm.insert(runs).values({
             id, chapterId: chapter, at: facts.at, cause: facts.cause, backend: facts.backend, language: facts.language,
@@ -66,14 +66,14 @@ export class RunRows {
     }
 
     private writeTask(run: Uint8Array, facts: RunFacts, task: PlacedTask): void {
-        this.orm.insert(tasks).values({ id: ids.next(), tabId: tabId(facts.tab), key: task.task.id }).onConflictDoNothing().run();
-        const known = this.orm.select({ id: tasks.id }).from(tasks).where(and(eq(tasks.tabId, tabId(facts.tab)), eq(tasks.key, task.task.id))).get() ?? {};
+        this.orm.insert(tasks).values({ id: ids.next(), tabId: facts.tab, key: task.task.id }).onConflictDoNothing().run();
+        const known = this.orm.select({ id: tasks.id }).from(tasks).where(and(eq(tasks.tabId, facts.tab), eq(tasks.key, task.task.id))).get() ?? {};
         const id = blob(known, 'id');
         this.orm.insert(runTasks).values({
             runId: run, taskId: id, position: task.position, name: task.task.name === '' ? null : task.task.name, legacyMarkdown: task.task.legacy ?? null,
         }).run();
         [...new Set(task.task.lanes)].forEach((pane, position) => {
-            this.orm.insert(laneRows).values({ runId: run, taskId: id, transcriptId: this.transcripts.ofPane(tabId(facts.tab), paneId(pane), instant(facts.at)), position }).run();
+            this.orm.insert(laneRows).values({ runId: run, taskId: id, transcriptId: this.transcripts.ofPane(facts.tab, pane, instant(facts.at)), position }).run();
         });
     }
 

@@ -9,7 +9,7 @@ import { parseRequestId } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
 import { HANDOFF_ANSWER_TTL_MS } from '#src/recap/application/handoff-limits.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 
 const NOW = 1_000_000_000;
 

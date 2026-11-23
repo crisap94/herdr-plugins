@@ -6,10 +6,11 @@ import { PerfLedger } from '#src/recap/application/perf-ledger.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import type { NoteToken } from '#src/recap/domain/coordination.ts';
-import { paneId } from '#src/recap/domain/ids.ts';
+import { paneId } from '#test/support/ids.ts';
 import type { UsageSample } from '#src/ports/process-usage.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
+import { textOf } from '#src/recap/domain/text.ts';
 
 function store(): { readonly writer: PaneNoteWriter; readonly calls: string[] } {
     const calls: string[] = [];
@@ -27,9 +28,9 @@ test('the feed starts from nothing, writes a pane\'s notes when they change and 
     const pane = paneId('w1:p1');
     feed.update(pane, []);
     feed.update(pane, []);
-    feed.update(pane, [{ label: 'note', value: 'hold' }]);
-    feed.update(pane, [{ label: 'note', value: 'hold' }]);
-    feed.update(pane, [{ label: 'note', value: 'go' }]);
+    feed.update(pane, [{ label: textOf('note'), value: textOf('hold') }]);
+    feed.update(pane, [{ label: textOf('note'), value: textOf('hold') }]);
+    feed.update(pane, [{ label: textOf('note'), value: textOf('go') }]);
     feed.update(pane, []);
     feed.forget(pane);
     feed.forget(pane);
