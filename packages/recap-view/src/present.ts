@@ -4,7 +4,7 @@ import type { SectionId } from '@stateforge-labs/session-ledger/unstable/i18n/se
 import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import { headlineOf, renderRecap } from '@stateforge-labs/session-ledger/unstable/recap/application/recap-shape.ts';
 import type { ColumnTask, RecapColumn, Row, RowState, TextColumnView } from './model.ts';
-import { assertAmount, assertCount, assertPercent } from './wording.ts';
+import { assertAmount, assertCount, assertPercent, parseWords, parseWordsOrNull } from './wording.ts';
 import type { TextWording } from './wording.ts';
 import { stageLine } from './compaction-stage.ts';
 import { groupsOf } from './groups.ts';
@@ -68,7 +68,7 @@ function contextHint(lane: Row, view: TextColumnView): string[] {
         return [];
     }
     assertPercent(percent);
-    return [view.wording.compaction.hint(percent, window)];
+    return [view.wording.compaction.hint(percent, parseWords(window))];
 }
 
 const stageShown = (lane: Row, view: TextColumnView): boolean => view.compactions?.some((each) => each.pane === lane.id) === true;
@@ -94,7 +94,7 @@ function staleLines(view: TextColumnView, width: number): string[] {
     const style = paint(view);
     const code = view.version ?? null;
     const daemon = view.daemonVersion;
-    return code === null || daemon === code ? [] : wrap(view.wording.daemonStale(daemon), width).map(style.yellow);
+    return code === null || daemon === code ? [] : wrap(view.wording.daemonStale(parseWordsOrNull(daemon)), width).map(style.yellow);
 }
 
 function recapMeta(view: TextColumnView, width: number): string[] {
@@ -138,7 +138,7 @@ function body(task: ColumnTask | null, lanes: readonly Row[], width: number, mar
 
 function errorLines(recap: RecapColumn | null, width: number, view: TextColumnView): string[] {
     const error = recap?.error ?? null;
-    return error === null ? [] : ['', ...wrap(view.wording.recapError(error), width).map(paint(view).red)];
+    return error === null ? [] : ['', ...wrap(view.wording.recapError(parseWords(error)), width).map(paint(view).red)];
 }
 
 function warningLines(view: TextColumnView, width: number): string[] {
@@ -233,7 +233,7 @@ function headline(view: TextColumnView): string {
     }
     const { needs, now } = leads(view.recap);
     if (needs !== null) {
-        return style.red(view.wording.needsYou(needs));
+        return style.red(view.wording.needsYou(parseWords(needs)));
     }
     const finished = finishedTasks(view.recap).length > 0;
     return now ?? view.rows?.find((c) => c.harnessRecap !== null)?.harnessRecap ?? (finished ? view.wording.allDoneShort : view.wording.noRecapShort);

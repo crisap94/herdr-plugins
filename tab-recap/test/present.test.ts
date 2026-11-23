@@ -14,6 +14,7 @@ import { tabId, agentKind, paneId } from '#test/support/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { viewRecord } from '#test/support/tab-view-records.ts';
+import { wordingOf } from '#src/view-model/wording.ts';
 
 const noGlow = (): null => null;
 
@@ -59,10 +60,10 @@ test('two agents, one tab: a header per agent, then ONE recap for the tab', () =
 
 test('a modal tells you how to close it; a column never does', async () => {
     const { footer } = await import('#src/recap/render/present.ts');
-    assert.match(footer(40, 'modal', en), /q close/);
-    assert.doesNotMatch(footer(40, 'column', en), /close/);
-    assert.match(footer(44, 'column', en), /tap: full screen/);
-    assert.ok(visibleLength(footer(12, 'modal', en)) <= 12);
+    assert.match(footer(40, 'modal', wordingOf(en)), /q close/);
+    assert.doesNotMatch(footer(40, 'column', wordingOf(en)), /close/);
+    assert.match(footer(44, 'column', wordingOf(en)), /tap: full screen/);
+    assert.ok(visibleLength(footer(12, 'modal', wordingOf(en))) <= 12);
 });
 
 test('the bar: one row — each lane as a dot, then what needs you (or what is happening now)', async () => {
@@ -134,12 +135,12 @@ test('the roomy footers name the settings key, and none overflows its width', as
         }
         for (const width of [12, 20, 30, 44, 80]) {
             for (const mode of ['column', 'modal'] as const) {
-                assert.ok(visibleLength(footer(width, mode, messages)) <= width);
+                assert.ok(visibleLength(footer(width, mode, wordingOf(messages))) <= width);
             }
         }
     }
-    assert.match(footer(100, 'column', en), /s settings/);
-    assert.match(footer(120, 'column', es), /s ajustes/);
+    assert.match(footer(100, 'column', wordingOf(en)), /s settings/);
+    assert.match(footer(120, 'column', wordingOf(es)), /s ajustes/);
 });
 
 test('the Spanish catalog keeps every hint within a phone column', () => {

@@ -9,7 +9,7 @@ import type { ClosedWhy } from '#src/recap/domain/fact.ts';
 import type { HandoffMessageKey } from '#src/recap/domain/handoff-outcome.ts';
 import type { ClosePoint } from '#src/recap/domain/lane-closed.ts';
 
-export type { Messages } from './legacy.ts';
+export type Messages = Catalog;
 
 export type Locale = 'en' | 'es';
 

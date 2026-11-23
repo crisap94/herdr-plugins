@@ -15,6 +15,7 @@ import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import { messagesOf } from '#src/daemon/config.ts';
 import { openStateAt } from '#src/daemon/state.ts';
 import type { Store } from '#src/adapters/db/database.ts';
+import { parseText } from '#src/recap/domain/text.ts';
 
 const KEYS = ['HERDR_PLUGIN_CONFIG_DIR', 'TAB_RECAP_STATE', 'TAB_RECAP_LOCALE'] as const;
 const LATEST = latestVersion();
@@ -129,7 +130,7 @@ test('R6: the CLI on a store newer than its code reports newer-db with today\'s 
         }
         assert.equal(opened.found, LATEST + 1);
         assert.equal(opened.known, LATEST);
-        assert.equal(notReadyLine(opened, messagesOf()), messagesOf().database.newer(opened.backup));
+        assert.equal(notReadyLine(opened, messagesOf()), messagesOf().database.newer(opened.backup === null ? null : must(parseText(opened.backup))));
         assert.equal(versionAt(file), LATEST + 1);
     });
 });

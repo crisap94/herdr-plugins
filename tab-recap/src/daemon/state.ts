@@ -27,7 +27,7 @@ export async function openStateAt(root: Directory, notifier: NotifierPort, log: 
     const store = openStoreAt(databaseFile(root), { daemonVersion: version, log: say, closedDays: loadSettings().closedLaneDays });
     if (store.kind === 'newer-db') {
         store.db.close();
-        return refuse(notifier, log, parseLine(`tab-recap: ${messagesOf().database.newer(store.backup)}`));
+        return refuse(notifier, log, parseLine(`tab-recap: ${messagesOf().database.newer(store.backup === null ? null : must(parseText(store.backup)))}`));
     }
     const outcome = importFilesAt(store, new LegacyStoreFiles(must(parseFsPath(root))), { now: () => instant(Date.now()) });
     if (outcome.kind === 'failed') {

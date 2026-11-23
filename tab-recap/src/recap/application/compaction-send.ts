@@ -20,6 +20,7 @@ import { withTypingLease } from './typing-scope.ts';
 import type { Lease } from './typing-scope.ts';
 import { parseDuration, parseTokens } from '@stateforge-labs/recap-view';
 import { maybe } from '#src/view-model/column.ts';
+import { wordingOf } from '#src/view-model/wording.ts';
 
 const RESTORING_MS = uncheckedMilliseconds(2 * 60_000);
 const RESTORE_SETTLE_MS = uncheckedMilliseconds(15_000);
@@ -124,7 +125,7 @@ export class Sender {
         const { compaction, badge } = this.deps.messages();
         const why = sent.kind === 'blocked' ? badge.blocked : saying(sent.why);
         trail.end('failed', { why: textOf(why) }, sent.kind === 'blocked' ? COMPACT_FAILURES.skipped : COMPACT_FAILURES.error);
-        await this.tell(must(parseText(compaction.title(String(lane.agent)))), must(parseText(compaction.failed(String(lane.agent), why))));
+        await this.tell(must(parseText(compaction.title(must(parseText(lane.agent))))), must(parseText(compaction.failed(must(parseText(lane.agent)), why))));
     }
 
     private handoff(lane: Lane, plan: CompactionPlan, text: Text): () => Prose | null {
@@ -159,8 +160,8 @@ export class Sender {
         const { compaction } = this.deps.messages();
         const figures = { tokensBefore: verdict.tokensBefore ?? null, tokensAfter: verdict.tokensAfter ?? null, tookMs: verdict.tookMs ?? this.deps.now() - ended.began };
         trail.end(verdict.outcome, { tokensBefore: figures.tokensBefore === null ? null : countOf(figures.tokensBefore), tokensAfter: figures.tokensAfter === null ? null : countOf(figures.tokensAfter), took: duration(figures.tookMs), retry: retried ? 'retried' : 'first-try', ...(verdict.outcome === 'failed' ? { why: textOf(compaction.stage.selfFailed) } : {}) });
-        const said = figuresOf({ tokensBefore: maybe(figures.tokensBefore, parseTokens), tokensAfter: maybe(figures.tokensAfter, parseTokens), tookMs: parseDuration(figures.tookMs) }, this.deps.messages());
-        await this.tell(must(parseText(compaction.title(String(lane.agent)))), must(parseText(compaction.outcome(String(lane.agent), verdict.outcome, retried, { tokens: said.tokens, took: said.took }))));
+        const said = figuresOf({ tokensBefore: maybe(figures.tokensBefore, parseTokens), tokensAfter: maybe(figures.tokensAfter, parseTokens), tookMs: parseDuration(figures.tookMs) }, wordingOf(this.deps.messages()));
+        await this.tell(must(parseText(compaction.title(must(parseText(lane.agent))))), must(parseText(compaction.outcome(must(parseText(lane.agent)), verdict.outcome, retried ? 'present' : 'absent', { tokens: must(parseText(said.tokens)), took: must(parseText(said.took)) }))));
     }
 
     private async attemptedOnce(lane: Lane, plan: CompactionPlan, trail: Trail, placement: Placement): Promise<OnceAttempt> {

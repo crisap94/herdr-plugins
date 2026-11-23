@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { elapsed } from '#src/recap/render/wrap.ts';
+import { must } from '#src/protocol/result.ts';
+import { parseCount } from '#src/recap/domain/count.ts';
 
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;
@@ -10,7 +12,7 @@ const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 const AGES = [12 * SECOND, 5 * MINUTE, 3 * HOUR, 2 * DAY, 0];
 
-const said = (messages: typeof en, ms: number): string => messages.ago(elapsed(ms).amount, elapsed(ms).unit);
+const said = (messages: typeof en, ms: number): string => messages.ago(must(parseCount(elapsed(ms).amount)), elapsed(ms).unit);
 
 test('elapsed time in English: 12s ago · 5m ago · 3h ago · 2d ago · 0s ago', () => {
     assert.deepEqual(AGES.map((ms) => said(en, ms)), ['12s ago', '5m ago', '3h ago', '2d ago', '0s ago']);

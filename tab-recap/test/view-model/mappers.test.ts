@@ -6,8 +6,10 @@ import { recapRunningOf, type LaneCursor, type TabRecap } from '#src/ports/recap
 import type { TabLaneRecord } from '#src/ports/tab-views.ts';
 import type { ColumnView } from '#src/recap/render/present.ts';
 import { factsOfBare } from '#test/support/session-readings.ts';
-import { columnTaskOf, columnViewOf, compactionRowOf, recapColumnOf, rowOf, webOf, wordingOf } from '#src/view-model/column.ts';
+import { columnTaskOf, columnViewOf, compactionRowOf, recapColumnOf, rowOf, webOf } from '#src/view-model/column.ts';
+import { wordingOf } from '#src/view-model/wording.ts';
 import { sessionRecapOf } from '#src/view-model/expanded.ts';
+import { parseCount as parseViewCount } from '@stateforge-labs/recap-view/unstable/wording.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCompactionId } from '#src/recap/domain/ids.ts';
@@ -76,9 +78,10 @@ test('compactionRowOf: copies the fields the column reads', () => {
     assert.deepEqual(compactionRowOf(record), { pane: 'p1', stage: 'compacting', brief: 'written', writer: 'claude', why: null, stageAt: 20, queued: false, tokensBefore: countOf(900), tokensAfter: null, tookMs: null });
 });
 
-test('wordingOf: hands back the same messages', () => {
+test('wordingOf: the same catalog gives the same wording, and it says what the catalog says', () => {
     const messages = messagesFor('en');
-    assert.equal(wordingOf(messages), messages);
+    assert.equal(wordingOf(messages), wordingOf(messages));
+    assert.equal(wordingOf(messages).taskNumber(parseViewCount(7)), messages.taskNumber(countOf(7)));
 });
 
 test('columnViewOf: rows matched to cursors by pane, the recap mapped, messages become the wording', () => {
@@ -87,11 +90,11 @@ test('columnViewOf: rows matched to cursors by pane, the recap mapped, messages 
         tab: viewRecord({ tab: 't1', column: null, lanes: [lane('p2', 'blocked'), lane('p3', 'done')], at: 5, daemonVersion: '1.2.0' }),
         recap, notes: new Map(), warnings: ['careful'], now: 200, messages, version: '1.3.0', compactions: [record],
     };
-    const mapped = columnViewOf(view, view.messages);
+    const mapped = columnViewOf(view, wordingOf(view.messages));
     assert.deepEqual(mapped.rows?.map((row) => [row.id, row.state, row.fromScreen, row.harnessRecap]), [['p2', 'blocked', true, 'harness words'], ['p3', 'done', false, null]]);
     assert.equal(mapped.daemonVersion, '1.2.0');
     assert.deepEqual(mapped.recap, recapColumnOf(recap));
-    assert.equal(mapped.wording, messages);
+    assert.equal(mapped.wording, wordingOf(messages));
     assert.equal(mapped.version, '1.3.0');
     assert.deepEqual(mapped.compactions, [compactionRowOf(record)]);
     assert.deepEqual(mapped.warnings, ['careful']);
@@ -100,7 +103,7 @@ test('columnViewOf: rows matched to cursors by pane, the recap mapped, messages 
 });
 
 test('columnViewOf: no tab gives no rows, no recap gives no column recap', () => {
-    const mapped = columnViewOf({ tab: null, recap: null, notes: new Map(), warnings: [], now: 0, messages: messagesFor('en') }, messagesFor('en'));
+    const mapped = columnViewOf({ tab: null, recap: null, notes: new Map(), warnings: [], now: 0, messages: messagesFor('en') }, wordingOf(messagesFor('en')));
     assert.equal(mapped.rows, null);
     assert.equal(mapped.recap, null);
     assert.equal(mapped.daemonVersion, null);

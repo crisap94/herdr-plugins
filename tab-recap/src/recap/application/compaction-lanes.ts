@@ -27,7 +27,7 @@ export interface Asked {
 const LANE_BUSY_WHY = must(parseText('lane busy'));
 
 export function laneBusyRefusal(messages: Messages, lane: Lane): Refusal {
-    return { stage: 'failed', reason: COMPACT_FAILURES.laneBusy, why: LANE_BUSY_WHY, toast: must(parseText(messages.compaction.failed(String(lane.agent), LANE_BUSY_WHY))) };
+    return { stage: 'failed', reason: COMPACT_FAILURES.laneBusy, why: LANE_BUSY_WHY, toast: must(parseText(messages.compaction.failed(must(parseText(lane.agent)), LANE_BUSY_WHY))) };
 }
 
 export function laneClosedRefusal(point: ClosePoint): Refusal {

@@ -8,6 +8,23 @@ export type Amount = Brand<number, 'Amount'>;
 export type Percent = Brand<number, 'Percent'>;
 export type Seconds = Brand<number, 'Seconds'>;
 export type Minutes = Brand<number, 'Minutes'>;
+export type Words = Brand<string, 'Words'>;
+export type WordsOrNull = Words | null;
+
+export function assertWords(input: unknown): asserts input is Words {
+    if (typeof input !== 'string') {
+        throw new TypeError('words are a string');
+    }
+}
+
+export function parseWords(input: unknown): Words {
+    assertWords(input);
+    return input;
+}
+
+export function parseWordsOrNull(input: unknown): WordsOrNull {
+    return input === null ? null : parseWords(input);
+}
 
 export function assertCount(input: unknown): asserts input is Count {
     if (typeof input !== 'number') {
@@ -63,21 +80,21 @@ export interface HintWording<Text> {
 }
 
 export interface CompactionStageWording<Text> {
-    readonly queued: (agent: Text | null, clock: Text) => Text;
-    readonly briefing: (agent: Text | null, writer: Text | null, clock: Text) => Text;
-    readonly compacting: (agent: Text | null, clock: Text) => Text;
-    readonly restoring: (agent: Text | null) => Text;
-    readonly compacted: (agent: Text | null, figures: Text) => Text;
+    readonly queued: (agent: WordsOrNull, clock: Words) => Text;
+    readonly briefing: (agent: WordsOrNull, writer: WordsOrNull, clock: Words) => Text;
+    readonly compacting: (agent: WordsOrNull, clock: Words) => Text;
+    readonly restoring: (agent: WordsOrNull) => Text;
+    readonly compacted: (agent: WordsOrNull, figures: Words) => Text;
     readonly template: Text;
-    readonly failed: (agent: Text | null, why: Text | null) => Text;
-    readonly unconfirmed: (agent: Text | null, why: Text | null) => Text;
-    readonly skipped: (agent: Text | null, why: Text | null) => Text;
-    readonly tokens: (before: Text, after: Text) => Text;
+    readonly failed: (agent: WordsOrNull, why: WordsOrNull) => Text;
+    readonly unconfirmed: (agent: WordsOrNull, why: WordsOrNull) => Text;
+    readonly skipped: (agent: WordsOrNull, why: WordsOrNull) => Text;
+    readonly tokens: (before: Words, after: Words) => Text;
     readonly took: (seconds: Seconds) => Text;
 }
 
 export interface CompactionWording<Text> {
-    readonly hint: (percent: Percent, window: Text) => Text;
+    readonly hint: (percent: Percent, window: Words) => Text;
     readonly stage: CompactionStageWording<Text>;
 }
 
@@ -134,13 +151,13 @@ export interface Wording<Text> {
     readonly recapTitle: Text;
     readonly taskNumber: (n: Count) => Text;
     readonly updating: Text;
-    readonly daemonStale: (daemon: Text | null) => Text;
+    readonly daemonStale: (daemon: WordsOrNull) => Text;
     readonly claudeOwn: Text;
     readonly noRecapYet: Text;
     readonly noRecapShort: Text;
     readonly allDoneShort: Text;
-    readonly recapError: (error: Text) => Text;
-    readonly needsYou: (what: Text) => Text;
+    readonly recapError: (error: Words) => Text;
+    readonly needsYou: (what: Words) => Text;
     readonly ago: (amount: Amount, unit: AgoUnit) => Text;
     readonly hints: HintWording<Text>;
     readonly compaction: CompactionWording<Text>;

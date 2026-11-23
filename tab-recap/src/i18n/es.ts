@@ -1,9 +1,8 @@
-import type { Catalog } from './messages.ts';
+import type { Catalog, Messages } from './messages.ts';
 import { renderRefusal } from '#src/host/policy.mjs';
 import { SPANISH_REFUSAL } from './refusal.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
-import { looseOf, type Messages } from './legacy.ts';
 import { agoTextOf } from './relative.ts';
 import { BACKEND_IDS, harnessChoiceLabels, harnessLabels } from '#src/recap/domain/backend.ts';
 
@@ -205,4 +204,4 @@ export const spanish: Catalog = {
     },
 };
 
-export const es: Messages = looseOf(spanish);
+export const es: Messages = spanish;
