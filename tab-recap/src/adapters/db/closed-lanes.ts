@@ -84,7 +84,7 @@ export function parseAssociation(input: unknown, tab: ScopeId): Result<Associati
     if (name.kind === 'err') {
         return name;
     }
-    return ok({ task: { tab, key: key.value }, name: name.value });
+    return ok({ task: { scope: tab, key: key.value }, name: name.value });
 }
 
 export function parseClosedLaneRow(input: unknown, tab: ScopeId): Result<ClosedLaneRow, ParseFailure> {
@@ -164,7 +164,7 @@ SELECT ${closed.tab}, ${closed.pane}, ${closed.closedAt}, ${closed.agent}, ${clo
     }
 
     runAt(task: TaskId, at: Instant): LastRun | null {
-        const tab = parseTabId(task.tab);
+        const tab = parseTabId(task.scope);
         if (tab.kind === 'err') {
             return null;
         }

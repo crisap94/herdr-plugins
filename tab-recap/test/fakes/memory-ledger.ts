@@ -22,7 +22,7 @@ export class MemoryLedger implements FactStore {
     }
 
     holds(task: TaskId, ...panes: readonly string[]): this {
-        const key = `${task.tab}\u001f${task.key}`;
+        const key = `${task.scope}\u001f${task.key}`;
         this.holders.set(key, new Set([...(this.holders.get(key) ?? []), ...panes]));
         return this;
     }
@@ -50,12 +50,12 @@ export class MemoryLedger implements FactStore {
     }
 
     keysOf(tab: ScopeId): readonly Text[] {
-        return [...new Set(this.facts.filter((fact) => fact.task.tab === tab).map((fact) => textOf(fact.task.key)))];
+        return [...new Set(this.facts.filter((fact) => fact.task.scope === tab).map((fact) => textOf(fact.task.key)))];
     }
 
     historyOf(tab: ScopeId, pane: SessionKey): readonly HistoryFact[] {
         return this.facts
-            .filter((fact) => fact.task.tab === tab && this.holders.get(`${tab}\u001f${fact.task.key}`)?.has(pane) === true)
+            .filter((fact) => fact.task.scope === tab && this.holders.get(`${tab}\u001f${fact.task.key}`)?.has(pane) === true)
             .toSorted((a, b) => b.lastAt - a.lastAt)
             .slice(0, HISTORY_LIMIT)
             .map((fact) => ({ section: fact.section, text: textOf(fact.text), why: fact.why === null ? null : textOf(fact.why), state: fact.state, closedWhy: fact.closedWhy, closedAt: fact.closedAt === null ? null : instant(fact.closedAt), firstAt: instant(fact.firstAt), lastAt: instant(fact.lastAt) }));

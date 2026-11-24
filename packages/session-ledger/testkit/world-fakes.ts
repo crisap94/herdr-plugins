@@ -19,11 +19,11 @@ const writtenOf = (answered: WrittenAnswer | Unknown): Written =>
 export const storiesOf = (changes: StoryChange[]): Stories => {
     const kept = new Map<string, KeptStory>();
     return {
-        read: (task) => kept.get(`${task.tab}\u0000${task.key}`) ?? null,
+        read: (task) => kept.get(`${task.scope}\u0000${task.key}`) ?? null,
         keep: (run, change) => {
             changes.push(change);
             if (change.story !== null) {
-                kept.set(`${run.task.tab}\u0000${run.task.key}`, { text: change.story, at: run.at });
+                kept.set(`${run.task.scope}\u0000${run.task.key}`, { text: change.story, at: run.at });
             }
             return { changed: [], refused: [] };
         },

@@ -23,7 +23,7 @@ function replayStore(): ReturnType<typeof memoryStore> {
     const store = memoryStore();
     const run = (minutes: number, ops: readonly Operation[], turn: string): void => {
         recordOps(store, {
-            tab: tabId('replay:t1'), at: instant(T0 + minutes * MIN), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], tasks: oneTask(''), ops: [{ task: textOf('t1'), ops }],
+            scope: tabId('replay:t1'), at: instant(T0 + minutes * MIN), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, sessions: [cursor('w1:p1')], tasks: oneTask(''), ops: [{ task: textOf('t1'), ops }],
             input: textOf(`<recap_input version="2"><tab id="x"/><ledger><fact id="f1" section="goal">LEDGER-ONLY</fact></ledger><transcript agent="a1"><turn role="user">${turn}</turn></transcript></recap_input>`),
         });
     };

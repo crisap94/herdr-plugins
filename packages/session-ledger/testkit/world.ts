@@ -76,7 +76,7 @@ const SETTLE_ROUNDS = 20;
 
 const DEFAULT_READ: Behaviour<Chunk> = {
     kind: 'answer',
-    value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: UNREAD, grew: grew(true) },
+    value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, harnessRecap: null, notes: [], position: UNREAD, grew: grew(true) },
 };
 
 interface Script {

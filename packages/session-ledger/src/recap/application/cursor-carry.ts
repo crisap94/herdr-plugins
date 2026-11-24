@@ -29,7 +29,7 @@ export class CursorCarry {
     }
 
     private remember(session: SessionId, wanted: SessionCursor): SessionCursor | undefined {
-        const key = `${wanted.pane}\n${session}`;
+        const key = `${wanted.key}\n${session}`;
         const before = this.seen.get(key);
         this.seen.delete(key);
         this.seen.set(key, wanted);

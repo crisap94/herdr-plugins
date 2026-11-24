@@ -18,7 +18,7 @@ const RECONCILE_DONE = JSON.stringify({ ops: [{ op: 'close', id: 'f1', why: 'don
 const taskOf = (world: EngineWorld): TaskId => {
     const [only] = recapOf(world, TAB)?.tasks ?? [];
     assert.ok(only);
-    return { tab: tabIdOf(TAB), key: textOf(key(only.id)) };
+    return { scope: tabIdOf(TAB), key: textOf(key(only.id)) };
 };
 
 const openOf = (world: EngineWorld, id: string, firstAt: number, lastAt: number): Fact => factOf(id, { task: taskOf(world), text: textOf(`open work ${id}`), firstAt: instant(firstAt), lastAt: instant(lastAt) });
@@ -51,7 +51,7 @@ const runOnce = async (world: EngineWorld, engine: Engine): Promise<void> => {
 
 const boundaryChunk = (): Behaviour<Chunk> => ({
     kind: 'answer',
-    value: { kind: 'chunk', entries: [{ role: 'user', text: textOf('the open work is finished') }], title: null, lastPrompt: null, claudeRecap: null, notes: [], marks: [{ kind: 'compacted', at: instant(5) }], position: UNREAD, grew: grew(true) },
+    value: { kind: 'chunk', entries: [{ role: 'user', text: textOf('the open work is finished') }], title: null, lastPrompt: null, harnessRecap: null, notes: [], marks: [{ kind: 'compacted', at: instant(5) }], position: UNREAD, grew: grew(true) },
 });
 
 export const CUR_RECONCILE_CASES: readonly Case<EngineWorld, Engine>[] = [

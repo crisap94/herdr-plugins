@@ -59,7 +59,7 @@ export function scripted(answers: Readonly<Partial<Record<JudgeTask, string>>>):
 export function seed(store: Rig['store'], count: number, over: { readonly input?: boolean; readonly gate?: boolean; readonly tab?: string; readonly first?: number } = {}): void {
     for (let n = 0; n < count; n += 1) {
         recordOps(store, {
-            tab: tabId(over.tab ?? 'w1:t1'), at: instant(NOW - (over.first ?? 1) * DAY + n * 1000), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')],
+            scope: tabId(over.tab ?? 'w1:t1'), at: instant(NOW - (over.first ?? 1) * DAY + n * 1000), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, sessions: [cursor('w1:p1')],
             ...withFacts(oneTask('', { ...SECTIONS, goal: textOf(`Ship retries ${n}`) })), ...(over.input === false ? {} : { input: textOf(`<recap_input version="1">run ${n}</recap_input>`) }),
             ...(over.gate === true ? { gateStats: GATE_STATS } : {}),
         });

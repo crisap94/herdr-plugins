@@ -67,7 +67,7 @@ const shapeOf = (recap: Recap | null): unknown => {
     }
     return {
         running: recap.running, backend: recap.backend, error: recap.error, language: recap.language, at: recap.at,
-        lanes: recap.lanes.map((lane) => lane.pane), costUsd: recap.costUsd, tasks: recap.tasks.map((task) => task.id),
+        lanes: recap.sessions.map((lane) => lane.key), costUsd: recap.costUsd, tasks: recap.tasks.map((task) => task.id),
     };
 };
 
@@ -105,7 +105,7 @@ describe('parity: the recap reader on the Drizzle projection', () => {
             const recap = new RecapReader(parity.raw, NO_LEDGER).read(tabId('t1'));
             const expected = rawRows(parity.raw, TASK_LANES, keyOf(30)).map((row) => row.pane);
             assert.ok(expected.length > 0);
-            assert.deepEqual(recap?.tasks.flatMap((task) => task.lanes).toSorted(byText), expected.toSorted(byText));
+            assert.deepEqual(recap?.tasks.flatMap((task) => task.sessions).toSorted(byText), expected.toSorted(byText));
         });
     });
 });
@@ -116,7 +116,7 @@ describe('parity: closed lanes on the Drizzle projection', () => {
             const repository = new ClosedLanesRepository(parity.raw, closedDaysOf('1'));
             for (const at of [29, 40]) {
                 const raw = rawRows(parity.raw, LAST_RUN_AT, 't1', 'k1', at)[0];
-                const found = repository.runAt({ tab: T1, key: textOf('k1') }, instant(at));
+                const found = repository.runAt({ scope: T1, key: textOf('k1') }, instant(at));
                 assert.deepEqual(found === null ? null : { at: found.at, cause: found.cause }, raw === undefined ? null : { at: raw.at, cause: raw.cause });
             }
         });

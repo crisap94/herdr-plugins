@@ -18,7 +18,7 @@ const ago = (minutes: number): number => NOW - minutes * MIN;
 const SHOP: LaneWebRecord = { base: textOf('https://git.example/team/shop'), forge: 'gitlab', branch: textOf('feat/payments-v2') };
 
 function fact(id: string, section: Fact['section'], text: string, at: number, more: Partial<Fact> = {}): Fact {
-    return { id: id as FactId, task: { tab: tabIdOf('w1:t1'), key: textOf('t1') }, section, text: textOf(text), why: null, ref: null, agent: null, anchor: null, firstAt: instant(at), lastAt: instant(at), state: 'open', closedWhy: null, closedAt: null, language: textOf('en'), ...more };
+    return { id: id as FactId, task: { scope: tabIdOf('w1:t1'), key: textOf('t1') }, section, text: textOf(text), why: null, ref: null, agent: null, anchor: null, firstAt: instant(at), lastAt: instant(at), state: 'open', closedWhy: null, closedAt: null, language: textOf('en'), ...more };
 }
 
 const FACTS: readonly Fact[] = [

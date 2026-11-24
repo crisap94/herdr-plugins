@@ -74,7 +74,7 @@ export class ExpandedModel {
     }
 
     private taskOf(tab: ScopeId, task: TaskRef, now: Instant): FoundTask {
-        const facts = knownOr(this.deps.ledger.allOf({ tab, key: task.id }), []);
+        const facts = knownOr(this.deps.ledger.allOf({ scope: tab, key: task.id }), []);
         const story = this.deps.stories.read(tab, task.id);
         const change = newestChange(facts);
         const stale = change !== null && (story === null || story.at < change);
@@ -113,7 +113,7 @@ export class ExpandedModel {
             ...this.sessionReads(tab), now,
             lanes: lanes.map((lane) => ({ agent: textOf(lane.agent), label: clipped(lane.title), context: lane.context ?? null })),
             webs: lanes.map((lane) => (lane.web === undefined || lane.web === null ? null : { base: lane.web.base, branch: lane.web.branch })),
-            edits: this.deps.edits(recap?.lanes ?? [], now).map((edit) => ({ path: edit.path, count: edit.count })),
+            edits: this.deps.edits(recap?.sessions ?? [], now).map((edit) => ({ path: edit.path, count: edit.count })),
             chapters: this.deps.boundaries.chapterCount(tab),
         });
         return { tasks: found.map((one) => one.task), session, webs: lanes.map((lane) => (lane.web === undefined || lane.web === null ? lane.web : webOf(lane.web))), breaks: this.deps.boundaries.breaksOf(tab).map(viewBreakOf) };

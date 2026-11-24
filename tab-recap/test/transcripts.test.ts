@@ -24,7 +24,7 @@ test('claude: prompts, replies and tool calls — never thinking, tool results o
         { role: 'tool', text: textOf(''), kind: 'read', what: textOf('List files') },
     ]);
     assert.equal(got.title, 'herdr recap column');
-    assert.equal(got.claudeRecap, 'Building the column.');
+    assert.equal(got.harnessRecap, 'Building the column.');
     assert.equal(got.lastPrompt, 'build a recap column');
     assert.deepEqual(got.notes, [{ kind: 'away_summary', at: null, text: textOf('Building the column.') }]);
     const timed = extractClaude([JSON.stringify({ type: 'user', timestamp: '2026-10-06T03:00:00.000Z', message: { content: 'hello' } })]);

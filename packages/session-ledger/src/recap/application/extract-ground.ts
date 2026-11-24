@@ -35,8 +35,8 @@ export function groundOf(world: GroundWorld): Ground {
         },
         grounds: tasks.map((task) => ({
             key: brand<string, 'Text'>(task.id), tab, shown: built.numbering.shown.get(brand<string, 'Text'>(task.id)) ?? new Map(),
-            open: world.ledger.openOf({ tab: tabIdOf(tab), key: task.id }),
-            closedLately: world.ledger.recentlyClosed({ tab: tabIdOf(tab), key: task.id }, instant(now - REPEAT_WINDOW_MS)), source, language: world.language, agents,
+            open: world.ledger.openOf({ scope: tabIdOf(tab), key: task.id }),
+            closedLately: world.ledger.recentlyClosed({ scope: tabIdOf(tab), key: task.id }, instant(now - REPEAT_WINDOW_MS)), source, language: world.language, agents,
         })),
     };
 }

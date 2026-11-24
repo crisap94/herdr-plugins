@@ -70,7 +70,7 @@ const fail = (id: string, what: string): void => { failures.push(`${id}: ${what}
 
 function factOf(fact: InputFact, tab: string, language: string): Fact {
     return {
-        id: factIdOf(fact.id), task: { tab: tabIdOf(tab), key: textOf(TASK) }, section: fact.section, text: fact.text, why: fact.why, ref: fact.ref, agent: fact.agent, anchor: fact.anchor,
+        id: factIdOf(fact.id), task: { scope: tabIdOf(tab), key: textOf(TASK) }, section: fact.section, text: fact.text, why: fact.why, ref: fact.ref, agent: fact.agent, anchor: fact.anchor,
         firstAt: fact.first, lastAt: fact.last, state: fact.state, closedWhy: fact.closed, closedAt: fact.state === 'closed' ? fact.last : null, language: textOf(language),
     };
 }

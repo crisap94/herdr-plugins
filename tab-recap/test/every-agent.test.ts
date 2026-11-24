@@ -36,7 +36,7 @@ function recording(agent: string, source: (pane: string) => string, tail: string
         latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
         read: (_source: string, was: Position): Promise<ChunkResult> => {
             seen.push(was);
-            return Promise.resolve({ kind: 'chunk', entries: [{ role: 'agent', text: textOf('hello from the screen') }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(was.cursor + 1), tail: tail === null ? null : textOf(tail) }, grew: grewOf(true) });
+            return Promise.resolve({ kind: 'chunk', entries: [{ role: 'agent', text: textOf('hello from the screen') }], title: null, lastPrompt: null, harnessRecap: null, notes: [], position: { cursor: cursorOf(was.cursor + 1), tail: tail === null ? null : textOf(tail) }, grew: grewOf(true) });
         },
     };
     return { reader, seen };
@@ -59,11 +59,11 @@ async function recapOf(transcripts: TranscriptRegistry, agents: readonly string[
 
 test('a lane with no reader of its own is read by the screen reader — the job does not know what a cursor means, it hands it back', async () => {
     const store = memoryStore();
-    seed(store, { ...blankRecap(tabId('w1:t1')), lanes: [{ pane: paneId('w1:p1'), agent: agentKind('gemini'), transcript: sourcePathOf('screen:w1:p1'), cursor: cursorOf(41), tail: textOf('abc'), title: null, lastPrompt: null, claudeRecap: null }] });
+    seed(store, { ...blankRecap(tabId('w1:t1')), sessions: [{ key: paneId('w1:p1'), agent: agentKind('gemini'), transcript: sourcePathOf('screen:w1:p1'), cursor: cursorOf(41), tail: textOf('abc'), title: null, lastPrompt: null, harnessRecap: null }] });
     const screen = recording(SCREEN_READER_ID, (pane) => `screen:${pane}`, 'def');
     const { requests } = await recapOf(registryWith({ claude: recording('claude', (pane) => `/t/${pane}`).reader }, screen.reader), ['gemini'], store);
     assert.deepEqual(screen.seen, [{ cursor: 41, tail: 'abc' }], 'the stored cursor and tail went back to the reader as they were');
-    assert.deepEqual(storeRead(store.records.readRecap(tabId('w1:t1')))?.lanes.map((lane) => [lane.cursor, lane.tail]), [[42, 'def']], 'and what the reader returned is what is stored');
+    assert.deepEqual(storeRead(store.records.readRecap(tabId('w1:t1')))?.sessions.map((lane) => [lane.cursor, lane.tail]), [[42, 'def']], 'and what the reader returned is what is stored');
     assert.deepEqual(requests[0]?.input.transcripts[0]?.entries.map((entry) => entry.text), ['hello from the screen']);
     assert.deepEqual(requests[0].input.agents.map((agent) => [agent.kind, agent.source]), [['gemini', 'screen']], 'the writer is told the lane is a screen');
 });
@@ -72,7 +72,7 @@ test('an agent with a reader of its own never goes to the screen reader; a sourc
     const own = recording('claude', (pane) => `/t/${pane}`);
     const screen = recording(SCREEN_READER_ID, (pane) => `screen:${pane}`);
     const store = memoryStore();
-    seed(store, { ...blankRecap(tabId('w1:t1')), lanes: [{ pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t/old-session'), cursor: cursorOf(999), tail: null, title: null, lastPrompt: null, claudeRecap: null }] });
+    seed(store, { ...blankRecap(tabId('w1:t1')), sessions: [{ key: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t/old-session'), cursor: cursorOf(999), tail: null, title: null, lastPrompt: null, harnessRecap: null }] });
     await recapOf(registryWith({ claude: own.reader }, screen.reader), ['claude'], store);
     assert.equal(screen.seen.length, 0);
     assert.deepEqual(own.seen, [{ cursor: 0, tail: null }], 'a new session starts from the beginning');
@@ -82,13 +82,13 @@ test('a lane nobody can read is reported by name, and does not stop the others',
     const own = recording('claude', (pane) => `/t/${pane}`);
     const { store } = await recapOf(registryWith({ claude: own.reader }), ['gemini', 'claude']);
     assert.match(storeRead(store.records.readRecap(tabId('w1:t1')))?.error ?? '', /w1:p1: no reader for gemini/);
-    assert.deepEqual(storeRead(store.records.readRecap(tabId('w1:t1')))?.lanes.map((lane) => lane.cursor), [0, 1]);
+    assert.deepEqual(storeRead(store.records.readRecap(tabId('w1:t1')))?.sessions.map((lane) => lane.cursor), [0, 1]);
 });
 
-const cursor = (pane: string, transcript: string): Recap['lanes'][number] => ({ pane: paneId(pane), agent: agentKind('x'), transcript: sourcePathOf(transcript), cursor: cursorOf(1), tail: null, title: null, lastPrompt: null, claudeRecap: null });
+const cursor = (pane: string, transcript: string): Recap['sessions'][number] => ({ key: paneId(pane), agent: agentKind('x'), transcript: sourcePathOf(transcript), cursor: cursorOf(1), tail: null, title: null, lastPrompt: null, harnessRecap: null });
 
 test('the column says `(screen)` beside a lane read from its screen — in both languages — and nothing beside the others', () => {
-    const recap = { ...blankRecap(tabId('w1:t1')), lanes: [cursor('w1:p1', 'screen:w1:p1'), cursor('w1:p2', '/t/b')], markdown: '## Goal\n- g', at: instant(0) };
+    const recap = { ...blankRecap(tabId('w1:t1')), sessions: [cursor('w1:p1', 'screen:w1:p1'), cursor('w1:p2', '/t/b')], markdown: '## Goal\n- g', at: instant(0) };
     const tab: TabViewRecord = viewRecord({ tab: 'w1:t1', column: null, at: 0, lanes: [
         { pane: 'w1:p1', agent: 'gemini', status: 'idle', title: null, cwd: null }, { pane: 'w1:p2', agent: 'claude', status: 'idle', title: null, cwd: null },
     ] });

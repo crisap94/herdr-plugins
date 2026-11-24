@@ -34,7 +34,7 @@ const view: TabViewRecord = viewRecord({
 
 function fixture(): { document: GuiTab; expanded: ReturnType<ExpandedModel['read']> } {
     const store = memoryStore();
-    seed(store, { ...blankRecap(tabId('w1:t1')), at: instant(NOW - 3 * 60 * MIN), lanes: [cursor('w1:p1')], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')], sections: null, markdown: textOf('## Goal\n- x') }] });
+    seed(store, { ...blankRecap(tabId('w1:t1')), at: instant(NOW - 3 * 60 * MIN), sessions: [cursor('w1:p1')], tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')], sections: null, markdown: textOf('## Goal\n- x') }] });
     const ledger = new MemoryLedger()
         .seed(fact('d1', 'decisions', 'Use sqlite', NOW - 30 * MIN))
         .seed(fact('n1', 'needs', 'Need the API key', NOW - 25 * MIN))
@@ -116,7 +116,7 @@ test('a cached expanded read is matched to its task by name, never by position',
     const { document, expanded } = fixture();
     const kept = present(expanded.tasks[0]);
     const stale = { ...expanded, tasks: [{ name: parseTaskName('A'), facts: [], story: null, curating: parseCurating(false) }, { ...kept, name: parseTaskName('B') }] };
-    const recap = { ...blankRecap(tabId('w1:t1')), at: instant(NOW), tasks: [{ id: textOf('t2'), name: textOf('B'), lanes: [paneIdOf('w1:p1')], sections: null, markdown: textOf('') }] };
+    const recap = { ...blankRecap(tabId('w1:t1')), at: instant(NOW), tasks: [{ id: textOf('t2'), name: textOf('B'), sessions: [paneIdOf('w1:p1')], sections: null, markdown: textOf('') }] };
     const built = guiTabOf(recap, view, instant(NOW), { ...BLANK_READS, expanded: stale, zone: must(parseText('UTC')) });
     assert.deepEqual(present(built.tasks[0]).facts.map((one) => one.text), present(document.tasks[0]).facts.map((one) => one.text));
 });

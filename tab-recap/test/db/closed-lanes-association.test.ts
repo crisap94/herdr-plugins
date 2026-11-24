@@ -72,7 +72,7 @@ test('a closure carries the task and name of the newest run of its own transcrip
     seedRun(db, 3000, transcript, 'k2', 'second');
     const repository = new ClosedLanesRepository(db, FOURTEEN);
     repository.record(closure(500, 4000));
-    assert.deepEqual(resolvedAssociation(repository, 4000), { task: { tab: 'w1:t1', key: 'k2' }, name: 'second' });
+    assert.deepEqual(resolvedAssociation(repository, 4000), { task: { scope: 'w1:t1', key: 'k2' }, name: 'second' });
     db.close();
 });
 
@@ -106,7 +106,7 @@ test('a run that finished after the close instant is not the association, even w
     seedRun(db, 4500, transcript, 'k2', 'after the close');
     const repository = new ClosedLanesRepository(db, FOURTEEN);
     repository.record(closure(500, 4000));
-    assert.deepEqual(resolvedAssociation(repository, 4000), { task: { tab: 'w1:t1', key: 'k1' }, name: 'before' });
+    assert.deepEqual(resolvedAssociation(repository, 4000), { task: { scope: 'w1:t1', key: 'k1' }, name: 'before' });
     db.close();
 });
 
@@ -139,7 +139,7 @@ test('a run that finishes after the closure does not rewrite its association', (
     const repository = new ClosedLanesRepository(db, FOURTEEN);
     repository.record(closure(500, 4000));
     seedRun(db, 6000, transcript, 'k3', 'later');
-    assert.deepEqual(resolvedAssociation(repository, 4000), { task: { tab: 'w1:t1', key: 'k2' }, name: 'second' });
+    assert.deepEqual(resolvedAssociation(repository, 4000), { task: { scope: 'w1:t1', key: 'k2' }, name: 'second' });
     db.close();
 });
 

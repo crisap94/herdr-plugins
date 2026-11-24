@@ -4,6 +4,7 @@ import { RUBRIC } from '../../tab-recap/src/adapters/job/prompts/rubric.ts';
 import { curatorInput } from '../../packages/session-ledger/src/recap/application/curator-input.ts';
 import type { CuratorMaterial } from '../../packages/session-ledger/src/recap/application/curator-input.ts';
 import type { Item, Prompt } from '../lib/types.ts';
+import { factOfStored, factToStored, type StoredFact } from '../lib/stored-fact.ts';
 
 export interface MergePair {
     readonly ids: readonly [string, string];
@@ -31,18 +32,24 @@ export type Input = Omit<CuratorMaterial, 'rubric'>;
 
 export type StoryItem = Item<Input, Expected>;
 
+export type StoredInput = Omit<Input, 'facts'> & { readonly facts: readonly StoredFact[] };
+
 interface Row {
     readonly id: string;
     readonly plants: readonly string[];
-    readonly input: Input;
+    readonly input: StoredInput;
     readonly expected: Expected;
 }
+
+export const inputOfStored = (input: StoredInput): Input => ({ ...input, facts: input.facts.map(factOfStored) });
+
+export const inputToStored = (input: Input): StoredInput => ({ ...input, facts: input.facts.map(factToStored) });
 
 export function loadItems(file: URL = new URL('./dataset.jsonl', import.meta.url)): StoryItem[] {
     const text = readFileSync(file, 'utf8');
     return text.split('\n').filter((line) => line.trim() !== '').map((line) => {
         const row = JSON.parse(line) as Row;
-        return { id: row.id, plants: row.plants, input: row.input, expected: row.expected };
+        return { id: row.id, plants: row.plants, input: inputOfStored(row.input), expected: row.expected };
     });
 }
 

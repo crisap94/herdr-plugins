@@ -42,8 +42,8 @@ export interface LinkedDecision {
 }
 
 export interface SkipRow {
-    readonly tab: ScopeId;
-    readonly pane: SessionKey;
+    readonly scope: ScopeId;
+    readonly key: SessionKey;
     readonly agent: HarnessKind;
     readonly at: Instant;
     readonly gate: SkipGate;
@@ -69,8 +69,8 @@ export type CoverageVerdict = PassedCoverage | CoverageFacts | UncheckedCoverage
 export type AnswerTally = ReadonlyMap<Text, Probability>;
 
 export interface DecisionDraft {
-    readonly tab: ScopeId;
-    readonly pane: SessionKey;
+    readonly scope: ScopeId;
+    readonly key: SessionKey;
     readonly agent: HarnessKind;
     readonly at: Instant;
     readonly mode: DecisionMode;
@@ -148,8 +148,8 @@ interface Row {
 
 const isRow = (input: unknown): input is Row => typeof input === 'object' && input !== null;
 
-type Placement = Pick<SkipRow, 'tab' | 'pane' | 'agent' | 'at'>;
-type DecisionLocator = Pick<StoredDecisionRow, 'id' | 'compactionId' | 'tab' | 'pane' | 'agent' | 'at' | 'laneStatus'>;
+type Placement = Pick<SkipRow, 'scope' | 'key' | 'agent' | 'at'>;
+type DecisionLocator = Pick<StoredDecisionRow, 'id' | 'compactionId' | 'scope' | 'key' | 'agent' | 'at' | 'laneStatus'>;
 type DecisionReading = Pick<StoredDecisionRow, 'mode' | 'share' | 'tokens' | 'window' | 'gate' | 'verdict' | 'askedVerdict'>;
 type DecisionEvidence = Pick<StoredDecisionRow, 'answers' | 'coverage' | 'decider' | 'costUsd' | 'tookMs'>;
 type DecisionCoverage = Pick<StoredDecisionRow, 'coverageOutcome' | 'coverageMs' | 'coverageCostUsd' | 'why'>;
@@ -187,7 +187,7 @@ function placementOf(row: Row): Result<Placement, ParseFailure> {
     if (agent.kind === 'err') return agent;
     const at = parseInstant(row.at);
     if (at.kind === 'err') return at;
-    return ok({ tab: tab.value, pane: pane.value, agent: agent.value, at: at.value });
+    return ok({ scope: tab.value, key: pane.value, agent: agent.value, at: at.value });
 }
 
 export function parseSkipRow(input: unknown): Result<SkipRow, ParseFailure> {

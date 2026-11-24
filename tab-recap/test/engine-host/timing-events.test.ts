@@ -63,7 +63,7 @@ test('EVT-6: with the key on, one consideration per candidate of the event scope
     const d = await daemon('on');
     d.emit(accomplished('w1:t1'));
     await settle();
-    assert.deepEqual(rows(d.w).map((row) => row.pane).toSorted(), ['w1:p1', 'w1:p2']);
+    assert.deepEqual(rows(d.w).map((row) => row.key).toSorted(), ['w1:p1', 'w1:p2']);
     assert.equal(d.w.asked.length, 2);
     await d.slots.stop();
     d.emit(accomplished('w1:t2'));
@@ -76,7 +76,7 @@ test('EVT-7: with the key on, the sweep still considers every ready lane', async
     d.emit(accomplished('w1:t2'));
     await settle();
     await d.sweep.sweep();
-    assert.deepEqual(rows(d.w).map((row) => row.pane).toSorted(), ['w1:p1', 'w1:p2', 'w1:p3']);
+    assert.deepEqual(rows(d.w).map((row) => row.key).toSorted(), ['w1:p1', 'w1:p2', 'w1:p3']);
     await d.slots.stop();
 });
 
@@ -94,6 +94,6 @@ test('EVT-8: with a consideration already in flight for the lane, an event asks 
     held.release();
     await sweeping;
     assert.equal(d.w.asked.length, 3);
-    assert.equal(rows(d.w).filter((row) => row.pane === 'w1:p3').length, 1);
+    assert.equal(rows(d.w).filter((row) => row.key === 'w1:p3').length, 1);
     await d.slots.stop();
 });

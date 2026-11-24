@@ -60,7 +60,7 @@ test('a reconcile is due every N turns or at once after a boundary, and settles 
 });
 
 test('a task with no tail reader or no writer is not reconciled', async () => {
-    const lanes = [{ pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePath('t'), cursor: cursorAt(0), tail: null, title: null, lastPrompt: null, claudeRecap: null }];
+    const lanes = [{ key: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePath('t'), cursor: cursorAt(0), tail: null, title: null, lastPrompt: null, harnessRecap: null }];
     const target = { id: textOf('t1'), name: textOf('goal'), lanes: [] };
     const reconciling = new Reconciling(depsOf({}, []));
     assert.equal(await reconciling.task(tabOf('w1:t1'), target, lanes, 'open'), false);

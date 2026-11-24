@@ -12,12 +12,12 @@ import { textOf } from '#src/recap/domain/text.ts';
 
 const NOW = Date.parse('2026-10-08T12:00:00Z');
 const found = (over: Partial<StoredDecisionRow>): StoredDecisionRow => ({
-    id: must(parseDecisionId('dcn_x')), tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 60_000), mode: 'shadow', share: countOf(61), tokens: must(parseCount(1)), window: must(parseCount(2)), gate: 'ask', verdict: 'compact', answers: new Map(), coverage: null,
+    id: must(parseDecisionId('dcn_x')), scope: tabId('w1:t1'), key: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 60_000), mode: 'shadow', share: countOf(61), tokens: must(parseCount(1)), window: must(parseCount(2)), gate: 'ask', verdict: 'compact', answers: new Map(), coverage: null,
     decider: textOf('jev · jev-1.13.0'), costUsd: must(parseUsd(0.00003)), tookMs: duration(5), why: null, askedVerdict: 'compact', coverageOutcome: null, coverageMs: null, coverageCostUsd: null, compactionId: null, laneStatus: null, ...over,
 });
 
 test('the listing: a header, one row per decision in the order given, the cells padded, then the last day\'s total', () => {
-    const lines = listing([found({}), found({ tab: tabId('w2:t9'), pane: paneId('w2:p3'), share: countOf(85), gate: 'ceiling', decider: null, costUsd: must(parseUsd(0)), at: instant(NOW - 2 * 3_600_000), verdict: 'compact' })], { since: instant(NOW - 86_400_000), costUsd: must(parseUsd(0.00003)) }, instant(NOW), textOf('UTC'));
+    const lines = listing([found({}), found({ scope: tabId('w2:t9'), key: paneId('w2:p3'), share: countOf(85), gate: 'ceiling', decider: null, costUsd: must(parseUsd(0)), at: instant(NOW - 2 * 3_600_000), verdict: 'compact' })], { since: instant(NOW - 86_400_000), costUsd: must(parseUsd(0.00003)) }, instant(NOW), textOf('UTC'));
     assert.deepEqual(lines, [
         'time         tab    pane   status  share  verdict  gate     decider           cost',
         '10-08 11:59  w1:t1  w1:p1  —       61 %   compact  ask      jev · jev-1.13.0  $0.00003',
@@ -41,8 +41,8 @@ test('the options: none or --all; anything else is a usage error that names it',
 });
 
 test('the listing: the lanes not decided now follow the decisions, newest first, with their gate and detail; a share not known is a dash', () => {
-    const stopped = (over: Partial<SkipRow>): SkipRow => ({ tab: tabId('w1:t1'), pane: paneId('w1:p9'), agent: agentKind('claude'), at: instant(NOW - 60_000), gate: 'in-flight', share: countOf(62), detail: textOf('2 running'), ...over });
-    const lines = listing([found({})], { since: instant(NOW - 86_400_000), costUsd: must(parseUsd(0)) }, instant(NOW), textOf('UTC'), [stopped({}), stopped({ pane: paneId('w2:p1'), tab: tabId('w2:t2'), at: instant(NOW - 120_000), gate: 'no-context', share: null, detail: textOf('the context share is not known yet') })]);
+    const stopped = (over: Partial<SkipRow>): SkipRow => ({ scope: tabId('w1:t1'), key: paneId('w1:p9'), agent: agentKind('claude'), at: instant(NOW - 60_000), gate: 'in-flight', share: countOf(62), detail: textOf('2 running'), ...over });
+    const lines = listing([found({})], { since: instant(NOW - 86_400_000), costUsd: must(parseUsd(0)) }, instant(NOW), textOf('UTC'), [stopped({}), stopped({ key: paneId('w2:p1'), scope: tabId('w2:t2'), at: instant(NOW - 120_000), gate: 'no-context', share: null, detail: textOf('the context share is not known yet') })]);
     assert.deepEqual(lines.slice(5), [
         'not decided now',
         'time         tab    pane   share  gate        detail',
@@ -57,7 +57,7 @@ test('the listing shows the asked verdict when coverage changed the effective ve
 });
 
 test('the listing shows the status each decision had; a decision that recorded none is a dash', () => {
-    const lines = listing([found({ laneStatus: 'done' }), found({ laneStatus: null, tab: tabId('w2:t9'), pane: paneId('w2:p3')})], { since: instant(0), costUsd: must(parseUsd(0)) }, instant(NOW), textOf('UTC'));
+    const lines = listing([found({ laneStatus: 'done' }), found({ laneStatus: null, scope: tabId('w2:t9'), key: paneId('w2:p3')})], { since: instant(0), costUsd: must(parseUsd(0)) }, instant(NOW), textOf('UTC'));
     assert.match(lines[1] ?? '', /w1:p1\s+done\s+61 %/);
     assert.match(lines[2] ?? '', /w2:p3\s+—\s+61 %/);
 });

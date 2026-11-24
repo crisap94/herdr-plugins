@@ -6,19 +6,19 @@ import type { Fact, HistoryFact, Refusal, TaskId } from './facts.ts';
 export type Running = Brand<boolean, 'Running'>;
 
 export interface SessionCursor {
-    readonly pane: SessionKey;
+    readonly key: SessionKey;
     readonly agent: HarnessKind;
     readonly transcript: SourcePath;
     readonly cursor: Cursor;
     readonly tail: Text | null;
     readonly title: Text | null;
     readonly lastPrompt: Text | null;
-    readonly claudeRecap: Text | null;
+    readonly harnessRecap: Text | null;
 }
 
 export interface Recap {
-    readonly tab: ScopeId;
-    readonly lanes: readonly SessionCursor[];
+    readonly scope: ScopeId;
+    readonly sessions: readonly SessionCursor[];
     readonly tasks: readonly RecapTask[];
     readonly at: Instant | null;
     readonly running: Running;
@@ -42,17 +42,17 @@ export interface RecapSections {
 export interface RecapTask {
     readonly id: Text;
     readonly name: Text;
-    readonly lanes: readonly SessionKey[];
+    readonly sessions: readonly SessionKey[];
     readonly sections: RecapSections | null;
     readonly markdown: Text;
 }
 
-export type TaskShape = Pick<RecapTask, 'id' | 'name' | 'lanes'>;
+export type TaskShape = Pick<RecapTask, 'id' | 'name' | 'sessions'>;
 
 export type OwnTrigger = 'auto' | 'manual';
 
 export interface SessionMark {
-    readonly pane: SessionKey;
+    readonly key: SessionKey;
     readonly at: Instant;
     readonly cursor: Count;
     readonly tokensBefore?: Count;
@@ -68,7 +68,7 @@ export interface GateStats {
 }
 
 export interface RunFacts {
-    readonly tab: ScopeId;
+    readonly scope: ScopeId;
     readonly at: Instant;
     readonly cause: RecapCause | 'imported';
     readonly backend: Text | null;
@@ -79,7 +79,7 @@ export interface RunFacts {
 export interface RecordedRun extends RunFacts {
     readonly marks?: readonly SessionMark[];
     readonly error: Text | null;
-    readonly lanes: readonly SessionCursor[];
+    readonly sessions: readonly SessionCursor[];
     readonly tasks: readonly TaskShape[];
     readonly changed: readonly Fact[];
     readonly refused: readonly Refusal[];
@@ -90,15 +90,15 @@ export interface RecordedRun extends RunFacts {
 export interface FailedRun extends RunFacts {
     readonly marks?: readonly SessionMark[];
     readonly error: Text;
-    readonly lanes: readonly SessionCursor[];
+    readonly sessions: readonly SessionCursor[];
 }
 
 export interface Advance {
     readonly marks?: readonly SessionMark[];
-    readonly tab: ScopeId;
+    readonly scope: ScopeId;
     readonly at: Instant;
     readonly error: Text | null;
-    readonly lanes: readonly SessionCursor[];
+    readonly sessions: readonly SessionCursor[];
 }
 
 export interface LastRun {

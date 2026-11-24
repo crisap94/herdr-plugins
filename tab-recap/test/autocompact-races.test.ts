@@ -48,8 +48,8 @@ test('two lanes considered at once, the decider held: both are asked, one reques
     held.release();
     await Promise.all([first, second]);
     assert.deepEqual(w.requests.map((request) => request.pane), ['w1:p1']);
-    assert.deepEqual(w.store.decisions.skips().map((skip) => [skip.pane, skip.gate, skip.detail]), [['w1:p2', 'busy', 'another lane; decider $0.00003 discarded']]);
-    assert.deepEqual(rows(w).map((row) => row.pane), ['w1:p1'], 'the second lane records no decision');
+    assert.deepEqual(w.store.decisions.skips().map((skip) => [skip.key, skip.gate, skip.detail]), [['w1:p2', 'busy', 'another lane; decider $0.00003 discarded']]);
+    assert.deepEqual(rows(w).map((row) => row.key), ['w1:p1'], 'the second lane records no decision');
     assert.ok(w.logs.includes('autocompact w1:p2: 62 % → skip busy (another lane; decider $0.00003 discarded)'), 'the log shows what the dropped decision cost');
 });
 
@@ -69,7 +69,7 @@ test('a begun, linked, unfinished automatic compaction of lane 1 holds lane 2: b
     const begun = w.store.compactions.begin({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), stage: 'compacting', at: instant(NOW), origin: 'auto' });
     w.store.decisions.linkLatest(tabId('w1:t1'), paneId('w1:p1'), must(parseCompactionId(begun)));
     await w.service.consider(at('w1:p2'));
-    assert.deepEqual([w.requests.map((request) => request.pane), w.store.decisions.skips().map((skip) => [skip.pane, skip.gate, skip.detail])], [['w1:p1'], [['w1:p2', 'busy', 'another lane']]]);
+    assert.deepEqual([w.requests.map((request) => request.pane), w.store.decisions.skips().map((skip) => [skip.key, skip.gate, skip.detail])], [['w1:p1'], [['w1:p2', 'busy', 'another lane']]]);
 });
 
 test('a sweep over five lanes in shadow decides four (the 82 % one a ceiling, the 5 % one below the minimum); a lane at 30 % is decided at the next sweep once the minimum drops from 40 to 10', async () => {
@@ -78,17 +78,17 @@ test('a sweep over five lanes in shadow decides four (the 82 % one a ceiling, th
     const lanes = ['w1:p1', 'w1:p2', 'w1:p3', 'w1:p4', 'w1:p5'].map((pane) => at(pane));
     const sweep = new AutocompactSweep({ candidates: (): readonly Candidate[] => candidatesOf(boardOf(lanes), (): void => undefined), autocompact: (): Considers => w.watch, log: (): void => undefined });
     await sweep.sweep();
-    assert.deepEqual(rows(w).map((row) => row.pane).toSorted(), ['w1:p1', 'w1:p2', 'w1:p3', 'w1:p4']);
-    assert.equal(rows(w).find((row) => row.pane === 'w1:p4')?.gate, 'ceiling');
-    assert.deepEqual(w.store.decisions.skips().map((skip) => [skip.pane, skip.gate]), [['w1:p5', 'below-minimum']]);
+    assert.deepEqual(rows(w).map((row) => row.key).toSorted(), ['w1:p1', 'w1:p2', 'w1:p3', 'w1:p4']);
+    assert.equal(rows(w).find((row) => row.key === 'w1:p4')?.gate, 'ceiling');
+    assert.deepEqual(w.store.decisions.skips().map((skip) => [skip.key, skip.gate]), [['w1:p5', 'below-minimum']]);
     assert.equal(w.asked.length, 3, 'one decider call per eligible lane below the ceiling: 15, 45 and 60 %');
     w.policy = { ...w.policy, minimum: brand<number, 'AutocompactPercent'>(40) };
     const idle30 = at('w1:p6');
     await new AutocompactSweep({ candidates: (): readonly Candidate[] => candidatesOf(boardOf([...lanes, idle30]), (): void => undefined), autocompact: (): Considers => w.watch, log: (): void => undefined }).sweep();
-    assert.deepEqual(w.store.decisions.skips().filter((skip) => skip.pane === 'w1:p6').map((skip) => [skip.gate, skip.detail]), [['below-minimum', 'below 40 %']]);
+    assert.deepEqual(w.store.decisions.skips().filter((skip) => skip.key === 'w1:p6').map((skip) => [skip.gate, skip.detail]), [['below-minimum', 'below 40 %']]);
     w.policy = { ...w.policy, minimum: brand<number, 'AutocompactPercent'>(10) };
     await new AutocompactSweep({ candidates: (): readonly Candidate[] => candidatesOf(boardOf([...lanes, idle30]), (): void => undefined), autocompact: (): Considers => w.watch, log: (): void => undefined }).sweep();
-    assert.equal(rows(w).find((row) => row.pane === 'w1:p6')?.verdict, 'compact', 'decided at the next sweep after the minimum dropped to 10');
+    assert.equal(rows(w).find((row) => row.key === 'w1:p6')?.verdict, 'compact', 'decided at the next sweep after the minimum dropped to 10');
 });
 
 test('the late check at the ceiling: an awaited reply that appears after the gate does not skip a full lane', async () => {

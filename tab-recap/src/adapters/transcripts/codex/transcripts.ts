@@ -56,7 +56,7 @@ function entriesOf(row: CodexRow): readonly Entry[] {
 export function extractCodexOf(lines: readonly Text[]): Omit<Chunk, 'kind' | 'position' | 'grew'> {
     const rows = readRollout(lines).rows;
     const entries = rows.flatMap((row) => entriesOf(row));
-    return { entries, notes: [], marks: marksOf(rows), title: null, lastPrompt: entries.findLast((entry) => entry.role === 'user')?.text ?? null, claudeRecap: null };
+    return { entries, notes: [], marks: marksOf(rows), title: null, lastPrompt: entries.findLast((entry) => entry.role === 'user')?.text ?? null, harnessRecap: null };
 }
 
 export class CodexTranscripts implements SessionReader {

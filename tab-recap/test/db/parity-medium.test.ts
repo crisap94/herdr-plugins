@@ -18,7 +18,7 @@ const literal = (n: number): string => `X'${hex(keyOf(n))}'`;
 const dumpOf = (sql: string) => (db: Database): unknown => db.prepare(sql).all();
 const exec = (sql: string) => (db: Database): void => { db.exec(sql); };
 const CAUSE = RECAP_CAUSES[0];
-const FACTS = { tab: tabId('t1'), at: instant(20), cause: CAUSE, backend: textOf('codex'), language: textOf('en'), costUsd: usdOf(0.25) };
+const FACTS = { scope: tabId('t1'), at: instant(20), cause: CAUSE, backend: textOf('codex'), language: textOf('en'), costUsd: usdOf(0.25) };
 const READS = 'SELECT run_id, transcript_id, from_cursor, to_cursor FROM run_read ORDER BY transcript_id';
 const RUNS = 'SELECT c.tab_id, c.n, c.started_at, r.at, r.cause, r.backend, r.language, r.cost_micro_usd, r.error, r.gate_stats FROM run r JOIN chapter c ON c.id = r.chapter_id ORDER BY r.at, c.n';
 const CHAPTERS = 'SELECT tab_id, n, started_at FROM chapter ORDER BY tab_id, n, started_at';
@@ -76,7 +76,7 @@ describe('parity: run records', () => {
         expectSameEffect({
             seed: exec(TAB_SEED),
             raw: (db) => { db.prepare('UPDATE tab SET running = 0, backend = ?, error = ? WHERE id = ?').run('codex', 'boom', 't1'); },
-            builder: (db) => { new RecapRecordsRepository(db).failRun({ ...FACTS, error: textOf('boom'), lanes: [] }); },
+            builder: (db) => { new RecapRecordsRepository(db).failRun({ ...FACTS, error: textOf('boom'), sessions: [] }); },
             dump: dumpOf(TABS),
         });
     });
@@ -94,7 +94,7 @@ describe('parity: run records', () => {
         expectSameEffect({
             seed: exec(TAB_SEED),
             raw: (db) => { db.prepare('UPDATE tab SET error = ? WHERE id = ?').run('late', 't2'); },
-            builder: (db) => { new RecapRecordsRepository(db).advance({ tab: tabId('t2'), at: instant(30), error: textOf('late'), lanes: [] }); },
+            builder: (db) => { new RecapRecordsRepository(db).advance({ scope: tabId('t2'), at: instant(30), error: textOf('late'), sessions: [] }); },
             dump: dumpOf(TABS),
         });
     });

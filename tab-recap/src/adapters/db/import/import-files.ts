@@ -49,14 +49,14 @@ export function compareLegacyFiles(store: Store, legacy: LegacyStoreFiles, now: 
     const refresh = legacy.pendingRequests();
     const visibility = legacy.pendingVisibility();
     const refused = [
-        ...recaps.map((file) => attempt(store.db, must(parseText(`recap ${file.tab}`)), () => { writer.recap(file, now); })),
+        ...recaps.map((file) => attempt(store.db, must(parseText(`recap ${file.scope}`)), () => { writer.recap(file, now); })),
         ...views.map((file) => attempt(store.db, must(parseText(`view ${file.tab}`)), () => { writer.view(file); })),
         attempt(store.db, must(parseText('hidden')), () => { if (hidden !== null) { writer.hidden(hidden); } }),
         attempt(store.db, must(parseText('requests')), () => { writer.requests(refresh, visibility, now); }),
     ].flatMap((message) => message ?? []);
     const differences = [
         ...refused,
-        ...recaps.flatMap((file) => recapDifferenceLines(file, knownOr(store.records.readRecap(file.tab), null))),
+        ...recaps.flatMap((file) => recapDifferenceLines(file, knownOr(store.records.readRecap(file.scope), null))),
         ...views.flatMap((file) => viewDifferenceLines(file, readBack(store, file.tab))),
         ...(hidden !== null && JSON.stringify(store.visibility.readHidden()) !== JSON.stringify(hidden) ? [must(parseText('hidden: reads back differently'))] : []),
     ];

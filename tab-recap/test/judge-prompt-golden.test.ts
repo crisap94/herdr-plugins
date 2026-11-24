@@ -27,7 +27,7 @@ test('golden: the report with a judge-vs-anchor failure lists the fact under its
     const store = memoryStore();
     const anchored: Operation = { op: 'add', section: 'done', text: textOf('Merged !256.'), why: null, ref: null, at: null, agent: null, anchor: textOf('merge !256') };
     const plainAdd: Operation = { op: 'add', section: 'done', text: textOf('Tagged 1.9.0.'), why: null, ref: null, at: null, agent: null };
-    recordOps(store, { tab: tabId('w1:t1'), at: instant(1000), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], tasks: oneTask(''), ops: [{ task: textOf('t1'), ops: [anchored, plainAdd] }], input: textOf('<recap_input version="2">merge !256</recap_input>') });
+    recordOps(store, { scope: tabId('w1:t1'), at: instant(1000), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, sessions: [cursor('w1:p1')], tasks: oneTask(''), ops: [{ task: textOf('t1'), ops: [anchored, plainAdd] }], input: textOf('<recap_input version="2">merge !256</recap_input>') });
     const run = runsOf(store.inputs, { tab: null, since: null, limit: 5, withInput: true })[0];
     assert.ok(run !== undefined);
     const score = JSON.stringify({

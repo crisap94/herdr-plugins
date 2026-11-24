@@ -59,25 +59,25 @@ export class RowsWriter {
     }
 
     private tasks(run: Uint8Array, file: Recap, tasks: readonly RecapTask[]): void {
-        const facts = { tab: file.tab, at: file.at ?? instant(0), cause: 'imported', backend: file.backend, language: file.language, costUsd: file.costUsd } as const;
-        this.runs.writeTasks(run, facts, tasks.map((task) => ({ id: task.id, name: task.name, lanes: task.lanes, ...(task.sections === null ? { legacy: task.markdown } : {}) })));
+        const facts = { scope: file.scope, at: file.at ?? instant(0), cause: 'imported', backend: file.backend, language: file.language, costUsd: file.costUsd } as const;
+        this.runs.writeTasks(run, facts, tasks.map((task) => ({ id: task.id, name: task.name, sessions: task.sessions, ...(task.sections === null ? { legacy: task.markdown } : {}) })));
         for (const task of tasks) {
-            const ref = { id: must(parseRunId(typeIdOf('run', run))), task: { tab: file.tab, key: task.id }, at: facts.at, language: file.language, mint };
+            const ref = { id: must(parseRunId(typeIdOf('run', run))), task: { scope: file.scope, key: task.id }, at: facts.at, language: file.language, mint };
             this.ledger.applyTo(run, ref, task.sections === null ? [] : opsOfSections(task.sections));
         }
     }
 
     recap(file: Recap, now: Instant): void {
         const at = file.at ?? now;
-        this.tabs.ensure(file.tab, instant(at));
-        this.transcripts.attach(file.tab, file.lanes, instant(at));
+        this.tabs.ensure(file.scope, instant(at));
+        this.transcripts.attach(file.scope, file.sessions, instant(at));
         if (file.at !== null || file.error !== null || file.costUsd > 0) {
-            const facts = { tab: file.tab, at, cause: 'imported', backend: file.backend, language: file.language, costUsd: file.costUsd } as const;
+            const facts = { scope: file.scope, at, cause: 'imported', backend: file.backend, language: file.language, costUsd: file.costUsd } as const;
             const failed = file.at === null;
             const run = this.runs.insertRun(facts, failed ? (file.error ?? textOf('')) : null);
             this.tasks(run, file, failed ? [] : file.tasks);
         }
-        this.state.run(file.running ? 1 : 0, file.backend, file.error, file.tab);
+        this.state.run(file.running ? 1 : 0, file.backend, file.error, file.scope);
     }
 
     view(view: LegacyViewFile): void {

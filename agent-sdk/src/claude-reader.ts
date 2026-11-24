@@ -140,7 +140,7 @@ export function claudeReader(options: ClaudeReaderOptions): SessionReader {
                     entries: records.flatMap(entriesOf),
                     title: null,
                     lastPrompt: last === undefined ? null : textOf(last),
-                    claudeRecap: null,
+                    harnessRecap: null,
                     notes: records.flatMap(notesOf),
                     marks: records.flatMap(marksOf),
                     position,

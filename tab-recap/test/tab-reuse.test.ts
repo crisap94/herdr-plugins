@@ -46,7 +46,7 @@ const transcripts: SessionReader = {
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
     read: (source: string): Promise<ChunkResult> => {
         const text = said[source.slice(3)] ?? '';
-        return Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf(text) }], title: null, lastPrompt: textOf(text), claudeRecap: null, notes: [], position: { cursor: cursorOf(100), tail: null }, grew: grewOf(true) });
+        return Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf(text) }], title: null, lastPrompt: textOf(text), harnessRecap: null, notes: [], position: { cursor: cursorOf(100), tail: null }, grew: grewOf(true) });
     },
 };
 
@@ -98,7 +98,7 @@ async function dispatched(store: Store, intents: readonly Intent[]): Promise<rea
 
 const OLD_FACTS = [add('goal', 'old payments work', 'migrate victoria'), add('now', 'migrating victoria', 'migrate victoria')];
 const NEW_FACTS = [add('goal', 'new docs work', 'write the docs')];
-const texts = (store: Store, tab: string, key: string): readonly string[] => storeRead(store.ledger.allOf({ tab: tabIdOf(tab), key: textOf(key) })).map((fact) => `${fact.state}:${fact.text}`);
+const texts = (store: Store, tab: string, key: string): readonly string[] => storeRead(store.ledger.allOf({ scope: tabIdOf(tab), key: textOf(key) })).map((fact) => `${fact.state}:${fact.text}`);
 
 test('tab reuse: a tab id herdr hands to a new tab after its workspace closed starts from an empty ledger, and the old facts are kept apart', async () => {
     const store = memoryStore();

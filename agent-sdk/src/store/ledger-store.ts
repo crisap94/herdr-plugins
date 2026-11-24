@@ -8,10 +8,10 @@ import {
     type Instant,
     type LastRun,
     type Recap,
-    type RecapTask,
     type RecordedRun,
     type Records,
     type ScopeId,
+    type SessionCursor,
     type SessionKey,
     type SessionMark,
     type TaskId,
@@ -82,7 +82,7 @@ const writeFact = (db: Handle, fact: Fact): void => {
             language = excluded.language`,
     ).run(
         fact.id,
-        fact.task.tab,
+        fact.task.scope,
         fact.task.key,
         fact.section,
         fact.text,
@@ -103,17 +103,31 @@ const ensureRecap = (db: Handle, scope: string, at: Instant | null): void => {
     db.prepare("INSERT OR IGNORE INTO recap (scope, lanes, tasks, at, running, cost_usd, language) VALUES (?, '[]', '[]', ?, 0, 0, '')").run(scope, at);
 };
 
+const storedMark = ({ key, ...rest }: SessionMark) => ({ pane: key, ...rest });
+
+const storedCursors = (cursors: readonly SessionCursor[]) =>
+    cursors.map((cursor) => ({
+        pane: cursor.key,
+        agent: cursor.agent,
+        transcript: cursor.transcript,
+        cursor: cursor.cursor,
+        tail: cursor.tail,
+        title: cursor.title,
+        lastPrompt: cursor.lastPrompt,
+        claudeRecap: cursor.harnessRecap,
+    }));
+
 const keepMarks = (db: Handle, scope: string, marks: Advance['marks']): void => {
     for (const mark of marks ?? []) {
-        db.prepare('INSERT INTO mark (scope, at, body) VALUES (?, ?, ?)').run(scope, mark.at, JSON.stringify(mark));
+        db.prepare('INSERT INTO mark (scope, at, body) VALUES (?, ?, ?)').run(scope, mark.at, JSON.stringify(storedMark(mark)));
     }
 };
 
 const openFactsOf = (db: Handle, task: TaskId): readonly Fact[] =>
-    rowsOf(db, "SELECT * FROM fact WHERE tab = ? AND task_key = ? AND state = 'open' ORDER BY first_at, rowid", task.tab, task.key).map(factOf);
+    rowsOf(db, "SELECT * FROM fact WHERE tab = ? AND task_key = ? AND state = 'open' ORDER BY first_at, rowid", task.scope, task.key).map(factOf);
 
 const markdownOf = (db: Handle, tab: string, id: Text): Text => {
-    const joined = openFactsOf(db, { tab: tabIdOfScope(tab), key: id })
+    const joined = openFactsOf(db, { scope: tabIdOfScope(tab), key: id })
         .map((fact) => fact.text)
         .join('\n');
     return isText(joined) ? joined : id;
@@ -121,12 +135,12 @@ const markdownOf = (db: Handle, tab: string, id: Text): Text => {
 
 const isText = (raw: string): raw is Text => raw.length >= 0;
 
-const tasksWithMarkdown = (db: Handle, run: RecordedRun): readonly RecapTask[] =>
-    run.tasks.map((task) => ({ id: task.id, name: task.name, lanes: task.lanes, sections: null, markdown: markdownOf(db, run.tab, task.id) }));
+const tasksWithMarkdown = (db: Handle, run: RecordedRun) =>
+    run.tasks.map((task) => ({ id: task.id, name: task.name, lanes: task.sessions, sections: null, markdown: markdownOf(db, run.scope, task.id) }));
 
 const recapOf = (row: Row, tab: string): Recap => ({
-    tab: tabIdOfScope(tab),
-    lanes: lanesOf(String(row.lanes)),
+    scope: tabIdOfScope(tab),
+    sessions: lanesOf(String(row.lanes)),
     tasks: tasksOf(String(row.tasks)),
     at: recapAtOf(row),
     running: runningAt(row),
@@ -155,60 +169,60 @@ const recordsOf = (db: Handle, writing: Store): Records => ({
     },
     recordRun: (run: RecordedRun): void => {
         writing.writeTransaction(() => {
-            ensureRecap(db, run.tab, run.at);
+            ensureRecap(db, run.scope, run.at);
             for (const fact of run.changed) {
                 writeFact(db, fact);
             }
             db.prepare(
                 'UPDATE recap SET lanes = ?, tasks = ?, at = ?, running = 0, backend = ?, error = ?, cost_usd = ?, language = ? WHERE scope = ?',
             ).run(
-                JSON.stringify(run.lanes),
+                JSON.stringify(storedCursors(run.sessions)),
                 JSON.stringify(tasksWithMarkdown(db, run)),
                 run.at,
                 run.backend,
                 run.error,
                 run.costUsd,
                 run.language,
-                run.tab,
+                run.scope,
             );
             db.prepare('INSERT INTO last_run (scope, at, cause) VALUES (?, ?, ?) ON CONFLICT (scope) DO UPDATE SET at = excluded.at, cause = excluded.cause').run(
-                run.tab,
+                run.scope,
                 run.at,
                 run.cause,
             );
-            keepMarks(db, run.tab, run.marks);
+            keepMarks(db, run.scope, run.marks);
         });
     },
     failRun: (run: FailedRun): void => {
         writing.writeTransaction(() => {
-            ensureRecap(db, run.tab, run.at);
-            db.prepare('UPDATE recap SET lanes = ?, running = 0, backend = ?, error = ? WHERE scope = ?').run(JSON.stringify(run.lanes), run.backend, run.error, run.tab);
-            keepMarks(db, run.tab, run.marks);
+            ensureRecap(db, run.scope, run.at);
+            db.prepare('UPDATE recap SET lanes = ?, running = 0, backend = ?, error = ? WHERE scope = ?').run(JSON.stringify(storedCursors(run.sessions)), run.backend, run.error, run.scope);
+            keepMarks(db, run.scope, run.marks);
         });
     },
     advance: (move: Advance): void => {
         writing.writeTransaction(() => {
-            ensureRecap(db, move.tab, move.at);
-            db.prepare('UPDATE recap SET lanes = ?, error = ? WHERE scope = ?').run(JSON.stringify(move.lanes), move.error, move.tab);
-            keepMarks(db, move.tab, move.marks);
+            ensureRecap(db, move.scope, move.at);
+            db.prepare('UPDATE recap SET lanes = ?, error = ? WHERE scope = ?').run(JSON.stringify(storedCursors(move.sessions)), move.error, move.scope);
+            keepMarks(db, move.scope, move.marks);
         });
     },
 });
 
 const factsOf = (db: Handle): FactStore => ({
     openOf: (task: TaskId) =>
-        guarded(() => rowsOf(db, "SELECT * FROM fact WHERE tab = ? AND task_key = ? AND state = 'open' ORDER BY last_at DESC, rowid", task.tab, task.key).map(factOf)),
+        guarded(() => rowsOf(db, "SELECT * FROM fact WHERE tab = ? AND task_key = ? AND state = 'open' ORDER BY last_at DESC, rowid", task.scope, task.key).map(factOf)),
     recentlyClosed: (task: TaskId, sinceMs: Instant) =>
         guarded(() =>
             rowsOf(
                 db,
                 "SELECT * FROM fact WHERE tab = ? AND task_key = ? AND state = 'closed' AND closed_at >= ? ORDER BY closed_at, rowid",
-                task.tab,
+                task.scope,
                 task.key,
                 sinceMs,
             ).map(factOf),
         ),
-    allOf: (task: TaskId) => guarded(() => rowsOf(db, 'SELECT * FROM fact WHERE tab = ? AND task_key = ? ORDER BY first_at, rowid', task.tab, task.key).map(factOf)),
+    allOf: (task: TaskId) => guarded(() => rowsOf(db, 'SELECT * FROM fact WHERE tab = ? AND task_key = ? ORDER BY first_at, rowid', task.scope, task.key).map(factOf)),
     keysOf: (scope: ScopeId) =>
         guarded(() =>
             rowsOf(db, 'SELECT DISTINCT task_key FROM fact WHERE tab = ? ORDER BY task_key', scope).map((row) => String(row.task_key)),

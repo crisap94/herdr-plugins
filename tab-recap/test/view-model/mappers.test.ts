@@ -23,12 +23,12 @@ import { laneRecord, viewRecord } from '#test/support/tab-view-records.ts';
 
 const lane = (pane: string, status: string): TabLaneRecord => laneRecord({ pane, agent: 'claude', status, title: `title ${pane}`, cwd: '/repo', web: { base: 'https://gitlab.example/repo', forge: 'gitlab', branch: 'main' } });
 
-const cursor = (pane: string, transcript: string): SessionCursor => ({ pane: paneId(pane), agent: agentKind('claude'), transcript: sourcePathOf(transcript), cursor: cursorOf(4), tail: null, title: null, lastPrompt: textOf('ship it'), claudeRecap: textOf('harness words') });
+const cursor = (pane: string, transcript: string): SessionCursor => ({ key: paneId(pane), agent: agentKind('claude'), transcript: sourcePathOf(transcript), cursor: cursorOf(4), tail: null, title: null, lastPrompt: textOf('ship it'), harnessRecap: textOf('harness words') });
 
 const recap: Recap = {
-    tab: tabId('t1'),
-    lanes: [cursor('p1', '/logs/p1.jsonl'), cursor('p2', 'screen:p2')],
-    tasks: [{ id: textOf('k1'), name: textOf('build'), lanes: [paneIdOf('p1'), paneIdOf('p2')], sections: null, markdown: textOf('# build') }],
+    scope: tabId('t1'),
+    sessions: [cursor('p1', '/logs/p1.jsonl'), cursor('p2', 'screen:p2')],
+    tasks: [{ id: textOf('k1'), name: textOf('build'), sessions: [paneIdOf('p1'), paneIdOf('p2')], sections: null, markdown: textOf('# build') }],
     at: instant(100),
     running: recapRunningOf(true),
     backend: textOf('claude'),

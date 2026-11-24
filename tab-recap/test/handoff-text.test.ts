@@ -33,7 +33,7 @@ type ShownHandoff = Extract<FittedHandoff, { readonly kind: 'text' }>;
 
 const ID = handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2db');
 const AT = Date.parse('2026-10-10T12:00:00Z');
-const TASK: TaskId = { tab: tabIdOf('w1:t1'), key: brand<string, 'Text'>('t1') };
+const TASK: TaskId = { scope: tabIdOf('w1:t1'), key: brand<string, 'Text'>('t1') };
 const NEVER_CUT: ReadonlySet<HandoffGroupId> = new Set(['goal', 'needs', 'decisions', 'rules']);
 const NEWER_POOL: readonly HandoffGroupId[] = ['now', 'next'];
 const OLDER_POOL: readonly HandoffGroupId[] = ['done', 'links', 'closed'];

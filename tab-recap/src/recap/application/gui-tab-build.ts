@@ -71,13 +71,13 @@ function groupsFor(view: TabViewRecord | null, recap: Recap): readonly GuiGroup[
     }));
 }
 
-const nameOf = (recap: Recap): NonEmptyText => orElse(parseNonEmptyText(recap.tasks[0]?.name), orElse(parseNonEmptyText(recap.tab), UNKNOWN));
+const nameOf = (recap: Recap): NonEmptyText => orElse(parseNonEmptyText(recap.tasks[0]?.name), orElse(parseNonEmptyText(recap.scope), UNKNOWN));
 
 const lanesOf = (view: TabViewRecord | null, draw: LaneDraw): readonly GuiLane[] => (view?.lanes ?? []).map((lane) => guiLaneOf(lane, draw)).filter((lane): lane is GuiLane => lane !== null);
 
 const breaksOf = (reads: GuiReads, messages: Messages): readonly GuiBreak[] => (reads.expanded?.breaks ?? []).map((each) => breakOf(each, messages));
 
-const claudeRecapsOf = (recap: Recap): readonly Text[] => recap.lanes.flatMap((lane) => orElse(parseText(lane.claudeRecap), null) ?? []);
+const claudeRecapsOf = (recap: Recap): readonly Text[] => recap.sessions.flatMap((lane) => orElse(parseText(lane.harnessRecap), null) ?? []);
 
 const expandedOf = (reads: GuiReads, task: RecapTask): ExpandedTask | undefined => reads.expanded?.tasks.find((each) => textOf(each.name) === task.name);
 
@@ -90,7 +90,7 @@ export function guiTabOf(recap: Recap, view: TabViewRecord | null, now: Instant,
     const lanes = lanesOf(view, { reads, messages, now, recap });
     const taskDraw: TaskDraw = { now, messages, reads, webs: websOf(view, reads) };
     return {
-        version: GUI_TAB_VERSION, tab: must(parseTabId(recap.tab)), name: nameOf(recap), status: worstStatus(lanes), at: now,
+        version: GUI_TAB_VERSION, tab: must(parseTabId(recap.scope)), name: nameOf(recap), status: worstStatus(lanes), at: now,
         recapAt: recap.at === null ? null : recap.at, writing: recap.running ? 'writing' : 'resting', error: orElse(parseText(recap.error), null),
         lanes, tasks: recap.tasks.map((task) => guiTask(task, expandedOf(reads, task), taskDraw)),
         locale: reads.locale, zone: reads.zone, compactHint: reads.compactHint, backend: orElse(parseText(recap.backend), null), versions: versionsOf(view, reads), warnings: reads.warnings,

@@ -27,8 +27,8 @@ interface LatestRun {
 }
 
 const cursorOf = (row: Row): SessionCursor => ({
-    pane: must(parsePaneId(text(row, 'pane'))), agent: must(parseAgentKind(text(row, 'agent'))), transcript: sourcePathOf(text(row, 'source')), cursor: positionOf(whole(row, 'cursor')),
-    tail: parseTextOrNull(maybeText(row, 'tail')), title: parseTextOrNull(maybeText(row, 'title')), lastPrompt: parseTextOrNull(maybeText(row, 'last_prompt')), claudeRecap: parseTextOrNull(maybeText(row, 'claude_note')),
+    key: must(parsePaneId(text(row, 'pane'))), agent: must(parseAgentKind(text(row, 'agent'))), transcript: sourcePathOf(text(row, 'source')), cursor: positionOf(whole(row, 'cursor')),
+    tail: parseTextOrNull(maybeText(row, 'tail')), title: parseTextOrNull(maybeText(row, 'title')), lastPrompt: parseTextOrNull(maybeText(row, 'last_prompt')), harnessRecap: parseTextOrNull(maybeText(row, 'claude_note')),
 });
 
 export class RecapReader {
@@ -54,9 +54,9 @@ export class RecapReader {
         return taskRows.map((row) => {
             const legacy = maybeText(row, 'legacy_markdown');
             const key = text(row, 'key');
-            const sections = legacy === null ? sectionsOfOpen(this.ledger.openOf({ tab, key: textOf(key) })) : null;
+            const sections = legacy === null ? sectionsOfOpen(this.ledger.openOf({ scope: tab, key: textOf(key) })) : null;
             return {
-                id: textOf(key), name: textOf(maybeText(row, 'name') ?? ''), lanes: lanes.get(typeIdOf('task', blob(row, 'task_id'))) ?? [], sections,
+                id: textOf(key), name: textOf(maybeText(row, 'name') ?? ''), sessions: lanes.get(typeIdOf('task', blob(row, 'task_id'))) ?? [], sections,
                 markdown: textOf(sections === null ? (legacy ?? '') : renderRecap(sections, language === 'es' ? 'es' : 'en')),
             };
         });
@@ -92,7 +92,7 @@ export class RecapReader {
         const cost = orm.select({ micro: sql<number>`coalesce(sum(${runs.costMicroUsd}), 0)` }).from(runs)
             .innerJoin(chapters, eq(chapters.id, runs.chapterId)).where(eq(chapters.tabId, id)).get();
         return {
-            tab: id, lanes: lanes.map(cursorOf), tasks: facts.run === null ? [] : this.tasksOf(id, facts.run, facts.language), at: facts.at, running: recapRunningOf(flag(row, 'running') === 'set'),
+            scope: id, sessions: lanes.map(cursorOf), tasks: facts.run === null ? [] : this.tasksOf(id, facts.run, facts.language), at: facts.at, running: recapRunningOf(flag(row, 'running') === 'set'),
             backend: parseTextOrNull(maybeText(row, 'backend')), error: parseTextOrNull(maybeText(row, 'error')), costUsd: usdOf(whole(cost ?? {}, 'micro') / 1e6), language: facts.language,
         };
     }

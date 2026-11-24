@@ -28,7 +28,7 @@ const board = [
     laneFrom(seenLane({ paneId: 'w1:p2', tabId: 'w1:t1', workspaceId: 'w1', agent: 'codex', status: 'idle', cwd: '/repo' })),
 ];
 
-const task = (key: string, lanes: readonly string[]): RecapTask => ({ id: textOf(key), name: textOf(key), lanes: lanes.map((lane) => paneIdOf(lane)), sections: null, markdown: textOf('') });
+const task = (key: string, lanes: readonly string[]): RecapTask => ({ id: textOf(key), name: textOf(key), sessions: lanes.map((lane) => paneIdOf(lane)), sections: null, markdown: textOf('') });
 
 const recapWith = (...tasks: readonly RecapTask[]): Recap => ({ ...blankRecap(tabId('w1:t1')), tasks });
 
@@ -50,8 +50,8 @@ function depsOf(parts: Parts = {}): SourceDeps {
     };
 }
 
-const T1: TaskId = { tab: tabIdOf('w1:t1'), key: textOf('t1') };
-const T2: TaskId = { tab: tabIdOf('w1:t1'), key: textOf('t2') };
+const T1: TaskId = { scope: tabIdOf('w1:t1'), key: textOf('t1') };
+const T2: TaskId = { scope: tabIdOf('w1:t1'), key: textOf('t2') };
 
 test('a tab with several tasks yields only the source task facts', () => {
     const mine = fact('f1', 'goal', 'mine', NOW - 1000, { task: T1 });

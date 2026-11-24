@@ -39,8 +39,8 @@ import { seenLane } from '#test/support/seen.ts';
 import { laneRecord, viewRecord } from '#test/support/tab-view-records.ts';
 
 const sections = (goal: string, rest: Partial<typeof NO_SECTIONS> = {}): typeof NO_SECTIONS => ({ ...NO_SECTIONS, goal: textOf(goal), ...rest });
-const taskOf = (id: string, name: string, lanes: readonly string[], goal = id): RecapTask => ({ id: textOf(id), name: textOf(name), lanes: lanes.map((lane) => paneIdOf(lane)), sections: sections(goal), markdown: textOf(`## Goal\n${goal}`) });
-const shape = (id: string, name: string, lanes: readonly string[]): TaskShape => ({ id: textOf(id), name: textOf(name), lanes: lanes.map((lane) => paneIdOf(lane)) });
+const taskOf = (id: string, name: string, lanes: readonly string[], goal = id): RecapTask => ({ id: textOf(id), name: textOf(name), sessions: lanes.map((lane) => paneIdOf(lane)), sections: sections(goal), markdown: textOf(`## Goal\n${goal}`) });
+const shape = (id: string, name: string, lanes: readonly string[]): TaskShape => ({ id: textOf(id), name: textOf(name), sessions: lanes.map((lane) => paneIdOf(lane)) });
 
 const lanesIn = (place: string | null, ...panes: readonly string[]): PlacedLane[] => panes.map((pane) => ({ pane: paneIdOf(pane), place: place === null ? null : textOf(place) }));
 const PAY = '/work/pay';
@@ -69,10 +69,10 @@ test('grouping: kept even when the lanes now work elsewhere; a new lane joins th
     const moved = [...lanesIn(DOCS, 'w1:p1'), ...lanesIn(PAY, 'w1:p2')];
     assert.deepEqual(keptGrouping(before, moved), before, 'sticky: no evidence is asked for, none can move a lane');
     const joined = keptGrouping(before, [...moved, ...lanesIn(PAY, 'w1:p9')]);
-    assert.deepEqual(joined.map((task) => task.lanes), [['w1:p1'], ['w1:p2', 'w1:p9']]);
+    assert.deepEqual(joined.map((task) => task.sessions), [['w1:p1'], ['w1:p2', 'w1:p9']]);
     const apart = keptGrouping(before, [...moved, ...lanesIn('/work/infra', 'w1:p9')]);
     assert.deepEqual(apart.map((task) => [task.id, task.name]), [['t1', 'Payments'], ['t2', 'Docs'], ['t3', 'infra']]);
-    assert.deepEqual(keptGrouping(before, [...moved, ...lanesIn(null, 'w1:p9')]).map((task) => task.lanes.length), [2, 1]);
+    assert.deepEqual(keptGrouping(before, [...moved, ...lanesIn(null, 'w1:p9')]).map((task) => task.sessions.length), [2, 1]);
 });
 
 test('grouping: when every lane of a tab\'s only task is gone, the next lanes continue it; of several tasks, they are a new one', () => {
@@ -120,7 +120,7 @@ const transcripts: SessionReader = {
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
     read: (source: string): Promise<ChunkResult> => Promise.resolve({
         kind: 'chunk', entries: [{ role: 'tool', kind: 'edit', text: textOf(`${source.slice(3)}.ts`) }, { role: 'agent', text: textOf(`work in ${source.slice(3)}`) }],
-        title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(5), tail: null }, grew: grewOf(true),
+        title: null, lastPrompt: null, harnessRecap: null, notes: [], position: { cursor: cursorOf(5), tail: null }, grew: grewOf(true),
     }),
 };
 
@@ -146,7 +146,7 @@ test('a tab with two lanes in two places: the request carries each lane\'s hints
         ['w1:p1', '/work/pay', '/work/pay', 'feat/v2', ['w1:p1.ts']], ['w1:p2', '/work/docs', null, null, ['w1:p2.ts']],
     ]);
     const recap = storeRead(store.records.readRecap(tabId('w1:t1')));
-    assert.deepEqual(recap?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal]), [['t1', 'pay', ['w1:p1'], 'pay v2'], ['t2', 'docs', ['w1:p2'], 'docs']], 'no grouping yet: one task per place, named by its folder');
+    assert.deepEqual(recap?.tasks.map((task) => [task.id, task.name, task.sessions, task.sections?.goal]), [['t1', 'pay', ['w1:p1'], 'pay v2'], ['t2', 'docs', ['w1:p2'], 'docs']], 'no grouping yet: one task per place, named by its folder');
     assert.match(firstTask(recap).markdown, /^## Goal\npay v2\n\n## Now\n- wiring/);
     assert.deepEqual(request.input.tasks, [{ id: 't1', name: 'pay', lanes: ['w1:p1'] }, { id: 't2', name: 'docs', lanes: ['w1:p2'] }], 'and the grouping is told to the writer');
 });
@@ -155,7 +155,7 @@ test('a tab with ONE lane is not told about tasks, but is still described: the a
     const { store, requests } = await run([JSON.stringify({ ops: [op('goal', 'solo')] })], ['w1:p1']);
     assert.deepEqual(requests[0]?.input.agents.map((agent) => [agent.cwd, agent.repo, agent.branch, agent.files]), [['/work/pay', '/work/pay', 'feat/v2', ['w1:p1.ts']]], 'the hints are there for a single agent too');
     assert.deepEqual(requests[0].input.tasks, []);
-    assert.deepEqual(storeRead(store.records.readRecap(tabId('w1:t1')))?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal]), [['t1', '', ['w1:p1'], 'solo']]);
+    assert.deepEqual(storeRead(store.records.readRecap(tabId('w1:t1')))?.tasks.map((task) => [task.id, task.name, task.sessions, task.sections?.goal]), [['t1', '', ['w1:p1'], 'solo']]);
 });
 
 test('the second run: the grouping is kept and goes back to the writer; an add names its task; an update or close goes to the fact\'s own task', async () => {
@@ -166,7 +166,7 @@ test('the second run: the grouping is kept and goes back to the writer; an add n
     assert.deepEqual(requests[0]?.input.tasks, [{ id: 't1', name: 'Payments', lanes: ['w1:p1'] }, { id: 't2', name: 'Docs', lanes: ['w1:p2'] }]);
     assert.deepEqual(requests[0].input.ledgers.map((ledger) => [ledger.task, ledger.facts.map((fact) => fact.id)]), [['t1', ['f1']], ['t2', ['f2']]]);
     const recap = storeRead(store.records.readRecap(tabId('w1:t1')));
-    assert.deepEqual(recap?.tasks.map((task) => [task.id, task.name, task.lanes, task.sections?.goal, task.sections?.done]), [['t1', 'Payments', ['w1:p1'], '', []], ['t2', 'Docs', ['w1:p2'], 'b', ['wrote the intro']]]);
+    assert.deepEqual(recap?.tasks.map((task) => [task.id, task.name, task.sessions, task.sections?.goal, task.sections?.done]), [['t1', 'Payments', ['w1:p1'], '', []], ['t2', 'Docs', ['w1:p2'], 'b', ['wrote the intro']]]);
 });
 
 const lane = (pane: string, agent: string, status = 'idle'): TabLaneRecord => laneRecord({ pane, agent, status, title: null, cwd: null });

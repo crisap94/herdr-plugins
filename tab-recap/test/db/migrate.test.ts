@@ -111,7 +111,7 @@ test('an upgraded fixture keeps its data readable through the repositories', () 
         assert.equal(recap.tasks.at(0)?.sections?.goal, 'keep the fixture readable');
         assert.deepEqual(recap.tasks.at(0)?.sections?.done, ['wrote the schema']);
         assert.equal(recap.costUsd, 1.5);
-        assert.deepEqual(recap.lanes.map((lane) => [lane.pane, lane.cursor]), [['w1:p1', 123]]);
+        assert.deepEqual(recap.sessions.map((lane) => [lane.key, lane.cursor]), [['w1:p1', 123]]);
         assert.equal(store.views.readTab(tabId('w1:t1'))?.lanes.at(0)?.lastPrompt, 'ship it');
     } finally {
         rmSync(dir, { recursive: true, force: true });

@@ -23,7 +23,7 @@ const subjects: readonly Subject[] = [
     { name: 'in-memory double', runs: () => new MemoryRunHistory(), views: () => new MemoryTabViews() },
 ];
 
-const run = (tab: string, at: number, cause: 'turn-ended' | 'focused' | 'requested' | 'imported'): RecordedRun => ({ tab: tabId(tab), at: instant(at), cause, backend: null, language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [], tasks: [], changed: [], refused: [] });
+const run = (tab: string, at: number, cause: 'turn-ended' | 'focused' | 'requested' | 'imported'): RecordedRun => ({ scope: tabId(tab), at: instant(at), cause, backend: null, language: textOf('en'), costUsd: usdOf(0), error: null, sessions: [], tasks: [], changed: [], refused: [] });
 const lane = (pane: string): TabLaneRecord => laneRecord({ pane, agent: 'claude', status: 'idle', title: null, cwd: null });
 
 for (const { name, runs, views } of subjects) {
@@ -31,7 +31,7 @@ for (const { name, runs, views } of subjects) {
         const history = runs();
         assert.equal(history.lastRunOf(tabId('w1:t1')), null, 'no run yet');
         history.recordRun(run('w1:t1', 100, 'turn-ended'));
-        history.failRun({ ...run('w1:t1', 200, 'requested'), error: textOf('boom'), lanes: [] });
+        history.failRun({ ...run('w1:t1', 200, 'requested'), error: textOf('boom'), sessions: [] });
         assert.deepEqual(history.lastRunOf(tabId('w1:t1')), { at: 100, cause: 'turn-ended' }, 'a later failed run does not replace it');
         history.recordRun(run('w1:t1', 300, 'requested'));
         assert.deepEqual(history.lastRunOf(tabId('w1:t1')), { at: 300, cause: 'requested' });

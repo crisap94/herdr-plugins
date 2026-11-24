@@ -31,12 +31,12 @@ export const REC_2: Case<null, StoreUnderTest> = {
             backend: text('codex'),
             language: text('de'),
             costUsd: usd(0.25),
-            lanes: [cursor('p1'), cursor('p2')],
+            sessions: [cursor('p1'), cursor('p2')],
             tasks: [shapeOf('a', [paneIdOf('p1')]), shapeOf('b', [paneIdOf('p2')])],
         });
         store.records.recordRun(run);
         const recap = recapOf(store, 'tab-1');
-        assert.deepEqual(recap.lanes, run.lanes);
+        assert.deepEqual(recap.sessions, run.sessions);
         assert.deepEqual(shapesOf(recap), run.tasks);
         assert.equal(recap.language, 'de');
         assert.equal(recap.backend, 'codex');
@@ -67,13 +67,13 @@ export const REC_4: Case<null, StoreUnderTest> = {
     async run(_world, store) {
         store.records.recordRun(runOf({ language: text('de') }));
         store.records.beginRun(scope('tab-1'), text('codex'), instant(150));
-        const failed = failedOf({ lanes: [cursor('p9')] });
+        const failed = failedOf({ sessions: [cursor('p9')] });
         store.records.failRun(failed);
         const recap = recapOf(store, 'tab-1');
         assert.equal(recap.running, false);
         assert.equal(recap.error, failed.error);
         assert.equal(recap.language, 'de');
-        assert.deepEqual(recap.lanes, failed.lanes);
+        assert.deepEqual(recap.sessions, failed.sessions);
     },
 };
 
@@ -85,10 +85,10 @@ export const REC_5: Case<null, StoreUnderTest> = {
     async run(_world, store) {
         const run = runOf({ language: text('de') });
         store.records.recordRun(run);
-        const move = advanceOf({ lanes: [cursor('p3')] });
+        const move = advanceOf({ sessions: [cursor('p3')] });
         store.records.advance(move);
         const recap = recapOf(store, 'tab-1');
-        assert.deepEqual(recap.lanes, move.lanes);
+        assert.deepEqual(recap.sessions, move.sessions);
         assert.equal(recap.error, move.error);
         assert.equal(recap.running, false);
         assert.deepEqual(shapesOf(recap), run.tasks);
@@ -105,16 +105,16 @@ export const REC_6: Case<null, StoreUnderTest> = {
         store.records.recordRun(runOf({ at: instant(100), cause: 'focused', language: text('de'), changed: [factAt(typeIdAt(1), { text: textOf('kept') })] }));
         const recap = store.records.readRecap(scope('tab-1'));
         const last = store.records.lastRunOf(scope('tab-1'));
-        const factsA = store.facts.allOf({ tab: tabIdOf('tab-1'), key: textOf('a') });
-        const factsB = store.facts.allOf({ tab: tabIdOf('tab-1'), key: textOf('b') });
+        const factsA = store.facts.allOf({ scope: tabIdOf('tab-1'), key: textOf('a') });
+        const factsB = store.facts.allOf({ scope: tabIdOf('tab-1'), key: textOf('b') });
         const broken = runOf({
             at: instant(900),
             cause: 'requested',
             language: text('fr'),
             backend: text('codex'),
-            lanes: [cursor('p7'), cursor('p8')],
+            sessions: [cursor('p7'), cursor('p8')],
             tasks: [shapeOf('a', [paneIdOf('p7')]), shapeOf('b', [paneIdOf('p8')])],
-            marks: [{ pane: paneIdOf('p7'), at: instant(900), cursor: countOf(3) }],
+            marks: [{ key: paneIdOf('p7'), at: instant(900), cursor: countOf(3) }],
             changed: [factAt(typeIdAt(2), { text: textOf('first half') }), brokenFact()],
         });
         assert.throws(() => {
@@ -122,8 +122,8 @@ export const REC_6: Case<null, StoreUnderTest> = {
         }, /a broken fact/);
         assert.deepEqual(store.records.readRecap(scope('tab-1')), recap);
         assert.deepEqual(store.records.lastRunOf(scope('tab-1')), last);
-        assert.deepEqual(store.facts.allOf({ tab: tabIdOf('tab-1'), key: textOf('a') }), factsA);
-        assert.deepEqual(store.facts.allOf({ tab: tabIdOf('tab-1'), key: textOf('b') }), factsB);
+        assert.deepEqual(store.facts.allOf({ scope: tabIdOf('tab-1'), key: textOf('a') }), factsA);
+        assert.deepEqual(store.facts.allOf({ scope: tabIdOf('tab-1'), key: textOf('b') }), factsB);
     },
 };
 
@@ -156,8 +156,8 @@ export const REC_9: Case<null, StoreUnderTest> = {
     level: 'full',
     async run(_world, store) {
         const lanes = [cursor('p1', '/transcripts/one.jsonl'), cursor('p1', '/transcripts/two.jsonl')];
-        store.records.recordRun(runOf({ lanes }));
-        assert.deepEqual(recapOf(store, 'tab-1').lanes, lanes);
+        store.records.recordRun(runOf({ sessions: lanes }));
+        assert.deepEqual(recapOf(store, 'tab-1').sessions, lanes);
     },
 };
 
@@ -181,10 +181,10 @@ export const REC_11: Case<null, StoreUnderTest> = {
     level: 'full',
     async run(_world, store) {
         const before = store.records.readRecap(scope('tab-2'));
-        store.records.recordRun(runOf({ tab: tabId('tab-1') }));
+        store.records.recordRun(runOf({ scope: tabId('tab-1') }));
         store.records.beginRun(scope('tab-1'), text('codex'), instant(150));
-        store.records.failRun(failedOf({ tab: tabId('tab-1') }));
-        store.records.advance(advanceOf({ tab: tabId('tab-1') }));
+        store.records.failRun(failedOf({ scope: tabId('tab-1') }));
+        store.records.advance(advanceOf({ scope: tabId('tab-1') }));
         assert.deepEqual(store.records.readRecap(scope('tab-2')), before);
     },
 };
@@ -206,7 +206,7 @@ export const REC_13: Case<null, StoreUnderTest> = {
     title: 'recordRun with marks',
     level: 'full',
     async run(_world, store) {
-        store.records.recordRun(runOf({ at: instant(100), marks: [{ pane: paneIdOf('p1'), at: instant(90), cursor: countOf(3) }] }));
+        store.records.recordRun(runOf({ at: instant(100), marks: [{ key: paneIdOf('p1'), at: instant(90), cursor: countOf(3) }] }));
         const stored = store.marksOf(scope('tab-1'));
         assert.deepEqual(stored, [{ at: 90 }]);
         store.records.recordRun(runOf({ at: instant(200) }));

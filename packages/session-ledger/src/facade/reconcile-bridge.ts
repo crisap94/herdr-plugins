@@ -94,7 +94,7 @@ export const reconcilingOver = (plugs: EnginePlugs, bridge: CurateBridge, storie
     };
     const reconciling = new Reconciling(deps);
     return {
-        task: async (round: Round, lanes: readonly SessionCursor[], why: CurateWhy): Promise<Reconciled> => ((await reconciling.task(tabOf(round.scope), { id: note(round.task.id), name: note(round.task.name), lanes: round.task.lanes.map(paneOf) }, lanes, why)) ? 'reconciled' : 'unchanged'),
+        task: async (round: Round, lanes: readonly SessionCursor[], why: CurateWhy): Promise<Reconciled> => ((await reconciling.task(tabOf(round.scope), { id: note(round.task.id), name: note(round.task.name), lanes: round.task.sessions.map(paneOf) }, lanes, why)) ? 'reconciled' : 'unchanged'),
         due: (event: RecapWritten): Owing => (reconciling.due(event) ? 'due' : 'waiting'),
         settle: (scope: ScopeId): void => { reconciling.settle(tabOf(scope)); },
     };

@@ -8,6 +8,10 @@ import { hiddenStateOf } from '#test/support/seen.ts';
 
 const cursor = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t/a.jsonl'), cursor: cursorOf(42), tail: textOf('tail'), title: textOf('build'), lastPrompt: textOf('fix it'), claudeRecap: null };
 
+const sessionOf = ({ pane, claudeRecap, ...rest }: typeof cursor): object => ({ key: pane, ...rest, harnessRecap: claudeRecap });
+
+const taskOut = ({ lanes, ...rest }: { readonly id: string; readonly name: string; readonly lanes: readonly string[]; readonly sections: unknown; readonly markdown: string }): object => ({ ...rest, sessions: lanes });
+
 const task = { id: 'k9', name: 'Ship', lanes: ['w1:p1'], sections: { goal: 'ship', now: ['a'], needs: [], done: ['b'], decisions: [], next: [], links: ['https://x.example'] }, markdown: '## Ship' };
 
 test('a full v1 recap file parses its cursors, tasks, instant, flags and language', () => {
@@ -15,12 +19,12 @@ test('a full v1 recap file parses its cursors, tasks, instant, flags and languag
     assert.deepEqual(parseLegacyRecapFile(file), {
         kind: 'ok',
         value: {
-            tab: 'w1:t1', lanes: [cursor], at: 1700, running: true, backend: 'claude', error: null, costUsd: 0.25, language: 'de',
-            tasks: [{ ...task, sections: { ...task.sections, rules: [] } }],
+            scope: 'w1:t1', sessions: [sessionOf(cursor)], at: 1700, running: true, backend: 'claude', error: null, costUsd: 0.25, language: 'de',
+            tasks: [taskOut({ ...task, sections: { ...task.sections, rules: [] } })],
         },
     });
     const bare = { tab: 'w1:t2', lanes: [], costUsd: 0 };
-    assert.deepEqual(parseLegacyRecapFile(bare), { kind: 'ok', value: { tab: 'w1:t2', lanes: [], tasks: [], at: null, running: false, backend: null, error: null, costUsd: 0, language: 'en' } });
+    assert.deepEqual(parseLegacyRecapFile(bare), { kind: 'ok', value: { scope: 'w1:t2', sessions: [], tasks: [], at: null, running: false, backend: null, error: null, costUsd: 0, language: 'en' } });
 });
 
 test('a pre-tasks recap file becomes one task from its markdown, sections and lane panes', () => {
@@ -28,7 +32,7 @@ test('a pre-tasks recap file becomes one task from its markdown, sections and la
     const sections = { goal: 'g', now: ['n'], needs: [], done: [], decisions: [], next: [], links: [], rules: [] };
     assert.deepEqual(parseLegacyRecapFile(file), {
         kind: 'ok',
-        value: { tab: 'w1:t3', lanes: [cursor, { ...cursor, pane: 'w1:p4' }], tasks: [{ id: 't1', name: '', lanes: ['w1:p1', 'w1:p4'], sections, markdown: '## Old' }], at: null, running: false, backend: null, error: null, costUsd: 1, language: 'en' },
+        value: { scope: 'w1:t3', sessions: [sessionOf(cursor), sessionOf({ ...cursor, pane: paneId('w1:p4') })], tasks: [{ id: 't1', name: '', sessions: ['w1:p1', 'w1:p4'], sections, markdown: '## Old' }], at: null, running: false, backend: null, error: null, costUsd: 1, language: 'en' },
     });
 });
 
@@ -62,10 +66,10 @@ test('each parser refuses a non-object input and an array as not-a-row', () => {
 
 test('a recap without costUsd reads it as 0 and a non-object task item becomes an empty numbered task', () => {
     const file = { tab: 'w1:t4', lanes: [], tasks: [task, 'junk'] };
-    const empty = { id: 't2', name: '', lanes: [], sections: null, markdown: '' };
+    const empty = { id: 't2', name: '', sessions: [], sections: null, markdown: '' };
     assert.deepEqual(parseLegacyRecapFile(file), {
         kind: 'ok',
-        value: { tab: 'w1:t4', lanes: [], tasks: [{ ...task, sections: { ...task.sections, rules: [] } }, empty], at: null, running: false, backend: null, error: null, costUsd: 0, language: 'en' },
+        value: { scope: 'w1:t4', sessions: [], tasks: [taskOut({ ...task, sections: { ...task.sections, rules: [] } }), empty], at: null, running: false, backend: null, error: null, costUsd: 0, language: 'en' },
     });
 });
 

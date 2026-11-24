@@ -21,7 +21,7 @@ export function marksOf(reads: readonly Read[], now: Instant, advanced: Advanced
             return [];
         }
         return [{
-            pane: read.lane.pane, at: mark.at ?? now, cursor: countOf(read.chunk.position.cursor),
+            key: read.lane.pane, at: mark.at ?? now, cursor: countOf(read.chunk.position.cursor),
             ...(mark.tokensBefore === undefined ? {} : { tokensBefore: mark.tokensBefore }),
             ...(mark.tokensAfter === undefined ? {} : { tokensAfter: mark.tokensAfter }),
             ...(mark.tookMs === undefined ? {} : { tookMs: mark.tookMs }),

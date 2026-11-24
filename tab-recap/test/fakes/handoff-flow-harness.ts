@@ -33,7 +33,7 @@ export const SOURCE = paneId('w1:p1');
 export const TARGET = paneId('w1:p2');
 export const TAB = tabId('w1:t1');
 export const TARGET_TAB = tabId('w1:t2');
-export const T1: TaskId = { tab: TAB, key: textOf('t1') };
+export const T1: TaskId = { scope: TAB, key: textOf('t1') };
 export const TEXT = 'Handoff text.';
 export const SETTLE_MS = 10_000;
 
@@ -63,7 +63,7 @@ export interface FlowWorld {
     onPause: (count: number) => void;
 }
 
-export const task = (id: string, lanes: readonly string[]): RecapTask => ({ id: textOf(id), name: textOf(id), lanes: lanes.map((lane) => paneIdOf(lane)), sections: null, markdown: textOf('') });
+export const task = (id: string, lanes: readonly string[]): RecapTask => ({ id: textOf(id), name: textOf(id), sessions: lanes.map((lane) => paneIdOf(lane)), sections: null, markdown: textOf('') });
 
 export const recapOf = (...tasks: readonly RecapTask[]): Recap => ({ ...blankRecap(tabId('w1:t1')), tasks });
 

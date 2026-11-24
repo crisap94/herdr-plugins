@@ -11,7 +11,7 @@ const OTHER = scope('two');
 
 const quietOf = (): Behaviour<Chunk> => ({
     kind: 'answer',
-    value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: UNREAD, grew: grew(false) },
+    value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, harnessRecap: null, notes: [], position: UNREAD, grew: grew(false) },
 });
 
 const FAILED = failure(1, 'scripted writer failure');

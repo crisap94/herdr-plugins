@@ -45,7 +45,7 @@ interface Asked extends Sent {
 
 const note = brand<string, 'Text'>;
 
-const taskOn = (scope: ScopeId, key: SessionKey): TaskId => ({ tab: tabIdOf(scope), key: textOf(key) });
+const taskOn = (scope: ScopeId, key: SessionKey): TaskId => ({ scope: tabIdOf(scope), key: textOf(key) });
 
 const storiesOver = (stories: Stories): LedgerStories => ({
     read: (tab: ScopeId, task: Text): KeptStory | null => stories.read(taskOn(brand<string, 'ScopeId'>(tab), brand<string, 'SessionKey'>(task))),
@@ -172,7 +172,7 @@ const curateScope = async (round: ScopeRound, marks: Marks, reconciling: Reconci
     }
     const done: Reconciled[] = [];
     for (const task of recap?.tasks ?? []) {
-        done.push(await oneTask({ plugs, curator, stories, scope, task }, marks, reconciling, recap?.lanes ?? []));
+        done.push(await oneTask({ plugs, curator, stories, scope, task }, marks, reconciling, recap?.sessions ?? []));
     }
     if (done.includes('reconciled')) {
         reconciling.settle(scope);
@@ -188,7 +188,7 @@ const reconcileScope = async (round: ScopeRound, why: CurateWhy, reconciling: Re
     const done: Reconciled[] = [];
     for (const task of recap.tasks) {
         try {
-            done.push(await reconciling.task({ ...round, task }, recap.lanes, why));
+            done.push(await reconciling.task({ ...round, task }, recap.sessions, why));
         } catch (error) {
             plugs.environment.log(lineOf({ ...round, task }, note(error instanceof Error ? error.message : String(error))));
         }

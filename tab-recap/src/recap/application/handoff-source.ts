@@ -98,7 +98,7 @@ const liveResolver: SourceResolver<'live'> = (source, deps): SourceResolution =>
         if (isUnknownRead(recap)) {
             return unknownOf(recap);
         }
-        const listing = (recap?.tasks ?? []).filter((task) => task.lanes.includes(source.pane));
+        const listing = (recap?.tasks ?? []).filter((task) => task.sessions.includes(source.pane));
         if (listing.length > 1) {
             return { kind: 'task-ambiguous' };
         }
@@ -106,7 +106,7 @@ const liveResolver: SourceResolver<'live'> = (source, deps): SourceResolution =>
         if (only === undefined) {
             return { kind: 'unlisted' };
         }
-        const task: TaskId = { tab: source.tab, key: only.id };
+        const task: TaskId = { scope: source.tab, key: only.id };
         const open = deps.ledger.openOf(task);
         if (isUnknownRead(open)) {
             return unknownOf(open);

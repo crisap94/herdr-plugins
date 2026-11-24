@@ -44,7 +44,7 @@ export class RunRows {
     }
 
     insertRun(facts: RunFacts, error: Text | null, gateStats: GateStats | null = null): Uint8Array {
-        const chapter = this.currentChapter(facts.tab, instant(facts.at));
+        const chapter = this.currentChapter(facts.scope, instant(facts.at));
         const id = ids.next();
         this.orm.insert(runs).values({
             id, chapterId: chapter, at: facts.at, cause: facts.cause, backend: facts.backend, language: facts.language,
@@ -66,14 +66,14 @@ export class RunRows {
     }
 
     private writeTask(run: Uint8Array, facts: RunFacts, task: PlacedTask): void {
-        this.orm.insert(tasks).values({ id: ids.next(), tabId: facts.tab, key: task.task.id }).onConflictDoNothing().run();
-        const known = this.orm.select({ id: tasks.id }).from(tasks).where(and(eq(tasks.tabId, facts.tab), eq(tasks.key, task.task.id))).get() ?? {};
+        this.orm.insert(tasks).values({ id: ids.next(), tabId: facts.scope, key: task.task.id }).onConflictDoNothing().run();
+        const known = this.orm.select({ id: tasks.id }).from(tasks).where(and(eq(tasks.tabId, facts.scope), eq(tasks.key, task.task.id))).get() ?? {};
         const id = blob(known, 'id');
         this.orm.insert(runTasks).values({
             runId: run, taskId: id, position: task.position, name: task.task.name === '' ? null : task.task.name, legacyMarkdown: task.task.legacy ?? null,
         }).run();
-        [...new Set(task.task.lanes)].forEach((pane, position) => {
-            this.orm.insert(laneRows).values({ runId: run, taskId: id, transcriptId: this.transcripts.ofPane(facts.tab, pane, instant(facts.at)), position }).run();
+        [...new Set(task.task.sessions)].forEach((pane, position) => {
+            this.orm.insert(laneRows).values({ runId: run, taskId: id, transcriptId: this.transcripts.ofPane(facts.scope, pane, instant(facts.at)), position }).run();
         });
     }
 

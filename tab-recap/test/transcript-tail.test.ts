@@ -24,7 +24,7 @@ const reader = (agent: string, bySource: Readonly<Record<string, readonly Entry[
     read: (source, was): Promise<ChunkResult> => {
         asked.push({ source, was });
         const entries = bySource[source];
-        return Promise.resolve(entries === undefined ? unknown({ why: 'unreadable', detail: causeOf(source) }) : { kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(9), tail: null }, grew: grewOf(true) });
+        return Promise.resolve(entries === undefined ? unknown({ why: 'unreadable', detail: causeOf(source) }) : { kind: 'chunk', entries, title: null, lastPrompt: null, harnessRecap: null, notes: [], position: { cursor: cursorOf(9), tail: null }, grew: grewOf(true) });
     },
 });
 const lane = (pane: string, agent: string, transcript: string): SessionCursor => ({ ...cursor(pane), agent: agentKind(agent), transcript: sourcePathOf(transcript) });

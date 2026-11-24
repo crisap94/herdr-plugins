@@ -32,9 +32,9 @@ test('a tab with no agent says so', () => {
 test('two agents, one tab: a header per agent, then ONE recap for the tab', () => {
     const recap = {
         ...blankRecap(tabId('w1:t1')),
-        lanes: [
-            { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('a'), cursor: cursorOf(1), tail: null, title: textOf('Victoria migration'), lastPrompt: textOf('go'), claudeRecap: null },
-            { pane: paneId('w1:p2'), agent: agentKind('codex'), transcript: sourcePathOf('b'), cursor: cursorOf(1), tail: null, title: null, lastPrompt: textOf('run tests'), claudeRecap: null },
+        sessions: [
+            { key: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('a'), cursor: cursorOf(1), tail: null, title: textOf('Victoria migration'), lastPrompt: textOf('go'), harnessRecap: null },
+            { key: paneId('w1:p2'), agent: agentKind('codex'), transcript: sourcePathOf('b'), cursor: cursorOf(1), tail: null, title: null, lastPrompt: textOf('run tests'), harnessRecap: null },
         ],
         tasks: oneTask('## Goal\n- migrate'),
         at: instant(0),
@@ -219,7 +219,7 @@ test('plainMarkdown collapses runs of blank lines, so an old recap without blank
 });
 
 test('a lane header shows the live prompt; the recap\'s last prompt only when there is none', () => {
-    const recap = { ...blankRecap(tabId('w1:t1')), lanes: [{ pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('t'), cursor: cursorOf(1), tail: null, title: textOf('x'), lastPrompt: textOf('what the last recap saw'), claudeRecap: null }] };
+    const recap = { ...blankRecap(tabId('w1:t1')), sessions: [{ key: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('t'), cursor: cursorOf(1), tail: null, title: textOf('x'), lastPrompt: textOf('what the last recap saw'), harnessRecap: null }] };
     const draw = (lastPrompt: string | null | undefined): string => {
         const lane = { pane: 'w1:p1', agent: 'claude', status: 'working', title: 'x', cwd: null, ...(lastPrompt === undefined ? {} : { lastPrompt }) };
         return present({ tab: viewRecord({ tab: 'w1:t1', column: null, at: 0, lanes: [lane] }), recap, notes: new Map(), warnings: [], now: 0, messages: en }, 60, noGlow).join('\n');

@@ -12,9 +12,9 @@ test('a sweep records a draft through the decision ledger and the same ledger re
     const [stored] = ledger.newest(must(parseCount(5)));
     assert.ok(stored !== undefined);
     assert.deepEqual(
-        [stored.tab, stored.pane, stored.agent, stored.mode, stored.gate, stored.verdict, stored.askedVerdict, stored.share, stored.tokens, stored.window, stored.decider, stored.tookMs, stored.costUsd, stored.laneStatus],
+        [stored.scope, stored.key, stored.agent, stored.mode, stored.gate, stored.verdict, stored.askedVerdict, stored.share, stored.tokens, stored.window, stored.decider, stored.tookMs, stored.costUsd, stored.laneStatus],
         ['w1:t1', 'w1:p1', 'claude', 'on', 'ask', 'compact', 'compact', 62, 620_000, 1_000_000, 'fake · m', 550, 0.00003, 'idle'],
     );
     assert.deepEqual(Object.fromEntries(stored.answers), SAFE);
-    assert.deepEqual(ledger.lastDecision(stored.tab, stored.pane), { at: stored.at, tokens: stored.tokens, mode: 'on', verdict: 'compact', gate: 'ask' });
+    assert.deepEqual(ledger.lastDecision(stored.scope, stored.key), { at: stored.at, tokens: stored.tokens, mode: 'on', verdict: 'compact', gate: 'ask' });
 });

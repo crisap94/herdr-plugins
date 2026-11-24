@@ -43,7 +43,7 @@ function record(pane: string, closedAt: number, name: string | null): ClosedLane
         agent: agentKind('claude'),
         closedAt: instant(closedAt),
         cwd: null,
-        association: name === null ? null : { task: { tab: tabId('w1:t1'), key: textOf('k1') }, name: taskNameOf(name) },
+        association: name === null ? null : { task: { scope: tabId('w1:t1'), key: textOf('k1') }, name: taskNameOf(name) },
     };
 }
 

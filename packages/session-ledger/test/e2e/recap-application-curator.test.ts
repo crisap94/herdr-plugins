@@ -14,7 +14,7 @@ const NOW = Date.parse('2026-10-07T16:30:00Z');
 const clock = { now: instant(NOW), zone: text('UTC') };
 
 const fact = (id: string, over: Partial<Fact> = {}): Fact => ({
-    id: brand<string, 'FactId'>(id), task: { tab: tabIdOf('w1:t1'), key: textOf('t1') }, section: 'now', text: textOf('Fix the <build> & ship'), why: null, ref: null, agent: null, anchor: null,
+    id: brand<string, 'FactId'>(id), task: { scope: tabIdOf('w1:t1'), key: textOf('t1') }, section: 'now', text: textOf('Fix the <build> & ship'), why: null, ref: null, agent: null, anchor: null,
     firstAt: instant(NOW - 3_600_000), lastAt: instant(NOW), state: 'open', closedWhy: null, closedAt: null, language: textOf('en'), ...over,
 });
 

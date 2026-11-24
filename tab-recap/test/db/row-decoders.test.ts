@@ -21,15 +21,15 @@ const TAB = tabId('w1:t1');
 const PANE = paneId('w1:p1');
 const add = (section: 'done' | 'goal', text: string, why: string | null = null): Operation => ({ op: 'add', section, text: textOf(text), why: why === null ? null : textOf(why), ref: null, at: null, agent: null });
 const run = (at: number): RunInput => ({
-    tab: TAB, at: instant(at), cause: 'requested', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')],
-    tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')] }], ops: [{ task: textOf('t1'), ops: [add('goal', 'ship'), add('done', 'first', 'because')] }],
+    scope: TAB, at: instant(at), cause: 'requested', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, sessions: [cursor('w1:p1')],
+    tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')] }], ops: [{ task: textOf('t1'), ops: [add('goal', 'ship'), add('done', 'first', 'because')] }],
 });
 const odd = (store: Store, ...statements: readonly string[]): void => {
     store.db.exec('PRAGMA ignore_check_constraints = ON');
     store.db.exec('PRAGMA foreign_keys = OFF');
     statements.forEach((statement) => { store.db.exec(statement); });
 };
-const lanesOf = (store: Store): readonly SessionCursor[] => storeRead(store.records.readRecap(TAB))?.lanes ?? [];
+const lanesOf = (store: Store): readonly SessionCursor[] => storeRead(store.records.readRecap(TAB))?.sessions ?? [];
 const byText = (left: readonly unknown[], right: readonly unknown[]): number => JSON.stringify(left).localeCompare(JSON.stringify(right));
 const MODE = 'added';
 const BIG = 9223372036854775807n;
@@ -38,7 +38,7 @@ test('readRecap: empty, null, zero, negative and past-2^53 lane columns read the
     const store = memoryStore();
     recordOps(store, run(100));
     odd(store, "UPDATE transcript SET cursor = 0, tail = '', title = NULL, last_prompt = '', claude_note = ''");
-    assert.deepEqual(lanesOf(store).map((lane) => [lane.cursor, lane.tail, lane.title, lane.lastPrompt, lane.claudeRecap]), [[0, '', null, '', '']]);
+    assert.deepEqual(lanesOf(store).map((lane) => [lane.cursor, lane.tail, lane.title, lane.lastPrompt, lane.harnessRecap]), [[0, '', null, '', '']]);
     odd(store, `UPDATE transcript SET cursor = ${BIG}`);
     assert.equal(lanesOf(store)[0]?.cursor, Number(BIG));
     odd(store, 'UPDATE transcript SET cursor = -4');

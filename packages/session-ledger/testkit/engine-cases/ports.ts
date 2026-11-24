@@ -13,7 +13,7 @@ const HELD_READ: Behaviour<Chunk> = {
     kind: 'block',
     after: {
         kind: 'answer',
-        value: { kind: 'chunk', entries: [{ role: 'user', text: text('hello') }], title: null, lastPrompt: text('hello'), claudeRecap: null, notes: [], position: UNREAD, grew: grew(true) },
+        value: { kind: 'chunk', entries: [{ role: 'user', text: text('hello') }], title: null, lastPrompt: text('hello'), harnessRecap: null, notes: [], position: UNREAD, grew: grew(true) },
     },
 };
 

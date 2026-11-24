@@ -41,14 +41,14 @@ export class BoundaryRows {
     }
 
     private compacted(tab: ScopeId, found: Found): readonly Row[] {
-        return [...new Set(found.marks.map((mark) => mark.pane))].flatMap((pane) => {
+        return [...new Set(found.marks.map((mark) => mark.key))].flatMap((pane) => {
             const last = this.orm.select({ at: max(boundary.at) }).from(boundary)
                 .innerJoin(transcript, eq(transcript.id, boundary.transcriptId))
                 .where(and(eq(boundary.kind, 'compacted'), eq(transcript.tabId, tab), eq(transcript.pane, pane))).get()?.at ?? null;
             const asked = this.orm.select({ startedAt: compaction.startedAt }).from(compaction)
                 .where(and(eq(compaction.tabId, tab), eq(compaction.pane, pane), ne(compaction.stage, 'skipped'))).all()
                 .map((row) => instant(row.startedAt));
-            const planned = compactedFrom(found.marks.filter((mark) => mark.pane === pane), last === null ? null : instant(last), asked);
+            const planned = compactedFrom(found.marks.filter((mark) => mark.key === pane), last === null ? null : instant(last), asked);
             return planned.map((each) => Object.assign({}, each, { transcript: this.transcripts.ofPane(tab, pane, found.at), replaces: null }));
         });
     }

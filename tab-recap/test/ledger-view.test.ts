@@ -17,7 +17,7 @@ import { seenLane } from '#test/support/seen.ts';
 const view = prunedWriterView(keepNewestOf(2), nextHoursOf(24));
 const wide = prunedWriterView(keepNewestOf(10), nextHoursOf(24));
 const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' }));
-const cursor = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t'), cursor: cursorOf(5), tail: null, title: null, lastPrompt: null, claudeRecap: null };
+const cursor = { key: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t'), cursor: cursorOf(5), tail: null, title: null, lastPrompt: null, harnessRecap: null };
 const HOUR = 3_600_000;
 const NOW = 100 * HOUR;
 const facts = [
@@ -63,7 +63,7 @@ test('the next window hides facts older than its hours, keeps a fact exactly at 
 
 test('the writer input applies the next window at the tab clock, so an old next fact is neither shown nor numbered', async () => {
     const built = await inputOf([{ lane, cursor, chunk: null, fresh: SEEN_BEFORE }], {
-        tab: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(NOW), tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')] }],
+        tab: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(NOW), tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')] }],
         facts: [{ key: brand<string, 'Text'>('t1'), open: nextFacts, closed: [] }], writerView: wide,
     });
     const ledger = built.input.ledgers.at(0);

@@ -8,6 +8,7 @@ import { CLOSED_WHY, SECTION_IDS, factIdOf } from '../../packages/session-ledger
 import { checkedTokens, outsideOf } from './tokens.ts';
 import { guardOf, overlapOf } from '../lib/fresh.ts';
 import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
+import { inputOfStored, type StoredInput } from './prompt.ts';
 
 interface Expected {
     readonly merge_pairs: readonly { readonly ids: readonly [string, string]; readonly kind: 'verbatim' | 'reworded'; readonly keep: string | null }[];
@@ -27,8 +28,10 @@ interface Row {
     readonly fresh?: { readonly seed: string; readonly traps: readonly { readonly kind: string; readonly ops: readonly { readonly op: 'close'; readonly id: string; readonly why: string; readonly into?: string }[]; readonly expect: 'refused' | 'kept' }[] };
 }
 
+type StoredRow = Omit<Row, 'input'> & { readonly input: StoredInput };
+
 const problems: string[] = [];
-const parse = (text: string): Row[] => text.split('\n').filter((line) => line.trim() !== '').map((line) => JSON.parse(line) as Row);
+const parse = (text: string): Row[] => text.split('\n').filter((line) => line.trim() !== '').map((line) => { const row = JSON.parse(line) as StoredRow; return { ...row, input: inputOfStored(row.input) }; });
 // A file is a fresh set when every row carries the fresh key. Without a path argument it is today's dataset.jsonl.
 const rows = parse(readFileSync(process.argv[2] ?? new URL('./dataset.jsonl', import.meta.url), 'utf8'));
 const fresh = rows.length > 0 && rows.every((row) => row.fresh !== undefined);

@@ -52,12 +52,12 @@ const instantOf = (result: Result<Instant, ParseFailure>): Instant | null => (re
 
 function rowOf(found: StoredDecisionRow, zone: Text): ListingRow {
     const verdict = found.askedVerdict !== null && found.askedVerdict !== found.verdict ? `${found.verdict} (asked ${found.askedVerdict})` : found.verdict;
-    const cells = [found.tab, found.pane, found.laneStatus ?? '—', `${found.share} %`, verdict, found.gate, found.decider ?? '—', moneyOf(found.costUsd)].map((line) => must(parseText(line)));
+    const cells = [found.scope, found.key, found.laneStatus ?? '—', `${found.share} %`, verdict, found.gate, found.decider ?? '—', moneyOf(found.costUsd)].map((line) => must(parseText(line)));
     return { cells: [stampOf(instantOf(parseInstant(found.at)), zone), ...cells] };
 }
 
 function skippedRow(found: SkipRow, zone: Text): ListingRow {
-    const cells = [found.tab, found.pane, found.share === null ? '—' : `${found.share} %`, found.gate, found.detail ?? '—'].map((line) => must(parseText(line)));
+    const cells = [found.scope, found.key, found.share === null ? '—' : `${found.share} %`, found.gate, found.detail ?? '—'].map((line) => must(parseText(line)));
     return { cells: [stampOf(instantOf(parseInstant(found.at)), zone), ...cells] };
 }
 

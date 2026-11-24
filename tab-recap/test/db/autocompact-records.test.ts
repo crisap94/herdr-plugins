@@ -23,7 +23,7 @@ import type { Probability } from '#src/recap/domain/probability.ts';
 const tallyOf = (record: Readonly<Record<string, number>>): AnswerTally => new Map(Object.entries(record).map(([key, value]): readonly [Text, Probability] => [textOf(key), uncheckedRatio(value)]));
 
 const decision = (over: Partial<DecisionDraft> = {}): DecisionDraft => ({
-    tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(1_000), mode: 'shadow', share: countOf(61), tokens: mustParsed(parseCount(610_000)), window: mustParsed(parseCount(1_000_000)), gate: 'ask', verdict: 'compact',
+    scope: tabId('w1:t1'), key: paneId('w1:p1'), agent: agentKind('claude'), at: instant(1_000), mode: 'shadow', share: countOf(61), tokens: mustParsed(parseCount(610_000)), window: mustParsed(parseCount(1_000_000)), gate: 'ask', verdict: 'compact',
     askedVerdict: 'compact', answers: tallyOf({ closes_request: 0.95, stuck: 0.01 }), coverage: null, decider: textOf('jev · jev-1.13.0'), costUsd: mustParsed(parseUsd(0.000031)), tookMs: duration(550), why: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, ...over,
 });
 
@@ -43,7 +43,7 @@ test('a decision round-trips: the answers, the coverage, the cost in micro-dolla
 
 test('newest: newest first, limited, of one tab when asked', () => {
     const store = seeded();
-    for (const [at, tab] of [[10, 'w1:t1'], [30, 'w1:t2'], [20, 'w1:t1']] as const) store.decisions.record(decision({ at: instant(at), tab: tabId(tab) }));
+    for (const [at, tab] of [[10, 'w1:t1'], [30, 'w1:t2'], [20, 'w1:t1']] as const) store.decisions.record(decision({ at: instant(at), scope: tabId(tab) }));
     assert.deepEqual(store.decisions.newest(mustParsed(parseCount(2))).map((each) => each.at), [30, 20]);
     assert.deepEqual(store.decisions.newest(mustParsed(parseCount(20)), mustParsed(parseTabId('w1:t1'))).map((each) => each.at), [20, 10]);
     assert.deepEqual(store.decisions.newest(mustParsed(parseCount(5)), mustParsed(parseTabId('w9:t9'))), []);
@@ -75,7 +75,7 @@ test('lastDecisionAt: the newest decision of the lane, of any verdict; null when
     store.decisions.record(decision({ at: instant(100), verdict: 'wait' }));
     store.decisions.record(decision({ at: instant(300), verdict: 'unknown' }));
     store.decisions.record(decision({ at: instant(400), verdict: 'compact' }));
-    store.decisions.record(decision({ at: instant(500), verdict: 'wait', pane: paneId('w1:p2')}));
+    store.decisions.record(decision({ at: instant(500), verdict: 'wait', key: paneId('w1:p2')}));
     assert.equal(store.decisions.lastDecisionAt(tabId('w1:t1'), paneId('w1:p1')), 400);
     assert.equal(store.decisions.lastDecisionAt(tabId('w1:t1'), paneId('w1:p2')), 500);
 });
@@ -103,7 +103,7 @@ test('countsFor: decisions, those that led to a compaction, those that waited; c
     const first = store.decisions.record(decision({ at: instant(100), verdict: 'compact', costUsd: mustParsed(parseUsd(0.5))}));
     store.decisions.record(decision({ at: instant(200), verdict: 'wait', costUsd: mustParsed(parseUsd(0.25))}));
     store.decisions.record(decision({ at: instant(300), verdict: 'undecided', costUsd: mustParsed(parseUsd(0))}));
-    store.decisions.record(decision({ at: instant(300), tab: tabId('w1:t2'), costUsd: mustParsed(parseUsd(1))}));
+    store.decisions.record(decision({ at: instant(300), scope: tabId('w1:t2'), costUsd: mustParsed(parseUsd(1))}));
     store.decisions.link(first, mustParsed(parseCompactionId(store.compactions.begin({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), stage: 'briefing', at: instant(5) }))));
     assert.deepEqual(store.decisions.countsFor(mustParsed(parseTabId('w1:t1'))), { decisions: 3, compacted: 1, waited: 2 });
     assert.deepEqual(store.decisions.countsFor(mustParsed(parseTabId('w9:t9'))), { decisions: 0, compacted: 0, waited: 0 });

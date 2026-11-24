@@ -14,7 +14,7 @@ const failWriter: Behaviour<WrittenAnswer> = { kind: 'fail', why: FAILED };
 
 const cursorOf = (world: EngineWorld, pane: string): number | undefined => cursorsOf(world, TAB).find((lane) => lane.pane === pane)?.cursor;
 
-const laneOf = (world: EngineWorld, pane: string): Recap['lanes'][number] | undefined => recapOf(world, TAB)?.lanes.find((lane) => lane.pane === pane);
+const laneOf = (world: EngineWorld, pane: string): Recap['sessions'][number] | undefined => recapOf(world, TAB)?.sessions.find((lane) => lane.key === pane);
 
 export const CSR_CASES: readonly Case<EngineWorld, Engine>[] = [
     {
@@ -160,21 +160,21 @@ export const CSR_CASES: readonly Case<EngineWorld, Engine>[] = [
         level: 'full',
         async run(world, engine) {
             engine.follow(TAB, followed(key('a'), { session: session('s1') }));
-            world.setRead(chunkAt(1, { title: text('T1'), lastPrompt: text('P1'), claudeRecap: text('R1') }));
+            world.setRead(chunkAt(1, { title: text('T1'), lastPrompt: text('P1'), harnessRecap: text('R1') }));
             world.setWriter(NO_OPS);
             await engine.refresh(TAB);
             const first = laneOf(world, 'a');
             assert.ok(first);
             assert.equal(first.title, 'T1');
             assert.equal(first.lastPrompt, 'P1');
-            assert.equal(first.claudeRecap, 'R1');
-            world.setRead(chunkAt(2, { title: null, lastPrompt: null, claudeRecap: null }));
+            assert.equal(first.harnessRecap, 'R1');
+            world.setRead(chunkAt(2, { title: null, lastPrompt: null, harnessRecap: null }));
             await engine.refresh(TAB);
             const second = laneOf(world, 'a');
             assert.ok(second);
             assert.equal(second.title, 'T1');
             assert.equal(second.lastPrompt, 'P1');
-            assert.equal(second.claudeRecap, 'R1');
+            assert.equal(second.harnessRecap, 'R1');
         },
     },
     {

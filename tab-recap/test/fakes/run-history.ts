@@ -6,11 +6,11 @@ export class MemoryRunHistory implements Pick<Records, 'recordRun' | 'failRun' |
     private readonly runs: Entry[] = [];
 
     recordRun(run: RecordedRun): void {
-        this.runs.push({ tab: run.tab, at: run.at, cause: run.cause, error: run.error });
+        this.runs.push({ tab: run.scope, at: run.at, cause: run.cause, error: run.error });
     }
 
     failRun(run: FailedRun): void {
-        this.runs.push({ tab: run.tab, at: run.at, cause: run.cause, error: run.error });
+        this.runs.push({ tab: run.scope, at: run.at, cause: run.cause, error: run.error });
     }
 
     lastRunOf(tab: string): LastRun | null {

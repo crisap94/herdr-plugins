@@ -41,7 +41,7 @@ const seedBoth = (db: Database): void => {
     seedRow(2, 'p1', 's0', 0, 300)(db);
 };
 
-const lane = (pane: string, transcript: string, cursor: number, text: string | null = null): SessionCursor => ({ pane: paneId(pane), agent: agentKind('claude'), transcript: sourcePathOf(transcript), cursor: cursorOf(cursor), tail: parseTextOrNull(text), title: parseTextOrNull(text), lastPrompt: parseTextOrNull(text), claudeRecap: parseTextOrNull(text) });
+const lane = (pane: string, transcript: string, cursor: number, text: string | null = null): SessionCursor => ({ key: paneId(pane), agent: agentKind('claude'), transcript: sourcePathOf(transcript), cursor: cursorOf(cursor), tail: parseTextOrNull(text), title: parseTextOrNull(text), lastPrompt: parseTextOrNull(text), harnessRecap: parseTextOrNull(text) });
 
 const memory = (seed: (db: Database) => void): Database => {
     const opened = openDatabase(fsPathOf(MEMORY));
@@ -57,10 +57,10 @@ const sourceOf = (db: Database, id: Uint8Array): string | null => (db.prepare('S
 function rawAttach(db: Database, tab: string, lanes: readonly SessionCursor[], at: number): Moved[] {
     db.prepare('UPDATE transcript SET attached = 0 WHERE tab_id = ?').run(tab);
     return lanes.map((each, position) => {
-        const was = db.prepare('SELECT cursor FROM transcript WHERE tab_id = ? AND pane = ? AND source = ?').get(tab, each.pane, each.transcript) as { cursor: number } | null;
-        const prior = was === null && each.transcript !== '' ? db.prepare(PRIOR_SQL).get(tab, each.pane) as { id: Uint8Array } | null : null;
-        const saved = db.prepare(UPSERT_SQL).get(ids.next(), tab, each.pane, each.agent, each.transcript, position, each.cursor, each.tail, each.title, each.lastPrompt, each.claudeRecap, at) as { id: Uint8Array };
-        return { id: saved.id, pane: each.pane, from: was === null ? each.cursor : was.cursor, to: each.cursor, replaces: prior === null ? null : prior.id };
+        const was = db.prepare('SELECT cursor FROM transcript WHERE tab_id = ? AND pane = ? AND source = ?').get(tab, each.key, each.transcript) as { cursor: number } | null;
+        const prior = was === null && each.transcript !== '' ? db.prepare(PRIOR_SQL).get(tab, each.key) as { id: Uint8Array } | null : null;
+        const saved = db.prepare(UPSERT_SQL).get(ids.next(), tab, each.key, each.agent, each.transcript, position, each.cursor, each.tail, each.title, each.lastPrompt, each.harnessRecap, at) as { id: Uint8Array };
+        return { id: saved.id, pane: each.key, from: was === null ? each.cursor : was.cursor, to: each.cursor, replaces: prior === null ? null : prior.id };
     });
 }
 

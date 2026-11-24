@@ -11,18 +11,18 @@ import { type RecapTask } from '@stateforge-labs/session-ledger/unstable/recap/d
 
 const tab = 'tab-1';
 
-const recapTask = (id: string, lanes: readonly string[]): RecapTask => ({ id: textOf(id), name: textOf(id), lanes: lanes.map((lane) => paneIdOf(lane)), sections: null, markdown: textOf(`task ${id}`) });
+const recapTask = (id: string, lanes: readonly string[]): RecapTask => ({ id: textOf(id), name: textOf(id), sessions: lanes.map((lane) => paneIdOf(lane)), sections: null, markdown: textOf(`task ${id}`) });
 
 test('restore returns the open and recently closed facts of the task that holds the session, with the last run and the clock', () => {
     const world = createEngineWorld();
     world.clock.set(10_000);
     const store = createMemoryStore({
-        recap: { tab: tabId(tab), lanes: [], tasks: [recapTask('a', ['p1']), recapTask('b', ['p2'])], at: instant(5_000), running: running(false), backend: null, error: null, costUsd: usd(0), language: text('en') },
+        recap: { scope: tabId(tab), sessions: [], tasks: [recapTask('a', ['p1']), recapTask('b', ['p2'])], at: instant(5_000), running: running(false), backend: null, error: null, costUsd: usd(0), language: text('en') },
         lastRun: { at: instant(5_000), cause: 'focused' },
         facts: [
-            factOf('open-a', { task: { tab: tabIdOf(tab), key: textOf('a') }, text: textOf('open in a') }),
-            factOf('closed-a', { task: { tab: tabIdOf(tab), key: textOf('a') }, state: 'closed', closedAt: instant(9_000), text: textOf('closed in a') }),
-            factOf('open-b', { task: { tab: tabIdOf(tab), key: textOf('b') }, text: textOf('open in b') }),
+            factOf('open-a', { task: { scope: tabIdOf(tab), key: textOf('a') }, text: textOf('open in a') }),
+            factOf('closed-a', { task: { scope: tabIdOf(tab), key: textOf('a') }, state: 'closed', closedAt: instant(9_000), text: textOf('closed in a') }),
+            factOf('open-b', { task: { scope: tabIdOf(tab), key: textOf('b') }, text: textOf('open in b') }),
         ],
     });
     const plugs = legacyPlugsOf({ ...world.plugs, store: { records: store.records, facts: store.facts } });

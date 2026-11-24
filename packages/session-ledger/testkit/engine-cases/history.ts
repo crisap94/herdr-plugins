@@ -25,8 +25,8 @@ const runWritten = async (world: EngineWorld, engine: Engine, text: string): Pro
 
 const seedHistory = (world: EngineWorld): void => {
     world.store.seed(null, [
-        factOf('fct_1', { task: { tab: tabIdOf(TAB), key: textOf(key('a')) }, text: textOf('stored fact'), firstAt: instant(1), lastAt: instant(1) }),
-        factOf('fct_2', { task: { tab: tabIdOf(TAB), key: textOf(key('a')) }, text: textOf('closed fact'), state: 'closed', closedWhy: 'done', closedAt: instant(2), firstAt: instant(1), lastAt: instant(2) }),
+        factOf('fct_1', { task: { scope: tabIdOf(TAB), key: textOf(key('a')) }, text: textOf('stored fact'), firstAt: instant(1), lastAt: instant(1) }),
+        factOf('fct_2', { task: { scope: tabIdOf(TAB), key: textOf(key('a')) }, text: textOf('closed fact'), state: 'closed', closedWhy: 'done', closedAt: instant(2), firstAt: instant(1), lastAt: instant(2) }),
     ]);
 };
 

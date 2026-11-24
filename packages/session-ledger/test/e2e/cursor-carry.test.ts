@@ -14,7 +14,7 @@ const sessionOf = (id: string): SessionId => {
     return read.value;
 };
 
-const cursorOf = (transcript: string, cursor = 0, agent = 'claude'): SessionCursor => ({ pane: paneId('p1'), agent: agentKind(agent), transcript: sourcePath(transcript), cursor: cursorAt(cursor), tail: null, title: null, lastPrompt: null, claudeRecap: null });
+const cursorOf = (transcript: string, cursor = 0, agent = 'claude'): SessionCursor => ({ key: paneId('p1'), agent: agentKind(agent), transcript: sourcePath(transcript), cursor: cursorAt(cursor), tail: null, title: null, lastPrompt: null, harnessRecap: null });
 
 const readerOf = (asked: string[], same: boolean): SessionReader => ({
     agent: agentKindOf('claude'),
@@ -77,7 +77,7 @@ test('a followed pane keeps its current cursor and at most four old ones', async
     const tab = scope('one');
     let source = 'x0';
     world.setLocate(() => ({ kind: 'answer', value: { kind: 'located', source } }));
-    world.setRead({ kind: 'answer', value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorAt(3), tail: null }, grew: grewOf(true) } });
+    world.setRead({ kind: 'answer', value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, harnessRecap: null, notes: [], position: { cursor: cursorAt(3), tail: null }, grew: grewOf(true) } });
     engine.follow(tab, followed(key('p1'), { session: session('s1') }));
     for (let at = 0; at < 7; at += 1) {
         source = `x${at}`;
@@ -85,5 +85,5 @@ test('a followed pane keeps its current cursor and at most four old ones', async
     }
     const recap = world.store.records.readRecap(tab);
     assert.ok(recap !== null && !('kind' in recap));
-    assert.deepEqual(recap.lanes.map((cursor) => cursor.transcript), ['x6', 'x5', 'x4', 'x3', 'x2']);
+    assert.deepEqual(recap.sessions.map((cursor) => cursor.transcript), ['x6', 'x5', 'x4', 'x3', 'x2']);
 });

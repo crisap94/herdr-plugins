@@ -19,13 +19,13 @@ export const isSection = (value: unknown): value is Section => SECTION_IDS.some(
 
 export const isClosedWhy = (value: unknown): value is ClosedWhy => CLOSED_WHY.some((why) => why === value);
 
-export interface TaskId { readonly tab: ScopeId; readonly key: Text; }
+export interface TaskId { readonly scope: ScopeId; readonly key: Text; }
 
 export interface Fact { readonly id: FactId; readonly task: TaskId; readonly section: Section; readonly text: Text; readonly why: Text | null; readonly ref: Text | null; readonly agent: Text | null; readonly anchor: Text | null; readonly firstAt: Instant; readonly lastAt: Instant; readonly state: 'open' | 'closed'; readonly closedWhy: ClosedWhy | null; readonly closedAt: Instant | null; readonly language: Text; }
 
 export type SameTask = Brand<boolean, 'SameTask'>;
 
-export const sameTask = (a: TaskId, b: TaskId): SameTask => brand<boolean, 'SameTask'>(a.tab === b.tab && a.key === b.key);
+export const sameTask = (a: TaskId, b: TaskId): SameTask => brand<boolean, 'SameTask'>(a.scope === b.scope && a.key === b.key);
 
 export type OpenFact = Fact & { readonly state: 'open' };
 

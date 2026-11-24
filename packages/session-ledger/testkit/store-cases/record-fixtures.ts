@@ -11,27 +11,27 @@ export const isUnknownValue = (value: unknown): value is Unknown =>
     typeof value === 'object' && value !== null && 'kind' in value && value.kind === 'unknown';
 
 export const cursor = (pane: string, transcript = `/transcripts/${pane}.jsonl`): SessionCursor => ({
-    pane: paneId(pane),
+    key: paneId(pane),
     agent: agentKind('claude'),
     transcript: sourcePath(transcript),
     cursor: cursorAt(1),
     tail: null,
     title: null,
     lastPrompt: null,
-    claudeRecap: null,
+    harnessRecap: null,
 });
 
-export const shapeOf = (id: string, lanes: readonly SessionKey[]): TaskShape => ({ id: textOf(id), name: textOf(`Task ${id}`), lanes });
+export const shapeOf = (id: string, lanes: readonly SessionKey[]): TaskShape => ({ id: textOf(id), name: textOf(`Task ${id}`), sessions: lanes });
 
 export const runOf = (over: Partial<RecordedRun> = {}): RecordedRun => ({
-    tab: tabId('tab-1'),
+    scope: tabId('tab-1'),
     at: instant(100),
     cause: 'requested',
     backend: text('claude'),
     language: text('en'),
     costUsd: usd(0.5),
     error: null,
-    lanes: [cursor('p1')],
+    sessions: [cursor('p1')],
     tasks: [shapeOf('a', [paneIdOf('p1')])],
     changed: [],
     refused: [],
@@ -39,22 +39,22 @@ export const runOf = (over: Partial<RecordedRun> = {}): RecordedRun => ({
 });
 
 export const failedOf = (over: Partial<FailedRun> = {}): FailedRun => ({
-    tab: tabId('tab-1'),
+    scope: tabId('tab-1'),
     at: instant(200),
     cause: 'requested',
     backend: text('codex'),
     language: text('fr'),
     costUsd: usd(0.1),
     error: text('the backend refused'),
-    lanes: [cursor('p2')],
+    sessions: [cursor('p2')],
     ...over,
 });
 
 export const advanceOf = (over: Partial<Advance> = {}): Advance => ({
-    tab: tabId('tab-1'),
+    scope: tabId('tab-1'),
     at: instant(300),
     error: text('stale'),
-    lanes: [cursor('p3')],
+    sessions: [cursor('p3')],
     ...over,
 });
 
@@ -82,7 +82,7 @@ export const brokenFact = (): Fact => ({
     get id(): Fact['id'] {
         throw new Error('a broken fact');
     },
-    task: { tab: tabIdOf('tab-1'), key: textOf('b') },
+    task: { scope: tabIdOf('tab-1'), key: textOf('b') },
     section: 'now',
     text: textOf(''),
     why: null,
@@ -97,4 +97,4 @@ export const brokenFact = (): Fact => ({
     language: textOf('en'),
 });
 
-export const shapesOf = (recap: Recap): readonly TaskShape[] => recap.tasks.map((task) => ({ id: task.id, name: task.name, lanes: task.lanes }));
+export const shapesOf = (recap: Recap): readonly TaskShape[] => recap.tasks.map((task) => ({ id: task.id, name: task.name, sessions: task.sessions }));

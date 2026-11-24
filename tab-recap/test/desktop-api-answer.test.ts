@@ -122,10 +122,10 @@ test('a need of another tab cannot be closed through this tab, even when that ta
     const { world } = await seeded();
     try {
         seedOther(world, [add('needs', 'Foreign question?')]);
-        const foreign = storeRead(world.store.ledger.allOf({ tab: tabIdOf(OTHER_TAB), key: textOf('t9') }))[0]?.id ?? '';
+        const foreign = storeRead(world.store.ledger.allOf({ scope: tabIdOf(OTHER_TAB), key: textOf('t9') }))[0]?.id ?? '';
         const reply = await api(world, 'POST', answerPath(foreign));
         assert.deepEqual([reply.status, reply.body], [404, { error: 'unknown-need' }]);
-        assert.equal(storeRead(world.store.ledger.openOf({ tab: tabIdOf(OTHER_TAB), key: textOf('t9') })).length, 1);
+        assert.equal(storeRead(world.store.ledger.openOf({ scope: tabIdOf(OTHER_TAB), key: textOf('t9') })).length, 1);
     } finally { world.close(); }
 });
 

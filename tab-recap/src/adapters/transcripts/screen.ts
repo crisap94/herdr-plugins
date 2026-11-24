@@ -53,7 +53,7 @@ export class ScreenTranscripts implements SessionReader {
         const tail = hashOf(must(parseText(steady(clean))));
         const grew = tail !== was.tail && clean !== '';
         return {
-            kind: 'chunk', entries: grew ? screenEntries(clean, CLAUDE_SCREEN_CHROME) : [], title: null, lastPrompt: null, claudeRecap: null, notes: [],
+            kind: 'chunk', entries: grew ? screenEntries(clean, CLAUDE_SCREEN_CHROME) : [], title: null, lastPrompt: null, harnessRecap: null, notes: [],
             position: { cursor: cursorOf(shown.revision), tail }, grew: grewOf(grew),
         };
     }

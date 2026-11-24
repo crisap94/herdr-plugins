@@ -52,7 +52,7 @@ const sectionsOf = (value: Row): RecapSections => ({
 const taskOf = (item: Row): RecapTask => ({
     id: typeof item.id === 'string' ? textOf(item.id) : textOf(''),
     name: typeof item.name === 'string' ? textOf(item.name) : textOf(''),
-    lanes: Array.isArray(item.lanes) ? item.lanes.flatMap((entry) => (typeof entry === 'string' ? [paneIdOf(entry)] : [])) : [],
+    sessions: Array.isArray(item.lanes) ? item.lanes.flatMap((entry) => (typeof entry === 'string' ? [paneIdOf(entry)] : [])) : [],
     sections: isRow(item.sections) ? sectionsOf(item.sections) : null,
     markdown: typeof item.markdown === 'string' ? textOf(item.markdown) : textOf(''),
 });
@@ -61,7 +61,7 @@ const legacyTasks = (stored: Row): RecapTask[] => {
     const markdown = typeof stored.markdown === 'string' ? stored.markdown : '';
     if (markdown === '') return [];
     const lanes = Array.isArray(stored.lanes) ? stored.lanes.flatMap((lane) => (isRow(lane) && typeof lane.pane === 'string' ? [paneIdOf(lane.pane)] : [])) : [];
-    return [{ id: textOf('t1'), name: textOf(''), lanes, sections: isRow(stored.sections) ? sectionsOf(stored.sections) : null, markdown: textOf(markdown) }];
+    return [{ id: textOf('t1'), name: textOf(''), sessions: lanes, sections: isRow(stored.sections) ? sectionsOf(stored.sections) : null, markdown: textOf(markdown) }];
 };
 
 const tasksOf = (stored: Row): RecapTask[] => {
@@ -82,14 +82,14 @@ const cursorOf = (input: Row): Result<SessionCursor, ParseFailure> => {
     const agent = parseAgentKind(input.agent);
     if (agent.kind === 'err') return agent;
     return ok({
-        pane: pane.value,
+        key: pane.value,
         agent: agent.value,
         transcript: sourcePathOf(input.transcript),
         cursor: positionOf(input.cursor),
         tail: parseTextOrNull(input.tail),
         title: parseTextOrNull(input.title),
         lastPrompt: parseTextOrNull(input.lastPrompt),
-        claudeRecap: parseTextOrNull(input.claudeRecap),
+        harnessRecap: parseTextOrNull(input.claudeRecap),
     });
 };
 
@@ -152,7 +152,7 @@ export function parseLegacyRecapFile(input: unknown): Result<Recap, ParseFailure
     const tab = parseTabId(input.tab);
     if (tab.kind === 'err') return tab;
     const costUsd = typeof input.costUsd === 'number' ? input.costUsd : 0;
-    return ok({ tab: tab.value, lanes: lanes.value, tasks: tasksOf(input), costUsd: usdOf(costUsd), ...recapMetaOf(input) });
+    return ok({ scope: tab.value, sessions: lanes.value, tasks: tasksOf(input), costUsd: usdOf(costUsd), ...recapMetaOf(input) });
 }
 
 export function parseLegacyViewFile(input: unknown): Result<LegacyViewFile, ParseFailure> {

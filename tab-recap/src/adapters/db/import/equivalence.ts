@@ -18,7 +18,7 @@ export function canonicalRecap(file: Recap): Recap {
 }
 
 export const holdingOf = (file: Recap): Presence =>
-    file.lanes.length > 0 || file.tasks.length > 0 || file.at !== null || file.error !== null || file.costUsd > 0 || file.running || file.backend !== null ? 'present' : 'absent';
+    file.sessions.length > 0 || file.tasks.length > 0 || file.at !== null || file.error !== null || file.costUsd > 0 || file.running || file.backend !== null ? 'present' : 'absent';
 
 export function canonicalView(file: LegacyViewFile): LegacyViewFile {
     return { ...file, column: typeof file.column === 'string' ? file.column : null, daemonVersion: file.daemonVersion ?? null };
@@ -28,11 +28,11 @@ const inMillionths = (recap: Recap): Recap => ({ ...recap, costUsd: usdOf(micros
 
 export function recapDifferenceLines(was: Recap, now: Recap | null): readonly Text[] {
     if (now === null) {
-        return [must(parseText(`recap ${was.tab}: reads back as nothing`))];
+        return [must(parseText(`recap ${was.scope}: reads back as nothing`))];
     }
     const left = new Map(Object.entries(inMillionths(was)));
     const right = new Map(Object.entries(inMillionths(now)));
-    return [...new Set([...left.keys(), ...right.keys()])].filter((field) => !isDeepStrictEqual(left.get(field), right.get(field))).map((field) => must(parseText(`recap ${was.tab}: ${field} differs`)));
+    return [...new Set([...left.keys(), ...right.keys()])].filter((field) => !isDeepStrictEqual(left.get(field), right.get(field))).map((field) => must(parseText(`recap ${was.scope}: ${field} differs`)));
 }
 
 export function viewDifferenceLines(was: LegacyViewFile, now: TabViewRecord | null): readonly Text[] {

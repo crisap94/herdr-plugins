@@ -16,10 +16,10 @@ import { usdOf } from '#src/recap/domain/usd.ts';
 import { tabIdOf, paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const sections = { goal: textOf('ship'), now: [textOf('a')], needs: [], done: [textOf('b'), textOf('c')], decisions: [], next: [], links: [textOf('x.ts')], rules: [] };
-const shape = (id: string, lanes: readonly string[], name = ''): TaskShape => ({ id: textOf(id), name: textOf(name), lanes: lanes.map((lane) => paneIdOf(lane)) });
+const shape = (id: string, lanes: readonly string[], name = ''): TaskShape => ({ id: textOf(id), name: textOf(name), sessions: lanes.map((lane) => paneIdOf(lane)) });
 const adds = (task: string, of: RecapSections = sections): readonly TaskOps[] => [{ task: textOf(task), ops: opsOfSections(of) }];
 const run = (over: Partial<RunInput> = {}): RunInput => ({
-    tab: tabId('w1:t1'), at: instant(100), cause: 'requested', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0.25), error: null, lanes: [cursor('w1:p1')], tasks: [shape('t1', ['w1:p1'])], ops: adds('t1'), ...over,
+    scope: tabId('w1:t1'), at: instant(100), cause: 'requested', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0.25), error: null, sessions: [cursor('w1:p1')], tasks: [shape('t1', ['w1:p1'])], ops: adds('t1'), ...over,
 });
 
 test('a tab nobody wrote anything for has no recap', () => {
@@ -33,8 +33,8 @@ test('a recorded run reads back as the recap: sections from the open facts, the 
     assert.deepEqual(recap.tasks.at(0)?.sections, sections);
     assert.match(recap.tasks.at(0)?.markdown ?? '', /^## Goal\nship\n\n## Now\n- a\n\n## Needs you\n—\n\n## Done\n- b\n- c/);
     assert.deepEqual([recap.at, recap.backend, recap.language, recap.costUsd, recap.running, recap.error], [100, 'claude', 'en', 0.25, false, null]);
-    assert.deepEqual(recap.lanes, [cursor('w1:p1')]);
-    assert.deepEqual(recap.tasks.at(0)?.lanes, ['w1:p1']);
+    assert.deepEqual(recap.sessions, [cursor('w1:p1')]);
+    assert.deepEqual(recap.tasks.at(0)?.sessions, ['w1:p1']);
 });
 
 test('the recap is the LAST run that wrote one, over the facts of all of them; cost adds up; Spanish headings follow the run\'s language', () => {
@@ -50,49 +50,49 @@ test('the recap is the LAST run that wrote one, over the facts of all of them; c
 
 test('a failed run keeps the previous recap, adds its error and cost, leaves the cursors where they were, and ends the run', () => {
     const store = memoryStore(); const { records } = store;
-    recordOps(store, run({ lanes: [cursor('w1:p1', 100)] }));
+    recordOps(store, run({ sessions: [cursor('w1:p1', 100)] }));
     records.beginRun(tabId('w1:t1'), textOf('codex'), instant(150));
     assert.equal(storeRead(records.readRecap(tabId('w1:t1')))?.running, true);
     assert.equal(storeRead(records.readRecap(tabId('w1:t1')))?.backend, 'codex');
-    records.failRun({ tab: tabId('w1:t1'), at: instant(160), cause: 'requested', backend: textOf('codex'), language: textOf('en'), costUsd: usdOf(0.5), error: textOf('the writer\'s answer was not usable'), lanes: [cursor('w1:p1', 100)] });
+    records.failRun({ scope: tabId('w1:t1'), at: instant(160), cause: 'requested', backend: textOf('codex'), language: textOf('en'), costUsd: usdOf(0.5), error: textOf('the writer\'s answer was not usable'), sessions: [cursor('w1:p1', 100)] });
     const recap = must(storeRead(records.readRecap(tabId('w1:t1'))));
-    assert.deepEqual([recap.running, recap.error, recap.at, recap.costUsd, recap.lanes.at(0)?.cursor], [false, 'the writer\'s answer was not usable', 100, 0.75, 100]);
+    assert.deepEqual([recap.running, recap.error, recap.at, recap.costUsd, recap.sessions.at(0)?.cursor], [false, 'the writer\'s answer was not usable', 100, 0.75, 100]);
     assert.deepEqual(recap.tasks.at(0)?.sections, sections, 'the recap is the one before the failure');
 });
 
 test('advance moves the cursors and the error line and writes no run', () => {
     const store = memoryStore(); const { records, db } = store;
     recordOps(store, run());
-    records.advance({ tab: tabId('w1:t1'), at: instant(300), error: textOf('w1:p2: no reader'), lanes: [cursor('w1:p1', 400)] });
+    records.advance({ scope: tabId('w1:t1'), at: instant(300), error: textOf('w1:p2: no reader'), sessions: [cursor('w1:p1', 400)] });
     const recap = must(storeRead(records.readRecap(tabId('w1:t1'))));
-    assert.deepEqual([recap.lanes.at(0)?.cursor, recap.error, recap.at], [400, 'w1:p2: no reader', 100]);
+    assert.deepEqual([recap.sessions.at(0)?.cursor, recap.error, recap.at], [400, 'w1:p2: no reader', 100]);
     assert.equal((db.prepare('SELECT COUNT(*) AS n FROM run').get() as { n: number }).n, 1);
 });
 
 test('cursors only (no run yet) is already a recap with no tasks; a lane that leaves is detached, its transcript row stays', () => {
     const store = memoryStore(); const { records, db } = store;
-    records.advance({ tab: tabId('w1:t1'), at: instant(1), error: null, lanes: [cursor('w1:p1'), cursor('w1:p2')] });
+    records.advance({ scope: tabId('w1:t1'), at: instant(1), error: null, sessions: [cursor('w1:p1'), cursor('w1:p2')] });
     assert.deepEqual([storeRead(records.readRecap(tabId('w1:t1')))?.tasks, storeRead(records.readRecap(tabId('w1:t1')))?.at], [[], null]);
-    records.advance({ tab: tabId('w1:t1'), at: instant(2), error: null, lanes: [cursor('w1:p2')] });
-    assert.deepEqual(storeRead(records.readRecap(tabId('w1:t1')))?.lanes.map((lane) => lane.pane), ['w1:p2']);
+    records.advance({ scope: tabId('w1:t1'), at: instant(2), error: null, sessions: [cursor('w1:p2')] });
+    assert.deepEqual(storeRead(records.readRecap(tabId('w1:t1')))?.sessions.map((lane) => lane.key), ['w1:p2']);
     assert.equal((db.prepare('SELECT COUNT(*) AS n FROM transcript').get() as { n: number }).n, 2);
 });
 
 test('lanes and tasks keep their order; a task that names a closed lane keeps naming it; each task has its own facts', () => {
     const store = memoryStore(); const { records } = store;
     recordOps(store, run({
-        lanes: [cursor('w1:p2'), cursor('w1:p1')], tasks: [shape('t2', ['w1:p3'], 'Docs'), shape('t1', ['w1:p2', 'w1:p1', 'w1:gone'], 'Payments')],
+        sessions: [cursor('w1:p2'), cursor('w1:p1')], tasks: [shape('t2', ['w1:p3'], 'Docs'), shape('t1', ['w1:p2', 'w1:p1', 'w1:gone'], 'Payments')],
         ops: [...adds('t1'), ...adds('t2', { ...NO_SECTIONS, goal: textOf('document it') })],
     }));
     const recap = must(storeRead(records.readRecap(tabId('w1:t1'))));
-    assert.deepEqual(recap.lanes.map((lane) => lane.pane), ['w1:p2', 'w1:p1']);
-    assert.deepEqual(recap.tasks.map((each) => [each.id, each.name, each.lanes, each.sections?.goal]), [['t2', 'Docs', ['w1:p3'], 'document it'], ['t1', 'Payments', ['w1:p2', 'w1:p1', 'w1:gone'], 'ship']]);
+    assert.deepEqual(recap.sessions.map((lane) => lane.key), ['w1:p2', 'w1:p1']);
+    assert.deepEqual(recap.tasks.map((each) => [each.id, each.name, each.sessions, each.sections?.goal]), [['t2', 'Docs', ['w1:p3'], 'document it'], ['t1', 'Payments', ['w1:p2', 'w1:p1', 'w1:gone'], 'ship']]);
 });
 
 test('an empty recap (no facts) is still a task; a second tab is a separate recap', () => {
     const store = memoryStore(); const { records } = store;
     recordOps(store, run({ ops: [] }));
-    recordOps(store, run({ tab: tabId('w1:t2'), at: instant(50) }));
+    recordOps(store, run({ scope: tabId('w1:t2'), at: instant(50) }));
     assert.deepEqual(storeRead(records.readRecap(tabId('w1:t1')))?.tasks.at(0)?.sections, NO_SECTIONS);
     assert.equal(storeRead(records.readRecap(tabId('w1:t2')))?.at, 50);
     assert.deepEqual(blankRecap(tabId('x')).tasks, []);
@@ -110,8 +110,8 @@ test('a run is all or nothing: a run whose fact the schema refuses (an empty tex
 
 test('a fact the run carries with an id that is not a fact typeid throws, and the run leaves no trace', () => {
     const store = memoryStore(); const { records, db } = store;
-    const carried: Fact = JSON.parse('{"id":"run_00000000000000000000000001","task":{"tab":"w1:t1","key":"t1"},"section":"done","text":"x","why":null,"ref":null,"agent":null,"anchor":null,"firstAt":100,"lastAt":100,"state":"open","closedWhy":null,"closedAt":null,"language":"en"}');
-    assert.throws(() => { records.recordRun({ tab: tabId('w1:t1'), at: instant(100), cause: 'requested', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0.25), error: null, lanes: [cursor('w1:p1')], tasks: [shape('t1', ['w1:p1'])], changed: [carried], refused: [] }); }, /is not a fact id/);
+    const carried: Fact = JSON.parse('{"id":"run_00000000000000000000000001","task":{"scope":"w1:t1","key":"t1"},"section":"done","text":"x","why":null,"ref":null,"agent":null,"anchor":null,"firstAt":100,"lastAt":100,"state":"open","closedWhy":null,"closedAt":null,"language":"en"}');
+    assert.throws(() => { records.recordRun({ scope: tabId('w1:t1'), at: instant(100), cause: 'requested', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0.25), error: null, sessions: [cursor('w1:p1')], tasks: [shape('t1', ['w1:p1'])], changed: [carried], refused: [] }); }, /is not a fact id/);
     for (const table of ['run', 'task', 'fact']) {
         assert.equal((db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n, 0, table);
     }
@@ -139,7 +139,7 @@ test('a writer\'s run closes the now facts it did not carry forward as supersede
     const store = memoryStore(); const { ledger } = store;
     recordOps(store, run({ at: instant(100), ops: nowAdd('Reading the logs') }));
     recordOps(store, run({ at: instant(200), ops: nowAdd('Wiring the client') }));
-    const states = (): string[] => storeRead(ledger.allOf({ tab: tabIdOf('w1:t1'), key: textOf('t1') })).map((fact) => `${fact.text}:${fact.state}:${fact.closedWhy}:${fact.closedAt}`);
+    const states = (): string[] => storeRead(ledger.allOf({ scope: tabIdOf('w1:t1'), key: textOf('t1') })).map((fact) => `${fact.text}:${fact.state}:${fact.closedWhy}:${fact.closedAt}`);
     assert.deepEqual(states(), ['Reading the logs:closed:superseded:200', 'Wiring the client:open:null:null']);
     recordOps(store, run({ at: instant(300), ops: [] }));
     assert.deepEqual(states(), ['Reading the logs:closed:superseded:200', 'Wiring the client:open:null:null']);

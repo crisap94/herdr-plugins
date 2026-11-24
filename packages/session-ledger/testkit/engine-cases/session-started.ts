@@ -112,7 +112,7 @@ export const STA_CASES: readonly Case<EngineWorld, Engine>[] = [
             world.setLocate((followedSession) => ({ kind: 'answer', value: { kind: 'located', source: followedSession.session ?? followedSession.key } }));
             world.setRead({
                 kind: 'answer',
-                value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorAt(5), tail: null }, grew: grew(true) },
+                value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, harnessRecap: null, notes: [], position: { cursor: cursorAt(5), tail: null }, grew: grew(true) },
             });
             engine.follow(TAB, followed(key('a'), { session: session('s1') }));
             await engine.refresh(TAB);

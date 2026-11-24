@@ -41,7 +41,7 @@ const listed = (value: readonly Fact[] | Unknown): readonly Fact[] => {
     throw new Error('the read was unknown');
 };
 
-const taskA = { tab: tabIdOf('tab-1'), key: textOf('a') };
+const taskA = { scope: tabIdOf('tab-1'), key: textOf('a') };
 
 test('a directory is the path it was given', () => {
     assert.equal(String(directory('/work')), '/work');
@@ -166,7 +166,7 @@ test('the world hands out a manual clock, counter ids, and captures the log and 
     assert.deepEqual(world.events(), [event]);
 });
 
-const recordedOf = (changed: readonly Fact[]): RecordedRun => ({ tab: tabId('tab-1'), at: instant(9), cause: 'requested', backend: null, language: text('en'), costUsd: usd(0), error: null, lanes: [], tasks: [], changed, refused: [] });
+const recordedOf = (changed: readonly Fact[]): RecordedRun => ({ scope: tabId('tab-1'), at: instant(9), cause: 'requested', backend: null, language: text('en'), costUsd: usd(0), error: null, sessions: [], tasks: [], changed, refused: [] });
 
 test('recordRun keeps the changed facts it is given, and allOf returns them', () => {
     const store = createMemoryStore();

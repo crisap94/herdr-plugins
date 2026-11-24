@@ -14,7 +14,7 @@ import { FRESH_ITEMS, FRESH_SEED, guardOf, overlapOf } from '../lib/fresh.ts';
 import { brand } from '../../packages/session-ledger/src/recap/domain/brand.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
 import type { Text } from '../../packages/session-ledger/src/recap/domain/text.ts';
-import { materialOf } from './prompt.ts';
+import { inputOfStored, materialOf, type StoredInput } from './prompt.ts';
 import { factIdOf } from '../lib/brands.ts';
 
 const textOf = brand<string, 'Text'>;
@@ -70,11 +70,13 @@ interface Row {
     readonly fresh?: { readonly seed: string; readonly traps: readonly Trap[] };
 }
 
+type StoredRow = Omit<Row, 'input'> & { readonly input: StoredInput };
+
 const PLANTS = ['stale', 'lookalike', 'compaction', 'update', 'duplicate', 'easy', 'answered-trap', 'long-evidence', 'add-bait', 'near-pair'];
 const SIZES = ['small', 'medium', 'large'];
 const path = process.argv[2];
 const file = path === undefined ? new URL('./dataset.jsonl', import.meta.url) : resolve(path);
-const parseRows = (text: string): Row[] => text.split('\n').filter((line) => line.trim() !== '').map((line) => JSON.parse(line) as Row);
+const parseRows = (text: string): Row[] => text.split('\n').filter((line) => line.trim() !== '').map((line) => { const row = JSON.parse(line) as StoredRow; return { ...row, input: inputOfStored(row.input) }; });
 const rows = parseRows(readFileSync(file, 'utf8'));
 // The fresh set is the file named dataset-fresh.jsonl. Its rows must all carry the fresh key, and no other file may.
 const fresh = (typeof file === 'string' ? file : file.pathname).endsWith('/dataset-fresh.jsonl');

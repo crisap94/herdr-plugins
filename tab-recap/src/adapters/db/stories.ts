@@ -46,10 +46,10 @@ export class StoriesRepository implements Stories {
         return writeTx(this.db, () => {
             const latest = this.orm.select({ id: runs.id }).from(runs)
                 .innerJoin(chapter, eq(chapter.id, runs.chapterId))
-                .where(eq(chapter.tabId, run.task.tab))
+                .where(eq(chapter.tabId, run.task.scope))
                 .orderBy(desc(runs.id)).limit(1).get();
             if (latest === undefined) {
-                throw new Error(`${run.task.tab} has no run: a curator has nothing to attribute its merges to`);
+                throw new Error(`${run.task.scope} has no run: a curator has nothing to attribute its merges to`);
             }
             const id = typeIdOf('run', latest.id);
             if (!isCuratedRunId(id)) {
@@ -59,7 +59,7 @@ export class StoriesRepository implements Stories {
             const applied = this.ledger.apply(ref, [...change.merges, ...(change.reconciled ?? [])]);
             if (change.story !== null) {
                 this.orm.update(tasks).set({ storyText: change.story, storyAt: run.at })
-                    .where(and(eq(tasks.tabId, run.task.tab), eq(tasks.key, run.task.key))).run();
+                    .where(and(eq(tasks.tabId, run.task.scope), eq(tasks.key, run.task.key))).run();
             }
             return applied;
         });

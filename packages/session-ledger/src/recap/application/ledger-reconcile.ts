@@ -134,7 +134,7 @@ export async function reconcileTask(parts: ReconcileParts, task: ReconcileTask):
     if (gated.kept.length === 0) {
         return;
     }
-    const applied = parts.stories.keep({ task: { tab: task.tab, key: task.key }, at: clock.now, language: parts.language }, { story: null, merges: [], reconciled: changes(gated.kept) });
+    const applied = parts.stories.keep({ task: { scope: task.tab, key: task.key }, at: clock.now, language: parts.language }, { story: null, merges: [], reconciled: changes(gated.kept) });
     applied.refused.forEach((one) => { parts.log(textOf(`${where}: the ledger refused ${one.op.op} — ${one.reason}`)); });
     parts.log(textOf(`${where}: reconciled ${applied.changed.length} facts`));
 }
@@ -209,14 +209,14 @@ export class Reconciling {
         const { deps } = this;
         const [key, now] = [textOf(`${tab}\u0000${task.id}`), deps.clock()];
         const writer = deps.writer();
-        const facts = deps.ledger.allOf({ tab, key: task.id });
+        const facts = deps.ledger.allOf({ scope: tab, key: task.id });
         if (deps.tail === undefined || writer === null || !facts.some((fact) => fact.state === 'open') || !this.wanted(key, why, tab, now)) {
             return brand<boolean, 'Ran'>(false);
         }
         this.lastRun.set(key, now);
         this.running.add(key);
         try {
-            const mine = lanes.filter((seat) => task.lanes.length === 0 || task.lanes.some((member) => member === seat.pane));
+            const mine = lanes.filter((seat) => task.lanes.length === 0 || task.lanes.some((member) => member === seat.key));
             const tail = await deps.tail(mine);
             const parts = { writer, stories: deps.stories, language: deps.language(), rubric: deps.rubric, clock: { now, zone: deps.zone() }, ...(deps.repair === undefined ? {} : { repair: deps.repair }), log: (line: Text): void => { deps.log(line); } };
             await reconcileTask(parts, { tab, key: task.id, name: task.name, facts, tail, agents: mine.flatMap((lane) => [lane.agent, lane.title ?? '']).filter((name) => name !== '').map((name) => textOf(name.toLowerCase())) });

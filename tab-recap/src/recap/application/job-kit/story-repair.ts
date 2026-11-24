@@ -54,7 +54,7 @@ export async function storyAnswerOf(deps: ReconcilingDeps, round: StoryRound): P
     if (round.sent.kind === 'err' || said.kind === 'err') {
         return round.first;
     }
-    const where = `curator ${round.run.task.tab} ${round.run.task.key}`;
+    const where = `curator ${round.run.task.scope} ${round.run.task.key}`;
     deps.log(must(parseText(`${where}: story repair — ${checked.refused.length} refused`)));
     return acceptedOf(round, await round.writer.write(storyRepair(round.sent.value, said.value, checked)));
 }

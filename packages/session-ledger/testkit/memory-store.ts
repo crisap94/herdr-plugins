@@ -95,10 +95,10 @@ const tasksOf = (facts: readonly Fact[], run: RecordedRun): readonly RecapTask[]
     run.tasks.map((task) => ({
         id: task.id,
         name: task.name,
-        lanes: task.lanes,
+        sessions: task.sessions,
         sections: null,
         markdown: textOf(facts
-            .filter((fact) => fact.state === 'open' && sameTask(fact.task, { tab: run.tab, key: task.id }))
+            .filter((fact) => fact.state === 'open' && sameTask(fact.task, { scope: run.scope, key: task.id }))
             .map((fact) => fact.text)
             .join('\n')),
     }));
@@ -120,9 +120,9 @@ const recordsOf = (state: State): Records => ({
         if (state.recordFailures > 0) { state.recordFailures -= 1; throw new Error('scripted recordRun failure'); }
         state.stored = keptOf(state.stored, run.changed);
         state.refused.push(...run.refused);
-        state.recaps.set(run.tab, {
-            tab: run.tab,
-            lanes: run.lanes,
+        state.recaps.set(run.scope, {
+            scope: run.scope,
+            sessions: run.sessions,
             tasks: tasksOf(state.stored, run),
             at: run.at,
             running: running(false),
@@ -131,18 +131,18 @@ const recordsOf = (state: State): Records => ({
             costUsd: run.costUsd,
             language: run.language,
         });
-        state.lastRuns.set(run.tab, { at: run.at, cause: run.cause });
-        keepMarks(state, run.tab, run.marks);
+        state.lastRuns.set(run.scope, { at: run.at, cause: run.cause });
+        keepMarks(state, run.scope, run.marks);
     },
     failRun: (run) => {
         state.log.push('failRun');
-        state.recaps.set(run.tab, { ...ensure(state, run.tab, run.at), lanes: run.lanes, running: running(false), backend: run.backend, error: run.error });
-        keepMarks(state, run.tab, run.marks);
+        state.recaps.set(run.scope, { ...ensure(state, run.scope, run.at), sessions: run.sessions, running: running(false), backend: run.backend, error: run.error });
+        keepMarks(state, run.scope, run.marks);
     },
     advance: (move) => {
         state.log.push('advance');
-        state.recaps.set(move.tab, { ...ensure(state, move.tab, move.at), lanes: move.lanes, error: move.error });
-        keepMarks(state, move.tab, move.marks);
+        state.recaps.set(move.scope, { ...ensure(state, move.scope, move.at), sessions: move.sessions, error: move.error });
+        keepMarks(state, move.scope, move.marks);
     },
 });
 
@@ -160,12 +160,12 @@ const factsOf = (state: State): FactStore => ({
     allOf: (task: TaskId) => read(state, 'allOf', () => state.stored.filter((fact) => sameTask(fact.task, task)).toSorted((a, b) => a.firstAt - b.firstAt)),
     keysOf: (scope: ScopeId) =>
         read(state, 'keysOf', () =>
-            [...new Set(state.stored.filter((fact) => fact.task.tab === tabIdOf(scope)).map((fact) => fact.task.key))].toSorted(),
+            [...new Set(state.stored.filter((fact) => fact.task.scope === tabIdOf(scope)).map((fact) => fact.task.key))].toSorted(),
         ),
     historyOf: (scope: ScopeId, key: SessionKey) => {
         state.log.push('historyOf');
         return state.stored
-            .filter((fact) => fact.task.tab === tabIdOf(scope) && fact.task.key === textOf(key))
+            .filter((fact) => fact.task.scope === tabIdOf(scope) && fact.task.key === textOf(key))
             .toSorted((a, b) => b.lastAt - a.lastAt)
             .slice(0, HISTORY_LIMIT)
             .map(historyOf);
@@ -174,9 +174,9 @@ const factsOf = (state: State): FactStore => ({
 
 const seedOf = (state: State, parts: StoreParts): void => {
     if (parts.recap !== undefined && parts.recap !== null) {
-        state.recaps.set(parts.recap.tab, parts.recap);
+        state.recaps.set(parts.recap.scope, parts.recap);
         if (parts.lastRun !== undefined && parts.lastRun !== null) {
-            state.lastRuns.set(parts.recap.tab, parts.lastRun);
+            state.lastRuns.set(parts.recap.scope, parts.lastRun);
         }
     }
 };
@@ -205,7 +205,7 @@ export function createMemoryStore(parts: StoreParts = {}): MemoryStore {
         failRecords: (times: number) => { state.recordFailures = times; },
         seed: (next: Recap | null, nextFacts: readonly Fact[]) => {
             if (next !== null) {
-                state.recaps.set(next.tab, next);
+                state.recaps.set(next.scope, next);
             }
             state.stored = nextFacts;
         },

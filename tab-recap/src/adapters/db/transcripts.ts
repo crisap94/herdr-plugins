@@ -47,7 +47,7 @@ export class TranscriptStore {
     attach(tab: ScopeId, lanes: readonly SessionCursor[], at: Instant): readonly TranscriptMove[] {
         this.orm.update(transcript).set({ attached: 0 }).where(eq(transcript.tabId, tab)).run();
         return lanes.map((lane, position) => {
-            const pane = must(parsePaneId(lane.pane));
+            const pane = must(parsePaneId(lane.key));
             const cursor = must(parseCount(lane.cursor));
             const was = this.orm.select({ cursor: transcript.cursor }).from(transcript)
                 .where(and(eq(transcript.tabId, tab), eq(transcript.pane, pane), eq(transcript.source, lane.transcript))).get() ?? null;
@@ -57,7 +57,7 @@ export class TranscriptStore {
                     .orderBy(desc(transcript.firstSeen), desc(transcript.id)).limit(1).get() ?? null
                 : null;
             const saved = this.orm.insert(transcript)
-                .values({ id: ids.next(), tabId: tab, pane, agent: lane.agent, source: lane.transcript, attached: 1, position, cursor, tail: lane.tail, title: lane.title, lastPrompt: lane.lastPrompt, claudeNote: lane.claudeRecap, firstSeen: at })
+                .values({ id: ids.next(), tabId: tab, pane, agent: lane.agent, source: lane.transcript, attached: 1, position, cursor, tail: lane.tail, title: lane.title, lastPrompt: lane.lastPrompt, claudeNote: lane.harnessRecap, firstSeen: at })
                 .onConflictDoUpdate({
                     target: [transcript.tabId, transcript.pane, transcript.source],
                     set: {

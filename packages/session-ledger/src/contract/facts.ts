@@ -16,7 +16,7 @@ export type FactId = Brand<string, 'FactId'>;
 export type RunId = Brand<string, 'RunId'>;
 
 export interface TaskId {
-    readonly tab: ScopeId;
+    readonly scope: ScopeId;
     readonly key: Text;
 }
 

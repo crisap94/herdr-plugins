@@ -21,12 +21,12 @@ import { viewRecord } from '#test/support/tab-view-records.ts';
 import { uncheckedTabId } from '#src/recap/domain/ids.ts';
 
 const MIN = 60_000;
-const T1 = { tab: tabIdOf('w1:t1'), key: textOf('t1') };
+const T1 = { scope: tabIdOf('w1:t1'), key: textOf('t1') };
 const view: TabViewRecord = viewRecord({ tab: 'w1:t1', column: null, at: NOW, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'orchestrator', cwd: null, context: { tokens: countOf(100_000), window: countOf(200_000), source: 'agent' }, web: { base: 'https://git.example/acme/shop', forge: 'gitlab', branch: 'main' } }] });
 
 function setup(ledger = new MemoryLedger().seed(fact('f1', 'now', 'Running the tests', NOW - 20 * MIN))): { model: ExpandedModel; ledger: MemoryLedger; store: ReturnType<typeof memoryStore>; asked: string[] } {
     const store = memoryStore();
-    seed(store, { ...blankRecap(tabId('w1:t1')), at: instant(NOW - 3 * 60 * MIN), lanes: [cursor('w1:p1')], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')], sections: null, markdown: textOf('## Goal\n- x') }] });
+    seed(store, { ...blankRecap(tabId('w1:t1')), at: instant(NOW - 3 * 60 * MIN), sessions: [cursor('w1:p1')], tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')], sections: null, markdown: textOf('## Goal\n- x') }] });
     const asked: string[] = [];
     const deps: ExpandedDeps = { records: store.records, ledger, stories: store.stories, session: store.session, boundaries: store.boundaries, requests: { requestCurate: (tab) => { asked.push(tab); } }, edits: () => [{ path: textOf('src/a.ts'), count: countOf(3) }] };
     return { model: new ExpandedModel(deps), ledger, store, asked };
@@ -35,7 +35,7 @@ function setup(ledger = new MemoryLedger().seed(fact('f1', 'now', 'Running the t
 test('the view is built from the store alone: the task\'s facts, the session facts from the store and the lanes, the lanes\' webs', () => {
     const { model, store } = setup();
     assert.equal(model.read(tabId('w1:t1'), view, instant(NOW)).session.runs, null, 'the imported run is not a turn');
-    recordOps(store, { tab: tabId('w1:t1'), at: instant(NOW - MIN), cause: 'turn-ended', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')] }], ops: [] });
+    recordOps(store, { scope: tabId('w1:t1'), at: instant(NOW - MIN), cause: 'turn-ended', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, sessions: [cursor('w1:p1')], tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')] }], ops: [] });
     const data = model.read(tabId('w1:t1'), view, instant(NOW));
     assert.deepEqual(data.tasks.map((task) => [task.name, task.facts.map((one) => one.text), task.story]), [['', ['Running the tests'], null]]);
     assert.deepEqual(data.session.agents, [{ label: 'claude · orchestrator', share: 50, window: 200_000 }]);

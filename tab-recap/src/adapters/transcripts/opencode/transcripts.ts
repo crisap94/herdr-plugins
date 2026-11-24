@@ -116,7 +116,7 @@ export class OpencodeTranscripts implements SessionReader {
         const prompts = entries.filter((entry) => entry.role === 'user');
         const title = store.sessionTitle(session);
         return {
-            kind: 'chunk', entries, title: title === null ? null : textOf(title), lastPrompt: prompts.at(-1)?.text ?? null, claudeRecap: null, notes: read.flatMap((one) => one.notes), marks: read.flatMap((one) => one.marks),
+            kind: 'chunk', entries, title: title === null ? null : textOf(title), lastPrompt: prompts.at(-1)?.text ?? null, harnessRecap: null, notes: read.flatMap((one) => one.notes), marks: read.flatMap((one) => one.marks),
             position: { cursor: cursorOf(Math.max(was.cursor, ...messages.map((message) => message.timeUpdated))), tail: null }, grew: grewOf(messages.length > 0),
         };
     }
