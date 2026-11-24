@@ -15,7 +15,7 @@ import { must, type Result } from '#src/protocol/result.ts';
 
 const valueOf = <T>(read: Result<T, ParseFailure>): T | null => (read.kind === 'ok' ? read.value : null);
 
-const innerText = (raw: ScopeId | SessionKey | HarnessKind | LedgerSessionId | ScopeId): NonEmptyText | null => valueOf(parseNonEmptyText(raw));
+const innerText = (raw: ScopeId | SessionKey | HarnessKind | LedgerSessionId): NonEmptyText | null => valueOf(parseNonEmptyText(raw));
 
 export const tabOf = (scope: ScopeId): ScopeId | null => {
     const text = innerText(scope);

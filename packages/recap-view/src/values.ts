@@ -42,10 +42,12 @@ export function parseTokens(input: unknown): Tokens {
 
 const isPaneId = (input: unknown): input is SessionKey => typeof input === 'string';
 
-export function parsePaneId(input: unknown): SessionKey {
+export function parseSessionKey(input: unknown): SessionKey {
     if (isPaneId(input)) return input;
     throw new TypeError('PaneId is a string');
 }
+
+export const parsePaneId = parseSessionKey;
 
 const isAgentName = (input: unknown): input is AgentName => typeof input === 'string';
 

@@ -1,5 +1,5 @@
-import type { HarnessKind, Brand, Instant, SessionKey, Text, Unknown, Usd } from './kernel.ts';
-import type { Directory } from './ids.ts';
+import type { Brand, Instant, Text, Unknown, Usd } from './kernel.ts';
+import type { Directory, HarnessKind, SessionKey } from './ids.ts';
 import type { ClosedWhy, Operation, Section } from './facts.ts';
 import type { AgentNote, Entry } from './session.ts';
 import type { CloseEvidence, HiddenCounts } from './settings.ts';

@@ -26,7 +26,7 @@ export function placementOf(candidate: Candidate): Placement {
     };
 }
 
-export function parsePaneId(input: unknown): Result<SessionKey, ParseFailure> {
+export function parseSessionKey(input: unknown): Result<SessionKey, ParseFailure> {
     const text = parseNonEmptyText(input);
     if (text.kind === 'err') {
         return text;
@@ -34,7 +34,7 @@ export function parsePaneId(input: unknown): Result<SessionKey, ParseFailure> {
     return ok(brand<string, 'SessionKey'>(text.value));
 }
 
-export function parseTabId(input: unknown): Result<ScopeId, ParseFailure> {
+export function parseScopeId(input: unknown): Result<ScopeId, ParseFailure> {
     const text = parseNonEmptyText(input);
     if (text.kind === 'err') {
         return text;
@@ -42,7 +42,7 @@ export function parseTabId(input: unknown): Result<ScopeId, ParseFailure> {
     return ok(brand<string, 'ScopeId'>(text.value));
 }
 
-export function parseAgentKind(input: unknown): Result<HarnessKind, ParseFailure> {
+export function parseHarnessKind(input: unknown): Result<HarnessKind, ParseFailure> {
     const text = parseNonEmptyText(input);
     if (text.kind === 'err') {
         return text;
@@ -65,3 +65,7 @@ export function parseCompactionId(input: unknown): Result<CompactionId, ParseFai
     }
     return ok(brand<string, 'CompactionId'>(text.value));
 }
+
+export const parsePaneId = parseSessionKey;
+export const parseTabId = parseScopeId;
+export const parseAgentKind = parseHarnessKind;

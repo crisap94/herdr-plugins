@@ -1,4 +1,5 @@
-import type { HarnessKind, Brand, Count, Duration, GateName, Instant, SessionKey, ScopeId, Text, Unknown, Usd } from './kernel.ts';
+import type { Brand, Count, Duration, GateName, Instant, Text, Unknown, Usd } from './kernel.ts';
+import type { HarnessKind, ScopeId, SessionKey } from './ids.ts';
 import type { Cursor, RecapCause, SourcePath } from './session.ts';
 import type { Fact, HistoryFact, Refusal, TaskId } from './facts.ts';
 

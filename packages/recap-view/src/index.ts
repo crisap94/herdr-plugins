@@ -72,6 +72,7 @@ export {
     parseFromScreen,
     parseInstant,
     parsePaneId,
+    parseSessionKey,
     parseProse,
     parseQueued,
     parseRepoName,

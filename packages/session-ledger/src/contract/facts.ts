@@ -1,4 +1,5 @@
-import type { Brand, Instant, ScopeId, Text } from './kernel.ts';
+import type { Brand, Instant, Text } from './kernel.ts';
+import type { ScopeId } from './ids.ts';
 
 export interface HistoryFact {
     readonly section: Section;

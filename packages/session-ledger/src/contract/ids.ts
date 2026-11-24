@@ -1,7 +1,9 @@
 import { brand } from '../recap/domain/brand.ts';
-import { err, ok, type Brand, type HarnessKind, type ScopeId, type SessionKey, type ParseFailure, type Result } from './kernel.ts';
+import { err, ok, type Brand, type ParseFailure, type Result } from './kernel.ts';
 
-export type { ScopeId, SessionKey, HarnessKind } from './kernel.ts';
+export type ScopeId = Brand<string, 'ScopeId'>;
+export type SessionKey = Brand<string, 'SessionKey'>;
+export type HarnessKind = Brand<string, 'HarnessKind'>;
 export type SessionId = Brand<string, 'SessionId'>;
 export type RestoreText = Brand<string, 'RestoreText'>;
 export type Directory = Brand<string, 'Directory'>;

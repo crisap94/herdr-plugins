@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Break, CompactionRow, Row, SessionRecap } from '@stateforge-labs/recap-view';
-import { parseAgentLabel, parseAgentName, parseBranchName, parseCurating, parseDirectory, parseDuration, parseFilePath, parseFromScreen, parseInstant, parsePaneId, parseProse, parseQueued, parseRepoName, parseRunning, parseTaskName, parseTitle, parseTokens, parseWebBase } from '@stateforge-labs/recap-view';
+import { parseAgentLabel, parseAgentName, parseBranchName, parseCurating, parseDirectory, parseDuration, parseFilePath, parseFromScreen, parseInstant, parsePaneId, parseSessionKey, parseProse, parseQueued, parseRepoName, parseRunning, parseTaskName, parseTitle, parseTokens, parseWebBase } from '@stateforge-labs/recap-view';
 import type { TextColumnView, TextExpandedView } from '@stateforge-labs/recap-view/unstable/model.ts';
 import { figuresOf, stageClockOf, stageLine } from '@stateforge-labs/recap-view/unstable/compaction-stage.ts';
 import { EXPANDED_TWO_COLUMNS, columnWidth, expanded } from '@stateforge-labs/recap-view/unstable/expanded.ts';
@@ -125,7 +125,7 @@ test('each view-model parser passes its carrier and refuses another', () => {
         assert.equal(parse(2), 2);
         assert.throws(() => parse('2'), TypeError);
     }
-    for (const parse of [parsePaneId, parseAgentLabel, parseAgentName, parseTitle, parseProse, parseTaskName, parseDirectory, parseFilePath, parseRepoName, parseBranchName, parseWebBase, parseWords]) {
+    for (const parse of [parsePaneId, parseSessionKey, parseAgentLabel, parseAgentName, parseTitle, parseProse, parseTaskName, parseDirectory, parseFilePath, parseRepoName, parseBranchName, parseWebBase, parseWords]) {
         assert.equal(parse('a'), 'a');
         assert.throws(() => parse(2), TypeError);
     }
