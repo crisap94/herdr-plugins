@@ -181,8 +181,8 @@ test('a database newer than the code opens read-only, is not written, and says w
         rmSync(`${path}-wal`, { force: true });
         writeFileSync(`${path}.v1.bak`, 'a copy');
         const opened = openDatabase(fsPathOf(path));
-        if (opened.kind !== 'newer-db') {
-            assert.fail('a database written by a newer plugin opens as newer-db');
+        if (opened.kind !== 'newer-store') {
+            assert.fail('a database written by a newer plugin opens as newer-store');
         }
         assert.deepEqual([opened.found, opened.known], [MIGRATIONS.length + 1, MIGRATIONS.length]);
         assert.throws(() => { opened.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('x', 1, 1)"); }, /readonly/i);

@@ -119,15 +119,15 @@ test('R5: the CLI on a current store writes a request that the daemon takes', as
     });
 });
 
-test('R6: the CLI on a store newer than its code reports newer-db with today\'s line', async () => {
+test('R6: the CLI on a store newer than its code reports newer-store with today\'s line', async () => {
     await withState((_state, file) => {
         behind(file);
         const db = connect(file);
         db.exec(`PRAGMA user_version = ${LATEST + 1}`);
         db.close();
         const opened = openCliStore();
-        if (opened.kind !== 'newer-db') {
-            assert.fail(`expected newer-db, got ${opened.kind}`);
+        if (opened.kind !== 'newer-store') {
+            assert.fail(`expected newer-store, got ${opened.kind}`);
         }
         assert.equal(opened.found, LATEST + 1);
         assert.equal(opened.known, LATEST);

@@ -4,6 +4,7 @@ import {
     openForRole as openRawForRole,
     type NewerDatabase as RawNewerDatabase,
     type Opened as RawOpened,
+    type StoreEvent,
     type StaleDatabase as RawStaleDatabase,
 } from '@stateforge-labs/session-ledger-sqlite/unstable/open.ts';
 import { MIGRATIONS } from './schema/index.ts';
@@ -15,7 +16,7 @@ import { fsPathOf, type FsPath } from '#src/recap/domain/fs-path.ts';
 export type Role = 'owner' | 'reader';
 
 export interface NewerDatabase {
-    readonly kind: 'newer-db';
+    readonly kind: 'newer-store';
     readonly db: Database;
     readonly found: Count;
     readonly known: Count;
@@ -32,13 +33,14 @@ export interface StaleDatabase {
 export interface ReadyDatabase {
     readonly kind: 'ready';
     readonly db: Database;
+    readonly events: readonly StoreEvent[];
 }
 
 export type Opened = ReadyDatabase | NewerDatabase;
 
 function newerOf(newer: RawNewerDatabase): NewerDatabase {
     return {
-        kind: 'newer-db',
+        kind: 'newer-store',
         db: newer.db,
         found: countOf(newer.found),
         known: countOf(newer.known),
@@ -47,7 +49,7 @@ function newerOf(newer: RawNewerDatabase): NewerDatabase {
 }
 
 function openedOf(raw: RawOpened): Opened {
-    return raw.kind === 'ready' ? { kind: 'ready', db: raw.db } : newerOf(raw);
+    return raw.kind === 'ready' ? { kind: 'ready', db: raw.db, events: raw.events } : newerOf(raw);
 }
 
 function staleOf(stale: RawStaleDatabase): StaleDatabase {

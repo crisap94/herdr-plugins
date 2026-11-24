@@ -11,10 +11,10 @@ export type CliOpened = Store | NewerDatabase | StaleDatabase;
 export const openCliStore = (): CliOpened => openStoreAt(databaseFile(stateDirectory()), { closedDays: loadSettings().closedLaneDays }, 'reader');
 
 export const notReadyText = (opened: NewerDatabase | StaleDatabase, messages: Messages): Text =>
-    must(parseText(opened.kind === 'newer-db' ? messages.database.newer(opened.backup === null ? null : must(parseText(opened.backup))) : messages.database.stale(opened.found, opened.known)));
+    must(parseText(opened.kind === 'newer-store' ? messages.database.newer(opened.backup === null ? null : must(parseText(opened.backup))) : messages.database.stale(opened.found, opened.known)));
 
 export function release(opened: NewerDatabase | StaleDatabase): void {
-    if (opened.kind === 'newer-db') {
+    if (opened.kind === 'newer-store') {
         opened.db.close();
         return;
     }

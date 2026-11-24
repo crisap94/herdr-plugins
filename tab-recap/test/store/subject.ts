@@ -10,13 +10,14 @@ import { openDatabase, openForRole, type Opened, type StaleDatabase } from '#src
 import { must } from '@stateforge-labs/session-ledger';
 import { parseFsPath, fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { versionOf } from '@stateforge-labs/session-ledger-sqlite/unstable/migrate.ts';
+import type { StoreEvent } from '@stateforge-labs/session-ledger-sqlite/unstable/open.ts';
 
 const handles = new WeakMap<ReadyResult, Database>();
 
-const readyOver = (db: Database): ReadyResult => {
+const readyOver = (db: Database, events: readonly StoreEvent[]): ReadyResult => {
     const result: ReadyResult = {
         kind: 'ready',
-        events: null,
+        events,
         exec: (sql: string) => {
             db.exec(sql);
         },
@@ -41,9 +42,9 @@ const newerOver = (db: Database, found: number, known: number, backup: string | 
 
 const openedOver = (opened: Opened | StaleDatabase): OpenResult => {
     if (opened.kind === 'ready') {
-        return readyOver(opened.db);
+        return readyOver(opened.db, opened.events);
     }
-    if (opened.kind === 'newer-db') {
+    if (opened.kind === 'newer-store') {
         return newerOver(opened.db, opened.found, opened.known, opened.backup);
     }
     return { kind: 'stale', found: opened.found, known: opened.known, close: opened.close };

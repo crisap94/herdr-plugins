@@ -25,7 +25,7 @@ export async function openStateAt(root: Directory, notifier: NotifierPort, log: 
     const version = codeVersion();
     const say = parseLineSink.bind(undefined, log);
     const store = openStoreAt(databaseFile(root), { daemonVersion: version, log: say, closedDays: loadSettings().closedLaneDays });
-    if (store.kind === 'newer-db') {
+    if (store.kind === 'newer-store') {
         store.db.close();
         return refuse(notifier, log, parseLine(`tab-recap: ${messagesOf().database.newer(store.backup === null ? null : must(parseText(store.backup)))}`));
     }
