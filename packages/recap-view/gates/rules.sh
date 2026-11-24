@@ -8,8 +8,9 @@ setting() { bun -p "const v = require('./gates/config.json')['$1']; Array.isArra
 CONTEXT="$(setting context)"
 ALLOW="$(setting vocabularyAllow)"
 TREE=""
-for folder in $(setting source); do [ -d "$folder" ] && TREE="$TREE $folder"; done
-[ -n "$TREE" ] || { echo "rules: 3 — NOT COVERED: no folder of gates/config.json source exists" >&2; exit 3; }
+SCAN="$(setting rulesTree)"; [ -n "$SCAN" ] || SCAN="$(setting source)"
+for folder in $SCAN; do [ -d "$folder" ] && TREE="$TREE $folder"; done
+[ -n "$TREE" ] || { echo "rules: 3 — NOT COVERED: no folder of gates/config.json rulesTree or source exists" >&2; exit 3; }
 
 failures=0
 fail() { echo "  FAIL  $*"; failures=$((failures + 1)); }

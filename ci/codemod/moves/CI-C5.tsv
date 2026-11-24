@@ -1,0 +1,38 @@
+text	bash ci/lint.sh	bash gates/run.sh lint	.coderabbit.yaml
+text	bash ci/test.sh	bash gates/run.sh test	.coderabbit.yaml
+text	and lint.sh asserts	and gates/run.sh lint asserts	.coderabbit.yaml
+text	bash ci/lint.sh	bash gates/run.sh lint	.github/pull_request_template.md
+text	bash ci/test.sh	bash gates/run.sh test	.github/pull_request_template.md
+text	bash ci/lint.sh	bash gates/run.sh lint	.gitlab/merge_request_templates/Default.md
+text	bash ci/test.sh	bash gates/run.sh test	.gitlab/merge_request_templates/Default.md
+text	its own `ci/lint.sh` and `ci/test.sh`	its own `gates/run.sh` (lint and test)	CONTRIBUTING.md
+text	'tab-recap', 'ci', 'test.sh'	'tab-recap', 'gates', 'run.sh'	ci/test/pipeline-rules.test.ts
+text	"tab-recap/ci/{lint.sh,test.sh}"	"tab-recap/gates/run.sh"	ci/tracks.json
+text	bash ci/lint.sh	bash gates/run.sh lint	openspec/changes/canonical-job-key/tasks.md
+text	bash ci/test.sh	bash gates/run.sh test	openspec/changes/canonical-job-key/tasks.md
+text	`ci/test.sh` `bun test	`gates/test.sh` `bun test	openspec/changes/gui-port/port-spec.md
+text	`ci/test.sh` passes no	`gates/test.sh` passes no	openspec/changes/gui-port/port-spec.md
+text	bash ci/lint.sh	bash gates/run.sh lint	openspec/changes/gui-port/roadmap.md
+text	bash ci/test.sh	bash gates/run.sh test	openspec/changes/gui-port/roadmap.md
+text	bash ci/lint.sh	bash gates/run.sh lint	openspec/changes/gui-port/tasks.md
+text	bash ci/test.sh	bash gates/run.sh test	openspec/changes/gui-port/tasks.md
+text	bash ci/lint.sh	bash gates/run.sh lint	openspec/changes/tuning-defaults-measured/tasks.md
+text	bash ci/test.sh	bash gates/run.sh test	openspec/changes/tuning-defaults-measured/tasks.md
+text	bash ci/lint.sh	bash gates/run.sh lint	openspec/config.yaml
+text	bash ci/test.sh	bash gates/run.sh test	openspec/config.yaml
+text	bash ci/lint.sh	bash gates/run.sh lint	openspec/specs/tab-recap/code-comments/spec.md
+text	bash ci/lint.sh	bash gates/run.sh lint	openspec/specs/tab-recap/code-gates/spec.md
+text	by `ci/lint.sh`	by `gates/run.sh lint`	openspec/specs/tab-recap/code-gates/spec.md
+text	`ci/lint.sh` SHALL	`gates/run.sh lint` SHALL	openspec/specs/tab-recap/code-gates/spec.md
+text	bash ci/lint.sh	bash gates/run.sh lint	openspec/specs/tab-recap/engine-boundary/spec.md
+text	bash ci/test.sh	bash gates/run.sh test	openspec/specs/tab-recap/engine-boundary/spec.md
+text	bash ci/lint.sh	bash gates/run.sh lint	tab-recap/CLAUDE.md
+text	bash ci/test.sh	bash gates/run.sh test	tab-recap/CLAUDE.md
+text	bash ci/lint.sh	bash gates/run.sh lint	tab-recap/CONTRIBUTING.md
+text	bash ci/test.sh	bash gates/run.sh test	tab-recap/CONTRIBUTING.md
+text	`lint.sh` checks	`gates/run.sh lint` checks	tab-recap/CONTRIBUTING.md
+text	`ci/lint.sh`)	`gates/run.sh lint`)	tab-recap/CONTRIBUTING.md
+text	bash ci/lint.sh	bash gates/run.sh lint	tab-recap/README.md
+text	bash ci/test.sh	bash gates/run.sh test	tab-recap/README.md
+text	bash ci/lint.sh	bash gates/run.sh lint	tab-recap/package.json
+text	bash ci/test.sh	bash gates/run.sh test	tab-recap/package.json

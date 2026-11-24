@@ -17,12 +17,12 @@ Needs Bun ≥ 1.4.4 and herdr ≥ 0.9.0. Bun only, no Node fallback: the reposit
 Run both from the plugin directory before you send anything:
 
 ```bash
-bash ci/lint.sh      # ast-grep rules and their probes, the module graph (dependency-cruiser), vocabulary ↔ CONTEXT.md, the domain-type check and its ratchet, oxlint (type-aware: it is also the type check of the tree)
-bash ci/test.sh      # bun test, 30 s per-test timeout (one file: bun test test/<file>.test.ts)
+bash gates/run.sh lint      # ast-grep rules and their probes, the module graph (dependency-cruiser), vocabulary ↔ CONTEXT.md, the domain-type check and its ratchet, oxlint (type-aware: it is also the type check of the tree)
+bash gates/run.sh test      # bun test, 30 s per-test timeout (one file: bun test test/<file>.test.ts)
 bun run typecheck    # tsgo --noEmit
 ```
 
-`lint.sh` checks that every architecture rule passes on the tree **and** fires on its bad probe
+`gates/run.sh lint` checks that every architecture rule passes on the tree **and** fires on its bad probe
 (a rule that cannot fail is not a rule), that identifiers use the vocabulary, that the code
 typechecks, and that a seeded violation is rejected. Exit codes: `0` clean, `1` a finding, `3`
 could not look (a tool is missing — run `bun install`).
@@ -94,7 +94,7 @@ work on network filesystems). Its shape lives in `tab-recap/src/adapters/db/sche
   `up` is a list of SQL statements, or a function taking the database.
 - **Never change what a released migration runs** (one that is in a `tab-recap-v*` tag): a fix is a new number. Its types may
   move with the code (a released migration now types its handle as `bun:sqlite`'s `Database`). `ci/check-migrations.sh` (part of
-  `ci/lint.sh`) strips the types of the released and the current file with Bun's transpiler and fails when the code left differs,
+  `gates/run.sh lint`) strips the types of the released and the current file with Bun's transpiler and fails when the code left differs,
   or when a released file was deleted; `ci/migration-runtime-bite.sh` proves both ways.
 - **Number it exactly one above `main`'s highest** (and consecutively when a branch adds several): a gap makes a database skip the
   numbers between, and a number already taken collides with a migration that landed first. `ci/check-migrations.sh` reads
