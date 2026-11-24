@@ -1,4 +1,4 @@
-import { type DeciderPort, type DecidedAnswersResult, type Noul } from '#src/ports/decider.ts';
+import { type DeciderPort, type DecidedAnswersResult, type Question } from '#src/ports/decider.ts';
 import type { HarnessAsk, HarnessChoice, HarnessPort } from '#src/ports/harness.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
@@ -18,7 +18,7 @@ export function unfencedText(markdown: Text): Text {
     return must(parseText(trimmed));
 }
 
-export function deciderInstructions(questions: ReadonlyMap<Text, Noul>): Text {
+export function deciderInstructions(questions: ReadonlyMap<Text, Question>): Text {
     const listed = [...questions].map(([id, noul]) => `- ${id}: ${noul.instructions}\n  true when: ${noul.criteria.true}\n  false when: ${noul.criteria.false}`);
     return must(parseText([
         'The input is a JSON document describing the state of some work. Answer each question below about it, independently of the others,',
@@ -57,7 +57,7 @@ export class HarnessPortDecider implements DeciderPort {
         this.label = must(parseText(`${harness.id} · ${choice.model === '' ? 'default' : choice.model} · ${choice.effort}`));
     }
 
-    async ask(state: Text, questions: ReadonlyMap<Text, Noul>): Promise<DecidedAnswersResult> {
+    async ask(state: Text, questions: ReadonlyMap<Text, Question>): Promise<DecidedAnswersResult> {
         const call: HarnessAsk = { instructions: deciderInstructions(questions), input: state };
         const bytes = Buffer.byteLength(call.instructions) + Buffer.byteLength(call.input);
         if (this.harness.limit !== null && bytes > this.harness.limit) return unknown({ why: 'unreadable', detail: causeOf(must(parseText(`the state is too long for ${this.harness.id}`))) });

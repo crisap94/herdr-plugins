@@ -1,9 +1,9 @@
-import type { DecisionDraft, DecisionGate, DecisionLedger, DecisionMode, DecisionVerdict, SkipGate } from '#src/ports/autocompact-records.ts';
+import type { DecisionDraft, DecisionGate, DecisionLedger, DecisionMode, Verdict, SkipGate } from '#src/ports/autocompact-records.ts';
 import type { DeciderPort } from '#src/ports/decider.ts';
 import type { Ledger } from '#src/ports/ledger.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { isUnknown, saying, type Unknown } from '#src/ports/unknowable.ts';
-import { gateFrom, parseGatePercent, type GateFacts, type LaneStatusAtDecision, type AutocompactMode, type AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
+import { gateFrom, parseGatePercent, type GateFacts, type LaneStatusAtDecision, type WatchMode, type Policy } from '#src/recap/domain/autocompact.ts';
 import { tuningFrom, type CompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
 import { shareOf, type ContextUse } from '#src/recap/domain/compaction.ts';
@@ -29,7 +29,7 @@ export type Waiting = { readonly kind: 'clear' } | { readonly kind: 'waiting'; r
 interface ContextsOf { of(pane: PaneId): ContextUse | null; }
 
 export interface AutocompactDeps {
-    policy(): AutocompactPolicy;
+    policy(): Policy;
     tuning?(): CompactTuning;
     idleHold?(): IdleHold;
     decider(): DeciderPort | null;
@@ -55,7 +55,7 @@ const BALANCED = tuningFrom(() => undefined);
 export type IdleClaim = 'claimed' | 'declined';
 
 interface Judged {
-    readonly verdict: DecisionVerdict;
+    readonly verdict: Verdict;
     readonly answers: ReadonlyMap<Text, Probability>;
     readonly why: Text | null;
     readonly decider: Text | null;
@@ -74,7 +74,7 @@ interface Found {
 
 const shareCount = (use: ContextUse): Count => must(parseCount(shareOf(use)));
 
-const asksForCompaction = (mode: AutocompactMode, verdict: DecisionVerdict, effect: Effect): Asking => mode === 'on' && verdict === 'compact' && effect === 'may-act' ? 'asks' : 'holds';
+const asksForCompaction = (mode: WatchMode, verdict: Verdict, effect: Effect): Asking => mode === 'on' && verdict === 'compact' && effect === 'may-act' ? 'asks' : 'holds';
 
 
 const NO_COST = must(parseUsd(0));
@@ -109,7 +109,7 @@ function marksOf(deps: AutocompactDeps, placed: Placement): Marks {
 type Forcing = 'forced' | 'scheduled';
 
 
-export class Autocompact {
+export class SafePointWatch {
     private readonly deps: AutocompactDeps;
     private readonly considering = new Set<PaneId>();
     private readonly asked = new Map<PaneId, Instant>();
@@ -145,7 +145,7 @@ export class Autocompact {
         }
     }
 
-    private async gated(placed: Placement, policy: AutocompactPolicy, use: ContextUse, tuning: CompactTuning, forced: Forcing): Promise<Stop> {
+    private async gated(placed: Placement, policy: Policy, use: ContextUse, tuning: CompactTuning, forced: Forcing): Promise<Stop> {
         const { deps } = this;
         const { pane } = placed;
         const now = deps.now();

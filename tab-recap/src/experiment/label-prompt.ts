@@ -1,14 +1,14 @@
-import type { Noul } from '#src/ports/decider.ts';
+import type { Question } from '#src/ports/decider.ts';
 import { must } from '#src/protocol/result.ts';
 import type { FactIndex } from '#src/recap/domain/fact-index.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { Flag, Label } from './stats.ts';
 
 
-const listed = (questions: ReadonlyMap<Text, Noul>): readonly Text[] =>
+const listed = (questions: ReadonlyMap<Text, Question>): readonly Text[] =>
     [...questions].map(([id, noul]) => must(parseText(`- ${id}: ${noul.instructions}\n  1 when: ${noul.criteria.true}\n  0 when: ${noul.criteria.false}`)));
 
-export function labelInstructions(questions: ReadonlyMap<Text, Noul>): Text {
+export function labelInstructions(questions: ReadonlyMap<Text, Question>): Text {
     return must(parseText([
         'You label moments of a coding agent\'s work. The input is a JSON document with `state` (what a decider saw when the agent went idle) and `hindsight`',
         '(the operator\'s next prompt, `next_prompt`, and the first entries that followed, `following`; tool entries have an empty or short `text`).',

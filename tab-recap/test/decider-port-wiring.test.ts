@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { coverageDeciderFor, deciderFor } from '#src/daemon/deciders.ts';
 import { loadSettings } from '#src/daemon/config.ts';
-import type { DeciderPort, Noul } from '#src/ports/decider.ts';
+import type { DeciderPort, Question } from '#src/ports/decider.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import type { BackendId } from '#src/recap/domain/backend.ts';
@@ -15,7 +15,7 @@ import { documentOf, noulOf, textOf } from './fakes/decider-fixtures.ts';
 import { duration } from '#src/recap/domain/time.ts';
 
 const WORK = must(parseDirectory('/work'));
-const QUESTIONS: ReadonlyMap<Text, Noul> = new Map([[textOf('q'), noulOf('is it so?', 'yes', 'no')]]);
+const QUESTIONS: ReadonlyMap<Text, Question> = new Map([[textOf('q'), noulOf('is it so?', 'yes', 'no')]]);
 const REPLY = { model: 'jev-1.13.0', answers: { q: { noul: 0.8 } }, usage: { input_tokens: 12.5 } };
 
 interface Config {

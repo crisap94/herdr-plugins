@@ -87,7 +87,6 @@
   "./unstable/recap/application/autocompact-state.ts TURNS_SHOWN",
   "./unstable/recap/application/autocompact-state.ts OPEN_WORK_SHOWN",
   "./unstable/recap/application/autocompact-state.ts replyOf",
-  "./unstable/recap/application/autocompact.ts Autocompact",
   "./unstable/recap/domain/autocompact.ts parseCheckedFact",
   "./unstable/recap/domain/autocompact.ts unreachable",
   "./unstable/recap/domain/autocompact.ts parseGatePercent",

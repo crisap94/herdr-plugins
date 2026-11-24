@@ -1,4 +1,4 @@
-import { type DecidedAnswers, type Noul } from '#src/ports/decider.ts';
+import { type DecidedAnswers, type Question } from '#src/ports/decider.ts';
 import { parseProbability, type Probability } from '#src/recap/domain/probability.ts';
 import { parseUsd } from '#src/recap/domain/usd.ts';
 import { must } from '#src/protocol/result.ts';
@@ -19,7 +19,7 @@ const probability = (value: number): Probability => {
 export const probabilitiesOf = (answers: Readonly<Record<string, number>>): ReadonlyMap<Text, Probability> =>
     new Map(Object.entries(answers).map(([id, value]): [Text, Probability] => [textOf(id), probability(value)]));
 
-export const noulOf = (instructions: string, whenTrue: string, whenFalse: string): Noul => ({
+export const noulOf = (instructions: string, whenTrue: string, whenFalse: string): Question => ({
     instructions: textOf(instructions),
     criteria: { true: textOf(whenTrue), false: textOf(whenFalse) },
 });

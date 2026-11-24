@@ -1,11 +1,11 @@
-import type { AutocompactState } from '#src/recap/application/autocompact-state.ts';
+import type { DeciderState } from '#src/recap/application/autocompact-state.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { agentTextOf } from './hindsight.ts';
 import type { Hindsight } from './hindsight.ts';
 import { verbatimLabel } from './verbatim.ts';
 
-interface CrossCheckPoint { readonly state: AutocompactState; readonly hindsight: Hindsight }
+interface CrossCheckPoint { readonly state: DeciderState; readonly hindsight: Hindsight }
 
 type CrossCheckLabel = 0 | 1;
 

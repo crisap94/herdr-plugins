@@ -21,7 +21,7 @@ import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { MAKERS } from '#src/daemon/harness-makers.ts';
 import type { Settings } from '#src/daemon/config.ts';
-import { Autocompact } from '#src/recap/application/autocompact.ts';
+import { SafePointWatch } from '#src/recap/application/autocompact.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
@@ -186,7 +186,7 @@ async function skipOf(readers: TranscriptRegistry, placed: Lane, kind: Kind): Pr
     const decider: DeciderPort = { label: textOf('fake'), ask: () => Promise.reject(new Error('the decider is not reached when the in-flight gate stops the lane')) };
     const env = (key: string): string | undefined => (key === 'TAB_RECAP_AUTOCOMPACT_KINDS' ? kind : undefined);
     const config = { autocompact: { ...policyOf(env), mode: 'on' }, tuning: tuningOf(() => undefined) } as unknown as Settings;
-    const service: Autocompact = wireAutocompact({
+    const service: SafePointWatch = wireAutocompact({
         config: () => config, awaiting: () => Promise.resolve({ kind: 'clear' }), store, transcripts: readers,
         contexts: { of: () => ({ tokens: 620_000, window: 1_000_000, source: 'observed' }) } as unknown as LaneContexts,
         recent: { of: () => Promise.resolve([]) } as unknown as LaneRecent,

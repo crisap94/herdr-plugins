@@ -61,12 +61,12 @@ export function unreachable(value: never): never {
     throw new Error(`unexpected case: ${String(value)}`);
 }
 
-export type AutocompactMode = 'off' | 'shadow' | 'on';
+export type WatchMode = 'off' | 'shadow' | 'on';
 
 export type AutocompactPercent = Brand<number, 'AutocompactPercent'>;
 
-export interface AutocompactPolicy {
-    readonly mode: AutocompactMode;
+export interface Policy {
+    readonly mode: WatchMode;
     readonly minimum: AutocompactPercent;
     readonly ceiling: AutocompactPercent;
     readonly cooldownMs: Milliseconds;
@@ -84,9 +84,9 @@ export const CEILING_DEFAULT = STYLE_NUMBERS.balanced.ceiling;
 export const COOLDOWN_DEFAULT_MS = STYLE_NUMBERS.balanced.cooldownMs;
 export const KINDS_DEFAULT = kindsWith(REGISTERED_KINDS, 'autocompactDefault');
 
-const MODES: readonly AutocompactMode[] = ['off', 'shadow', 'on'];
+const MODES: readonly WatchMode[] = ['off', 'shadow', 'on'];
 
-export function parseAutocompactMode(raw: unknown): AutocompactMode {
+export function parseWatchMode(raw: unknown): WatchMode {
     const text = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
     return MODES.find((mode) => mode === text) ?? 'shadow';
 }
@@ -140,11 +140,11 @@ export type AutocompactSetting = 'TAB_RECAP_AUTOCOMPACT' | 'TAB_RECAP_AUTOCOMPAC
 
 export type AutocompactSettings = (key: AutocompactSetting) => Text | undefined;
 
-export function policyFrom(get: AutocompactSettings): AutocompactPolicy {
+export function policyFrom(get: AutocompactSettings): Policy {
     const style = parseAutocompactStyle(get('TAB_RECAP_AUTOCOMPACT_STYLE'));
     const minimum = parseAutocompactPercent(get('TAB_RECAP_AUTOCOMPACT_AT'), MINIMUM_DEFAULT);
     return {
-        mode: parseAutocompactMode(get('TAB_RECAP_AUTOCOMPACT')), minimum, ceiling: parseAutocompactCeiling(get('TAB_RECAP_AUTOCOMPACT_CEILING'), minimum, style),
+        mode: parseWatchMode(get('TAB_RECAP_AUTOCOMPACT')), minimum, ceiling: parseAutocompactCeiling(get('TAB_RECAP_AUTOCOMPACT_CEILING'), minimum, style),
         cooldownMs: parseCooldownMs(get('TAB_RECAP_AUTOCOMPACT_COOLDOWN_MS'), style), kinds: parseAutocompactKinds(get('TAB_RECAP_AUTOCOMPACT_KINDS')), shadowKinds: parseShadowKinds(get('TAB_RECAP_AUTOCOMPACT_SHADOW_KINDS')),
         ceilingPolicy: parseCeilingPolicy(get('TAB_RECAP_AUTOCOMPACT_CEILING_OVERRIDES_CHECK')), coverageBackoff: parseBackoff(get('TAB_RECAP_AUTOCOMPACT_COVERAGE_BACKOFF_MS')),
         missedFacts: parseMissedFacts(get('TAB_RECAP_AUTOCOMPACT_MISSED_FACTS')),

@@ -1,4 +1,4 @@
-import type { AutocompactState } from '#src/recap/application/autocompact-state.ts';
+import type { DeciderState } from '#src/recap/application/autocompact-state.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import type { Probability } from '#src/recap/domain/probability.ts';
@@ -9,7 +9,7 @@ import { questionScore, type Labels, type ScoredReps } from './report-metrics.ts
 import type { Label } from './stats.ts';
 
 
-export interface CodedMoment { readonly id: Text; readonly state: AutocompactState; readonly hindsight: Hindsight }
+export interface CodedMoment { readonly id: Text; readonly state: DeciderState; readonly hindsight: Hindsight }
 
 export interface CodeAgreement { readonly positives: Count; readonly auc: Probability | null; readonly brier: Probability | null }
 

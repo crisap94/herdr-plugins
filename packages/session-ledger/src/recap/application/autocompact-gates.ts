@@ -1,5 +1,5 @@
 import type { DecisionLedger, LastDecisionRow } from '#src/ports/autocompact-records.ts';
-import type { AutocompactMode, AutocompactPercent, Gate, GateBusy, GateSameness } from '#src/recap/domain/autocompact.ts';
+import type { WatchMode, AutocompactPercent, Gate, GateBusy, GateSameness } from '#src/recap/domain/autocompact.ts';
 import { flightDetail, ceilingOf } from '#src/recap/domain/in-flight.ts';
 import type { Flight } from '#src/recap/domain/in-flight.ts';
 import { must } from '#src/protocol/result.ts';
@@ -36,7 +36,7 @@ export const gateBusyOf = (busy: Busy): GateBusy => (busy.kind === 'busy' ? 'bus
 
 export const gateSamenessOf = (sameness: Sameness, recheck: Recheck): GateSameness => (sameness === 'same' && recheck !== 'due' ? 'same' : 'changed');
 
-export function unchangedOf(last: LastDecisionRow | null, startedAt: Instant, tokens: Count, mode: AutocompactMode): Sameness {
+export function unchangedOf(last: LastDecisionRow | null, startedAt: Instant, tokens: Count, mode: WatchMode): Sameness {
     return last !== null && last.verdict !== 'unknown' && last.at >= startedAt && last.tokens === tokens && last.mode === mode ? 'same' : 'changed';
 }
 

@@ -1,6 +1,6 @@
 import type { Store } from '#src/adapters/db/database.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
-import type { Autocompact } from '#src/recap/application/autocompact.ts';
+import type { SafePointWatch } from '#src/recap/application/autocompact.ts';
 import { candidateOf } from './autocompact.ts';
 import { LaneDispatch } from '#src/recap/application/dispatch.ts';
 import type { Sharing } from '#src/recap/application/dispatch.ts';
@@ -21,7 +21,7 @@ import { loadSettings } from './config.ts';
 
 export interface Box {
     informer: Informer | null;
-    autocompact: Autocompact | null;
+    autocompact: SafePointWatch | null;
 }
 
 export const listeningOf = (box: Box) => (): Presence => box.informer?.listening ?? 'absent';

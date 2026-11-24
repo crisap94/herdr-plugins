@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { autocompactState, OPEN_WORK_SHOWN, TURNS_SHOWN, type AutocompactState } from '../../tab-recap/src/recap/application/autocompact-state.ts';
+import { autocompactState, OPEN_WORK_SHOWN, TURNS_SHOWN, type DeciderState } from '../../tab-recap/src/recap/application/autocompact-state.ts';
 import { QUESTIONS } from '../../tab-recap/src/recap/application/autocompact-questions.ts';
 import { deciderInstructions, probabilitiesOf } from '../../tab-recap/src/adapters/job/decider.ts';
 import { verdictOf } from '../../tab-recap/src/recap/domain/autocompact-verdict.ts';
@@ -9,7 +9,7 @@ import type { Entry } from '../../packages/session-ledger/src/ports/transcripts.
 import type { HistoryFact } from '../../packages/session-ledger/src/ports/ledger.ts';
 import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 
-interface Evidence { readonly question: string; readonly field: keyof AutocompactState; readonly quote: string }
+interface Evidence { readonly question: string; readonly field: keyof DeciderState; readonly quote: string }
 interface Row {
     readonly id: string;
     readonly plants: readonly string[];
@@ -29,7 +29,7 @@ const SIDES = ['true', 'false', 'open'];
 const REAL = /\/home\/|\/Users\/|crisap|herdr|tab-recap|homelab|cadre|\b[\w-]+\.(com|io|net|org|dev|ai|app)\b/i;
 const instructions = deciderInstructions(QUESTIONS);
 
-const fieldText = (state: AutocompactState, field: keyof AutocompactState): string => {
+const fieldText = (state: DeciderState, field: keyof DeciderState): string => {
     const value = state[field];
     return value === null ? '' : typeof value === 'string' ? value : JSON.stringify(value.map((part) => part.text)).replaceAll('\\n', '\n').replaceAll('\\"', '"');
 };

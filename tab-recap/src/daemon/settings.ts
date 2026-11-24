@@ -1,7 +1,7 @@
 import type { Locale } from '#src/i18n/index.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
 import type { DeciderSetting, JobAnswer, JobSetting } from '#src/recap/domain/job.ts';
-import type { AutocompactPolicy, BriefRetention, CoverageBy, JevSettings } from '#src/recap/domain/autocompact.ts';
+import type { Policy as WatchPolicy, BriefRetention, CoverageBy, JevSettings } from '#src/recap/domain/autocompact.ts';
 import type { CompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import type { CompactTarget } from '#src/recap/domain/compaction.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
@@ -133,7 +133,7 @@ export interface Settings {
     readonly keepBrief: BriefRetention;
     readonly curator: JobSetting;
     readonly curatorRepair: RepairMode;
-    readonly autocompact: AutocompactPolicy;
+    readonly autocompact: WatchPolicy;
     readonly tuning: CompactTuning;
     readonly decider: DeciderSetting;
     readonly coverage: CoverageBy;

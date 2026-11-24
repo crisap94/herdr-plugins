@@ -1,5 +1,5 @@
 import type { AnswerTally } from '#src/ports/autocompact-records.ts';
-import type { DeciderPort, Noul } from '#src/ports/decider.ts';
+import type { DeciderPort, Question } from '#src/ports/decider.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
@@ -44,8 +44,8 @@ export const checkedFactsOf = (history: readonly HistoryFact[]): readonly Checke
         return fact.state === 'open' && checked !== null && COVERED.has(checked.section) ? [checked] : [];
     }).slice(0, FACTS_CHECKED);
 
-export function questionsOf(facts: readonly CheckedFact[]): ReadonlyMap<Text, Noul> {
-    const questions = new Map<Text, Noul>();
+export function questionsOf(facts: readonly CheckedFact[]): ReadonlyMap<Text, Question> {
+    const questions = new Map<Text, Question>();
     facts.forEach((fact, at) => {
         questions.set(must(parseText(`keeps_${at}`)), {
             instructions: must(parseText(`Does \`brief\` carry what \`facts[${at}].text\` says, with the detail needed to act on it (names, paths and numbers kept)?`)),

@@ -24,7 +24,7 @@ import { targetOf } from '#src/recap/domain/compaction.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
 import type { AgentPanes, Prompted } from '#src/ports/agents.ts';
-import type { DeciderPort, DecidedAnswersResult, Noul } from '#src/ports/decider.ts';
+import type { DeciderPort, DecidedAnswersResult, Question } from '#src/ports/decider.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
 import { unknown } from '#src/ports/unknowable.ts';
@@ -39,8 +39,8 @@ import { seenLane } from '#test/support/seen.ts';
 const fact = (section: Section, text: string, why: string | null = null, state: 'open' | 'closed' = 'open'): HistoryFact => ({ section, text: textOf(text), why: why === null ? null : textOf(why), state, closedWhy: null, closedAt: null, firstAt: instant(1), lastAt: instant(2) });
 const HISTORY = [fact('goal', 'Ship the cart rewrite'), fact('decisions', 'Keep SQLite', 'one file'), fact('next', 'Tag the release'), fact('done', 'Merged !12'), fact('rules', 'Never push to main', null, 'closed')];
 
-function deciding(answers: Readonly<Record<string, number>>, fallback = 0.95): DeciderPort & { asked: ReadonlyMap<Text, Noul>[] } {
-    const asked: ReadonlyMap<Text, Noul>[] = [];
+function deciding(answers: Readonly<Record<string, number>>, fallback = 0.95): DeciderPort & { asked: ReadonlyMap<Text, Question>[] } {
+    const asked: ReadonlyMap<Text, Question>[] = [];
     return { label: textOf('fake'), asked, ask: (_state, questions): Promise<DecidedAnswersResult> => { asked.push(questions); return Promise.resolve(decidedOf(Object.fromEntries([...questions.keys()].map((id) => [id, answers[id] ?? fallback])))); } };
 }
 

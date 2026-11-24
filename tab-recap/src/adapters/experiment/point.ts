@@ -2,7 +2,7 @@ import type { HistoryFact } from '#src/ports/ledger.ts';
 import type { ModelWindows } from '#src/ports/model-catalogue.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { autocompactState } from '#src/recap/application/autocompact-state.ts';
-import type { AutocompactState } from '#src/recap/application/autocompact-state.ts';
+import type { DeciderState } from '#src/recap/application/autocompact-state.ts';
 import { contextOf, shareOf } from '#src/recap/domain/compaction.ts';
 import { COOLDOWN_DEFAULT_MS, CEILING_DEFAULT, KINDS_DEFAULT, gateFrom, parseGatePercent } from '#src/recap/domain/autocompact.ts';
 import { duration, type Instant } from '#src/recap/domain/time.ts';
@@ -46,7 +46,7 @@ export interface Point extends StoredPoint {
     readonly inFlight: InFlight;
     readonly lastBreakAt: Instant | null;
     readonly gate: Gate;
-    readonly state: AutocompactState;
+    readonly state: DeciderState;
     readonly recent: readonly Entry[];
     readonly history: readonly HistoryFact[];
     readonly hindsight: Hindsight;

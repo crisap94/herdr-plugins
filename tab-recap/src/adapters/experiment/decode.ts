@@ -4,7 +4,7 @@ import type { Label } from '#src/experiment/stats.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import type { CallKind, Entry } from '#src/ports/transcripts.ts';
 import type { Result } from '#src/protocol/result.ts';
-import type { AutocompactState, OpenWorkItem, Turn } from '#src/recap/application/autocompact-state.ts';
+import type { DeciderState, OpenWorkItem, Turn } from '#src/recap/application/autocompact-state.ts';
 import { SKIP_GATES, type Gate } from '#src/recap/domain/autocompact.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { isClosedWhy, isSection } from '#src/recap/domain/fact.ts';
@@ -66,7 +66,7 @@ const factOf = (row: Row): HistoryFact => ({
 const turnOf = (row: Row): Turn => ({ role: roleOf(row), text: taken(parseText(row.text)) });
 const workOf = (row: Row): OpenWorkItem => ({ section: taken(parseText(row.section)), text: taken(parseText(row.text)) });
 
-const stateOf = (row: Row): AutocompactState => ({
+const stateOf = (row: Row): DeciderState => ({
     last_prompt: row.last_prompt === null ? null : taken(parseText(row.last_prompt)),
     last_reply: row.last_reply === null ? null : taken(parseText(row.last_reply)),
     recent_turns: taken(parseRows(row.recent_turns)).map(turnOf),

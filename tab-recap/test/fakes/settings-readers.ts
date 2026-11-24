@@ -1,5 +1,5 @@
 import { BACKEND_IDS, harnessLabels, type BackendChoice, type BackendId } from '#src/recap/domain/backend.ts';
-import { jevFrom, policyFrom, type AutocompactPolicy, type JevSettings } from '#src/recap/domain/autocompact.ts';
+import { jevFrom, policyFrom, type Policy, type JevSettings } from '#src/recap/domain/autocompact.ts';
 import { tuningFrom, type CompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import { compactSettingOf, coverageSettingOf, curateSettingOf, deciderSettingOf, judgeSettingOf, keepDaysCountOf, placementFor } from '#src/recap/domain/job.ts';
 import type { DeciderSetting, JobPlacement, JobSetting } from '#src/recap/domain/job.ts';
@@ -26,7 +26,7 @@ export const coverageJobOf = (reader: RawReader): DeciderSetting => coverageSett
 
 export const keepDaysOf = (raw: string | undefined): Count => keepDaysCountOf(raw === undefined ? undefined : textOf(raw));
 
-export const policyOf = (reader: RawReader): AutocompactPolicy => policyFrom(typedReader(reader));
+export const policyOf = (reader: RawReader): Policy => policyFrom(typedReader(reader));
 
 export const jevOf = (reader: RawReader): JevSettings => jevFrom(typedReader(reader));
 

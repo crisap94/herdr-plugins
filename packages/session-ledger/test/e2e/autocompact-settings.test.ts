@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { must } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
-import { CEILING_DEFAULT, COOLDOWN_DEFAULT_MS, MINIMUM_MAX, MINIMUM_MIN, MISSED_FACTS, MISSED_FACTS_DEFAULT, parseAutocompactCeiling, parseAutocompactMode, parseAutocompactPercent, parseBackoff, parseBriefRetention, parseCeilingPolicy, parseCooldownMs, parseMissedFacts } from '@stateforge-labs/session-ledger/unstable/recap/domain/autocompact.ts';
+import { CEILING_DEFAULT, COOLDOWN_DEFAULT_MS, MINIMUM_MAX, MINIMUM_MIN, MISSED_FACTS, MISSED_FACTS_DEFAULT, parseAutocompactCeiling, parseWatchMode, parseAutocompactPercent, parseBackoff, parseBriefRetention, parseCeilingPolicy, parseCooldownMs, parseMissedFacts } from '@stateforge-labs/session-ledger/unstable/recap/domain/autocompact.ts';
 import { millisecondsWithin, parseAutocompactStyle, probabilityWithin, STYLE_DEFAULT, STYLE_NUMBERS, STYLES, styleOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/autocompact-style.ts';
 import { MUST_BE_LOW, ONE_MUST_BE_HIGH, parseThreshold, THRESHOLDS, verdictOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/autocompact-verdict.ts';
 import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
@@ -95,11 +95,11 @@ test('a milliseconds setting is a whole number inside its range', () => {
 });
 
 test('the mode and the missed-facts word fall back to their defaults', () => {
-    assert.equal(parseAutocompactMode('on'), 'on');
-    assert.equal(parseAutocompactMode(' OFF '), 'off');
-    assert.equal(parseAutocompactMode('Shadow'), 'shadow');
+    assert.equal(parseWatchMode('on'), 'on');
+    assert.equal(parseWatchMode(' OFF '), 'off');
+    assert.equal(parseWatchMode('Shadow'), 'shadow');
     for (const input of ['yes', '', undefined, 1]) {
-        assert.equal(parseAutocompactMode(input), 'shadow');
+        assert.equal(parseWatchMode(input), 'shadow');
     }
     assert.deepEqual(MISSED_FACTS, ['append', 'wait']);
     assert.equal(MISSED_FACTS_DEFAULT, 'append');
