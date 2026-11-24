@@ -26,7 +26,7 @@ function claude(files: ReadonlyMap<string, readonly Mark[]>): SessionReader {
         agent: agentKind('claude'),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
         locate: (lane: Lane) => Promise.resolve(lane.session === null ? unknown({ why: 'not-found', what: textOf('a session id') }) : { kind: 'located' as const, source: sourcePathOf(`/projects/x/${lane.session}.jsonl`) }),
-        read: (source) => Promise.resolve({ kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, notes: [], marks: files.get(source) ?? [], position: UNREAD, grew: grewOf(false) }),
+        read: (source) => Promise.resolve({ kind: 'chunk', entries: [], title: null, lastPrompt: null, harnessRecap: null, notes: [], marks: files.get(source) ?? [], position: UNREAD, grew: grewOf(false) }),
         latestPrompt: () => Promise.resolve({ kind: 'prompt', text: null }),
     };
 }

@@ -10,7 +10,7 @@ export type Trigger = 'auto' | 'manual' | 'plugin';
 
 export type OwnTrigger = 'auto' | 'manual';
 
-export interface SessionMark { readonly pane: SessionKey; readonly at: Instant; readonly cursor: Count; readonly tokensBefore?: Count; readonly tokensAfter?: Count; readonly tookMs?: Duration; readonly trigger?: OwnTrigger; }
+export interface SessionMark { readonly key: SessionKey; readonly at: Instant; readonly cursor: Count; readonly tokensBefore?: Count; readonly tokensAfter?: Count; readonly tookMs?: Duration; readonly trigger?: OwnTrigger; }
 
 export interface Planned { readonly kind: BoundaryKind; readonly pane: SessionKey; readonly at: Instant; readonly trigger: Trigger | null; readonly cursor: Count; readonly tokensBefore: Count | null; readonly tokensAfter: Count | null; readonly tookMs: Duration | null; }
 
@@ -29,7 +29,7 @@ export const triggerOf = (at: Instant, asked: readonly Instant[], own: OwnTrigge
 
 export function compactedFrom(marks: readonly SessionMark[], lastAt: Instant | null, asked: readonly Instant[]): readonly Planned[] {
     return marks.filter((mark) => lastAt === null || mark.at > lastAt).toSorted(byTime).map((mark): Planned => ({
-        kind: 'compacted', pane: mark.pane, at: mark.at, trigger: triggerOf(mark.at, asked, mark.trigger ?? null), cursor: mark.cursor, tokensBefore: mark.tokensBefore ?? null, tokensAfter: mark.tokensAfter ?? null, tookMs: mark.tookMs ?? null,
+        kind: 'compacted', pane: mark.key, at: mark.at, trigger: triggerOf(mark.at, asked, mark.trigger ?? null), cursor: mark.cursor, tokensBefore: mark.tokensBefore ?? null, tokensAfter: mark.tokensAfter ?? null, tookMs: mark.tookMs ?? null,
     }));
 }
 

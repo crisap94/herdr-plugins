@@ -23,7 +23,7 @@ export const OTHER_ID = handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2dc');
 export const SOURCE_FILE = 'session.jsonl';
 export const LAST_RUN: LastRun = { at: instant(NOW - 60_000), cause: 'turn-ended' };
 export const LANE: HandoffLane = { tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), status: 'idle', cwd: asText('/repo') };
-export const CURSOR: SessionCursor = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf(SOURCE_FILE), cursor: cursorOf(0), tail: null, title: null, lastPrompt: null, claudeRecap: null };
+export const CURSOR: SessionCursor = { key: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf(SOURCE_FILE), cursor: cursorOf(0), tail: null, title: null, lastPrompt: null, harnessRecap: null };
 
 export const FACTS: readonly Fact[] = [
     fact('g1', 'goal', 'Ship the parser', NOW - 5_000),
@@ -43,7 +43,7 @@ export function claudeReader(prompts: number): SessionReader {
         agent: agentKind('claude'),
         inFlight: { kind: 'supported', split: { kind: 'foreground-only', why: 'codex-cells' }, read: async () => ({ kind: 'in-flight', count: runningOf(0), background: [] }) },
         locate: async () => ({ kind: 'located', source: sourcePathOf(SOURCE_FILE) }),
-        read: async () => ({ kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(0), tail: null }, grew: grewOf(false) }),
+        read: async () => ({ kind: 'chunk', entries, title: null, lastPrompt: null, harnessRecap: null, notes: [], position: { cursor: cursorOf(0), tail: null }, grew: grewOf(false) }),
         latestPrompt: async () => ({ kind: 'prompt', text: null }),
     };
 }

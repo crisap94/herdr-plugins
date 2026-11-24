@@ -17,7 +17,7 @@ import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/
 export const NO_REPOS: Workplaces = { repoOf: () => Promise.resolve({ kind: 'no-repo' }) };
 
 export const oneTask = (markdown: string, sections: RecapSections | null = null, lanes: readonly string[] = []): readonly RecapTask[] =>
-    [{ id: textOf('t1'), name: textOf(''), lanes: lanes.map((lane) => paneIdOf(lane)), sections, markdown: textOf(markdown) }];
+    [{ id: textOf('t1'), name: textOf(''), sessions: lanes.map((lane) => paneIdOf(lane)), sections, markdown: textOf(markdown) }];
 
 export const withFacts = (tasks: readonly RecapTask[]): { readonly tasks: readonly RecapTask[]; readonly ops: readonly TaskOps[] } =>
     ({ tasks, ops: tasks.map((task) => ({ task: task.id, ops: task.sections === null ? [] : opsOfSections(task.sections) })) });

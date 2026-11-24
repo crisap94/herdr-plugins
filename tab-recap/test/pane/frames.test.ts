@@ -43,9 +43,9 @@ const cases = (['column', 'modal', 'bar'] as const).flatMap((role) => [
 const settle = (): Promise<void> => new Promise((resolve) => { setImmediate(resolve); });
 
 const recapOf = (): Recap => ({
-    tab: tabId(TAB),
-    lanes: [cursor('w1:p1')],
-    tasks: [{ id: textOf('t1'), name: textOf('Build'), lanes: [paneIdOf('w1:p1')], sections: null, markdown: textOf('## Done\n\n- shipped the frame source') }],
+    scope: tabId(TAB),
+    sessions: [cursor('w1:p1')],
+    tasks: [{ id: textOf('t1'), name: textOf('Build'), sessions: [paneIdOf('w1:p1')], sections: null, markdown: textOf('## Done\n\n- shipped the frame source') }],
     at: instant(NOW - 60_000),
     running: recapRunningOf(false),
     backend: textOf('claude'),

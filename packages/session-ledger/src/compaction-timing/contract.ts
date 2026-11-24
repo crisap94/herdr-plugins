@@ -93,8 +93,8 @@ export interface LinkedDecision {
 }
 
 export interface Skip {
-    readonly tab: ScopeId;
-    readonly pane: SessionKey;
+    readonly scope: ScopeId;
+    readonly key: SessionKey;
     readonly agent: HarnessKind;
     readonly at: Instant;
     readonly gate: SkipGate;
@@ -111,8 +111,8 @@ export interface LastDecision {
 }
 
 export interface Decision {
-    readonly tab: ScopeId;
-    readonly pane: SessionKey;
+    readonly scope: ScopeId;
+    readonly key: SessionKey;
     readonly agent: HarnessKind;
     readonly at: Instant;
     readonly mode: DecisionMode;

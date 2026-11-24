@@ -36,7 +36,7 @@ const accomplishmentOf = (scope: ScopeId, done: RunAccomplishment): Accomplishme
     kind: 'accomplishment-established',
     scope,
     task: done.fact.task,
-    sessions: done.task.lanes.flatMap((member) => {
+    sessions: done.task.sessions.flatMap((member) => {
         const read = parseSessionKey(member);
         return read.kind === 'ok' ? [read.value] : [];
     }),
@@ -74,10 +74,10 @@ const reportRun = (plugs: FacadePlugs) => (event: RecapWritten): void => {
     startedAfterRun(plugs, scope, event);
 };
 
-type Moved = Pick<Advance, 'tab' | 'lanes'>;
+type Moved = Pick<Advance, 'scope' | 'sessions'>;
 
 const unread = (cursors: readonly SessionCursor[], read: readonly SessionCursor[]): readonly SessionCursor[] =>
-    cursors.filter((cursor) => !read.some((other) => other.pane === cursor.pane && other.transcript === cursor.transcript));
+    cursors.filter((cursor) => !read.some((other) => other.key === cursor.key && other.transcript === cursor.transcript));
 
 const after = <F extends (...args: never[]) => ReturnType<F>>(call: F, then: (result: ReturnType<F>) => ReturnType<F>) => (...args: Parameters<F>): ReturnType<F> => then(call(...args));
 
@@ -86,16 +86,16 @@ const OLD_CURSORS_PER_PANE = 4;
 const keptOver = (store: EngineStore): EngineStore => {
     const read = new Map<string, readonly SessionCursor[]>();
     const withKept = (move: Moved): readonly SessionCursor[] => {
-        const old = unread(read.get(move.tab) ?? [], move.lanes);
+        const old = unread(read.get(move.scope) ?? [], move.sessions);
         const held = old.filter((cursor, at) => {
-            const same = [...move.lanes, ...old.slice(0, at)].filter((other) => other.pane === cursor.pane);
-            const current = same.filter((other) => move.lanes.includes(other)).length;
+            const same = [...move.sessions, ...old.slice(0, at)].filter((other) => other.key === cursor.key);
+            const current = same.filter((other) => move.sessions.includes(other)).length;
             return current > 0 && same.length - current < OLD_CURSORS_PER_PANE;
         });
-        return [...move.lanes, ...held];
+        return [...move.sessions, ...held];
     };
     const seen = (found: ReturnType<EngineStore['records']['readRecap']>): ReturnType<EngineStore['records']['readRecap']> => {
-        if (found !== null && !('kind' in found)) read.set(found.tab, found.lanes);
+        if (found !== null && !('kind' in found)) read.set(found.scope, found.sessions);
         return found;
     };
     return {
@@ -105,13 +105,13 @@ const keptOver = (store: EngineStore): EngineStore => {
             lastRunOf: store.records.lastRunOf.bind(store.records),
             beginRun: store.records.beginRun.bind(store.records),
             recordRun: (run): void => {
-                store.records.recordRun({ ...run, lanes: withKept(run) });
+                store.records.recordRun({ ...run, sessions: withKept(run) });
             },
             failRun: (run): void => {
-                store.records.failRun({ ...run, lanes: withKept(run) });
+                store.records.failRun({ ...run, sessions: withKept(run) });
             },
             advance: (move): void => {
-                store.records.advance({ ...move, lanes: withKept(move) });
+                store.records.advance({ ...move, sessions: withKept(move) });
             },
         },
     };

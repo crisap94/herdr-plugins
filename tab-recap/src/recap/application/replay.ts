@@ -81,7 +81,7 @@ const unavailable = (kind: HarnessKind): Text => capabilityWording('history-unav
 
 function windowed(base: SessionReader, file: SessionPath, windows: readonly (readonly Entry[])[], at: Position): SessionReader {
     const read = (): Promise<ChunkResult> => Promise.resolve({
-        kind: 'chunk', entries: windows[at.turn] ?? [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(at.turn + 1), tail: null }, grew: grewOf(true),
+        kind: 'chunk', entries: windows[at.turn] ?? [], title: null, lastPrompt: null, harnessRecap: null, notes: [], position: { cursor: cursorOf(at.turn + 1), tail: null }, grew: grewOf(true),
     });
     const locate = (): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(file) });
     const inFlight: InFlightCapability = { kind: 'unsupported', why: 'windowed-reader' };
@@ -132,7 +132,7 @@ export async function replayFile(deps: TypedReplayDeps, file: SessionPath, label
     return {
         windows: must(parseCount(windows.length)),
         turns: must(parseCount(turns.length)),
-        facts: tasks.flatMap((task) => knownOr(deps.ledger.allOf({ tab: label, key: task.id }), [])),
+        facts: tasks.flatMap((task) => knownOr(deps.ledger.allOf({ scope: label, key: task.id }), [])),
         costUsd: must(parseUsd(knownOr(deps.records.readRecap(label), null)?.costUsd ?? 0)),
     };
 }

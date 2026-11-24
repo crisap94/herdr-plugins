@@ -66,9 +66,9 @@ export class RecapRecordsRepository implements GuardedRecapRecords {
 
     recordRun(run: RecordedRun): void {
         writeTx(this.db, () => {
-            this.tabs.ensure(run.tab, instant(run.at));
-            const moved = this.transcripts.attach(run.tab, run.lanes, instant(run.at));
-            this.boundaries.record(run.tab, { at: instant(run.at), marks: run.marks ?? [], moved });
+            this.tabs.ensure(run.scope, instant(run.at));
+            const moved = this.transcripts.attach(run.scope, run.sessions, instant(run.at));
+            this.boundaries.record(run.scope, { at: instant(run.at), marks: run.marks ?? [], moved });
             const id = this.runs.insertRun(run, null, run.gateStats ?? null);
             if (run.input !== undefined) {
                 this.runs.insertInput(id, run.input);
@@ -82,9 +82,9 @@ export class RecapRecordsRepository implements GuardedRecapRecords {
 
     failRun(run: FailedRun): void {
         writeTx(this.db, () => {
-            this.tabs.ensure(run.tab, instant(run.at));
-            const moved = this.transcripts.attach(run.tab, run.lanes, instant(run.at));
-            this.boundaries.record(run.tab, { at: instant(run.at), marks: run.marks ?? [], moved });
+            this.tabs.ensure(run.scope, instant(run.at));
+            const moved = this.transcripts.attach(run.scope, run.sessions, instant(run.at));
+            this.boundaries.record(run.scope, { at: instant(run.at), marks: run.marks ?? [], moved });
             this.runs.insertRun(run, run.error);
             this.settle(run);
         });
@@ -92,14 +92,14 @@ export class RecapRecordsRepository implements GuardedRecapRecords {
 
     advance(move: Advance): void {
         writeTx(this.db, () => {
-            this.tabs.ensure(move.tab, instant(move.at));
-            const moved = this.transcripts.attach(move.tab, move.lanes, instant(move.at));
-            this.boundaries.record(move.tab, { at: instant(move.at), marks: move.marks ?? [], moved });
-            this.orm.update(tabs).set({ error: move.error }).where(eq(tabs.id, move.tab)).run();
+            this.tabs.ensure(move.scope, instant(move.at));
+            const moved = this.transcripts.attach(move.scope, move.sessions, instant(move.at));
+            this.boundaries.record(move.scope, { at: instant(move.at), marks: move.marks ?? [], moved });
+            this.orm.update(tabs).set({ error: move.error }).where(eq(tabs.id, move.scope)).run();
         });
     }
 
-    private settle(run: Pick<RecordedRun, 'tab' | 'backend' | 'error'>): void {
-        this.orm.update(tabs).set({ running: 0, backend: run.backend, error: run.error }).where(eq(tabs.id, run.tab)).run();
+    private settle(run: Pick<RecordedRun, 'scope' | 'backend' | 'error'>): void {
+        this.orm.update(tabs).set({ running: 0, backend: run.backend, error: run.error }).where(eq(tabs.id, run.scope)).run();
     }
 }

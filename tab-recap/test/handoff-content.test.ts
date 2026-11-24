@@ -22,7 +22,7 @@ import { fact } from './fakes/fact-at.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 const NOW = Date.parse('2026-10-10T12:00:00Z');
-const TASK: TaskId = { tab: tabIdOf('w1:t1'), key: textOf('t1') };
+const TASK: TaskId = { scope: tabIdOf('w1:t1'), key: textOf('t1') };
 
 const FRESHNESS: Freshness = { lastRun: { at: instant(NOW - 60_000), cause: 'turn-ended' }, status: 'idle', newerPrompts: { kind: 'none' }, refresh: 'not-requested' };
 const WORKSITE: WorksiteSnapshot = { kind: 'unavailable' };

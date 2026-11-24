@@ -75,12 +75,12 @@ test('upgrading a database of version 6 backs it up as .v6.bak first', () => {
     }
 });
 
-const T1 = { tab: tabIdOf('w1:t1'), key: textOf('t1') };
-const SHAPE = [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')] }];
+const T1 = { scope: tabIdOf('w1:t1'), key: textOf('t1') };
+const SHAPE = [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')] }];
 const adding = (text: string, section: AddOp['section'] = 'now'): AddOp => ({ op: 'add', section, text: textOf(text), why: section === 'decisions' ? textOf('a reason') : null, ref: null, at: null, agent: null });
 
 function writerRun(store: ReturnType<typeof memoryStore>, at: number, ops: readonly Operation[]): void {
-    recordOps(store, { tab: tabId('w1:t1'), at: instant(at), cause: 'turn-ended', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1', at)], tasks: SHAPE, ops: [{ task: textOf('t1'), ops }] });
+    recordOps(store, { scope: tabId('w1:t1'), at: instant(at), cause: 'turn-ended', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, sessions: [cursor('w1:p1', at)], tasks: SHAPE, ops: [{ task: textOf('t1'), ops }] });
 }
 
 test('a task has no story until the curator keeps one; the story keeps the run time it was begun at', () => {
@@ -153,7 +153,7 @@ test('session source: first seen, runs by cause (imported apart), and the finish
     assert.equal(store.session.firstSeen(tabId('w1:t1')), null);
     assert.deepEqual(store.session.runsByCause(tabId('w1:t1')), {});
     const run = (cause: 'turn-ended' | 'focused' | 'requested' | 'imported', at: number): void => {
-        recordOps(store, { tab: tabId('w1:t1'), at: instant(at), cause, backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1', at)], tasks: SHAPE, ops: [] });
+        recordOps(store, { scope: tabId('w1:t1'), at: instant(at), cause, backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, sessions: [cursor('w1:p1', at)], tasks: SHAPE, ops: [] });
     };
     run('turn-ended', 100); run('turn-ended', 200); run('focused', 300); run('imported', 50);
     assert.equal(store.session.firstSeen(tabId('w1:t1')), 100, 'the tab row keeps the time it was first touched');

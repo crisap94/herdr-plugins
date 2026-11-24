@@ -17,7 +17,7 @@ const NO_OPS: Behaviour<WrittenAnswer> = { kind: 'answer', value: { kind: 'writt
 
 const spoken = (line: string): Behaviour<Chunk> => ({
     kind: 'answer',
-    value: { kind: 'chunk', entries: [{ role: 'user', text: textOf(line) }], title: null, lastPrompt: textOf(line), claudeRecap: null, notes: [], position: UNREAD, grew: grewOf(true) },
+    value: { kind: 'chunk', entries: [{ role: 'user', text: textOf(line) }], title: null, lastPrompt: textOf(line), harnessRecap: null, notes: [], position: UNREAD, grew: grewOf(true) },
 });
 
 const factOf = (id: string, task: TaskId, text: string, lastAt: number): Fact => ({
@@ -45,7 +45,7 @@ test('a curator answer with no story leaves the stored story as it was', async (
     if (only === undefined || recap.tasks.length !== 1) {
         throw new Error('the turn did not write one task');
     }
-    const task: TaskId = { tab: tabIdOf(TAB), key: textOf(key(only.id)) };
+    const task: TaskId = { scope: tabIdOf(TAB), key: textOf(key(only.id)) };
     world.store.seed(null, [factOf('fct_1', task, 'open work', 1), factOf('fct_2', task, 'more work', 10 * MINUTES)]);
     world.setCurator(CURATED);
     await engine.curate(TAB);

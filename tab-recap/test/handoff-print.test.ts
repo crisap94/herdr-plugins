@@ -28,7 +28,7 @@ const VIEW: TabViewRecord = viewRecord({ tab: 'w1:t1', column: null, lanes: [{ p
 const CLOSED_AT = instant(NOW - 1000);
 const CLOSED_ROW: ClosedLaneRead = {
     kind: 'row',
-    record: { tab: tabId('w1:t1'), pane: FROM, agent: agentKind('claude'), closedAt: CLOSED_AT, cwd: null, association: { task: { tab: tabId('w1:t1'), key: brand<string, 'Text'>('t1') }, name: null } },
+    record: { tab: tabId('w1:t1'), pane: FROM, agent: agentKind('claude'), closedAt: CLOSED_AT, cwd: null, association: { task: { scope: tabId('w1:t1'), key: brand<string, 'Text'>('t1') }, name: null } },
 };
 const locked = (): Error => Object.assign(new Error('/home/coder/secret/db.sqlite is locked'), { name: 'SqliteError', code: 'SQLITE_BUSY' });
 
@@ -52,7 +52,7 @@ function printerWith(spy: Spy, world: World = {}, logged: string[] = [], flushed
             if (world.unreadable === true) {
                 throw locked();
             }
-            return { ...recapOf(task('t1', ['w1:p1'])), lanes: [CURSOR] };
+            return { ...recapOf(task('t1', ['w1:p1'])), sessions: [CURSOR] };
         },
         lastRunOf: (): LastRun | null => (world.lastRun === undefined ? LAST_RUN : world.lastRun),
     };

@@ -17,10 +17,10 @@ import { usdOf } from '#src/recap/domain/usd.ts';
 import { paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 import { factIdOf } from '#src/recap/domain/fact.ts';
 
-const TASK = { tab: tabIdOf('w1:t1'), key: textOf('t1') };
+const TASK = { scope: tabIdOf('w1:t1'), key: textOf('t1') };
 const add = (section: 'done' | 'next' | 'decisions' | 'goal', text: string, why: string | null = null): Operation => ({ op: 'add', section, text: textOf(text), why: why === null ? null : textOf(why), ref: null, at: null, agent: null });
 const run = (at: number, ops: readonly Operation[]): RunInput => ({
-    tab: tabId('w1:t1'), at: instant(at), cause: 'requested', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')] }], ops: [{ task: textOf('t1'), ops }],
+    scope: tabId('w1:t1'), at: instant(at), cause: 'requested', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, sessions: [cursor('w1:p1')], tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')] }], ops: [{ task: textOf('t1'), ops }],
 });
 const ref = (db: ReturnType<typeof memoryStore>['db'], at: number): RunRef => {
     const row = db.prepare('SELECT id FROM run ORDER BY id DESC LIMIT 1').get() as { id: Uint8Array };
@@ -43,8 +43,8 @@ test('open facts come newest last seen first, the order of adding breaking a tie
 
 test('keysOf: the tasks of the tab that have ever had facts, closed or not; another tab\'s are not', () => {
     const store = memoryStore(); const { ledger } = store;
-    recordOps(store, { ...run(100, []), tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')] }, { id: textOf('t2'), name: textOf(''), lanes: [] }], ops: [{ task: textOf('t2'), ops: [add('done', 'x')] }, { task: textOf('t1'), ops: [add('done', 'y')] }] });
-    recordOps(store, { ...run(200, []), tab: tabId('w1:t2'), ops: [{ task: textOf('t1'), ops: [add('done', 'z')] }] });
+    recordOps(store, { ...run(100, []), tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')] }, { id: textOf('t2'), name: textOf(''), sessions: [] }], ops: [{ task: textOf('t2'), ops: [add('done', 'x')] }, { task: textOf('t1'), ops: [add('done', 'y')] }] });
+    recordOps(store, { ...run(200, []), scope: tabId('w1:t2'), ops: [{ task: textOf('t1'), ops: [add('done', 'z')] }] });
     assert.deepEqual(storeRead(ledger.keysOf(tabId('w1:t1'))), ['t1', 't2']);
     assert.deepEqual(storeRead(ledger.keysOf(tabId('w1:t9'))), []);
 });
@@ -123,12 +123,12 @@ test('a goal add closes the previous goal as superseded; the column shows the op
 
 test('history: every fact of the agent\'s tasks, open and closed, with why and dates; other tasks and panes stay out; newest first', () => {
     const store = memoryStore(); const { ledger } = store;
-    recordOps(store, { ...run(100, []), lanes: [cursor('w1:p1'), cursor('w1:p2')], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')] }, { id: textOf('t2'), name: textOf(''), lanes: [paneIdOf('w1:p2')] }], ops: [
+    recordOps(store, { ...run(100, []), sessions: [cursor('w1:p1'), cursor('w1:p2')], tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')] }, { id: textOf('t2'), name: textOf(''), sessions: [paneIdOf('w1:p2')] }], ops: [
         { task: textOf('t1'), ops: [add('decisions', 'Use SQLite', 'one file to back up'), add('done', 'a')] }, { task: textOf('t2'), ops: [add('decisions', 'Other pane decision', 'not ours')] },
     ] });
     const decision = storeRead(ledger.openOf(TASK)).find((fact) => fact.section === 'decisions');
     assert.ok(decision !== undefined);
-    recordOps(store, { ...run(200, [{ op: 'close', id: decision.id, why: 'superseded' }, add('decisions', 'Use SQLite and WAL', 'readers never block')]), lanes: [cursor('w1:p1'), cursor('w1:p2')], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')] }, { id: textOf('t2'), name: textOf(''), lanes: [paneIdOf('w1:p2')] }] });
+    recordOps(store, { ...run(200, [{ op: 'close', id: decision.id, why: 'superseded' }, add('decisions', 'Use SQLite and WAL', 'readers never block')]), sessions: [cursor('w1:p1'), cursor('w1:p2')], tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')] }, { id: textOf('t2'), name: textOf(''), sessions: [paneIdOf('w1:p2')] }] });
     const items = ledger.historyOf(tabId('w1:t1'), paneId('w1:p1'));
     assert.deepEqual(items.map((item) => [item.text, item.state, item.closedWhy, item.why]), [
         ['Use SQLite', 'closed', 'superseded', 'one file to back up'], ['Use SQLite and WAL', 'open', null, 'readers never block'], ['a', 'open', null, null],

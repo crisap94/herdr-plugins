@@ -53,7 +53,7 @@ function harness(settings: Settings, causes: string[], answer?: () => Promise<Wr
             reads.push(from.cursor);
             sources.push(source);
             const entries: Entry[] = settings.entries === false ? [] : [{ role: 'user', text: textOf('migrate victoria') }];
-            return Promise.resolve({ kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(reads.length), tail: null }, grew: grewOf(settings.grew ?? true) });
+            return Promise.resolve({ kind: 'chunk', entries, title: null, lastPrompt: null, harnessRecap: null, notes: [], position: { cursor: cursorOf(reads.length), tail: null }, grew: grewOf(settings.grew ?? true) });
         },
     };
     const store = memoryStore();

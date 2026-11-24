@@ -49,7 +49,7 @@ function judgeOf(script: Script): { judge: JudgePort; asked: { task: JudgeTask; 
 function setup(script: Script, input: string | null = '<recap_input version="1">what the writer saw</recap_input>'): { deps: JudgeDeps; run: RunRecord; store: ReturnType<typeof memoryStore>; asked: { task: JudgeTask; document: string }[] } {
     const store = memoryStore();
     recordOps(store, {
-        tab: tabId('w1:t1'), at: instant(1000), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], ...withFacts(oneTask('', SECTIONS)),
+        scope: tabId('w1:t1'), at: instant(1000), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, sessions: [cursor('w1:p1')], ...withFacts(oneTask('', SECTIONS)),
         ...(input === null ? {} : { input: textOf(input) }),
     });
     const run = runsOf(store.inputs, { tab: null, since: null, limit: 5, withInput: false }).at(0);

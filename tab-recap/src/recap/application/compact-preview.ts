@@ -24,14 +24,14 @@ const refused = (reason: CompactRefusal): CompactPreview => ({ kind: 'refused', 
 
 const listed = (deps: CompactPreviewDeps, tab: ScopeId, pane: SessionKey): Flag => {
     const live = deps.views.readTab(tab)?.lanes.some((each) => each.pane === pane) === true;
-    return live || knownOr(deps.records.readRecap(tab), null)?.lanes.some((each) => each.pane === pane) === true ? YES : NO;
+    return live || knownOr(deps.records.readRecap(tab), null)?.sessions.some((each) => each.key === pane) === true ? YES : NO;
 };
 
 function materialOf(deps: CompactPreviewDeps, tab: ScopeId, pane: SessionKey, note: Text | null): Material | null {
     if (listed(deps, tab, pane) === NO) { return null; }
     const web = deps.views.readTab(tab)?.lanes.find((each) => each.pane === pane)?.web ?? null;
     const tasks = knownOr(deps.records.readRecap(tab), null)?.tasks ?? [];
-    const task = tasks.find((each) => each.lanes.includes(pane)) ?? tasks[0];
+    const task = tasks.find((each) => each.sessions.includes(pane)) ?? tasks[0];
     return { sections: task?.sections ?? NO_SECTIONS, web, note };
 }
 

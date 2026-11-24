@@ -25,20 +25,20 @@ test('a refresh that finishes with no stored error is refreshed', async () => {
 
 test('a refresh that finishes with a stored error is failed', async () => {
     const store = memoryStore();
-    store.records.failRun({ tab: tabId('w1:t1'), at: instant(100), cause: 'requested', backend: null, language: textOf('en'), costUsd: usdOf(0), error: textOf(textOf('the summarizer failed')), lanes: [] });
+    store.records.failRun({ scope: tabId('w1:t1'), at: instant(100), cause: 'requested', backend: null, language: textOf('en'), costUsd: usdOf(0), error: textOf(textOf('the summarizer failed')), sessions: [] });
     assert.equal(await refreshWithin(Promise.resolve(), store.records, tabId('w1:t1'), duration(1_000)), 'failed');
 });
 
 test('a refresh that does not finish in time is timed out, whatever the tab stores', async () => {
     const store = memoryStore();
-    store.records.failRun({ tab: tabId('w1:t1'), at: instant(100), cause: 'requested', backend: null, language: textOf('en'), costUsd: usdOf(0), error: textOf('stale error'), lanes: [] });
+    store.records.failRun({ scope: tabId('w1:t1'), at: instant(100), cause: 'requested', backend: null, language: textOf('en'), costUsd: usdOf(0), error: textOf('stale error'), sessions: [] });
     assert.equal(await refreshWithin(never(), store.records, tabId('w1:t1'), duration(10)), 'timed-out');
 });
 
 test('a run that fails and then succeeds reads failed, then refreshed, on the tab store', async () => {
     const store = memoryStore();
-    store.records.failRun({ tab: tabId('w1:t1'), at: instant(100), cause: 'requested', backend: null, language: textOf('en'), costUsd: usdOf(0), error: textOf(textOf('the summarizer failed')), lanes: [] });
+    store.records.failRun({ scope: tabId('w1:t1'), at: instant(100), cause: 'requested', backend: null, language: textOf('en'), costUsd: usdOf(0), error: textOf(textOf('the summarizer failed')), sessions: [] });
     assert.equal(await refreshWithin(Promise.resolve(), store.records, tabId('w1:t1'), duration(1_000)), 'failed');
-    recordOps(store, { tab: tabId('w1:t1'), at: instant(200), cause: 'requested', backend: null, language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [], tasks: [], ops: [] });
+    recordOps(store, { scope: tabId('w1:t1'), at: instant(200), cause: 'requested', backend: null, language: textOf('en'), costUsd: usdOf(0), error: null, sessions: [], tasks: [], ops: [] });
     assert.equal(await refreshWithin(Promise.resolve(), store.records, tabId('w1:t1'), duration(1_000)), 'refreshed');
 });

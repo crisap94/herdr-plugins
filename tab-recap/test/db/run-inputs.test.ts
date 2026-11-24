@@ -22,7 +22,7 @@ const STATS: GateStats = { refused: { [gateName('G1')]: count(2) }, flagged: { [
 const SECTIONS = { goal: textOf('Ship retries'), now: [textOf('Review !256.')], needs: [], done: [textOf('Merged !250.'), textOf('Tagged 1.9.0.')], decisions: [], next: [], links: [textOf('!256')], rules: [] };
 
 const run = (at: number, extra: Partial<RunInput> = {}): RunInput => ({
-    tab: tabId('w1:t1'), at: instant(at), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], ...withFacts(oneTask('', SECTIONS)), ...extra,
+    scope: tabId('w1:t1'), at: instant(at), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, sessions: [cursor('w1:p1')], ...withFacts(oneTask('', SECTIONS)), ...extra,
 });
 
 const QUERY = { tab: null, since: null, limit: 20, withInput: false } as const;
@@ -44,7 +44,7 @@ test('a run keeps its input document (inflated equal, bytes = uncompressed lengt
 test('a run without an input or counts is listed (not as judgeable) and a failed run is not listed at all', () => {
     const store = memoryStore();
     recordOps(store, run(1000));
-    store.records.failRun({ tab: tabId('w1:t1'), at: instant(2000), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: textOf('boom'), lanes: [cursor('w1:p1')] });
+    store.records.failRun({ scope: tabId('w1:t1'), at: instant(2000), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: textOf('boom'), sessions: [cursor('w1:p1')] });
     const listed = runsOf(store.inputs, QUERY);
     assert.deepEqual(listed.map((r) => [r.at, r.input, r.gateStats]), [[1000, 'absent', null]]);
     assert.deepEqual(runsOf(store.inputs, { ...QUERY, withInput: true }), []);
@@ -54,7 +54,7 @@ test('runs come newest first, by tab and by time, with a limit; the items carry 
     const store = memoryStore();
     recordOps(store, run(1000, { input: textOf('<a/>') }));
     recordOps(store, run(2000, { input: textOf('<b/>') }));
-    recordOps(store, run(3000, { tab: tabId('w1:t2'), input: textOf('<c/>'), lanes: [cursor('w1:p2')] }));
+    recordOps(store, run(3000, { scope: tabId('w1:t2'), input: textOf('<c/>'), sessions: [cursor('w1:p2')] }));
     assert.deepEqual(runsOf(store.inputs, QUERY).map((r) => r.at), [3000, 2000, 1000]);
     assert.deepEqual(runsOf(store.inputs, { ...QUERY, tab: 'w1:t1' }).map((r) => r.at), [2000, 1000]);
     assert.deepEqual(runsOf(store.inputs, { ...QUERY, since: 2000 }).map((r) => r.at), [3000, 2000]);
@@ -82,7 +82,7 @@ test('retention: the daily upkeep deletes a 15-day-old input and keeps the run, 
     const now = 100 * DAY;
     recordOps(store, run(now - 15 * DAY, { input: textOf('<old/>') }));
     recordOps(store, run(now - 13 * DAY, { input: textOf('<recent/>') }));
-    const decision = store.decisions.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(now - 15 * DAY), mode: 'shadow', share: countOf(50), tokens: must(parseCount(5)), window: must(parseCount(10)), gate: 'ask', verdict: 'compact', askedVerdict: 'compact', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null });
+    const decision = store.decisions.record({ scope: tabId('w1:t1'), key: paneId('w1:p1'), agent: agentKind('claude'), at: instant(now - 15 * DAY), mode: 'shadow', share: countOf(50), tokens: must(parseCount(5)), window: must(parseCount(10)), gate: 'ask', verdict: 'compact', askedVerdict: 'compact', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null });
     store.autocompactBriefs.put(decision, textOf('old brief'), [], [], instant(now - 15 * DAY));
     let clock = now;
     const lines: string[] = [];
@@ -131,7 +131,7 @@ test('retention: a brief retention of none deletes every checked brief at the da
     const store = memoryStore();
     store.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 2)");
     const now = 100 * DAY;
-    const decision = store.decisions.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(now), mode: 'shadow', share: countOf(50), tokens: must(parseCount(5)), window: must(parseCount(10)), gate: 'ask', verdict: 'compact', askedVerdict: 'compact', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null });
+    const decision = store.decisions.record({ scope: tabId('w1:t1'), key: paneId('w1:p1'), agent: agentKind('claude'), at: instant(now), mode: 'shadow', share: countOf(50), tokens: must(parseCount(5)), window: must(parseCount(10)), gate: 'ask', verdict: 'compact', askedVerdict: 'compact', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null });
     store.autocompactBriefs.put(decision, textOf('fresh brief'), [], [], instant(now));
     const clock = now;
     const retention = new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock: { now: (): ReturnType<typeof instant> => instant(clock) }, days: (): Count => countOf(14), briefRetention: (): BriefRetention => ({ kind: 'none' }), log: (): void => undefined });

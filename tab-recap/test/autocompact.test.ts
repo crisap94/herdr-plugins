@@ -96,11 +96,11 @@ test('over the ceiling (81 %): compact with gate ceiling and no decider call; in
 
 test('cooldown: a wait four minutes ago stops the next consideration before any model; after ten minutes it asks again', async () => {
     const w = world();
-    w.store.decisions.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 4 * 60_000), mode: 'on', share: countOf(60), tokens: mustParsed(parseCount(1)), window: mustParsed(parseCount(2)), gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: mustParsed(parseUsd(0)), tookMs: null, why: null });
+    w.store.decisions.record({ scope: tabId('w1:t1'), key: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 4 * 60_000), mode: 'on', share: countOf(60), tokens: mustParsed(parseCount(1)), window: mustParsed(parseCount(2)), gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: mustParsed(parseUsd(0)), tookMs: null, why: null });
     await w.service.consider(lane());
     assert.deepEqual([w.asked.length, rows(w).length], [0, 1]);
     const later = world();
-    later.store.decisions.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 11 * 60_000), mode: 'on', share: countOf(60), tokens: mustParsed(parseCount(1)), window: mustParsed(parseCount(2)), gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: mustParsed(parseUsd(0)), tookMs: null, why: null });
+    later.store.decisions.record({ scope: tabId('w1:t1'), key: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 11 * 60_000), mode: 'on', share: countOf(60), tokens: mustParsed(parseCount(1)), window: mustParsed(parseCount(2)), gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: mustParsed(parseUsd(0)), tookMs: null, why: null });
     await later.service.consider(lane());
     assert.equal(later.asked.length, 1);
 });
@@ -143,7 +143,7 @@ test('a lane below the minimum (8 %), or within the cooldown, never reads the in
     below.share = 8;
     await below.service.consider(lane());
     const cooling = world();
-    cooling.store.decisions.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 4 * 60_000), mode: 'on', share: countOf(60), tokens: mustParsed(parseCount(1)), window: mustParsed(parseCount(2)), gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: mustParsed(parseUsd(0)), tookMs: null, why: null });
+    cooling.store.decisions.record({ scope: tabId('w1:t1'), key: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 4 * 60_000), mode: 'on', share: countOf(60), tokens: mustParsed(parseCount(1)), window: mustParsed(parseCount(2)), gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: mustParsed(parseUsd(0)), tookMs: null, why: null });
     await cooling.service.consider(lane());
     const asking = world();
     await asking.service.consider(lane());

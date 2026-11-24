@@ -478,7 +478,7 @@ function handoffRows(kind: RegisteredKind, pin: HandoffPin): void {
     });
 
     test(`${kind} handoff: a refresh that moves the source lane to another task renders that task`, async () => {
-        const f = fact('f2', 'goal', 'Ship the writer', NOW - 1000, { task: { tab: TAB, key: textOf('t2') } });
+        const f = fact('f2', 'goal', 'Ship the writer', NOW - 1000, { task: { scope: TAB, key: textOf('t2') } });
         const h = handoffHarness({ targetAgent: kind, facts: [f], onRefresh: (): void => { h.world.recap = recapOf(task('t2', ['w1:p1'])); } });
         assert.deepEqual(await h.flow.run(request({ refresh: 'refresh-first' })), { kind: 'delivered' });
         assert.deepEqual(h.renders.map((input) => input.facts), [[f]]);

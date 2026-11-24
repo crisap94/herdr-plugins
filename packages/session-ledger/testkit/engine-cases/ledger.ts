@@ -8,7 +8,7 @@ import { textOf } from '../../src/recap/domain/text.ts';
 import { tabIdOf } from '../../src/recap/domain/lane-shape.ts';
 
 const TAB = scope('one');
-const TASK = { tab: tabIdOf(TAB), key: textOf('t1') };
+const TASK = { scope: tabIdOf(TAB), key: textOf('t1') };
 
 const factsOf = (world: EngineWorld): readonly Fact[] => {
     const found = world.store.facts.allOf(TASK);

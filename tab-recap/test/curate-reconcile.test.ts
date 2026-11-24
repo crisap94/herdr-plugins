@@ -31,7 +31,7 @@ const [textOf, countOf, tabOf, boundaryOf, instantOf] = [brand<string, 'Text'>, 
 
 const NOW = Date.parse('2026-10-07T16:30:00Z');
 const MIN = 60_000;
-const T1 = { tab: tabIdOf('w1:t1'), key: textOf('t1') };
+const T1 = { scope: tabIdOf('w1:t1'), key: textOf('t1') };
 const facts = [
     fact('q', 'needs', 'Which branch should the release ship from?', NOW - 50 * MIN),
     fact('d', 'decisions', 'Keep carts in SQLite', NOW - 40 * MIN, { why: textOf('one file to back up') }),
@@ -57,7 +57,7 @@ function setup(answers: readonly Curated[], over: { every?: number; tail?: reado
     const ledger = new MemoryLedger().seed(...facts);
     const stories = new MemoryStories(ledger);
     const store = memoryStore();
-    seed(store, { ...blankRecap(tabId('w1:t1')), at: instant(5), lanes: [cursor('w1:p1')], tasks: oneTask('## Goal\n- x') });
+    seed(store, { ...blankRecap(tabId('w1:t1')), at: instant(5), sessions: [cursor('w1:p1')], tasks: oneTask('## Goal\n- x') });
     const [logs, calls, clock, queue]: [string[], Rig['calls'], { now: number }, Curated[]] = [[], [], { now: NOW }, [...answers]];
     const writer: Curators = { backend: must(parseText('fake/test')), write: (document, mode): Promise<Curated> => { calls.push({ document, mode }); return Promise.resolve(queue.shift() ?? unknown({ why: 'failed', code: exitCodeOf(1), detail: causeOf('no more answers') })); } };
     const mode = over.repair;

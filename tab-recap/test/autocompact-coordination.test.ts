@@ -17,7 +17,7 @@ import { textOf } from '#src/recap/domain/text.ts';
 const monitor = backgroundItem(backgroundTool(textOf('Monitor')), backgroundLabel(textOf('open merge requests')));
 
 const coverageWait = (tokens: number): DecisionDraft => ({
-    tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 10 * 60_000), mode: 'on', share: countOf(70), tokens: must(parseCount(tokens)), window: must(parseCount(1_000_000)), gate: 'coverage', verdict: 'wait', askedVerdict: 'compact', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null,
+    scope: tabId('w1:t1'), key: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 10 * 60_000), mode: 'on', share: countOf(70), tokens: must(parseCount(tokens)), window: must(parseCount(1_000_000)), gate: 'coverage', verdict: 'wait', askedVerdict: 'compact', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: must(parseUsd(0)), tookMs: null, why: null,
 });
 
 test('A full lane waits for two others', async () => {
@@ -94,7 +94,7 @@ test('an `awaiting` token makes the lane in flight, with the detail `awaiting <v
     w.awaiting = 'reviewer';
     await w.service.consider(lane());
     assert.deepEqual([w.asked, w.requests, w.reads], [[], [], []]);
-    const skip = w.store.decisions.skips().find((each) => each.pane === 'w1:p1');
+    const skip = w.store.decisions.skips().find((each) => each.key === 'w1:p1');
     assert.deepEqual([skip?.gate, skip?.detail], ['in-flight', 'awaiting reviewer']);
 });
 
@@ -136,7 +136,7 @@ test('an unreadable `awaiting` counts as in flight: nothing is asked, and the re
     w.awaitingUnknown = true;
     await w.service.consider(lane());
     assert.deepEqual([w.asked, w.requests], [[], []]);
-    const skip = w.store.decisions.skips().find((each) => each.pane === 'w1:p1');
+    const skip = w.store.decisions.skips().find((each) => each.key === 'w1:p1');
     assert.ok(skip !== undefined, 'the lane was skipped');
     assert.equal(skip.gate, 'in-flight');
     assert.match(skip.detail ?? '', /unreadable|unreachable|not/u);
@@ -148,5 +148,5 @@ test('`awaiting` is read again after the decider answers: a wait that began whil
     w.decide = (): DecidedAnswersResult => { w.awaiting = 'reviewer'; return decide(); };
     await w.service.consider(lane());
     assert.deepEqual(w.requests, [], 'the decider was asked, but nothing is requested');
-    assert.deepEqual(w.store.decisions.skips().find((each) => each.pane === 'w1:p1')?.detail, 'awaiting reviewer');
+    assert.deepEqual(w.store.decisions.skips().find((each) => each.key === 'w1:p1')?.detail, 'awaiting reviewer');
 });

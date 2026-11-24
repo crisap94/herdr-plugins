@@ -22,6 +22,6 @@ export function factsOf(lane: Lane, deps: FactsDeps): LaneTokenFacts {
     const tab = String(lane.tab);
     const use = deps.contexts.of(lane.pane);
     const recap = knownOr(deps.records.readRecap(must(parseTabId(tab))), null);
-    const needs = (recap?.tasks ?? []).reduce((count, task) => count + knownOr(deps.ledger.openOf({ tab: tabIdOf(tab), key: task.id }), []).filter((fact) => fact.section === 'needs').length, 0);
+    const needs = (recap?.tasks ?? []).reduce((count, task) => count + knownOr(deps.ledger.openOf({ scope: tabIdOf(tab), key: task.id }), []).filter((fact) => fact.section === 'needs').length, 0);
     return { share: use === null ? null : countOf(shareOf(use)), recapAt: recap?.at ?? null, needs: countOf(needs) };
 }

@@ -30,7 +30,7 @@ const [textOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Instant'>];
 
 const NOW = Date.parse('2026-10-11T10:00:00Z');
 const TAB = tabId('w1:t1');
-const T1: TaskId = { tab: TAB, key: textOf('t1') };
+const T1: TaskId = { scope: TAB, key: textOf('t1') };
 const LOCKED = unknown({ why: 'unreadable', detail: causeOf('locked') });
 const SECTIONS = { goal: textOf('Ship retries'), now: [], needs: [], done: [textOf('Merged !256.')], decisions: [], next: [], links: [], rules: [] };
 const VIEW: TabViewRecord = viewRecord({ tab: TAB, column: null, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: '/repo' }], at: NOW });
@@ -43,7 +43,7 @@ interface Probe {
 
 function seeded(): ReturnType<typeof memoryStore> {
     const store = memoryStore();
-    recordOps(store, { tab: TAB, at: instant(5), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')], ...withFacts(oneTask('', SECTIONS)), input: textOf('<recap_input version="1"/>') });
+    recordOps(store, { scope: TAB, at: instant(5), cause: 'requested', backend: textOf('fake'), language: textOf('en'), costUsd: usdOf(0), error: null, sessions: [cursor('w1:p1')], ...withFacts(oneTask('', SECTIONS)), input: textOf('<recap_input version="1"/>') });
     return store;
 }
 

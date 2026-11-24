@@ -173,7 +173,7 @@ export class SafePointWatch {
 
     private skip(placed: Placement, gate: SkipGate, share: Count | null, detail: Text | null): void {
         const { pane } = placed;
-        this.deps.decisions.skip({ tab: placed.tab, pane, agent: placed.agent, at: this.deps.now(), gate, share, detail });
+        this.deps.decisions.skip({ scope: placed.tab, key: pane, agent: placed.agent, at: this.deps.now(), gate, share, detail });
         if (this.skipped.get(pane) === gate) return;
         this.skipped.set(pane, gate);
         this.deps.emit?.({ kind: 'session-skipped', key: placed.candidate.key, gate });
@@ -240,7 +240,7 @@ export class SafePointWatch {
         const { tab, pane } = placed;
         const { judged, effect, flight, atCeiling } = found;
         const made: DecisionDraft = {
-            tab, pane, agent: placed.agent, at: deps.now(), mode: found.mode, share: shareCount(use), tokens: must(parseCount(use.tokens)), window: must(parseCount(use.window)), gate: found.gate, verdict: judged.verdict, askedVerdict: judged.verdict,
+            scope: tab, key: pane, agent: placed.agent, at: deps.now(), mode: found.mode, share: shareCount(use), tokens: must(parseCount(use.tokens)), window: must(parseCount(use.window)), gate: found.gate, verdict: judged.verdict, askedVerdict: judged.verdict,
             answers: judged.answers, coverage: null, decider: judged.decider, costUsd: judged.costUsd, tookMs: judged.tookMs, why: decisionWhy(judged, flight, atCeiling), coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: status,
         };
         const id = deps.decisions.record(made);

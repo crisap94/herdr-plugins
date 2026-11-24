@@ -113,7 +113,7 @@ const OK: Coverage = { ok: true, missing: [], missingFacts: [], answers: { keeps
 const MISSING: Coverage = { ok: false, missing: ['decisions: Keep SQLite'], missingFacts: [{ index: 1, fact: { section: 'decisions', text: 'Keep SQLite', why: null }, parts: ['text'] }], answers: { keeps_1: 0.2 }, unknown: null };
 
 function decided(world: World, gate: 'ask' | 'ceiling' = 'ask'): string {
-    const id = world.store.decisions.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 1000), mode: 'on', share: countOf(gate === 'ceiling' ? 84 : 62), tokens: mustParsed(parseCount(1)), window: mustParsed(parseCount(2)), gate, verdict: 'compact', askedVerdict: 'compact', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: textOf('fake'), costUsd: mustParsed(parseUsd(0)), tookMs: duration(1), why: null });
+    const id = world.store.decisions.record({ scope: tabId('w1:t1'), key: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - 1000), mode: 'on', share: countOf(gate === 'ceiling' ? 84 : 62), tokens: mustParsed(parseCount(1)), window: mustParsed(parseCount(2)), gate, verdict: 'compact', askedVerdict: 'compact', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: textOf('fake'), costUsd: mustParsed(parseUsd(0)), tookMs: duration(1), why: null });
     return id;
 }
 

@@ -81,15 +81,15 @@ export class LedgerRows {
     }
 
     openOf(task: TaskId): readonly Fact[] {
-        return this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, task.tab), eq(taskTable.key, task.key), eq(factTable.state, OPEN))).orderBy(desc(factTable.lastAt), asc(factTable.id)).all().map((row) => parseLedgerFact(row, task));
+        return this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, task.scope), eq(taskTable.key, task.key), eq(factTable.state, OPEN))).orderBy(desc(factTable.lastAt), asc(factTable.id)).all().map((row) => parseLedgerFact(row, task));
     }
 
     recentlyClosed(task: TaskId, since: Instant): readonly Fact[] {
-        return this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, task.tab), eq(taskTable.key, task.key), eq(factTable.state, CLOSED), gte(factTable.closedAt, since))).orderBy(asc(factTable.closedAt), asc(factTable.id)).all().map((row) => parseLedgerFact(row, task));
+        return this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, task.scope), eq(taskTable.key, task.key), eq(factTable.state, CLOSED), gte(factTable.closedAt, since))).orderBy(asc(factTable.closedAt), asc(factTable.id)).all().map((row) => parseLedgerFact(row, task));
     }
 
     allOf(task: TaskId): readonly Fact[] {
-        return this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, task.tab), eq(taskTable.key, task.key))).orderBy(asc(factTable.firstAt), asc(factTable.id)).all().map((row) => parseLedgerFact(row, task));
+        return this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, task.scope), eq(taskTable.key, task.key))).orderBy(asc(factTable.firstAt), asc(factTable.id)).all().map((row) => parseLedgerFact(row, task));
     }
 
     keysOf(tab: ScopeId): readonly TaskName[] {
@@ -104,13 +104,13 @@ export class LedgerRows {
     }
 
     private taskRow(task: TaskId): Uint8Array {
-        this.orm.insert(taskTable).values({ id: ids.next(), tabId: task.tab, key: task.key }).onConflictDoNothing().run();
-        return blob(this.orm.select({ id: taskTable.id }).from(taskTable).where(and(eq(taskTable.tabId, task.tab), eq(taskTable.key, task.key))).get() ?? {}, 'id');
+        this.orm.insert(taskTable).values({ id: ids.next(), tabId: task.scope, key: task.key }).onConflictDoNothing().run();
+        return blob(this.orm.select({ id: taskTable.id }).from(taskTable).where(and(eq(taskTable.tabId, task.scope), eq(taskTable.key, task.key))).get() ?? {}, 'id');
     }
 
     private insertFact(run: Uint8Array, owner: Uint8Array, task: TaskId, id: Uint8Array, f: Fact): void {
         this.orm.insert(factTable).values({
-            id, tabId: task.tab, taskId: owner, section: f.section, text: f.text, why: f.why, ref: f.ref, agent: f.agent, anchor: f.anchor,
+            id, tabId: task.scope, taskId: owner, section: f.section, text: f.text, why: f.why, ref: f.ref, agent: f.agent, anchor: f.anchor,
             firstAt: f.firstAt, lastAt: f.lastAt, state: f.state, closedWhy: f.closedWhy, closedAt: f.closedAt, bornRun: run, lastRun: run, language: f.language,
         }).run();
     }
@@ -148,7 +148,7 @@ export class LedgerRows {
     }
 
     applyTo(run: Uint8Array, at: RunRef, ops: readonly Operation[], sweepNow: SweepNow = 'keep'): Applied {
-        const before = this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, at.task.tab), eq(taskTable.key, at.task.key), or(eq(factTable.state, OPEN), gte(factTable.closedAt, at.at - FOLD_WINDOW_MS)))).orderBy(asc(factTable.firstAt), asc(factTable.id)).all().map((row) => parseLedgerFact(row, at.task));
+        const before = this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, at.task.scope), eq(taskTable.key, at.task.key), or(eq(factTable.state, OPEN), gte(factTable.closedAt, at.at - FOLD_WINDOW_MS)))).orderBy(asc(factTable.firstAt), asc(factTable.id)).all().map((row) => parseLedgerFact(row, at.task));
         const folded = apply(before, ops, at, sweepOf(sweepNow === 'sweep'));
         this.persist(run, at.task, before, folded.changed);
         return { changed: folded.changed, refused: folded.refused };

@@ -9,6 +9,7 @@ import { FRESH_PLANS, FRESH_PROJECTS, type Trap } from './fresh-plans.ts';
 import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
 import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/lane-shape.ts';
+import { inputToStored } from './prompt.ts';
 
 const NOW = Date.parse('2026-11-10T16:30:00Z');
 const ZONE = 'UTC';
@@ -594,7 +595,7 @@ function build(plan: Plan, index: number): Built {
         taken.add(one.minute);
     }
     const all = [...written, ...fillerOf(plan, taken, rng)];
-    const task = { tab: tabIdOf(`tab-${String(index + 1).padStart(2, '0')}`), key: textOf(`t${(index % 7) + 1}`) };
+    const task = { scope: tabIdOf(`tab-${String(index + 1).padStart(2, '0')}`), key: textOf(`t${(index % 7) + 1}`) };
     const keyed = all.map((draft) => {
         const firstAt = start + draft.minute * MINUTE;
         const closedAt = draft.closed === undefined ? null : Math.min(NOW - MINUTE, Math.max(firstAt + MINUTE, start + minuteOf(draft.closed[1]) * MINUTE));
@@ -638,7 +639,7 @@ function build(plan: Plan, index: number): Built {
         plants: plan.plants,
         tags: [plan.size, plan.project, plan.language, ...plan.plants],
         shape: { facts: facts.length, open, closed: facts.length - open, document_bytes_without_rubric: Buffer.byteLength(document) },
-        input: material,
+        input: inputToStored(material),
         expected: {
             merge_pairs: [
                 ...(plan.copies ?? []).map((copy) => ({ ids: [idOf(copy.of), idOf(copy.k)], kind: 'verbatim', keep: null })),

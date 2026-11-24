@@ -47,7 +47,7 @@ export class Briefing {
 
     materialOf(tab: ScopeId, pane: SessionKey, note: Text | null): Material {
         const tasks = knownOr(this.deps.records.readRecap(tab), null)?.tasks ?? [];
-        const task = tasks.find((each) => each.lanes.includes(pane)) ?? tasks[0];
+        const task = tasks.find((each) => each.sessions.includes(pane)) ?? tasks[0];
         return { sections: task?.sections ?? NO_SECTIONS, web: this.deps.webs.of(pane), note };
     }
 
@@ -59,7 +59,7 @@ export class Briefing {
         if (brief.enabled() === 'absent') {
             return { text: null, why: null, own, history };
         }
-        const label = knownOr(records.readRecap(tab), null)?.lanes.find((each) => each.pane === pane)?.title ?? lane.title ?? '';
+        const label = knownOr(records.readRecap(tab), null)?.sessions.find((each) => each.key === pane)?.title ?? lane.title ?? '';
         const clock = { now: this.deps.now(), zone: textOf(Intl.DateTimeFormat().resolvedOptions().timeZone) };
         const broke = this.deps.boundaries.lastBreakAt(tab, lane.pane);
         const document = compactionMaterialInput({ agent: { kind: textOf(agent), label: textOf(label), repo: null, branch: null }, note: material.note, current: material.sections, history, lastBreakAt: broke, recent, clock });

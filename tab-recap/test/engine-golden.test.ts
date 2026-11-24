@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.ts';
 import { scratchStore } from '#src/adapters/db/scratch.ts';
 import type { Store } from '#src/adapters/db/database.ts';
+import type { Fact, Recap, RecapTask, SessionCursor } from '@stateforge-labs/session-ledger';
 import { PREFIXES } from '#src/adapters/db/typeid.ts';
 import { replayFile } from '#src/recap/application/replay.ts';
 import type { TypedReplayDeps } from '#src/recap/application/replay.ts';
@@ -43,6 +44,14 @@ function stable(text: string): string {
 const section = (title: string, body: string): string => `=== ${title}\n${body}\n`;
 const json = (value: unknown): string => JSON.stringify(value, null, 2);
 
+const cursorPrint = (cursor: SessionCursor): object => ({ pane: cursor.key, agent: cursor.agent, transcript: cursor.transcript, cursor: cursor.cursor, tail: cursor.tail, title: cursor.title, lastPrompt: cursor.lastPrompt, claudeRecap: cursor.harnessRecap });
+
+const taskPrint = ({ sessions, ...task }: RecapTask): object => ({ id: task.id, name: task.name, lanes: sessions, sections: task.sections, markdown: task.markdown });
+
+const recapPrint = (recap: Recap | null): object | null => recap === null ? null : { tab: recap.scope, lanes: recap.sessions.map(cursorPrint), tasks: recap.tasks.map(taskPrint), at: recap.at, running: recap.running, backend: recap.backend, error: recap.error, costUsd: recap.costUsd, language: recap.language };
+
+const factPrint = (fact: Fact): object => ({ ...fact, task: { tab: fact.task.scope, key: fact.task.key } });
+
 const storedShape = (rest: Omit<RunRecord, 'id' | 'input'>, input: RunRecord['input']): object => ({ tab: rest.tab, at: rest.at, language: rest.language, backend: rest.backend, hasInput: input === 'present', gateStats: rest.gateStats });
 
 const itemShape = (entry: RunEntry): object => ({ key: entry.key, section: entry.section, text: entry.text, fact: entry.fact, born: entry.birth === 'born', anchor: entry.anchor });
@@ -60,8 +69,8 @@ function ledgerOf(store: Store): string {
         ].join('');
     });
     const recap = storeRead(store.records.readRecap(tabId(LABEL)));
-    const facts = (recap?.tasks ?? []).flatMap((task) => storeRead(store.ledger.allOf({ tab: tabIdOf(LABEL), key: task.id })));
-    return [...parts, section('recap', json(recap)), section('last run', json(storeRead(store.records.lastRunOf(tabId(LABEL))))), section('facts', json(facts))].join('');
+    const facts = (recap?.tasks ?? []).flatMap((task) => storeRead(store.ledger.allOf({ scope: tabIdOf(LABEL), key: task.id })));
+    return [...parts, section('recap', json(recapPrint(recap))), section('last run', json(storeRead(store.records.lastRunOf(tabId(LABEL))))), section('facts', json(facts.map(factPrint)))].join('');
 }
 
 async function golden(pipeline: Pipeline | undefined): Promise<string> {

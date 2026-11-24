@@ -73,9 +73,9 @@ const viewOf = (spec: TabSpec): TabViewRecord => viewRecord({
 export function build(spec: TabSpec): Built {
     const store = memoryStore();
     const view = viewOf(spec);
-    seed(store, { ...blankRecap(tabId(spec.tab)), at: instant(NOW - 3 * 60 * MIN), lanes: spec.lanes.map((lane) => cursor(lane.pane)), tasks: [{ id: textOf('t1'), name: textOf(''), lanes: spec.lanes.map((lane) => paneIdOf(lane.pane)), sections: { ...NO_SECTIONS, goal: textOf('Ship it') }, markdown: textOf('## Goal\n- Ship it') }] });
+    seed(store, { ...blankRecap(tabId(spec.tab)), at: instant(NOW - 3 * 60 * MIN), sessions: spec.lanes.map((lane) => cursor(lane.pane)), tasks: [{ id: textOf('t1'), name: textOf(''), sessions: spec.lanes.map((lane) => paneIdOf(lane.pane)), sections: { ...NO_SECTIONS, goal: textOf('Ship it') }, markdown: textOf('## Goal\n- Ship it') }] });
     const ledger = new MemoryLedger();
-    spec.facts.forEach((one) => ledger.seed(fact(one.id, one.section, one.text, NOW - one.minutesAgo * MIN, { task: { tab: tabIdOf(spec.tab), key: textOf('t1') }, why: one.why === undefined ? null : textOf(one.why) })));
+    spec.facts.forEach((one) => ledger.seed(fact(one.id, one.section, one.text, NOW - one.minutesAgo * MIN, { task: { scope: tabIdOf(spec.tab), key: textOf('t1') }, why: one.why === undefined ? null : textOf(one.why) })));
     const deps: ExpandedDeps = { records: store.records, ledger, stories: store.stories, session: store.session, boundaries: store.boundaries, requests: { requestCurate: (): void => undefined }, edits: () => [] };
     const expanded = new ExpandedModel(deps).read(tabId(spec.tab), view, instant(NOW));
     const recap = present(storeRead(store.records.readRecap(tabId(spec.tab))));

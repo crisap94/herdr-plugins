@@ -18,7 +18,7 @@ import { agentKind, paneId } from '#test/support/ids.ts';
 import { sourcePathOf, cursorOf } from '#src/ports/transcripts.ts';
 
 const DIR = '/work/project';
-const CURSOR: SessionCursor = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('session.jsonl'), cursor: cursorOf(10), tail: null, title: null, lastPrompt: null, claudeRecap: null };
+const CURSOR: SessionCursor = { key: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('session.jsonl'), cursor: cursorOf(10), tail: null, title: null, lastPrompt: null, harnessRecap: null };
 const repoAt = (result: RepoResult): Workplaces => ({ repoOf: () => Promise.resolve(result) });
 const repo: RepoResult = { kind: 'repo', root: must(parseDirectory('/work/project')), branch: must(parseText('feat/x')), web: null };
 const edits = (files: readonly { readonly path: string; readonly count: number }[]): WorksiteDeps['edits'] & { readonly asked: (readonly SessionCursor[])[] } => {

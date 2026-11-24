@@ -171,7 +171,7 @@ export class HandoffFlow {
         if (lane === undefined) {
             return { kind: 'refused', reason: 'source-unavailable' };
         }
-        const cursor = knownOr(this.deps.records.readRecap(must(parseTabId(String(request.tab)))), null)?.lanes.find((candidate) => candidate.pane === String(request.pane)) ?? null;
+        const cursor = knownOr(this.deps.records.readRecap(must(parseTabId(String(request.tab)))), null)?.sessions.find((candidate) => candidate.key === String(request.pane)) ?? null;
         return this.deps.render({ handoff: request.id, at: this.deps.now(), lane: { ...lane, cwd: lane.cwd === null ? null : textOf(lane.cwd) }, cursor, facts: found.facts, note: request.note, refresh });
     }
 

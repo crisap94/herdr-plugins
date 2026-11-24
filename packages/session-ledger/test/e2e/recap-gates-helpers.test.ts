@@ -20,7 +20,7 @@ import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/l
 const count = brand<number, 'Count'>;
 
 const fact: Fact = {
-    id: brand<string, 'FactId'>('f1'), task: { tab: tabIdOf('tab-1'), key: textOf('t1') }, section: 'decisions', text: textOf('use sqlite'), why: textOf('it is local'), ref: null, agent: null, anchor: null,
+    id: brand<string, 'FactId'>('f1'), task: { scope: tabIdOf('tab-1'), key: textOf('t1') }, section: 'decisions', text: textOf('use sqlite'), why: textOf('it is local'), ref: null, agent: null, anchor: null,
     firstAt: instant(1), lastAt: instant(1), state: 'open', closedWhy: null, closedAt: null, language: textOf('en'),
 };
 

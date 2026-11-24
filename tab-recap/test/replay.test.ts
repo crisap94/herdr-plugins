@@ -127,7 +127,7 @@ test('the store a replay writes to is a real store: the same repositories, the f
     const scratch = scratchStore();
     try {
         assert.equal(scratch.store.kind, 'ready');
-        assert.ok(storeRead(storeOver(scratch.store.db).ledger.openOf({ tab: tabIdOf('x'), key: textOf('t1') })).length === 0);
+        assert.ok(storeRead(storeOver(scratch.store.db).ledger.openOf({ scope: tabIdOf('x'), key: textOf('t1') })).length === 0);
     } finally {
         scratch.dispose();
     }

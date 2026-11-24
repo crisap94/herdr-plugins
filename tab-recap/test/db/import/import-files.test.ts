@@ -26,7 +26,7 @@ test('every historical shape imports and reads back equal to what the legacy rea
         assert.deepEqual(report.differences, []);
         assert.deepEqual([report.recaps, report.views, report.requests, report.visibility, report.hidden], [6, 3, 1, 2, 'present'], 'the empty recap file is not a recap');
         for (const recap of legacy.recaps().map(canonicalRecap).filter((file) => holdingOf(file) === 'present')) {
-            assert.deepEqual(recapDifferenceLines(recap, storeRead(store.records.readRecap(recap.tab))), [], recap.tab);
+            assert.deepEqual(recapDifferenceLines(recap, storeRead(store.records.readRecap(recap.scope))), [], recap.scope);
         }
         for (const view of legacy.views()) {
             assert.deepEqual(viewDifferenceLines({ ...view, column: view.column ?? null }, store.views.readTab(tabId(view.tab))), [], view.tab);
@@ -119,7 +119,7 @@ test('a state directory with no files is marked imported and nothing is made; th
         const store = memoryStore();
         assert.equal(importFilesAt(store, filesAt(dir), options).kind, 'nothing');
         assert.equal(importFilesAt(store, filesAt(dir), options).kind, 'already');
-        const recap: Recap = { tab: tabId('t'), lanes: [], tasks: [], at: instant(5), running: recapRunningOf(false), backend: null, error: null, costUsd: usdOf(1), language: textOf('en') };
+        const recap: Recap = { scope: tabId('t'), sessions: [], tasks: [], at: instant(5), running: recapRunningOf(false), backend: null, error: null, costUsd: usdOf(1), language: textOf('en') };
         assert.deepEqual(recapDifferenceLines(recap, { ...recap, at: instant(6), costUsd: usdOf(2) }), ['recap t: at differs', 'recap t: costUsd differs']);
         assert.deepEqual(recapDifferenceLines(recap, { ...recap, costUsd: usdOf(1.0000001) }), [], 'money is compared in millionths');
         assert.deepEqual(recapDifferenceLines(recap, null), ['recap t: reads back as nothing']);

@@ -158,8 +158,8 @@ const FIXTURES: Readonly<Record<'en' | 'es', Fixture>> = {
 const WEB: LaneWebRecord = { base: textOf('https://git.example/team/shop'), forge: 'gitlab', branch: textOf('feat/payments-v2') };
 const VERSION = '1.8.1';
 
-const lane = (pane: string, agent: string, prompt: string, title: string | null): Recap['lanes'][number] =>
-    ({ pane: must(parsePaneId(pane)), agent: must(parseAgentKind(agent)), transcript: sourcePathOf(`${agent}.jsonl`), cursor: cursorOf(1), tail: null, title: parseTextOrNull(title), lastPrompt: textOf(prompt), claudeRecap: null });
+const lane = (pane: string, agent: string, prompt: string, title: string | null): Recap['sessions'][number] =>
+    ({ key: must(parsePaneId(pane)), agent: must(parseAgentKind(agent)), transcript: sourcePathOf(`${agent}.jsonl`), cursor: cursorOf(1), tail: null, title: parseTextOrNull(title), lastPrompt: textOf(prompt), harnessRecap: null });
 
 function columnView(fixture: Fixture): ColumnView {
     const tab: TabViewRecord = {
@@ -170,8 +170,8 @@ function columnView(fixture: Fixture): ColumnView {
         ],
     };
     const recap: Recap = {
-        ...blankRecap(must(parseTabId('w1:t1'))), at: instant(NOW - 120_000), backend: textOf(fixture.backend), tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1'), paneIdOf('w1:p2')], sections: fixture.sections, markdown: renderRecap(fixture.sections, fixture.messages.locale) }],
-        lanes: [lane('w1:p1', 'claude', fixture.prompts[0], fixture.title), lane('w1:p2', 'codex', fixture.prompts[1], null)],
+        ...blankRecap(must(parseTabId('w1:t1'))), at: instant(NOW - 120_000), backend: textOf(fixture.backend), tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1'), paneIdOf('w1:p2')], sections: fixture.sections, markdown: renderRecap(fixture.sections, fixture.messages.locale) }],
+        sessions: [lane('w1:p1', 'claude', fixture.prompts[0], fixture.title), lane('w1:p2', 'codex', fixture.prompts[1], null)],
     };
     return { tab, recap, notes: new Map(), warnings: [], now: NOW, messages: fixture.messages, version: VERSION, compactHint: 40 };
 }

@@ -54,9 +54,9 @@ function restoreFactsOf(store: EngineStore, environment: EngineEnvironment, at: 
         environment.log(`restore ${id}: skipped, ${saying(recap.why)}`);
         return { at, lastRun: null, open: [], closed: [] };
     }
-    const tasks = (recap === null ? [] : recap.tasks).filter((task) => task.lanes.includes(heldBy(session)));
+    const tasks = (recap === null ? [] : recap.tasks).filter((task) => task.sessions.includes(heldBy(session)));
     const facts = tasks.map((task) => {
-        const owned = { tab: id, key: task.id };
+        const owned = { scope: id, key: task.id };
         const open = store.ledger.openOf(owned);
         const closed = store.ledger.recentlyClosed(owned, instant(at - CLOSED_SHOWN_MS));
         return { open: 'kind' in open ? [] : open, closed: 'kind' in closed ? [] : closed };

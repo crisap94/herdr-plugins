@@ -17,10 +17,10 @@ const T0 = Date.parse('2026-10-07T14:00:00Z');
 const MIN = 60_000;
 const sections = { goal: textOf('ship'), now: [], needs: [], done: [textOf('b')], decisions: [], next: [], links: [], rules: [] };
 const run = (over: Partial<RunInput> = {}): RunInput => ({
-    tab: tabId('w1:t1'), at: instant(T0), cause: 'turn-ended', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')],
-    tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')] }], ops: [{ task: textOf('t1'), ops: opsOfSections(sections) }], ...over,
+    scope: tabId('w1:t1'), at: instant(T0), cause: 'turn-ended', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, sessions: [cursor('w1:p1')],
+    tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')] }], ops: [{ task: textOf('t1'), ops: opsOfSections(sections) }], ...over,
 });
-const claude = (at: number, over: Partial<SessionMark> = {}): SessionMark => ({ pane: paneIdOf('w1:p1'), at: instant(at), cursor: countOf(200), tokensBefore: countOf(800_000), tokensAfter: countOf(14_000), tookMs: duration(15_588), ...over });
+const claude = (at: number, over: Partial<SessionMark> = {}): SessionMark => ({ key: paneIdOf('w1:p1'), at: instant(at), cursor: countOf(200), tokensBefore: countOf(800_000), tokensAfter: countOf(14_000), tookMs: duration(15_588), ...over });
 
 const rows = (db: Database, sql: string): Record<string, unknown>[] => db.prepare(sql).all().map((row) => Object.assign({}, row));
 const compaction = (db: Database, startedAt: number, stage = 'compacted', pane = 'w1:p1'): void => {
@@ -33,7 +33,7 @@ test('claude compacts on its own: a compacted, auto boundary at the record\'s ti
     const store = memoryStore();
     seedTab(store);
     const at = T0 + 2 * MIN;
-    recordOps(store, run({ at: instant(at + 5000), marks: [claude(at)], lanes: [cursor('w1:p1', 300)] }));
+    recordOps(store, run({ at: instant(at + 5000), marks: [claude(at)], sessions: [cursor('w1:p1', 300)] }));
     assert.deepEqual(rows(store.db, 'SELECT kind, at, trigger, cursor, tokens_before, tokens_after, took_ms FROM boundary_readable'),
         [{ kind: 'compacted', at, trigger: 'auto', cursor: 200, tokens_before: 800_000, tokens_after: 14_000, took_ms: 15_588 }]);
     assert.deepEqual(rows(store.db, 'SELECT n, started_at, sealed_at, cause FROM chapter_span ORDER BY n'),
@@ -60,7 +60,7 @@ test('the plugin compacted: the boundary is plugin and the record points at it; 
     recordOps(late, run({ at: instant(T0 + 3 * MIN), marks: [claude(T0 + 2 * MIN)] }));
     late.db.exec("UPDATE compaction SET stage = 'briefing', finished_at = NULL, boundary_id = NULL");
     late.db.exec("UPDATE compaction SET stage = 'compacted', finished_at = started_at + 20000");
-    late.records.advance({ tab: tabId('w1:t1'), at: instant(T0 + 4 * MIN), error: null, lanes: [cursor('w1:p1', 400)] });
+    late.records.advance({ scope: tabId('w1:t1'), at: instant(T0 + 4 * MIN), error: null, sessions: [cursor('w1:p1', 400)] });
     assert.equal(rows(late.db, 'SELECT boundary_id FROM compaction')[0]?.['boundary_id'] !== null, true, 'linked once confirmed');
 });
 
@@ -103,7 +103,7 @@ test('a mark already recorded (the cursor did not move on) is not recorded twice
     seedTab(store);
     const at = T0 + 2 * MIN;
     recordOps(store, run({ at: instant(at + 1), marks: [claude(at)] }));
-    store.records.failRun({ tab: tabId('w1:t1'), at: instant(at + 2), cause: 'turn-ended', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: textOf('bad'), lanes: [cursor('w1:p1', 100)], marks: [claude(at)] });
+    store.records.failRun({ scope: tabId('w1:t1'), at: instant(at + 2), cause: 'turn-ended', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: textOf('bad'), sessions: [cursor('w1:p1', 100)], marks: [claude(at)] });
     recordOps(store, run({ at: instant(at + 3), marks: [claude(at - MIN)] }));
     assert.equal(rows(store.db, 'SELECT * FROM boundary').length, 1);
     assert.equal(store.boundaries.chapterCount(tabId('w1:t1')), 2);
@@ -128,8 +128,8 @@ test('a compaction record older than the chapter it seals starts the next chapte
 test('a new session in the pane: a second transcript makes a switched boundary naming the transcript it replaces; the same one again does not', () => {
     const store = memoryStore();
     seedTab(store);
-    recordOps(store, run({ at: instant(T0 + MIN), lanes: [{ ...cursor('w1:p1', 10), transcript: sourcePathOf('/t/second') }] }));
-    recordOps(store, run({ at: instant(T0 + 2 * MIN), lanes: [{ ...cursor('w1:p1', 20), transcript: sourcePathOf('/t/second') }] }));
+    recordOps(store, run({ at: instant(T0 + MIN), sessions: [{ ...cursor('w1:p1', 10), transcript: sourcePathOf('/t/second') }] }));
+    recordOps(store, run({ at: instant(T0 + 2 * MIN), sessions: [{ ...cursor('w1:p1', 20), transcript: sourcePathOf('/t/second') }] }));
     const found = rows(store.db, 'SELECT b.kind, b.at, b.trigger, t.source AS now, r.source AS replaced FROM boundary b JOIN transcript t ON t.id = b.transcript_id JOIN transcript r ON r.id = b.replaces_id');
     assert.deepEqual(found, [{ kind: 'switched', at: T0 + MIN, trigger: null, now: '/t/second', replaced: '/t/w1:p1' }]);
     assert.deepEqual(rows(store.db, 'SELECT cause FROM chapter_span ORDER BY n'), [{ cause: 'start' }, { cause: 'switched' }]);
@@ -137,8 +137,8 @@ test('a new session in the pane: a second transcript makes a switched boundary n
 
 test('a lane first read, or one whose transcript could not be found (an empty source), is no switch', () => {
     const store = memoryStore();
-    recordOps(store, run({ lanes: [{ ...cursor('w1:p1', 0), transcript: sourcePathOf('') }] }));
-    recordOps(store, run({ at: instant(T0 + MIN), lanes: [cursor('w1:p1', 5)] }));
+    recordOps(store, run({ sessions: [{ ...cursor('w1:p1', 0), transcript: sourcePathOf('') }] }));
+    recordOps(store, run({ at: instant(T0 + MIN), sessions: [cursor('w1:p1', 5)] }));
     assert.equal(rows(store.db, 'SELECT * FROM boundary').length, 0);
 });
 
@@ -147,7 +147,7 @@ test('the timeline reads: the breaks oldest first with the mark\'s tokens, else 
     seedTab(store);
     compaction(store.db, T0 + MIN);
     store.db.exec('UPDATE compaction SET tokens_before = 39000, tokens_after = 3000, took_ms = 16000');
-    recordOps(store, run({ at: instant(T0 + 3 * MIN), marks: [{ pane: paneIdOf('w1:p1'), at: instant(T0 + 2 * MIN), cursor: countOf(200) }] }));
+    recordOps(store, run({ at: instant(T0 + 3 * MIN), marks: [{ key: paneIdOf('w1:p1'), at: instant(T0 + 2 * MIN), cursor: countOf(200) }] }));
     assert.deepEqual(store.boundaries.breaksOf(tabId('w1:t1')), [{ kind: 'compacted', at: T0 + 2 * MIN, trigger: 'plugin', tokensBefore: 39_000, tokensAfter: countOf(3000), took: 16_000 }]);
     assert.equal(store.boundaries.lastBreakAt(tabId('w1:t1'), paneIdOf('w1:p1')), T0 + 2 * MIN);
     assert.equal(store.boundaries.lastBreakAt(tabId('w1:t1'), paneIdOf('w1:p2')), null);

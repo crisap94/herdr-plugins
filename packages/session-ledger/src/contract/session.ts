@@ -53,7 +53,7 @@ export interface Chunk {
     readonly entries: readonly Entry[];
     readonly title: Text | null;
     readonly lastPrompt: Text | null;
-    readonly claudeRecap: Text | null;
+    readonly harnessRecap: Text | null;
     readonly notes: readonly AgentNote[];
     readonly marks?: readonly Mark[];
     readonly position: Position;

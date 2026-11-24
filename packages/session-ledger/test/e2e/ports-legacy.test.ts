@@ -30,11 +30,11 @@ test('the capability reasons word each missing capability for its agent', () => 
 
 test('a blank recap holds no recap until a task has markdown', () => {
     const blank = blankRecap(tabId('tab-1'));
-    assert.deepEqual(blank, { tab: 'tab-1', lanes: [], tasks: [], at: null, running: false, backend: null, error: null, costUsd: 0, language: 'en' });
+    assert.deepEqual(blank, { scope: 'tab-1', sessions: [], tasks: [], at: null, running: false, backend: null, error: null, costUsd: 0, language: 'en' });
     assert.equal(hasRecap(blank), recappedOf(false));
     assert.equal(blank.running, recapRunningOf(false));
     assert.equal(blank.running, running(false));
-    assert.equal(blank.tab, tabIdOf('tab-1'));
+    assert.equal(blank.scope, tabIdOf('tab-1'));
 });
 
 test('a pane id and a tab id keep the text they are made of', () => {

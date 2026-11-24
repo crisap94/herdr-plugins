@@ -22,7 +22,7 @@ export const runIdOf = (text: string): RunId => {
 
 export const factOf = (id: string, over: Partial<Omit<Fact, 'id'>> = {}): Fact => ({
     id: factIdOf(id),
-    task: { tab: tabIdOf('tab-1'), key: textOf('a') },
+    task: { scope: tabIdOf('tab-1'), key: textOf('a') },
     section: 'now',
     text: textOf(''),
     why: null,
@@ -38,7 +38,7 @@ export const factOf = (id: string, over: Partial<Omit<Fact, 'id'>> = {}): Fact =
     ...over,
 });
 
-export const sameTask = (left: TaskId, right: TaskId): boolean => left.tab === right.tab && left.key === right.key;
+export const sameTask = (left: TaskId, right: TaskId): boolean => left.scope === right.scope && left.key === right.key;
 
 export const historyOf = ({ section, text, why, state, closedWhy, closedAt, firstAt, lastAt }: Fact): HistoryFact => ({
     section,
@@ -52,5 +52,5 @@ export const historyOf = ({ section, text, why, state, closedWhy, closedAt, firs
 });
 
 export const emptyRecap = (tab: ScopeId): Recap => ({
-    tab, lanes: [], tasks: [], at: null, running: running(false), backend: null, error: null, costUsd: usd(0), language: textOf(''),
+    scope: tab, sessions: [], tasks: [], at: null, running: running(false), backend: null, error: null, costUsd: usd(0), language: textOf(''),
 });

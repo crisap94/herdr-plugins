@@ -12,5 +12,5 @@ export const moneyOf = (usd: Usd): Text => must(parseText(usd === 0 ? '$0' : `$$
 export function lineOf(made: DecisionDraft, effect: Effect): Text {
     const figures = [...made.answers].map(([id, value]) => `${WORDS[id] ?? id} ${value.toFixed(2)}`);
     const tag = [made.gate === 'ceiling' ? 'ceiling' : null, made.mode, effect === 'record-only' ? 'record-only' : null].filter((part) => part !== null).join(', ');
-    return must(parseText(`autocompact ${made.pane}: ${[`${made.share} %`, ...figures].join(' · ')} → ${made.verdict} (${tag})${made.why === null ? '' : `: ${made.why}`}`));
+    return must(parseText(`autocompact ${made.key}: ${[`${made.share} %`, ...figures].join(' · ')} → ${made.verdict} (${tag})${made.why === null ? '' : `: ${made.why}`}`));
 }

@@ -20,9 +20,9 @@ const writesOf = (world: EngineWorld): readonly string[] => world.store.calls().
 
 const written = (world: EngineWorld, factLanguage: string): void => {
     const recap: Recap = {
-        tab: tabId('one'),
-        lanes: [],
-        tasks: [{ id: textOf('t1'), name: textOf('work'), lanes: [paneIdOf(key('a'))], sections: null, markdown: textOf('editing src/app.ts v2') }],
+        scope: tabId('one'),
+        sessions: [],
+        tasks: [{ id: textOf('t1'), name: textOf('work'), sessions: [paneIdOf(key('a'))], sections: null, markdown: textOf('editing src/app.ts v2') }],
         at: instant(0),
         running: running(false),
         backend: null,
@@ -30,7 +30,7 @@ const written = (world: EngineWorld, factLanguage: string): void => {
         costUsd: usd(0),
         language: text('en'),
     };
-    world.store.seed(recap, [factOf('fct_1', { task: { tab: tabIdOf(TAB), key: textOf('t1') }, text: textOf('editing src/app.ts v2'), language: textOf(factLanguage) })]);
+    world.store.seed(recap, [factOf('fct_1', { task: { scope: tabIdOf(TAB), key: textOf('t1') }, text: textOf('editing src/app.ts v2'), language: textOf(factLanguage) })]);
 };
 
 export const LNG_CASES: readonly Case<EngineWorld, Engine>[] = [

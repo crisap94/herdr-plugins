@@ -23,7 +23,7 @@ const wire = (document: GuiTab): unknown => JSON.parse(JSON.stringify(document))
 
 const recapOf = (tab: string, overrides: Partial<Recap> = {}): Recap => ({
     ...blankRecap(tabId(tab)), at: instant(1000), backend: textOf('custom'), ...overrides,
-    tasks: [{ id: textOf('t1'), name: textOf('Login page'), lanes: [paneIdOf('p1')], markdown: textOf('# Login'), sections: { goal: textOf('Ship the login page'), now: [textOf('wiring the form')], needs: [], done: [textOf('route added')], decisions: [], next: [textOf('tests')], links: [], rules: [textOf('secret rule')] } }],
+    tasks: [{ id: textOf('t1'), name: textOf('Login page'), sessions: [paneIdOf('p1')], markdown: textOf('# Login'), sections: { goal: textOf('Ship the login page'), now: [textOf('wiring the form')], needs: [], done: [textOf('route added')], decisions: [], next: [textOf('tests')], links: [], rules: [textOf('secret rule')] } }],
 });
 
 const viewOf = (tab: string): TabViewRecord => viewRecord({

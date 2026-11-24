@@ -39,7 +39,7 @@ test('an answer without a JSON object or an ops list is invalid, and an old-shap
     assert.deepEqual(parseAnswer(text('{"other":1}'), resolving), { kind: 'invalid', why: 'the JSON object has no "ops" list' });
 });
 
-const fact: Fact = { id: brand<string, 'FactId'>('fact-1'), task: { tab: tabIdOf('w1:t1'), key: textOf('t1') }, section: 'next', text: textOf('ship the uploader'), why: null, ref: null, agent: null, anchor: null, firstAt: instant(1), lastAt: instant(1), state: 'open', closedWhy: null, closedAt: null, language: textOf('en'), };
+const fact: Fact = { id: brand<string, 'FactId'>('fact-1'), task: { scope: tabIdOf('w1:t1'), key: textOf('t1') }, section: 'next', text: textOf('ship the uploader'), why: null, ref: null, agent: null, anchor: null, firstAt: instant(1), lastAt: instant(1), state: 'open', closedWhy: null, closedAt: null, language: textOf('en'), };
 
 const ground: TaskGround = { key: text('t1'), tab: text('w1:t1'), shown: new Map([[text('f1'), fact]]), open: [fact], closedLately: [], source: text('ship the uploader'), language: text('en'), agents: [] };
 

@@ -23,7 +23,7 @@ import { parseText, textOf } from '@stateforge-labs/session-ledger/unstable/reca
 import { countOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/count.ts';
 import { paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
-const TASK = { tab: tabIdOf('tab-1'), key: textOf('t1') };
+const TASK = { scope: tabIdOf('tab-1'), key: textOf('t1') };
 
 const factOf = (id: string, section: Fact['section'], text: string): Fact => ({
     id: brand<string, 'FactId'>(id), task: TASK, section, text: textOf(text), why: null, ref: null, agent: null, anchor: null,
@@ -57,7 +57,7 @@ test('the backend table names each harness and picks the first available automat
 test('a compaction boundary is a plugin one only within its window', () => {
     assert.equal(triggerOf(instant(1000), [instant(500)], null), 'plugin');
     assert.equal(triggerOf(instant(PLUGIN_WITHIN_MS + 2000), [instant(1000)], 'manual'), 'manual');
-    const planned = compactedFrom([{ pane: paneIdOf('p'), at: instant(20), cursor: countOf(2) }, { pane: paneIdOf('p'), at: instant(10), cursor: countOf(1) }], instant(10), []);
+    const planned = compactedFrom([{ key: paneIdOf('p'), at: instant(20), cursor: countOf(2) }, { key: paneIdOf('p'), at: instant(10), cursor: countOf(1) }], instant(10), []);
     assert.deepEqual(planned.map(({ at, trigger }) => [at, trigger]), [[20, 'auto']]);
     assert.equal(chapterStart(instant(5), instant(9)), 9);
     assert.equal(settledBefore(instant(1), instant(2)), true);
@@ -112,8 +112,8 @@ test('the fact vocabulary and the failure cause', () => {
 });
 
 test('grouping keeps the tasks and seats a new lane by its place', () => {
-    const kept = keptGrouping([{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('a')] }], [{ pane: paneIdOf('a'), place: textOf('/x/one') }, { pane: paneIdOf('b'), place: textOf('/y/two') }]);
-    assert.deepEqual(kept, [{ id: 't1', lanes: ['a'], name: 'one' }, { id: 't2', lanes: ['b'], name: 'two' }]);
+    const kept = keptGrouping([{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('a')] }], [{ pane: paneIdOf('a'), place: textOf('/x/one') }, { pane: paneIdOf('b'), place: textOf('/y/two') }]);
+    assert.deepEqual(kept, [{ id: 't1', sessions: ['a'], name: 'one' }, { id: 't2', sessions: ['b'], name: 'two' }]);
 });
 
 test('a flight holds its lane and says why', () => {

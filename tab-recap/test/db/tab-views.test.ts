@@ -43,7 +43,7 @@ test('each write replaces the lanes; an unknown tab, and a tab with only a recap
     views.writeTab(view({ at: 2, lanes: [lane('w1:p3')] }));
     assert.deepEqual(views.readTab(tabId('w1:t1'))?.lanes.map((each) => each.pane), ['w1:p3']);
     assert.equal(views.readTab(tabId('missing')), null);
-    records.advance({ tab: tabId('w1:t9'), at: instant(1), error: null, lanes: [] });
+    records.advance({ scope: tabId('w1:t9'), at: instant(1), error: null, sessions: [] });
     assert.equal(views.readTab(tabId('w1:t9')), null);
 });
 

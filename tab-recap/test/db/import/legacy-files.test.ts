@@ -11,13 +11,13 @@ test('the legacy reader knows every shape a file was ever stored in', () => {
     try {
         everyShape(dir);
         const legacy = filesAt(dir);
-        const recap = (tab: string): ReturnType<LegacyStoreFiles['recaps']>[number] | undefined => legacy.recaps().find((each) => each.tab === tab);
+        const recap = (tab: string): ReturnType<LegacyStoreFiles['recaps']>[number] | undefined => legacy.recaps().find((each) => each.scope === tab);
         assert.equal(legacy.recaps().length, 7);
         assert.deepEqual(recap('w1:t1')?.tasks.at(0)?.sections, sections);
-        assert.deepEqual(recap('w1:t2')?.tasks, [{ id: 't1', name: '', lanes: ['w1:p1'], sections: null, markdown: '## Goal\n- from the old days' }], 'before tasks and sections: ONE task holding every lane, markdown only');
+        assert.deepEqual(recap('w1:t2')?.tasks, [{ id: 't1', name: '', sessions: ['w1:p1'], sections: null, markdown: '## Goal\n- from the old days' }], 'before tasks and sections: ONE task holding every lane, markdown only');
         assert.equal(recap('w1:t2')?.language, 'en', 'no language is English');
         assert.deepEqual(recap('w1:t3')?.tasks.at(0)?.sections, sections, 'before tasks, after sections');
-        assert.equal(recap('w1:t4')?.lanes.at(0)?.tail, null, 'a cursor without a tail');
+        assert.equal(recap('w1:t4')?.sessions.at(0)?.tail, null, 'a cursor without a tail');
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }
@@ -47,8 +47,8 @@ test('damaged sections read as null, half-damaged ones keep what is text; pendin
         put(dir, 'visibility', '2.json', { target: 'w1:t1', hidden: 'maybe' });
         put(dir, 'visibility', '3.json', { target: 'w1:t1', hidden: false });
         const legacy = filesAt(dir);
-        assert.equal(legacy.recaps().find((recap) => recap.tab === 'bad')?.tasks.at(0)?.sections, null);
-        assert.deepEqual(legacy.recaps().find((recap) => recap.tab === 'half')?.tasks.at(0)?.sections, { goal: '', now: ['a'], needs: [], done: [], decisions: [], next: [], links: [], rules: [] });
+        assert.equal(legacy.recaps().find((recap) => recap.scope === 'bad')?.tasks.at(0)?.sections, null);
+        assert.deepEqual(legacy.recaps().find((recap) => recap.scope === 'half')?.tasks.at(0)?.sections, { goal: '', now: ['a'], needs: [], done: [], decisions: [], next: [], links: [], rules: [] });
         assert.equal(legacy.recaps().length, 2, 'a file that is not JSON is not a recap');
         assert.deepEqual([legacy.pendingRequests(), legacy.pendingVisibility()], [['w1:t1'], [{ target: 'w1:t1', visibility: 'shown' }]]);
         assert.deepEqual(legacy.pendingRequests(), ['w1:t1'], 'still there');

@@ -78,7 +78,7 @@ function webOf(web: LaneWebRecord | null | undefined): GuiWeb | null {
     return web === null || web === undefined ? null : { base: must(parseText(web.base)), forge: web.forge, branch: orElse(parseText(web.branch), null) };
 }
 
-type Cursor = Recap['lanes'][number] | undefined;
+type Cursor = Recap['sessions'][number] | undefined;
 
 const promptOf = (lane: TabLaneRecord, cursor: Cursor): GuiLane['lastPrompt'] => orElse(parseText(lane.lastPrompt ?? cursor?.lastPrompt), null);
 
@@ -92,7 +92,7 @@ export function guiLaneOf(lane: TabLaneRecord, draw: LaneDraw): GuiLane | null {
     const pane = parsePaneId(lane.pane);
     const agent = parseAgentKind(lane.agent);
     if (pane.kind === 'err' || agent.kind === 'err') { return null; }
-    const cursor = draw.recap.lanes.find((each) => each.pane === lane.pane);
+    const cursor = draw.recap.sessions.find((each) => each.key === lane.pane);
     return {
         pane: pane.value, agent: agent.value, status: orElse(parseNonEmptyText(lane.status), UNKNOWN), title: orElse(parseText(lane.title), null), cwd: orElse(parseDirectory(lane.cwd), null),
         lastPrompt: promptOf(lane, cursor), branch: orElse(parseText(lane.web?.branch), null),

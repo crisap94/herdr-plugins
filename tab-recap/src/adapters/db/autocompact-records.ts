@@ -63,12 +63,12 @@ export class DecisionLedgerRepository implements DecisionLedger {
         const id = ids.next();
         writeTx(this.db, () => {
             this.orm.insert(autocompactDecision).values({
-                id, tabId: d.tab, pane: d.pane, agent: d.agent, at: d.at, mode: d.mode, share: d.share, tokens: d.tokens, window: d.window,
+                id, tabId: d.scope, pane: d.key, agent: d.agent, at: d.at, mode: d.mode, share: d.share, tokens: d.tokens, window: d.window,
                 gate: d.gate, verdict: d.verdict, answers: JSON.stringify(Object.fromEntries(d.answers)), coverage: d.coverage === null ? null : JSON.stringify(Object.fromEntries(d.coverage)),
                 decider: d.decider, costMicroUsd: Math.round(d.costUsd * MICRO), tookMs: d.tookMs, why: d.why,
                 askedVerdict: d.askedVerdict, laneStatus: d.laneStatus, requested: 0,
             }).run();
-            this.orm.delete(autocompactSkip).where(and(eq(autocompactSkip.tabId, d.tab), eq(autocompactSkip.pane, d.pane))).run();
+            this.orm.delete(autocompactSkip).where(and(eq(autocompactSkip.tabId, d.scope), eq(autocompactSkip.pane, d.key))).run();
         });
         return must(parseDecisionId(typeIdOf('decision', id)));
     }
@@ -144,8 +144,8 @@ export class DecisionLedgerRepository implements DecisionLedger {
         const kept = new Set(keep.map((lane) => `${lane.tab}\u0000${lane.pane}`));
         writeTx(this.db, () => {
             for (const skip of this.skips()) {
-                if (!kept.has(`${skip.tab}\u0000${skip.pane}`)) {
-                    this.orm.delete(autocompactSkip).where(and(eq(autocompactSkip.tabId, skip.tab), eq(autocompactSkip.pane, skip.pane))).run();
+                if (!kept.has(`${skip.scope}\u0000${skip.key}`)) {
+                    this.orm.delete(autocompactSkip).where(and(eq(autocompactSkip.tabId, skip.scope), eq(autocompactSkip.pane, skip.key))).run();
                 }
             }
         });
@@ -154,7 +154,7 @@ export class DecisionLedgerRepository implements DecisionLedger {
     skip(skip: SkipRow): void {
         writeTx(this.db, () => {
             this.orm.insert(autocompactSkip).values({
-                tabId: skip.tab, pane: skip.pane, agent: skip.agent, at: skip.at, gate: skip.gate, share: skip.share, detail: skip.detail,
+                tabId: skip.scope, pane: skip.key, agent: skip.agent, at: skip.at, gate: skip.gate, share: skip.share, detail: skip.detail,
             }).onConflictDoUpdate({
                 target: [autocompactSkip.tabId, autocompactSkip.pane],
                 set: { agent: sql`excluded.agent`, at: sql`excluded.at`, gate: sql`excluded.gate`, share: sql`excluded.share`, detail: sql`excluded.detail` },

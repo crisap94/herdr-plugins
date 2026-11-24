@@ -6,6 +6,7 @@ import { reconcileInput, type ReconcileMaterial } from '../../packages/session-l
 import type { TaskGround } from '../../packages/session-ledger/src/recap/application/ops-gating.ts';
 import type { Fact } from '../../packages/session-ledger/src/recap/domain/fact.ts';
 import type { Item, Prompt } from '../lib/types.ts';
+import { factOfStored, factToStored, type StoredFact } from '../lib/stored-fact.ts';
 import { brand } from '../../packages/session-ledger/src/recap/domain/brand.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
 import type { Text } from '../../packages/session-ledger/src/recap/domain/text.ts';
@@ -72,6 +73,15 @@ export function prompt(item: ReconcileItem): Prompt {
     return { system: SYSTEM, user: builtOf(item).document };
 }
 
+export type StoredInput = Omit<Input, 'open'> & { readonly open: readonly StoredFact[] };
+
+export const inputOfStored = (input: StoredInput): Input => ({ ...input, open: input.open.map(factOfStored) });
+
+export const inputToStored = (input: Input): StoredInput => ({ ...input, open: input.open.map(factToStored) });
+
 export function loadItems(file: string): ReconcileItem[] {
-    return readFileSync(file, 'utf8').split('\n').filter((line) => line.trim() !== '').map((line) => JSON.parse(line) as ReconcileItem);
+    return readFileSync(file, 'utf8').split('\n').filter((line) => line.trim() !== '').map((line) => {
+        const item = JSON.parse(line) as Omit<ReconcileItem, 'input'> & { readonly input: StoredInput };
+        return { ...item, input: inputOfStored(item.input) };
+    });
 }

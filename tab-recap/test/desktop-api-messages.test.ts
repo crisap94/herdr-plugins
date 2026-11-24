@@ -60,10 +60,10 @@ const filesOf = (world: World): string => JSON.stringify(readdirSync(world.root,
 test('the compact message reads and writes nothing: no table changes, no model is asked', async () => {
     const world = await seededWorld();
     try {
-        const before = [tableCounts(world), JSON.stringify(world.store.ledger.allOf({ tab: tabIdOf(TAB), key: textOf('t1') })), filesOf(world)];
+        const before = [tableCounts(world), JSON.stringify(world.store.ledger.allOf({ scope: tabIdOf(TAB), key: textOf('t1') })), filesOf(world)];
         for (let n = 0; n < 3; n += 1) { assert.equal((await api(world, 'GET', compactPath(`pane=${PANE}&note=x`))).status, 200); }
         assert.equal((await api(world, 'GET', handoffPath(`from=${PANE}`))).status, 200);
-        assert.deepEqual([tableCounts(world), JSON.stringify(world.store.ledger.allOf({ tab: tabIdOf(TAB), key: textOf('t1') })), filesOf(world)], before);
+        assert.deepEqual([tableCounts(world), JSON.stringify(world.store.ledger.allOf({ scope: tabIdOf(TAB), key: textOf('t1') })), filesOf(world)], before);
     } finally { world.close(); }
 });
 
@@ -86,7 +86,7 @@ test('a note of 280 characters is taken and 281 is refused; an unknown pane, an 
 
 test('the compact message drops the least important lines to fit 3000 characters, as the engine does', () => {
     const sections = { ...NO_SECTIONS, goal: textOf('g'.repeat(500)), decisions: Array.from({ length: 40 }, (_, n) => textOf(`Decision ${n}: ${'because '.repeat(30)}`)) };
-    const records = { readRecap: (): Recap => ({ ...blankRecap(tabId(TAB)), lanes: [cursor(PANE)], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf(PANE)], sections, markdown: textOf('') }] }) };
+    const records = { readRecap: (): Recap => ({ ...blankRecap(tabId(TAB)), sessions: [cursor(PANE)], tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf(PANE)], sections, markdown: textOf('') }] }) };
     const made = compactPreviewOf({ records, views: { readTab: (): null => null } }, tabId(TAB), paneId(PANE), must(parseText('n'.repeat(280))));
     assert.ok(made.kind === 'guidance');
     assert.ok(made.text.length <= 3000);
@@ -137,16 +137,16 @@ const lane = (pane: string, web: LaneWebRecord | null): TabLaneRecord => laneRec
 const SHAPES: readonly Shape[] = [
     {
         name: 'two tasks, the lane in the second, a web, a note with newlines and unicode',
-        recap: { ...blankRecap(tabId(TAB)), lanes: [cursor(PANE), cursor('w1:p2')], tasks: [
-            { id: textOf('a'), name: textOf('A'), lanes: [paneIdOf('w1:p2')], sections: sectionsOf('Other goal'), markdown: textOf('') },
-            { id: textOf('b'), name: textOf('B'), lanes: [paneIdOf(PANE)], sections: sectionsOf('Ship it', { needs: [textOf('Which db?')], links: [textOf('PR #12'), textOf('src/app.ts:4')], decisions: [textOf('Use postgres: simpler ops')], now: [textOf('Wiring')], next: [textOf('Docs')], rules: [textOf('Never touch main')] }), markdown: textOf('') },
+        recap: { ...blankRecap(tabId(TAB)), sessions: [cursor(PANE), cursor('w1:p2')], tasks: [
+            { id: textOf('a'), name: textOf('A'), sessions: [paneIdOf('w1:p2')], sections: sectionsOf('Other goal'), markdown: textOf('') },
+            { id: textOf('b'), name: textOf('B'), sessions: [paneIdOf(PANE)], sections: sectionsOf('Ship it', { needs: [textOf('Which db?')], links: [textOf('PR #12'), textOf('src/app.ts:4')], decisions: [textOf('Use postgres: simpler ops')], now: [textOf('Wiring')], next: [textOf('Docs')], rules: [textOf('Never touch main')] }), markdown: textOf('') },
         ] },
         view: viewRecord({ tab: TAB, column: null, at: 1, lanes: [lane(PANE, WEB), lane('w1:p2', null)] }),
         note: 'keep\nthe  schema \té\u{1F600}\u0007',
     },
     {
         name: 'a closed lane: in the recap and no longer in the view; a task without sections',
-        recap: { ...blankRecap(tabId(TAB)), lanes: [cursor(PANE)], tasks: [{ id: textOf('a'), name: textOf('A'), lanes: [paneIdOf(PANE)], sections: null, markdown: textOf('') }] },
+        recap: { ...blankRecap(tabId(TAB)), sessions: [cursor(PANE)], tasks: [{ id: textOf('a'), name: textOf('A'), sessions: [paneIdOf(PANE)], sections: null, markdown: textOf('') }] },
         view: viewRecord({ tab: TAB, column: null, at: 1, lanes: [] }),
         note: '',
     },
@@ -171,7 +171,7 @@ for (const shape of SHAPES) {
 }
 
 test('over the limit the preview is exactly what compaction sends: nothing is cut, and no character is split in half', () => {
-    const records = { readRecap: (): Recap => ({ ...blankRecap(tabId(TAB)), lanes: [cursor(PANE)], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf(PANE)], sections: sectionsOf('\u{1F600}'.repeat(2000)), markdown: textOf('') }] }) };
+    const records = { readRecap: (): Recap => ({ ...blankRecap(tabId(TAB)), sessions: [cursor(PANE)], tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf(PANE)], sections: sectionsOf('\u{1F600}'.repeat(2000)), markdown: textOf('') }] }) };
     const made = compactPreviewOf({ records, views: { readTab: (): null => null } }, tabId(TAB), paneId(PANE), must(parseText('')));
     assert.ok(made.kind === 'guidance');
     assert.equal(made.text, guidanceOf({ sections: sectionsOf('\u{1F600}'.repeat(2000)), web: null, note: null }));

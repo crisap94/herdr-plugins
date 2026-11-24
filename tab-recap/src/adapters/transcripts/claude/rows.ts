@@ -12,7 +12,7 @@ const AWAY_SUBTYPE = claude.ClaudeSystemSubtype.enum['away_summary'];
 interface Meta {
     title: Text | null;
     lastPrompt: Text | null;
-    claudeRecap: Text | null;
+    harnessRecap: Text | null;
 }
 
 function awayOf(record: ClaudeRecord): Text | null {
@@ -47,7 +47,7 @@ function noteMeta(record: ClaudeRecord, meta: Meta): void {
     if (record.kind === 'last-prompt' && record.prompt !== '') {
         meta.lastPrompt = must(parseText(claude.unwrapPastedContent(record.prompt)));
     }
-    meta.claudeRecap = awayOf(record) ?? meta.claudeRecap;
+    meta.harnessRecap = awayOf(record) ?? meta.harnessRecap;
 }
 
 function agentEntries(record: ClaudeRecord): Entry[] {
@@ -95,7 +95,7 @@ function marksOf(record: ClaudeRecord): Mark[] {
 }
 
 export function extractClaudeOf(lines: readonly Text[]): Omit<Chunk, 'kind' | 'position' | 'grew'> {
-    const meta: Meta = { title: null, lastPrompt: null, claudeRecap: null };
+    const meta: Meta = { title: null, lastPrompt: null, harnessRecap: null };
     const entries: Entry[] = [];
     const notes: AgentNote[] = [];
     const marks: Mark[] = [];

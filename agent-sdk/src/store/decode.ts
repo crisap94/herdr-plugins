@@ -77,14 +77,14 @@ const sessionCursorOf = (raw: unknown): SessionCursor => {
         return bad('lane');
     }
     return {
-        pane,
+        key: pane,
         agent,
         transcript,
         cursor,
         tail: textOrNullAt(raw, 'tail'),
         title: textOrNullAt(raw, 'title'),
         lastPrompt: textOrNullAt(raw, 'lastPrompt'),
-        claudeRecap: textOrNullAt(raw, 'claudeRecap'),
+        harnessRecap: textOrNullAt(raw, 'claudeRecap'),
     };
 };
 
@@ -100,7 +100,7 @@ const taskOf = (raw: unknown): RecapTask => {
         return bad('task');
     }
     const lanes = raw.lanes.map((pane: unknown) => (typeof pane === 'string' && isPaneId(pane) ? pane : bad('task lane')));
-    return { id: textAt(raw, 'id'), name: textAt(raw, 'name'), lanes, sections: null, markdown: textAt(raw, 'markdown') };
+    return { id: textAt(raw, 'id'), name: textAt(raw, 'name'), sessions: lanes, sections: null, markdown: textAt(raw, 'markdown') };
 };
 
 export const tasksOf = (json: string): readonly RecapTask[] => listOf(json, 'tasks').map(taskOf);
@@ -138,7 +138,7 @@ export const factOf = (row: Row): Fact => {
     }
     return {
         id,
-        task: { tab: tabIdOfScope(stringAt(row, 'tab')), key: textAt(row, 'task_key') },
+        task: { scope: tabIdOfScope(stringAt(row, 'tab')), key: textAt(row, 'task_key') },
         section,
         text: textAt(row, 'text'),
         why: textOrNullAt(row, 'why'),

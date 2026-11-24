@@ -38,13 +38,13 @@ test('print reads a database not yet upgraded to the handoff tables, and writes 
         const seeded = openDatabase(fsPathOf(path), MIGRATIONS.slice(0, BEFORE_HANDOFF));
         assert.equal(seeded.kind, 'ready');
         const at = 1_000;
-        new RecapRecordsRepository(seeded.db).recordRun({ tab: tabId('w1:t1'), at: instant(at), cause: 'focused', backend: null, language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [], tasks: [], changed: [], refused: [] });
+        new RecapRecordsRepository(seeded.db).recordRun({ scope: tabId('w1:t1'), at: instant(at), cause: 'focused', backend: null, language: textOf('en'), costUsd: usdOf(0), error: null, sessions: [], tasks: [], changed: [], refused: [] });
         new TabViewRowStore(seeded.db).writeTab(viewRecord({ tab: 'w1:t1', column: null, at, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: null }] }));
         seeded.db.close();
         const before = rowCounts(path);
 
         const print = openPrintStore(must(parseFsPath(path)), closedLaneDaysOf('14'));
-        assert.equal(storeRead(print.records.readRecap(tabId('w1:t1')))?.tab, 'w1:t1', 'the recap reads');
+        assert.equal(storeRead(print.records.readRecap(tabId('w1:t1')))?.scope, 'w1:t1', 'the recap reads');
         assert.deepEqual(storeRead(print.records.lastRunOf(tabId('w1:t1'))), { at, cause: 'focused' });
         assert.equal(print.views.tabOf(paneId('w1:p1')), 'w1:t1');
         assert.equal(print.views.readTab(tabId('w1:t1'))?.lanes.length, 1);

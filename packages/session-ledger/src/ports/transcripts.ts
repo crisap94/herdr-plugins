@@ -26,7 +26,7 @@ export type Grew = Brand<boolean, 'Grew'>;
 
 export const grewOf = brand<boolean, 'Grew'>;
 
-export interface Chunk { readonly kind: 'chunk'; readonly entries: readonly Entry[]; readonly title: Text | null; readonly lastPrompt: Text | null; readonly claudeRecap: Text | null; readonly notes: readonly AgentNote[]; readonly marks?: readonly Mark[]; readonly position: Position; readonly grew: Grew; readonly more?: boolean; }
+export interface Chunk { readonly kind: 'chunk'; readonly entries: readonly Entry[]; readonly title: Text | null; readonly lastPrompt: Text | null; readonly harnessRecap: Text | null; readonly notes: readonly AgentNote[]; readonly marks?: readonly Mark[]; readonly position: Position; readonly grew: Grew; readonly more?: boolean; }
 
 export type SourcePath = Brand<string, 'SourcePath'>;
 

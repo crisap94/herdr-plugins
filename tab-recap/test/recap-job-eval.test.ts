@@ -24,7 +24,7 @@ const transcripts: SessionReader = {
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
     locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
-    read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf('migrate victoria') }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(100), tail: null }, grew: grewOf(true) }),
+    read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf('migrate victoria') }], title: null, lastPrompt: null, harnessRecap: null, notes: [], position: { cursor: cursorOf(100), tail: null }, grew: grewOf(true) }),
 };
 
 async function recapWith(keepInput: (() => KeepInput) | undefined): Promise<ReturnType<ReturnType<typeof memoryStore>['inputs']['runs']>> {

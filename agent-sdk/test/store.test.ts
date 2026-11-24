@@ -4,8 +4,9 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openStore } from '@stateforge-labs/session-ledger-sqlite';
+import { handleOf } from '@stateforge-labs/session-ledger-sqlite/driver';
 import { instant } from '@stateforge-labs/session-ledger';
-import { key, runConformance, scope, storeCases, text, type StoreUnderTest, type Subject } from '@stateforge-labs/session-ledger/testkit';
+import { agentKind, count, cursorAt, key, paneId, runConformance, scope, sourcePath, storeCases, text, usd, type StoreUnderTest, type Subject } from '@stateforge-labs/session-ledger/testkit';
 import { HISTORY, openLedgerStore, type LedgerStore } from '../src/store/index.ts';
 
 const folders: string[] = [];
@@ -89,4 +90,34 @@ test('the history of a store that cannot be read is empty, as in the plugin', ()
     const store = readyAt(temporaryFile());
     store.close();
     equal(store.facts.historyOf(scope('one'), key('a')).length, 0);
+});
+
+test('a recorded run is stored under the keys the file has always carried', () => {
+    const path = temporaryFile();
+    const first = readyAt(path);
+    const lane = { key: paneId('p1'), agent: agentKind('claude'), transcript: sourcePath('/t/p1.jsonl'), cursor: cursorAt(3), tail: null, title: text('T'), lastPrompt: text('P'), harnessRecap: text('R') };
+    first.records.recordRun({
+        scope: scope('tab-1'),
+        at: instant(100),
+        cause: 'requested',
+        backend: text('claude'),
+        language: text('en'),
+        costUsd: usd(0.5),
+        error: null,
+        sessions: [lane],
+        tasks: [{ id: text('a'), name: text('A'), sessions: [paneId('p1')] }],
+        changed: [],
+        refused: [],
+        marks: [{ key: paneId('p1'), at: instant(90), cursor: count(3), tokensBefore: count(9) }],
+    });
+    first.close();
+    const reopened = openStore(path, HISTORY, 'owner');
+    equal(reopened.kind, 'ready');
+    if (reopened.kind === 'ready') {
+        const db = handleOf(reopened);
+        equal(db.prepare('SELECT lanes FROM recap').all()[0]?.lanes, '[{"pane":"p1","agent":"claude","transcript":"/t/p1.jsonl","cursor":3,"tail":null,"title":"T","lastPrompt":"P","claudeRecap":"R"}]');
+        equal(db.prepare('SELECT tasks FROM recap').all()[0]?.tasks, '[{"id":"a","name":"A","lanes":["p1"],"sections":null,"markdown":""}]');
+        equal(db.prepare('SELECT body FROM mark').all()[0]?.body, '{"pane":"p1","at":90,"cursor":3,"tokensBefore":9}');
+        reopened.close();
+    }
 });

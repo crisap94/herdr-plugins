@@ -16,7 +16,7 @@ import { seenLane } from '#test/support/seen.ts';
 
 const laneAt = (pane: string): Lane => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
 const waitAt = (w: World, at: number, mode: 'shadow' | 'on'): void => {
-    w.store.decisions.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(at), mode, share: countOf(12), tokens: mustParsed(parseCount(120_000)), window: mustParsed(parseCount(1_000_000)), gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: mustParsed(parseUsd(0)), tookMs: null, why: null });
+    w.store.decisions.record({ scope: tabId('w1:t1'), key: paneId('w1:p1'), agent: agentKind('claude'), at: instant(at), mode, share: countOf(12), tokens: mustParsed(parseCount(120_000)), window: mustParsed(parseCount(1_000_000)), gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: mustParsed(parseUsd(0)), tookMs: null, why: null });
 };
 
 test('unchanged: the same tokens and mode as the last decision, made by this process, is skipped without a model; new tokens are asked', async () => {
@@ -50,12 +50,12 @@ test('busy across lanes: two lanes over the ceiling in on make one request; the 
     w.share = 85;
     await w.service.consider(laneAt('w1:p1'));
     await w.service.consider(laneAt('w1:p2'));
-    assert.deepEqual([w.requests.map((request) => request.pane), w.store.decisions.skips().map((skip) => [skip.pane, skip.gate, skip.detail])], [['w1:p1'], [['w1:p2', 'busy', 'another lane']]]);
+    assert.deepEqual([w.requests.map((request) => request.pane), w.store.decisions.skips().map((skip) => [skip.key, skip.gate, skip.detail])], [['w1:p1'], [['w1:p2', 'busy', 'another lane']]]);
     const first = w.store.compactions.begin({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), stage: 'compacting', at: instant(NOW), origin: 'auto' });
     w.store.decisions.linkLatest(tabId('w1:t1'), paneId('w1:p1'), must(parseCompactionId(first)));
     w.store.compactions.finish(first, { stage: 'compacted', at: instant(NOW + 1000) });
     w.clock.at += 60_000;
     await w.service.consider(laneAt('w1:p2'));
     assert.deepEqual(w.requests.map((request) => request.pane), ['w1:p1', 'w1:p2']);
-    assert.deepEqual(rows(w).filter((row) => row.pane === 'w1:p2').map((row) => row.gate), ['ceiling']);
+    assert.deepEqual(rows(w).filter((row) => row.key === 'w1:p2').map((row) => row.gate), ['ceiling']);
 });

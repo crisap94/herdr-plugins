@@ -33,7 +33,7 @@ function reader(entries: readonly Entry[] | null, asked: Asked[] = []): SessionR
         latestPrompt: () => Promise.resolve({ kind: 'prompt', text: null }),
         read: (source, was, budget): Promise<ChunkResult> => {
             asked.push({ source, was, budget });
-            return Promise.resolve(entries === null ? unknown({ why: 'unreadable', detail: causeOf(source) }) : { kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(99), tail: null }, grew: grewOf(true) });
+            return Promise.resolve(entries === null ? unknown({ why: 'unreadable', detail: causeOf(source) }) : { kind: 'chunk', entries, title: null, lastPrompt: null, harnessRecap: null, notes: [], position: { cursor: cursorOf(99), tail: null }, grew: grewOf(true) });
         },
     };
 }
@@ -47,7 +47,7 @@ const input = (overrides: Partial<FreshnessInput> = {}): FreshnessInput => ({
 });
 
 const cursorAt = (transcript: string, cursor: number, tail: string | null = null): SessionCursor => ({
-    pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf(transcript), cursor: cursorOf(cursor), tail: tail === null ? null : textOf(tail), title: null, lastPrompt: null, claudeRecap: null,
+    key: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf(transcript), cursor: cursorOf(cursor), tail: tail === null ? null : textOf(tail), title: null, lastPrompt: null, harnessRecap: null,
 });
 
 test('a tab with no good run is the ledger-empty outcome, whatever the transcript holds', async () => {

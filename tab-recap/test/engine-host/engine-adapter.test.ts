@@ -42,7 +42,7 @@ const reader: SessionReader = {
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
     locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
-    read: (source: string): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf(`go ${source}`) }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(7), tail: null }, grew: grewOf(true) }),
+    read: (source: string): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf(`go ${source}`) }], title: null, lastPrompt: null, harnessRecap: null, notes: [], position: { cursor: cursorOf(7), tail: null }, grew: grewOf(true) }),
 };
 
 interface World {
@@ -97,7 +97,7 @@ function outcome(at: World, history: readonly Lane[]): unknown {
     const recap = storeRead(at.store.records.readRecap(tabId(TAB)));
     return {
         asked: at.asked.map((request) => request.input),
-        lanes: recap?.lanes,
+        lanes: recap?.sessions,
         sections: recap?.tasks.map((task) => task.sections),
         costUsd: recap?.costUsd,
         language: recap?.language,

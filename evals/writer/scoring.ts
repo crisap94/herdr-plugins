@@ -31,7 +31,7 @@ export const CODE_CRITERIA: readonly string[] = ['W1', 'W1s', ...GATE_IDS.map((g
 
 function factOf(fact: InputFact, tab: string, language: string): Fact {
     return {
-        id: factIdOf(fact.id), task: { tab: tabIdOf(tab), key: textOf(TASK) }, section: fact.section, text: fact.text, why: fact.why, ref: fact.ref, agent: fact.agent, anchor: fact.anchor,
+        id: factIdOf(fact.id), task: { scope: tabIdOf(tab), key: textOf(TASK) }, section: fact.section, text: fact.text, why: fact.why, ref: fact.ref, agent: fact.agent, anchor: fact.anchor,
         firstAt: fact.first, lastAt: fact.last, state: fact.state, closedWhy: fact.closed, closedAt: fact.state === 'closed' ? fact.last : null, language: textOf(language),
     };
 }
@@ -78,7 +78,7 @@ export function outcomeOf(item: WriterItem, text: string, closeEvidence?: CloseE
         const judged = judge(closeEvidence === 'on' ? [...LEDGER_GATES, closeEvidenceGate] : LEDGER_GATES, given, ground, instant(now));
         const out = new Set(judged.refused.map((finding) => finding.at));
         let made = 0;
-        const folded = apply([...ground.shown.values()], judged.kept, { id: 'eval' as RunId, task: { tab: tabIdOf(ground.tab), key: textOf(TASK) }, at: now, language: item.input.language, mint: () => `eval-${(made += 1)}` as FactId });
+        const folded = apply([...ground.shown.values()], judged.kept, { id: 'eval' as RunId, task: { scope: tabIdOf(ground.tab), key: textOf(TASK) }, at: now, language: item.input.language, mint: () => `eval-${(made += 1)}` as FactId });
         found = { kind: 'ops', why: '', problems: answer.problems, given, refused: judged.refused, kept: given.filter((_op, at) => !out.has(countOf(at))), ledger: folded.ledger, ground };
     }
     cache.set(key, found);

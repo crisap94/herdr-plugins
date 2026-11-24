@@ -29,12 +29,12 @@ export class PublishingRecords implements GuardedRecapRecords {
 
     recordRun(run: RecordedRun): void {
         this.inner.recordRun(run);
-        this.published(run.tab);
+        this.published(run.scope);
     }
 
     failRun(run: FailedRun): void {
         this.inner.failRun(run);
-        this.published(run.tab);
+        this.published(run.scope);
     }
 
     advance(move: Advance): void {

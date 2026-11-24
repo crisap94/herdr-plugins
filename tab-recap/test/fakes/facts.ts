@@ -4,7 +4,7 @@ import { textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
-export const TASK: TaskId = { tab: tabIdOf('w1:t1'), key: textOf('t1') };
+export const TASK: TaskId = { scope: tabIdOf('w1:t1'), key: textOf('t1') };
 
 let counter = 0;
 

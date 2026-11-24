@@ -50,7 +50,7 @@ export function rowOf(lane: TabLaneRecord, cursor: SessionCursor | undefined): R
         title: maybe(lane.title, parseTitle),
         cwd: maybe(lane.cwd, parseDirectory),
         fromScreen: parseFromScreen(cursor !== undefined && isScreenSource(sourcePathOf(cursor.transcript))),
-        harnessRecap: maybe(cursor?.claudeRecap ?? null, parseProse),
+        harnessRecap: maybe(cursor?.harnessRecap ?? null, parseProse),
     };
 }
 
@@ -59,7 +59,7 @@ function columnRowOf(lane: TabLaneRecord, cursor: SessionCursor | undefined): Ro
 }
 
 export function columnTaskOf(task: RecapTask): ColumnTask {
-    return { name: parseTaskName(task.name), members: task.lanes.map(parsePaneId), sections: task.sections, markdown: parseProse(task.markdown) };
+    return { name: parseTaskName(task.name), members: task.sessions.map(parsePaneId), sections: task.sections, markdown: parseProse(task.markdown) };
 }
 
 export function recapColumnOf(recap: Recap): RecapColumn {
@@ -95,10 +95,10 @@ function columnExtras<Text>(view: PluginColumnView, style: Style<Text> | undefin
 }
 
 export function columnViewOf<Text>(view: PluginColumnView, wording: Wording<Text>, style?: Style<Text>): ColumnView<Text> {
-    const cursors = view.recap?.lanes ?? [];
+    const cursors = view.recap?.sessions ?? [];
     return {
         ...columnExtras(view, style),
-        rows: view.tab === null ? null : view.tab.lanes.map((lane) => columnRowOf(lane, cursors.find((cursor) => cursor.pane === lane.pane))),
+        rows: view.tab === null ? null : view.tab.lanes.map((lane) => columnRowOf(lane, cursors.find((cursor) => cursor.key === lane.pane))),
         daemonVersion: view.tab?.daemonVersion ?? null,
         recap: view.recap === null ? null : recapColumnOf(view.recap),
         notes: view.notes,

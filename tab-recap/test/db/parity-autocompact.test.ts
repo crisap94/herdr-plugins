@@ -42,7 +42,7 @@ describe('parity: autocompact records', () => {
                 db.prepare("DELETE FROM autocompact_skip WHERE tab_id = 't1' AND pane = 'p1'").run();
             },
             builder: (db) => {
-                new DecisionLedgerRepository(db).record({ tab: tabId('t1'), pane: paneId('p1'), agent: agentKind('claude'), at: instant(10), mode: 'on', share: countOf(60), tokens: mustParsed(parseCount(600000)), window: mustParsed(parseCount(1000000)), gate: 'ask', verdict: 'compact', answers: new Map(), coverage: null, decider: null, costUsd: mustParsed(parseUsd(0.5)), tookMs: null, why: null, askedVerdict: null, laneStatus: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null });
+                new DecisionLedgerRepository(db).record({ scope: tabId('t1'), key: paneId('p1'), agent: agentKind('claude'), at: instant(10), mode: 'on', share: countOf(60), tokens: mustParsed(parseCount(600000)), window: mustParsed(parseCount(1000000)), gate: 'ask', verdict: 'compact', answers: new Map(), coverage: null, decider: null, costUsd: mustParsed(parseUsd(0.5)), tookMs: null, why: null, askedVerdict: null, laneStatus: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null });
             },
             dump: dumpBoth,
         });
@@ -72,7 +72,7 @@ describe('parity: autocompact records', () => {
                 db.prepare("INSERT INTO autocompact_skip (tab_id, pane, agent, at, gate, share, detail) VALUES ('t1', 'p2', 'claude', 7, 'in-flight', 60, 'y') ON CONFLICT (tab_id, pane) DO UPDATE SET agent = excluded.agent, at = excluded.at, gate = excluded.gate, share = excluded.share, detail = excluded.detail").run();
             },
             builder: (db) => {
-                new DecisionLedgerRepository(db).skip({ tab: tabId('t1'), pane: paneId('p2'), agent: agentKind('claude'), at: instant(7), gate: 'in-flight', share: countOf(60), detail: textOf('y') });
+                new DecisionLedgerRepository(db).skip({ scope: tabId('t1'), key: paneId('p2'), agent: agentKind('claude'), at: instant(7), gate: 'in-flight', share: countOf(60), detail: textOf('y') });
             },
             dump: dumpBoth,
         });

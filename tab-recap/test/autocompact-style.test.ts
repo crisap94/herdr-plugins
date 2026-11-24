@@ -29,7 +29,7 @@ function styled(keys: Readonly<Record<string, string>>, startedAt = 0): World {
 }
 
 function waitedMinutesAgo(w: World, minutes: number): void {
-    w.store.decisions.record({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - minutes * 60_000), mode: 'on', share: countOf(12), tokens: mustParsed(parseCount(120_000)), window: mustParsed(parseCount(1_000_000)), gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: mustParsed(parseUsd(0)), tookMs: null, why: null });
+    w.store.decisions.record({ scope: tabId('w1:t1'), key: paneId('w1:p1'), agent: agentKind('claude'), at: instant(NOW - minutes * 60_000), mode: 'on', share: countOf(12), tokens: mustParsed(parseCount(120_000)), window: mustParsed(parseCount(1_000_000)), gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: mustParsed(parseUsd(0)), tookMs: null, why: null });
 }
 
 const passes = async (style: string): Promise<boolean> => (await checkCoverage(textOf('the brief'), NEEDS, keeping(0.65), probabilityRequired(parseProbability(tuningOf(env({ TAB_RECAP_AUTOCOMPACT_STYLE: style })).coverageAtLeast)))).complete === 'present';

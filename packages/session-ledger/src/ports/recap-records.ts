@@ -22,19 +22,19 @@ export type Recapped = Brand<boolean, 'Recapped'>;
 export const recappedOf = brand<boolean, 'Recapped'>;
 
 export interface SessionCursor {
-    readonly pane: SessionKey;
+    readonly key: SessionKey;
     readonly agent: HarnessKind;
     readonly transcript: SourcePath;
     readonly cursor: Cursor;
     readonly tail: Text | null;
     readonly title: Text | null;
     readonly lastPrompt: Text | null;
-    readonly claudeRecap: Text | null;
+    readonly harnessRecap: Text | null;
 }
 
 export interface Recap {
-    readonly tab: ScopeId;
-    readonly lanes: readonly SessionCursor[];
+    readonly scope: ScopeId;
+    readonly sessions: readonly SessionCursor[];
     readonly tasks: readonly RecapTask[];
     readonly at: Instant | null;
     readonly running: Running;
@@ -45,13 +45,13 @@ export interface Recap {
 }
 
 export function blankRecap(tab: ScopeId): Recap {
-    return { tab, lanes: [], tasks: [], at: null, running: recapRunningOf(false), backend: null, error: null, costUsd: brand<number, 'Usd'>(0), language: brand<string, 'Text'>('en') };
+    return { scope: tab, sessions: [], tasks: [], at: null, running: recapRunningOf(false), backend: null, error: null, costUsd: brand<number, 'Usd'>(0), language: brand<string, 'Text'>('en') };
 }
 
 export const hasRecap = (recap: Recap): Recapped => recappedOf(recap.tasks.some((task) => task.markdown !== ''));
 
 export interface RunFacts {
-    readonly tab: ScopeId;
+    readonly scope: ScopeId;
     readonly at: Instant;
     readonly cause: RecapCause | 'imported';
     readonly backend: Text | null;
@@ -62,7 +62,7 @@ export interface RunFacts {
 export interface RecordedRun extends RunFacts {
     readonly marks?: readonly SessionMark[];
     readonly error: Text | null;
-    readonly lanes: readonly SessionCursor[];
+    readonly sessions: readonly SessionCursor[];
     readonly tasks: readonly TaskShape[];
     readonly changed: readonly Fact[];
     readonly refused: readonly Refusal[];
@@ -73,15 +73,15 @@ export interface RecordedRun extends RunFacts {
 export interface FailedRun extends RunFacts {
     readonly marks?: readonly SessionMark[];
     readonly error: Text;
-    readonly lanes: readonly SessionCursor[];
+    readonly sessions: readonly SessionCursor[];
 }
 
 export interface Advance {
     readonly marks?: readonly SessionMark[];
-    readonly tab: ScopeId;
+    readonly scope: ScopeId;
     readonly at: Instant;
     readonly error: Text | null;
-    readonly lanes: readonly SessionCursor[];
+    readonly sessions: readonly SessionCursor[];
 }
 
 export interface LastRun {

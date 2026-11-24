@@ -14,7 +14,7 @@ import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/l
 
 const HOUR = 3_600_000;
 const AT = 100 * HOUR;
-const OWNER = { tab: tabIdOf('tab-1') };
+const OWNER = { scope: tabIdOf('tab-1') };
 
 const factOf = (id: string, over: Partial<Fact> = {}): Fact => ({
     id: brand<string, 'FactId'>(id), task: { ...OWNER, key: textOf('a') }, section: 'now', text: textOf(id), why: null, ref: null, agent: null, anchor: null,
@@ -36,7 +36,7 @@ test('an add gets the minted id and the run at and language', () => {
     const add: Operation = { op: 'add', section: 'needs', text: textOf('ship it'), why: null, ref: null, at: null, agent: null };
     const folded = foldedRun(ledgerOf([]), [{ task: textOf('a'), ops: [add] }], runOf(['fct_new']));
     assert.deepEqual(folded.refused, []);
-    assert.deepEqual(folded.changed.map((fact) => [fact.id, fact.task, fact.firstAt, fact.lastAt, fact.language]), [['fct_new', { tab: 'tab-1', key: 'a' }, AT, AT, 'es']]);
+    assert.deepEqual(folded.changed.map((fact) => [fact.id, fact.task, fact.firstAt, fact.lastAt, fact.language]), [['fct_new', { scope: 'tab-1', key: 'a' }, AT, AT, 'es']]);
 });
 
 test('a close of an id the ledger does not hold is refused as unknown-id', () => {
@@ -64,7 +64,7 @@ test('throwingLedger turns an unknown read into an error that says why', () => {
 });
 
 test('accomplishedOf reports the done facts that are new after the run, and an unknown read reports nothing and logs once', () => {
-    const task = { id: textOf('a'), name: textOf('A'), lanes: [] };
+    const task = { id: textOf('a'), name: textOf('A'), sessions: [] };
     const old = factOf('fct_old', { section: 'done' });
     const fresh = factOf('fct_new', { section: 'done' });
     const logged: string[] = [];

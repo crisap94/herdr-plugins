@@ -17,7 +17,7 @@ export function factsOfTabAt(path: FsPath, tab: ScopeId): readonly Fact[] | null
             return null;
         }
         const rows = new LedgerRows(db);
-        return all(db.prepare('SELECT key FROM task WHERE tab_id = ? ORDER BY key'), tab).flatMap((row) => rows.allOf({ tab, key: textOf(text(row, 'key')) }));
+        return all(db.prepare('SELECT key FROM task WHERE tab_id = ? ORDER BY key'), tab).flatMap((row) => rows.allOf({ scope: tab, key: textOf(text(row, 'key')) }));
     } finally {
         db.close();
     }

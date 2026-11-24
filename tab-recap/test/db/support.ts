@@ -56,24 +56,24 @@ export type RunInput = Omit<RecordedRun, 'changed' | 'refused'> & { readonly ops
 
 export function recordOps(store: Pick<Store, 'records' | 'ledger'>, run: RunInput): void {
     const { ops = [], ...rest } = run;
-    const folded = foldedRun(throwingLedger(checkedLedger(store.ledger)), ops, { owner: { tab: run.tab }, at: run.at, language: run.language, mint: mintFactId });
+    const folded = foldedRun(throwingLedger(checkedLedger(store.ledger)), ops, { owner: { scope: run.scope }, at: run.at, language: run.language, mint: mintFactId });
     store.records.recordRun({ ...rest, ...folded });
 }
 
 export function seed(store: Store, recap: Recap): void {
     const at = recap.at ?? instant(1);
-    const facts = { tab: recap.tab, at, cause: 'imported', backend: recap.backend, language: recap.language, costUsd: recap.costUsd } as const;
+    const facts = { scope: recap.scope, at, cause: 'imported', backend: recap.backend, language: recap.language, costUsd: recap.costUsd } as const;
     if (recap.at !== null) {
-        recordOps(store, { ...facts, error: recap.error, lanes: recap.lanes, tasks: recap.tasks, ops: recap.tasks.map((task) => ({ task: task.id, ops: task.sections === null ? [] : opsOfSections(task.sections) })) });
-    } else if (recap.lanes.length > 0) {
-        store.records.advance({ tab: recap.tab, at, error: recap.error, lanes: recap.lanes });
+        recordOps(store, { ...facts, error: recap.error, sessions: recap.sessions, tasks: recap.tasks, ops: recap.tasks.map((task) => ({ task: task.id, ops: task.sections === null ? [] : opsOfSections(task.sections) })) });
+    } else if (recap.sessions.length > 0) {
+        store.records.advance({ scope: recap.scope, at, error: recap.error, sessions: recap.sessions });
     }
     if (recap.running) {
-        store.records.beginRun(recap.tab, recap.backend, at);
+        store.records.beginRun(recap.scope, recap.backend, at);
     }
 }
 
-export const cursor = (pane: string, position = 100): SessionCursor => ({ pane: paneId(pane), agent: agentKind('claude'), transcript: sourcePathOf(`/t/${pane}`), cursor: cursorOf(position), tail: null, title: null, lastPrompt: null, claudeRecap: null });
+export const cursor = (pane: string, position = 100): SessionCursor => ({ key: paneId(pane), agent: agentKind('claude'), transcript: sourcePathOf(`/t/${pane}`), cursor: cursorOf(position), tail: null, title: null, lastPrompt: null, harnessRecap: null });
 
 export const newId = (): Uint8Array => ids.next();
 

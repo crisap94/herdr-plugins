@@ -88,7 +88,7 @@ test('edit counts: per path, most edited first, ties by path', () => {
 
 const reader = (agent: string, entries: readonly { role: 'tool' | 'agent'; kind?: 'edit' | 'shell'; text: Text }[] | 'unreadable'): SessionReader => ({
     agent: agentKind(agent), inFlight: { kind: 'unsupported', why: 'unregistered-reader' }, locate: () => Promise.resolve({ kind: 'located', source: sourcePathOf('x') }), latestPrompt: () => Promise.resolve({ kind: 'prompt', text: null }),
-    read: () => Promise.resolve(entries === 'unreadable' ? unknown({ why: 'unreadable', detail: causeOf('x') }) : { kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(0), tail: null }, grew: grewOf(false) }),
+    read: () => Promise.resolve(entries === 'unreadable' ? unknown({ why: 'unreadable', detail: causeOf('x') }) : { kind: 'chunk', entries, title: null, lastPrompt: null, harnessRecap: null, notes: [], position: { cursor: cursorOf(0), tail: null }, grew: grewOf(false) }),
 });
 
 test('edit calls are counted through each lane\'s own reader; screens, unreadable records and other calls count nothing', async () => {

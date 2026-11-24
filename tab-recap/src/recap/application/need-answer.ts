@@ -26,7 +26,7 @@ const refused = (reason: NeedRefusal): NeedAnswer => ({ kind: 'refused', reason 
 
 function factOf(ledger: NeedAnswerDeps['ledger'], tab: ScopeId, id: NonEmptyText): Fact | null {
     for (const key of knownOr(ledger.keysOf(tab), [])) {
-        const found = knownOr(ledger.allOf({ tab, key }), []).find((fact) => String(fact.id) === id);
+        const found = knownOr(ledger.allOf({ scope: tab, key }), []).find((fact) => String(fact.id) === id);
         if (found !== undefined) { return found; }
     }
     return null;

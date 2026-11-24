@@ -41,10 +41,10 @@ test('a column asks while the daemon writes: two connections to one file lose no
         }
         const taken: string[] = [];
         for (let at = 0; at < 50; at += 1) {
-            daemon.records.advance({ tab: tabId('w1:t1'), at: instant(at), error: null, lanes: [cursor('w1:p1', at)] });
+            daemon.records.advance({ scope: tabId('w1:t1'), at: instant(at), error: null, sessions: [cursor('w1:p1', at)] });
             column.requests.request(tabId(`w1:t${at}`));
             taken.push(...daemon.requests.takeRequests().map(String));
-            assert.equal(storeRead(column.records.readRecap(tabId('w1:t1')))?.tab, 'w1:t1', 'the column reads while the daemon writes');
+            assert.equal(storeRead(column.records.readRecap(tabId('w1:t1')))?.scope, 'w1:t1', 'the column reads while the daemon writes');
         }
         assert.equal(taken.length, 50);
         assert.equal((daemon.db.prepare('PRAGMA journal_mode').get() as { journal_mode: string }).journal_mode, 'wal');
