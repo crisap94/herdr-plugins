@@ -24,11 +24,11 @@ import { instant } from '#src/recap/domain/time.ts';
 import { present, presentBar } from '#src/recap/render/present.ts';
 import { groupsOf } from '#src/recap/render/groups.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
-import type { TabRecap } from '#src/ports/recap-records.ts';
+import type { Recap } from '#src/ports/recap-records.ts';
 import type { TabLaneRecord, TabViewRecord } from '#src/ports/tab-views.ts';
-import type { LaneRepo } from '#src/ports/lane-repo.ts';
-import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
-import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import type { Workplaces } from '#src/ports/lane-repo.ts';
+import type { RecapRequest, Writer, Written } from '#src/ports/summarizer.ts';
+import type { ChunkResult, Located, PromptResult, SessionReader } from '#src/ports/transcripts.ts';
 import { agentOf, firstTask, oneTask, requestOf } from '#test/support.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '#src/recap/domain/brand.ts';
@@ -113,7 +113,7 @@ test('files touched are the distinct paths of the edit calls, the most recent la
     assert.equal(touchedFiles(Array.from({ length: 9 }, (_, i) => tool('edit', `f${i}.ts`))).length, 5);
 });
 
-const transcripts: Transcripts = {
+const transcripts: SessionReader = {
     agent: agentKind('claude'),
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
     locate: (lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
@@ -124,12 +124,12 @@ const transcripts: Transcripts = {
     }),
 };
 
-const repos: LaneRepo = { repoOf: (cwd) => Promise.resolve(cwd === '/work/pay' ? { kind: 'repo', root: must(parseDirectory('/work/pay')), branch: must(parseText('feat/v2')), web: null } : { kind: 'no-repo' }) };
+const repos: Workplaces = { repoOf: (cwd) => Promise.resolve(cwd === '/work/pay' ? { kind: 'repo', root: must(parseDirectory('/work/pay')), branch: must(parseText('feat/v2')), web: null } : { kind: 'no-repo' }) };
 
 async function run(answers: readonly string[], lanes: readonly string[], store = memoryStore()): Promise<{ store: Store; requests: RecapRequest[] }> {
     const requests: RecapRequest[] = [];
-    const summarizer: Summarizer = { backend: textOf('fake'), contract: 'strict', write: (request): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: textOf(answers[Math.min(requests.length - 1, answers.length - 1)] ?? ''), costUsd: brand<number, 'Usd'>(0) }); } };
-    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, transcripts: registryWith({ [transcripts.agent]: transcripts }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), repos, clock: { now: (): ReturnType<typeof instant> => instant(1) }, summarizer: (): Summarizer => summarizer, language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined });
+    const summarizer: Writer = { backend: textOf('fake'), contract: 'strict', write: (request): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: textOf(answers[Math.min(requests.length - 1, answers.length - 1)] ?? ''), costUsd: brand<number, 'Usd'>(0) }); } };
+    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, transcripts: registryWith({ [transcripts.agent]: transcripts }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), repos, clock: { now: (): ReturnType<typeof instant> => instant(1) }, summarizer: (): Writer => summarizer, language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined });
     job.request(tabId('w1:t1'), lanes.map((pane) => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd: pane === 'w1:p1' ? '/work/pay' : '/work/docs' }))), 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 40); });
     return { store, requests };
@@ -183,7 +183,7 @@ test('groups: one task (or none) is ONE group of every lane; several tasks group
 });
 
 test('two tasks: each under its own name, its lanes first, then its own recap; the tab\'s meta once', () => {
-    const recap: TabRecap = {
+    const recap: Recap = {
         ...blankRecap(tabId('w1:t1')), at: instant(0), backend: textOf('claude/haiku'),
         tasks: [
             { ...taskOf('t1', 'Payments v2', ['w1:p1', 'w1:p2'], 'ship payments'), sections: sections('ship payments', { needs: [textOf('approve the deploy')] }) },
@@ -201,7 +201,7 @@ test('two tasks: each under its own name, its lanes first, then its own recap; t
 });
 
 test('a lane that arrived after the last recap shows its header, without a recap, after the tasks', () => {
-    const recap: TabRecap = { ...blankRecap(tabId('w1:t1')), tasks: [taskOf('t1', 'A', ['w1:p1']), taskOf('t2', 'B', ['w1:p2'])] };
+    const recap: Recap = { ...blankRecap(tabId('w1:t1')), tasks: [taskOf('t1', 'A', ['w1:p1']), taskOf('t2', 'B', ['w1:p2'])] };
     const text = strip(present({ tab: tab(LANES), recap, notes: new Map(), warnings: [], now: 0, messages: en }, 50, () => null));
     assert.ok(text.indexOf('opencode w1:p3') > text.indexOf('▌ B'));
     assert.equal(text.split('GOAL').length, 3);
@@ -219,7 +219,7 @@ test('the bar takes the most urgent "needs you" across tasks — else the first 
 });
 
 test('a tab with one task is drawn exactly as before: no task heading, lanes then the one recap', () => {
-    const recap: TabRecap = { ...blankRecap(tabId('w1:t1')), at: instant(0), tasks: [{ ...taskOf('t1', '', ['w1:p1', 'w1:p2']), sections: sections('one thing') }] };
+    const recap: Recap = { ...blankRecap(tabId('w1:t1')), at: instant(0), tasks: [{ ...taskOf('t1', '', ['w1:p1', 'w1:p2']), sections: sections('one thing') }] };
     const text = strip(present({ tab: tab(LANES.slice(0, 2)), recap, notes: new Map(), warnings: [], now: 0, messages: en }, 50, () => null));
     assert.ok(!text.includes('▌'));
     assert.ok(text.indexOf('codex w1:p2') < text.indexOf('TAB RECAP') && text.indexOf('TAB RECAP') < text.indexOf('one thing'));

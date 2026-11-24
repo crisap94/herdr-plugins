@@ -6,7 +6,7 @@ import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { flightOf } from '#src/recap/application/in-flight.ts';
 import type { InFlightReader, InFlightRead } from '#src/ports/in-flight.ts';
 import type { Located, InFlightResult } from '#src/ports/transcripts.ts';
-import type { Transcripts } from '#src/ports/transcripts.ts';
+import type { SessionReader } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
@@ -20,7 +20,7 @@ const claude = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId:
 const codex = laneFrom(seenLane({ paneId: 'w1:p2', tabId: 'w1:t1', workspaceId: 'w1', agent: 'codex', cwd: '/repo' }));
 const sessionless = laneFrom(seenLane({ paneId: 'w1:p3', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' }));
 
-function fakeReader(agent: string, located: Located, flight: InFlightResult): Transcripts {
+function fakeReader(agent: string, located: Located, flight: InFlightResult): SessionReader {
     return {
         agent: agentKind(agent),
         locate: () => Promise.resolve(located),
@@ -30,7 +30,7 @@ function fakeReader(agent: string, located: Located, flight: InFlightResult): Tr
     };
 }
 
-const adapterFor = (reader: Transcripts): InFlightReader => new TranscriptInFlight(registryWith({ [reader.agent]: reader }));
+const adapterFor = (reader: SessionReader): InFlightReader => new TranscriptInFlight(registryWith({ [reader.agent]: reader }));
 
 test('a transcript that does not exist yet is not-started for a lane whose locating key is known', async () => {
     const reader = fakeReader('claude', unknown({ why: 'not-found', what: textOf('the transcript of sess-1') }), { kind: 'in-flight', count: runningOf(9), background: [] });

@@ -1,7 +1,7 @@
 import { statSync } from 'node:fs';
 import { claudeProjectsRoot, locateClaudeTranscript } from '@stateforge-labs/harness-adapters/claude';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
-import { UNREAD, type ChunkResult, type InFlightResult, type Located, type ObservedResult, type Position, type PromptResult, type SourcePath, type Transcripts, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
+import { UNREAD, type ChunkResult, type InFlightResult, type Located, type ObservedResult, type Position, type PromptResult, type SourcePath, type SessionReader, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { parseAgentKind } from '#src/recap/domain/ids.ts';
@@ -72,7 +72,7 @@ export class ClaudeReader {
     }
 }
 
-export class ClaudeTranscripts implements Transcripts {
+export class ClaudeTranscripts implements SessionReader {
     readonly agent = must(parseAgentKind(CLAUDE_KIND));
     private readonly root: FsPath;
     private readonly reader = new ClaudeReader();

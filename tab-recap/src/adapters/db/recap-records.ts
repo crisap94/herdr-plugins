@@ -1,7 +1,7 @@
 import { must } from '#src/protocol/result.ts';
 import type { Database } from 'bun:sqlite';
 import { eq } from 'drizzle-orm';
-import type { Advance, FailedRun, LastRun, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
+import type { Advance, FailedRun, LastRun, RecordedRun, Recap } from '#src/ports/recap-records.ts';
 import type { GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import { RECAP_CAUSES } from '#src/recap/domain/intent.ts';
 import type { RecapCause } from '#src/recap/domain/intent.ts';
@@ -44,7 +44,7 @@ export class RecapRecordsRepository implements GuardedRecapRecords {
         this.boundaries = new BoundaryRows(db, this.transcripts);
     }
 
-    readRecap(tab: string): TabRecap | null | Unknown {
+    readRecap(tab: string): Recap | null | Unknown {
         const parsed = parseTabId(tab);
         return parsed.kind === 'err' ? null : guardedRead(() => this.reader.read(parsed.value));
     }

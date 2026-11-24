@@ -4,8 +4,8 @@ import assert from 'node:assert/strict';
 import { worksiteOf } from '#src/recap/application/worksite-section.ts';
 import type { WorksiteDeps, WorksiteInput } from '#src/recap/application/worksite-section.ts';
 import { countOf } from '#src/recap/domain/count.ts';
-import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
-import type { LaneCursor } from '#src/ports/recap-records.ts';
+import type { Workplaces, RepoResult } from '#src/ports/lane-repo.ts';
+import type { SessionCursor } from '#src/ports/recap-records.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
@@ -18,11 +18,11 @@ import { agentKind, paneId } from '#test/support/ids.ts';
 import { sourcePathOf, cursorOf } from '#src/ports/transcripts.ts';
 
 const DIR = '/work/project';
-const CURSOR: LaneCursor = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('session.jsonl'), cursor: cursorOf(10), tail: null, title: null, lastPrompt: null, claudeRecap: null };
-const repoAt = (result: RepoResult): LaneRepo => ({ repoOf: () => Promise.resolve(result) });
+const CURSOR: SessionCursor = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('session.jsonl'), cursor: cursorOf(10), tail: null, title: null, lastPrompt: null, claudeRecap: null };
+const repoAt = (result: RepoResult): Workplaces => ({ repoOf: () => Promise.resolve(result) });
 const repo: RepoResult = { kind: 'repo', root: must(parseDirectory('/work/project')), branch: must(parseText('feat/x')), web: null };
-const edits = (files: readonly { readonly path: string; readonly count: number }[]): WorksiteDeps['edits'] & { readonly asked: (readonly LaneCursor[])[] } => {
-    const asked: LaneCursor[][] = [];
+const edits = (files: readonly { readonly path: string; readonly count: number }[]): WorksiteDeps['edits'] & { readonly asked: (readonly SessionCursor[])[] } => {
+    const asked: SessionCursor[][] = [];
     return { asked, of: (lanes) => { asked.push([...lanes]); return Promise.resolve(files.map((file) => ({ path: textOf(file.path), count: countOf(file.count) }))); } };
 };
 const knownOf = (snapshot: WorksiteSnapshot): WorksiteFacts => {

@@ -8,11 +8,11 @@ import { RecapWriter } from '#src/adapters/job/writer.ts';
 import type { BriefWriter } from '#src/ports/compaction-briefs.ts';
 import type { DeciderPort } from '#src/ports/decider.ts';
 import type { Curators } from '#src/ports/curators.ts';
-import type { Enumerators } from '#src/ports/enumerators.ts';
+import type { Enumerator } from '#src/ports/enumerators.ts';
 import type { AnchorChecks, JudgePort } from '#src/ports/judge.ts';
 import type { HarnessDirectory, HarnessList } from '#src/ports/harnesses.ts';
 import type { NotifierPort } from '#src/ports/notifier.ts';
-import type { Summarizer, Written } from '#src/ports/summarizer.ts';
+import type { Writer, Written } from '#src/ports/summarizer.ts';
 import { isUnknown, saying, unknown } from '#src/ports/unknowable.ts';
 import { RuntimeLoadError } from '#src/adapters/harness/library.ts';
 import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
@@ -52,7 +52,7 @@ export function intersect(fromHerdr: HarnessList, fromPath: HarnessList): Harnes
 
 const NONE = `a coding agent to write recaps: install ${installableHarnessSentence()} (or set TAB_RECAP_BACKEND / TAB_RECAP_CUSTOM_CMD)`;
 
-class Nothing implements Summarizer {
+class Nothing implements Writer {
     readonly backend = must(parseText('none'));
     readonly contract = 'strict';
     private readonly what: Text;
@@ -64,12 +64,12 @@ class Nothing implements Summarizer {
     }
 }
 
-export function summarizerFor(config: Settings, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): Summarizer {
+export function summarizerFor(config: Settings, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): Writer {
     const id = pick(config.backend, available);
     return id === null ? new Nothing() : new RecapWriter(MAKERS[id](config, work, runtime, jobTagFor(config, 'recapWriter'), log), { model: config.models[id], effort: config.effort }, config.writerAnswer ?? 'text');
 }
 
-export function enumeratorFor(config: Settings, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): Enumerators | null {
+export function enumeratorFor(config: Settings, available: Available, work: Directory, runtime: HarnessRuntime, log?: LogLine): Enumerator | null {
     const id = pick(config.backend, available);
     return id === null || !enumeratesJob(id) ? null : new HarnessEnumerator(MAKERS[id](config, work, runtime, jobTagFor(config, 'enumerator'), log), { model: config.models[id], effort: 'low' });
 }
@@ -163,11 +163,11 @@ export class Backends {
         return this.whenLoaded(() => curatorFor(loadSettings(), this.available, this.work, this.runtime, this.log), () => null);
     }
 
-    summarizer(): Summarizer {
+    summarizer(): Writer {
         return this.whenLoaded(() => summarizerFor(loadSettings(), this.available, this.work, this.runtime, this.log), (reason) => new Nothing(reason));
     }
 
-    enumerator(): Enumerators | null {
+    enumerator(): Enumerator | null {
         return this.whenLoaded(() => enumeratorFor(loadSettings(), this.available, this.work, this.runtime, this.log), () => null);
     }
 }

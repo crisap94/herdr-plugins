@@ -2,7 +2,7 @@ import { promises as fsp } from 'node:fs';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import type { Clock } from '#src/ports/clock.ts';
-import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
+import type { Workplaces, RepoResult } from '#src/ports/lane-repo.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
@@ -28,7 +28,7 @@ export async function repoAt(directory: Directory): Promise<RepoResult> {
     });
 }
 
-export class GitLaneRepo implements LaneRepo {
+export class GitLaneRepo implements Workplaces {
     private readonly cache = new Map<Directory, { readonly result: RepoResult; readonly at: number }>();
     private readonly inflight = new Map<Directory, Promise<RepoResult>>();
     private readonly clock: Clock;

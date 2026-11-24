@@ -3,7 +3,7 @@ import type { GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { TabId } from '#src/recap/domain/ids.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
-import type { Advance, FailedRun, LastRun, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
+import type { Advance, FailedRun, LastRun, RecordedRun, Recap } from '#src/ports/recap-records.ts';
 
 export class PublishingRecords implements GuardedRecapRecords {
     private readonly inner: GuardedRecapRecords;
@@ -14,7 +14,7 @@ export class PublishingRecords implements GuardedRecapRecords {
         this.published = published;
     }
 
-    readRecap(tab: TabId): TabRecap | null | Unknown {
+    readRecap(tab: TabId): Recap | null | Unknown {
         return this.inner.readRecap(tab);
     }
 

@@ -3,7 +3,7 @@ import type { AgentLookup } from '#src/ports/agents.ts';
 import type { PaneTokens } from '#src/ports/pane-tokens.ts';
 import type { HandoffPrintService, PrintAsk, PrintAnswer } from '#src/ports/handoff-print.ts';
 import type { ClosureReader, ClosureRuns } from '#src/ports/closed-lanes.ts';
-import type { LaneCursor } from '#src/ports/recap-records.ts';
+import type { SessionCursor } from '#src/ports/recap-records.ts';
 import type { TabLaneRecord, TabViewStore } from '#src/ports/tab-views.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
@@ -52,7 +52,7 @@ export interface PrintDeps {
 
 const refusedWith = (reason: Extract<HandoffOutcome, { readonly kind: 'refused' }>['reason']): PrintAnswer => ({ kind: 'refused', reason });
 
-const transcriptOf = (cursor: LaneCursor | null): FsPath | null => (cursor === null || cursor.transcript === '' ? null : fsPathOf(cursor.transcript));
+const transcriptOf = (cursor: SessionCursor | null): FsPath | null => (cursor === null || cursor.transcript === '' ? null : fsPathOf(cursor.transcript));
 
 const laneOf = (tab: TabId, lane: TabLaneRecord): HandoffLane => ({
     tab,
@@ -69,7 +69,7 @@ interface Live {
 
 interface View {
     readonly lane: HandoffLane;
-    readonly cursor: LaneCursor | null;
+    readonly cursor: SessionCursor | null;
     readonly facts: readonly Fact[];
     readonly closed: ClosedView | undefined;
 }

@@ -1,6 +1,6 @@
-import type { RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
+import type { RecapRequest, Writer } from '#src/ports/summarizer.ts';
 
-export function countedWriter(made: Summarizer, onWrite: () => void): Summarizer {
+export function countedWriter(made: Writer, onWrite: () => void): Writer {
     return {
         backend: made.backend,
         contract: made.contract,

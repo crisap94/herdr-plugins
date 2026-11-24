@@ -16,7 +16,7 @@ export interface RecapRequest { readonly input: RecapInput; readonly language: T
 
 export type Written = { readonly kind: 'written'; readonly text: Text; readonly costUsd: Usd } | Unknown;
 
-export interface Summarizer {
+export interface Writer {
     readonly backend: Text;
     readonly contract: JobContract;
     write(request: RecapRequest): Promise<Written>;

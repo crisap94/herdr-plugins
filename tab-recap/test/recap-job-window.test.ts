@@ -14,8 +14,8 @@ import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { debounceOf } from '#src/recap/domain/debounce.ts';
 import { memoryStore } from '#test/db/support.ts';
 import { NO_REPOS } from '#test/support.ts';
-import type { Summarizer, Written } from '#src/ports/summarizer.ts';
-import type { ChunkResult, Entry, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import type { Writer, Written } from '#src/ports/summarizer.ts';
+import type { ChunkResult, Entry, Located, PromptResult, SessionReader } from '#src/ports/transcripts.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
@@ -44,7 +44,7 @@ function harness(settings: Settings, causes: string[], answer?: () => Promise<Wr
     let clockCalls = 0;
     const reads: number[] = [];
     const sources: string[] = [];
-    const reader: Transcripts = {
+    const reader: SessionReader = {
         agent: agentKind('claude'),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
         locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
@@ -57,7 +57,7 @@ function harness(settings: Settings, causes: string[], answer?: () => Promise<Wr
         },
     };
     const store = memoryStore();
-    const summarizer: Summarizer = {
+    const summarizer: Writer = {
         backend: textOf('fake'),
         contract: 'strict',
         write: (): Promise<Written> => {
@@ -67,7 +67,7 @@ function harness(settings: Settings, causes: string[], answer?: () => Promise<Wr
     };
     const job = new RecapJob({
         transcripts: registryWith({ claude: reader }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), repos: NO_REPOS,
-        clock: { now: (): ReturnType<typeof instant> => { clockCalls += 1; return instant(Date.now()); } }, summarizer: (): Summarizer => summarizer,
+        clock: { now: (): ReturnType<typeof instant> => { clockCalls += 1; return instant(Date.now()); } }, summarizer: (): Writer => summarizer,
         language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined, debounce: (): Debounce => settings.debounce, writerView: (): WriterView => FULL_WRITER_VIEW, mint: mintFactId,
         ran: (event): void => { causes.push(event.cause ?? 'turn-ended'); },
     });

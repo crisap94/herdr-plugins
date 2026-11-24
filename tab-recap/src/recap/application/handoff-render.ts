@@ -1,4 +1,4 @@
-import type { LaneCursor } from '#src/ports/recap-records.ts';
+import type { SessionCursor } from '#src/ports/recap-records.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
@@ -21,7 +21,7 @@ export interface HandoffRenderInput {
     readonly handoff: HandoffId | null;
     readonly at: Instant;
     readonly lane: HandoffLane;
-    readonly cursor: LaneCursor | null;
+    readonly cursor: SessionCursor | null;
     readonly facts: readonly Fact[];
     readonly note: Text | null;
     readonly refresh: RefreshStatus;

@@ -1,7 +1,7 @@
 import { brand, type Brand } from '#src/recap/domain/brand.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { Lane } from '#src/recap/domain/lane-shape.ts';
-import type { LaneMark } from '#src/recap/domain/boundary.ts';
+import type { SessionMark } from '#src/recap/domain/boundary.ts';
 import type { Chunk } from '#src/ports/transcripts.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 
@@ -15,7 +15,7 @@ export interface Read {
     readonly chunk: Chunk | null;
 }
 
-export function marksOf(reads: readonly Read[], now: Instant, advanced: Advanced): readonly LaneMark[] {
+export function marksOf(reads: readonly Read[], now: Instant, advanced: Advanced): readonly SessionMark[] {
     return reads.flatMap((read) => (read.chunk?.marks ?? []).flatMap((mark) => {
         if (mark.kind !== 'compacted' || (mark.at === null && !advanced) || read.chunk === null) {
             return [];

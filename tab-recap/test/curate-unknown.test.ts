@@ -4,7 +4,7 @@ import { CurateTasks } from '#src/recap/application/curate.ts';
 import type { CurateDeps } from '#src/recap/application/curate.ts';
 import type { GuardedLedger, GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
-import type { TabRecap } from '#src/ports/recap-records.ts';
+import type { Recap } from '#src/ports/recap-records.ts';
 import { unknown, type Unknown } from '#src/ports/unknowable.ts';
 import { tabId } from '#test/support/ids.ts';
 import { causeOf } from './fakes/cause.ts';
@@ -16,11 +16,11 @@ const [textOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Instant'>];
 
 const TAB = tabId('w1:t1');
 const LOCKED = unknown({ why: 'unreadable', detail: causeOf('locked') });
-const ONE_TASK: TabRecap = { ...blankRecap(tabId('w1:t1')), tasks: [{ id: textOf('t1'), name: textOf('t1'), lanes: [], sections: null, markdown: textOf('') }] };
+const ONE_TASK: Recap = { ...blankRecap(tabId('w1:t1')), tasks: [{ id: textOf('t1'), name: textOf('t1'), lanes: [], sections: null, markdown: textOf('') }] };
 
 interface Seen { allOf: number; storyReads: number; writers: number }
 
-function curatorOf(recap: TabRecap | Unknown, facts: 'known' | 'unknown', seen: Seen): CurateTasks {
+function curatorOf(recap: Recap | Unknown, facts: 'known' | 'unknown', seen: Seen): CurateTasks {
     const memory = new MemoryLedger();
     const stories = new MemoryStories(memory);
     const records: GuardedRecapRecords = {

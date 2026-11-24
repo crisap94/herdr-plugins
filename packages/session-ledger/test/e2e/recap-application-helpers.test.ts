@@ -17,7 +17,7 @@ import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/bra
 import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 import type { Lane } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 import { cursorOf, grewOf, type Chunk, type Entry } from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
-import type { LaneCursor } from '@stateforge-labs/session-ledger/unstable/ports/recap-records.ts';
+import type { SessionCursor } from '@stateforge-labs/session-ledger/unstable/ports/recap-records.ts';
 import type { RecapInput } from '@stateforge-labs/session-ledger/unstable/ports/recap-input.ts';
 import { agentKind, cursorAt, paneId, sourcePath } from '@stateforge-labs/session-ledger/testkit';
 
@@ -88,7 +88,7 @@ test('a compacted mark becomes a lane mark, and an unknown time waits for the la
 const laneOf = (pane: string): Lane => ({ pane: brand<string, 'PaneId'>(pane), tab: brand<string, 'TabId'>('tab-1'), workspace: brand<string, 'WorkspaceId'>('w1'), agent: brand<string, 'AgentKind'>('claude'), status: 'working', session: null, cwd: null, title: null, since: null });
 
 test('the recap input numbers agents by index and keeps the newest note of each kind', async () => {
-    const cursor: LaneCursor = { pane: paneId('p1'), agent: agentKind('claude'), transcript: sourcePath('t'), cursor: cursorAt(0), tail: null, title: null, lastPrompt: null, claudeRecap: text('Recap text') };
+    const cursor: SessionCursor = { pane: paneId('p1'), agent: agentKind('claude'), transcript: sourcePath('t'), cursor: cursorAt(0), tail: null, title: null, lastPrompt: null, claudeRecap: text('Recap text') };
     const chunk: Chunk = { kind: 'chunk', entries: [], title: null, lastPrompt: null, claudeRecap: null, grew: grewOf(false), position: { cursor: cursorOf(0), tail: null }, notes: [
         { kind: 'compaction', at: instant(1), text: textOf('first') }, { kind: 'compaction', at: instant(2), text: textOf('second') },
     ] };

@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { createEngine, type Engine, type EnginePlugs } from '#src/recap/application/engine.ts';
 import { RecapJob, type RecapJobDeps } from '#src/recap/application/recap-job.ts';
-import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
+import type { RecapWritten } from '#src/recap/application/ledger-reconcile.ts';
 import { tabId, agentKind, paneId } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
@@ -14,8 +14,8 @@ import { FULL_WRITER_VIEW } from '#src/recap/domain/writer-view.ts';
 import { memoryStore, storeRead } from '#test/db/support.ts';
 import { NO_REPOS } from '#test/support.ts';
 import type { Store } from '#src/adapters/db/database.ts';
-import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
-import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import type { RecapRequest, Writer, Written } from '#src/ports/summarizer.ts';
+import type { ChunkResult, Located, PromptResult, SessionReader } from '#src/ports/transcripts.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import type { KeepInput } from '#src/recap/application/recap-job.ts';
@@ -29,7 +29,7 @@ const lanes: readonly Lane[] = [
     laneFrom(seenLane({ paneId: 'w1:p2', tabId: TAB, workspaceId: 'w1', agent: 'claude', session: 's2' })),
 ];
 
-const reader: Transcripts = {
+const reader: SessionReader = {
     agent: agentKind('claude'),
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
     locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
@@ -40,7 +40,7 @@ const reader: Transcripts = {
 interface World {
     readonly store: Store;
     readonly asked: RecapRequest[];
-    readonly ran: RunEvent[];
+    readonly ran: RecapWritten[];
     readonly deps: RecapJobDeps;
     readonly plugs: EnginePlugs;
 }
@@ -48,8 +48,8 @@ interface World {
 function world(): World {
     const store = memoryStore();
     const asked: RecapRequest[] = [];
-    const ran: RunEvent[] = [];
-    const summarizer: Summarizer = {
+    const ran: RecapWritten[] = [];
+    const summarizer: Writer = {
         backend: textOf('fake'),
         contract: 'strict',
         write: (request: RecapRequest): Promise<Written> => {
@@ -60,7 +60,7 @@ function world(): World {
     const plugs: EnginePlugs = {
         source: { transcripts: registryWith({ claude: reader }) },
         store: { records: checkedRecords(store.records), ledger: checkedLedger(store.ledger) },
-        models: { summarizer: (): Summarizer => summarizer, enumerator: () => null },
+        models: { summarizer: (): Writer => summarizer, enumerator: () => null },
         environment: { clock: { now: (): ReturnType<typeof instant> => instant(9) }, repos: NO_REPOS, mint: mintFactId, log: (): void => undefined },
         settings: { language: (): Text => brand<string, 'Text'>('en'), writerView: () => FULL_WRITER_VIEW, keepInput: (): KeepInput => brand<boolean, 'KeepInput'>(true) },
         ran: (event): void => { ran.push(event); },
@@ -105,7 +105,7 @@ test('refresh and compacted resolve once the recap is written, as refreshNow doe
     const compacted = await both((job) => job.refreshNow(tabId(TAB), lanes), (engine) => engine.compacted(tabId(TAB), lanes));
     assert.deepEqual(refreshed.engine, refreshed.job);
     assert.deepEqual(compacted.engine, compacted.job);
-    assert.deepEqual((refreshed.job as { ran: RunEvent[] }).ran.map((event) => event.cause), ['requested']);
+    assert.deepEqual((refreshed.job as { ran: RecapWritten[] }).ran.map((event) => event.cause), ['requested']);
 });
 
 test('sessionStarted has no effect in this slice: no run, no record', async () => {

@@ -20,10 +20,10 @@ import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { loadSettings, stateDirectory } from '#src/daemon/config.ts';
-import type { Enumerators } from '#src/ports/enumerators.ts';
+import type { Enumerator } from '#src/ports/enumerators.ts';
 import type { JudgePort } from '#src/ports/judge.ts';
-import type { Summarizer } from '#src/ports/summarizer.ts';
-import type { Transcripts } from '#src/ports/transcripts.ts';
+import type { Writer } from '#src/ports/summarizer.ts';
+import type { SessionReader } from '#src/ports/transcripts.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import type { EvalRequest } from '#src/recap/application/eval-request.ts';
 import { judgedReport } from '#src/recap/application/replay-judge.ts';
@@ -67,16 +67,16 @@ function printMechanical(done: Replayed, file: string, beside: string | null, ra
     }
 }
 
-function counted(config: Settings, available: readonly AgentKind[], dir: string, runtime: HarnessRuntime): { readonly writer: Summarizer; readonly enumerator: Enumerators | null; readonly calls: { writer: number; enumeration: number } } {
+function counted(config: Settings, available: readonly AgentKind[], dir: string, runtime: HarnessRuntime): { readonly writer: Writer; readonly enumerator: Enumerator | null; readonly calls: { writer: number; enumeration: number } } {
     const calls = { writer: 0, enumeration: 0 };
     const made = summarizerFor(config, availableIn(available), must(parseDirectory(join(dir, 'summarizer'))), runtime);
     const writer = countedWriter(made, () => { calls.writer += 1; });
     const own = enumeratorFor(config, availableIn(available), must(parseDirectory(join(dir, 'enumerator'))), runtime);
-    const enumerator: Enumerators | null = own === null ? null : { backend: own.backend, job: own.job, write: (document) => { calls.enumeration += 1; return own.write(document); } };
+    const enumerator: Enumerator | null = own === null ? null : { backend: own.backend, job: own.job, write: (document) => { calls.enumeration += 1; return own.write(document); } };
     return { writer, enumerator, calls };
 }
 
-async function replayed(input: { readonly file: string; readonly reader: Transcripts; readonly options: EvalRequest; readonly size: number; readonly judge: string }, scratch: Scratch, parts: { readonly config: Settings; readonly available: readonly AgentKind[]; readonly runtime: HarnessRuntime }): Promise<void> {
+async function replayed(input: { readonly file: string; readonly reader: SessionReader; readonly options: EvalRequest; readonly size: number; readonly judge: string }, scratch: Scratch, parts: { readonly config: Settings; readonly available: readonly AgentKind[]; readonly runtime: HarnessRuntime }): Promise<void> {
     const { config, available, runtime } = parts;
     const { writer, enumerator, calls } = counted(config, available, scratch.dir, runtime);
     const pipeline = input.options.pipeline ?? config.pipeline;
@@ -94,7 +94,7 @@ function importedBeside(tab: string | null): ReturnType<typeof importedChaptersA
     return id?.kind === 'ok' ? importedChaptersAt(databaseFile(stateDirectory()), id.value) : null;
 }
 
-async function run(file: string, reader: Transcripts, options: EvalRequest, size: number): Promise<number> {
+async function run(file: string, reader: SessionReader, options: EvalRequest, size: number): Promise<number> {
     const config = loadSettings();
     const found = await new PathHarnessDirectory(AUTO_PATH_KINDS).available();
     const available = isUnknown(found) ? [] : found.ids;

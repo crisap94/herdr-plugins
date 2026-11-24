@@ -4,11 +4,11 @@ import { must } from '#src/protocol/result.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { TranscriptRegistry, type AgentKind } from '#src/ports/transcript-registry.ts';
 import type { CheckedLedger } from '#src/ports/ledger.ts';
-import type { CheckedRecapRecords, RecordedRun, FailedRun, Advance, TabRecap, LastRun } from '#src/ports/recap-records.ts';
-import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
-import { UNREAD, type Transcripts, type Located, type ChunkResult, type PromptResult, type Position } from '#src/ports/transcripts.ts';
+import type { CheckedRecapRecords, RecordedRun, FailedRun, Advance, Recap, LastRun } from '#src/ports/recap-records.ts';
+import type { RecapRequest, Writer, Written } from '#src/ports/summarizer.ts';
+import { UNREAD, type SessionReader, type Located, type ChunkResult, type PromptResult, type Position } from '#src/ports/transcripts.ts';
 import type { Clock } from '#src/ports/clock.ts';
-import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
+import type { Workplaces, RepoResult } from '#src/ports/lane-repo.ts';
 import type { Unknown, Unknowable } from '#src/ports/unknowable.ts';
 import type { Fact, FactId, Section } from '#src/recap/domain/fact.ts';
 import type { Operation, Refusal } from '#src/recap/domain/ops.ts';
@@ -20,7 +20,7 @@ import { FULL_WRITER_VIEW, keepNewestOf, nextHoursOf, prunedWriterView, type Hid
 import type { Debounce } from '#src/recap/domain/debounce.ts';
 import { PACING_TURN, type Pacing } from '#src/recap/domain/pacing.ts';
 import type { EnginePlugs as LegacyPlugs, RestoreFacts as LegacyRestoreFacts } from '#src/recap/application/engine.ts';
-import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
+import type { RecapWritten } from '#src/recap/application/ledger-reconcile.ts';
 import type { KeepInput } from '#src/recap/application/recap-job.ts';
 import { curate } from './curate.ts';
 import { followedOf } from './translate.ts';
@@ -34,7 +34,7 @@ export interface FacadePlugs extends Omit<LegacyPlugs, 'ran'> {
     on?(event: sl.LedgerEvent): void;
     restore?: RestoreHooks;
     curate?(scope: sl.ScopeId): Promise<void>;
-    afterRun?(scope: sl.ScopeId, event: RunEvent): Promise<void>;
+    afterRun?(scope: sl.ScopeId, event: RecapWritten): Promise<void>;
 }
 
 const isLedgerFactId = (id: FactId): id is FactId & sl.FactId => id !== '';
@@ -97,7 +97,7 @@ const scopeOf = (tab: string): sl.ScopeId => must(parseScopeId(tab));
 const keyOf = (pane: string): sl.SessionKey => must(parseSessionKey(pane));
 
 const pluginRecords = (records: sl.Records): CheckedRecapRecords => ({
-    readRecap: (tab: TabId): TabRecap | null | Unknown => {
+    readRecap: (tab: TabId): Recap | null | Unknown => {
         const found = records.readRecap(scopeOf(tab));
         return isLedgerUnknown(found) ? pluginUnknown(found) : found;
     },
@@ -148,7 +148,7 @@ const ledgerRequest = (request: RecapRequest): sl.RecapRequest => {
 
 const pluginWritten = (written: sl.Written): Written => (written.kind === 'written' ? written : pluginUnknown(written));
 
-const pluginSummarizer = (writer: sl.Writer): Summarizer => ({
+const pluginSummarizer = (writer: sl.Writer): Writer => ({
     backend: must(parseText(writer.backend)),
     contract: writer.contract,
     write: async (request: RecapRequest): Promise<Written> => pluginWritten(await writer.write(ledgerRequest(request))),
@@ -162,7 +162,7 @@ const ledgerPosition = (position: Position): sl.Position => ({
     tail: position.tail === null ? null : brand<string, 'Text'>(position.tail),
 });
 
-const transcriptsOf = (reader: sl.SessionReader): Transcripts => ({
+const transcriptsOf = (reader: sl.SessionReader): SessionReader => ({
     agent: brand<string, 'AgentKind'>(reader.harness),
     inFlight: { kind: 'unsupported', why: 'in-flight-unavailable' },
     locate: async (lane: Lane): Promise<Located> => {
@@ -188,13 +188,13 @@ class SessionRegistry extends TranscriptRegistry {
         this.sessions = sessions;
     }
 
-    override exact(kind: AgentKind): Transcripts | undefined {
+    override exact(kind: AgentKind): SessionReader | undefined {
         const harness = parseHarnessKind(kind);
         const reader = harness.kind === 'ok' ? this.sessions.readerFor(harness.value) : undefined;
         return reader === undefined ? undefined : transcriptsOf(reader);
     }
 
-    override readerFor(kind: AgentKind): Transcripts | undefined {
+    override readerFor(kind: AgentKind): SessionReader | undefined {
         return this.exact(kind);
     }
 }
@@ -203,7 +203,7 @@ const pluginClock = (clock: sl.Clock): Clock => ({ now: () => must(parseInstant(
 
 const pluginRepo = (result: sl.RepoResult): RepoResult => (result.kind === 'repo' || result.kind === 'no-repo' ? result : pluginUnknown(result));
 
-const pluginRepos = (workplaces: sl.Workplaces): LaneRepo => ({
+const pluginRepos = (workplaces: sl.Workplaces): Workplaces => ({
     repoOf: async (cwd: string): Promise<RepoResult> => pluginRepo(await workplaces.repoOf(brand<string, 'Directory'>(cwd))),
 });
 

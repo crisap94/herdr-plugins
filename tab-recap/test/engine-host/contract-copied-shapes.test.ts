@@ -7,9 +7,6 @@ const repository = new URL('../../../', import.meta.url);
 const shapesDir = new URL('packages/session-ledger/gates/copied-shapes/', repository);
 
 const NAME_MAP: Readonly<Record<string, string>> = {
-    TabRecap: 'Recap',
-    LaneCursor: 'SessionCursor',
-    LaneMark: 'SessionMark',
     AutocompactStyle: 'DecisionStyle',
     SkipRow: 'Skip',
     LastDecisionRow: 'LastDecision',
@@ -126,7 +123,7 @@ const differencesOf = (copied: Copied, contractText: string, originText: string)
     return want === have ? [] : [`${label}: differs from ${row.origin}\n  main:     ${want}\n  contract: ${have}`];
 };
 
-const RECORD_ROW: Copied = { contract: 'packages/session-ledger/src/contract/records.ts', row: { export: 'Recap', origin: 'packages/session-ledger/src/ports/recap-records.ts', originName: 'TabRecap' } };
+const RECORD_ROW: Copied = { contract: 'packages/session-ledger/src/contract/records.ts', row: { export: 'Recap', origin: 'packages/session-ledger/src/ports/recap-records.ts' } };
 const SECTION_ROW: Copied = { contract: 'packages/session-ledger/src/contract/facts.ts', row: { export: 'Section', origin: 'packages/session-ledger/src/recap/domain/fact.ts', originConst: 'SECTION_IDS' } };
 
 test('every copied declaration of the contract equals its declaration on main', () => {
@@ -144,7 +141,7 @@ test('a copied field whose type drifts from main is reported', () => {
 test('the name map lets a renamed copy match, and the unmapped name does not', () => {
     const origin = read(RECORD_ROW.row.origin);
     assert.deepEqual(differencesOf(RECORD_ROW, read(RECORD_ROW.contract), origin), []);
-    const unmapped = read(RECORD_ROW.contract).replace('readonly lanes: readonly SessionCursor[];', 'readonly lanes: readonly LaneCursor[];');
+    const unmapped = read(RECORD_ROW.contract).replace('readonly lanes: readonly SessionCursor[];', 'readonly lanes: readonly UnmappedCursor[];');
     assert.equal(differencesOf(RECORD_ROW, unmapped, origin).length, 1);
 });
 

@@ -1,6 +1,6 @@
 import { fallbackLedger, isUnknownRead, type GuardedLedger, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
-import type { LaneCursor } from '#src/ports/recap-records.ts';
+import type { SessionCursor } from '#src/ports/recap-records.ts';
 import type { CurationRun } from '#src/ports/stories.ts';
 import { curationOf } from '#src/recap/domain/curation.ts';
 import type { Fact, FactId } from '#src/recap/domain/fact.ts';
@@ -19,14 +19,14 @@ import { Reconciling } from '@stateforge-labs/session-ledger/unstable/recap/appl
 import { storyAnswerOf } from './job-kit/story-repair.ts';
 import type { StoryReading } from './job-kit/story-repair.ts';
 import { answerTextOf } from '@stateforge-labs/session-ledger/unstable/recap/application/recap-shape.ts';
-import type { CurateWhy, ReconcilingDeps, RunEvent } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-reconcile.ts';
+import type { CurateWhy, ReconcilingDeps, RecapWritten } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-reconcile.ts';
 import { factIdOf } from '#src/recap/domain/fact.ts';
 
-export type { CurateWhy, RunEvent };
+export type { CurateWhy, RecapWritten };
 
 export const CURATE_GAP_MS = 5 * 60_000;
 
-interface CurateScope { readonly lanes: readonly LaneCursor[]; readonly why: CurateWhy }
+interface CurateScope { readonly lanes: readonly SessionCursor[]; readonly why: CurateWhy }
 
 export interface CurateDeps extends Omit<ReconcilingDeps, 'ledger'> {
     readonly records: GuardedRecapRecords;
@@ -46,7 +46,7 @@ export class CurateTasks {
         this.reconciling = new Reconciling(this.plain);
     }
 
-    async afterRun(event: RunEvent): Promise<void> {
+    async afterRun(event: RecapWritten): Promise<void> {
         const tab = parseTabId(event.tab);
         if (tab.kind === 'ok' && this.reconciling.due(event)) {
             await this.run(tab.value, event.boundary ? 'boundary' : 'turns');

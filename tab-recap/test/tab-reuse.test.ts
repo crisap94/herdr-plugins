@@ -20,9 +20,9 @@ import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { ColumnPanes } from '#src/ports/columns.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
-import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
+import type { RecapRequest, Writer, Written } from '#src/ports/summarizer.ts';
 import type { TabViewStore } from '#src/ports/tab-views.ts';
-import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import type { ChunkResult, Located, PromptResult, SessionReader } from '#src/ports/transcripts.ts';
 import { memoryStore, storeRead } from '#test/db/support.ts';
 import { closedDaysOf } from '#test/fakes/closed-days.ts';
 import { silentClosures } from '#test/fakes/silent-closures.ts';
@@ -39,7 +39,7 @@ import { seenLane as laneOf } from '#test/support/seen.ts';
 
 const said: Record<string, string> = { old: 'migrate victoria', new: 'write the docs' };
 
-const transcripts: Transcripts = {
+const transcripts: SessionReader = {
     agent: agentKind('claude'),
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
     locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${String(lane.session)}`) }),
@@ -54,13 +54,13 @@ const add = (section: string, text: string, anchor: string): Record<string, unkn
 
 async function recapOnce(store: Store, lane: Lane, at: number, ops: readonly Record<string, unknown>[]): Promise<readonly RecapRequest[]> {
     const requests: RecapRequest[] = [];
-    const summarizer: Summarizer = {
+    const summarizer: Writer = {
         backend: textOf('fake'),
         contract: 'strict',
         write: (request: RecapRequest): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: textOf(JSON.stringify({ ops })), costUsd: brand<number, 'Usd'>(0) }); },
     };
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ claude: transcripts }),
-        records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(at) }, summarizer: (): Summarizer => summarizer, language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined,
+        records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(at) }, summarizer: (): Writer => summarizer, language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined,
     });
     await job.refreshNow(lane.tab, [lane]);
     return requests;

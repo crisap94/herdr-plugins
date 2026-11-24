@@ -1,12 +1,12 @@
 import type { Lane } from '#src/recap/domain/lane-shape.ts';
-import type { LaneRepo } from '#src/ports/lane-repo.ts';
+import type { Workplaces } from '#src/ports/lane-repo.ts';
 import type { RecapInput, InputAgent, InputNote } from '#src/ports/recap-input.ts';
 import type { Count } from '#src/contract/kernel.ts';
 import { brand, type Brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { isScreenSource } from '#src/ports/transcript-source.ts';
-import type { LaneCursor } from '#src/ports/recap-records.ts';
+import type { SessionCursor } from '#src/ports/recap-records.ts';
 import { sourcePathOf, type Chunk } from '#src/ports/transcripts.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
@@ -21,7 +21,7 @@ export const SEEN_BEFORE = brand<boolean, 'Fresh'>(false);
 
 export interface Observed {
     readonly lane: Lane;
-    readonly cursor: LaneCursor;
+    readonly cursor: SessionCursor;
     readonly chunk: Chunk | null;
     readonly fresh: Fresh;
 }
@@ -40,7 +40,7 @@ function notesOf(seen: Observed, agent: Text): readonly InputNote[] {
 
 export interface InputWorld {
     readonly tab: Text;
-    readonly repos: LaneRepo;
+    readonly repos: Workplaces;
     readonly now: Instant;
     readonly tasks: readonly TaskShape[];
     readonly facts: readonly TaskFacts[];

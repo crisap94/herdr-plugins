@@ -1,7 +1,7 @@
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
-import type { LaneRepo } from '#src/ports/lane-repo.ts';
-import type { LaneCursor } from '#src/ports/recap-records.ts';
+import type { Workplaces } from '#src/ports/lane-repo.ts';
+import type { SessionCursor } from '#src/ports/recap-records.ts';
 import type { LastCommitOutcome, UncommittedOutcome, WorksiteReaderPort } from '#src/ports/worksite-reader.ts';
 import { coordinationNamesOf } from '#src/recap/domain/coordination.ts';
 import { FILES_SHOWN } from '#src/recap/domain/session-facts.ts';
@@ -13,13 +13,13 @@ import { parseDirectory } from '#src/recap/domain/directory.ts';
 
 export interface WorksiteInput {
     readonly directory: Text | null;
-    readonly cursor: LaneCursor | null;
+    readonly cursor: SessionCursor | null;
     readonly tokens: ReadonlyMap<Text, Text> | null;
 }
 
 export interface WorksiteDeps {
     readonly reader: WorksiteReaderPort;
-    readonly repo: LaneRepo;
+    readonly repo: Workplaces;
     readonly edits: EditSource;
 }
 

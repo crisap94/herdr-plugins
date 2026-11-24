@@ -8,7 +8,7 @@ import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { storeOver, type Store, type StoreSettings } from '#src/adapters/db/database.ts';
 import { opsOfSections } from '#src/adapters/db/import/sections-to-ops.ts';
-import type { LaneCursor, RecordedRun, TabRecap } from '#src/ports/recap-records.ts';
+import type { SessionCursor, RecordedRun, Recap } from '#src/ports/recap-records.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { checkedLedger, isUnknownRead } from '#src/ports/guarded-reads.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
@@ -60,7 +60,7 @@ export function recordOps(store: Pick<Store, 'records' | 'ledger'>, run: RunInpu
     store.records.recordRun({ ...rest, ...folded });
 }
 
-export function seed(store: Store, recap: TabRecap): void {
+export function seed(store: Store, recap: Recap): void {
     const at = recap.at ?? instant(1);
     const facts = { tab: recap.tab, at, cause: 'imported', backend: recap.backend, language: recap.language, costUsd: recap.costUsd } as const;
     if (recap.at !== null) {
@@ -73,7 +73,7 @@ export function seed(store: Store, recap: TabRecap): void {
     }
 }
 
-export const cursor = (pane: string, position = 100): LaneCursor => ({ pane: paneId(pane), agent: agentKind('claude'), transcript: sourcePathOf(`/t/${pane}`), cursor: cursorOf(position), tail: null, title: null, lastPrompt: null, claudeRecap: null });
+export const cursor = (pane: string, position = 100): SessionCursor => ({ pane: paneId(pane), agent: agentKind('claude'), transcript: sourcePathOf(`/t/${pane}`), cursor: cursorOf(position), tail: null, title: null, lastPrompt: null, claudeRecap: null });
 
 export const newId = (): Uint8Array => ids.next();
 

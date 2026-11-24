@@ -9,7 +9,7 @@ import { parseEvalRequest } from '#src/recap/application/eval-options.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { replayFile } from '#src/recap/application/replay.ts';
 import type { Replayed, TypedReplayDeps } from '#src/recap/application/replay.ts';
-import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
+import type { RecapRequest, Writer, Written } from '#src/ports/summarizer.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { FULL_WRITER_VIEW, keepNewestOf, nextHoursOf, prunedWriterView } from '#src/recap/domain/writer-view.ts';
@@ -26,9 +26,9 @@ const FILE = join(import.meta.dirname, 'fixtures', 'replay-claude.jsonl');
 const NUMBERS = ['one', 'two', 'three', 'four', 'five', 'six'];
 const candidateFor = (document: string, call: number): string => answer([{ section: 'done', text: `Candidate number ${NUMBERS[call - 1] ?? 'more'}`, anchor: /<turn[^>]*>([^<.]{8,60})/.exec(document)?.[1] ?? '' }]);
 
-function adding(): { summarizer: Summarizer; seen: RecapRequest[] } {
+function adding(): { summarizer: Writer; seen: RecapRequest[] } {
     const seen: RecapRequest[] = [];
-    const summarizer: Summarizer = {
+    const summarizer: Writer = {
         backend: textOf('fake'),
         contract: 'strict',
         write: (request): Promise<Written> => {

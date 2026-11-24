@@ -13,7 +13,7 @@ import { GUI_TAB_LIMIT, encodeGuiTab, guiFileName, worstStatus, type GuiLaneV1, 
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { parseNonEmptyText, parseText, textOf } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { blankRecap, type RecapRecords, type TabRecap } from '#src/ports/recap-records.ts';
+import { blankRecap, type Records, type Recap } from '#src/ports/recap-records.ts';
 import type { TabViewRecord, TabViewStore } from '#src/ports/tab-views.ts';
 import { v2Problems } from '#test/gui-schema-support.ts';
 import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
@@ -21,7 +21,7 @@ import { viewRecord } from '#test/support/tab-view-records.ts';
 
 const wire = (document: GuiTab): unknown => JSON.parse(JSON.stringify(document));
 
-const recapOf = (tab: string, overrides: Partial<TabRecap> = {}): TabRecap => ({
+const recapOf = (tab: string, overrides: Partial<Recap> = {}): Recap => ({
     ...blankRecap(tabId(tab)), at: instant(1000), backend: textOf('custom'), ...overrides,
     tasks: [{ id: textOf('t1'), name: textOf('Login page'), lanes: [paneIdOf('p1')], markdown: textOf('# Login'), sections: { goal: textOf('Ship the login page'), now: [textOf('wiring the form')], needs: [], done: [textOf('route added')], decisions: [], next: [textOf('tests')], links: [], rules: [textOf('secret rule')] } }],
 });
@@ -39,8 +39,8 @@ function tabViewsOf(views: Readonly<Record<string, TabViewRecord>>): TabViewStor
     return { readTab: (tab): TabViewRecord | null => views[tab] ?? null, writeTab: (): void => undefined, tabOf: (): null => null };
 }
 
-function recordsOf(recaps: Readonly<Record<string, TabRecap>>): RecapRecords {
-    return { readRecap: (tab): TabRecap | null => recaps[tab] ?? null } as RecapRecords;
+function recordsOf(recaps: Readonly<Record<string, Recap>>): Records {
+    return { readRecap: (tab): Recap | null => recaps[tab] ?? null } as Records;
 }
 
 test('a tab document matches the v2 schema and keeps the rules section', () => {
@@ -123,7 +123,7 @@ test('writing a tab view through the publishing views publishes that tab', () =>
 test('a read that throws is logged and never escapes the publish path', () => {
     const dir = must(parseDirectory(mkdtempSync(join(tmpdir(), 'gui-pub-'))));
     const logged: string[] = [];
-    const records = { readRecap: (): never => { throw new Error('database is locked'); } } as unknown as RecapRecords;
+    const records = { readRecap: (): never => { throw new Error('database is locked'); } } as unknown as Records;
     const publisher = new GuiPublisher({ dir, records, views: tabViewsOf({}), now: (): Instant => instant(100), log: (line): void => { logged.push(line); } });
     assert.doesNotThrow(() => { publisher.publish(tabId('a')); });
     assert.match(logged.join('\n'), /tab a not published: database is locked/);

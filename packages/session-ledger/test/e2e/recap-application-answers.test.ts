@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { answeredBy, parseFields, type AnswerGround } from '@stateforge-labs/session-ledger/unstable/recap/application/enumerate-answer.ts';
-import { RECONCILE_EVERY, Reconciling, reconcileTask, type ReconcilingDeps, type RunEvent } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-reconcile.ts';
+import { RECONCILE_EVERY, Reconciling, reconcileTask, type ReconcilingDeps, type RecapWritten } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-reconcile.ts';
 import type { Curated, Curators } from '@stateforge-labs/session-ledger/unstable/ports/curators.ts';
 import type { Entry } from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
 import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
@@ -45,7 +45,7 @@ const depsOf = (over: Partial<ReconcilingDeps>, logs: string[]): ReconcilingDeps
     ...over,
 });
 
-const event = (turns: number, boundary: boolean): RunEvent => ({ tab: tabOf('w1:t1'), turns: count(turns), boundary: boundaryOf(boundary) });
+const event = (turns: number, boundary: boolean): RecapWritten => ({ tab: tabOf('w1:t1'), turns: count(turns), boundary: boundaryOf(boundary) });
 
 test('a reconcile is due every N turns or at once after a boundary, and settles back to zero', () => {
     const reconciling = new Reconciling(depsOf({ every: () => count(3) }, []));

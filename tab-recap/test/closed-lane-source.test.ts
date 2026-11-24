@@ -7,7 +7,7 @@ import { resolveSource } from '#src/recap/application/handoff-source.ts';
 import type { SourceResolution } from '#src/recap/application/handoff-source.ts';
 import { CLOSED_SHOWN_MS } from '#src/recap/application/ledger-input.ts';
 import type { ClosedLaneRead, ClosureReader } from '#src/ports/closed-lanes.ts';
-import type { Ledger } from '#src/ports/ledger.ts';
+import type { FactStore } from '#src/ports/ledger.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
@@ -102,7 +102,7 @@ test('an unreadable store is unknown with the store cause', () => {
 });
 
 test('a throwing ledger is unknown and carries the cause of the throw', () => {
-    const throwing: Pick<Ledger, 'allOf'> = { allOf: () => { throw new Error('store locked'); } };
+    const throwing: Pick<FactStore, 'allOf'> = { allOf: () => { throw new Error('store locked'); } };
     assert.deepEqual(resolveClosedLane(IDENTITY, depsOf(rowOf(CLOSED), { ledger: throwing })), { kind: 'unknown', why: { why: 'unreadable', detail: 'Error' } });
 });
 

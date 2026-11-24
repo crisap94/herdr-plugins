@@ -1,6 +1,6 @@
 import { knownOr, type GuardedLedger, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import type { BoundaryLog } from '#src/ports/boundaries.ts';
-import type { LaneCursor } from '#src/ports/recap-records.ts';
+import type { SessionCursor } from '#src/ports/recap-records.ts';
 import type { RequestPort } from '#src/ports/requests.ts';
 import type { SessionSourcePort } from '#src/ports/session-source.ts';
 import type { Stories, Story } from '#src/ports/stories.ts';
@@ -34,7 +34,7 @@ export interface ExpandedDeps {
     readonly autocompact?: Pick<DecisionLedger, 'countsFor'>;
     readonly boundaries: Pick<BoundaryLog, 'breaksOf' | 'chapterCount'>;
     readonly requests: Pick<RequestPort, 'requestCurate'>;
-    readonly edits: (lanes: readonly LaneCursor[], now: Instant) => readonly FileCount[];
+    readonly edits: (lanes: readonly SessionCursor[], now: Instant) => readonly FileCount[];
 }
 
 export type ExpandedData = Pick<ExpandedView, 'tasks' | 'session' | 'webs' | 'breaks'>;

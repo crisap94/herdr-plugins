@@ -14,7 +14,7 @@ import { hiddenStateOf } from '#test/support/seen.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
 import { cursor, filterOf, memoryStore, recordOps, storeRead, type RunInput } from './support.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
-import type { LaneCursor } from '#src/ports/recap-records.ts';
+import type { SessionCursor } from '#src/ports/recap-records.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 
 const TAB = tabId('w1:t1');
@@ -29,7 +29,7 @@ const odd = (store: Store, ...statements: readonly string[]): void => {
     store.db.exec('PRAGMA foreign_keys = OFF');
     statements.forEach((statement) => { store.db.exec(statement); });
 };
-const lanesOf = (store: Store): readonly LaneCursor[] => storeRead(store.records.readRecap(TAB))?.lanes ?? [];
+const lanesOf = (store: Store): readonly SessionCursor[] => storeRead(store.records.readRecap(TAB))?.lanes ?? [];
 const byText = (left: readonly unknown[], right: readonly unknown[]): number => JSON.stringify(left).localeCompare(JSON.stringify(right));
 const MODE = 'added';
 const BIG = 9223372036854775807n;

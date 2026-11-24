@@ -16,10 +16,10 @@ import { tabId, agentKind, paneId } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
-import type { TabRecap } from '#src/ports/recap-records.ts';
+import type { Recap } from '#src/ports/recap-records.ts';
 import type { TabViewRecord } from '#src/ports/tab-views.ts';
-import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
-import type { ChunkResult, Located, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import type { RecapRequest, Writer, Written } from '#src/ports/summarizer.ts';
+import type { ChunkResult, Located, Position, PromptResult, SessionReader } from '#src/ports/transcripts.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
@@ -27,9 +27,9 @@ import { grewOf, cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { seenLane } from '#test/support/seen.ts';
 import { viewRecord } from '#test/support/tab-view-records.ts';
 
-function recording(agent: string, source: (pane: string) => string, tail: string | null = null): { reader: Transcripts; seen: Position[] } {
+function recording(agent: string, source: (pane: string) => string, tail: string | null = null): { reader: SessionReader; seen: Position[] } {
     const seen: Position[] = [];
-    const reader: Transcripts = {
+    const reader: SessionReader = {
         agent: agentKind(agent),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
         locate: (lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(source(String(lane.pane))) }),
@@ -42,7 +42,7 @@ function recording(agent: string, source: (pane: string) => string, tail: string
     return { reader, seen };
 }
 
-const writer = (requests: RecapRequest[]): Summarizer => ({
+const writer = (requests: RecapRequest[]): Writer => ({
     backend: textOf('fake'),
     contract: 'strict',
     write: (request): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: textOf(JSON.stringify({ ops: [] })), costUsd: brand<number, 'Usd'>(0) }); },
@@ -50,7 +50,7 @@ const writer = (requests: RecapRequest[]): Summarizer => ({
 
 async function recapOf(transcripts: TranscriptRegistry, agents: readonly string[], store = memoryStore()): Promise<{ store: Store; requests: RecapRequest[] }> {
     const requests: RecapRequest[] = [];
-    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts, records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Summarizer => writer(requests), language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined });
+    const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts, records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Writer => writer(requests), language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined });
     const lanes = agents.map((agent, at) => laneFrom(seenLane({ paneId: `w1:p${at + 1}`, tabId: 'w1:t1', workspaceId: 'w1', agent })));
     job.request(tabId('w1:t1'), lanes, 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 30); });
@@ -85,7 +85,7 @@ test('a lane nobody can read is reported by name, and does not stop the others',
     assert.deepEqual(storeRead(store.records.readRecap(tabId('w1:t1')))?.lanes.map((lane) => lane.cursor), [0, 1]);
 });
 
-const cursor = (pane: string, transcript: string): TabRecap['lanes'][number] => ({ pane: paneId(pane), agent: agentKind('x'), transcript: sourcePathOf(transcript), cursor: cursorOf(1), tail: null, title: null, lastPrompt: null, claudeRecap: null });
+const cursor = (pane: string, transcript: string): Recap['lanes'][number] => ({ pane: paneId(pane), agent: agentKind('x'), transcript: sourcePathOf(transcript), cursor: cursorOf(1), tail: null, title: null, lastPrompt: null, claudeRecap: null });
 
 test('the column says `(screen)` beside a lane read from its screen — in both languages — and nothing beside the others', () => {
     const recap = { ...blankRecap(tabId('w1:t1')), lanes: [cursor('w1:p1', 'screen:w1:p1'), cursor('w1:p2', '/t/b')], markdown: '## Goal\n- g', at: instant(0) };

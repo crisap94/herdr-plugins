@@ -52,7 +52,7 @@ export type InFlightCapability =
 
 export type SupportedInFlight = Extract<InFlightCapability, { readonly kind: 'supported' }>;
 
-export interface Transcripts {
+export interface SessionReader {
     readonly agent: AgentKind;
     locate(lane: Lane): Promise<Located>;
     read(source: SourcePath, was: Position, budget: Count): Promise<ChunkResult>;

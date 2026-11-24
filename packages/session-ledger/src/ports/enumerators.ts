@@ -4,7 +4,7 @@ import type { Unknown } from './unknowable.ts';
 
 export type Enumerated = { readonly kind: 'enumerated'; readonly text: Text; readonly costUsd: Usd } | Unknown;
 
-export interface Enumerators {
+export interface Enumerator {
     readonly backend: Text;
     readonly job: Text;
     write(document: Text): Promise<Enumerated>;

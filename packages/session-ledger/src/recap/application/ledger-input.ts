@@ -1,5 +1,5 @@
 import type { Count } from '#src/contract/kernel.ts';
-import type { Ledger } from '#src/ports/ledger.ts';
+import type { FactStore } from '#src/ports/ledger.ts';
 import type { InputAgent, InputFact, InputLedger } from '#src/ports/recap-input.ts';
 import type { Fact, Section, TaskId } from '#src/recap/domain/fact.ts';
 import { SECTION_IDS } from '#src/recap/domain/fact.ts';
@@ -27,7 +27,7 @@ export interface TaskFacts {
     readonly closed: readonly Fact[];
 }
 
-export function taskFactsOf(ledger: Pick<Ledger, 'openOf' | 'recentlyClosed'>, task: TaskId, at: Instant): TaskFacts {
+export function taskFactsOf(ledger: Pick<FactStore, 'openOf' | 'recentlyClosed'>, task: TaskId, at: Instant): TaskFacts {
     return { key: textOf(task.key), open: ledger.openOf(task), closed: ledger.recentlyClosed(task, instant(at - CLOSED_SHOWN_MS)) };
 }
 

@@ -5,13 +5,13 @@ import { instant } from '#src/contract/kernel.ts';
 import { parseSessionKey, type ScopeId, type SessionKey } from '#src/contract/ids.ts';
 import type { FollowedSession, RecapCause } from '#src/contract/session.ts';
 import { createEngine as createLegacyEngine, type Engine as LegacyEngine, type EngineStore } from '#src/recap/application/engine.ts';
-import type { RunAccomplishment, RunEvent, RunTurn } from '#src/recap/application/ledger-reconcile.ts';
+import type { RunAccomplishment, RecapWritten, RunTurn } from '#src/recap/application/ledger-reconcile.ts';
 import { compacted } from './compacted.ts';
 import { createFollowSet } from './follow-set.ts';
 import { followedBy, type FollowedBy } from './followed-by.ts';
 import { legacyPlugsOf, type FacadePlugs, type RestoreHooks } from './plugs.ts';
 import { sessionStarted, type Started } from './session-started.ts';
-import type { Advance, LaneCursor } from '#src/ports/recap-records.ts';
+import type { Advance, SessionCursor } from '#src/ports/recap-records.ts';
 import { historyOf, laneOf, tabOf, writtenOf } from './translate.ts';
 
 const NO_RESTORE: RestoreHooks = { bytes: () => undefined, render: () => undefined };
@@ -48,7 +48,7 @@ const afterRunFailed = (plugs: FacadePlugs, scope: ScopeId) => (error: Error): v
     plugs.environment.log(`curator ${scope}: ${error.message}`);
 };
 
-const startedAfterRun = (plugs: FacadePlugs, scope: ScopeId, event: RunEvent): void => {
+const startedAfterRun = (plugs: FacadePlugs, scope: ScopeId, event: RecapWritten): void => {
     const failed = afterRunFailed(plugs, scope);
     try {
         plugs.afterRun?.(scope, event).catch(failed);
@@ -57,7 +57,7 @@ const startedAfterRun = (plugs: FacadePlugs, scope: ScopeId, event: RunEvent): v
     }
 };
 
-const reportRun = (plugs: FacadePlugs) => (event: RunEvent): void => {
+const reportRun = (plugs: FacadePlugs) => (event: RecapWritten): void => {
     const written = writtenOf(event);
     if (written === null) {
         plugs.environment.log(`engine-adapter: run events skipped, the tab id is empty: ${event.tab}`);
@@ -76,7 +76,7 @@ const reportRun = (plugs: FacadePlugs) => (event: RunEvent): void => {
 
 type Moved = Pick<Advance, 'tab' | 'lanes'>;
 
-const unread = (cursors: readonly LaneCursor[], read: readonly LaneCursor[]): readonly LaneCursor[] =>
+const unread = (cursors: readonly SessionCursor[], read: readonly SessionCursor[]): readonly SessionCursor[] =>
     cursors.filter((cursor) => !read.some((other) => other.pane === cursor.pane && other.transcript === cursor.transcript));
 
 const after = <F extends (...args: never[]) => ReturnType<F>>(call: F, then: (result: ReturnType<F>) => ReturnType<F>) => (...args: Parameters<F>): ReturnType<F> => then(call(...args));
@@ -84,8 +84,8 @@ const after = <F extends (...args: never[]) => ReturnType<F>>(call: F, then: (re
 const OLD_CURSORS_PER_PANE = 4;
 
 const keptOver = (store: EngineStore): EngineStore => {
-    const read = new Map<string, readonly LaneCursor[]>();
-    const withKept = (move: Moved): readonly LaneCursor[] => {
+    const read = new Map<string, readonly SessionCursor[]>();
+    const withKept = (move: Moved): readonly SessionCursor[] => {
         const old = unread(read.get(move.tab) ?? [], move.lanes);
         const held = old.filter((cursor, at) => {
             const same = [...move.lanes, ...old.slice(0, at)].filter((other) => other.pane === cursor.pane);

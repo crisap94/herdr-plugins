@@ -23,7 +23,7 @@ import type { ColumnView, Markdown } from '#src/recap/render/present.ts';
 import { coloured, plain } from '#src/recap/render/wrap.ts';
 import type { Style } from '#src/recap/render/wrap.ts';
 import type { Role } from '#src/wire/view/protocol.ts';
-import { recapRunningOf, type TabRecap } from '#src/ports/recap-records.ts';
+import { recapRunningOf, type Recap } from '#src/ports/recap-records.ts';
 import { cursor, memoryStore, storeRead } from '#test/db/support.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
 import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
@@ -42,7 +42,7 @@ const cases = (['column', 'modal', 'bar'] as const).flatMap((role) => [
 
 const settle = (): Promise<void> => new Promise((resolve) => { setImmediate(resolve); });
 
-const recapOf = (): TabRecap => ({
+const recapOf = (): Recap => ({
     tab: tabId(TAB),
     lanes: [cursor('w1:p1')],
     tasks: [{ id: textOf('t1'), name: textOf('Build'), lanes: [paneIdOf('w1:p1')], sections: null, markdown: textOf('## Done\n\n- shipped the frame source') }],

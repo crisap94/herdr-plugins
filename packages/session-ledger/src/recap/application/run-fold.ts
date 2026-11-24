@@ -1,7 +1,7 @@
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
 import { foldSwept, type RunRef, type TaskOps } from '#src/recap/domain/ops.ts';
-import type { Applied, CheckedLedger, Ledger } from '#src/ports/ledger.ts';
+import type { Applied, CheckedLedger, FactStore } from '#src/ports/ledger.ts';
 import { saying, type Unknown } from '#src/ports/unknowable.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import type { RunAccomplishment } from './ledger-reconcile.ts';
@@ -28,7 +28,7 @@ function known(found: readonly Fact[] | Unknown): readonly Fact[] {
     return found;
 }
 
-export function throwingLedger(ledger: CheckedLedger): Omit<Ledger, 'keysOf'> {
+export function throwingLedger(ledger: CheckedLedger): Omit<FactStore, 'keysOf'> {
     return { ...ledger, openOf: (task: TaskId) => known(ledger.openOf(task)), recentlyClosed: (task: TaskId, since: Instant) => known(ledger.recentlyClosed(task, since)), allOf: (task: TaskId) => known(ledger.allOf(task)) };
 }
 
@@ -41,7 +41,7 @@ function inOrder(facts: readonly Fact[]): readonly Fact[] {
     return sorted;
 }
 
-export function foldedRun(ledger: Pick<Ledger, 'openOf' | 'recentlyClosed'>, asked: readonly TaskOps[], run: FoldRun): Applied {
+export function foldedRun(ledger: Pick<FactStore, 'openOf' | 'recentlyClosed'>, asked: readonly TaskOps[], run: FoldRun): Applied {
     const changed: Fact[] = [];
     const refused: Applied['refused'][number][] = [];
     for (const one of asked) {

@@ -1,7 +1,7 @@
 import type { Database } from 'bun:sqlite';
 import { and, desc, eq, max, ne, sql } from 'drizzle-orm';
 import { chapterStart, compactedFrom } from '#src/recap/domain/boundary.ts';
-import type { LaneMark, Planned } from '#src/recap/domain/boundary.ts';
+import type { SessionMark, Planned } from '#src/recap/domain/boundary.ts';
 import { type TabId } from '#src/recap/domain/ids.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { boundary, chapter, compaction, transcript } from './drizzle/index.ts';
@@ -13,7 +13,7 @@ import { countOf } from '#src/recap/domain/count.ts';
 
 export interface Found {
     readonly at: Instant;
-    readonly marks: readonly LaneMark[];
+    readonly marks: readonly SessionMark[];
     readonly moved: readonly TranscriptMove[];
 }
 

@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { extract, OLD_CONTRACT, type Ground } from '@stateforge-labs/session-ledger/unstable/recap/application/extract-job.ts';
 import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { RecapRequest, Summarizer, Written } from '@stateforge-labs/session-ledger/unstable/ports/summarizer.ts';
+import type { RecapRequest, Writer, Written } from '@stateforge-labs/session-ledger/unstable/ports/summarizer.ts';
 
 const text = brand<string, 'Text'>;
 
@@ -16,7 +16,7 @@ const ground: Ground = {
 
 const request: RecapRequest = { input: { tab: { id: textOf('w1:t1'), now: instant(10 * 3_600_000), zone: textOf('UTC') }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] }, language: textOf('en'), previousLanguage: textOf('en') };
 
-const writing = (answers: readonly string[], contract: Summarizer['contract'] = 'strict'): { summarizer: Summarizer; calls: RecapRequest[] } => {
+const writing = (answers: readonly string[], contract: Writer['contract'] = 'strict'): { summarizer: Writer; calls: RecapRequest[] } => {
     const calls: RecapRequest[] = [];
     const write = (asked: RecapRequest): Promise<Written> => {
         calls.push(asked);

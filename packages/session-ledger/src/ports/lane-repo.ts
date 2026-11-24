@@ -11,6 +11,6 @@ export type RepoResult =
     | { readonly kind: 'no-repo' }
     | Unknown;
 
-export interface LaneRepo {
+export interface Workplaces {
     repoOf(cwd: Directory): Promise<RepoResult>;
 }

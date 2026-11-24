@@ -7,7 +7,7 @@ import type { Directory } from '#src/recap/domain/directory.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
-import type { Chunk, ChunkResult, Entry, InFlightResult, Located, ObservedResult, Position, PromptResult, SourcePath, Transcripts } from '#src/ports/transcripts.ts';
+import type { Chunk, ChunkResult, Entry, InFlightResult, Located, ObservedResult, Position, PromptResult, SourcePath, SessionReader } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
@@ -35,7 +35,7 @@ function newest(entries: readonly Entry[], budget: Count): readonly Entry[] {
 
 const sessionOf = (source: Text): Text => must(parseText(sessionIdOfTranscriptPath('opencode', source) ?? ''));
 
-export class OpencodeTranscripts implements Transcripts {
+export class OpencodeTranscripts implements SessionReader {
     readonly agent = must(parseAgentKind('opencode'));
     readonly inFlight: SupportedReading = { kind: 'supported', split: { kind: 'foreground-only', why: 'opencode-parts' }, read: (source) => this.readInFlight(textOf(source)) };
     private readonly database: FsPath;

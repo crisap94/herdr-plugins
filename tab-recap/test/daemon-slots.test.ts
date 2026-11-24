@@ -15,20 +15,20 @@ const SLOT_MODULES = [
     { name: 'timing', file: 'timing', mod: timing },
 ] as const;
 
-interface Ledger {
+interface FactStore {
     readonly starts: string[];
     readonly stops: string[];
     readonly logs: string[];
 }
 
-const ledger = (): Ledger => ({ starts: [], stops: [], logs: [] });
+const ledger = (): FactStore => ({ starts: [], stops: [], logs: [] });
 
-const contextWith = (values: Partial<Record<SlotKey, string>>, book: Ledger): SlotContext => ({
+const contextWith = (values: Partial<Record<SlotKey, string>>, book: FactStore): SlotContext => ({
     setting: (key: SlotKey): Switch => parseSwitch(values[key]),
     log: (line: Line): void => { book.logs.push(line); },
 } as SlotContext);
 
-const fakeEntry = (name: SlotName, key: SlotKey, defaultOn: Mode, book: Ledger, broken = false): SlotEntry => ({
+const fakeEntry = (name: SlotName, key: SlotKey, defaultOn: Mode, book: FactStore, broken = false): SlotEntry => ({
     name,
     key,
     defaultOn,

@@ -16,7 +16,7 @@ export interface HistoryFact {
     readonly lastAt: Instant;
 }
 
-export interface Ledger {
+export interface FactStore {
     openOf(task: TaskId): readonly Fact[];
     recentlyClosed(task: TaskId, sinceMs: Instant): readonly Fact[];
     allOf(task: TaskId): readonly Fact[];
@@ -31,6 +31,6 @@ export interface Applied {
 
 type Reads = 'openOf' | 'recentlyClosed' | 'keysOf' | 'allOf';
 
-export type CheckedLedger = Omit<Ledger, Reads> & {
-    readonly [K in Reads]: (...args: Parameters<Ledger[K]>) => ReturnType<Ledger[K]> | Unknown;
+export type CheckedLedger = Omit<FactStore, Reads> & {
+    readonly [K in Reads]: (...args: Parameters<FactStore[K]>) => ReturnType<FactStore[K]> | Unknown;
 };

@@ -8,7 +8,7 @@ import { canonicalRecap, holdingOf, recapDifferenceLines, viewDifferenceLines } 
 import { memoryStore, scratchDir } from '../support.ts';
 import { everyShape, filesAt, put, sections } from './support.ts';
 import { tabId } from '#test/support/ids.ts';
-import { recapRunningOf, type TabRecap } from '#src/ports/recap-records.ts';
+import { recapRunningOf, type Recap } from '#src/ports/recap-records.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
@@ -119,7 +119,7 @@ test('a state directory with no files is marked imported and nothing is made; th
         const store = memoryStore();
         assert.equal(importFilesAt(store, filesAt(dir), options).kind, 'nothing');
         assert.equal(importFilesAt(store, filesAt(dir), options).kind, 'already');
-        const recap: TabRecap = { tab: tabId('t'), lanes: [], tasks: [], at: instant(5), running: recapRunningOf(false), backend: null, error: null, costUsd: usdOf(1), language: textOf('en') };
+        const recap: Recap = { tab: tabId('t'), lanes: [], tasks: [], at: instant(5), running: recapRunningOf(false), backend: null, error: null, costUsd: usdOf(1), language: textOf('en') };
         assert.deepEqual(recapDifferenceLines(recap, { ...recap, at: instant(6), costUsd: usdOf(2) }), ['recap t: at differs', 'recap t: costUsd differs']);
         assert.deepEqual(recapDifferenceLines(recap, { ...recap, costUsd: usdOf(1.0000001) }), [], 'money is compared in millionths');
         assert.deepEqual(recapDifferenceLines(recap, null), ['recap t: reads back as nothing']);

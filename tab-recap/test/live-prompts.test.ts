@@ -21,7 +21,7 @@ import { instant } from '#src/recap/domain/time.ts';
 import type { ColumnPanes } from '#src/ports/columns.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { TabViewRecord, TabViewStore } from '#src/ports/tab-views.ts';
-import type { Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import type { Located, PromptResult, SessionReader } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
@@ -32,9 +32,9 @@ import { reconciliation, seenLane as laneOf, statusObservation } from '#test/sup
 
 const lane = (pane: string, agent = 'claude'): Lane => laneFrom(laneOf({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, session: `s-${pane}` }));
 
-function reader(agent: string, prompts: Record<string, PromptResult>): { transcripts: Transcripts; asked: { source: string; budget: number }[] } {
+function reader(agent: string, prompts: Record<string, PromptResult>): { transcripts: SessionReader; asked: { source: string; budget: number }[] } {
     const asked: { source: string; budget: number }[] = [];
-    const transcripts: Transcripts = {
+    const transcripts: SessionReader = {
         agent: agentKind(agent),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
         locate: (found: Lane): Promise<Located> => Promise.resolve(found.pane === 'w9:p9' ? unknown({ why: 'not-found', what: textOf('it') }) : { kind: 'located', source: sourcePathOf(`/t/${found.pane}`) }),

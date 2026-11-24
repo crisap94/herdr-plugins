@@ -6,13 +6,13 @@ import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { FactId } from '#src/recap/domain/fact.ts';
-import type { LaneRepo } from '#src/ports/lane-repo.ts';
+import type { Workplaces } from '#src/ports/lane-repo.ts';
 import type { CheckedLedger } from '#src/ports/ledger.ts';
-import { blankRecap, hasRecap, type CheckedRecapRecords, type LaneCursor, type RecordedRun, type TabRecap } from '#src/ports/recap-records.ts';
-import type { RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
+import { blankRecap, hasRecap, type CheckedRecapRecords, type SessionCursor, type RecordedRun, type Recap } from '#src/ports/recap-records.ts';
+import type { RecapRequest, Writer } from '#src/ports/summarizer.ts';
 import { UNREAD, sourcePathOf } from '#src/ports/transcripts.ts';
 import { isUnknown, saying, type Unknown } from '#src/ports/unknowable.ts';
-import type { Enumerators } from '#src/ports/enumerators.ts';
+import type { Enumerator } from '#src/ports/enumerators.ts';
 import { DEFAULT_PIPELINE, type CloseEvidence, type Pipeline } from '#src/recap/domain/pipeline.ts';
 import { DEBOUNCE_OFF, type Debounce } from '#src/recap/domain/debounce.ts';
 import { PACING_TURN, type Pacing, type Shown, type SmartPacing } from '#src/recap/domain/pacing.ts';
@@ -23,7 +23,7 @@ import { taskFactsOf } from './ledger-input.ts';
 import { groundOf } from './extract-ground.ts';
 import type { Extracted, Ground } from './extract-job.ts';
 import { extractPiped } from './extract-pipeline.ts';
-import type { RunEvent } from './ledger-reconcile.ts';
+import type { RecapWritten } from './ledger-reconcile.ts';
 import { ADVANCED, marksOf, NOT_ADVANCED } from './boundaries.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { FRESH, inputOf, SEEN_BEFORE } from './recap-input.ts';
@@ -39,9 +39,9 @@ export interface RecapJobDeps {
     readonly transcripts: TranscriptRegistry;
     readonly records: CheckedRecapRecords;
     readonly ledger: CheckedLedger;
-    readonly repos: LaneRepo;
+    readonly repos: Workplaces;
     readonly clock: Clock;
-    summarizer(): Summarizer;
+    summarizer(): Writer;
     language(): Text;
     keepInput?(): KeepInput;
     pipeline?(): Pipeline;
@@ -50,14 +50,14 @@ export interface RecapJobDeps {
     debounce?(): Debounce;
     pacing?(): Pacing;
     visible?(tab: TabId): Shown;
-    enumerator?(): Enumerators | null;
-    ran?(event: RunEvent): void;
+    enumerator?(): Enumerator | null;
+    ran?(event: RecapWritten): void;
     mint(): FactId;
     log(line: string): void;
 }
 
 const READ_BUDGET = 768 * 1024;
-async function placeOf(seat: Lane, repos: LaneRepo): Promise<PlacedLane> {
+async function placeOf(seat: Lane, repos: Workplaces): Promise<PlacedLane> {
     const found = seat.cwd === null ? null : await repos.repoOf(seat.cwd);
     const place = found?.kind === 'repo' ? found.root : seat.cwd;
     return { pane: seat.pane, place: place === null ? null : textOf(place) };
@@ -156,18 +156,18 @@ export class RecapJob {
         return isUnknown(located) ? saying(located.why) : { reader, source: located.source };
     }
 
-    private async read(lane: Lane, prior: TabRecap, budget: Count): Promise<Reading> {
-        const blank: LaneCursor = { pane: lane.pane, agent: lane.agent, transcript: sourcePathOf(''), cursor: UNREAD.cursor, tail: UNREAD.tail, title: lane.title === null ? null : textOf(lane.title), lastPrompt: null, claudeRecap: null };
+    private async read(lane: Lane, prior: Recap, budget: Count): Promise<Reading> {
+        const blank: SessionCursor = { pane: lane.pane, agent: lane.agent, transcript: sourcePathOf(''), cursor: UNREAD.cursor, tail: UNREAD.tail, title: lane.title === null ? null : textOf(lane.title), lastPrompt: null, claudeRecap: null };
         const found = await this.locate(lane);
         if (typeof found === 'string') return { lane, cursor: blank, chunk: null, grew: grew(false), fresh: SEEN_BEFORE, error: found };
         const was = await this.carry.cursorFor({ session: lane.session, cursors: prior.lanes.filter((c) => c.pane === blank.pane), wanted: { ...blank, transcript: found.source }, reader: found.reader });
         const chunk = await found.reader.read(found.source, { cursor: was.cursor, tail: was.tail }, budget);
         if (isUnknown(chunk)) return { lane, cursor: was, chunk: null, grew: grew(false), fresh: SEEN_BEFORE, error: saying(chunk.why) };
-        const cursor: LaneCursor = { ...was, title: chunk.title ?? was.title, lastPrompt: chunk.lastPrompt ?? was.lastPrompt, claudeRecap: chunk.claudeRecap ?? was.claudeRecap };
+        const cursor: SessionCursor = { ...was, title: chunk.title ?? was.title, lastPrompt: chunk.lastPrompt ?? was.lastPrompt, claudeRecap: chunk.claudeRecap ?? was.claudeRecap };
         return { lane, cursor, chunk, grew: chunk.grew, fresh: was.cursor === UNREAD.cursor ? FRESH : SEEN_BEFORE, error: null };
     }
 
-    private async readAll(prior: TabRecap, lanes: readonly Lane[], cause: RecapCause): Promise<readonly Reading[]> {
+    private async readAll(prior: Recap, lanes: readonly Lane[], cause: RecapCause): Promise<readonly Reading[]> {
         const budget = count(Math.floor(READ_BUDGET / Math.max(1, lanes.length)));
         try {
             return await Promise.all(lanes.map((each) => this.read(each, prior, budget)));
@@ -195,7 +195,7 @@ export class RecapJob {
 
     private skipped(tab: TabId, failure: Unknown): void { this.deps.log(`recap ${String(tab)}: skipped, ${saying(failure.why)}`); }
 
-    private switchedOf(prior: TabRecap, keys: readonly Text[], want: Text, cause: RecapCause): boolean | Unknown {
+    private switchedOf(prior: Recap, keys: readonly Text[], want: Text, cause: RecapCause): boolean | Unknown {
         if (!hasRecap(prior)) return false;
         if (prior.language !== want) return true;
         if (cause === 'focused') return false;
@@ -207,7 +207,7 @@ export class RecapJob {
         return false;
     }
 
-    private async piped(summarizer: Summarizer, request: RecapRequest, ground: Ground): Promise<Extracted> {
+    private async piped(summarizer: Writer, request: RecapRequest, ground: Ground): Promise<Extracted> {
         const { deps } = this;
         const closeEvidence = deps.closeEvidence?.() ?? 'off';
         try {
@@ -219,7 +219,7 @@ export class RecapJob {
         }
     }
 
-    private async prepared(prior: TabRecap, readings: readonly Reading[], plan: Plan): Promise<Prepared> {
+    private async prepared(prior: Recap, readings: readonly Reading[], plan: Plan): Promise<Prepared> {
         const now = this.deps.clock.now(); const ledger = throwingLedger(this.deps.ledger);
         const tasks = keptGrouping(prior.tasks, await Promise.all(readings.map((r) => placeOf(r.lane, this.deps.repos))), plan.keys);
         const writerView = this.deps.writerView(); const facts = tasks.map((task) => taskFactsOf(ledger, { tab: prior.tab, key: task.id }, now));
@@ -230,7 +230,7 @@ export class RecapJob {
         return { tasks, ground, request: { input: built.input, language: brand<string, 'Text'>(plan.want), previousLanguage: brand<string, 'Text'>(stale?.language ?? plan.was), ...(notInLanguage.length === 0 ? {} : { notInLanguage }) } };
     }
 
-    private async preparedOrFail(prior: TabRecap, readings: readonly Reading[], plan: Plan): Promise<Prepared> {
+    private async preparedOrFail(prior: Recap, readings: readonly Reading[], plan: Plan): Promise<Prepared> {
         try { return await this.prepared(prior, readings, plan); } catch (error) {
             const at = this.deps.clock.now();
             this.deps.records.failRun({ tab: prior.tab, at, cause: plan.cause, backend: this.deps.summarizer().backend, costUsd: usd(0), language: plan.was, error: textOf(error instanceof Error ? error.message : String(error)), lanes: readings.map((r) => r.cursor), marks: marksOf(readings, at, NOT_ADVANCED) });
@@ -238,7 +238,7 @@ export class RecapJob {
         }
     }
 
-    private async summarize(prior: TabRecap, readings: readonly Reading[], plan: Plan, run: Run): Promise<void> {
+    private async summarize(prior: Recap, readings: readonly Reading[], plan: Plan, run: Run): Promise<void> {
         const errors = readings.flatMap((r) => (r.error === null ? [] : [`${r.lane.pane}: ${r.error}`]));
         const note = errors.length > 0 ? textOf(errors.join('; ')) : null;
         const unmoved = readings.map((r) => r.cursor);

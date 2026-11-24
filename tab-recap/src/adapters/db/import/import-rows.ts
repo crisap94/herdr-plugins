@@ -1,6 +1,6 @@
 import type { Database, Statement } from 'bun:sqlite';
 import type { HiddenState } from '#src/recap/domain/board.ts';
-import type { TabRecap } from '#src/ports/recap-records.ts';
+import type { Recap } from '#src/ports/recap-records.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import type { VisibilityAsk } from '#src/ports/requests.ts';
 import type { LegacyViewFile } from '#src/ports/legacy-store-files.ts';
@@ -58,7 +58,7 @@ export class RowsWriter {
         this.state = db.prepare('UPDATE tab SET running = ?, backend = ?, error = ? WHERE id = ?');
     }
 
-    private tasks(run: Uint8Array, file: TabRecap, tasks: readonly RecapTask[]): void {
+    private tasks(run: Uint8Array, file: Recap, tasks: readonly RecapTask[]): void {
         const facts = { tab: file.tab, at: file.at ?? instant(0), cause: 'imported', backend: file.backend, language: file.language, costUsd: file.costUsd } as const;
         this.runs.writeTasks(run, facts, tasks.map((task) => ({ id: task.id, name: task.name, lanes: task.lanes, ...(task.sections === null ? { legacy: task.markdown } : {}) })));
         for (const task of tasks) {
@@ -67,7 +67,7 @@ export class RowsWriter {
         }
     }
 
-    recap(file: TabRecap, now: Instant): void {
+    recap(file: Recap, now: Instant): void {
         const at = file.at ?? now;
         this.tabs.ensure(file.tab, instant(at));
         this.transcripts.attach(file.tab, file.lanes, instant(at));

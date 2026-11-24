@@ -1,6 +1,6 @@
 import { isDeepStrictEqual } from 'node:util';
 import { must } from '#src/protocol/result.ts';
-import type { TabRecap } from '#src/ports/recap-records.ts';
+import type { Recap } from '#src/ports/recap-records.ts';
 import type { LegacyViewFile } from '#src/ports/legacy-store-files.ts';
 import type { TabViewRecord } from '#src/ports/tab-views.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
@@ -9,7 +9,7 @@ import { microsOf } from '../run-write.ts';
 
 export type Presence = 'present' | 'absent';
 
-export function canonicalRecap(file: TabRecap): TabRecap {
+export function canonicalRecap(file: Recap): Recap {
     const costUsd = typeof file.costUsd === 'number' ? file.costUsd : usdOf(0);
     const at = typeof file.at === 'number' ? file.at : null;
     const error = typeof file.error === 'string' ? file.error : null;
@@ -17,16 +17,16 @@ export function canonicalRecap(file: TabRecap): TabRecap {
     return { ...file, at, error, costUsd, running: file.running, backend: typeof file.backend === 'string' ? file.backend : null, language: hasRun ? file.language : textOf('en') };
 }
 
-export const holdingOf = (file: TabRecap): Presence =>
+export const holdingOf = (file: Recap): Presence =>
     file.lanes.length > 0 || file.tasks.length > 0 || file.at !== null || file.error !== null || file.costUsd > 0 || file.running || file.backend !== null ? 'present' : 'absent';
 
 export function canonicalView(file: LegacyViewFile): LegacyViewFile {
     return { ...file, column: typeof file.column === 'string' ? file.column : null, daemonVersion: file.daemonVersion ?? null };
 }
 
-const inMillionths = (recap: TabRecap): TabRecap => ({ ...recap, costUsd: usdOf(microsOf(recap.costUsd)) });
+const inMillionths = (recap: Recap): Recap => ({ ...recap, costUsd: usdOf(microsOf(recap.costUsd)) });
 
-export function recapDifferenceLines(was: TabRecap, now: TabRecap | null): readonly Text[] {
+export function recapDifferenceLines(was: Recap, now: Recap | null): readonly Text[] {
     if (now === null) {
         return [must(parseText(`recap ${was.tab}: reads back as nothing`))];
     }

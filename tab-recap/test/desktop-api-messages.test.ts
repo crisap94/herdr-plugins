@@ -11,7 +11,7 @@ import { viewRecord } from '#test/support/tab-view-records.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { must } from '#src/protocol/result.ts';
 import { compactPreviewOf } from '#src/recap/application/compact-preview.ts';
-import { blankRecap, type TabRecap } from '#src/ports/recap-records.ts';
+import { blankRecap, type Recap } from '#src/ports/recap-records.ts';
 import { NO_SECTIONS, type RecapSections } from '#src/recap/domain/shape.ts';
 import type { LaneWebRecord, TabLaneRecord, TabViewRecord } from '#src/ports/tab-views.ts';
 import { requestNoteOf } from './fakes/compact-note.ts';
@@ -86,7 +86,7 @@ test('a note of 280 characters is taken and 281 is refused; an unknown pane, an 
 
 test('the compact message drops the least important lines to fit 3000 characters, as the engine does', () => {
     const sections = { ...NO_SECTIONS, goal: textOf('g'.repeat(500)), decisions: Array.from({ length: 40 }, (_, n) => textOf(`Decision ${n}: ${'because '.repeat(30)}`)) };
-    const records = { readRecap: (): TabRecap => ({ ...blankRecap(tabId(TAB)), lanes: [cursor(PANE)], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf(PANE)], sections, markdown: textOf('') }] }) };
+    const records = { readRecap: (): Recap => ({ ...blankRecap(tabId(TAB)), lanes: [cursor(PANE)], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf(PANE)], sections, markdown: textOf('') }] }) };
     const made = compactPreviewOf({ records, views: { readTab: (): null => null } }, tabId(TAB), paneId(PANE), must(parseText('n'.repeat(280))));
     assert.ok(made.kind === 'guidance');
     assert.ok(made.text.length <= 3000);
@@ -127,7 +127,7 @@ const sectionsOf = (goal: string, rest: Partial<RecapSections> = {}): RecapSecti
 
 interface Shape {
     readonly name: string;
-    readonly recap: TabRecap | null;
+    readonly recap: Recap | null;
     readonly view: TabViewRecord | null;
     readonly note: string;
 }
@@ -160,7 +160,7 @@ const SHAPES: readonly Shape[] = [
 
 for (const shape of SHAPES) {
     test(`the preview is Briefing.materialOf then guidanceOf, byte for byte: ${shape.name}`, () => {
-        const records = { readRecap: (): TabRecap | null => shape.recap };
+        const records = { readRecap: (): Recap | null => shape.recap };
         const views = { readTab: (): TabViewRecord | null => shape.view };
         const webs = { of: (pane: string): LaneWebRecord | null => shape.view?.lanes.find((each) => each.pane === pane)?.web ?? null };
         const briefing = new Briefing({ records, webs, brief: { enabled: (): boolean => { throw new Error('a model was asked'); }, write: (): never => { throw new Error('a model was asked'); } } } as unknown as CompactionPorts);
@@ -171,7 +171,7 @@ for (const shape of SHAPES) {
 }
 
 test('over the limit the preview is exactly what compaction sends: nothing is cut, and no character is split in half', () => {
-    const records = { readRecap: (): TabRecap => ({ ...blankRecap(tabId(TAB)), lanes: [cursor(PANE)], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf(PANE)], sections: sectionsOf('\u{1F600}'.repeat(2000)), markdown: textOf('') }] }) };
+    const records = { readRecap: (): Recap => ({ ...blankRecap(tabId(TAB)), lanes: [cursor(PANE)], tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf(PANE)], sections: sectionsOf('\u{1F600}'.repeat(2000)), markdown: textOf('') }] }) };
     const made = compactPreviewOf({ records, views: { readTab: (): null => null } }, tabId(TAB), paneId(PANE), must(parseText('')));
     assert.ok(made.kind === 'guidance');
     assert.equal(made.text, guidanceOf({ sections: sectionsOf('\u{1F600}'.repeat(2000)), web: null, note: null }));

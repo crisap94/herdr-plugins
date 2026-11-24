@@ -3,7 +3,7 @@ import { allHiddenOf, type HiddenState } from '#src/recap/domain/board.ts';
 import type { RecapSections } from '#src/recap/domain/shape.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import { parseTextOrNull, textOf, type Text } from '#src/recap/domain/text.ts';
-import { recapRunningOf, type LaneCursor, type TabRecap } from '#src/ports/recap-records.ts';
+import { recapRunningOf, type SessionCursor, type Recap } from '#src/ports/recap-records.ts';
 import { cursorOf as positionOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import type { VisibilityAsk } from '#src/ports/requests.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
@@ -72,7 +72,7 @@ const tasksOf = (stored: Row): RecapTask[] => {
     });
 };
 
-const cursorOf = (input: Row): Result<LaneCursor, ParseFailure> => {
+const cursorOf = (input: Row): Result<SessionCursor, ParseFailure> => {
     if (typeof input.pane !== 'string') return err({ kind: 'not-a-string' });
     if (typeof input.agent !== 'string') return err({ kind: 'not-a-string' });
     if (typeof input.transcript !== 'string') return err({ kind: 'not-a-string' });
@@ -109,9 +109,9 @@ const laneOf = (input: Row): Result<LegacyViewLane, ParseFailure> => {
     });
 };
 
-const cursorsOf = (stored: Row): Result<LaneCursor[], ParseFailure> => {
+const cursorsOf = (stored: Row): Result<SessionCursor[], ParseFailure> => {
     if (!Array.isArray(stored.lanes)) return err({ kind: 'not-a-row' });
-    const lanes: LaneCursor[] = [];
+    const lanes: SessionCursor[] = [];
     for (const item of stored.lanes) {
         if (!isRow(item)) return err({ kind: 'not-a-row' });
         const cursor = cursorOf(item);
@@ -134,7 +134,7 @@ const viewLanesOf = (input: Row): Result<LegacyViewLane[], ParseFailure> => {
     return ok(lanes);
 };
 
-type RecapMeta = Pick<TabRecap, 'at' | 'running' | 'backend' | 'error' | 'language'>;
+type RecapMeta = Pick<Recap, 'at' | 'running' | 'backend' | 'error' | 'language'>;
 
 const recapMetaOf = (input: Row): RecapMeta => ({
     at: typeof input.at === 'number' ? instant(input.at) : null,
@@ -144,7 +144,7 @@ const recapMetaOf = (input: Row): RecapMeta => ({
     language: typeof input.language === 'string' && input.language !== '' ? textOf(input.language) : textOf('en'),
 });
 
-export function parseLegacyRecapFile(input: unknown): Result<TabRecap, ParseFailure> {
+export function parseLegacyRecapFile(input: unknown): Result<Recap, ParseFailure> {
     if (!isRow(input)) return err({ kind: 'not-a-row' });
     if (typeof input.tab !== 'string') return err({ kind: 'not-a-string' });
     const lanes = cursorsOf(input);

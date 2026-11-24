@@ -4,9 +4,9 @@ import { freshnessOf } from '#src/recap/application/freshness-block.ts';
 import type { FreshnessInput } from '#src/recap/application/freshness-block.ts';
 import { TRANSCRIPT_READ_BUDGET_BYTES } from '#src/recap/application/transcript-read-budget.ts';
 import { registryWith } from './fakes/transcript-registry.ts';
-import type { LaneCursor, LastRun, RecapRecords } from '#src/ports/recap-records.ts';
+import type { SessionCursor, LastRun, Records } from '#src/ports/recap-records.ts';
 import { UNREAD, cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
-import type { ChunkResult, Entry, Position, Transcripts } from '#src/ports/transcripts.ts';
+import type { ChunkResult, Entry, Position, SessionReader } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { SCREEN_PREFIX } from '#src/ports/screens.ts';
@@ -17,7 +17,7 @@ import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 
 const TAB = tabId('w1:t1');
 const LAST: LastRun = { at: instant(1_000), cause: 'turn-ended' };
-const records = (last: LastRun | null): Pick<RecapRecords, 'lastRunOf'> => ({ lastRunOf: () => last });
+const records = (last: LastRun | null): Pick<Records, 'lastRunOf'> => ({ lastRunOf: () => last });
 
 interface Asked {
     readonly source: string;
@@ -25,7 +25,7 @@ interface Asked {
     readonly budget: number;
 }
 
-function reader(entries: readonly Entry[] | null, asked: Asked[] = []): Transcripts {
+function reader(entries: readonly Entry[] | null, asked: Asked[] = []): SessionReader {
     return {
         agent: agentKind('claude'),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
@@ -46,7 +46,7 @@ const input = (overrides: Partial<FreshnessInput> = {}): FreshnessInput => ({
     tab: TAB, agent: agentKind('claude'), source: fsPathOf('session-a.jsonl'), cursor: null, status: 'idle', refresh: 'not-requested', ...overrides,
 });
 
-const cursorAt = (transcript: string, cursor: number, tail: string | null = null): LaneCursor => ({
+const cursorAt = (transcript: string, cursor: number, tail: string | null = null): SessionCursor => ({
     pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf(transcript), cursor: cursorOf(cursor), tail: tail === null ? null : textOf(tail), title: null, lastPrompt: null, claudeRecap: null,
 });
 

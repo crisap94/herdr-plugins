@@ -5,8 +5,8 @@ import assert from 'node:assert/strict';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { memoryStore } from '#test/db/support.ts';
 import { NO_REPOS } from '#test/support.ts';
-import type { Summarizer, Written } from '#src/ports/summarizer.ts';
-import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import type { Writer, Written } from '#src/ports/summarizer.ts';
+import type { ChunkResult, Located, PromptResult, SessionReader } from '#src/ports/transcripts.ts';
 import { keyOf, pluginEngine, scopeOf, type PluginEnginePlugs } from '#src/engine/engine-adapter.ts';
 import { tabRecaps } from '#src/engine/tab-recaps.ts';
 import { onBeatOf } from '#src/daemon/follow-board.ts';
@@ -43,7 +43,7 @@ function boardWith(published: readonly Lane[]): Board {
 test('a board with two lanes, published with no turn ended and no refresh, makes compacted refresh both lanes, and a board without them makes it refresh none', async () => {
     const located: string[] = [];
     const store = memoryStore();
-    const reader: Transcripts = {
+    const reader: SessionReader = {
         agent: agentKind('claude'),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
         locate: (lane: Lane): Promise<Located> => {
@@ -53,7 +53,7 @@ test('a board with two lanes, published with no turn ended and no refresh, makes
         latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
         read: (source: string): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf(`go ${source}`) }], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(7), tail: null }, grew: grewOf(true) }),
     };
-    const summarizer: Summarizer = {
+    const summarizer: Writer = {
         backend: textOf('fake'),
         contract: 'strict',
         write: (): Promise<Written> => {
@@ -63,7 +63,7 @@ test('a board with two lanes, published with no turn ended and no refresh, makes
     const plugs: PluginEnginePlugs = {
         source: { transcripts: registryWith({ claude: reader }) },
         store: { records: checkedRecords(store.records), ledger: checkedLedger(store.ledger) },
-        models: { summarizer: (): Summarizer => summarizer, enumerator: () => null },
+        models: { summarizer: (): Writer => summarizer, enumerator: () => null },
         environment: { clock: { now: (): ReturnType<typeof instant> => instant(9) }, repos: NO_REPOS, mint: mintFactId, log: (): void => undefined },
         settings: { language: (): Text => brand<string, 'Text'>('en'), writerView: () => FULL_WRITER_VIEW, keepInput: (): KeepInput => brand<boolean, 'KeepInput'>(true) },
     };

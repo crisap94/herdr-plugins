@@ -1,4 +1,4 @@
-import type { Enumerated, Enumerators } from '#src/ports/enumerators.ts';
+import type { Enumerated, Enumerator } from '#src/ports/enumerators.ts';
 import type { HarnessAsk, HarnessChoice, HarnessPort } from '#src/ports/harness.ts';
 import { isUnknown, unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
@@ -7,7 +7,7 @@ import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import { ENUMERATE_INSTRUCTIONS } from './prompts/enumerate-instructions.ts';
 import { unfencedText } from './prompts/recap-prompt.ts';
 
-export class HarnessEnumerator implements Enumerators {
+export class HarnessEnumerator implements Enumerator {
     readonly backend: Text;
     readonly job: Text;
     private readonly harness: HarnessPort;
