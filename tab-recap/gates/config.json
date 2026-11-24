@@ -1,5 +1,5 @@
 {
-  "source": ["src", "bin", "test", "ci", "gates"],
+  "source": ["src", "bin", "test", "gates"],
   "rulesTree": ["src", "bin", "test"],
   "domain": "src",
   "graph": ["src", "bin"],

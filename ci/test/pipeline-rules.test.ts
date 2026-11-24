@@ -186,7 +186,7 @@ function jobsThatRun(env: Env, files: readonly string[], present: Present = onDi
 }
 
 const MERGE_REQUEST_JOBS: readonly string[] = ['merge-request-notes', 'track-scope'];
-const CHECKED_JOBS: ReadonlySet<string> = new Set([...UNIT_JOBS, 'install-smoke', 'track-scope', 'lane-scope', 'domain-baseline', 'merge-request-notes']);
+const CHECKED_JOBS: ReadonlySet<string> = new Set([...UNIT_JOBS, 'install-smoke', 'track-scope', 'merge-request-notes']);
 
 function checked(env: Env, files: readonly string[], present: Present = onDisk): readonly string[] {
     return jobsThatRun(env, files, present).filter((name) => CHECKED_JOBS.has(name));
@@ -255,41 +255,21 @@ test('path rules 2: the ledger runs the packages and the plugin but not the root
     );
 });
 
-test('path rules 3: a plugin source file runs the plugin only, and lane-scope on a lane branch', () => {
+test('path rules 3: a plugin source file runs the plugin only, whatever the source branch', () => {
     const files = ['tab-recap/src/daemon/main.ts'];
     assert.deepEqual(checked(MERGE_REQUEST, files), sorted(PLUGIN_JOBS, MERGE_REQUEST_JOBS));
-    assert.deepEqual(
-        checked({ ...MERGE_REQUEST, CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: 'lane/B3-example' }, files),
-        sorted(PLUGIN_JOBS, MERGE_REQUEST_JOBS, ['lane-scope']),
-    );
+    assert.deepEqual(checked({ ...MERGE_REQUEST, CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: 'lane/B3-example' }, files), sorted(PLUGIN_JOBS, MERGE_REQUEST_JOBS));
 });
 
-test('the lane-scope and domain-baseline rules carry their exists: guards', () => {
+test('the lane-scope and domain-baseline jobs are gone from the pipeline', () => {
     const jobs = pipeline().jobs;
-    assert.deepEqual(jobs.get('lane-scope')?.rules, [
-        {
-            if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^lane\\/B[1-8]-/',
-            exists: ['tab-recap/ci/lanes.json'],
-        },
-    ]);
-    assert.deepEqual(jobs.get('domain-baseline')?.rules, [
-        { if: '$CI_PIPELINE_SOURCE == "merge_request_event"', exists: ['tab-recap/ci/domain-types-baseline/*.json'] },
-    ]);
+    assert.equal(jobs.has('lane-scope'), false);
+    assert.equal(jobs.has('domain-baseline'), false);
 });
 
-const laneMapAndBaselineGone: Present = (path) => !path.startsWith('tab-recap/ci/domain-types-baseline/') && path !== 'tab-recap/ci/lanes.json';
-
-test('path rules 11: with the baseline folder and lane map gone, domain-baseline and lane-scope switch themselves off', () => {
-    assert.deepEqual(
-        checked({ ...MERGE_REQUEST, CI_MERGE_REQUEST_SOURCE_BRANCH_NAME: 'lane/B3-example' }, ['tab-recap/src/daemon/main.ts'], laneMapAndBaselineGone),
-        sorted(PLUGIN_JOBS, ['merge-request-notes', 'track-scope']),
-    );
-});
-
-test('the glob guard no longer matches the baseline folder, which is gone, and still matches a folder that exists', () => {
-    assert.equal(onDisk('tab-recap/ci/domain-types-baseline/*.json'), false);
+test('the glob guard matches a folder that exists and not one that does not', () => {
     assert.equal(onDisk('tab-recap/gates/domain-types-exceptions/*.json'), true);
-    assert.equal(onDisk('tab-recap/ci/no-such-folder/*.json'), false);
+    assert.equal(onDisk('tab-recap/ci/*.json'), false);
 });
 
 test('path rules 4: a root ci file runs the root unit, the plugin lint that exercises the ci scripts, and track-scope', () => {

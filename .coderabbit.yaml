@@ -112,7 +112,7 @@ reviews:
       instructions: >-
         The GitHub side is a push mirror of main: workflows only test and release from the
         mirrored tags. Pin actions to a full commit SHA or exact version; no secrets in logs.
-    - path: "tab-recap/ci/**"
+    - path: "ci/**/*.sh"
       instructions: >-
         Scripts run on macOS' stock bash 3.2 and Linux: no mapfile or other bash 4 features;
         set -euo pipefail; exit 0 clean, 1 finding, 2 usage, 3 could not look.

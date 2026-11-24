@@ -1,0 +1,10 @@
+drop	tab-recap/ci/lanes.json
+drop	tab-recap/ci/lanes-generate.ts
+drop	tab-recap/ci/check-lane.ts
+drop	tab-recap/test/lanes-map.test.ts
+drop	tab-recap/gates/bin/lane-map.ts
+drop	agent-sdk/gates/bin/lane-map.ts
+drop	desktop/gates/bin/lane-map.ts
+drop	packages/recap-view/gates/bin/lane-map.ts
+drop	packages/session-ledger/gates/bin/lane-map.ts
+drop	packages/session-ledger-sqlite/gates/bin/lane-map.ts

@@ -290,4 +290,4 @@ never emptied except in step 7, which also says so in `error` and `cuts`.
 - **v1 file**: `parseGuiTab` of a recorded v1 file yields defaults for every v2 field; a version 3 file is rejected by name.
 - **No side effect**: `show --json` with a stale story queues no curation request (spy on `requests`).
 - **Rate**: 50 `publish` calls within 1 s cause at most one `model.read` per `EXPANDED_EVERY_MS`, and the last publish is delivered.
-- Domain-type ratchet registry (`ci/domain-types-baseline/B6.json`) and `ci/lanes.json` are regenerated, not hand-edited.
+- Ownership of a new file is a glob in `ci/tracks.json`; there is no generated lane map and no domain-type baseline registry.

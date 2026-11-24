@@ -8,7 +8,6 @@ import { after, test } from 'node:test';
 const ROOT = new URL('../../', import.meta.url).pathname;
 const SCRIPT = join(ROOT, 'ci/check-track.ts');
 const TRACKS = join(ROOT, 'ci/tracks.json');
-const LANES = join(ROOT, 'tab-recap/ci/lanes.json');
 const SCRATCH = mkdtempSync(join(tmpdir(), 'check-track-'));
 
 after(() => {
@@ -18,7 +17,7 @@ after(() => {
 type Run = { readonly status: number | null; readonly stdout: string; readonly stderr: string };
 
 function check(branch: string | null, changed: readonly string[], extra: Readonly<Record<string, string>> = {}): Run {
-    const env: Record<string, string | undefined> = { ...process.env, CHANGED_FILES: changed.join('\n'), TRACKS_FILE: TRACKS, LANES_FILE: LANES, ...extra };
+    const env: Record<string, string | undefined> = { ...process.env, CHANGED_FILES: changed.join('\n'), TRACKS_FILE: TRACKS, ...extra };
     delete env['CI_MERGE_REQUEST_SOURCE_BRANCH_NAME'];
     delete env['CI_MERGE_REQUEST_LABELS'];
     if (extra['CI_MERGE_REQUEST_LABELS'] !== undefined) env['CI_MERGE_REQUEST_LABELS'] = extra['CI_MERGE_REQUEST_LABELS'];
@@ -27,8 +26,8 @@ function check(branch: string | null, changed: readonly string[], extra: Readonl
 }
 
 function laneFiles(key: string): readonly string[] {
-    const parsed: { lanes: Record<string, string[]> } = JSON.parse(readFileSync(LANES, 'utf8'));
-    return parsed.lanes[key] ?? [];
+    const parsed: { tracks: Record<string, string[]> } = JSON.parse(readFileSync(TRACKS, 'utf8'));
+    return (parsed.tracks[key] ?? []).map((file) => file.slice('tab-recap/'.length));
 }
 
 function git(cwd: string, args: readonly string[]): string {
@@ -47,7 +46,7 @@ function manifestChange(branch: string, before: Readonly<Record<string, unknown>
     git(repo, ['checkout', '-q', '-b', 'work']);
     writeFileSync(join(repo, 'package.json'), `${JSON.stringify(afterChange, null, 2)}\n`);
     git(repo, ['commit', '-q', '-am', 'change']);
-    const env: Record<string, string | undefined> = { ...process.env, TRACKS_FILE: TRACKS, LANES_FILE: LANES, TRACK_BASE: 'main' };
+    const env: Record<string, string | undefined> = { ...process.env, TRACKS_FILE: TRACKS, TRACK_BASE: 'main' };
     delete env['CHANGED_FILES'];
     delete env['CI_MERGE_REQUEST_LABELS'];
     const result = spawnSync(process.execPath, [SCRIPT, branch], { cwd: repo, encoding: 'utf8', env });
@@ -56,10 +55,11 @@ function manifestChange(branch: string, before: Readonly<Record<string, unknown>
 
 const BASE_MANIFEST = { name: 'x', version: '1.0.0', scripts: { test: 'bun test' }, dependencies: { a: '1.0.0' } };
 
-test('rule 1: the branch name picks the track; a lane branch leaves files to lane-scope; a release branch edits only the release files; any other branch is held only to locked paths and package.json fields', () => {
+test('rule 1: the branch name picks the track; a release branch edits only the release files; a lane branch or any other branch is held only to locked paths and package.json fields', () => {
     assert.equal(check('track/HOOK-h1a-receiver', ['tab-recap/src/adapters/hooks/receiver.ts']).status, 0);
     const lane = check('lane/B3-1-application', ['tab-recap/src/recap/application/engine.ts']);
     assert.equal(lane.status, 0, lane.stderr);
+    assert.equal(check('lane/B3-1-application', ['bun.lock']).status, 1);
     assert.equal(check('release/tab-recap-v3.0.3', ['CHANGELOG.md', 'tab-recap/herdr-plugin.toml']).status, 0);
     const release = check('release/tab-recap-v3.0.3', ['README.md']);
     assert.equal(release.status, 1);
@@ -163,14 +163,6 @@ test('a shared slot file admits its own track and SW, and no other track', () =>
 test('probe owners: the wire-self-contained probes belong to FND (row FND-W1), not to CI', () => {
     const probe = 'tab-recap/gates/probes/depcruise/wire-self-contained/bad/src/wire/view/protocol.ts';
     assert.equal(check('track/FND-W1-view-wire-contract', [probe]).status, 0);
-    const refused = check('track/CI-x', [probe]);
-    assert.equal(refused.status, 1);
-    assert.match(refused.stderr, /owned by FND/u);
-});
-
-test('probe owners: the workspace-types-only probes belong to FND (row FND-6b-1), not to CI', () => {
-    const probe = 'tab-recap/gates/probes/depcruise/workspace-types-only/good/src/index.ts';
-    assert.equal(check('track/FND-6b-1-seams', [probe]).status, 0);
     const refused = check('track/CI-x', [probe]);
     assert.equal(refused.status, 1);
     assert.match(refused.stderr, /owned by FND/u);

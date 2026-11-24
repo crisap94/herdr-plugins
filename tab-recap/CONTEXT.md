@@ -195,7 +195,6 @@ identifier, so a new name either uses this vocabulary or adds to it here first.
 | **Edge** | Where a raw value enters the plugin: the configuration reader, the herdr transport decoder, the database row mappers, the transcript readers and the command-line reader. Parsers run there, once per value. | a module boundary in general; the launcher |
 | **Exception** | A per-symbol entry (file, function, and parameter or return) with its reason, in `gates/domain-types-exceptions/<lane>.json`, that lets a primitive stay in a signature. Only three classes exist: a Node or third-party callback, a released migration, and `brand.ts`. | a file or folder allowance |
 | **Legacy export** | An old export kept as a thin wrapper over the new one in its lane's `legacy.ts`, so callers in other lanes still compile. Phase C deletes it. | a deprecated alias that stays |
-| **Work lane** | One parallel slice of the domain-types change (B1 to B8), which owns the files `ci/lanes.json` gives it. Not the `lane` above: a work lane is a team of changes, never a pane. | a lane (a herdr pane) |
 
 ## The verbs of the fold
 

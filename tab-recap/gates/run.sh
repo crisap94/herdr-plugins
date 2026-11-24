@@ -41,9 +41,6 @@ bash gates/rules-bite.sh && echo "  ok    rules-bite" || fail "a domain-type gat
 echo "module graph (dependency-cruiser: one rule set, every rule bites its fixtures, the cruise sees every module):"
 bash gates/graph.sh && echo "  ok    module graph" || fail "the module graph breaks a rule, a fixture, or the module count"
 
-echo "lane map (every file of src and test belongs to exactly one lane):"
-bun ci/lanes-generate.ts --check && echo "  ok    lane map" || fail "ci/lanes.json is stale, lists a file twice, or misses one"
-
 echo "domain types (the signature check fails its bad probes and passes its good ones, the tree has no finding and no baseline allows one, the baseline guard holds):"
 bash gates/domain-types.sh && echo "  ok    domain types" || fail "a domain-type probe does not behave as its name says, or a signature is not a domain type: run bun gates/bin/check-domain-types.ts --json"
 

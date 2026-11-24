@@ -4,7 +4,6 @@ import { err, ok, type Result } from './result.ts';
 import { countsOf, filesAbove, guardAt, loadBaseline, ratchet, writeBaseline, type Git } from './domain-baseline.ts';
 import { applyEntries, loadEntries, releasedMigrations, type Migrations, type Rules } from './domain-exceptions.ts';
 import { compareFindings, describeFinding, type Counts, type Finding } from './domain-findings.ts';
-import { loadLanes, type Lanes } from './lane-map.ts';
 
 const CONFIG = 'gates/config.json';
 const MOVES = 'gates/domain-types-moves.tsv';
@@ -126,30 +125,23 @@ type Option = Result<string | null, string>;
 
 const valueOf = (option: Option): string | null => (option.kind === 'ok' ? option.value : null);
 
-const lanesOf = (option: Option): Result<Lanes | null, string> => {
-    const path = valueOf(option);
-    return path === null ? ok(null) : loadLanes(path);
-};
-
 const modeOf = (args: readonly string[], report: Report): Result<Mode, string> => {
     const reading = optionOf(args, '--baseline');
     const writing = optionOf(args, '--write-baseline');
-    const lanePath = optionOf(args, '--lanes');
-    const failure = [reading, writing, lanePath].find((option) => option.kind === 'err');
+    const failure = [reading, writing].find((option) => option.kind === 'err');
     if (failure?.kind === 'err') {
         return failure;
     }
     const target = valueOf(writing);
     const path = target ?? valueOf(reading);
-    const lanes = lanesOf(lanePath);
-    if (path === null || lanes.kind === 'err') {
-        return lanes.kind === 'err' ? lanes : ok({ kind: 'plain' });
+    if (path === null) {
+        return ok({ kind: 'plain' });
     }
     if (target !== null) {
-        const written = writeBaseline(path, report.counts, lanes.value);
+        const written = writeBaseline(path, report.counts);
         return written.kind === 'err' ? written : ok({ kind: 'written', message: written.value });
     }
-    const baseline = loadBaseline(path, lanes.value);
+    const baseline = loadBaseline(path);
     return baseline.kind === 'err' ? baseline : ok({ kind: 'ratchet', outcome: { problems: ratchet(report.counts, baseline.value), above: filesAbove(report.counts, baseline.value) } });
 };
 

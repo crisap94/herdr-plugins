@@ -268,35 +268,6 @@ install-smoke:
   script:
     - bash ci/install-smoke.sh
 
-lane-scope:
-  extends: .tab-recap
-  stage: check
-  variables:
-    GIT_DEPTH: "0"
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^lane\/B[1-8]-/
-      exists:
-        - tab-recap/ci/lanes.json
-  script:
-    - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
-    - |
-      adapts=0
-      case ",$CI_MERGE_REQUEST_LABELS," in *,lane-scope::adapts,*) adapts=1 ;; esac
-      LANE_ADAPTS=$adapts LANE_BASE="origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" bun ci/check-lane.ts "$(echo "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" | sed -E 's#^lane/(B[1-8])-.*#\1#')"
-
-domain-baseline:
-  extends: .tab-recap
-  stage: check
-  variables:
-    GIT_DEPTH: "0"
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      exists:
-        - tab-recap/ci/domain-types-baseline/*.json
-  script:
-    - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
-    - BASELINE_BASE="origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" bash ci/check-domain-baseline.sh
-
 merge-request-notes:
   stage: check
   rules:
