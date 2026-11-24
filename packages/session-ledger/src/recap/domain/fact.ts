@@ -1,5 +1,5 @@
 import { brand, type Brand } from './brand.ts';
-import type { TabId } from './lane-shape.ts';
+import type { ScopeId } from './lane-shape.ts';
 import type { Text } from './text.ts';
 import type { Instant } from './time.ts';
 
@@ -19,7 +19,7 @@ export const isSection = (value: unknown): value is Section => SECTION_IDS.some(
 
 export const isClosedWhy = (value: unknown): value is ClosedWhy => CLOSED_WHY.some((why) => why === value);
 
-export interface TaskId { readonly tab: TabId; readonly key: Text; }
+export interface TaskId { readonly tab: ScopeId; readonly key: Text; }
 
 export interface Fact { readonly id: FactId; readonly task: TaskId; readonly section: Section; readonly text: Text; readonly why: Text | null; readonly ref: Text | null; readonly agent: Text | null; readonly anchor: Text | null; readonly firstAt: Instant; readonly lastAt: Instant; readonly state: 'open' | 'closed'; readonly closedWhy: ClosedWhy | null; readonly closedAt: Instant | null; readonly language: Text; }
 

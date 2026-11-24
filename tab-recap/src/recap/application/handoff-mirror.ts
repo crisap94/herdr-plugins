@@ -13,7 +13,7 @@ import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import { parseStoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
-import { uncheckedMilliseconds, type PaneId } from '#src/recap/domain/ids.ts';
+import { uncheckedMilliseconds, type SessionKey } from '#src/recap/domain/ids.ts';
 import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
@@ -23,8 +23,8 @@ import { HANDOFF_ANSWER_TTL_MS } from './handoff-limits.ts';
 export type HandoffLog = (line: Text) => void;
 
 export interface Route {
-    readonly source: PaneId;
-    readonly target: PaneId;
+    readonly source: SessionKey;
+    readonly target: SessionKey;
     readonly id: Text;
 }
 
@@ -72,7 +72,7 @@ async function settledOrBound(done: Promise<void>): Promise<void> {
     }
 }
 
-export async function reportWrite(tokens: LaneTokenReporter, log: HandoffLog, pane: PaneId, write: TokenWrite): Promise<void> {
+export async function reportWrite(tokens: LaneTokenReporter, log: HandoffLog, pane: SessionKey, write: TokenWrite): Promise<void> {
     try {
         const done = await tokens.report(pane, new Map([[write.name, write.value]]), HANDOFF_ANSWER_TTL);
         if (isUnknown(done)) {
@@ -85,7 +85,7 @@ export async function reportWrite(tokens: LaneTokenReporter, log: HandoffLog, pa
 
 export class HandoffMirror {
     private readonly deps: HandoffMirrorDeps;
-    private readonly pending = new Map<PaneId, Promise<void>>();
+    private readonly pending = new Map<SessionKey, Promise<void>>();
 
     constructor(deps: HandoffMirrorDeps) {
         this.deps = deps;
@@ -122,7 +122,7 @@ export class HandoffMirror {
         this.deps.events.lane(route.target, kind, detail);
     }
 
-    private report(pane: PaneId, write: TokenWrite): void {
+    private report(pane: SessionKey, write: TokenWrite): void {
         const { tokens, log } = this.deps;
         const previous = this.pending.get(pane);
         const next = previous === undefined ? reportWrite(tokens, log, pane, write) : settledOrBound(previous).then(() => reportWrite(tokens, log, pane, write));
@@ -130,7 +130,7 @@ export class HandoffMirror {
         void this.release(pane, next);
     }
 
-    private async release(pane: PaneId, done: Promise<void>): Promise<void> {
+    private async release(pane: SessionKey, done: Promise<void>): Promise<void> {
         await done.catch(() => undefined);
         if (this.pending.get(pane) === done) {
             this.pending.delete(pane);

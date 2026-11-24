@@ -5,7 +5,7 @@ import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
 import { countOf, type Count } from '#src/recap/domain/count.ts';
-import { type TabId } from '#src/recap/domain/ids.ts';
+import { type ScopeId } from '#src/recap/domain/ids.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import type { Usd } from '#src/recap/domain/usd.ts';
 import { chapter as chapters, run as runs, runRead as reads, runTask as runTasks, runTaskLane as laneRows, task as tasks } from './drizzle/index.ts';
@@ -37,7 +37,7 @@ export class RunRows {
         this.orm = ormOf(db);
     }
 
-    private currentChapter(tab: TabId, at: Instant): Uint8Array {
+    private currentChapter(tab: ScopeId, at: Instant): Uint8Array {
         this.orm.insert(chapters).values({ id: ids.next(), tabId: tab, n: 1, startedAt: at }).onConflictDoNothing().run();
         const latest = this.orm.select({ id: chapters.id }).from(chapters).where(eq(chapters.tabId, tab)).orderBy(desc(chapters.n)).limit(1).get() ?? {};
         return blob(latest, 'id');

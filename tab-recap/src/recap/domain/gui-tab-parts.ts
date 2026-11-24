@@ -3,7 +3,7 @@ import type { BoundaryKind, Trigger } from '@stateforge-labs/session-ledger/unst
 import type { WindowSource } from '@stateforge-labs/session-ledger/unstable/recap/domain/compaction.ts';
 import type { Count } from './count.ts';
 import type { ClosedWhy, Section } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
-import type { PaneId } from './ids.ts';
+import type { SessionKey } from './ids.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 import type { Origin } from './origin.ts';
 import type { RunCause } from './session-facts.ts';
@@ -104,7 +104,7 @@ export interface GuiCut {
 
 export interface GuiGroup {
     readonly task: NonEmptyText | null;
-    readonly lanes: readonly PaneId[];
+    readonly lanes: readonly SessionKey[];
 }
 
 export interface GuiVersions {

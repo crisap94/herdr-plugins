@@ -11,7 +11,7 @@ import { guiTabOf } from '#src/recap/application/gui-tab-build.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import { fitGuiTab } from '#src/recap/domain/gui-fit.ts';
 import { GUI_TAB_LIMIT, encodeGuiTab, guiFileName, parseGuiIndex, type GuiIndex, type GuiTab } from '#src/recap/domain/gui-tab.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { parseNonEmptyText, textOf, type NonEmptyText } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
@@ -26,7 +26,7 @@ export interface GuiPublisherDeps {
     readonly records: GuardedRecapRecords;
     readonly views: TabViewStore;
     readonly now: () => Instant;
-    readonly reads?: (tab: TabId, view: TabViewRecord | null) => GuiReads;
+    readonly reads?: (tab: ScopeId, view: TabViewRecord | null) => GuiReads;
     readonly log: (line: NonEmptyText) => void;
     readonly bus?: DesktopBus;
 }
@@ -47,7 +47,7 @@ export class GuiPublisher {
         this.deps = deps;
     }
 
-    document(tab: TabId): GuiTab | null {
+    document(tab: ScopeId): GuiTab | null {
         const recap = knownOr(this.deps.records.readRecap(tab), null);
         const view = this.deps.views.readTab(tab);
         if (recap === null && view === null) { return null; }
@@ -55,7 +55,7 @@ export class GuiPublisher {
         return guiTabOf(recap ?? blankRecap(tab), view, this.deps.now(), reads);
     }
 
-    publish(tab: TabId): void {
+    publish(tab: ScopeId): void {
         try {
             this.write(tab);
         } catch (error) {
@@ -63,7 +63,7 @@ export class GuiPublisher {
         }
     }
 
-    private write(tab: TabId): void {
+    private write(tab: ScopeId): void {
         const document = this.document(tab);
         if (document === null) { return; }
         const fitted = fitGuiTab(document, limit);

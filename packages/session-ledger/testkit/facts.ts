@@ -1,4 +1,4 @@
-import { instant, type Fact, type FactId, type HistoryFact, type Recap, type RunId, type TabId, type TaskId } from '@stateforge-labs/session-ledger';
+import { instant, type Fact, type FactId, type HistoryFact, type Recap, type RunId, type ScopeId, type TaskId } from '@stateforge-labs/session-ledger';
 import { running, text as textOf, usd } from './values.ts';
 import { tabIdOf } from '../src/recap/domain/lane-shape.ts';
 
@@ -51,6 +51,6 @@ export const historyOf = ({ section, text, why, state, closedWhy, closedAt, firs
     lastAt: lastAt,
 });
 
-export const emptyRecap = (tab: TabId): Recap => ({
+export const emptyRecap = (tab: ScopeId): Recap => ({
     tab, lanes: [], tasks: [], at: null, running: running(false), backend: null, error: null, costUsd: usd(0), language: textOf(''),
 });

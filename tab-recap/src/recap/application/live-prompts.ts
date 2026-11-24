@@ -1,7 +1,7 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 import { countOf } from '#src/recap/domain/count.ts';
@@ -11,13 +11,13 @@ const REMEMBERED = 200;
 
 export class LivePrompts {
     private readonly transcripts: TranscriptRegistry;
-    private readonly known = new Map<PaneId, Text>();
+    private readonly known = new Map<SessionKey, Text>();
 
     constructor(transcripts: TranscriptRegistry) {
         this.transcripts = transcripts;
     }
 
-    of(pane: PaneId): Text | null {
+    of(pane: SessionKey): Text | null {
         return this.known.get(pane) ?? null;
     }
 

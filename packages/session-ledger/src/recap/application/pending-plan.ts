@@ -1,4 +1,4 @@
-import type { Lane as Seat, PaneId } from '#src/recap/domain/lane-shape.ts';
+import type { Lane as Seat, SessionKey } from '#src/recap/domain/lane-shape.ts';
 import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { Debounce } from '#src/recap/domain/debounce.ts';
 import type { Shown, SmartPacing } from '#src/recap/domain/pacing.ts';
@@ -16,7 +16,7 @@ export type Start = AfterStart | AtStart;
 
 export interface Pending { readonly lanes: readonly Seat[]; readonly cause: RecapCause; readonly urge: Urge; readonly start: Start; readonly burst: Instant | null }
 
-export interface PlanSlot { pending: Pending | null; lastStart: Instant | null; lastLanes: ReadonlySet<PaneId> }
+export interface PlanSlot { pending: Pending | null; lastStart: Instant | null; lastLanes: ReadonlySet<SessionKey> }
 
 export interface PacePlan { readonly pacing: SmartPacing; readonly shown: Shown; readonly now: Instant }
 
@@ -28,9 +28,9 @@ function stronger(previous: Pending | null, next: Pending): Pending {
     return previous !== null && previous.urge === 'forced' && next.urge === 'paced' ? { ...previous, lanes: next.lanes } : next;
 }
 
-const keyOf = (seat: Seat): PaneId => seat.pane;
+const keyOf = (seat: Seat): SessionKey => seat.pane;
 
-export function laneSet(lanes: readonly Seat[]): ReadonlySet<PaneId> {
+export function laneSet(lanes: readonly Seat[]): ReadonlySet<SessionKey> {
     return new Set(lanes.map(keyOf));
 }
 

@@ -9,13 +9,13 @@ import { newerPromptsOf, type Freshness, type RefreshStatus } from '#src/recap/d
 import type { LaneStatus } from '#src/recap/domain/status.ts';
 import type { ClosedView } from './closed-view.ts';
 import { TRANSCRIPT_READ_BUDGET_BYTES } from './transcript-read-budget.ts';
-import type { AgentKind, TabId } from '#src/recap/domain/ids.ts';
+import type { HarnessKind, ScopeId } from '#src/recap/domain/ids.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
 export interface FreshnessInput {
-    readonly tab: TabId;
-    readonly agent: AgentKind;
+    readonly tab: ScopeId;
+    readonly agent: HarnessKind;
     readonly source: FsPath | null;
     readonly cursor: SessionCursor | null;
     readonly status: LaneStatus;

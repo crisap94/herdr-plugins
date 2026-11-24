@@ -1,7 +1,7 @@
 import { err, ok } from '#src/protocol/result.ts';
 import type { Result } from '#src/protocol/result.ts';
 import { parseAgentKind, parseCompactionId, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
-import type { AgentKind, CompactionId, PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { HarnessKind, CompactionId, SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import type { Text } from '#src/recap/domain/text.ts';
@@ -23,9 +23,9 @@ export type CompactionActivity = 'auto-in-progress' | 'idle';
 
 export interface CompactionRow {
     readonly id: CompactionId;
-    readonly tab: TabId;
-    readonly pane: PaneId;
-    readonly agent: AgentKind;
+    readonly tab: ScopeId;
+    readonly pane: SessionKey;
+    readonly agent: HarnessKind;
     readonly stage: Stage;
     readonly brief: BriefOrigin | null;
     readonly writer: Text | null;
@@ -43,9 +43,9 @@ export interface CompactionRow {
 }
 
 export interface CompactionStart {
-    readonly tab: TabId;
-    readonly pane: PaneId;
-    readonly agent: AgentKind;
+    readonly tab: ScopeId;
+    readonly pane: SessionKey;
+    readonly agent: HarnessKind;
     readonly stage: Stage;
     readonly at: Instant;
     readonly writer?: Text | null;
@@ -73,7 +73,7 @@ export interface CompactionFinish {
 }
 
 export interface CompactionShown {
-    shownFor(tab: TabId): readonly CompactionRow[];
+    shownFor(tab: ScopeId): readonly CompactionRow[];
     autoInProgress(): CompactionActivity;
 }
 
@@ -81,7 +81,7 @@ export interface CompactionLog extends CompactionShown {
     begin(start: CompactionStart): CompactionId;
     advance(id: CompactionId, stage: ActiveStage, facts: StageNote): void;
     finish(id: CompactionId, end: CompactionFinish): void;
-    dismissTurn(tab: TabId, pane: PaneId, at: Instant): void;
+    dismissTurn(tab: ScopeId, pane: SessionKey, at: Instant): void;
     interrupted(at: Instant, why: Text): Count;
 }
 

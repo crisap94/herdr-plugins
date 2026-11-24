@@ -22,7 +22,7 @@ import type { LaneSettler } from '#src/ports/lane-settling.ts';
 import { memoryStore } from './db/support.ts';
 import { lineBreakRefusal } from './fakes/typed-line.ts';
 import { oneTask } from './support.ts';
-import { type PaneId, uncheckedTabId, uncheckedPaneId } from '#src/recap/domain/ids.ts';
+import { type SessionKey, uncheckedTabId, uncheckedPaneId } from '#src/recap/domain/ids.ts';
 import { paneId, tabId, agentKind } from '#test/support/ids.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
@@ -100,7 +100,7 @@ function queuing(world: ReturnType<typeof fleet>, clock: Clock, slices: readonly
     return { ...world, plans: queuingPlans, clock: () => clock.t, settling: ticking(clock, slices), marks: () => Promise.resolve(marksAt(clock.t)) };
 }
 
-function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPlanner; readonly clock?: () => number; readonly marks?: () => Promise<readonly Mark[]>; readonly answerTo?: (id: RequestId, pane: PaneId, stage: AnswerStage) => void }, setting = 'focused', focused: string | null = 'w1:p1', briefing: Briefing | null = null, reads: readonly (readonly Mark[])[] = [[]]): Compaction {
+function flow(world: ReturnType<typeof fleet> & { readonly plans?: CompactionPlanner; readonly clock?: () => number; readonly marks?: () => Promise<readonly Mark[]>; readonly answerTo?: (id: RequestId, pane: SessionKey, stage: AnswerStage) => void }, setting = 'focused', focused: string | null = 'w1:p1', briefing: Briefing | null = null, reads: readonly (readonly Mark[])[] = [[]]): Compaction {
     let looked = 0;
     const store = world.store;
     const recap = { ...blankRecap(tabId('w1:t1')), tasks: oneTask('x', { ...NO_SECTIONS, goal: textOf('Ship the cart rewrite'), decisions: [textOf('The recap column shows three lines')], rules: [textOf('Never push to main')] }, ['w1:p1', 'w1:p2']) };

@@ -1,7 +1,7 @@
 import { err, ok, must, type Result } from '#src/protocol/result.ts';
 import { parseCount, type Count } from './count.ts';
 import { isFields } from './fields.ts';
-import { parseAgentKind, parsePaneId, parseTabId, type AgentKind, type PaneId, type TabId } from './ids.ts';
+import { parseAgentKind, parsePaneId, parseTabId, type HarnessKind, type SessionKey, type ScopeId } from './ids.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 import { parseFlag, parseGuiStageId, type Flag, type GuiStageId } from './gui-tab-parts.ts';
 import { parseGuiWriting, type GuiWriting } from './gui-tab-types.ts';
@@ -19,8 +19,8 @@ const ZERO = must(parseCount(0));
 const NO_TEXT = must(parseText(''));
 
 export interface GuiIndexLane {
-    readonly terminal: PaneId;
-    readonly agent: AgentKind;
+    readonly terminal: SessionKey;
+    readonly agent: HarnessKind;
     readonly status: NonEmptyText;
     readonly name: Text;
     readonly contextPercent: Count | null;
@@ -41,7 +41,7 @@ export interface GuiIndexExtras {
 }
 
 export interface GuiIndexRow extends GuiIndexExtras {
-    readonly tab: TabId;
+    readonly tab: ScopeId;
     readonly name: NonEmptyText;
     readonly status: NonEmptyText;
     readonly at: Instant;

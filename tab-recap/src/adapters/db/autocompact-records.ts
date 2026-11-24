@@ -5,7 +5,7 @@ import { parseSkipRow, parseStoredDecisionRow } from '#src/ports/autocompact-rec
 import type { AnswerTally, CoverageRevision, CoverageVerdict, DecisionCounts, DecisionDraft, DecisionGate, DecisionLedger, LastDecisionRow, LinkedDecision, PaneKey, SkipRow, StoredDecisionRow, UnlinkedCompact } from '#src/ports/autocompact-records.ts';
 import { unreachable } from '#src/recap/domain/autocompact.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseDecisionId, type CompactionId, type DecisionId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { parseDecisionId, type CompactionId, type DecisionId, type SessionKey, type ScopeId } from '#src/recap/domain/ids.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseUsd, type Usd } from '#src/recap/domain/usd.ts';
@@ -78,7 +78,7 @@ export class DecisionLedgerRepository implements DecisionLedger {
         if (key !== null && target !== null) writeTx(this.db, () => { this.attachTo(key, target); });
     }
 
-    linkLatest(tab: TabId, pane: PaneId, compactionId: CompactionId): LinkedDecision | null {
+    linkLatest(tab: ScopeId, pane: SessionKey, compactionId: CompactionId): LinkedDecision | null {
         const [row, target] = [guarded((): LatestDecision | null => this.orm.select({ id: autocompactDecision.id, gate: autocompactDecision.gate }).from(autocompactDecision)
             .where(and(eq(autocompactDecision.tabId, tab), eq(autocompactDecision.pane, pane), eq(autocompactDecision.verdict, COMPACT), isNull(autocompactDecision.compactionId)))
             .orderBy(desc(autocompactDecision.at), desc(autocompactDecision.id)).limit(1).get() ?? null, null), idOf('compaction', uncheckedTypeId(compactionId))];
@@ -107,7 +107,7 @@ export class DecisionLedgerRepository implements DecisionLedger {
         }
     }
 
-    lastDecisionAt(tab: TabId, pane: PaneId): Instant | null {
+    lastDecisionAt(tab: ScopeId, pane: SessionKey): Instant | null {
         return guarded(() => {
             const at = this.orm.select({ at: sql<number | null>`MAX(${autocompactDecision.at})` }).from(autocompactDecision)
                 .where(and(eq(autocompactDecision.tabId, tab), eq(autocompactDecision.pane, pane))).get()?.at ?? null;
@@ -115,7 +115,7 @@ export class DecisionLedgerRepository implements DecisionLedger {
         }, null);
     }
 
-    lastDecision(tab: TabId, pane: PaneId): LastDecisionRow | null {
+    lastDecision(tab: ScopeId, pane: SessionKey): LastDecisionRow | null {
         return guarded((): LastDecisionRow | null => {
             const row = this.orm.select({ at: autocompactDecision.at, tokens: autocompactDecision.tokens, mode: autocompactDecision.mode, verdict: autocompactDecision.verdict, gate: autocompactDecision.gate })
                 .from(autocompactDecision).where(and(eq(autocompactDecision.tabId, tab), eq(autocompactDecision.pane, pane)))
@@ -124,7 +124,7 @@ export class DecisionLedgerRepository implements DecisionLedger {
         }, null);
     }
 
-    unlinkedCompactSince(tab: TabId, pane: PaneId, at: Instant): UnlinkedCompact {
+    unlinkedCompactSince(tab: ScopeId, pane: SessionKey, at: Instant): UnlinkedCompact {
         return guarded(() => (this.orm.select({ found: sql`1` }).from(autocompactDecision).where(and(eq(autocompactDecision.tabId, tab), eq(autocompactDecision.pane, pane),
             eq(autocompactDecision.mode, ON), eq(autocompactDecision.verdict, COMPACT), eq(autocompactDecision.requested, 1), isNull(autocompactDecision.compactionId), gte(autocompactDecision.at, at)))
             .limit(1).get() === undefined ? NONE : UNLINKED), NONE);
@@ -172,7 +172,7 @@ export class DecisionLedgerRepository implements DecisionLedger {
         }), []);
     }
 
-    newest(limit: Count, tab?: TabId): readonly StoredDecisionRow[] {
+    newest(limit: Count, tab?: ScopeId): readonly StoredDecisionRow[] {
         return guarded(() => this.orm.select(NEWEST_COLUMNS).from(autocompactDecision)
             .where(tab === undefined ? undefined : eq(autocompactDecision.tabId, tab))
             .orderBy(desc(autocompactDecision.at), desc(autocompactDecision.id)).limit(limit).all().flatMap((row) => {
@@ -194,7 +194,7 @@ export class DecisionLedgerRepository implements DecisionLedger {
             }), []);
     }
 
-    countsFor(tab: TabId): DecisionCounts {
+    countsFor(tab: ScopeId): DecisionCounts {
         return guarded((): DecisionCounts => {
             const row = this.orm.select({
                 decisions: count(), compacted: count(autocompactDecision.compactionId),

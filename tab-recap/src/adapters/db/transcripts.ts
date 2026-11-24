@@ -3,7 +3,7 @@ import { and, desc, eq, ne, sql } from 'drizzle-orm';
 import { must } from '#src/protocol/result.ts';
 import type { SessionCursor } from '#src/ports/recap-records.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { parsePaneId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { parsePaneId, type SessionKey, type ScopeId } from '#src/recap/domain/ids.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { transcript } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
@@ -16,7 +16,7 @@ const NO_ROW = 'transcript write returned no row';
 
 export interface TranscriptMove {
     readonly id: Uint8Array;
-    readonly pane: PaneId;
+    readonly pane: SessionKey;
     readonly from: Count;
     readonly to: Count;
     readonly replaces: Uint8Array | null;
@@ -44,7 +44,7 @@ export class TranscriptStore {
         this.orm = ormOf(db);
     }
 
-    attach(tab: TabId, lanes: readonly SessionCursor[], at: Instant): readonly TranscriptMove[] {
+    attach(tab: ScopeId, lanes: readonly SessionCursor[], at: Instant): readonly TranscriptMove[] {
         this.orm.update(transcript).set({ attached: 0 }).where(eq(transcript.tabId, tab)).run();
         return lanes.map((lane, position) => {
             const pane = must(parsePaneId(lane.pane));
@@ -76,7 +76,7 @@ export class TranscriptStore {
         });
     }
 
-    ofPane(tab: TabId, pane: PaneId, at: Instant): Uint8Array {
+    ofPane(tab: ScopeId, pane: SessionKey, at: Instant): Uint8Array {
         const found = this.orm.select({ id: transcript.id }).from(transcript)
             .where(and(eq(transcript.tabId, tab), eq(transcript.pane, pane)))
             .orderBy(desc(transcript.attached), desc(transcript.id)).limit(1).get();

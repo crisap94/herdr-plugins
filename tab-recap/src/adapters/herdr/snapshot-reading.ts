@@ -10,11 +10,11 @@ import type { PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import { paneTokenMapOf, seenFrom, sessionOf } from '#src/recap/application/decode.ts';
 import type { Reconciliation } from '#src/recap/domain/fold.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { uncheckedTokenName, uncheckedTokenValue, type PaneId, type SessionId, parseTabId } from '#src/recap/domain/ids.ts';
+import { uncheckedTokenName, uncheckedTokenValue, type SessionKey, type SessionId, parseTabId } from '#src/recap/domain/ids.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 
-export const paneTokensOf = (snapshot: JsonObject): ReadonlyMap<PaneId, FleetPaneTokens> => new Map(parseJsonList(snapshot['panes']).flatMap((pane) => {
+export const paneTokensOf = (snapshot: JsonObject): ReadonlyMap<SessionKey, FleetPaneTokens> => new Map(parseJsonList(snapshot['panes']).flatMap((pane) => {
     const found = paneTokenMapOf(pane);
     return found === null ? [] : [[found.pane, new Map([...found.tokens].map(([name, value]) => [uncheckedTokenName(name), uncheckedTokenValue(value)] as const))] as const];
 }));
@@ -29,7 +29,7 @@ export function reconciliationOf(snapshot: JsonObject): Reconciliation {
     return { focusedTab: focused === '' ? null : focused, lanes, panes: panes.map((pane) => parseJsonText(pane['pane_id'])), columns: columnsIn(panes, agents), dead: deadColumnsIn(panes, agents), widths, ...tabs };
 }
 
-export async function readPaneSession(pane: PaneId): Promise<SessionId | null | Unknown> {
+export async function readPaneSession(pane: SessionKey): Promise<SessionId | null | Unknown> {
     try {
         const info = parseJson(await usePlugin((client) => client.call('pane.get', { pane_id: pane })))['pane'];
         return typeof info === 'object' && info !== null ? sessionOf(parseJson(info), sessionOfForKind) : null;
@@ -38,9 +38,9 @@ export async function readPaneSession(pane: PaneId): Promise<SessionId | null | 
     }
 }
 
-const paneInfoOf = async (pane: PaneId): Promise<JsonObject> => parseJson(parseJson(await usePlugin((client) => client.call('pane.get', { pane_id: pane })))['pane']);
+const paneInfoOf = async (pane: SessionKey): Promise<JsonObject> => parseJson(parseJson(await usePlugin((client) => client.call('pane.get', { pane_id: pane })))['pane']);
 
-export async function readPaneTokens(pane: PaneId): Promise<PaneTokensResult> {
+export async function readPaneTokens(pane: SessionKey): Promise<PaneTokensResult> {
     try {
         const tokens = parseJson((await paneInfoOf(pane))['tokens']);
         return { kind: 'tokens', tokens: new Map(Object.entries(tokens).flatMap(([name, raw]) => (typeof raw === 'string' ? [[must(parseText(name)), must(parseText(raw))] as const] : []))) };

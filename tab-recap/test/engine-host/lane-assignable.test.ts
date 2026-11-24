@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { Lane as EngineLane, TabId as EngineTabId } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
-import { type TabId as PluginTabId } from '#src/recap/domain/ids.ts';
+import type { Lane as EngineLane, ScopeId as EngineTabId } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { type ScopeId as PluginTabId } from '#src/recap/domain/ids.ts';
 import { tabId } from '#test/support/ids.ts';
 import { laneFrom, type Lane as PluginLane } from '#src/recap/domain/lane.ts';
 import { seenLane } from '#test/support/seen.ts';

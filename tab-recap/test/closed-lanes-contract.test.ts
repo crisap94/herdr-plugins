@@ -7,7 +7,7 @@ import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import type { ClosedLaneRecord, ClosureReader, ClosureRecorder, ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { ClosedLane } from '#src/recap/domain/closures.ts';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -19,7 +19,7 @@ interface Harness {
     readonly recorder: ClosureRecorder;
     readonly reader: ClosureReader;
     readonly sweep: ClosureSweep;
-    readonly seedTab: (tab: TabId) => void;
+    readonly seedTab: (tab: ScopeId) => void;
 }
 
 const DAY = 86_400_000;
@@ -40,7 +40,7 @@ function sqlite(days: ClosedLaneDays): Harness {
         recorder: repository,
         reader: repository,
         sweep: repository,
-        seedTab: (tab: TabId): void => {
+        seedTab: (tab: ScopeId): void => {
             db.prepare('INSERT INTO tab (id, first_seen, last_seen) VALUES (?, 1, 1)').run(tab);
         },
     };
@@ -51,7 +51,7 @@ function memory(days: ClosedLaneDays): Harness {
     return { recorder: fake, reader: fake, sweep: fake, seedTab: (): void => undefined };
 }
 
-const closure = (tab: TabId, pane: string, closedAt: Instant): ClosedLane => ({
+const closure = (tab: ScopeId, pane: string, closedAt: Instant): ClosedLane => ({
     tab,
     pane: paneId(pane),
     agent: agentKind('claude'),
@@ -60,7 +60,7 @@ const closure = (tab: TabId, pane: string, closedAt: Instant): ClosedLane => ({
     closedAt,
 });
 
-function listedOf(harness: Harness, tab: TabId, now: Instant): readonly ClosedLaneRecord[] {
+function listedOf(harness: Harness, tab: ScopeId, now: Instant): readonly ClosedLaneRecord[] {
     const listed = harness.reader.listOf(tab, now);
     if (listed.kind !== 'listed') {
         throw new Error(`expected a listing, got ${listed.kind}`);

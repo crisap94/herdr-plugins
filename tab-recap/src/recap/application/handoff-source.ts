@@ -4,7 +4,7 @@ import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import { HANDOFF_CLOSED_WINDOW_MS } from './handoff-limits.ts';
 import { resolveClosedLane } from './closed-lane-source.ts';
 import type { ClosedSourceDeps } from './closed-lane-source.ts';
@@ -14,8 +14,8 @@ import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 
 export interface SourceRequest {
-    readonly tab: TabId;
-    readonly pane: PaneId;
+    readonly tab: ScopeId;
+    readonly pane: SessionKey;
 }
 
 export type SourceLane = Pick<Lane, 'pane' | 'tab'>;

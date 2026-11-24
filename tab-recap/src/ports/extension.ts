@@ -1,6 +1,6 @@
 import type { Locale } from '#src/i18n/messages.ts';
 import type { TabLaneRecord } from '#src/ports/tab-views.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
@@ -16,7 +16,7 @@ export interface PaneNote {
 
 export interface PaneNotes {
     readonly kind: 'notes';
-    readonly byPane: ReadonlyMap<PaneId, readonly PaneNote[]>;
+    readonly byPane: ReadonlyMap<SessionKey, readonly PaneNote[]>;
 }
 
 export type PaneNotesResult = PaneNotes | Unknown;

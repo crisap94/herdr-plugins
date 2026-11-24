@@ -1,5 +1,5 @@
 import { uncheckedTypeId } from '#src/recap/domain/type-id.ts';
-import { parseCompactionId, type CompactionId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { parseCompactionId, type CompactionId, type SessionKey, type ScopeId } from '#src/recap/domain/ids.ts';
 import type { Database } from 'bun:sqlite';
 import { and, eq, isNull, lt, sql } from 'drizzle-orm';
 import { parseCompactionRow } from '#src/ports/compaction-records.ts';
@@ -74,7 +74,7 @@ export class CompactionLogRepository implements CompactionLog {
         }
     }
 
-    dismissTurn(tab: TabId, pane: PaneId, at: Instant): void {
+    dismissTurn(tab: ScopeId, pane: SessionKey, at: Instant): void {
         writeTx(this.db, () => {
             this.orm.update(compaction).set({ dismissedAt: at })
                 .where(and(eq(compaction.tabId, tab), eq(compaction.pane, pane), lt(compaction.finishedAt, at), isNull(compaction.dismissedAt)))
@@ -92,7 +92,7 @@ export class CompactionLogRepository implements CompactionLog {
             .where(and(eq(compaction.origin, AUTO_ORIGIN), isNull(compaction.finishedAt))).limit(1).get() === undefined ? IDLE : ACTIVE), IDLE);
     }
 
-    shownFor(tab: TabId): readonly CompactionRow[] {
+    shownFor(tab: ScopeId): readonly CompactionRow[] {
         return guarded(() => this.orm.all<Row>(sql`SELECT id, tab_id AS tab, pane, agent, stage, brief, writer, template_why AS templateWhy, why, origin, retried, queued,
   started_at AS startedAt, stage_at AS stageAt, finished_at AS finishedAt, tokens_before AS tokensBefore, tokens_after AS tokensAfter, took_ms AS tookMs
   FROM compaction c WHERE tab_id = ${tab} AND dismissed_at IS NULL AND id = (

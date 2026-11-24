@@ -6,7 +6,7 @@ import type { Count } from '#src/recap/domain/count.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import { paneId } from '#test/support/ids.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { bumped, NO_COUNTS, perfLine } from '#src/recap/domain/perf.ts';
@@ -71,7 +71,7 @@ test('the run of a root: requests merge into the strongest tier, one run at a ti
 
 const laneAt = (pane: string, cwd: string | null, status: string): Lane => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status, cwd }));
 
-const lanes = (...all: Lane[]): ReadonlyMap<PaneId, Lane> => new Map(all.map((lane): [PaneId, Lane] => [lane.pane, lane]));
+const lanes = (...all: Lane[]): ReadonlyMap<SessionKey, Lane> => new Map(all.map((lane): [SessionKey, Lane] => [lane.pane, lane]));
 
 test('movesOf: a new lane attaches, a moved cwd attaches again, a gone lane detaches, a working lane that stops ended its turn', () => {
     const p1 = paneId('w1:p1');
@@ -84,7 +84,7 @@ test('movesOf: a new lane attaches, a moved cwd attaches again, a gone lane deta
     const next = movesOf(same.known, lanes(laneAt('w1:p1', '/b', 'idle')));
     assert.deepEqual(next.attach.map((one) => [one.pane, one.cwd]), [[p1, '/b']]);
     assert.deepEqual([next.detach, next.ended], [[p2], [p1]]);
-    const known: ReadonlyMap<PaneId, LaneGlance> = next.known;
+    const known: ReadonlyMap<SessionKey, LaneGlance> = next.known;
     assert.deepEqual([...known.keys()], [p1]);
 });
 

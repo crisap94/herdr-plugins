@@ -4,7 +4,7 @@ import type { HistoryFact } from '#src/ports/ledger.ts';
 import { isClosedWhy, isSection } from '#src/recap/domain/fact.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { retiredFloor } from './retention.ts';
 import { maybeText, maybeWhole, text, whole } from './rows.ts';
@@ -33,7 +33,7 @@ export class LedgerHistory {
         this.orm = ormOf(db);
     }
 
-    read(tab: TabId, pane: PaneId): readonly HistoryFact[] {
+    read(tab: ScopeId, pane: SessionKey): readonly HistoryFact[] {
         return this.orm.all<Row>(sql`SELECT f.section, f.text, f.why, f.state, f.closed_why, f.closed_at, f.first_at, f.last_at FROM fact f
           WHERE f.tab_id = ${tab} AND f.task_id IN
             (SELECT l.task_id FROM run_task_lane l JOIN transcript t ON t.id = l.transcript_id JOIN run r ON r.id = l.run_id JOIN chapter c ON c.id = r.chapter_id

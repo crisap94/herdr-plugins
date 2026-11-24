@@ -3,7 +3,7 @@ import type { Result } from '#src/protocol/result.ts';
 import { parseLaneStatusAtDecision, SKIP_GATES } from '#src/recap/domain/autocompact.ts';
 import type { CheckedFact, LaneStatusAtDecision, SkipGate, UncheckedReason } from '#src/recap/domain/autocompact.ts';
 import { parseAgentKind, parseCompactionId, parseDecisionId, parsePaneId, parseTabId } from '#src/recap/domain/timing-ids.ts';
-import type { AgentKind, CompactionId, DecisionId, PaneId, TabId } from '#src/recap/domain/timing-ids.ts';
+import type { HarnessKind, CompactionId, DecisionId, SessionKey, ScopeId } from '#src/recap/domain/timing-ids.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
@@ -33,8 +33,8 @@ export interface UncheckedCoverage {
 }
 export type CoverageRecord = PassedCoverage | CoverageMissed | UncheckedCoverage;
 export interface PaneKey {
-    readonly tab: TabId;
-    readonly pane: PaneId;
+    readonly tab: ScopeId;
+    readonly pane: SessionKey;
 }
 export interface LinkedDecision {
     readonly id: DecisionId;
@@ -42,9 +42,9 @@ export interface LinkedDecision {
 }
 
 export interface SkipRow {
-    readonly tab: TabId;
-    readonly pane: PaneId;
-    readonly agent: AgentKind;
+    readonly tab: ScopeId;
+    readonly pane: SessionKey;
+    readonly agent: HarnessKind;
     readonly at: Instant;
     readonly gate: SkipGate;
     readonly share: Count | null;
@@ -69,9 +69,9 @@ export type CoverageVerdict = PassedCoverage | CoverageFacts | UncheckedCoverage
 export type AnswerTally = ReadonlyMap<Text, Probability>;
 
 export interface DecisionDraft {
-    readonly tab: TabId;
-    readonly pane: PaneId;
-    readonly agent: AgentKind;
+    readonly tab: ScopeId;
+    readonly pane: SessionKey;
+    readonly agent: HarnessKind;
     readonly at: Instant;
     readonly mode: DecisionMode;
     readonly share: Count;
@@ -122,18 +122,18 @@ export type UnlinkedCompact = 'unlinked' | 'none';
 export interface DecisionLedger {
     record(decision: DecisionDraft): DecisionId;
     link(id: DecisionId, compactionId: CompactionId): void;
-    linkLatest(tab: TabId, pane: PaneId, compactionId: CompactionId): LinkedDecision | null;
+    linkLatest(tab: ScopeId, pane: SessionKey, compactionId: CompactionId): LinkedDecision | null;
     amend(id: DecisionId, update: CoverageRevision): void;
-    lastDecisionAt(tab: TabId, pane: PaneId): Instant | null;
-    lastDecision(tab: TabId, pane: PaneId): LastDecisionRow | null;
+    lastDecisionAt(tab: ScopeId, pane: SessionKey): Instant | null;
+    lastDecision(tab: ScopeId, pane: SessionKey): LastDecisionRow | null;
     markRequested(id: DecisionId): void;
-    unlinkedCompactSince(tab: TabId, pane: PaneId, at: Instant): UnlinkedCompact;
+    unlinkedCompactSince(tab: ScopeId, pane: SessionKey, at: Instant): UnlinkedCompact;
     unlinkedCompactAny(at: Instant): UnlinkedCompact;
     pruneSkips(keep: readonly PaneKey[]): void;
     skip(skip: SkipRow): void;
     skips(): readonly SkipRow[];
-    newest(limit: Count, tab?: TabId): readonly StoredDecisionRow[];
-    countsFor(tab: TabId): DecisionCounts;
+    newest(limit: Count, tab?: ScopeId): readonly StoredDecisionRow[];
+    countsFor(tab: ScopeId): DecisionCounts;
     costSince(at: Instant): Usd;
 }
 

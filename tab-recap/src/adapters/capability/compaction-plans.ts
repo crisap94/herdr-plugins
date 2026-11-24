@@ -4,7 +4,7 @@ import type { CompactionPlanResult } from '#src/recap/domain/compaction-plan.ts'
 import { duration } from '#src/recap/domain/time.ts';
 import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
-import type { AgentKind } from '#src/recap/domain/ids.ts';
+import type { HarnessKind } from '#src/recap/domain/ids.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import type { CompactionPlanner } from '#src/ports/compaction-plans.ts';
 import { supported } from '#src/ports/capability.ts';
@@ -13,7 +13,7 @@ import type { CompactionWhy } from '#src/ports/capability-reasons.ts';
 import { capabilityWording } from '#src/ports/capability-reasons.ts';
 import { must } from '#src/protocol/result.ts';
 
-type HarnessKind = Parameters<typeof compactCommand>[0];
+type PlanHarness = Parameters<typeof compactCommand>[0];
 type PlanFor = (guidance: Text) => CompactionPlanResult;
 
 const claude = (guidance: Text): CompactionPlanResult => ({ kind: 'supported', plan: {
@@ -25,7 +25,7 @@ const claude = (guidance: Text): CompactionPlanResult => ({ kind: 'supported', p
     whileWorking: QUEUES,
 } });
 
-const polling = (harness: HarnessKind): PlanFor => (_guidance: Text): CompactionPlanResult => ({ kind: 'supported', plan: {
+const polling = (harness: PlanHarness): PlanFor => (_guidance: Text): CompactionPlanResult => ({ kind: 'supported', plan: {
     lines: [compactionLine(must(parseCompactionPiece(compactCommand(harness))))],
     enterDelay: duration(300),
     confirm: { kind: 'poll', reads: must(parseConfirmationReads(20)), every: duration(1000) },
@@ -41,7 +41,7 @@ export const COMPACTION_PLANS = {
 } satisfies Readonly<Record<RegisteredKind, Support<PlanFor, CompactionWhy>>>;
 
 export const compactionPlanner: CompactionPlanner = {
-    forKind(kind: AgentKind, guidance: Text): CompactionPlanResult {
+    forKind(kind: HarnessKind, guidance: Text): CompactionPlanResult {
         const registered = registeredKindOf(textOf(kind));
         if (registered === null) {
             return unsupported(capabilityWording('compaction-unavailable', must(parseText(kind))));

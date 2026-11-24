@@ -3,7 +3,7 @@ import type { ContextUse, Observed } from '#src/recap/domain/compaction.ts';
 import type { CompactLimits } from '#src/ports/compact-limits.ts';
 import type { ContextWindowLookup } from '#src/ports/context-windows.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { parseCount, countOf } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
@@ -33,7 +33,7 @@ export class LaneContexts {
     private readonly windows: ContextWindowLookup;
     private readonly limits: CompactLimits;
     private readonly setting: () => Count | null;
-    private readonly known = new Map<PaneId, ContextUse | null>();
+    private readonly known = new Map<SessionKey, ContextUse | null>();
 
     constructor(transcripts: TranscriptRegistry, windows: ContextWindowLookup, limits: CompactLimits, setting: () => Count | null) {
         this.transcripts = transcripts;
@@ -46,7 +46,7 @@ export class LaneContexts {
         return this.setting();
     }
 
-    of(pane: PaneId): ContextUse | null {
+    of(pane: SessionKey): ContextUse | null {
         return this.known.get(pane) ?? null;
     }
 

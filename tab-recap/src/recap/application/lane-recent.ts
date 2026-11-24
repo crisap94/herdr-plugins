@@ -1,6 +1,6 @@
 import { must } from '#src/protocol/result.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { type PaneId, type SessionId, parseSessionId } from '#src/recap/domain/ids.ts';
+import { type SessionKey, type SessionId, parseSessionId } from '#src/recap/domain/ids.ts';
 import { UNREAD, type Entry, type Mark } from '#src/ports/transcripts.ts';
 import { isUnknown, type Unknown } from '#src/ports/unknowable.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
@@ -8,7 +8,7 @@ import { countOf } from '#src/recap/domain/count.ts';
 
 const TAIL_BYTES = countOf(256 * 1024);
 
-export type CurrentSession = (pane: PaneId) => Promise<SessionId | null | Unknown>;
+export type CurrentSession = (pane: SessionKey) => Promise<SessionId | null | Unknown>;
 
 interface RecentTail {
     readonly entries: readonly Entry[];

@@ -27,7 +27,7 @@ import { parseText } from '#src/recap/domain/text.ts';
 import { tabId } from '#test/support/ids.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
-const [textOf, countOf, tabOf, boundaryOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Count'>, brand<string, 'TabId'>, brand<boolean, 'Boundary'>, brand<number, 'Instant'>];
+const [textOf, countOf, tabOf, boundaryOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Count'>, brand<string, 'ScopeId'>, brand<boolean, 'Boundary'>, brand<number, 'Instant'>];
 
 const NOW = Date.parse('2026-10-07T16:30:00Z');
 const MIN = 60_000;

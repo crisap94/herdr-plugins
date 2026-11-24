@@ -13,12 +13,12 @@ import type {
     Text,
     Unknown,
 } from './engine-port.ts';
-import type { AgentKind, AutocompactPercent, Count, DecisionId, Duration, Instant, PaneId, Probability, TabId, Usd } from '../contract/kernel.ts';
+import type { AutocompactPercent, Count, DecisionId, Duration, Instant, Probability, Usd } from '../contract/kernel.ts';
 
 export type { Awaiting, BackgroundItem, ContextUse, WindowSource } from './engine-port.ts';
 
 export type RegisteredKind = 'claude' | 'codex' | 'opencode';
-export type LaneKind = RegisteredKind | AgentKind;
+export type LaneKind = RegisteredKind | HarnessKind;
 export type AutocompactKinds = readonly LaneKind[];
 
 export type Milliseconds = Brand<number, 'Milliseconds'>;
@@ -93,9 +93,9 @@ export interface LinkedDecision {
 }
 
 export interface Skip {
-    readonly tab: TabId;
-    readonly pane: PaneId;
-    readonly agent: AgentKind;
+    readonly tab: ScopeId;
+    readonly pane: SessionKey;
+    readonly agent: HarnessKind;
     readonly at: Instant;
     readonly gate: SkipGate;
     readonly share: Count | null;
@@ -111,9 +111,9 @@ export interface LastDecision {
 }
 
 export interface Decision {
-    readonly tab: TabId;
-    readonly pane: PaneId;
-    readonly agent: AgentKind;
+    readonly tab: ScopeId;
+    readonly pane: SessionKey;
+    readonly agent: HarnessKind;
     readonly at: Instant;
     readonly mode: DecisionMode;
     readonly share: Count;

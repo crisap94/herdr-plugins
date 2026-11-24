@@ -1,6 +1,6 @@
 import { must } from '#src/protocol/result.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
-import { type PaneId, type TabId, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
+import { type SessionKey, type ScopeId, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 
 export interface HandoffValues {
@@ -21,14 +21,14 @@ export interface HandoffProblem {
 
 export interface ListingArguments {
     readonly mode: 'list';
-    readonly tab: TabId;
+    readonly tab: ScopeId;
 }
 
 const LATEST_DATE_MS = 8_640_000_000_000_000;
 
 export const problem = (text: string): HandoffProblem => ({ problem: text });
 
-export function paneOf(raw: string | undefined): PaneId | null {
+export function paneOf(raw: string | undefined): SessionKey | null {
     if (raw === undefined) {
         return null;
     }

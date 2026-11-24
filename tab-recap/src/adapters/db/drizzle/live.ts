@@ -1,10 +1,10 @@
 import { blob, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { compositeKey } from './columns.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import { BLOB_MODE } from './constants.ts';
 
 export const tab = sqliteTable('tab', {
-    id: text('id').primaryKey().notNull().$type<TabId>(),
+    id: text('id').primaryKey().notNull().$type<ScopeId>(),
     firstSeen: integer('first_seen').notNull(),
     lastSeen: integer('last_seen').notNull(),
     columnPane: text('column_pane'),
@@ -18,8 +18,8 @@ export const tab = sqliteTable('tab', {
 export const lane = sqliteTable(
     'lane',
     {
-        tabId: text('tab_id').notNull().$type<TabId>(),
-        pane: text('pane').notNull().$type<PaneId>(),
+        tabId: text('tab_id').notNull().$type<ScopeId>(),
+        pane: text('pane').notNull().$type<SessionKey>(),
         position: integer('position').notNull(),
         agent: text('agent').notNull(),
         status: text('status').notNull(),
@@ -41,7 +41,7 @@ export const paneAlert = sqliteTable(
     'pane_alert',
     {
         source: text('source').notNull(),
-        pane: text('pane').notNull().$type<PaneId>(),
+        pane: text('pane').notNull().$type<SessionKey>(),
         label: text('label').notNull(),
         at: integer('at').notNull(),
         details: text('details').notNull(),
@@ -52,7 +52,7 @@ export const paneAlert = sqliteTable(
 export const paneNote = sqliteTable(
     'pane_note',
     {
-        pane: text('pane').notNull().$type<PaneId>(),
+        pane: text('pane').notNull().$type<SessionKey>(),
         label: text('label').notNull(),
         value: text('value').notNull(),
     },
@@ -60,12 +60,12 @@ export const paneNote = sqliteTable(
 );
 
 export const paneWorktree = sqliteTable('pane_worktree', {
-    pane: text('pane').primaryKey().notNull().$type<PaneId>(),
+    pane: text('pane').primaryKey().notNull().$type<SessionKey>(),
     root: text('root').notNull(),
 });
 
 export const tabVisibility = sqliteTable('tab_visibility', {
-    tabId: text('tab_id').primaryKey().notNull().$type<TabId>(),
+    tabId: text('tab_id').primaryKey().notNull().$type<ScopeId>(),
     state: text('state').notNull(),
 });
 
@@ -99,8 +99,8 @@ export const worktreeStatus = sqliteTable('worktree_status', {
 export const closedLane = sqliteTable(
     'closed_lane',
     {
-        tabId: text('tab_id').notNull().$type<TabId>(),
-        pane: text('pane').notNull().$type<PaneId>(),
+        tabId: text('tab_id').notNull().$type<ScopeId>(),
+        pane: text('pane').notNull().$type<SessionKey>(),
         closedAt: integer('closed_at').notNull(),
         agent: text('agent').notNull(),
         cwd: text('cwd'),

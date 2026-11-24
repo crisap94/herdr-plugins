@@ -2,7 +2,7 @@ import { changes, dirty } from './setup-changes.ts';
 import { CHOICES, TEXTS } from './setup-fields.ts';
 import { environmentName } from '#src/recap/domain/backend.ts';
 import { countOf, type Count } from '#src/recap/domain/count.ts';
-import type { AgentKind } from '#src/recap/domain/ids.ts';
+import type { HarnessKind } from '#src/recap/domain/ids.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 import { fieldOf, JOB_FIELDS, modelTarget, rowOf, ROWS } from './setup-state.ts';
 import type { Editing, FieldId, LanguageChange, Setup, Stepped, TestState } from './setup-state.ts';
@@ -144,7 +144,7 @@ export function step(state: Setup, key: Text): Stepped {
     return (COMMANDS[key] ?? stay)({ ...state, asked: 'not-asked', note: state.asked === 'asked' ? null : state.note });
 }
 
-export const withAvailable = (state: Setup, available: readonly AgentKind[]): Setup => ({ ...state, available });
+export const withAvailable = (state: Setup, available: readonly HarnessKind[]): Setup => ({ ...state, available });
 
 export const tested = (state: Setup, test: TestState): Setup => ({ ...state, test });
 

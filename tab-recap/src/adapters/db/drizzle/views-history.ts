@@ -1,11 +1,11 @@
 import { blob, integer, sqliteView, text } from 'drizzle-orm/sqlite-core';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import { BLOB_MODE } from './constants.ts';
 
 export const transcriptReadable = sqliteView('transcript_readable', {
     id: text('id'),
-    tabId: text('tab_id').$type<TabId>(),
-    pane: text('pane').$type<PaneId>(),
+    tabId: text('tab_id').$type<ScopeId>(),
+    pane: text('pane').$type<SessionKey>(),
     agent: text('agent'),
     source: text('source'),
     attached: integer('attached'),
@@ -20,14 +20,14 @@ export const transcriptReadable = sqliteView('transcript_readable', {
 
 export const chapterReadable = sqliteView('chapter_readable', {
     id: text('id'),
-    tabId: text('tab_id').$type<TabId>(),
+    tabId: text('tab_id').$type<ScopeId>(),
     n: integer('n'),
     startedAt: integer('started_at'),
 }).existing();
 
 export const chapterSpan = sqliteView('chapter_span', {
     chapterId: blob('chapter_id', { mode: BLOB_MODE }).$type<Uint8Array>(),
-    tabId: text('tab_id').$type<TabId>(),
+    tabId: text('tab_id').$type<ScopeId>(),
     n: integer('n'),
     startedAt: integer('started_at'),
     sealedAt: integer('sealed_at'),
@@ -49,8 +49,8 @@ export const boundaryReadable = sqliteView('boundary_readable', {
 }).existing();
 
 export const closedLaneReadable = sqliteView('closed_lane_readable', {
-    tabId: text('tab_id').$type<TabId>(),
-    pane: text('pane').$type<PaneId>(),
+    tabId: text('tab_id').$type<ScopeId>(),
+    pane: text('pane').$type<SessionKey>(),
     closedAt: integer('closed_at'),
     agent: text('agent'),
     cwd: text('cwd'),

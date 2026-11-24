@@ -13,7 +13,7 @@ import { parseCount } from '#src/recap/domain/count.ts';
 import type { PositiveCount } from '#src/recap/domain/count.ts';
 import { parsePositiveCount } from '#src/recap/domain/count.ts';
 import type { Fact, FactId } from '#src/recap/domain/fact.ts';
-import type { SessionPath, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionPath, ScopeId } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Pipeline } from '#src/recap/domain/pipeline.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
@@ -25,7 +25,7 @@ import { parseUsd } from '#src/recap/domain/usd.ts';
 import { pluginEngine } from '#src/engine/engine-adapter.ts';
 import { tabRecaps, type TabRecaps } from '#src/engine/tab-recaps.ts';
 import type { EngineModels, EngineSettings } from '@stateforge-labs/session-ledger/unstable/recap/application/engine.ts';
-import type { AgentKind } from '#src/recap/domain/ids.ts';
+import type { HarnessKind } from '#src/recap/domain/ids.ts';
 
 export function mergedWindows(entries: readonly Entry[], mergeTurns: PositiveCount): readonly (readonly Entry[])[] {
     const windows: Entry[][] = [];
@@ -77,7 +77,7 @@ const noPrompt = (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', 
 
 const endOf = (window: readonly Entry[] | undefined, from: Instant): Instant => instant(Math.max(from + 1, window?.findLast((entry) => entry.at !== undefined)?.at ?? from + 1));
 
-const unavailable = (kind: AgentKind): Text => capabilityWording('history-unavailable', must(parseText(kind)));
+const unavailable = (kind: HarnessKind): Text => capabilityWording('history-unavailable', must(parseText(kind)));
 
 function windowed(base: SessionReader, file: SessionPath, windows: readonly (readonly Entry[])[], at: Position): SessionReader {
     const read = (): Promise<ChunkResult> => Promise.resolve({
@@ -113,14 +113,14 @@ async function entriesOf(reader: SessionReader, file: SessionPath, size: Count):
     return result.entries;
 }
 
-async function runWindows(engine: TabRecaps, lane: ReturnType<typeof laneFrom>, windows: readonly (readonly Entry[])[], at: Position, label: TabId): Promise<void> {
+async function runWindows(engine: TabRecaps, lane: ReturnType<typeof laneFrom>, windows: readonly (readonly Entry[])[], at: Position, label: ScopeId): Promise<void> {
     for (; at.turn < windows.length; at.turn = must(parseCount(at.turn + 1))) {
         at.now = endOf(windows[at.turn], at.now);
         await engine.refresh(label, [lane]);
     }
 }
 
-export async function replayFile(deps: TypedReplayDeps, file: SessionPath, label: TabId, size: Count, mergeTurns: PositiveCount): Promise<Replayed> {
+export async function replayFile(deps: TypedReplayDeps, file: SessionPath, label: ScopeId, size: Count, mergeTurns: PositiveCount): Promise<Replayed> {
     const entries = await entriesOf(deps.reader, file, size);
     const turns = mergedWindows(entries, ONE);
     const windows = mergedWindows(entries, mergeTurns);

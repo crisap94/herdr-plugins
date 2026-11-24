@@ -1,13 +1,13 @@
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import type { AnsweredPane, CompactAsk, HandoffAskRecord, HandoffAsk, RequestPort, VisibilityAsk, Withdrawal } from '#src/ports/requests.ts';
-import type { HandoffId, TabId } from '#src/recap/domain/ids.ts';
+import type { HandoffId, ScopeId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 
 export class MemoryRequests implements RequestPort {
     private readonly now: () => number;
-    private refreshes: TabId[] = [];
-    private curations: TabId[] = [];
+    private refreshes: ScopeId[] = [];
+    private curations: ScopeId[] = [];
     private visibilities: VisibilityAsk[] = [];
     private compactions: CompactAsk[] = [];
     private handoffs: HandoffAskRecord[] = [];
@@ -16,7 +16,7 @@ export class MemoryRequests implements RequestPort {
         this.now = now;
     }
 
-    request(tab: TabId): void {
+    request(tab: ScopeId): void {
         this.refreshes.push(tab);
     }
 
@@ -28,7 +28,7 @@ export class MemoryRequests implements RequestPort {
         this.compactions.push(request);
     }
 
-    requestCurate(tab: TabId): void {
+    requestCurate(tab: ScopeId): void {
         this.curations.push(tab);
     }
 
@@ -44,7 +44,7 @@ export class MemoryRequests implements RequestPort {
         return this.handoffs.length < before ? 'withdrawn' : 'not-found';
     }
 
-    takeRequests(): readonly TabId[] {
+    takeRequests(): readonly ScopeId[] {
         const taken = [...new Set(this.refreshes)];
         this.refreshes = [];
         return taken;
@@ -62,7 +62,7 @@ export class MemoryRequests implements RequestPort {
         return taken;
     }
 
-    takeCurations(): readonly TabId[] {
+    takeCurations(): readonly ScopeId[] {
         const taken = [...new Set(this.curations)];
         this.curations = [];
         return taken;

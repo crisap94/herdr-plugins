@@ -1,10 +1,10 @@
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import type { Done } from './columns.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
 export type SetupOpened = { readonly kind: 'opened' } | { readonly kind: 'busy' } | Unknown;
 
 export interface ModalHost {
-    show(tab: TabId): Promise<Done>;
-    setup(tab: TabId | null): Promise<SetupOpened>;
+    show(tab: ScopeId): Promise<Done>;
+    setup(tab: ScopeId | null): Promise<SetupOpened>;
 }

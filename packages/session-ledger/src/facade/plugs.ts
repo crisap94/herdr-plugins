@@ -2,7 +2,7 @@ import type * as sl from './contract-names.ts';
 import { parseHarnessKind, parseScopeId, parseSessionKey, type RestoreText } from '#src/contract/ids.ts';
 import { must } from '#src/protocol/result.ts';
 import { brand } from '#src/recap/domain/brand.ts';
-import { TranscriptRegistry, type AgentKind } from '#src/ports/transcript-registry.ts';
+import { TranscriptRegistry, type HarnessKind } from '#src/ports/transcript-registry.ts';
 import type { CheckedLedger } from '#src/ports/ledger.ts';
 import type { CheckedRecapRecords, RecordedRun, FailedRun, Advance, Recap, LastRun } from '#src/ports/recap-records.ts';
 import type { RecapRequest, Writer, Written } from '#src/ports/summarizer.ts';
@@ -12,7 +12,7 @@ import type { Workplaces, RepoResult } from '#src/ports/lane-repo.ts';
 import type { Unknown, Unknowable } from '#src/ports/unknowable.ts';
 import type { Fact, FactId, Section } from '#src/recap/domain/fact.ts';
 import type { Operation, Refusal } from '#src/recap/domain/ops.ts';
-import type { Lane, TabId } from '#src/recap/domain/lane-shape.ts';
+import type { Lane, ScopeId } from '#src/recap/domain/lane-shape.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import { parseDuration, parseInstant, type Duration, type Instant } from '#src/recap/domain/time.ts';
 import { parseFailureCause, type FailureCause } from '#src/recap/domain/failure-cause.ts';
@@ -97,15 +97,15 @@ const scopeOf = (tab: string): sl.ScopeId => must(parseScopeId(tab));
 const keyOf = (pane: string): sl.SessionKey => must(parseSessionKey(pane));
 
 const pluginRecords = (records: sl.Records): CheckedRecapRecords => ({
-    readRecap: (tab: TabId): Recap | null | Unknown => {
+    readRecap: (tab: ScopeId): Recap | null | Unknown => {
         const found = records.readRecap(scopeOf(tab));
         return isLedgerUnknown(found) ? pluginUnknown(found) : found;
     },
-    lastRunOf: (tab: TabId): LastRun | null | Unknown => {
+    lastRunOf: (tab: ScopeId): LastRun | null | Unknown => {
         const found = records.lastRunOf(scopeOf(tab));
         return isLedgerUnknown(found) ? pluginUnknown(found) : found;
     },
-    beginRun: (tab: TabId, backend: Text | null, at: Instant): void => {
+    beginRun: (tab: ScopeId, backend: Text | null, at: Instant): void => {
         records.beginRun(scopeOf(tab), backend, at);
     },
     recordRun: (run: RecordedRun): void => {
@@ -163,7 +163,7 @@ const ledgerPosition = (position: Position): sl.Position => ({
 });
 
 const transcriptsOf = (reader: sl.SessionReader): SessionReader => ({
-    agent: brand<string, 'AgentKind'>(reader.harness),
+    agent: brand<string, 'HarnessKind'>(reader.harness),
     inFlight: { kind: 'unsupported', why: 'in-flight-unavailable' },
     locate: async (lane: Lane): Promise<Located> => {
         const session = followedOf(lane);
@@ -181,20 +181,20 @@ class SessionRegistry extends TranscriptRegistry {
     private readonly sessions: sl.SessionSource;
 
     constructor(sessions: sl.SessionSource) {
-        super(new Map(), null, (kind: AgentKind): Text => {
+        super(new Map(), null, (kind: HarnessKind): Text => {
             const harness = parseHarnessKind(kind);
             return harness.kind === 'ok' ? sessions.unavailableReason(harness.value) : textOf(`no reader for ${kind}`);
         });
         this.sessions = sessions;
     }
 
-    override exact(kind: AgentKind): SessionReader | undefined {
+    override exact(kind: HarnessKind): SessionReader | undefined {
         const harness = parseHarnessKind(kind);
         const reader = harness.kind === 'ok' ? this.sessions.readerFor(harness.value) : undefined;
         return reader === undefined ? undefined : transcriptsOf(reader);
     }
 
-    override readerFor(kind: AgentKind): SessionReader | undefined {
+    override readerFor(kind: HarnessKind): SessionReader | undefined {
         return this.exact(kind);
     }
 }
@@ -237,7 +237,7 @@ export const legacyPlugsOf = (plugs: sl.EnginePlugs): FacadePlugs => {
             ...(settings.pipeline === undefined ? {} : { pipeline: () => settings.pipeline?.() ?? 'one' }),
             ...(settings.debounce === undefined ? {} : { debounce: () => pluginDebounce(settings.debounce?.() ?? { kind: 'off' }) }),
             ...(settings.pacing === undefined ? {} : { pacing: () => pluginPacing(settings.pacing?.() ?? { kind: 'turn' }) }),
-            ...(settings.visible === undefined ? {} : { visible: (id: TabId) => settings.visible?.(must(parseScopeId(String(id)))) ?? 'shown' }),
+            ...(settings.visible === undefined ? {} : { visible: (id: ScopeId) => settings.visible?.(must(parseScopeId(String(id)))) ?? 'shown' }),
         },
         curate: curation.request,
         afterRun: curation.afterRun,

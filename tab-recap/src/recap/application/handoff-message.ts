@@ -4,7 +4,7 @@ import type { TabViewStore } from '#src/ports/tab-views.ts';
 import { unknown, type Unknown, exitCodeOf } from '#src/ports/unknowable.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
 import type { HandoffReason } from '#src/recap/domain/handoff-outcome.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 
 export type HandoffRead =
@@ -29,7 +29,7 @@ function readOf(printed: PrintAnswer): HandoffRead {
     }
 }
 
-export async function handoffMessageOf(deps: HandoffMessageDeps, tab: TabId, from: PaneId, to: PaneId | null): Promise<HandoffRead> {
+export async function handoffMessageOf(deps: HandoffMessageDeps, tab: ScopeId, from: SessionKey, to: SessionKey | null): Promise<HandoffRead> {
     if (deps.views.tabOf(from) !== tab) { return { kind: 'unknown-pane' }; }
     try {
         return readOf(await deps.printer.renderForPrint({ from, to, note: null, closed: null }));

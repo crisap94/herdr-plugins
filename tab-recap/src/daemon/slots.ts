@@ -6,7 +6,7 @@ import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { EventStream } from '#src/recap/application/lane-events.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import type { PreCompacts } from '#src/adapters/hooks/pre-compacts.ts';
@@ -26,7 +26,7 @@ export type Line = Brand<string, 'LogLine'>;
 export type Message = Brand<string, 'ErrorMessage'>;
 
 export interface StatusEvent {
-    readonly pane: PaneId;
+    readonly pane: SessionKey;
     readonly status: LaneStatus;
 }
 

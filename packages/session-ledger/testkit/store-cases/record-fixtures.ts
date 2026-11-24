@@ -5,7 +5,7 @@ import { factOf } from '../facts.ts';
 import type { StoreUnderTest } from '../memory-store.ts';
 import { agentKind, cursorAt, paneId, sourcePath, tabId, text, usd } from '../values.ts';
 import { textOf } from '../../src/recap/domain/text.ts';
-import { tabIdOf, type PaneId, paneIdOf } from '../../src/recap/domain/lane-shape.ts';
+import { tabIdOf, type SessionKey, paneIdOf } from '../../src/recap/domain/lane-shape.ts';
 
 export const isUnknownValue = (value: unknown): value is Unknown =>
     typeof value === 'object' && value !== null && 'kind' in value && value.kind === 'unknown';
@@ -21,7 +21,7 @@ export const cursor = (pane: string, transcript = `/transcripts/${pane}.jsonl`):
     claudeRecap: null,
 });
 
-export const shapeOf = (id: string, lanes: readonly PaneId[]): TaskShape => ({ id: textOf(id), name: textOf(`Task ${id}`), lanes });
+export const shapeOf = (id: string, lanes: readonly SessionKey[]): TaskShape => ({ id: textOf(id), name: textOf(`Task ${id}`), lanes });
 
 export const runOf = (over: Partial<RecordedRun> = {}): RecordedRun => ({
     tab: tabId('tab-1'),

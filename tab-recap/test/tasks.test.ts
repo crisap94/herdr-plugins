@@ -93,8 +93,8 @@ test('the document lists the current tasks only when the tab has several lanes, 
     const one = requestOf({ entries: [{ role: 'user', text: textOf('x') }] });
     assert.ok(!messageText(one).includes('<current_tasks>') && !instructions(one).includes('<ledger task='), 'one agent: no grouping');
     const many = requestOf({
-        agents: [agentOf('a1', { cwd: brand<string, 'Directory'>('/r/pay'), repo: brand<string, 'Directory'>('/r/pay'), branch: textOf('feat/v2'), files: [textOf('src/client.ts')] }), agentOf('a2', { kind: brand<string, 'AgentKind'>('codex'), cwd: brand<string, 'Directory'>('/tmp') })],
-        tasks: [{ id: textOf('t1'), name: textOf('Payments'), lanes: [brand<string, 'PaneId'>('w1:p1')] }],
+        agents: [agentOf('a1', { cwd: brand<string, 'Directory'>('/r/pay'), repo: brand<string, 'Directory'>('/r/pay'), branch: textOf('feat/v2'), files: [textOf('src/client.ts')] }), agentOf('a2', { kind: brand<string, 'HarnessKind'>('codex'), cwd: brand<string, 'Directory'>('/tmp') })],
+        tasks: [{ id: textOf('t1'), name: textOf('Payments'), lanes: [brand<string, 'SessionKey'>('w1:p1')] }],
         ledgers: [{ task: textOf('t1'), facts: [] }],
     });
     const text = messageText(many);

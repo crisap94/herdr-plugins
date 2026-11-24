@@ -5,7 +5,7 @@ import { ClosedLanesRepository, parseClosedLaneRow } from '#src/adapters/db/clos
 import type { LedgerRows } from '#src/adapters/db/ledger-rows.ts';
 import type { Recap } from '#src/ports/recap-records.ts';
 import { RecapReader } from '#src/adapters/db/recap-read.ts';
-import { type TabId } from '#src/recap/domain/ids.ts';
+import { type ScopeId } from '#src/recap/domain/ids.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -51,7 +51,7 @@ const T1 = tabId('t1');
 type Raw = Record<string, unknown>;
 
 const rawRows = (db: Database, sql: string, ...params: (string | number | Uint8Array)[]): Raw[] => db.prepare(sql).all(...params);
-const closedOf = (rows: Raw[], tab: TabId): unknown[] => rows.map((row) => {
+const closedOf = (rows: Raw[], tab: ScopeId): unknown[] => rows.map((row) => {
     const parsed = parseClosedLaneRow(row, tab);
     if (parsed.kind === 'err') {
         throw new Error('a seeded closed lane parses');

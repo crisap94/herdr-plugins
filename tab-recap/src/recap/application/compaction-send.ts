@@ -5,7 +5,7 @@ import type { Prompted } from '#src/ports/agents.ts';
 import { saying, unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
-import { uncheckedMilliseconds, type PaneId } from '#src/recap/domain/ids.ts';
+import { uncheckedMilliseconds, type SessionKey } from '#src/recap/domain/ids.ts';
 import { parseText, type Text as Prose, textOf } from '#src/recap/domain/text.ts';
 import { duration, type Instant } from '#src/recap/domain/time.ts';
 import { figuresOf } from '#src/recap/render/compaction-stage.ts';
@@ -69,7 +69,7 @@ export class Sender {
         return this.deps.now();
     }
 
-    private async typed(pane: PaneId, type: () => Promise<Prompted>): Promise<Prompted> {
+    private async typed(pane: SessionKey, type: () => Promise<Prompted>): Promise<Prompted> {
         const typing = this.deps.typing;
         const lease: Lease | undefined = typing === undefined ? undefined : { acquire: () => typing.acquire(pane), release: () => typing.release(pane) };
         const leased = await withTypingLease(lease, type);

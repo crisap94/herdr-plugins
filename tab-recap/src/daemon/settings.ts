@@ -22,7 +22,7 @@ import type { PrunedWriterView, WriterView } from '#src/recap/domain/writer-view
 import type { Count, PositiveCount } from '#src/recap/domain/count.ts';
 import type { Duration } from '#src/recap/domain/time.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import type { AgentKind } from '#src/recap/domain/ids.ts';
+import type { HarnessKind } from '#src/recap/domain/ids.ts';
 
 export type SettingReader = (key: EnvironmentName) => Text | undefined;
 export type Glow = 'auto' | 'on' | 'off';
@@ -125,7 +125,7 @@ export interface Settings {
     readonly recapLanguage: Text;
     readonly sizing: Sizing;
     readonly policy: Policy;
-    readonly screenAgents: readonly AgentKind[];
+    readonly screenAgents: readonly HarnessKind[];
     readonly compaction: CompactionSettings;
     readonly brief: JobSetting;
     readonly judge: JobSetting;

@@ -1,6 +1,6 @@
 import { textOf, parseText, type Text } from '#src/recap/domain/text.ts';
 import { isUncheckedSessionId, isUncheckedSessionPath, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
-import type { AgentSession, PaneId, SessionId, TabId } from '#src/recap/domain/ids.ts';
+import type { AgentSession, SessionKey, SessionId, ScopeId } from '#src/recap/domain/ids.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import type { FleetFrame } from '#src/ports/fleet-source.ts';
@@ -25,12 +25,12 @@ export interface JsonObject {
 }
 
 export interface PaneSessionRef {
-    readonly pane: PaneId;
+    readonly pane: SessionKey;
     readonly session: SessionId;
 }
 
 export interface PaneTokenMap {
-    readonly pane: PaneId;
+    readonly pane: SessionKey;
     readonly tokens: ReadonlyMap<Text, Text>;
 }
 
@@ -128,13 +128,13 @@ export function paneTokenMapOf(data: JsonObject): PaneTokenMap | null {
     return parsed.kind === 'ok' ? { pane: parsed.value, tokens } : null;
 }
 
-function paneKnownIn(data: JsonObject): PaneId | null {
+function paneKnownIn(data: JsonObject): SessionKey | null {
     const pane = field(data, 'pane_id');
     const parsed = pane === null ? null : parsePaneId(pane);
     return parsed !== null && parsed.kind === 'ok' ? parsed.value : null;
 }
 
-function tabKnownIn(data: JsonObject): TabId | null {
+function tabKnownIn(data: JsonObject): ScopeId | null {
     const tab = textAt(data, 'tab_id');
     const parsed = tab === null ? null : parseTabId(tab);
     return parsed !== null && parsed.kind === 'ok' ? parsed.value : null;

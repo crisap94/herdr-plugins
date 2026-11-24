@@ -1,20 +1,20 @@
 import {
     instant,
-    type AgentKind,
+    type HarnessKind,
     type ClosedWhy,
     type Cursor,
     type Fact,
     type FactId,
     type HistoryFact,
     type Instant,
-    type PaneId,
+    type SessionKey,
     type RecapCause,
     type RecapTask,
     type Running,
     type Section,
     type SessionCursor,
     type SourcePath,
-    type TabId,
+    type ScopeId,
     type Text,
     type Usd,
 } from '@stateforge-labs/session-ledger';
@@ -22,9 +22,9 @@ import {
 export type Row = Readonly<Record<string, unknown>>;
 
 const isTextValue = (raw: string): raw is Text => raw.length >= 0;
-const isTabId = (raw: string): raw is TabId => raw.length >= 0;
-const isPaneId = (raw: string): raw is PaneId => raw.length >= 0;
-const isAgentKind = (raw: string): raw is AgentKind => raw.length >= 0;
+const isTabId = (raw: string): raw is ScopeId => raw.length >= 0;
+const isPaneId = (raw: string): raw is SessionKey => raw.length >= 0;
+const isAgentKind = (raw: string): raw is HarnessKind => raw.length >= 0;
 const isSourcePath = (raw: string): raw is SourcePath => raw.length >= 0;
 const isFactId = (raw: string): raw is FactId => raw.length > 0;
 const isCursor = (raw: number): raw is Cursor => Number.isSafeInteger(raw) && raw >= 0;
@@ -105,7 +105,7 @@ const taskOf = (raw: unknown): RecapTask => {
 
 export const tasksOf = (json: string): readonly RecapTask[] => listOf(json, 'tasks').map(taskOf);
 
-export const tabIdOfScope = (raw: string): TabId => (isTabId(raw) ? raw : bad('tab'));
+export const tabIdOfScope = (raw: string): ScopeId => (isTabId(raw) ? raw : bad('tab'));
 
 const isRunningFlag = (raw: boolean): raw is Running => typeof raw === 'boolean';
 

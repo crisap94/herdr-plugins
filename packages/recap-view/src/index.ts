@@ -51,7 +51,7 @@ export type {
     FilePath,
     FromScreen,
     Instant,
-    PaneId,
+    SessionKey,
     Prose,
     Queued,
     RepoName,

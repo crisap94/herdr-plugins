@@ -2,7 +2,7 @@ import type { Database } from 'bun:sqlite';
 import { eq, sql } from 'drizzle-orm';
 import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { PaneAlertReader, PaneAlertWriter } from '#src/ports/pane-alerts.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import { parsePaneId } from '#src/recap/domain/ids.ts';
 import { parseAlertSource } from '#src/recap/domain/pane-alert.ts';
 import type { AlertSource, PaneAlert } from '#src/recap/domain/pane-alert.ts';
@@ -91,11 +91,11 @@ export class PaneAlertsRepository implements PaneAlertWriter, PaneAlertReader {
         this.orm.delete(paneAlert).where(eq(paneAlert.source, source)).run();
     }
 
-    forgetPane(pane: PaneId): void {
+    forgetPane(pane: SessionKey): void {
         this.orm.delete(paneAlert).where(eq(paneAlert.pane, pane)).run();
     }
 
-    alertsOf(pane: PaneId): readonly PaneAlert[] {
+    alertsOf(pane: SessionKey): readonly PaneAlert[] {
         return guarded(() => this.orm.select({ source: paneAlert.source, pane: paneAlert.pane, label: paneAlert.label, at: paneAlert.at, details: paneAlert.details }).from(paneAlert).where(eq(paneAlert.pane, pane)).orderBy(paneAlert.source).all().flatMap((row) => {
             const parsed = parsePaneAlertRow(row);
             return parsed.kind === 'ok' ? [parsed.value] : [];

@@ -7,7 +7,7 @@ import type { TabViewStore } from '#src/ports/tab-views.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
 import { parseHandoffOutcome, type HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
-import { parseTabId, type HandoffId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { parseTabId, type HandoffId, type SessionKey, type ScopeId } from '#src/recap/domain/ids.ts';
 import { HANDOFF_POLL_MS, HANDOFF_WAIT_MS, HANDOFF_WAIT_REFRESH_MS } from './handoff-limits.ts';
 
 type Refusal = HandoffOutcome | null;
@@ -15,8 +15,8 @@ type Refusal = HandoffOutcome | null;
 type Refresh = 'requested' | 'skipped';
 
 export interface DeliverRequest {
-    readonly from: PaneId;
-    readonly to: PaneId;
+    readonly from: SessionKey;
+    readonly to: SessionKey;
     readonly note: Text | null;
     readonly refresh: RefreshFirst;
     readonly closed: ClosedLaneIdentity | null;
@@ -85,7 +85,7 @@ function refusedBeforeStore(request: DeliverRequest, deps: DeliverDeps): Refusal
     return deps.cliVersion === null || daemon.version !== deps.cliVersion ? refused('daemon-outdated') : null;
 }
 
-function tabOfRequest(request: DeliverRequest, store: HandoffStore): TabId | null {
+function tabOfRequest(request: DeliverRequest, store: HandoffStore): ScopeId | null {
     if (request.closed !== null) {
         return request.closed.tab;
     }
@@ -105,7 +105,7 @@ async function settledOutcome(id: HandoffId, store: HandoffStore, deps: DeliverD
     return late === null ? failed('not-answered-taken') : outcomeOf(late);
 }
 
-function queuedOf(request: DeliverRequest, store: HandoffStore, tab: TabId): HandoffId {
+function queuedOf(request: DeliverRequest, store: HandoffStore, tab: ScopeId): HandoffId {
     return store.requests.requestHandoff({ tab, pane: request.from, toPane: request.to, note: request.note, refresh: request.refresh, source: sourceOf(request.closed) });
 }
 

@@ -1,5 +1,5 @@
 import type { Count } from '#src/recap/domain/count.ts';
-import type { AgentKind, SessionId } from '#src/recap/domain/ids.ts';
+import type { HarnessKind, SessionId } from '#src/recap/domain/ids.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Directory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
 
@@ -9,5 +9,5 @@ export interface CompactLimit {
 }
 
 export interface CompactLimits {
-    limitOf(kind: AgentKind, model: Text | null, cwd: Directory | null, session: SessionId | null): CompactLimit;
+    limitOf(kind: HarnessKind, model: Text | null, cwd: Directory | null, session: SessionId | null): CompactLimit;
 }

@@ -1,11 +1,11 @@
 import { blob, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import { BLOB_MODE } from './constants.ts';
 
 export const transcript = sqliteTable('transcript', {
     id: blob('id', { mode: BLOB_MODE }).$type<Uint8Array>().primaryKey().notNull(),
-    tabId: text('tab_id').notNull().$type<TabId>(),
-    pane: text('pane').notNull().$type<PaneId>(),
+    tabId: text('tab_id').notNull().$type<ScopeId>(),
+    pane: text('pane').notNull().$type<SessionKey>(),
     agent: text('agent').notNull(),
     source: text('source').notNull(),
     attached: integer('attached').notNull(),
@@ -20,7 +20,7 @@ export const transcript = sqliteTable('transcript', {
 
 export const chapter = sqliteTable('chapter', {
     id: blob('id', { mode: BLOB_MODE }).$type<Uint8Array>().primaryKey().notNull(),
-    tabId: text('tab_id').notNull().$type<TabId>(),
+    tabId: text('tab_id').notNull().$type<ScopeId>(),
     n: integer('n').notNull(),
     startedAt: integer('started_at').notNull(),
 });

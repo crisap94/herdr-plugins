@@ -8,7 +8,7 @@ import { parseFactId } from '#src/recap/domain/run-ids.ts';
 import type { Fact, FactId, TaskId } from '#src/recap/domain/fact.ts';
 import { apply } from '#src/recap/domain/ops.ts';
 import type { Operation, RunRef } from '#src/recap/domain/ops.ts';
-import { type TabId } from '#src/recap/domain/ids.ts';
+import { type ScopeId } from '#src/recap/domain/ids.ts';
 import { parseTaskName, type TaskName } from '#src/recap/domain/task-name.ts';
 
 import { blob, BadRow, isRow, maybeText, maybeWhole, text, whole } from './rows.ts';
@@ -92,7 +92,7 @@ export class LedgerRows {
         return this.orm.select(FACT_COLUMNS).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId)).where(and(eq(taskTable.tabId, task.tab), eq(taskTable.key, task.key))).orderBy(asc(factTable.firstAt), asc(factTable.id)).all().map((row) => parseLedgerFact(row, task));
     }
 
-    keysOf(tab: TabId): readonly TaskName[] {
+    keysOf(tab: ScopeId): readonly TaskName[] {
         return this.orm.selectDistinct({ key: taskTable.key }).from(factTable).innerJoin(taskTable, eq(taskTable.id, factTable.taskId))
             .where(eq(taskTable.tabId, tab)).orderBy(asc(taskTable.key)).all().map((row) => {
                 const key = parseTaskName(text(row, 'key'));

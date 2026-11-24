@@ -1,4 +1,4 @@
-import type { Engine, ScopeId, SessionKey } from '@stateforge-labs/session-ledger';
+import type { Engine } from '@stateforge-labs/session-ledger';
 import { keyOf, ledgerDirectoryOf, ledgerSessionOf, scopeOf } from '#src/engine/engine-adapter.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { parseLine, parseMessage, type Line } from '#src/daemon/slots.ts';
@@ -7,7 +7,7 @@ import type { Observation } from '#src/recap/domain/fold.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { textOf } from '#src/recap/domain/text.ts';
-import { parseSessionId, type PaneId, type SessionId, type TabId } from '#src/recap/domain/ids.ts';
+import { parseSessionId, type SessionKey, type SessionId, type ScopeId } from '#src/recap/domain/ids.ts';
 import type { HookAnswer, HookCall, HookHarness, HookReceiver, PreCompactAnswer } from '#src/wire/hooks/contract.ts';
 import { PRE_COMPACT_HOLD_REASON } from '#src/wire/hooks/contract.ts';
 import type { PreCompactCall, PreCompactReceiver } from '#src/adapters/hooks/endpoint.ts';
@@ -18,8 +18,8 @@ import type { TurnEnds } from '#src/adapters/hooks/turn-ends.ts';
 import type { Rebind, RebindMode } from '#src/adapters/hooks/rebind.ts';
 
 export interface Followed {
-    readonly tab: TabId;
-    readonly pane: PaneId;
+    readonly tab: ScopeId;
+    readonly pane: SessionKey;
     readonly lane: Lane;
 }
 
@@ -27,7 +27,7 @@ export type RestoreMode = 'on' | 'off';
 
 export interface ReceiverDeps {
     followed(harness: HookHarness, session: SessionId): Followed | null;
-    lanesOf(tab: TabId): readonly Lane[];
+    lanesOf(tab: ScopeId): readonly Lane[];
     observe(observation: Observation): void;
     recaps: Pick<TabRecaps, 'turnEnded'>;
     engine: Pick<Engine, 'sessionStarted' | 'compacted'>;

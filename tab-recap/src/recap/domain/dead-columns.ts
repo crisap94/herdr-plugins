@@ -1,6 +1,6 @@
 import { put, without } from './board.ts';
 import type { Board } from './board.ts';
-import type { PaneId } from './ids.ts';
+import type { SessionKey } from './ids.ts';
 import type { Intent } from './intent.ts';
 import type { DeadColumn, Reconciliation } from './seen.ts';
 import { spend } from './policy.ts';
@@ -25,7 +25,7 @@ export function deadColumnsAfter(board: Board, seen: Reconciliation, now: Instan
     const alive = new Set<string>(seen.panes);
     const agents = new Set<string>(seen.lanes.map((lane) => lane.paneId));
     const titled = new Set<string>(seen.columns.map((column) => column.paneId));
-    const placedPanes = new Set<PaneId>([...board.columns.values()].map((placed) => placed.pane));
+    const placedPanes = new Set<SessionKey>([...board.columns.values()].map((placed) => placed.pane));
     const fromBoard: DeadColumn[] = [...board.columns]
         .filter(([, placed]) => alive.has(placed.pane) && !agents.has(placed.pane) && !titled.has(placed.pane) && !board.closing.has(placed.pane) && (placed.since === undefined || now - placed.since >= policy.closeGrace))
         .map(([tab, placed]) => ({ tab, pane: placed.pane }));

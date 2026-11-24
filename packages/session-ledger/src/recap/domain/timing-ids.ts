@@ -4,17 +4,17 @@ import { parseNonEmptyText, parseText } from '#src/recap/domain/text.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import type { Candidate } from '#src/compaction-timing/contract.ts';
 
-export type PaneId = Brand<string, 'PaneId'>;
-export type TabId = Brand<string, 'TabId'>;
-export type AgentKind = Brand<string, 'AgentKind'>;
+export type SessionKey = Brand<string, 'SessionKey'>;
+export type ScopeId = Brand<string, 'ScopeId'>;
+export type HarnessKind = Brand<string, 'HarnessKind'>;
 export type DecisionId = Brand<string, 'DecisionId'>;
 export type CompactionId = Brand<string, 'CompactionId'>;
 
 export interface Placement {
     readonly candidate: Candidate;
-    readonly tab: TabId;
-    readonly pane: PaneId;
-    readonly agent: AgentKind;
+    readonly tab: ScopeId;
+    readonly pane: SessionKey;
+    readonly agent: HarnessKind;
 }
 
 export function placementOf(candidate: Candidate): Placement {
@@ -26,28 +26,28 @@ export function placementOf(candidate: Candidate): Placement {
     };
 }
 
-export function parsePaneId(input: unknown): Result<PaneId, ParseFailure> {
+export function parsePaneId(input: unknown): Result<SessionKey, ParseFailure> {
     const text = parseNonEmptyText(input);
     if (text.kind === 'err') {
         return text;
     }
-    return ok(brand<string, 'PaneId'>(text.value));
+    return ok(brand<string, 'SessionKey'>(text.value));
 }
 
-export function parseTabId(input: unknown): Result<TabId, ParseFailure> {
+export function parseTabId(input: unknown): Result<ScopeId, ParseFailure> {
     const text = parseNonEmptyText(input);
     if (text.kind === 'err') {
         return text;
     }
-    return ok(brand<string, 'TabId'>(text.value));
+    return ok(brand<string, 'ScopeId'>(text.value));
 }
 
-export function parseAgentKind(input: unknown): Result<AgentKind, ParseFailure> {
+export function parseAgentKind(input: unknown): Result<HarnessKind, ParseFailure> {
     const text = parseNonEmptyText(input);
     if (text.kind === 'err') {
         return text;
     }
-    return ok(brand<string, 'AgentKind'>(text.value));
+    return ok(brand<string, 'HarnessKind'>(text.value));
 }
 
 export function parseDecisionId(input: unknown): Result<DecisionId, ParseFailure> {

@@ -1,8 +1,8 @@
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import type { Shown } from '#src/recap/domain/pacing.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 
-export type Watching = (tab: TabId) => Shown;
+export type Watching = (tab: ScopeId) => Shown;
 
 export interface Viewers {
     readonly watching: Watching;
@@ -12,7 +12,7 @@ export interface Viewers {
 export function viewersOf(): Viewers {
     let source: Watching | null = null;
     return {
-        watching: (tab: TabId): Shown => source?.(tab) ?? 'hidden',
+        watching: (tab: ScopeId): Shown => source?.(tab) ?? 'hidden',
         attach: (next: Watching): (() => void) => {
             source = next;
             return (): void => {
@@ -25,5 +25,5 @@ export function viewersOf(): Viewers {
 }
 
 export function visibleOf(board: () => Board, viewers: Pick<Viewers, 'watching'>): Watching {
-    return (tab: TabId): Shown => (board().focused === tab ? 'shown' : viewers.watching(tab));
+    return (tab: ScopeId): Shown => (board().focused === tab ? 'shown' : viewers.watching(tab));
 }

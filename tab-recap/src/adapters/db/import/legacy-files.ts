@@ -6,7 +6,7 @@ import type { VisibilityAsk } from '#src/ports/requests.ts';
 import { must, type Result } from '#src/protocol/result.ts';
 import type { HiddenState } from '#src/recap/domain/board.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { Presence } from './equivalence.ts';
 
@@ -14,7 +14,7 @@ type Kind = 'recaps' | 'tabs' | 'requests' | 'visibility';
 
 const KINDS: readonly Kind[] = ['recaps', 'tabs', 'requests', 'visibility'];
 
-export const fileKey = (id: TabId | PaneId): Text => must(parseText(id.replaceAll(':', '_').replaceAll('/', '_')));
+export const fileKey = (id: ScopeId | SessionKey): Text => must(parseText(id.replaceAll(':', '_').replaceAll('/', '_')));
 
 function attempt<T, E>(read: () => Result<T, E>): T | null {
     try {

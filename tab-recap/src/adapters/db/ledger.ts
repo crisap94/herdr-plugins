@@ -5,7 +5,7 @@ import type { GuardedLedger } from '#src/ports/guarded-reads.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
-import { parsePaneId, parseTabId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { parsePaneId, parseTabId, type SessionKey, type ScopeId } from '#src/recap/domain/ids.ts';
 import type { Operation, RunRef } from '#src/recap/domain/ops.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
@@ -38,11 +38,11 @@ export class LedgerRepository implements GuardedLedger {
         return guardedRead(() => this.rows.allOf(task));
     }
 
-    keysOf(tab: TabId): readonly Text[] | Unknown {
+    keysOf(tab: ScopeId): readonly Text[] | Unknown {
         return guardedRead(() => this.rows.keysOf(tab).map(textOf));
     }
 
-    historyOf(tab: TabId, pane: PaneId): readonly HistoryFact[] {
+    historyOf(tab: ScopeId, pane: SessionKey): readonly HistoryFact[] {
         return guarded(() => this.history.read(must(parseTabId(tab)), must(parsePaneId(pane))), []);
     }
 

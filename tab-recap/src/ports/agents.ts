@@ -1,6 +1,6 @@
 import type { LaneStatus } from '#src/recap/domain/status.ts';
 import type { CompactionLine } from '#src/recap/domain/compaction-plan.ts';
-import type { AgentKind, PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { HarnessKind, SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Duration, Milliseconds } from '#src/recap/domain/time.ts';
 import type { Done } from './columns.ts';
@@ -14,7 +14,7 @@ export interface LineBehavior {
 
 export interface AgentFound {
     readonly kind: 'agent';
-    readonly agent: AgentKind;
+    readonly agent: HarnessKind;
     readonly status: LaneStatus;
 }
 
@@ -32,8 +32,8 @@ export interface PromptStance {
 }
 
 export interface AgentPanes {
-    status(pane: PaneId): Promise<AgentLookup>;
-    prompt(pane: PaneId, text: Text, wait: PromptWaitFor | undefined, behavior: PromptStance): Promise<Prompted>;
-    typeLine(pane: PaneId, line: CompactionLine, behavior: LineBehavior): Promise<Prompted>;
-    askNote(tab: TabId, pane: PaneId | null): Promise<Done>;
+    status(pane: SessionKey): Promise<AgentLookup>;
+    prompt(pane: SessionKey, text: Text, wait: PromptWaitFor | undefined, behavior: PromptStance): Promise<Prompted>;
+    typeLine(pane: SessionKey, line: CompactionLine, behavior: LineBehavior): Promise<Prompted>;
+    askNote(tab: ScopeId, pane: SessionKey | null): Promise<Done>;
 }

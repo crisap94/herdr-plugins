@@ -13,7 +13,7 @@ import type { GuiReads } from '#src/recap/application/gui-tab-reads.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import { NO, YES, type Flag, type GuiLocale } from '#src/recap/domain/gui-tab-parts.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { WorktreeStatus } from '#src/recap/domain/worktree.ts';
@@ -28,7 +28,7 @@ export type DesktopMode = 'daemon' | 'read-only';
 export interface DesktopReadsDeps {
     readonly store: Store;
     readonly dir: Directory;
-    readonly republish: (tab: TabId) => void;
+    readonly republish: (tab: ScopeId) => void;
     readonly mode: DesktopMode;
     readonly now: () => Instant;
     readonly leases?: OpenLeases;
@@ -55,8 +55,8 @@ export class DesktopReads {
     private readonly deps: DesktopReadsDeps;
     private readonly watching: ExpandedModel;
     private readonly quiet: ExpandedModel;
-    private readonly held = new Map<TabId, Held>();
-    private readonly timers = new Map<TabId, NodeJS.Timeout>();
+    private readonly held = new Map<ScopeId, Held>();
+    private readonly timers = new Map<ScopeId, NodeJS.Timeout>();
     private settled: Settled | null = null;
 
     constructor(deps: DesktopReadsDeps) {
@@ -70,11 +70,11 @@ export class DesktopReads {
         this.quiet = new ExpandedModel({ ...base, requests: { requestCurate: (): void => undefined } });
     }
 
-    read(tab: TabId, view: TabViewRecord | null): GuiReads {
+    read(tab: ScopeId, view: TabViewRecord | null): GuiReads {
         const now = this.deps.now();
         const settled = this.settledAt(now);
         const lanes = view?.lanes;
-        const git = (pane: PaneId): WorktreeStatus | null => (worktreeSwitch() === 'on' ? this.deps.store.worktrees.statusOf(pane) : null);
+        const git = (pane: SessionKey): WorktreeStatus | null => (worktreeSwitch() === 'on' ? this.deps.store.worktrees.statusOf(pane) : null);
         const found = notesByPaneOf(settled.extensions, lanes, settled.locale);
         return {
             expanded: this.expandedFor(tab, view, now), notes: (pane): readonly PaneNote[] => found.get(pane) ?? [],
@@ -98,11 +98,11 @@ export class DesktopReads {
         return this.settled;
     }
 
-    forget(tab: TabId): void {
+    forget(tab: ScopeId): void {
         this.held.delete(tab);
     }
 
-    watched(tab: TabId, now: Instant): Flag {
+    watched(tab: ScopeId, now: Instant): Flag {
         if (this.deps.mode !== 'daemon') { return NO; }
         if (this.deps.leases?.held(tab, now) === YES) { return YES; }
         try {
@@ -112,7 +112,7 @@ export class DesktopReads {
         }
     }
 
-    private expandedFor(tab: TabId, view: TabViewRecord | null, now: Instant): ExpandedData {
+    private expandedFor(tab: ScopeId, view: TabViewRecord | null, now: Instant): ExpandedData {
         const watched = this.watched(tab, now);
         const held = this.held.get(tab);
         if (held !== undefined && held.watched === watched && now - held.at < EXPANDED_EVERY_MS) {
@@ -125,7 +125,7 @@ export class DesktopReads {
         return data;
     }
 
-    private later(tab: TabId, wait: Count): void {
+    private later(tab: ScopeId, wait: Count): void {
         if (this.deps.mode !== 'daemon') { return; }
         const pending = this.timers.get(tab);
         if (pending !== undefined) { clearTimeout(pending); }

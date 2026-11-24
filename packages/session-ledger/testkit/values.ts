@@ -1,4 +1,4 @@
-import type { AgentKind, Boundary, ByteCount, Count, Cursor, ExitCode, Grew, PaneId, PositiveCount, FailureCause, MintedId, Running, SourcePath, TabId, Text, Unknowable, Usd } from '@stateforge-labs/session-ledger';
+import type { HarnessKind, Boundary, ByteCount, Count, Cursor, ExitCode, Grew, SessionKey, PositiveCount, FailureCause, MintedId, Running, SourcePath, ScopeId, Text, Unknowable, Usd } from '@stateforge-labs/session-ledger';
 
 const accepted = <Raw, Branded extends Raw>(raw: Raw, fits: (raw: Raw) => raw is Branded, what: string): Branded => {
     if (fits(raw)) {
@@ -17,16 +17,16 @@ const isByteCount = (raw: number): raw is ByteCount => Number.isSafeInteger(raw)
 const isExitCode = (raw: number): raw is ExitCode => Number.isSafeInteger(raw);
 const isPositiveCount = (raw: number): raw is PositiveCount => Number.isSafeInteger(raw) && raw >= 1;
 const isUsd = (raw: number): raw is Usd => Number.isFinite(raw);
-const isTabId = (raw: string): raw is TabId => raw.length >= 0;
-const isPaneId = (raw: string): raw is PaneId => raw.length >= 0;
-const isAgentKind = (raw: string): raw is AgentKind => raw.length >= 0;
+const isTabId = (raw: string): raw is ScopeId => raw.length >= 0;
+const isPaneId = (raw: string): raw is SessionKey => raw.length >= 0;
+const isAgentKind = (raw: string): raw is HarnessKind => raw.length >= 0;
 const isRunning = (raw: boolean): raw is Running => typeof raw === 'boolean';
 const isGrew = (raw: boolean): raw is Grew => typeof raw === 'boolean';
 const isBoundary = (raw: boolean): raw is Boundary => typeof raw === 'boolean';
 
-export const tabId = (raw: string): TabId => accepted(raw, isTabId, 'a tab');
-export const paneId = (raw: string): PaneId => accepted(raw, isPaneId, 'a pane');
-export const agentKind = (raw: string): AgentKind => accepted(raw, isAgentKind, 'an agent kind');
+export const tabId = (raw: string): ScopeId => accepted(raw, isTabId, 'a tab');
+export const paneId = (raw: string): SessionKey => accepted(raw, isPaneId, 'a pane');
+export const agentKind = (raw: string): HarnessKind => accepted(raw, isAgentKind, 'an agent kind');
 export const running = (raw: boolean): Running => accepted(raw, isRunning, 'a running flag');
 export const text = (raw: string): Text => accepted(raw, isText, 'a text');
 export const usd = (raw: number): Usd => accepted(raw, isUsd, 'a cost');

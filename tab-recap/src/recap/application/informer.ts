@@ -5,7 +5,7 @@ import { observe } from '#src/recap/domain/fold.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import { emptyBoard, watchSet } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
-import { uncheckedMilliseconds, uncheckedTokenName, uncheckedTokenValue, type PaneId } from '#src/recap/domain/ids.ts';
+import { uncheckedMilliseconds, uncheckedTokenName, uncheckedTokenValue, type SessionKey } from '#src/recap/domain/ids.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import type { Policy } from '#src/recap/domain/policy.ts';
@@ -20,7 +20,7 @@ import { textOf, type Text } from '#src/recap/domain/text.ts';
 
 interface PaneTokens {
     readonly kind: 'tokens';
-    readonly pane: PaneId;
+    readonly pane: SessionKey;
     readonly tokens: FleetPaneTokens;
 }
 
@@ -36,8 +36,8 @@ export interface InformerHooks {
     onBlind(blindness: Blindness): void;
     onUnknownKind(rawKind: Text): void;
     onBeat(): void;
-    onStatus?(pane: PaneId, status: Text): void;
-    onPaneTokens?(pane: PaneId, tokens: FleetPaneTokens): void;
+    onStatus?(pane: SessionKey, status: Text): void;
+    onPaneTokens?(pane: SessionKey, tokens: FleetPaneTokens): void;
     sessionIdentity: SessionOf;
 }
 

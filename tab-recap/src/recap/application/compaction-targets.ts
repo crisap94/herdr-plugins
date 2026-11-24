@@ -2,14 +2,14 @@ import { COMPACTABLE } from '#src/recap/domain/compaction.ts';
 import type { CompactTarget } from '#src/recap/domain/compaction.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { CompactAsk } from '#src/ports/requests.ts';
 import type { CompactionPorts } from './compaction-deps.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
 export interface TargetWhere {
-    readonly pane: PaneId | null;
-    readonly focused: PaneId | null;
+    readonly pane: SessionKey | null;
+    readonly focused: SessionKey | null;
 }
 
 export const compactable = (lanes: readonly Lane[]): readonly Lane[] => lanes.filter((lane) => COMPACTABLE.some((kind) => kind === String(lane.agent)));
@@ -31,14 +31,14 @@ export function targetsOf(lanes: readonly Lane[], setting: CompactTarget, where:
 }
 
 export interface Scope {
-    readonly tab: TabId;
+    readonly tab: ScopeId;
     readonly lanes: readonly Lane[];
     readonly targets: readonly Lane[];
 }
 
 type Targeting = Pick<CompactionPorts, 'lanes' | 'focused' | 'target'>;
 
-async function targetsFor(deps: Targeting, request: CompactAsk, tab: TabId, lanes: readonly Lane[]): Promise<readonly Lane[]> {
+async function targetsFor(deps: Targeting, request: CompactAsk, tab: ScopeId, lanes: readonly Lane[]): Promise<readonly Lane[]> {
     const asked = request.pane === null ? null : parsePaneId(request.pane);
     if (asked !== null && asked.kind === 'err') return [];
     const focused = await deps.focused(tab);

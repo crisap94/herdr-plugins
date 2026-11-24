@@ -11,7 +11,7 @@ import type { Count } from '#src/recap/domain/count.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import type { TaskId } from '#src/recap/domain/fact.ts';
 import { parseAgentKind, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { RECAP_CAUSES } from '#src/recap/domain/intent.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import { closedCutoffOf } from '#src/recap/domain/retention.ts';
@@ -69,7 +69,7 @@ const windowOf = (now: Instant, days: ClosedLaneDays): ClosedWindow => {
     return cutoff === null ? { off: 1, cutoff: instant(0) } : { off: 0, cutoff };
 };
 
-export function parseAssociation(input: unknown, tab: TabId): Result<Association, ParseFailure> {
+export function parseAssociation(input: unknown, tab: ScopeId): Result<Association, ParseFailure> {
     if (!isRow(input)) {
         return err({ kind: 'not-a-row' });
     }
@@ -87,7 +87,7 @@ export function parseAssociation(input: unknown, tab: TabId): Result<Association
     return ok({ task: { tab, key: key.value }, name: name.value });
 }
 
-export function parseClosedLaneRow(input: unknown, tab: TabId): Result<ClosedLaneRow, ParseFailure> {
+export function parseClosedLaneRow(input: unknown, tab: ScopeId): Result<ClosedLaneRow, ParseFailure> {
     if (!isRow(input)) {
         return err({ kind: 'not-a-row' });
     }
@@ -179,7 +179,7 @@ SELECT ${closed.tab}, ${closed.pane}, ${closed.closedAt}, ${closed.agent}, ${clo
         return cause.kind === 'ok' && when.kind === 'ok' ? { at: when.value, cause: cause.value } : null;
     }
 
-    listOf(tab: TabId, now: Instant): ClosedLaneList {
+    listOf(tab: ScopeId, now: Instant): ClosedLaneList {
         if (!this.present) {
             return { kind: 'listed', records: [] };
         }
@@ -192,7 +192,7 @@ SELECT ${closed.tab}, ${closed.pane}, ${closed.closedAt}, ${closed.agent}, ${clo
         }
     }
 
-    protectedTabs(now: Instant): readonly TabId[] {
+    protectedTabs(now: Instant): readonly ScopeId[] {
         if (!this.present) {
             return [];
         }
@@ -204,7 +204,7 @@ SELECT ${closed.tab}, ${closed.pane}, ${closed.closedAt}, ${closed.agent}, ${clo
         });
     }
 
-    expiredTabs(now: Instant): readonly TabId[] {
+    expiredTabs(now: Instant): readonly ScopeId[] {
         if (!this.present) {
             return [];
         }
@@ -216,14 +216,14 @@ SELECT ${closed.tab}, ${closed.pane}, ${closed.closedAt}, ${closed.agent}, ${clo
         });
     }
 
-    countOf(tab: TabId): Count {
+    countOf(tab: ScopeId): Count {
         if (!this.present) {
             return NO_COUNT;
         }
         return countOrThrow(parseCount(this.orm.select({ n: count() }).from(closedLane).where(eq(closedLane.tabId, tab)).get()?.n ?? 0));
     }
 
-    pruneTab(tab: TabId, now: Instant): Count {
+    pruneTab(tab: ScopeId, now: Instant): Count {
         if (!this.present) {
             return NO_COUNT;
         }

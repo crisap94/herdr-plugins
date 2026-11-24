@@ -3,7 +3,7 @@ import type { HiddenState, Seeded, Shape } from '#src/recap/domain/board.ts';
 import { countOf } from '#src/recap/domain/count.ts';
 import type { DeadColumn } from '#src/recap/domain/dead-columns.ts';
 import type { ColumnOpenedObservation, Reconciliation, SeenColumn, SessionObservation, StatusObservation, SwitchedObservation } from '#src/recap/domain/fold.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -28,7 +28,7 @@ interface BareReconciliation {
     readonly panes: readonly string[];
     readonly columns: readonly BareColumn[];
     readonly widths: ReadonlyMap<string, number>;
-    readonly tabs?: readonly TabId[];
+    readonly tabs?: readonly ScopeId[];
     readonly dead?: readonly DeadColumn[];
 }
 
@@ -58,11 +58,11 @@ export const reconciliation = (bare: BareReconciliation): Reconciliation => ({
     ...(bare.dead === undefined ? {} : { dead: bare.dead }),
 });
 
-export const statusObservation = (bare: { readonly kind: 'status'; readonly pane: PaneId; readonly status: string }): StatusObservation => ({ kind: 'status', pane: bare.pane, status: textOf(bare.status) });
+export const statusObservation = (bare: { readonly kind: 'status'; readonly pane: SessionKey; readonly status: string }): StatusObservation => ({ kind: 'status', pane: bare.pane, status: textOf(bare.status) });
 
-export const sessionObservation = (bare: { readonly kind: 'session'; readonly pane: PaneId; readonly session: string }): SessionObservation => ({ kind: 'session', pane: bare.pane, session: textOf(bare.session) });
+export const sessionObservation = (bare: { readonly kind: 'session'; readonly pane: SessionKey; readonly session: string }): SessionObservation => ({ kind: 'session', pane: bare.pane, session: textOf(bare.session) });
 
-export const columnOpenedObservation = (bare: { readonly kind: 'column-opened'; readonly tab: TabId; readonly pane: PaneId; readonly shape: Shape; readonly at?: number }): ColumnOpenedObservation => ({
+export const columnOpenedObservation = (bare: { readonly kind: 'column-opened'; readonly tab: ScopeId; readonly pane: SessionKey; readonly shape: Shape; readonly at?: number }): ColumnOpenedObservation => ({
     kind: 'column-opened', tab: bare.tab, pane: bare.pane, shape: bare.shape, ...(bare.at === undefined ? {} : { at: instant(bare.at) }),
 });
 

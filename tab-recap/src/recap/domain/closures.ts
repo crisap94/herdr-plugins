@@ -1,27 +1,27 @@
-import type { AgentKind, PaneId, TabId } from './ids.ts';
+import type { HarnessKind, SessionKey, ScopeId } from './ids.ts';
 import type { Directory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
 import type { Lane } from './lane.ts';
 import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
 
 export interface ClosedLaneIdentity {
-    readonly tab: TabId;
-    readonly pane: PaneId;
+    readonly tab: ScopeId;
+    readonly pane: SessionKey;
     readonly closedAt: Instant;
 }
 
 export interface ClosedLane {
-    readonly tab: TabId;
-    readonly pane: PaneId;
-    readonly agent: AgentKind;
+    readonly tab: ScopeId;
+    readonly pane: SessionKey;
+    readonly agent: HarnessKind;
     readonly since: Instant | null;
     readonly cwd: Directory | null;
     readonly closedAt: Instant;
 }
 
 export interface RestoredLane {
-    readonly tab: TabId;
-    readonly pane: PaneId;
-    readonly agent: AgentKind;
+    readonly tab: ScopeId;
+    readonly pane: SessionKey;
+    readonly agent: HarnessKind;
     readonly since: Instant | null;
     readonly cwd: Directory | null;
 }
@@ -38,12 +38,12 @@ export function incarnating(lane: Lane, prior: Pick<Lane, 'agent' | 'since'> | u
 
 export type Kept = 'kept' | 'gone';
 
-const keeps = (after: ReadonlyMap<PaneId, Lane>, prior: Pick<Incarnation, 'pane' | 'agent'>): Kept =>
+const keeps = (after: ReadonlyMap<SessionKey, Lane>, prior: Pick<Incarnation, 'pane' | 'agent'>): Kept =>
     after.get(prior.pane)?.agent === prior.agent ? 'kept' : 'gone';
 
 export function closuresBetween(
-    before: ReadonlyMap<PaneId, Lane>,
-    after: ReadonlyMap<PaneId, Lane>,
+    before: ReadonlyMap<SessionKey, Lane>,
+    after: ReadonlyMap<SessionKey, Lane>,
     persisted: readonly RestoredLane[],
     now: Instant,
 ): readonly ClosedLane[] {

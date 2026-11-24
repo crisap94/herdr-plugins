@@ -8,7 +8,7 @@ import { createTurnEnds } from '#src/adapters/hooks/turn-ends.ts';
 import type { Line } from '#src/daemon/slots.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
-import { type PaneId } from '#src/recap/domain/ids.ts';
+import { type SessionKey } from '#src/recap/domain/ids.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
 import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
 import { laneStatus, type LaneStatus } from '#src/recap/domain/status.ts';
@@ -19,7 +19,7 @@ import { seenLane } from '#test/support/seen.ts';
 
 const NOW = 1_000_000;
 const TAB = tabId('w1:t1');
-const PANE: PaneId = paneId('w1:p1');
+const PANE: SessionKey = paneId('w1:p1');
 const NOTHING: HookAnswer = { kind: 'nothing' };
 
 const isRestoreText = (text: string): text is RestoreText => typeof text === 'string';

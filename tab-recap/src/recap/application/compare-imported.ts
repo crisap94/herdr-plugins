@@ -3,7 +3,7 @@ import type { JudgeEntry, RunInputReader, RunRecord } from '#src/ports/run-input
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { countOf, parseCount, type Count } from '#src/recap/domain/count.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { parseUsd, type Usd } from '#src/recap/domain/usd.ts';
@@ -89,7 +89,7 @@ interface ChapterOutcome {
 }
 
 export interface CompareDeps extends JudgeDeps {
-    readonly label: TabId;
+    readonly label: ScopeId;
 }
 
 function evidenceOf(inputs: RunInputReader, runs: readonly RunRecord[]): Text | null {

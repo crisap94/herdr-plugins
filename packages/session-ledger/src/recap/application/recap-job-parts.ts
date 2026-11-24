@@ -1,5 +1,5 @@
 import type { Brand } from '#src/recap/domain/brand.ts';
-import type { Lane, TabId } from '#src/recap/domain/lane-shape.ts';
+import type { Lane, ScopeId } from '#src/recap/domain/lane-shape.ts';
 import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
@@ -31,4 +31,4 @@ export interface WrittenRun { readonly tasks: readonly TaskShape[]; readonly req
 
 export interface Run { started(at: ReturnType<Clock['now']>): void; advanced(readings: readonly Reading[]): void }
 
-export interface Slot { readonly tab: TabId; timer: ReturnType<typeof setTimeout> | null; flight: Flight; pending: Pending | null; lastStart: Instant | null; lastLanes: ReadonlySet<Lane['pane']>; waiting: (() => void)[]; deferred: 'none' | 'deferred' }
+export interface Slot { readonly tab: ScopeId; timer: ReturnType<typeof setTimeout> | null; flight: Flight; pending: Pending | null; lastStart: Instant | null; lastLanes: ReadonlySet<Lane['pane']>; waiting: (() => void)[]; deferred: 'none' | 'deferred' }

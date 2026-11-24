@@ -5,11 +5,11 @@ import type { HarnessDirectory, HarnessList } from '#src/ports/harnesses.ts';
 import { must } from '#src/protocol/result.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
-import { parseAgentKind, type AgentKind } from '#src/recap/domain/ids.ts';
+import { parseAgentKind, type HarnessKind } from '#src/recap/domain/ids.ts';
 import { AUTO_ORDER } from '#src/recap/domain/backend.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 
-export const AUTO_PATH_KINDS: readonly AgentKind[] = AUTO_ORDER.map((id) => must(parseAgentKind(id)));
+export const AUTO_PATH_KINDS: readonly HarnessKind[] = AUTO_ORDER.map((id) => must(parseAgentKind(id)));
 
 export function dirsOf(path: Text): readonly FsPath[] {
     return path.split(delimiter).flatMap((dir) => {
@@ -18,7 +18,7 @@ export function dirsOf(path: Text): readonly FsPath[] {
     });
 }
 
-export function presenceOnPath(command: AgentKind, dirs: readonly FsPath[]): Presence {
+export function presenceOnPath(command: HarnessKind, dirs: readonly FsPath[]): Presence {
     const found = dirs.some((dir) => {
         try {
             accessSync(join(dir, command), constants.X_OK);
@@ -31,9 +31,9 @@ export function presenceOnPath(command: AgentKind, dirs: readonly FsPath[]): Pre
 }
 
 export class PathHarnessDirectory implements HarnessDirectory {
-    private readonly ids: readonly AgentKind[];
+    private readonly ids: readonly HarnessKind[];
 
-    constructor(ids: readonly AgentKind[]) {
+    constructor(ids: readonly HarnessKind[]) {
         this.ids = ids;
     }
 

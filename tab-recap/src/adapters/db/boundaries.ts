@@ -2,7 +2,7 @@ import type { Database } from 'bun:sqlite';
 import { and, desc, eq, max, ne, sql } from 'drizzle-orm';
 import { chapterStart, compactedFrom } from '#src/recap/domain/boundary.ts';
 import type { SessionMark, Planned } from '#src/recap/domain/boundary.ts';
-import { type TabId } from '#src/recap/domain/ids.ts';
+import { type ScopeId } from '#src/recap/domain/ids.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { boundary, chapter, compaction, transcript } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
@@ -40,7 +40,7 @@ export class BoundaryRows {
         this.orm = ormOf(db);
     }
 
-    private compacted(tab: TabId, found: Found): readonly Row[] {
+    private compacted(tab: ScopeId, found: Found): readonly Row[] {
         return [...new Set(found.marks.map((mark) => mark.pane))].flatMap((pane) => {
             const last = this.orm.select({ at: max(boundary.at) }).from(boundary)
                 .innerJoin(transcript, eq(transcript.id, boundary.transcriptId))
@@ -60,7 +60,7 @@ export class BoundaryRows {
         }]));
     }
 
-    private open(tab: TabId, row: Row): void {
+    private open(tab: ScopeId, row: Row): void {
         const sealed = this.orm.select({ n: chapter.n, startedAt: chapter.startedAt }).from(chapter)
             .where(eq(chapter.tabId, tab)).orderBy(desc(chapter.n)).limit(1).get();
         const chapterRow = ids.next();
@@ -73,7 +73,7 @@ export class BoundaryRows {
         }).run();
     }
 
-    record(tab: TabId, found: Found): void {
+    record(tab: ScopeId, found: Found): void {
         this.orm.insert(chapter).values({ id: ids.next(), tabId: tab, n: 1, startedAt: found.at }).onConflictDoNothing().run();
         for (const row of [...this.compacted(tab, found), ...this.switched(found)].toSorted(byTime)) {
             this.open(tab, row);

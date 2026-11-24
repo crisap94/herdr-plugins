@@ -1,5 +1,5 @@
 import type { Board } from '#src/recap/domain/board.ts';
-import { uncheckedMilliseconds, type PaneId } from '#src/recap/domain/ids.ts';
+import { uncheckedMilliseconds, type SessionKey } from '#src/recap/domain/ids.ts';
 import { ANSWER_TTL_MS, COMPACT_EXCHANGE, NOT_ACTED, noteOf } from '#src/recap/domain/compact-request.ts';
 import { outcomeOf } from '#src/recap/domain/ask-outcome.ts';
 import { COMPACT_TOKEN } from '#src/recap/domain/lane-tokens.ts';
@@ -34,7 +34,7 @@ export interface CompactRequestQueueDeps {
 }
 
 interface Incoming {
-    readonly pane: PaneId;
+    readonly pane: SessionKey;
     readonly requester: ToolName;
     readonly id: RequestId;
     readonly note: Text | null;
@@ -49,7 +49,7 @@ export class CompactRequestQueue {
         this.deps = deps;
     }
 
-    onPaneTokens(pane: PaneId, tokens: ReadonlyMap<WireText, WireText>): void {
+    onPaneTokens(pane: SessionKey, tokens: ReadonlyMap<WireText, WireText>): void {
         if (pane.trim() === '') {
             return;
         }
@@ -78,7 +78,7 @@ export class CompactRequestQueue {
         }
     }
 
-    answer(id: RequestId, pane: PaneId, stage: WireText): void {
+    answer(id: RequestId, pane: SessionKey, stage: WireText): void {
         this.finish(id, pane, stage);
     }
 
@@ -95,7 +95,7 @@ export class CompactRequestQueue {
         }
     }
 
-    private refuseBadId(pane: PaneId, refused: Refused): void {
+    private refuseBadId(pane: SessionKey, refused: Refused): void {
         const key = must(parseText(`${pane}\u0000${refused.exchange.name}\u0000${refused.tool}\u0000${refused.rawId}`));
         if (this.deps.enabled() === 'absent' || this.badSeen.has(key)) {
             return;
@@ -126,7 +126,7 @@ export class CompactRequestQueue {
         this.finish(id, pane, must(parseWireText(COMPACT_STAGES.queued)));
     }
 
-    private finish(id: RequestId, pane: PaneId, stage: WireText): void {
+    private finish(id: RequestId, pane: SessionKey, stage: WireText): void {
         const outcome = stage === COMPACT_STAGES.done || isFailureStage(stage) ? outcomeOf(stage) : null;
         if (outcome !== null && pane !== '') {
             this.deps.asks.settle({ exchange: COMPACT_EXCHANGE, id, pane }, outcome);
@@ -141,14 +141,14 @@ export class CompactRequestQueue {
         this.deps.asks.record({ exchange: COMPACT_EXCHANGE, requester: incoming.requester, id: incoming.id, pane: incoming.pane, at: this.deps.now(), ref: null });
     }
 
-    private reply(pane: PaneId, write: TokenWrite): void {
+    private reply(pane: SessionKey, write: TokenWrite): void {
         if (this.deps.enabled() === 'absent' || pane === '') {
             return;
         }
         void this.write(pane, write);
     }
 
-    private async write(pane: PaneId, write: TokenWrite): Promise<void> {
+    private async write(pane: SessionKey, write: TokenWrite): Promise<void> {
         const done = await this.deps.tokens.report(pane, new Map([[write.name, write.value]]), ANSWER_TTL);
         if (isUnknown(done)) {
             this.deps.log(must(parseText(`compaction request on ${pane}: not answered (${saying(done.why)})`)));

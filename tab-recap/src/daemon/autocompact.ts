@@ -7,11 +7,11 @@ import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { lanesOf, type Board } from '#src/recap/domain/board.ts';
-import { type PaneId, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
+import { type ScopeId, type SessionKey, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { READY } from '#src/recap/domain/status.ts';
 import { parseLaneStatusAtDecision } from '#src/recap/domain/autocompact.ts';
-import { parseHarnessKind, parseScopeId, parseSessionKey, type ScopeId, type SessionKey } from '@stateforge-labs/session-ledger';
+import { parseHarnessKind, parseScopeId, parseSessionKey } from '@stateforge-labs/session-ledger';
 import type { Candidate, CompactionActivity, RecapReadiness, SafePointEvent, SessionSignals } from '@stateforge-labs/session-ledger/compaction-timing';
 import { flightReason, unreadable, type Observed } from '#src/recap/domain/in-flight.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -30,7 +30,7 @@ import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { TranscriptInFlight } from '#src/adapters/transcripts/in-flight.ts';
 import { flightOf } from '#src/recap/application/in-flight.ts';
 
-export async function awaitingPane(pane: PaneId): Promise<Waiting> {
+export async function awaitingPane(pane: SessionKey): Promise<Waiting> {
     const found = await readPaneTokens(pane);
     if (found.kind !== 'tokens') return found;
     const value = awaitingOf(found.tokens);
@@ -39,7 +39,7 @@ export async function awaitingPane(pane: PaneId): Promise<Waiting> {
 
 interface AutocompactParts {
     readonly config?: () => Settings;
-    readonly awaiting?: (pane: PaneId) => Promise<Waiting>;
+    readonly awaiting?: (pane: SessionKey) => Promise<Waiting>;
     readonly store: Store;
     readonly transcripts: TranscriptRegistry;
     readonly contexts: LaneContexts;

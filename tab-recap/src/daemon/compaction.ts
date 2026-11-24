@@ -20,7 +20,7 @@ import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { lanesOf, listsPane } from '#src/recap/domain/board.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
@@ -40,16 +40,16 @@ interface CoverageCheck {
 }
 
 interface CompactionWebs {
-    of(pane: PaneId): LaneWebRecord | null;
+    of(pane: SessionKey): LaneWebRecord | null;
 }
 
 interface CompactionAnswers {
-    answer(id: RequestId, pane: PaneId, stage: WireText): void;
+    answer(id: RequestId, pane: SessionKey, stage: WireText): void;
 }
 
 interface CompactionTyping {
-    acquire(pane: PaneId): Promise<'taken' | 'busy' | 'unavailable'>;
-    release(pane: PaneId): Promise<void>;
+    acquire(pane: SessionKey): Promise<'taken' | 'busy' | 'unavailable'>;
+    release(pane: SessionKey): Promise<void>;
 }
 
 interface CompactionParts {
@@ -87,9 +87,9 @@ export function wireCompaction(parts: CompactionParts): Compaction {
         compactionPlans: compactionPlanner,
         agents: fleet.agents(), notifier: fleet, records: parts.records, boundaries: parts.boundaries, ledger: parts.ledger, compactions: parts.compactions, settling: parts.settling, webs: parts.webs, log: (line: Text) => { parts.log(line); },
         brief, recent: (lane) => parts.recent.of(lane), marks: (lane) => parts.recent.marks(lane), pause: sleep, now: () => instant(Date.now()),
-        lanes: (tab: TabId) => lanesOf(informer.current, tab),
-        listsPane: (pane: PaneId): Presence => (listsPane(informer.current, pane) ? 'present' : 'absent'),
-        focused: async (tab: TabId): Promise<PaneId | null> => {
+        lanes: (tab: ScopeId) => lanesOf(informer.current, tab),
+        listsPane: (pane: SessionKey): Presence => (listsPane(informer.current, pane) ? 'present' : 'absent'),
+        focused: async (tab: ScopeId): Promise<SessionKey | null> => {
             const layout = await fleet.layout(tab);
             return isUnknown(layout) || layout.focused === null ? null : layout.focused;
         },
@@ -99,7 +99,7 @@ export function wireCompaction(parts: CompactionParts): Compaction {
         checkedBriefs: parts.checkedBriefs,
         ceilingOverride: (): Presence => (loadSettings().autocompact.ceilingPolicy === 'overrides-check' ? 'present' : 'absent'),
         missedFacts: () => loadSettings().autocompact.missedFacts,
-        answer: (id: RequestId, pane: PaneId, stage: AnswerStage) => { parts.answers.answer(id, pane, must(parseWireText(stage))); },
+        answer: (id: RequestId, pane: SessionKey, stage: AnswerStage) => { parts.answers.answer(id, pane, must(parseWireText(stage))); },
         asks: parts.asks,
         typing: parts.typing,
         events: parts.events,

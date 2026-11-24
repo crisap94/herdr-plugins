@@ -1,12 +1,12 @@
 import type { TokenName, TokenValue } from '#src/protocol/primitives.ts';
 import type { Reconciliation } from '#src/recap/domain/fold.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 
 export interface FleetTopic {
     readonly type: Text;
-    readonly pane?: PaneId;
+    readonly pane?: SessionKey;
 }
 
 export interface FleetFrame {
@@ -19,8 +19,8 @@ export type FleetPaneTokens = ReadonlyMap<TokenName, TokenValue>;
 export interface FleetSnapshot {
     readonly kind: 'snapshot';
     readonly seen: Reconciliation;
-    readonly focusedTab: TabId | null;
-    readonly paneTokens: ReadonlyMap<PaneId, FleetPaneTokens>;
+    readonly focusedTab: ScopeId | null;
+    readonly paneTokens: ReadonlyMap<SessionKey, FleetPaneTokens>;
 }
 
 export type FleetSnapshotResult = FleetSnapshot | Unknown;

@@ -6,7 +6,7 @@ import type { GitDirWatch, GitDirWatcher, StatusRead, WorktreeLocator, WorktreeP
 import type { Board } from '#src/recap/domain/board.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import type { Duration, Instant } from '#src/recap/domain/time.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { isHidden } from '#src/recap/domain/visibility.ts';
@@ -21,7 +21,7 @@ export interface WorktreeRegistryDeps {
     readonly clock: Clock;
     readonly perf: PerfSink;
     readonly enabled: () => WorktreeSwitch;
-    readonly gone: (pane: PaneId) => void;
+    readonly gone: (pane: SessionKey) => void;
     readonly settle: Duration;
     readonly every: Duration;
 }
@@ -38,11 +38,11 @@ const THREW: StatusRead = unknown({ why: 'unreadable', detail: causeOf(must(pars
 export class WorktreeRegistry {
     private readonly deps: WorktreeRegistryDeps;
     private readonly roots = new Map<Directory, Open>();
-    private readonly panes = new Map<PaneId, Directory>();
-    private readonly resolving = new Map<PaneId, Directory | null>();
+    private readonly panes = new Map<SessionKey, Directory>();
+    private readonly resolving = new Map<SessionKey, Directory | null>();
     private readonly located = new Map<Directory, WorktreeWatch>();
     private readonly scheduled = new Map<Directory, () => void>();
-    private known: ReadonlyMap<PaneId, LaneGlance> = new Map();
+    private known: ReadonlyMap<SessionKey, LaneGlance> = new Map();
     private state: WorktreeSwitch;
 
     constructor(deps: WorktreeRegistryDeps) {
@@ -95,20 +95,20 @@ export class WorktreeRegistry {
         return shown;
     }
 
-    private turnEnded(pane: PaneId): void {
+    private turnEnded(pane: SessionKey): void {
         const root = this.panes.get(pane);
         if (root !== undefined) {
             this.request(root, 'turn-ended');
         }
     }
 
-    private detach(pane: PaneId): void {
+    private detach(pane: SessionKey): void {
         this.resolving.delete(pane);
         this.unbind(pane);
         this.deps.gone(pane);
     }
 
-    private async attach(pane: PaneId, cwd: Directory | null): Promise<void> {
+    private async attach(pane: SessionKey, cwd: Directory | null): Promise<void> {
         this.unbind(pane);
         this.resolving.set(pane, cwd);
         const worktree = cwd === null ? null : await this.worktreeOf(cwd);
@@ -136,7 +136,7 @@ export class WorktreeRegistry {
         return null;
     }
 
-    private join(pane: PaneId, worktree: WorktreeWatch): void {
+    private join(pane: SessionKey, worktree: WorktreeWatch): void {
         this.panes.set(pane, worktree.root);
         this.deps.store.bind(pane, worktree.root);
         if (!this.roots.has(worktree.root)) {
@@ -154,7 +154,7 @@ export class WorktreeRegistry {
         this.roots.set(root, { watch, run: IDLE_ROOT, status: null, fullAt: this.deps.clock.now() });
     }
 
-    private unbind(pane: PaneId): void {
+    private unbind(pane: SessionKey): void {
         const root = this.panes.get(pane);
         if (root === undefined) {
             return;

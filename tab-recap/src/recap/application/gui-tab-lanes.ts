@@ -11,7 +11,7 @@ import { parseCount } from '#src/recap/domain/count.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { orElse, UNKNOWN, type GuiLane } from '#src/recap/domain/gui-tab.ts';
 import { NO, YES, type Flag, type GuiCompaction, type GuiContext, type GuiGit, type GuiNote, type GuiNoteKind, type GuiStage, type GuiWeb } from '#src/recap/domain/gui-tab-parts.ts';
-import { parseAgentKind, parsePaneId, type PaneId } from '#src/recap/domain/ids.ts';
+import { parseAgentKind, parsePaneId, type SessionKey } from '#src/recap/domain/ids.ts';
 import { changedOf } from '#src/recap/domain/worktree.ts';
 import { parseNonEmptyText, parseText, type Text } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
@@ -86,7 +86,7 @@ const headingOf = (lane: TabLaneRecord, cursor: Cursor): Text => must(parseText(
 
 const fromScreenOf = (cursor: Cursor): Flag => (cursor !== undefined && isScreenSource(sourcePathOf(cursor.transcript)) ? YES : NO);
 
-const notesFor = (pane: PaneId, draw: LaneDraw): readonly GuiNote[] => draw.reads.notes(pane).map(noteOf);
+const notesFor = (pane: SessionKey, draw: LaneDraw): readonly GuiNote[] => draw.reads.notes(pane).map(noteOf);
 
 export function guiLaneOf(lane: TabLaneRecord, draw: LaneDraw): GuiLane | null {
     const pane = parsePaneId(lane.pane);

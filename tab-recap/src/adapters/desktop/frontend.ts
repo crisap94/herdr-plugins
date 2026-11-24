@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
@@ -42,7 +42,7 @@ interface Shared {
 
 interface Publishing {
     readonly publisher: GuiPublisher;
-    readonly forget: (tab: TabId) => void;
+    readonly forget: (tab: ScopeId) => void;
 }
 
 function publisherFor(store: Store, log: (line: NonEmptyText) => void, shared: Shared): Publishing {
@@ -55,7 +55,7 @@ function publisherFor(store: Store, log: (line: NonEmptyText) => void, shared: S
 }
 
 function engineFor(store: Store, fleet: HcCoreFleet, publishing: Publishing, flush: FlushTab): DesktopEngine {
-    const republish = (tab: TabId): void => {
+    const republish = (tab: ScopeId): void => {
         publishing.forget(tab);
         publishing.publisher.publish(tab);
     };

@@ -1,7 +1,7 @@
 import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
-import { uncheckedWorkspaceId, type PaneId, type SessionId, type TabId } from '#src/recap/domain/ids.ts';
+import { uncheckedWorkspaceId, type SessionKey, type SessionId, type ScopeId } from '#src/recap/domain/ids.ts';
 import { must } from '#src/protocol/result.ts';
 import type { ClosedEvery, Done, ColumnLayoutResult, OpenResult } from '#src/ports/columns.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
@@ -72,12 +72,12 @@ export class HcCoreFleet implements Fleet {
         return this.phase === 'warm' ? null : this.load();
     }
 
-    private async seen(pane: PaneId): Promise<HcSeenResult> {
+    private async seen(pane: SessionKey): Promise<HcSeenResult> {
         const failed = await this.current();
         return failed ?? { kind: 'seen', terminal: this.roster.terminal(pane) };
     }
 
-    async sessionOf(pane: PaneId): Promise<SessionId | null | Unknown> {
+    async sessionOf(pane: SessionKey): Promise<SessionId | null | Unknown> {
         const found = await this.seen(pane);
         if (found.kind !== 'seen') {
             return found;
@@ -127,7 +127,7 @@ export class HcCoreFleet implements Fleet {
         return { kind: 'done' };
     }
 
-    layout(tab: TabId): Promise<ColumnLayoutResult> {
+    layout(tab: ScopeId): Promise<ColumnLayoutResult> {
         return Promise.resolve(unknown({ why: 'not-found', what: textOf(`the layout of ${tab}`) }));
     }
 
@@ -151,7 +151,7 @@ export class HcCoreFleet implements Fleet {
         return this.harnesses.available();
     }
 
-    async readScreen(pane: PaneId, lines: Count): Promise<ScreenOutcome> {
+    async readScreen(pane: SessionKey, lines: Count): Promise<ScreenOutcome> {
         const answer = await this.link.call(HC_READ_METHOD, must(parseHcParams({ terminal: pane, lines: ZERO })), HC_CALL_TIMEOUT);
         if (answer.kind === 'unknown') {
             return unknownOfCore(answer);

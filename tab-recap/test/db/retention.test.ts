@@ -6,7 +6,7 @@ import type { RemovedCounts } from '#src/ports/retention.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import { removeExpiredTabs } from '#src/recap/application/retention.ts';
 import { tabId } from '#test/support/ids.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { cursor, memoryStore, recordOps } from './support.ts';
 import { textOf } from '#src/recap/domain/text.ts';
@@ -98,7 +98,7 @@ test('one tab that cannot be removed does not stop the sweep', () => {
     tab(store, 'w1:a', 40);
     tab(store, 'w1:b', 41);
     const real = store.retention;
-    const flaky = { expired: (cutoff: Instant, protectedTabs: readonly TabId[]): readonly TabId[] => real.expired(cutoff, protectedTabs), remove: (id: string): RemovedCounts => { if (id === 'w1:a') { throw new Error('locked'); } return real.remove(tabId(id)); } };
+    const flaky = { expired: (cutoff: Instant, protectedTabs: readonly ScopeId[]): readonly ScopeId[] => real.expired(cutoff, protectedTabs), remove: (id: string): RemovedCounts => { if (id === 'w1:a') { throw new Error('locked'); } return real.remove(tabId(id)); } };
     assert.equal(removeExpiredTabs({ retention: flaky, closures: store.closedLanes, clock: { now: () => instant(NOW) }, days: () => countOf(30), log: (line) => { lines.push(line); } }, instant(NOW)), 1);
     assert.match(lines.join('\n'), /could not remove w1:a: locked[^]*removed w1:b/);
     assert.deepEqual([count(store.db, 'tab', 'w1:a'), count(store.db, 'tab', 'w1:b')], [1, 0]);

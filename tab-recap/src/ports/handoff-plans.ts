@@ -1,6 +1,6 @@
 import type { HandoffPlanResult } from '#src/recap/domain/handoff-plan.ts';
-import type { AgentKind } from '#src/recap/domain/ids.ts';
+import type { HarnessKind } from '#src/recap/domain/ids.ts';
 
 export interface HandoffPlanCatalogue {
-    forKind(kind: AgentKind): HandoffPlanResult;
+    forKind(kind: HarnessKind): HandoffPlanResult;
 }

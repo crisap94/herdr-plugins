@@ -7,7 +7,7 @@ import { isSection, type Section } from '#src/recap/domain/fact.ts';
 import { holdsLane, type Flight, ceilingOf } from '#src/recap/domain/in-flight.ts';
 import type { Duration, Instant, Milliseconds } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseAgentKind, type AgentKind } from './timing-ids.ts';
+import { parseAgentKind, type HarnessKind } from './timing-ids.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
@@ -119,7 +119,7 @@ export function parseCooldownMs(raw: unknown, style: AutocompactStyle): Cooldown
     return brand<number, 'Milliseconds'>(text !== '' && Number.isInteger(ms) && ms >= 0 ? ms : STYLE_NUMBERS[style].cooldownMs);
 }
 
-export type LaneKind = RegisteredKind | AgentKind;
+export type LaneKind = RegisteredKind | HarnessKind;
 export type AutocompactKinds = readonly LaneKind[];
 
 export function parseAutocompactKinds(raw: unknown): AutocompactKinds {

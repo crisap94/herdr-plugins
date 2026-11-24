@@ -5,7 +5,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { uncheckedAgentKind, type PaneId } from '#src/recap/domain/ids.ts';
+import { uncheckedAgentKind, type SessionKey } from '#src/recap/domain/ids.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import type { HcTerminal } from './sdk-core.ts';
 import { HC_NO_TYPING } from '../desktop/constants.ts';
@@ -17,7 +17,7 @@ export interface HcSeen {
 
 export type HcSeenResult = HcSeen | Unknown;
 
-export type HcSeenLookup = (pane: PaneId) => Promise<HcSeenResult>;
+export type HcSeenLookup = (pane: SessionKey) => Promise<HcSeenResult>;
 
 export class HcCoreAgents implements AgentPanes {
     private readonly lookup: HcSeenLookup;
@@ -26,7 +26,7 @@ export class HcCoreAgents implements AgentPanes {
         this.lookup = lookup;
     }
 
-    async status(pane: PaneId): Promise<AgentLookup> {
+    async status(pane: SessionKey): Promise<AgentLookup> {
         const found = await this.lookup(pane);
         if (found.kind !== 'seen') {
             return found;

@@ -1,13 +1,12 @@
-import type { AgentKind, Brand, Count, Duration, GateName, Instant, PaneId, TabId, Text, Unknown, Usd } from './kernel.ts';
-import type { ScopeId, SessionKey } from './ids.ts';
+import type { HarnessKind, Brand, Count, Duration, GateName, Instant, SessionKey, ScopeId, Text, Unknown, Usd } from './kernel.ts';
 import type { Cursor, RecapCause, SourcePath } from './session.ts';
 import type { Fact, HistoryFact, Refusal, TaskId } from './facts.ts';
 
 export type Running = Brand<boolean, 'Running'>;
 
 export interface SessionCursor {
-    readonly pane: PaneId;
-    readonly agent: AgentKind;
+    readonly pane: SessionKey;
+    readonly agent: HarnessKind;
     readonly transcript: SourcePath;
     readonly cursor: Cursor;
     readonly tail: Text | null;
@@ -17,7 +16,7 @@ export interface SessionCursor {
 }
 
 export interface Recap {
-    readonly tab: TabId;
+    readonly tab: ScopeId;
     readonly lanes: readonly SessionCursor[];
     readonly tasks: readonly RecapTask[];
     readonly at: Instant | null;
@@ -42,7 +41,7 @@ export interface RecapSections {
 export interface RecapTask {
     readonly id: Text;
     readonly name: Text;
-    readonly lanes: readonly PaneId[];
+    readonly lanes: readonly SessionKey[];
     readonly sections: RecapSections | null;
     readonly markdown: Text;
 }
@@ -52,7 +51,7 @@ export type TaskShape = Pick<RecapTask, 'id' | 'name' | 'lanes'>;
 export type OwnTrigger = 'auto' | 'manual';
 
 export interface SessionMark {
-    readonly pane: PaneId;
+    readonly pane: SessionKey;
     readonly at: Instant;
     readonly cursor: Count;
     readonly tokensBefore?: Count;
@@ -68,7 +67,7 @@ export interface GateStats {
 }
 
 export interface RunFacts {
-    readonly tab: TabId;
+    readonly tab: ScopeId;
     readonly at: Instant;
     readonly cause: RecapCause | 'imported';
     readonly backend: Text | null;
@@ -95,7 +94,7 @@ export interface FailedRun extends RunFacts {
 
 export interface Advance {
     readonly marks?: readonly SessionMark[];
-    readonly tab: TabId;
+    readonly tab: ScopeId;
     readonly at: Instant;
     readonly error: Text | null;
     readonly lanes: readonly SessionCursor[];

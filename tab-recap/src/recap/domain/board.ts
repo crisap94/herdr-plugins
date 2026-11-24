@@ -1,6 +1,6 @@
 import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import type { Lane } from './lane.ts';
-import type { PaneId, TabId } from './ids.ts';
+import type { SessionKey, ScopeId } from './ids.ts';
 import type { Count } from './count.ts';
 import type { RestoredLane } from './closures.ts';
 import type { Text } from './text.ts';
@@ -20,30 +20,30 @@ export type AllHidden = Brand<boolean, 'AllHidden'>;
 
 export const allHiddenOf = brand<boolean, 'AllHidden'>;
 
-export interface Placement { readonly pane: PaneId; readonly shape: Shape; readonly since?: Instant; }
+export interface Placement { readonly pane: SessionKey; readonly shape: Shape; readonly since?: Instant; }
 
 export interface HiddenState { readonly all: AllHidden; readonly hidden: readonly Text[]; readonly shown: readonly Text[]; }
 
 export interface Board {
-    readonly lanes: ReadonlyMap<PaneId, Lane>;
-    readonly columns: ReadonlyMap<TabId, Placement>;
-    readonly closing: ReadonlyMap<PaneId, Instant>;
-    readonly opening: ReadonlySet<TabId>;
-    readonly reopens: ReadonlyMap<TabId, readonly Instant[]>;
-    readonly givenUp: ReadonlyMap<TabId, Instant>;
-    readonly widths: ReadonlyMap<TabId, Count>;
-    readonly focused: TabId | null;
+    readonly lanes: ReadonlyMap<SessionKey, Lane>;
+    readonly columns: ReadonlyMap<ScopeId, Placement>;
+    readonly closing: ReadonlyMap<SessionKey, Instant>;
+    readonly opening: ReadonlySet<ScopeId>;
+    readonly reopens: ReadonlyMap<ScopeId, readonly Instant[]>;
+    readonly givenUp: ReadonlyMap<ScopeId, Instant>;
+    readonly widths: ReadonlyMap<ScopeId, Count>;
+    readonly focused: ScopeId | null;
     readonly enabled: Enabled;
     readonly seeded: Seeded;
-    readonly hidden: ReadonlySet<TabId>;
+    readonly hidden: ReadonlySet<ScopeId>;
     readonly allHidden: AllHidden;
-    readonly shown: ReadonlySet<TabId>;
+    readonly shown: ReadonlySet<ScopeId>;
     readonly persisted: readonly RestoredLane[] | null;
 }
 
 export type Visibility = boolean | 'toggle';
 
-export type VisibilityTarget = { readonly tab: TabId } | 'all';
+export type VisibilityTarget = { readonly tab: ScopeId } | 'all';
 
 export function emptyBoard(): Board {
     return {
@@ -64,15 +64,15 @@ export function emptyBoard(): Board {
     };
 }
 
-export function lanesOf(board: Board, tab: TabId): readonly Lane[] {
+export function lanesOf(board: Board, tab: ScopeId): readonly Lane[] {
     return [...board.lanes.values()].filter((lane) => lane.tab === tab);
 }
 
-export function tabsWithLanes(board: Board): readonly TabId[] {
+export function tabsWithLanes(board: Board): readonly ScopeId[] {
     return [...new Set([...board.lanes.values()].map((lane) => lane.tab))].toSorted();
 }
 
-export function tabOfColumn(board: Board, pane: PaneId): TabId | null {
+export function tabOfColumn(board: Board, pane: SessionKey): ScopeId | null {
     for (const [tab, column] of board.columns) {
         if (column.pane === pane) {
             return tab;
@@ -81,11 +81,11 @@ export function tabOfColumn(board: Board, pane: PaneId): TabId | null {
     return null;
 }
 
-export function watchSet(board: Board): readonly PaneId[] {
+export function watchSet(board: Board): readonly SessionKey[] {
     return [...board.lanes.keys()].toSorted();
 }
 
-export function withLanes(board: Board, lanes: ReadonlyMap<PaneId, Lane>): Board {
+export function withLanes(board: Board, lanes: ReadonlyMap<SessionKey, Lane>): Board {
     return { ...board, lanes };
 }
 
@@ -121,4 +121,4 @@ export type Listed = Brand<boolean, 'Listed'>;
 
 export const listedOf = brand<boolean, 'Listed'>;
 
-export function listsPane(board: Board, pane: PaneId): Listed { return listedOf(board.lanes.has(pane)); }
+export function listsPane(board: Board, pane: SessionKey): Listed { return listedOf(board.lanes.has(pane)); }

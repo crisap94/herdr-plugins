@@ -8,12 +8,12 @@ import type { LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import type { WorkspaceTokenMap, WorkspaceTokenReporter } from '#src/ports/workspace-tokens.ts';
 import { parseTokenName, parseTokenValue } from '#src/protocol/primitives.ts';
 import { must } from '#src/protocol/result.ts';
-import { uncheckedMilliseconds, uncheckedTokenValue, type PaneId, type WorkspaceId } from '#src/recap/domain/ids.ts';
+import { uncheckedMilliseconds, uncheckedTokenValue, type SessionKey, type WorkspaceId } from '#src/recap/domain/ids.ts';
 import { parseMilliseconds } from '#src/recap/domain/time.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 
 export interface LaneEvents {
-    lane(pane: PaneId, kind: EventKind, detail?: Text | null): void;
+    lane(pane: SessionKey, kind: EventKind, detail?: Text | null): void;
     inWorkspace(workspace: WorkspaceId, kind: EventKind, detail?: Text | null): void;
 }
 
@@ -27,7 +27,7 @@ export interface EventDeps {
 
 type DaemonKind = 'daemon-started' | 'daemon-stopping';
 interface Counter { readonly base: Instant; readonly n: Count; readonly at: Instant }
-type Carried = { readonly target: 'pane'; readonly id: PaneId } | { readonly target: 'workspace'; readonly id: WorkspaceId };
+type Carried = { readonly target: 'pane'; readonly id: SessionKey } | { readonly target: 'workspace'; readonly id: WorkspaceId };
 const KEEP_MS = 3_600_000;
 const EVENT_NAME = must(parseTokenName(EVENT_TOKEN));
 const WORKSPACE_TTL = must(parseMilliseconds(EVENT_TTL_MS));
@@ -44,7 +44,7 @@ export class EventStream implements LaneEvents {
         this.deps = deps;
     }
 
-    lane(pane: PaneId, kind: EventKind, detail?: Text | null): void {
+    lane(pane: SessionKey, kind: EventKind, detail?: Text | null): void {
         this.emit({ target: 'pane', id: pane }, kind, detail);
     }
 
@@ -129,7 +129,7 @@ export class EventStream implements LaneEvents {
 
 const keyOf = (to: Carried): Text => textOf(`${to.target}:${to.id}`);
 
-interface PaneRef { readonly pane: PaneId }
+interface PaneRef { readonly pane: SessionKey }
 
 export function recapWritten(events: LaneEvents, lanes: readonly PaneRef[], cause: Text | undefined): void {
     if (cause === undefined || cause === 'imported') {

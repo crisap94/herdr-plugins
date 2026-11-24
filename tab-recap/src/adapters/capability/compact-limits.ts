@@ -9,7 +9,7 @@ import { parseCount } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
-import type { AgentKind, SessionId } from '#src/recap/domain/ids.ts';
+import type { HarnessKind, SessionId } from '#src/recap/domain/ids.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Directory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
@@ -176,7 +176,7 @@ export class CompactLimitFiles implements CompactLimits {
         this.launches = launches;
     }
 
-    limitOf(kind: AgentKind, model: Text | null, cwd: Directory | null, session: SessionId | null): CompactLimit {
+    limitOf(kind: HarnessKind, model: Text | null, cwd: Directory | null, session: SessionId | null): CompactLimit {
         switch (String(kind)) {
             case 'claude':
                 return this.claude(model, cwd, session);
