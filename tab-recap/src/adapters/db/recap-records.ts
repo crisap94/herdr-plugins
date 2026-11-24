@@ -11,7 +11,7 @@ import type { Unknown } from '@stateforge-labs/session-ledger';
 import { lastGoodRun, run as runs, tab as tabs } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { BoundaryRows } from './boundaries.ts';
-import { writeTx } from './connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { LedgerRows } from './ledger-rows.ts';
 import { RecapReader } from './recap-read.ts';
 import { guardedRead } from './rows.ts';
@@ -58,14 +58,14 @@ export class RecapRecordsRepository implements GuardedRecapRecords {
     }
 
     beginRun(tab: string, backend: string | null, at: number): void {
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             this.tabs.ensure(must(parseTabId(tab)), instant(at));
             this.orm.update(tabs).set({ running: 1, backend }).where(eq(tabs.id, must(parseTabId(tab)))).run();
         });
     }
 
     recordRun(run: RecordedRun): void {
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             this.tabs.ensure(run.scope, instant(run.at));
             const moved = this.transcripts.attach(run.scope, run.sessions, instant(run.at));
             this.boundaries.record(run.scope, { at: instant(run.at), marks: run.marks ?? [], moved });
@@ -81,7 +81,7 @@ export class RecapRecordsRepository implements GuardedRecapRecords {
     }
 
     failRun(run: FailedRun): void {
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             this.tabs.ensure(run.scope, instant(run.at));
             const moved = this.transcripts.attach(run.scope, run.sessions, instant(run.at));
             this.boundaries.record(run.scope, { at: instant(run.at), marks: run.marks ?? [], moved });
@@ -91,7 +91,7 @@ export class RecapRecordsRepository implements GuardedRecapRecords {
     }
 
     advance(move: Advance): void {
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             this.tabs.ensure(move.scope, instant(move.at));
             const moved = this.transcripts.attach(move.scope, move.sessions, instant(move.at));
             this.boundaries.record(move.scope, { at: instant(move.at), marks: move.marks ?? [], moved });

@@ -9,7 +9,7 @@ import { paneId as paneOf, tabId } from '#test/support/ids.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { instant } from '@stateforge-labs/session-ledger';
-import { present } from '#src/recap/render/present.ts';
+import { present } from '#src/view-model/present.ts';
 import type { ExtensionPort, PaneNote, PaneNotesResult } from '#src/ports/extension.ts';
 import type { TabLaneRecord } from '#src/ports/tab-views.ts';
 import { textOf } from '@stateforge-labs/session-ledger';

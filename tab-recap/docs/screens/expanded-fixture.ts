@@ -4,7 +4,7 @@ import type { BoundaryBreak } from '#src/ports/boundaries.ts';
 import type { Fact, FactId } from '@stateforge-labs/session-ledger';
 import type { LaneWebRecord } from '#src/ports/tab-views.ts';
 import { sessionFactsFrom } from '#src/recap/domain/session-facts.ts';
-import { expanded } from '#src/recap/render/expanded.ts';
+import { expanded } from '#src/view-model/expanded.ts';
 import { parseCurating, parseInstant, parseProse, parseTaskName } from '@stateforge-labs/recap-view';
 import { viewBreakOf, webOf } from '#src/view-model/column.ts';
 import { countOf } from '@stateforge-labs/session-ledger';

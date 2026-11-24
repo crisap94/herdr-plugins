@@ -11,7 +11,7 @@ import type { BareReadings } from '#test/support/session-readings.ts';
 import { en } from '#src/i18n/en.ts';
 import type { Messages } from '#src/i18n/messages.ts';
 import { es } from '#src/i18n/es.ts';
-import { sessionLines, spanOf } from '#src/recap/render/session-lines.ts';
+import { sessionLines, spanOf } from '#src/view-model/session-lines.ts';
 import type { LegacySessionReader as SessionReader } from '@stateforge-labs/session-ledger';
 import { unknown } from '@stateforge-labs/session-ledger';
 import { causeOf } from './fakes/cause.ts';

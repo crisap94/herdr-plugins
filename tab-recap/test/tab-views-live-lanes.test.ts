@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MEMORY } from '#src/adapters/db/connection.ts';
+import { IN_MEMORY } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { TabViewRowStore } from '#src/adapters/db/tab-views.ts';
@@ -16,7 +16,7 @@ const lane = (pane: string, over: Record<string, unknown> = {}): TabLaneRecord =
 const view = (tab: string, lanes: readonly TabLaneRecord[]): TabViewRecord => viewRecord({ tab, column: null, at: 1, lanes });
 
 function sqlite(): Harness {
-    const opened = openDatabase(fsPathOf(MEMORY));
+    const opened = openDatabase(fsPathOf(IN_MEMORY));
     if (opened.kind !== 'ready') {
         throw new Error('a fresh in-memory database is never newer');
     }

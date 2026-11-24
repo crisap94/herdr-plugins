@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import type { BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite';
 import { drizzle } from 'drizzle-orm/bun-sqlite';
-import { MEMORY } from '#src/adapters/db/connection.ts';
+import { IN_MEMORY } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { scratchDir } from './support.ts';
@@ -76,7 +76,7 @@ export function expectSameRows(parity: ParityDatabase, raw: RawQuery, produced: 
 export type SameEffect = { seed: (db: Database) => void; raw: (db: Database) => void; builder: (db: Database) => void; dump: (db: Database) => unknown };
 
 function memoryDatabase(seed: (db: Database) => void): Database {
-    const opened = openDatabase(fsPathOf(MEMORY));
+    const opened = openDatabase(fsPathOf(IN_MEMORY));
     if (opened.kind !== 'ready') {
         throw new Error('a fresh in-memory database is never newer');
     }

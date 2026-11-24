@@ -4,10 +4,10 @@ import { spawn } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { Database } from 'bun:sqlite';
-import { BUSY_PRAGMA, connect, connectReadOnly, writeTx } from '#src/adapters/db/connection.ts';
+import { BUSY_PRAGMA, connect, connectReadOnly, writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { openFixture, scratchDir } from './support.ts';
 
-const CONNECTION = new URL('../../src/adapters/db/connection.ts', import.meta.url).href;
+const CONNECTION = import.meta.resolve('@stateforge-labs/session-ledger-sqlite/unstable/connection.ts');
 
 const parentFile = (dir: string): string => join(dir, 'lock.db');
 
@@ -73,11 +73,11 @@ test('connectReadOnly sets the same busy timeout and refuses writes', () => {
     }
 });
 
-test('writeTx commits its work', () => {
+test('writeTransaction commits its work', () => {
     const db = connect(':memory:');
     try {
         db.exec('CREATE TABLE t (x INTEGER)');
-        const result = writeTx(db, () => {
+        const result = writeTransaction(db, () => {
             db.exec('INSERT INTO t VALUES (1)');
             return 'done';
         });
@@ -89,11 +89,11 @@ test('writeTx commits its work', () => {
     }
 });
 
-test('writeTx rolls back and rethrows when the work throws', () => {
+test('writeTransaction rolls back and rethrows when the work throws', () => {
     const db = connect(':memory:');
     try {
         db.exec('CREATE TABLE t (x INTEGER)');
-        assert.throws(() => writeTx(db, () => {
+        assert.throws(() => writeTransaction(db, () => {
             db.exec('INSERT INTO t VALUES (1)');
             throw new Error('boom');
         }), /boom/);
@@ -104,13 +104,13 @@ test('writeTx rolls back and rethrows when the work throws', () => {
     }
 });
 
-test('writeTx joins an outer transaction instead of opening a second one', () => {
+test('writeTransaction joins an outer transaction instead of opening a second one', () => {
     const db = connect(':memory:');
     try {
         db.exec('CREATE TABLE t (x INTEGER)');
-        writeTx(db, () => {
+        writeTransaction(db, () => {
             db.exec('INSERT INTO t VALUES (1)');
-            writeTx(db, () => db.exec('INSERT INTO t VALUES (2)'));
+            writeTransaction(db, () => db.exec('INSERT INTO t VALUES (2)'));
             assert.equal(db.inTransaction, true);
         });
         assert.equal(db.prepare('SELECT count(*) AS n FROM t').get()?.n, 2);
@@ -120,13 +120,13 @@ test('writeTx joins an outer transaction instead of opening a second one', () =>
     }
 });
 
-test('a nested writeTx that throws rolls back the whole outer transaction', () => {
+test('a nested writeTransaction that throws rolls back the whole outer transaction', () => {
     const db = connect(':memory:');
     try {
         db.exec('CREATE TABLE t (x INTEGER)');
-        assert.throws(() => writeTx(db, () => {
+        assert.throws(() => writeTransaction(db, () => {
             db.exec('INSERT INTO t VALUES (1)');
-            writeTx(db, () => {
+            writeTransaction(db, () => {
                 throw new Error('inner');
             });
         }), /inner/);
@@ -178,7 +178,7 @@ test('a second process waits out a 300 ms writer and then commits', async () => 
         const parent = connect(path);
         parent.exec('CREATE TABLE t (x INTEGER)');
         parent.exec('BEGIN IMMEDIATE');
-        const script = `import { connect, writeTx } from ${JSON.stringify(CONNECTION)};\nconst db = connect(${JSON.stringify(path)});\nwriteTx(db, () => db.exec('INSERT INTO t VALUES (1)'));\ndb.close();`;
+        const script = `import { connect, writeTransaction } from ${JSON.stringify(CONNECTION)};\nconst db = connect(${JSON.stringify(path)});\nwriteTransaction(db, () => db.exec('INSERT INTO t VALUES (1)'));\ndb.close();`;
         const run = child(script);
         setTimeout(() => parent.exec('COMMIT'), 300);
         const result = await run;
@@ -199,7 +199,7 @@ test('a second process gives up on a 2 s writer with SQLITE_BUSY', async () => {
         const parent = connect(path);
         parent.exec('CREATE TABLE t (x INTEGER)');
         parent.exec('BEGIN IMMEDIATE');
-        const script = `import { connect, writeTx } from ${JSON.stringify(CONNECTION)};\nconst db = connect(${JSON.stringify(path)});\nwriteTx(db, () => db.exec('INSERT INTO t VALUES (1)'));`;
+        const script = `import { connect, writeTransaction } from ${JSON.stringify(CONNECTION)};\nconst db = connect(${JSON.stringify(path)});\nwriteTransaction(db, () => db.exec('INSERT INTO t VALUES (1)'));`;
         const result = await child(script);
         parent.exec('COMMIT');
         parent.close();
@@ -218,7 +218,6 @@ const FROZEN = new Set([
     'src/adapters/db/schema/012-herdr-events.ts',
     'src/adapters/db/schema/017-handoff.ts',
     'src/adapters/db/schema/migration.ts',
-    'src/adapters/db/migrate.ts',
     'src/adapters/db/import/import-facts.ts',
     'test/db/connection.test.ts',
 ]);

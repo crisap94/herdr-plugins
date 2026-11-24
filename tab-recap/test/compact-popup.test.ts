@@ -10,7 +10,7 @@ import { NOTE_LIMIT } from '#src/recap/application/compaction-message.ts';
 import { compactFooterText, compactViewText } from '#src/recap/render/compact.ts';
 import { must } from '@stateforge-labs/session-ledger';
 import { parseText, textOf } from '@stateforge-labs/session-ledger';
-import { plain, visibleLength } from '#src/recap/render/wrap.ts';
+import { plain, visibleLength } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 
 const ESC = String.fromCodePoint(0x1b);
 

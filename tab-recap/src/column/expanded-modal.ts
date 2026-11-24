@@ -3,11 +3,11 @@ import { must } from '@stateforge-labs/session-ledger';
 import { modalTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
 import { EditCache, EditTally } from '#src/recap/application/edit-tally.ts';
 import { ExpandedModel } from '#src/recap/application/expanded-view.ts';
-import { expanded } from '#src/recap/render/expanded.ts';
-import type { ColumnView } from '#src/recap/render/present.ts';
+import { expanded } from '#src/view-model/expanded.ts';
+import type { ColumnView } from '#src/view-model/present.ts';
 import { parseText } from '@stateforge-labs/session-ledger';
 import type { Text } from '@stateforge-labs/session-ledger';
-import { coloured, wrap } from '#src/recap/render/wrap.ts';
+import { coloured, wrap } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import { instant } from '@stateforge-labs/session-ledger';
 
 export function expandedScreen(store: Store | null): (view: ColumnView, width: number) => readonly Text[] {

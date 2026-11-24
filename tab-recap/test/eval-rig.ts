@@ -6,7 +6,7 @@ import type { JudgePort, JudgeTask } from '#src/ports/judge.ts';
 import { brand } from '@stateforge-labs/session-ledger';
 import { gateName } from '@stateforge-labs/session-ledger';
 import type { GateStats } from '@stateforge-labs/session-ledger';
-import { plain } from '#src/recap/render/wrap.ts';
+import { plain } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import { cursor, memoryStore, recordOps } from '#test/db/support.ts';
 import { oneTask, withFacts } from '#test/support.ts';
 import { instant, type Instant } from '@stateforge-labs/session-ledger';

@@ -8,7 +8,7 @@ import { parseText } from '@stateforge-labs/session-ledger';
 import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { handoffAnswer } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
-import { writeTx } from './connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { handoffBytesOf } from './handoff-ids.ts';
 import { guarded } from './rows.ts';
 
@@ -31,7 +31,7 @@ export class HandoffAnswerRepository implements HandoffAnswerStore {
             throw new RangeError('not a handoff id');
         }
         const reason = 'reason' in outcome ? outcome.reason : null;
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             const known = this.orm.select({ at: handoffAnswer.at }).from(handoffAnswer).where(eq(handoffAnswer.id, key)).get() ?? null;
             if (known === null) {
                 this.orm.insert(handoffAnswer).values({ id: key, at: this.now(), outcome: outcome.kind, reason }).run();
@@ -51,6 +51,6 @@ export class HandoffAnswerRepository implements HandoffAnswerStore {
     }
 
     prune(before: Instant): void {
-        writeTx(this.db, () => { this.orm.delete(handoffAnswer).where(lt(handoffAnswer.at, before)).run(); });
+        writeTransaction(this.db, () => { this.orm.delete(handoffAnswer).where(lt(handoffAnswer.at, before)).run(); });
     }
 }

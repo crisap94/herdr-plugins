@@ -15,8 +15,8 @@ import { parseAgentKind, parsePaneId, type SessionKey } from '#src/recap/domain/
 import { changedOf } from '#src/recap/domain/worktree.ts';
 import { parseNonEmptyText, parseText, type Text } from '@stateforge-labs/session-ledger';
 import { instant, type Instant } from '@stateforge-labs/session-ledger';
-import { stageLine } from '#src/recap/render/compaction-stage.ts';
-import { plain } from '#src/recap/render/wrap.ts';
+import { stageLine } from '#src/view-model/compaction-stage.ts';
+import { plain } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import type { GuiReads } from './gui-tab-reads.ts';
 import { sourcePathOf } from '@stateforge-labs/session-ledger';
 

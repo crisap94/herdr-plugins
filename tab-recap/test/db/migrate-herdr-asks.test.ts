@@ -5,8 +5,8 @@ import assert from 'node:assert/strict';
 import type { Database } from 'bun:sqlite';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { MEMORY } from '#src/adapters/db/connection.ts';
-import { versionOf } from '#src/adapters/db/migrate.ts';
+import { IN_MEMORY } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
+import { versionOf } from '@stateforge-labs/session-ledger-sqlite/unstable/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
@@ -49,7 +49,7 @@ test('migration 13 from a v12 database: an answer id on a compaction, asks remem
         store.requests.requestCompact({ tab: tabId('w1:t1'), pane: paneId('w1:p2'), note: null, origin: 'request', answer: textOf('r8') });
         assert.deepEqual(store.requests.takeAnswered(), [{ pane: 'w1:p2', answer: 'r8' }]);
         assert.deepEqual(store.requests.takeAnswered(), []);
-        assert.deepEqual(shapeOf(db), shapeOf(openDatabase(fsPathOf(MEMORY)).db), 'upgraded == fresh');
+        assert.deepEqual(shapeOf(db), shapeOf(openDatabase(fsPathOf(IN_MEMORY)).db), 'upgraded == fresh');
         assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(), []);
     } finally {
         rmSync(dir, { recursive: true, force: true });

@@ -1,5 +1,5 @@
-import { writeTx } from '#src/adapters/db/connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 
-export function save(db: Parameters<typeof writeTx>[0]): void {
-    writeTx(db, () => { db.exec('UPDATE tab SET running = 0'); });
+export function save(db: Parameters<typeof writeTransaction>[0]): void {
+    writeTransaction(db, () => { db.exec('UPDATE tab SET running = 0'); });
 }

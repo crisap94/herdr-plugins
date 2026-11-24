@@ -3,8 +3,8 @@ import { must } from '@stateforge-labs/session-ledger';
 import type { Fact } from '@stateforge-labs/session-ledger';
 import type { GuiSpan } from '#src/recap/domain/gui-tab-parts.ts';
 import { parseText } from '@stateforge-labs/session-ledger';
-import { isSafeUrl } from '#src/recap/render/hyperlink.ts';
-import { linkify } from '#src/recap/render/links.ts';
+import { isSafeUrl } from '@stateforge-labs/recap-view/unstable/hyperlink.ts';
+import { linkify } from '@stateforge-labs/recap-view/unstable/links.ts';
 
 export type Texted = Pick<Fact, 'text'>;
 

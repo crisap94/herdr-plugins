@@ -10,7 +10,7 @@ import type { Text } from '@stateforge-labs/session-ledger';
 import type { Instant } from '@stateforge-labs/session-ledger';
 import { blob, guarded } from './rows.ts';
 import type { Row } from './rows.ts';
-import { writeTx } from './connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { compaction } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { idOf, typeIdOf } from './typeid.ts';
@@ -36,7 +36,7 @@ export class CompactionLogRepository implements CompactionLog {
     begin(start: CompactionStart): CompactionId {
         const id = ids.next();
         const finished = ENDED.has(start.stage) ? start.at : null;
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             this.orm.insert(compaction).values({
                 id, tabId: start.tab, pane: start.pane, agent: start.agent, stage: start.stage, writer: start.writer ?? null,
                 startedAt: start.at, stageAt: start.at, finishedAt: finished, why: start.why ?? null, origin: start.origin ?? 'operator', answer: start.answer ?? null,
@@ -50,7 +50,7 @@ export class CompactionLogRepository implements CompactionLog {
         const key = idOf('compaction', uncheckedTypeId(id));
         const queued = facts.queue === undefined ? null : Number(facts.queue === 'queued');
         if (key !== null) {
-            writeTx(this.db, () => {
+            writeTransaction(this.db, () => {
                 this.orm.update(compaction).set({
                     stage, stageAt: facts.at,
                     brief: sql`COALESCE(${facts.brief ?? null}, ${compaction.brief})`,
@@ -65,7 +65,7 @@ export class CompactionLogRepository implements CompactionLog {
     finish(id: CompactionId, end: CompactionFinish): void {
         const key = idOf('compaction', uncheckedTypeId(id));
         if (key !== null) {
-            writeTx(this.db, () => {
+            writeTransaction(this.db, () => {
                 this.orm.update(compaction).set({
                     stage: end.stage, stageAt: end.at, finishedAt: end.at, tokensBefore: end.tokensBefore ?? null, tokensAfter: end.tokensAfter ?? null,
                     tookMs: end.took ?? null, retried: end.retry === 'retried' ? RETRIED : NOT_RETRIED, why: end.why ?? null,
@@ -75,7 +75,7 @@ export class CompactionLogRepository implements CompactionLog {
     }
 
     dismissTurn(tab: ScopeId, pane: SessionKey, at: Instant): void {
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             this.orm.update(compaction).set({ dismissedAt: at })
                 .where(and(eq(compaction.tabId, tab), eq(compaction.pane, pane), lt(compaction.finishedAt, at), isNull(compaction.dismissedAt)))
                 .run();
@@ -83,7 +83,7 @@ export class CompactionLogRepository implements CompactionLog {
     }
 
     interrupted(at: Instant, why: Text): Count {
-        return writeTx(this.db, () => must(parseCount(this.orm.update(compaction).set({ stage: 'unconfirmed', stageAt: at, finishedAt: at, why })
+        return writeTransaction(this.db, () => must(parseCount(this.orm.update(compaction).set({ stage: 'unconfirmed', stageAt: at, finishedAt: at, why })
             .where(isNull(compaction.finishedAt)).returning({ id: compaction.id }).all().length)));
     }
 

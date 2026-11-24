@@ -1,5 +1,5 @@
-import { coloured, plain } from '#src/recap/render/wrap.ts';
-import type { Style } from '#src/recap/render/wrap.ts';
+import { coloured, plain } from '@stateforge-labs/recap-view/unstable/wrap.ts';
+import type { Style } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 
 export type ColourStream = Partial<Pick<NodeJS.WriteStream, 'hasColors'>>;
 

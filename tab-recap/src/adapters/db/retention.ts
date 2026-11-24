@@ -6,7 +6,7 @@ import type { RemovedCounts, RetentionPort, Retirement, TabRetirement } from '#s
 import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
 import type { Instant } from '@stateforge-labs/session-ledger';
-import { writeTx } from './connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { boundary, chapter, compaction, fact, run, tab as tabs, tabVisibility } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { one } from './rows.ts';
@@ -40,7 +40,7 @@ export class RetentionRepository implements RetentionPort, TabRetirement {
 
     remove(tab: ScopeId): RemovedCounts {
         const id = tab;
-        return writeTx(this.db, () => {
+        return writeTransaction(this.db, () => {
             const removed = this.sizeOf(id);
             this.orm.delete(tabVisibility).where(eq(tabVisibility.tabId, id)).run();
             this.orm.delete(tabs).where(eq(tabs.id, id)).run();
@@ -49,7 +49,7 @@ export class RetentionRepository implements RetentionPort, TabRetirement {
     }
 
     retire(tab: ScopeId, at: Instant): Retirement {
-        return writeTx(this.db, () => {
+        return writeTransaction(this.db, () => {
             const written = this.orm.select({ n: count() }).from(run).innerJoin(chapter, eq(chapter.id, run.chapterId))
                 .where(and(eq(chapter.tabId, tab), gte(chapter.n, retiredFloor(tab)))).get()?.n ?? 0;
             if (written === 0) {

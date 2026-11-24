@@ -9,7 +9,7 @@ import { parseTabId, uncheckedTabId } from '#src/recap/domain/ids.ts';
 import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger';
 import { comparisonText } from '#src/recap/render/compare.ts';
 import { reportText } from '#src/recap/render/eval.ts';
-import type { Style } from '#src/recap/render/wrap.ts';
+import type { Style } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import { compareImported } from './compare-imported.ts';
 import { reportOf } from './eval-report.ts';
 import { judgeRuns } from './judge.ts';

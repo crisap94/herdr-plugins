@@ -2,7 +2,7 @@ import type { Database } from 'bun:sqlite';
 import type { AskBook, AskDraft } from '#src/ports/ask-ledger.ts';
 import type { HandoffAsk, HandoffAskQueue, HandoffAsker } from '#src/ports/requests.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
-import { writeTx } from './connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 
 export class HandoffQueueRepository implements HandoffAskQueue {
     private readonly db: Database;
@@ -16,7 +16,7 @@ export class HandoffQueueRepository implements HandoffAskQueue {
     }
 
     queueHandoff(ask: AskDraft, request: HandoffAsk): void {
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             this.asks.record(ask);
             const id = this.requests.requestHandoff(request);
             this.asks.attach(ask, textOf(id));

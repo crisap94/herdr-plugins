@@ -1,4 +1,4 @@
-import { writeTx } from '#src/adapters/db/connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import { handoffBytesOf } from '#src/adapters/db/handoff-ids.ts';
 import { handoffPlanner } from '#src/adapters/capability/handoff-plans.ts';
@@ -273,5 +273,5 @@ export function wireHandoffs(parts: HandoffWiring): HandoffRunner {
         }),
         pause, now, log,
     });
-    return new HandoffRunner({ flow, asks: store.asks, answers: store.handoffs, claims, mirror, transaction: (work) => writeTx(store.db, work), now, log: parts.log });
+    return new HandoffRunner({ flow, asks: store.asks, answers: store.handoffs, claims, mirror, transaction: (work) => writeTransaction(store.db, work), now, log: parts.log });
 }

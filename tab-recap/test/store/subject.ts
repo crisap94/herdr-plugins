@@ -4,12 +4,12 @@ import { join } from 'node:path';
 import type { Database } from 'bun:sqlite';
 import type { Subject } from '@stateforge-labs/session-ledger/testkit';
 import type { MigrationHistory, NewerResult, OpenResult, ReadOnlyResult, ReadyResult, Role, StoreSubject, StoreWorld } from '@stateforge-labs/session-ledger-sqlite/testkit';
-import { backupsOf } from '#src/adapters/db/backup.ts';
-import { closeDatabase, connectReadOnly, MEMORY, writeTx } from '#src/adapters/db/connection.ts';
+import { backupsOf } from '@stateforge-labs/session-ledger-sqlite/unstable/backup.ts';
+import { closeDatabase, connectReadOnly, IN_MEMORY, writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { openDatabase, openForRole, type Opened, type StaleDatabase } from '#src/adapters/db/open.ts';
 import { must } from '@stateforge-labs/session-ledger';
 import { parseFsPath, fsPathOf } from '#src/recap/domain/fs-path.ts';
-import { versionOf } from '#src/adapters/db/migrate.ts';
+import { versionOf } from '@stateforge-labs/session-ledger-sqlite/unstable/migrate.ts';
 
 const handles = new WeakMap<ReadyResult, Database>();
 
@@ -51,7 +51,7 @@ const openedOver = (opened: Opened | StaleDatabase): OpenResult => {
 
 const pluginStore: StoreSubject = {
     name: 'plugin store',
-    memory: MEMORY,
+    memory: IN_MEMORY,
     open: (path: string, history: MigrationHistory, role: Role): OpenResult => openedOver(role === 'owner' ? openDatabase(fsPathOf(path), history) : openForRole(must(parseFsPath(path)), history, role)),
     openReadOnly: (path: string): ReadOnlyResult => {
         const db = connectReadOnly(path);
@@ -71,7 +71,7 @@ const pluginStore: StoreSubject = {
         if (db === undefined) {
             throw new Error('transaction needs a ready store');
         }
-        return writeTx(db, work);
+        return writeTransaction(db, work);
     },
     backupsOf: (path: string) => backupsOf(path),
 };

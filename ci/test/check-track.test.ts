@@ -74,7 +74,7 @@ test('rule 2: a changed path belongs to the first track whose globs match it, th
     assert.match(engine.stderr, /owned by ENG/u);
     const store = check('track/HOOK-x', ['tab-recap/src/adapters/db/open.ts']);
     assert.match(store.stderr, /owned by STO/u);
-    const view = check('track/HOOK-x', ['tab-recap/src/recap/render/present.ts']);
+    const view = check('track/HOOK-x', ['tab-recap/src/view-model/present.ts']);
     assert.match(view.stderr, /owned by VIEW/u);
     const daemon = check('track/HOOK-x', ['tab-recap/src/daemon/main.ts']);
     assert.match(daemon.stderr, /owned by B7/u);

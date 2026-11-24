@@ -9,7 +9,7 @@ import { parseCompactAsk, parseHandoffAskRecord, parseVisibilityAsk } from '#src
 import type { AnsweredPane, CompactAsk, CompactionAskQueue, HandoffAsk, HandoffAskRecord, Queued, RequestPort, Visibility, VisibilityAsk, Withdrawal } from '#src/ports/requests.ts';
 import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
 import { instant, type Instant } from '@stateforge-labs/session-ledger';
-import { writeTx } from './connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { handoffBytesOf, handoffIdOf } from './handoff-ids.ts';
 import { guarded } from './rows.ts';
 import { ids } from './uuid7.ts';
@@ -77,7 +77,7 @@ export class RequestsStore implements RequestPort, CompactionAskQueue {
     }
 
     takeHandoffs(): readonly HandoffAskRecord[] {
-        return guarded(() => writeTx(this.db, () => {
+        return guarded(() => writeTransaction(this.db, () => {
             const rows = this.orm.select().from(requestTable).where(eq(requestTable.kind, 'handoff')).orderBy(asc(requestTable.id)).all();
             this.orm.delete(requestTable).where(eq(requestTable.kind, 'handoff')).run();
             return rows.flatMap((row) => okOf(parseHandoffAskRecord({
@@ -89,7 +89,7 @@ export class RequestsStore implements RequestPort, CompactionAskQueue {
     }
 
     takeAnswered(): readonly AnsweredPane[] {
-        return guarded(() => writeTx(this.db, () => {
+        return guarded(() => writeTransaction(this.db, () => {
             const where = and(eq(requestTable.kind, 'compact'), isNotNull(requestTable.answer));
             const rows = this.orm.select().from(requestTable).where(where).orderBy(asc(requestTable.id)).all();
             this.orm.delete(requestTable).where(where).run();
@@ -102,7 +102,7 @@ export class RequestsStore implements RequestPort, CompactionAskQueue {
     }
 
     takeCurations(): readonly ScopeId[] {
-        return guarded(() => writeTx(this.db, () => {
+        return guarded(() => writeTransaction(this.db, () => {
             const rows = this.orm.select().from(requestTable).where(eq(requestTable.kind, 'curate')).orderBy(asc(requestTable.id)).all();
             this.orm.delete(requestTable).where(eq(requestTable.kind, 'curate')).run();
             return [...new Set(rows.flatMap((row) => okOf(parseTabId(row.target)) ?? []))];
@@ -110,7 +110,7 @@ export class RequestsStore implements RequestPort, CompactionAskQueue {
     }
 
     takeCompactions(): readonly CompactAsk[] {
-        return guarded(() => writeTx(this.db, () => {
+        return guarded(() => writeTransaction(this.db, () => {
             const rows = this.orm.select().from(requestTable).where(eq(requestTable.kind, 'compact')).orderBy(asc(requestTable.id)).all();
             this.orm.delete(requestTable).where(eq(requestTable.kind, 'compact')).run();
             return rows.flatMap((row) => okOf(parseCompactAsk({ tab: row.target, pane: row.pane, note: row.note, origin: row.origin, answer: row.answer })) ?? []);
@@ -118,7 +118,7 @@ export class RequestsStore implements RequestPort, CompactionAskQueue {
     }
 
     takeRequests(): readonly ScopeId[] {
-        return guarded(() => writeTx(this.db, () => {
+        return guarded(() => writeTransaction(this.db, () => {
             const rows = this.orm.select().from(requestTable).where(eq(requestTable.kind, 'refresh')).orderBy(asc(requestTable.id)).all();
             this.orm.delete(requestTable).where(eq(requestTable.kind, 'refresh')).run();
             return [...new Set(rows.flatMap((row) => okOf(parseTabId(row.target)) ?? []))];
@@ -126,7 +126,7 @@ export class RequestsStore implements RequestPort, CompactionAskQueue {
     }
 
     takeVisibility(): readonly VisibilityAsk[] {
-        return guarded(() => writeTx(this.db, () => {
+        return guarded(() => writeTransaction(this.db, () => {
             const rows = this.orm.select().from(requestTable).where(eq(requestTable.kind, 'visibility')).orderBy(asc(requestTable.id)).all();
             this.orm.delete(requestTable).where(eq(requestTable.kind, 'visibility')).run();
             return rows.flatMap((row) => okOf(parseVisibilityAsk({ target: row.target, visibility: VISIBILITY_OF_WORD.get(row.hidden) ?? 'shown' })) ?? []);

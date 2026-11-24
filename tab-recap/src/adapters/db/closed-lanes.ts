@@ -20,7 +20,7 @@ import { parseTaskName } from '#src/recap/domain/task-name.ts';
 import { parseText } from '@stateforge-labs/session-ledger';
 import { instant, parseInstant } from '@stateforge-labs/session-ledger';
 import type { Instant } from '@stateforge-labs/session-ledger';
-import { writeTx } from './connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { closedLane, run as runs, runTask as runTasks, task as tasks } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { retiredSince } from './retention.ts';
@@ -135,7 +135,7 @@ export class ClosedLanesRepository implements ClosureRecorder, ClosureReader, Cl
         if (!this.present) {
             throw new Error('the closed-lane table is not migrated');
         }
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             this.orm.run(sql`WITH hit AS (
   SELECT l.task_id, rt.name AS name FROM run_task_lane l
   JOIN transcript t ON t.id = l.transcript_id
@@ -228,7 +228,7 @@ SELECT ${closed.tab}, ${closed.pane}, ${closed.closedAt}, ${closed.agent}, ${clo
             return NO_COUNT;
         }
         const window = windowOf(now, this.days);
-        return writeTx(this.db, () => {
+        return writeTransaction(this.db, () => {
             const scope = and(eq(closedLane.tabId, tab), window.off === 1 ? undefined : lt(closedLane.closedAt, window.cutoff));
             const removed = countOrThrow(parseCount(this.orm.select({ n: count() }).from(closedLane).where(scope).get()?.n ?? 0));
             this.orm.delete(closedLane).where(scope).run();

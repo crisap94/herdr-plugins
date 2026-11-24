@@ -1,0 +1,37 @@
+drop	tab-recap/src/adapters/db/connection.ts
+drop	tab-recap/src/adapters/db/backup.ts
+drop	tab-recap/src/adapters/db/migrate.ts
+drop	tab-recap/src/recap/render/wrap.ts
+drop	tab-recap/src/recap/render/hyperlink.ts
+drop	tab-recap/src/recap/render/links.ts
+drop	tab-recap/src/recap/render/linked.ts
+drop	tab-recap/src/recap/render/timeline.ts
+drop	tab-recap/src/recap/render/timeline-breaks.ts
+drop	tab-recap/src/recap/render/present.ts
+drop	tab-recap/src/recap/render/expanded.ts
+drop	tab-recap/src/recap/render/expanded-regions.ts
+drop	tab-recap/src/recap/render/groups.ts
+drop	tab-recap/src/recap/render/compaction-stage.ts
+drop	tab-recap/src/recap/render/session-lines.ts
+specifier	#src/adapters/db/connection.ts	@stateforge-labs/session-ledger-sqlite/unstable/connection.ts
+specifier	#src/adapters/db/backup.ts	@stateforge-labs/session-ledger-sqlite/unstable/backup.ts
+specifier	#src/adapters/db/migrate.ts	@stateforge-labs/session-ledger-sqlite/unstable/migrate.ts
+specifier	#src/adapters/db/rebuild.ts	@stateforge-labs/session-ledger-sqlite/unstable/rebuild.ts
+specifier	#src/adapters/db/schema/migration.ts	@stateforge-labs/session-ledger-sqlite/unstable/migration.ts
+specifier	#src/recap/render/wrap.ts	@stateforge-labs/recap-view/unstable/wrap.ts
+specifier	#src/recap/render/hyperlink.ts	@stateforge-labs/recap-view/unstable/hyperlink.ts
+specifier	#src/recap/render/links.ts	@stateforge-labs/recap-view/unstable/links.ts
+specifier	#src/recap/render/linked.ts	@stateforge-labs/recap-view/unstable/linked.ts
+specifier	#src/recap/render/timeline.ts	@stateforge-labs/recap-view/unstable/timeline.ts
+specifier	#src/recap/render/timeline-breaks.ts	@stateforge-labs/recap-view/unstable/timeline-breaks.ts
+specifier	#src/recap/render/present.ts	#src/view-model/present.ts
+specifier	#src/recap/render/expanded.ts	#src/view-model/expanded.ts
+specifier	#src/recap/render/expanded-regions.ts	#src/view-model/expanded-regions.ts
+specifier	#src/recap/render/groups.ts	#src/view-model/groups.ts
+specifier	#src/recap/render/compaction-stage.ts	#src/view-model/compaction-stage.ts
+specifier	#src/recap/render/session-lines.ts	#src/view-model/session-lines.ts
+text	'./connection.ts'	'@stateforge-labs/session-ledger-sqlite/unstable/connection.ts'	tab-recap/src/adapters/db/*.ts
+text	'../connection.ts'	'@stateforge-labs/session-ledger-sqlite/unstable/connection.ts'	tab-recap/src/adapters/db/import/*.ts
+text	'../db/connection.ts'	'@stateforge-labs/session-ledger-sqlite/unstable/connection.ts'	tab-recap/src/adapters/experiment/store.ts
+text	writeTx	writeTransaction	tab-recap/{src,test,rules}/**
+text	writeTx	writeTransaction	tab-recap/CONTRIBUTING.md

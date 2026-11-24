@@ -6,7 +6,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { latestVersion } from '#src/adapters/db/migrate.ts';
+import { latestVersion } from '@stateforge-labs/session-ledger-sqlite/unstable/migrate.ts';
+import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { databaseFile } from '#src/adapters/db/database.ts';
 import { openStateAt } from '#src/daemon/state.ts';
 import type { Notice, NotifierPort } from '#src/ports/notifier.ts';
@@ -64,7 +65,7 @@ test('a database newer than this plugin: the daemon says which backup to restore
     process.env['TAB_RECAP_LOCALE'] = 'en';
     try {
         const db = openFixture(databaseFile(dir as Directory));
-        db.exec(`PRAGMA user_version = ${latestVersion() + 1}`);
+        db.exec(`PRAGMA user_version = ${latestVersion(MIGRATIONS) + 1}`);
         db.close();
         const { notifier, told } = recorder();
         const lines: string[] = [];

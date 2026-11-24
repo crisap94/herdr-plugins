@@ -9,7 +9,7 @@ import { parsePaneId, parseTabId, type SessionKey, type ScopeId } from '#src/rec
 import type { Operation, RunRef } from '@stateforge-labs/session-ledger';
 import { textOf, type Text } from '@stateforge-labs/session-ledger';
 import type { Instant } from '@stateforge-labs/session-ledger';
-import { writeTx } from './connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { LedgerHistory } from './ledger-history.ts';
 import { LedgerRows } from './ledger-rows.ts';
 import { guarded, guardedRead } from './rows.ts';
@@ -51,6 +51,6 @@ export class LedgerRepository implements GuardedLedger {
         if (id === null) {
             throw new Error(`${run.id} is not a run id`);
         }
-        return writeTx(this.db, () => this.rows.applyTo(id, run, ops));
+        return writeTransaction(this.db, () => this.rows.applyTo(id, run, ops));
     }
 }

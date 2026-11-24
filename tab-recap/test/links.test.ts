@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { contextOf, linkify } from '#src/recap/render/links.ts';
+import { contextOf, linkify } from '@stateforge-labs/recap-view/unstable/links.ts';
 import { parseBranchName, parseWebBase, type Web } from '@stateforge-labs/recap-view';
 
 const GITLAB: Web = { base: parseWebBase('https://gitlab.example/acme/shop'), forge: 'gitlab', branch: parseBranchName('feat/cart') };

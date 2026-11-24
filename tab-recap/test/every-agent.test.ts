@@ -11,7 +11,7 @@ import { NO_REPOS } from '#test/support.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { RecapJob } from '@stateforge-labs/session-ledger';
-import { present } from '#src/recap/render/present.ts';
+import { present } from '#src/view-model/present.ts';
 import { tabId, agentKind, paneId } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { instant } from '@stateforge-labs/session-ledger';

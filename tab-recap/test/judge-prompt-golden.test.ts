@@ -12,7 +12,7 @@ import { coverDocument } from '#src/recap/application/judge-context.ts';
 import type { JudgeEntry } from '#src/ports/run-inputs.ts';
 import type { Operation } from '@stateforge-labs/session-ledger';
 import { reportText } from '#src/recap/render/eval.ts';
-import { plain } from '#src/recap/render/wrap.ts';
+import { plain } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import { instant } from '@stateforge-labs/session-ledger';
 import { usdOf } from '@stateforge-labs/session-ledger';
 import { judgeOf } from '#test/eval-rig.ts';

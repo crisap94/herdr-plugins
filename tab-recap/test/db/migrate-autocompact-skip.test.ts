@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Database } from 'bun:sqlite';
-import { MEMORY } from '#src/adapters/db/connection.ts';
-import { versionOf } from '#src/adapters/db/migrate.ts';
+import { IN_MEMORY } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
+import { versionOf } from '@stateforge-labs/session-ledger-sqlite/unstable/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
@@ -32,7 +32,7 @@ test('migration 11 from a v10 database: one skip per lane (replaced, not appende
         assert.throws(() => { db.exec("INSERT INTO autocompact_skip (tab_id, pane, agent, at, gate, share) VALUES ('w1:t1', 'w1:p3', 'claude', 1, 'busy', -1)"); }, /CHECK/);
         db.exec("DELETE FROM tab WHERE id = 'w1:t1'");
         assert.equal((db.prepare('SELECT COUNT(*) AS n FROM autocompact_skip').get() as { n: number }).n, 0, 'a forgotten tab takes its skips');
-        assert.deepEqual(shape(db), shape(openDatabase(fsPathOf(MEMORY)).db), 'upgraded == fresh');
+        assert.deepEqual(shape(db), shape(openDatabase(fsPathOf(IN_MEMORY)).db), 'upgraded == fresh');
         assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(), []);
     } finally {
         rmSync(dir, { recursive: true, force: true });

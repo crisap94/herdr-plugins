@@ -6,7 +6,7 @@ import type { NoteToken } from '#src/recap/domain/coordination.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger';
 import { parseNonEmptyText, parseText, textOf } from '@stateforge-labs/session-ledger';
-import { writeTx } from './connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { paneNote } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { guarded, isRow } from './rows.ts';
@@ -38,7 +38,7 @@ export class PaneNotesRepository implements PaneNoteWriter, PaneNoteReader {
     }
 
     replace(pane: SessionKey, notes: readonly NoteToken[]): void {
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             this.clear(pane);
             notes.forEach((note) => {
                 this.orm.insert(paneNote).values({ pane, label: note.label, value: note.value })

@@ -19,7 +19,7 @@ import { requestRewrites } from '#src/recap/application/setup-changes.ts';
 import { messagesFor } from '#src/i18n/index.ts';
 import { draftFrom, initial, locksOf, saved, step, tested, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Effect, SaveEffect, Setup, TestEffect } from '#src/recap/application/setup-keys.ts';
-import { coloured } from '#src/recap/render/wrap.ts';
+import { coloured } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import { harnessLabels } from '@stateforge-labs/session-ledger';
 import { setupFooterLine, setupLines } from '#src/recap/render/setup.ts';
 import { isUnknown, saying } from '@stateforge-labs/session-ledger';

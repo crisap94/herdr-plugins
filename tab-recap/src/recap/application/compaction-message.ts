@@ -1,4 +1,4 @@
-import { linkify } from '#src/recap/render/links.ts';
+import { linkify } from '@stateforge-labs/recap-view/unstable/links.ts';
 import type { LaneWebRecord } from '#src/ports/tab-views.ts';
 import type { RecapSections } from '@stateforge-labs/session-ledger';
 import { must } from '@stateforge-labs/session-ledger';

@@ -8,7 +8,7 @@ import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import type { Instant } from '@stateforge-labs/session-ledger';
 import { existsSync, mkdirSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
-import { writeTx } from '../connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import type { Store } from '../database.ts';
 import { canonicalRecap, canonicalView, holdingOf, recapDifferenceLines, viewDifferenceLines, type Presence } from './equivalence.ts';
 import { attempt, RowsWriter } from './import-rows.ts';
@@ -91,7 +91,7 @@ export function importFilesAt(store: Store, legacy: LegacyStoreFiles, options: I
     const now = options.now();
     const seen: { report: ImportReport | null } = { report: null };
     try {
-        writeTx(store.db, () => {
+        writeTransaction(store.db, () => {
             seen.report = legacy.exists() === 'present' ? compareLegacyFiles(store, legacy, now) : null;
             options.afterInsert?.();
             if (seen.report !== null && seen.report.differences.length > 0) {

@@ -1,8 +1,8 @@
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { factsOfBare } from '#test/support/session-readings.ts';
-import type { ExpandedView } from '#src/recap/render/expanded.ts';
-import { plain } from '#src/recap/render/wrap.ts';
+import type { ExpandedView } from '#src/view-model/expanded.ts';
+import { plain } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import { fact } from './fact-at.ts';
 import { parseCurating, parseInstant, parseProse, parseTaskName } from '@stateforge-labs/recap-view';
 import { countOf } from '@stateforge-labs/session-ledger';

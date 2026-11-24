@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Database } from 'bun:sqlite';
-import { MEMORY } from '#src/adapters/db/connection.ts';
-import { versionOf } from '#src/adapters/db/migrate.ts';
+import { IN_MEMORY } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
+import { versionOf } from '@stateforge-labs/session-ledger-sqlite/unstable/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
@@ -14,7 +14,7 @@ import { scratchDir, shapeOf } from './support.ts';
 const BEFORE = 18;
 
 const freshDb = (): Database => {
-    const opened = openDatabase(fsPathOf(MEMORY));
+    const opened = openDatabase(fsPathOf(IN_MEMORY));
     if (opened.kind !== 'ready') {
         throw new Error('a fresh in-memory database is never newer');
     }

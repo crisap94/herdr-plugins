@@ -6,9 +6,9 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { backupsOf } from '#src/adapters/db/backup.ts';
-import { connect, connectReadOnly } from '#src/adapters/db/connection.ts';
-import { latestVersion, versionOf } from '#src/adapters/db/migrate.ts';
+import { backupsOf } from '@stateforge-labs/session-ledger-sqlite/unstable/backup.ts';
+import { connect, connectReadOnly } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
+import { latestVersion, versionOf } from '@stateforge-labs/session-ledger-sqlite/unstable/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
@@ -19,7 +19,7 @@ import type { Store } from '#src/adapters/db/database.ts';
 import { parseText } from '@stateforge-labs/session-ledger';
 
 const KEYS = ['HERDR_PLUGIN_CONFIG_DIR', 'TAB_RECAP_STATE', 'TAB_RECAP_LOCALE'] as const;
-const LATEST = latestVersion();
+const LATEST = latestVersion(MIGRATIONS);
 const notifier = { notify: (): Promise<{ kind: 'shown' }> => Promise.resolve({ kind: 'shown' }) };
 
 async function daemonStore(state: string): Promise<Store> {

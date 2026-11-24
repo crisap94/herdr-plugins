@@ -3,8 +3,8 @@ import type { TabViewRecord } from '#src/ports/tab-views.ts';
 import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
-import { present, presentBar } from '#src/recap/render/present.ts';
-import { visibleLength, wrap } from '#src/recap/render/wrap.ts';
+import { present, presentBar } from '#src/view-model/present.ts';
+import { visibleLength, wrap } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import { oneTask } from '#test/support.ts';
 import { blankRecap } from '@stateforge-labs/session-ledger';
 import { NO_SECTIONS } from '@stateforge-labs/session-ledger';
@@ -59,7 +59,7 @@ test('two agents, one tab: a header per agent, then ONE recap for the tab', () =
 });
 
 test('a modal tells you how to close it; a column never does', async () => {
-    const { footer } = await import('#src/recap/render/present.ts');
+    const { footer } = await import('#src/view-model/present.ts');
     assert.match(footer(40, 'modal', wordingOf(en)), /q close/);
     assert.doesNotMatch(footer(40, 'column', wordingOf(en)), /close/);
     assert.match(footer(44, 'column', wordingOf(en)), /tap: full screen/);
@@ -67,7 +67,7 @@ test('a modal tells you how to close it; a column never does', async () => {
 });
 
 test('the bar: one row — each lane as a dot, then what needs you (or what is happening now)', async () => {
-    const { firstItem } = await import('#src/recap/render/present.ts');
+    const { firstItem } = await import('#src/view-model/present.ts');
     const markdown = '## Goal\n- migrate\n\n## Now\n- running **CI** on !940\n\n## Waiting on you\n- approve the `prod` deploy\n';
     assert.equal(firstItem(markdown, 'now'), 'running CI on !940');
     const tab = viewRecord({ tab: 'w1:t1', column: null, at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'blocked', title: null, cwd: null }] });
@@ -108,7 +108,7 @@ test('es: the column speaks Spanish — badge, recap meta, ago, notes, empty sta
 });
 
 test('es: the phone bar still shows needs-you first, then Now, from Spanish headings', async () => {
-    const { firstItem } = await import('#src/recap/render/present.ts');
+    const { firstItem } = await import('#src/view-model/present.ts');
     const markdown = '## Objetivo\n- migrar\n\n## Ahora\n- ejecutando **CI** en !940\n\n## Esperando tu respuesta\n- aprueba el despliegue de `prod`\n';
     assert.equal(firstItem(markdown, 'now'), 'ejecutando CI en !940');
     assert.equal(firstItem(markdown, 'needs'), 'aprueba el despliegue de prod');
@@ -122,13 +122,13 @@ test('es: the phone bar still shows needs-you first, then Now, from Spanish head
 });
 
 test('English headings are read in a recap that was written in English while the UI is Spanish (and vice versa)', async () => {
-    const { firstItem } = await import('#src/recap/render/present.ts');
+    const { firstItem } = await import('#src/view-model/present.ts');
     assert.equal(firstItem('## Waiting on you\n- the OK', 'needs'), 'the OK');
     assert.equal(firstItem('## Esperando tu respuesta\n- el OK', 'needs'), 'el OK');
 });
 
 test('the roomy footers name the settings key, and none overflows its width', async () => {
-    const { footer } = await import('#src/recap/render/present.ts');
+    const { footer } = await import('#src/view-model/present.ts');
     for (const messages of [en, es]) {
         for (const hint of [messages.hints.column[0] ?? '', messages.hints.modal[0] ?? '']) {
             assert.match(hint, /\bs\b/, `"${hint}" names s`);
@@ -213,7 +213,7 @@ test('the recap body: exactly one blank line between sections, none between a he
 });
 
 test('plainMarkdown collapses runs of blank lines, so an old recap without blank lines between sections is separated too', async () => {
-    const { plainMarkdown } = await import('#src/recap/render/wrap.ts');
+    const { plainMarkdown } = await import('@stateforge-labs/recap-view/unstable/wrap.ts');
     const lines = plain(plainMarkdown('## Goal\n- a\n## Now\n- b\n\n\n\n## Next\n- c', 40));
     assert.deepEqual(lines, ['GOAL', '• a', '', 'NOW', '• b', '', 'NEXT', '• c']);
 });

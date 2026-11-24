@@ -14,7 +14,7 @@ import type { CurateDeps } from '#src/recap/application/curate.ts';
 import type { RepairMode } from '@stateforge-labs/session-ledger';
 import { storyRepair } from '#src/recap/application/job-kit/story-repair.ts';
 import { parseText } from '@stateforge-labs/session-ledger';
-import { timelineOf } from '#src/recap/render/timeline.ts';
+import { timelineOf } from '@stateforge-labs/recap-view/unstable/timeline.ts';
 import { cursor, memoryStore, seed } from '#test/db/support.ts';
 import { facts, NOW } from '#test/fakes/curated-facts.ts';
 import { fact } from '#test/fakes/fact-at.ts';

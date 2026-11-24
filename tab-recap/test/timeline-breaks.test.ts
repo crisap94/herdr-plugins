@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { messagesFor } from '#src/i18n/index.ts';
 import type { BoundaryBreak } from '#src/ports/boundaries.ts';
-import { breakLine as drawBreak, chaptersFact } from '#src/recap/render/timeline-breaks.ts';
+import { breakLine as drawBreak, chaptersFact } from '@stateforge-labs/recap-view/unstable/timeline-breaks.ts';
 import { viewBreakOf } from '#src/view-model/column.ts';
 import { countOf } from '@stateforge-labs/session-ledger';
 import { duration, instant } from '@stateforge-labs/session-ledger';

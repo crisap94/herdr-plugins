@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Database } from 'bun:sqlite';
 import { ids } from '#src/adapters/db/uuid7.ts';
-import { BUSY_PRAGMA, MEMORY } from '#src/adapters/db/connection.ts';
+import { BUSY_PRAGMA, IN_MEMORY } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { storeOver, type Store, type StoreSettings } from '#src/adapters/db/database.ts';
@@ -25,7 +25,7 @@ import type { RunId } from '#src/recap/domain/run-ids.ts';
 import type { RunFilter, RunInputReader, RunRecord } from '#src/ports/run-inputs.ts';
 import type { VerdictRecord } from '#src/ports/verdicts.ts';
 
-export function openFixture(path: string = MEMORY): Database {
+export function openFixture(path: string = IN_MEMORY): Database {
     const db = new Database(path);
     db.exec(BUSY_PRAGMA);
     db.exec('PRAGMA foreign_keys = ON');
@@ -33,7 +33,7 @@ export function openFixture(path: string = MEMORY): Database {
 }
 
 export function memoryStore(options: StoreSettings = {}): Store {
-    const opened = openDatabase(fsPathOf(MEMORY));
+    const opened = openDatabase(fsPathOf(IN_MEMORY));
     if (opened.kind !== 'ready') {
         throw new Error('a fresh in-memory database is never newer');
     }

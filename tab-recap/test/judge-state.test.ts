@@ -13,7 +13,7 @@ import { judgeOf } from '#test/eval-rig.ts';
 import type { RunRecord } from '#src/ports/run-inputs.ts';
 import type { Operation, TaskOps } from '@stateforge-labs/session-ledger';
 import { reportText } from '#src/recap/render/eval.ts';
-import { plain } from '#src/recap/render/wrap.ts';
+import { plain } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import { cursor, memoryStore, recordOps, runIdOf, runsOf, storeRead } from '#test/db/support.ts';
 import { oneTask } from '#test/support.ts';
 import { instant } from '@stateforge-labs/session-ledger';

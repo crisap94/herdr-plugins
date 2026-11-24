@@ -122,7 +122,10 @@ test('a foreign source edit of a frozen lane key fails even with the adapts labe
     const lanes: Record<string, string[]> = JSON.parse(readFileSync(join(ROOT, 'ci/lanes.json'), 'utf8')).lanes;
     for (const key of ['STO', 'VIEW']) {
         const file = lanes[key]?.find((entry) => entry.startsWith('src/') && entry.endsWith('.ts'));
-        assert.ok(file !== undefined, `${key} owns no src/ file in ci/lanes.json`);
+        if (file === undefined) {
+            assert.notEqual(key, 'STO', 'STO owns no src/ file in ci/lanes.json');
+            continue;
+        }
         const run = lane('B2', [`tab-recap/${file}`], { LANE_ADAPTS: '1' });
         assert.equal(run.status, 1, key);
         assert.doesNotMatch(String(run.stdout), /adapting /u, key);
@@ -251,6 +254,7 @@ test('the carve-out puts the store and view lists in STO and VIEW, before the fo
         'src/recap/application/other.ts',
         'src/adapters/db/open.ts',
         'src/adapters/db/schema/migration.ts',
+        'src/adapters/db/rebuild.ts',
         'src/adapters/db/rows.ts',
         'src/recap/render/present.ts',
         'src/recap/render/handoff-budget.ts',
@@ -267,10 +271,11 @@ test('the carve-out puts the store and view lists in STO and VIEW, before the fo
         'src/recap/application/other.ts': 'B3',
         'src/adapters/db/open.ts': 'STO',
         'src/adapters/db/schema/migration.ts': 'STO',
+        'src/adapters/db/rebuild.ts': 'STO',
         'test/open.test.ts': 'STO',
         'src/adapters/db/rows.ts': 'B5',
-        'src/recap/render/present.ts': 'VIEW',
-        'test/present.test.ts': 'VIEW',
+        'src/recap/render/present.ts': 'B4',
+        'test/present.test.ts': 'B4',
         'src/recap/render/handoff-budget.ts': 'B4',
         'test/mixed.test.ts': 'B1',
     };

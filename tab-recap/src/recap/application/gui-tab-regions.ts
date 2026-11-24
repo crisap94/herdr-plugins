@@ -1,7 +1,7 @@
 import type { Break, Web } from '@stateforge-labs/recap-view';
 import { must } from '@stateforge-labs/session-ledger';
-import { breakText } from '#src/recap/render/timeline-breaks.ts';
-import { clockOf, dateLines, timelineOf, type Entry } from '#src/recap/render/timeline.ts';
+import { breakText } from '@stateforge-labs/recap-view/unstable/timeline-breaks.ts';
+import { clockOf, dateLines, timelineOf, type Entry } from '@stateforge-labs/recap-view/unstable/timeline.ts';
 import type { Messages } from '#src/i18n/index.ts';
 import { parseCount } from '@stateforge-labs/session-ledger';
 import { orElse } from '#src/recap/domain/gui-tab.ts';

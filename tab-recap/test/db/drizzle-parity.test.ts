@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import type { Database } from 'bun:sqlite';
-import { MEMORY } from '#src/adapters/db/connection.ts';
+import { IN_MEMORY } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import * as projectionModule from '#src/adapters/db/drizzle/index.ts';
@@ -12,7 +12,7 @@ const EXPECTED_TABLES = 30;
 const EXPECTED_VIEWS = 16;
 
 function freshDatabase(): Database {
-    const opened = openDatabase(fsPathOf(MEMORY));
+    const opened = openDatabase(fsPathOf(IN_MEMORY));
     if (opened.kind !== 'ready') {
         throw new Error('a fresh in-memory database is never newer');
     }
