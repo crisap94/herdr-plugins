@@ -15,7 +15,7 @@
       "tab-recap/test/engine-host/**",
       "tab-recap/test/conformance/**",
       "tab-recap/test/fixtures/engine-golden-*.txt",
-      "tab-recap/test/{engine-golden,engine-plain-session,engine-files,engine}.test.ts",
+      "tab-recap/test/{engine-golden,engine-plain-session,engine}.test.ts",
       "tab-recap/gates/domain-types-exceptions/ENG.json",
       "tab-recap/src/daemon/slots/timing.ts",
       "tab-recap/rules/graph/engine.cjs",

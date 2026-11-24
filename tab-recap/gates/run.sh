@@ -7,8 +7,7 @@ case "${1:-}" in
     *) echo "usage: bash tab-recap/gates/run.sh lint|test" >&2; exit 3 ;;
 esac
 
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$HERE"
+HERE="$(pwd)"
 tsgolint="$(ls -d "$HERE"/node_modules/@oxlint-tsgolint/*/tsgolint 2>/dev/null | head -n 1)"
 [ -z "$tsgolint" ] || export OXLINT_TSGOLINT_PATH="$tsgolint"
 . ../ci/lib/host-limits.sh
