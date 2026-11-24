@@ -21,7 +21,7 @@ rules:
   design:
     - "For every hand-written piece kept, say why no built-in fits."
   tasks:
-    - "Every group ends with the plugin gates passing (bash ci/lint.sh and bash ci/test.sh, from tab-recap/)."
+    - "Every group ends with the plugin gates passing (bash gates/run.sh lint and bash gates/run.sh test, from tab-recap/)."
     - "New domain nouns go into tab-recap/CONTEXT.md before code."
     - "The last group of every change is Archive: once every other task is checked, run openspec archive <change> in the same merge request, so main specs are updated when the change is fully implemented."
 

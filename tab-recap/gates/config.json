@@ -1,5 +1,6 @@
 {
   "source": ["src", "bin", "test", "ci", "gates"],
+  "rulesTree": ["src", "bin", "test"],
   "domain": "src",
   "graph": ["src", "bin"],
   "moduleCountExclude": "src/recap/domain/time.ts",

@@ -8,7 +8,7 @@
 
 ## 2. Verification
 
-- [ ] 2.1 From `tab-recap/`: `bash ci/lint.sh`, `bunx tsc --noEmit` and `bash ci/test.sh` pass. Verify: the merge request pipeline is green.
+- [ ] 2.1 From `tab-recap/`: `bash gates/run.sh lint`, `bunx tsc --noEmit` and `bash gates/run.sh test` pass. Verify: the merge request pipeline is green.
 
 ## 3. Archive
 

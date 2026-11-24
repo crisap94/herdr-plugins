@@ -85,13 +85,13 @@ reviews:
         object a probe that builds it invalid. No sleeps or real network in unit tests.
     - path: "tab-recap/rules/**"
       instructions: >-
-        A rule needs both probes (bad must fire, good must pass), and lint.sh asserts the bad
+        A rule needs both probes (bad must fire, good must pass), and gates/run.sh lint asserts the bad
         probe fires. Never widen a rule's ignores without a reason in the OpenSpec design.
     - path: "openspec/changes/**"
       instructions: >-
         OpenSpec rules (openspec/config.yaml): the proposal states what is out of scope and names
         the changelog:: label; the design says why no built-in fits each hand-written piece;
-        every task group ends with the plugin's bash ci/lint.sh and bash ci/test.sh passing from its folder;
+        every task group ends with the plugin's bash gates/run.sh lint and bash gates/run.sh test passing from its folder;
         new domain nouns go into CONTEXT.md first; the last group is Archive, run in the same
         merge request once every task is checked. A MODIFIED requirement restates the full base
         block plus the change. Every requirement has testable scenarios; every number is measured

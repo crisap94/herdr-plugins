@@ -8,5 +8,5 @@
 
 ## Checklist
 
-- [ ] `bash ci/lint.sh` and `bash ci/test.sh` pass (run in the plugin directory)
+- [ ] `bash gates/run.sh lint` and `bash gates/run.sh test` pass (run in the plugin directory)
 - [ ] One label chosen: `changelog::added`, `changelog::changed`, `changelog::fixed` or `changelog::internal` (add `changelog::breaking` as well if users must act)

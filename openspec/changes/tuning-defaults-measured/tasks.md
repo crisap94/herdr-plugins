@@ -1,6 +1,6 @@
 # Tasks
 
-Paths are under `tab-recap/`. Every group ends with `bash ci/lint.sh` and `bash ci/test.sh` passing. Each measurement
+Paths are under `tab-recap/`. Every group ends with `bash gates/run.sh lint` and `bash gates/run.sh test` passing. Each measurement
 commits metrics only under `experiments/` at the repository root; corpora and raw outputs stay private.
 
 ## 1. Coverage gate (carried from `autocompact-coverage-gate` 8.1, 8.2)

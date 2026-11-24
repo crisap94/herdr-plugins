@@ -4,8 +4,8 @@
 
 ## Gates
 
-- [ ] `bash ci/lint.sh` passes (run in the plugin directory)
-- [ ] `bash ci/test.sh` passes
+- [ ] `bash gates/run.sh lint` passes (run in the plugin directory)
+- [ ] `bash gates/run.sh test` passes
 
 ## For the changelog
 

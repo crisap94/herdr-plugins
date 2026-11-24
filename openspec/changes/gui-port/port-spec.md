@@ -414,8 +414,8 @@ element by element (shape, colour role, order). The harness (F) cannot see pixel
 
 ### F.1 Where and how it runs
 
-`test/gui-mod/*.test.ts` (matched by `ci/test.sh` `bun test "test/**/*.test.ts"`; register new files with `bun ci/lanes-generate.ts`).
-`ci/test.sh` passes no `--import`, so each test file registers the fakes itself and then `await import(...)`s the mod:
+`test/gui-mod/*.test.ts` (matched by `gates/test.sh` `bun test "test/**/*.test.ts"`; register new files with `bun ci/lanes-generate.ts`).
+`gates/test.sh` passes no `--import`, so each test file registers the fakes itself and then `await import(...)`s the mod:
 
 ```
 module.registerHooks({ resolve(specifier, context, next) { fake = FAKES[specifier]; return fake ? { url: fake, shortCircuit: true } : next(specifier, context) } })

@@ -182,7 +182,7 @@ See [SUPPORT.md](../SUPPORT.md).
 
 ## Contributing
 
-[CONTRIBUTING.md](CONTRIBUTING.md) covers the setup and the gates: `bash ci/lint.sh` and `bash ci/test.sh`, run in this
+[CONTRIBUTING.md](CONTRIBUTING.md) covers the setup and the gates: `bash gates/run.sh lint` and `bash gates/run.sh test`, run in this
 folder. The rules shared by every plugin are in [../CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Security

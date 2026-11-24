@@ -80,8 +80,8 @@ tab's lowest pane — herdr splits only right or down, so the bar sits at the bo
 
 ```bash
 bun install            # tsgo, oxlint (dev) and the runtime dependencies @stateforge-labs/herdr-sdk, @stateforge-labs/harness-adapters, @stateforge-labs/harness-hooks, drizzle-orm and isomorphic-git (pinned exactly), plus the workspace packages session-ledger, session-ledger-sqlite and recap-view (workspace:*)
-bash ci/lint.sh        # rules + their probes, vocabulary ↔ CONTEXT.md, oxlint (type-aware: it is also the type check of the tree), and seeds it must reject
-bash ci/test.sh        # bun test
+bash gates/run.sh lint        # rules + their probes, vocabulary ↔ CONTEXT.md, oxlint (type-aware: it is also the type check of the tree), and seeds it must reject
+bash gates/run.sh test        # bun test
 ```
 
 On a shared machine, set `TEST_HOST_LOCK=<file>` so lint and test queue across every checkout (`TEST_HOST_SLOTS=<n>` lets n run at

@@ -13,8 +13,8 @@
   },
   "scripts": {
     "typecheck": "tsgo --noEmit",
-    "lint": "bash ci/lint.sh",
-    "test": "bash ci/test.sh",
+    "lint": "bash gates/run.sh lint",
+    "test": "bash gates/run.sh test",
     "daemon": "bun src/daemon/launch.mjs"
   },
   "dependencies": {

@@ -17,12 +17,12 @@ test SHALL fail when the manifest differs from the computed closure.
 #### Scenario: An engine file imports a host file
 
 - **WHEN** a file listed in `ci/engine-files.json` imports a file under `src/daemon/`
-- **THEN** `bash ci/lint.sh` SHALL fail with the rule `engine-self-contained` and both paths named
+- **THEN** `bash gates/run.sh lint` SHALL fail with the rule `engine-self-contained` and both paths named
 
 #### Scenario: The manifest drifts from the closure
 
 - **WHEN** a file is added to the closure of `recap-job.ts` and not to `ci/engine-files.json`
-- **THEN** `bash ci/test.sh` SHALL fail and name the missing file
+- **THEN** `bash gates/run.sh test` SHALL fail and name the missing file
 
 #### Scenario: An engine file imports another engine file
 
@@ -57,7 +57,7 @@ the resulting facts with a committed snapshot.
 #### Scenario: A step of the cut changes the writer's input
 
 - **WHEN** a change made under this capability alters one byte of the writer's input for the replayed fixture
-- **THEN** the golden test SHALL fail and `bash ci/test.sh` SHALL fail
+- **THEN** the golden test SHALL fail and `bash gates/run.sh test` SHALL fail
 
 #### Scenario: Replay through the facade
 

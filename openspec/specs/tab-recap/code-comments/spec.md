@@ -14,17 +14,17 @@ line and a directive pragma. The guard `recap-no-comments` SHALL fail the lint g
 #### Scenario: A source file contains a comment
 
 - **WHEN** a source file under `tab-recap/src` contains a line comment that is not a directive pragma
-- **THEN** the guard `recap-no-comments` SHALL report it and `bash ci/lint.sh` SHALL fail
+- **THEN** the guard `recap-no-comments` SHALL report it and `bash gates/run.sh lint` SHALL fail
 
 #### Scenario: A source file contains only a directive pragma
 
 - **WHEN** a source file under `tab-recap/src` contains only a directive pragma that silences nothing: `@ts-check` or a `/// <reference` line
-- **THEN** the guard `recap-no-comments` SHALL NOT report it and `bash ci/lint.sh` SHALL pass
+- **THEN** the guard `recap-no-comments` SHALL NOT report it and `bash gates/run.sh lint` SHALL pass
 
 #### Scenario: A test file contains only a directive pragma
 
 - **WHEN** a test file under `tab-recap/test` contains only a directive pragma, one of `@ts-expect-error`, `@ts-ignore`, `@ts-nocheck`, `@ts-check`, `oxlint-disable`, `ast-grep-ignore` or `eslint-disable`
-- **THEN** the guard `recap-no-comments` SHALL NOT report it and `bash ci/lint.sh` SHALL pass
+- **THEN** the guard `recap-no-comments` SHALL NOT report it and `bash gates/run.sh lint` SHALL pass
 
 #### Scenario: Released migrations are frozen; new migrations are checked
 
@@ -39,4 +39,4 @@ In `tab-recap/src` and `tab-recap/bin`, no pragma that silences a check SHALL ap
 #### Scenario: A source file contains a suppression pragma
 
 - **WHEN** a source file under `tab-recap/src` contains `// @ts-expect-error`
-- **THEN** the guard `recap-no-suppression` SHALL report it and `bash ci/lint.sh` SHALL fail
+- **THEN** the guard `recap-no-suppression` SHALL report it and `bash gates/run.sh lint` SHALL fail

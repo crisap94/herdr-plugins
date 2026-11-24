@@ -54,7 +54,7 @@ Please include:
 1. Create `<plugin>/` at the repo root with a `herdr-plugin.toml` (`id`, `name`, `version`,
    `min_herdr_version`, `description`, `platforms`).
 2. Give it a `README.md`, a `CONTRIBUTING.md`, a `ROADMAP.md`, an `experiments/` folder, a `CONTEXT.md` (its vocabulary, enforced by a lint rule), a `CLAUDE.md`
-   (layers and red lines) and its own `ci/lint.sh` and `ci/test.sh`.
+   (layers and red lines) and its own `gates/run.sh` (lint and test).
 3. Write its house rules in its `CONTRIBUTING.md`, add a `## <plugin>` section to [`CHANGELOG.md`](CHANGELOG.md),
    add a row to the table in the root [`README.md`](README.md) and a line to [`ROADMAP.md`](ROADMAP.md).
 4. Wire its gates into the CI configuration (`.github/workflows/ci.yml` and `.gitlab-ci.yml`); a plugin

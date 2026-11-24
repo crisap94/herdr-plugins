@@ -18,7 +18,7 @@ type. An unannotated callback parameter inferred from a library declaration SHAL
 #### Scenario: A primitive parameter
 
 - **WHEN** a function, method, arrow function, constructor, accessor or function-typed property in `src/` declares a parameter of type `string`, `number`, `boolean`, `bigint` or `symbol`
-- **THEN** `bash ci/lint.sh` SHALL exit 1 with a line that begins `not supported:` and names that parameter
+- **THEN** `bash gates/run.sh lint` SHALL exit 1 with a line that begins `not supported:` and names that parameter
 
 #### Scenario: An alias of a primitive
 
@@ -141,18 +141,18 @@ TypeScript files of `src/` and `bin/`. The ast-grep rules that stated these boun
 
 ### Requirement: Every gate proves that it bites
 
-Each gate SHALL keep a bad probe that must fail it and a good probe that must pass it, run by `ci/lint.sh`;
-`ci/lint.sh` SHALL fail when a bad probe passes or a good probe fails.
+Each gate SHALL keep a bad probe that must fail it and a good probe that must pass it, run by `gates/run.sh lint`;
+`gates/run.sh lint` SHALL fail when a bad probe passes or a good probe fails.
 
 #### Scenario: A gate that stopped biting
 
 - **WHEN** the signature check is changed so that its `string` parameter probe passes
-- **THEN** `bash ci/lint.sh` SHALL exit 1 and name the probe
+- **THEN** `bash gates/run.sh lint` SHALL exit 1 and name the probe
 
 #### Scenario: The brand-cast rule still bites
 
 - **WHEN** the bad probe of `recap-one-brand-cast` stops triggering it
-- **THEN** `bash ci/lint.sh` SHALL exit 1
+- **THEN** `bash gates/run.sh lint` SHALL exit 1
 
 ### Requirement: Any finding fails the build
 
@@ -166,4 +166,4 @@ The check SHALL fail the build on any finding that no exception covers, and no b
 #### Scenario: A baseline file is added
 
 - **WHEN** a merge request adds `tab-recap/ci/domain-types-baseline/`
-- **THEN** `bash ci/lint.sh` SHALL still fail on the finding, because the check reads no baseline
+- **THEN** `bash gates/run.sh lint` SHALL still fail on the finding, because the check reads no baseline
