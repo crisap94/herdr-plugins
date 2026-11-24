@@ -47,8 +47,8 @@ reviews:
         transport; agent.prompt, pane.send_text and pane.send_keys appear only in
         adapters/herdr/agents.ts; a recap never types into a lane (no pane.send_input,
         agent.send_keys, pane.input.set); only adapters write files and only under the plugin's
-        state dir; any foreign SQLite store is opened readOnly; transactions are writeTx
-        (BEGIN IMMEDIATE) in adapters/db/connection.ts only; platform probes only in src/host and
+        state dir; any foreign SQLite store is opened readOnly; transactions are writeTransaction
+        (BEGIN IMMEDIATE) in packages/session-ledger-sqlite/src/connection.ts only; platform probes only in src/host and
         the OS-family adapters. Run-time red line: a recap never closes, resizes or moves a pane
         that hosts an agent. Dispatch maps intents to port calls and decides nothing; a new intent
         is a member on the Intent union plus a golden sequence in test/fold.test.ts. TypeScript
