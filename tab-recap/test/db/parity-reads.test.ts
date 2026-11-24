@@ -3,7 +3,7 @@ import type { Database } from 'bun:sqlite';
 import assert from 'node:assert/strict';
 import { ClosedLanesRepository, parseClosedLaneRow } from '#src/adapters/db/closed-lanes.ts';
 import type { LedgerRows } from '#src/adapters/db/ledger-rows.ts';
-import type { TabRecap } from '#src/ports/recap-records.ts';
+import type { Recap } from '#src/ports/recap-records.ts';
 import { RecapReader } from '#src/adapters/db/recap-read.ts';
 import { type TabId } from '#src/recap/domain/ids.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
@@ -61,7 +61,7 @@ const closedOf = (rows: Raw[], tab: TabId): unknown[] => rows.map((row) => {
 const byText = (a: unknown, b: unknown): number => String(a).localeCompare(String(b));
 const idsOf = (tabs: readonly string[]): unknown[] => tabs.map((tab) => ({ id: tab }));
 
-const shapeOf = (recap: TabRecap | null): unknown => {
+const shapeOf = (recap: Recap | null): unknown => {
     if (recap === null) {
         return null;
     }

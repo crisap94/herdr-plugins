@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Database } from 'bun:sqlite';
 import { opsOfSections } from '#src/adapters/db/import/sections-to-ops.ts';
-import type { LaneMark } from '#src/recap/domain/boundary.ts';
+import type { SessionMark } from '#src/recap/domain/boundary.ts';
 import { tabId } from '#test/support/ids.ts';
 import { cursor, memoryStore, must, recordOps, type RunInput } from './support.ts';
 import type { Store } from '#src/adapters/db/database.ts';
@@ -20,7 +20,7 @@ const run = (over: Partial<RunInput> = {}): RunInput => ({
     tab: tabId('w1:t1'), at: instant(T0), cause: 'turn-ended', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, lanes: [cursor('w1:p1')],
     tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1')] }], ops: [{ task: textOf('t1'), ops: opsOfSections(sections) }], ...over,
 });
-const claude = (at: number, over: Partial<LaneMark> = {}): LaneMark => ({ pane: paneIdOf('w1:p1'), at: instant(at), cursor: countOf(200), tokensBefore: countOf(800_000), tokensAfter: countOf(14_000), tookMs: duration(15_588), ...over });
+const claude = (at: number, over: Partial<SessionMark> = {}): SessionMark => ({ pane: paneIdOf('w1:p1'), at: instant(at), cursor: countOf(200), tokensBefore: countOf(800_000), tokensAfter: countOf(14_000), tookMs: duration(15_588), ...over });
 
 const rows = (db: Database, sql: string): Record<string, unknown>[] => db.prepare(sql).all().map((row) => Object.assign({}, row));
 const compaction = (db: Database, startedAt: number, stage = 'compacted', pane = 'w1:p1'): void => {

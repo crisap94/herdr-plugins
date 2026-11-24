@@ -1,4 +1,4 @@
-import type { Applied, HistoryFact, Ledger } from '#src/ports/ledger.ts';
+import type { Applied, HistoryFact, FactStore } from '#src/ports/ledger.ts';
 import type { Fact, FactId, TaskId } from '#src/recap/domain/fact.ts';
 import { sameTask } from '#src/recap/domain/fact.ts';
 import { apply } from '#src/recap/domain/ops.ts';
@@ -9,7 +9,7 @@ import type { Operation, RunRef } from '#src/recap/domain/ops.ts';
 
 const HISTORY_LIMIT = 300;
 
-export class MemoryLedger implements Ledger {
+export class MemoryLedger implements FactStore {
     private facts: Fact[] = [];
     private readonly holders = new Map<string, Set<string>>();
     private counter = 0;

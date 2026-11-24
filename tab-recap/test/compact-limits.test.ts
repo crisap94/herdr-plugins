@@ -10,7 +10,7 @@ import { CompactLimitFiles } from '#src/adapters/capability/compact-limits.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
-import type { Transcripts } from '#src/ports/transcripts.ts';
+import type { SessionReader } from '#src/ports/transcripts.ts';
 import type { ModelWindows } from '#src/ports/model-catalogue.ts';
 import { agentKind } from '#test/support/ids.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
@@ -34,7 +34,7 @@ const write = (file: string, text: string): void => {
 
 const lane = (agent: string, cwd: string): ReturnType<typeof laneFrom> => laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent, cwd }));
 
-function reader(agent: string, model: string | null, tokens: number, window: number | null): Transcripts {
+function reader(agent: string, model: string | null, tokens: number, window: number | null): SessionReader {
     return {
         agent: agentKind(agent),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },

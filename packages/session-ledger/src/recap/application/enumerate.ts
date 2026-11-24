@@ -1,5 +1,5 @@
 import type { Count, Usd } from '#src/contract/kernel.ts';
-import type { Enumerators } from '#src/ports/enumerators.ts';
+import type { Enumerator } from '#src/ports/enumerators.ts';
 import type { InputCandidate } from '#src/ports/recap-input.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
@@ -22,7 +22,7 @@ const usd = brand<number, 'Usd'>;
 const SAME = 0.6;
 
 export interface EnumerateRun {
-    readonly enumerator: Enumerators;
+    readonly enumerator: Enumerator;
     readonly language: Text;
     readonly tab: MaterialTab;
     log(line: Text): void;

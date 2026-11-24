@@ -8,7 +8,7 @@ import type { HandoffSender } from '#src/recap/application/handoff-sender.ts';
 import type { Ready } from '#src/recap/application/handoff-target.ts';
 import type { Waiting } from '#src/recap/application/autocompact.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
-import type { RecapRecords, TabRecap } from '#src/ports/recap-records.ts';
+import type { Records, Recap } from '#src/ports/recap-records.ts';
 import type { HandoffAskRecord } from '#src/ports/requests.ts';
 import type { InFlightReader, InFlightRead } from '#src/ports/in-flight.ts';
 import { handoffPlanner } from '#src/adapters/capability/handoff-plans.ts';
@@ -47,7 +47,7 @@ export interface FlowWorld {
     targetPresent: boolean;
     targetKeyKnown: boolean;
     peer: boolean;
-    recap: TabRecap | null;
+    recap: Recap | null;
     facts: readonly Fact[];
     awaiting: Waiting;
     flight: InFlightRead;
@@ -65,9 +65,9 @@ export interface FlowWorld {
 
 export const task = (id: string, lanes: readonly string[]): RecapTask => ({ id: textOf(id), name: textOf(id), lanes: lanes.map((lane) => paneIdOf(lane)), sections: null, markdown: textOf('') });
 
-export const recapOf = (...tasks: readonly RecapTask[]): TabRecap => ({ ...blankRecap(tabId('w1:t1')), tasks });
+export const recapOf = (...tasks: readonly RecapTask[]): Recap => ({ ...blankRecap(tabId('w1:t1')), tasks });
 
-export const SOURCE_LISTED = (): TabRecap => recapOf(task('t1', ['w1:p1']));
+export const SOURCE_LISTED = (): Recap => recapOf(task('t1', ['w1:p1']));
 
 export function worldOf(over: Partial<FlowWorld> = {}): FlowWorld {
     return {
@@ -127,7 +127,7 @@ export function harness(over: Partial<FlowWorld> = {}, sender: Pick<HandoffSende
     };
     const deps: HandoffFlowDeps = {
         lanes,
-        records: { readRecap: () => { if (world.recapThrows) { throw new Error('unreadable recap'); } return world.recap; } } satisfies Pick<RecapRecords, 'readRecap'>,
+        records: { readRecap: () => { if (world.recapThrows) { throw new Error('unreadable recap'); } return world.recap; } } satisfies Pick<Records, 'readRecap'>,
         ledger: new MemoryLedger().seed(...world.facts),
         closed: { closures: { resolve: () => ({ kind: 'absent' }) }, ledger: new MemoryLedger().seed(...world.facts), runs: { runAt: () => null }, closedDays: () => DEFAULT_CLOSED_LANE_DAYS },
         target: { plans: handoffPlanner, inFlight, awaiting: async () => { calls.push('awaiting'); return world.awaiting; } },

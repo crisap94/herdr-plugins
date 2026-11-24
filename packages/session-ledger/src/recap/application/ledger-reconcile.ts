@@ -1,6 +1,6 @@
 import type { Curated, Curators } from '#src/ports/curators.ts';
-import type { Ledger } from '#src/ports/ledger.ts';
-import type { LaneCursor } from '#src/ports/recap-records.ts';
+import type { FactStore } from '#src/ports/ledger.ts';
+import type { SessionCursor } from '#src/ports/recap-records.ts';
 import type { Stories } from '#src/ports/stories.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
@@ -155,7 +155,7 @@ export interface RunAccomplishment {
     readonly at: Instant;
 }
 
-export interface RunEvent {
+export interface RecapWritten {
     readonly tab: TabId;
     readonly turns: Count;
     readonly boundary: Boundary;
@@ -165,14 +165,14 @@ export interface RunEvent {
 }
 
 export interface ReconcilingDeps {
-    readonly ledger: Ledger;
+    readonly ledger: FactStore;
     readonly stories: Stories;
     readonly writer: () => Curators | null;
     readonly clock: () => Instant;
     readonly zone: () => Text;
     readonly language: () => Text;
     readonly rubric: Text;
-    readonly tail?: (lanes: readonly LaneCursor[]) => Promise<readonly Entry[]>;
+    readonly tail?: (lanes: readonly SessionCursor[]) => Promise<readonly Entry[]>;
     readonly every?: () => Count;
     readonly repair?: () => RepairMode;
     log(line: Text): void;
@@ -188,7 +188,7 @@ export class Reconciling {
         this.deps = deps;
     }
 
-    due(event: RunEvent): Due {
+    due(event: RecapWritten): Due {
         const turns = count((this.turns.get(event.tab) ?? 0) + event.turns);
         this.turns.set(event.tab, turns);
         return brand<boolean, 'Due'>(event.boundary || turns >= (this.deps.every?.() ?? RECONCILE_EVERY));
@@ -204,7 +204,7 @@ export class Reconciling {
         return brand<boolean, 'Wanted'>(fresh && !this.running.has(key) && (last === undefined || now - last >= GAP_MS));
     }
 
-    async task(tab: TabId, task: CurateTarget, lanes: readonly LaneCursor[], why: CurateWhy): Promise<Ran> {
+    async task(tab: TabId, task: CurateTarget, lanes: readonly SessionCursor[], why: CurateWhy): Promise<Ran> {
         const { deps } = this;
         const [key, now] = [textOf(`${tab}\u0000${task.id}`), deps.clock()];
         const writer = deps.writer();

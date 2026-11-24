@@ -1,6 +1,6 @@
 import { brand } from '#src/recap/domain/brand.ts';
 import { textOf } from '#src/recap/domain/text.ts';
-import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
+import type { RecapRequest, Writer, Written } from '#src/ports/summarizer.ts';
 
 const QUOTES = ['Add a cart to the shop', 'Use SQLite for it, no server', 'also add totals', 'open a merge request', 'can guests keep their basket?', 'cookie is fine'];
 const add = (section: string, text: string, anchor: string, why?: string): Record<string, unknown> => ({ op: 'add', section, text, anchor, ...(why === undefined ? {} : { why }) });
@@ -14,9 +14,9 @@ const ANSWERS: readonly (readonly Record<string, unknown>[])[] = [
     [{ op: 'close', id: 'f5', why: 'answered' }, add('done', 'Guests keep their basket in a cookie', QUOTES[5] ?? '')],
 ];
 
-export function writer(): { readonly summarizer: Summarizer; readonly seen: RecapRequest[] } {
+export function writer(): { readonly summarizer: Writer; readonly seen: RecapRequest[] } {
     const seen: RecapRequest[] = [];
-    const summarizer: Summarizer = {
+    const summarizer: Writer = {
         backend: textOf('fake'),
         contract: 'strict',
         write: (request: RecapRequest): Promise<Written> => {

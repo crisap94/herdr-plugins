@@ -4,7 +4,7 @@ import type { RecapWritten } from '#src/contract/events.ts';
 import type { HistoryFact } from '#src/contract/facts.ts';
 import type { Instant } from '#src/contract/kernel.ts';
 import { isClosedWhy, isSection, type ClosedWhy, type Section } from '#src/recap/domain/fact.ts';
-import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
+import type { RecapWritten as ReconcileWritten } from '#src/recap/application/ledger-reconcile.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
 import type { AgentKind, Lane, PaneId, SessionId, TabId, WorkspaceId } from '#src/recap/domain/lane-shape.ts';
@@ -113,7 +113,7 @@ export const historyOf = (facts: readonly StoredHistoryFact[]): readonly History
         }];
     });
 
-export const writtenOf = (event: RunEvent): RecapWritten | null => {
+export const writtenOf = (event: ReconcileWritten): RecapWritten | null => {
     const scope = valueOf(parseScopeId(event.tab));
     if (scope === null) {
         return null;

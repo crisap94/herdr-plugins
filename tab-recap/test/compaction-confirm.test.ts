@@ -8,7 +8,7 @@ import type { OutcomeDeps } from '#src/recap/application/compaction-outcome.ts';
 import { instant, duration } from '#src/recap/domain/time.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { Mark, Transcripts } from '#src/ports/transcripts.ts';
+import type { Mark, SessionReader } from '#src/ports/transcripts.ts';
 import { UNREAD, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
@@ -21,7 +21,7 @@ import { seenLane } from '#test/support/seen.ts';
 const SINCE = Date.parse('2026-10-10T02:21:48Z');
 const compactedAt = (at: number): Mark => ({ kind: 'compacted', at: instant(at), tokensBefore: countOf(54_709), tokensAfter: countOf(4_460), tookMs: duration(4_000) });
 
-function claude(files: ReadonlyMap<string, readonly Mark[]>): Transcripts {
+function claude(files: ReadonlyMap<string, readonly Mark[]>): SessionReader {
     return {
         agent: agentKind('claude'),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },

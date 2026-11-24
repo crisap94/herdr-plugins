@@ -8,7 +8,7 @@ import { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import { agentWindows } from '#src/adapters/capability/context-window.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
-import type { Transcripts } from '#src/ports/transcripts.ts';
+import type { SessionReader } from '#src/ports/transcripts.ts';
 import type { ModelWindows } from '#src/ports/model-catalogue.ts';
 import type { CompactLimits } from '#src/ports/compact-limits.ts';
 import { memoryStore } from './db/support.ts';
@@ -40,7 +40,7 @@ test('a lane header shows the hint with the percentage and the window it was mea
 
 const lane = (agent: string): ReturnType<typeof laneFrom> => laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent, cwd: '/w' }));
 
-function reader(agent: string, model: string | null, tokens: number, window: number | null): Transcripts {
+function reader(agent: string, model: string | null, tokens: number, window: number | null): SessionReader {
     return {
         agent: agentKind(agent),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },

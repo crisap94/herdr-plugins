@@ -10,7 +10,7 @@ import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import { parseText, parseTextOrNull, type Text, textOf } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
-import type { LaneCursor, TabRecap } from '#src/ports/recap-records.ts';
+import type { SessionCursor, Recap } from '#src/ports/recap-records.ts';
 import { chapter as chapters, lastGoodRun, run as runs, runTask as runTasks, runTaskLane as runTaskLanes, tab as tabs, task as tasks, transcript as transcripts } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { retiredFloor } from './retention.ts';
@@ -26,7 +26,7 @@ interface LatestRun {
     readonly language: Text;
 }
 
-const cursorOf = (row: Row): LaneCursor => ({
+const cursorOf = (row: Row): SessionCursor => ({
     pane: must(parsePaneId(text(row, 'pane'))), agent: must(parseAgentKind(text(row, 'agent'))), transcript: sourcePathOf(text(row, 'source')), cursor: positionOf(whole(row, 'cursor')),
     tail: parseTextOrNull(maybeText(row, 'tail')), title: parseTextOrNull(maybeText(row, 'title')), lastPrompt: parseTextOrNull(maybeText(row, 'last_prompt')), claudeRecap: parseTextOrNull(maybeText(row, 'claude_note')),
 });
@@ -74,7 +74,7 @@ export class RecapReader {
         return { run: null, at: null, language: must(parseText(newest?.language ?? 'en')) };
     }
 
-    read(id: TabId): TabRecap | null {
+    read(id: TabId): Recap | null {
         const orm = this.orm;
         const row = orm.select({ running: tabs.running, backend: tabs.backend, error: tabs.error }).from(tabs)
             .where(and(eq(tabs.id, id), or(eq(tabs.running, 1), isNotNull(tabs.error), isNotNull(tabs.backend),

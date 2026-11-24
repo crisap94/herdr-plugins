@@ -1,7 +1,7 @@
 import { UNREAD, sourcePathOf } from '#src/ports/transcripts.ts';
 import { isScreenSource } from '#src/ports/screens.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
-import type { LaneCursor } from '#src/ports/recap-records.ts';
+import type { SessionCursor } from '#src/ports/recap-records.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
@@ -17,7 +17,7 @@ export interface FileEdits {
 }
 
 export interface EditSource {
-    of(lanes: readonly LaneCursor[]): Promise<readonly FileEdits[]>;
+    of(lanes: readonly SessionCursor[]): Promise<readonly FileEdits[]>;
 }
 
 const REFRESH_EVERY: Milliseconds = must(parseMilliseconds(60_000));
@@ -47,7 +47,7 @@ export class EditTally implements EditSource {
         this.transcripts = transcripts;
     }
 
-    private async editsOf(lane: LaneCursor): Promise<readonly Text[]> {
+    private async editsOf(lane: SessionCursor): Promise<readonly Text[]> {
         const reader = this.transcripts.readerFor(lane.agent);
         if (reader === undefined || lane.transcript === '' || isScreenSource(sourcePathOf(lane.transcript))) {
             return [];
@@ -56,7 +56,7 @@ export class EditTally implements EditSource {
         return isUnknown(chunk) ? [] : chunk.entries.filter((entry) => entry.role === 'tool' && entry.kind === 'edit' && entry.text !== '').map((entry) => entry.text);
     }
 
-    async of(lanes: readonly LaneCursor[]): Promise<readonly FileEdits[]> {
+    async of(lanes: readonly SessionCursor[]): Promise<readonly FileEdits[]> {
         const found = await Promise.all(lanes.map((lane) => this.editsOf(lane)));
         return countEdits(found.flat());
     }
@@ -73,7 +73,7 @@ export class EditCache {
         this.every = every;
     }
 
-    of(lanes: readonly LaneCursor[], now: Instant): readonly FileEdits[] {
+    of(lanes: readonly SessionCursor[], now: Instant): readonly FileEdits[] {
         if (now - this.lastAt >= this.every) {
             this.lastAt = now;
             void this.refresh(lanes);
@@ -81,7 +81,7 @@ export class EditCache {
         return this.found;
     }
 
-    private async refresh(lanes: readonly LaneCursor[]): Promise<void> {
+    private async refresh(lanes: readonly SessionCursor[]): Promise<void> {
         this.found = await this.counts.of(lanes);
     }
 }

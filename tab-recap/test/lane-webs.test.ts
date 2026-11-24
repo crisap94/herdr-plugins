@@ -9,7 +9,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
-import type { LaneRepo, RepoResult } from '#src/ports/lane-repo.ts';
+import type { Workplaces, RepoResult } from '#src/ports/lane-repo.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
@@ -23,7 +23,7 @@ const dir = (path: string): Directory => must(parseDirectory(path));
 const branch = (name: string): Text => must(parseText(name));
 const lane = (pane: string, cwd: string | null): Lane => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd }));
 
-function repos(answers: Record<string, RepoResult>): LaneRepo {
+function repos(answers: Record<string, RepoResult>): Workplaces {
     return { repoOf: (cwd) => Promise.resolve(answers[cwd] ?? { kind: 'no-repo' }) };
 }
 

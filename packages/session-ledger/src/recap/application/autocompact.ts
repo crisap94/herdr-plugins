@@ -1,6 +1,6 @@
 import type { DecisionDraft, DecisionGate, DecisionLedger, DecisionMode, Verdict, SkipGate } from '#src/ports/autocompact-records.ts';
 import type { DeciderPort } from '#src/ports/decider.ts';
-import type { Ledger } from '#src/ports/ledger.ts';
+import type { FactStore } from '#src/ports/ledger.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { isUnknown, saying, type Unknown } from '#src/ports/unknowable.ts';
 import { gateFrom, parseGatePercent, type GateFacts, type LaneStatusAtDecision, type WatchMode, type Policy } from '#src/recap/domain/autocompact.ts';
@@ -39,7 +39,7 @@ export interface AutocompactDeps {
     emit?(event: SafePointEvent): void;
     recent(candidate: Candidate): Promise<readonly Entry[]>;
     statusOf(candidate: Candidate): LaneStatusAtDecision | null;
-    readonly ledger: Pick<Ledger, 'historyOf'>;
+    readonly ledger: Pick<FactStore, 'historyOf'>;
     readonly sessions: Pick<SessionSignals, 'lastBreakAt'>;
     readonly activity: Pick<CompactionActivity, 'activeFor' | 'automaticInProgress'>;
     readonly decisions: Pick<DecisionLedger, 'record' | 'skip' | 'markRequested' | 'pruneSkips' | 'lastDecisionAt' | 'lastDecision' | 'unlinkedCompactSince' | 'unlinkedCompactAny'>;

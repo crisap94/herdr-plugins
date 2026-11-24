@@ -5,7 +5,7 @@ import type { PrintStore } from '#src/recap/application/handoff-print.ts';
 import { renderHandoff } from '#src/recap/application/handoff-pipeline.ts';
 import type { AgentLookup } from '#src/ports/agents.ts';
 import type { PrintAsk, PrintAnswer } from '#src/ports/handoff-print.ts';
-import type { LastRun, TabRecap } from '#src/ports/recap-records.ts';
+import type { LastRun, Recap } from '#src/ports/recap-records.ts';
 import type { TabViewRecord } from '#src/ports/tab-views.ts';
 import type { ClosedLaneList, ClosedLaneRead } from '#src/ports/closed-lanes.ts';
 import { unknown } from '#src/ports/unknowable.ts';
@@ -48,7 +48,7 @@ interface World {
 function printerWith(spy: Spy, world: World = {}, logged: string[] = [], flushed: string[] = []): PrintedHandoffs {
     const base = depsOf();
     const records: Pick<PrintStore['records'], 'readRecap' | 'lastRunOf'> = {
-        readRecap: (): TabRecap => {
+        readRecap: (): Recap => {
             if (world.unreadable === true) {
                 throw locked();
             }

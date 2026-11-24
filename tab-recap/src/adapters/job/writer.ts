@@ -1,5 +1,5 @@
 import type { BackendHarness, HarnessAsk, HarnessChoice } from '#src/ports/harness.ts';
-import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
+import type { RecapRequest, Writer, Written } from '#src/ports/summarizer.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 import type { JobAnswer } from '#src/recap/domain/job.ts';
@@ -9,7 +9,7 @@ import { fittedAsk, unfencedText } from './prompts/recap-prompt.ts';
 import { jobContractOf } from '#src/recap/domain/backend.ts';
 import type { JobContract } from '#src/recap/domain/backend.ts';
 
-export class RecapWriter implements Summarizer {
+export class RecapWriter implements Writer {
     readonly backend: Text;
     readonly contract: JobContract;
     private readonly harness: BackendHarness;

@@ -15,7 +15,7 @@ import { parseCount } from '#src/recap/domain/count.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { tabId } from '#test/support/ids.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { blankRecap, type RecapRecords, type TabRecap } from '#src/ports/recap-records.ts';
+import { blankRecap, type Records, type Recap } from '#src/ports/recap-records.ts';
 import type { TabViewStore } from '#src/ports/tab-views.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
@@ -76,7 +76,7 @@ test('the publisher feeds the bus after each file write and leaves api.json alon
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'api.json'), '{"keep":true}');
     const bus = new DesktopBus((): Instant => instant(1));
-    const records = { readRecap: (tab: string): TabRecap => ({ ...blankRecap(tabId(tab)), at: instant(1000), backend: textOf('custom') }) } as unknown as RecapRecords;
+    const records = { readRecap: (tab: string): Recap => ({ ...blankRecap(tabId(tab)), at: instant(1000), backend: textOf('custom') }) } as unknown as Records;
     const views: TabViewStore = { readTab: (): null => null, writeTab: (): void => undefined, tabOf: (): null => null };
     const publisher = new GuiPublisher({ dir, records, views, now: (): Instant => instant(5), log: (): void => undefined, bus });
     publisher.publish(tabId('t1'));

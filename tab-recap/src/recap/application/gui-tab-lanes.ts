@@ -1,7 +1,7 @@
 import type { Messages } from '#src/i18n/index.ts';
 import type { CompactionRow } from '#src/ports/compaction-records.ts';
 import { DEFAULT_MARK, type PaneNote } from '#src/ports/extension.ts';
-import type { TabRecap } from '#src/ports/recap-records.ts';
+import type { Recap } from '#src/ports/recap-records.ts';
 import { isScreenSource } from '#src/ports/screens.ts';
 import type { LaneWebRecord, TabLaneRecord } from '#src/ports/tab-views.ts';
 import { must } from '#src/protocol/result.ts';
@@ -24,7 +24,7 @@ export interface LaneDraw {
     readonly reads: GuiReads;
     readonly messages: Messages;
     readonly now: Instant;
-    readonly recap: TabRecap;
+    readonly recap: Recap;
 }
 
 function contextOf(use: ContextUse | null | undefined): GuiContext | null {
@@ -78,7 +78,7 @@ function webOf(web: LaneWebRecord | null | undefined): GuiWeb | null {
     return web === null || web === undefined ? null : { base: must(parseText(web.base)), forge: web.forge, branch: orElse(parseText(web.branch), null) };
 }
 
-type Cursor = TabRecap['lanes'][number] | undefined;
+type Cursor = Recap['lanes'][number] | undefined;
 
 const promptOf = (lane: TabLaneRecord, cursor: Cursor): GuiLane['lastPrompt'] => orElse(parseText(lane.lastPrompt ?? cursor?.lastPrompt), null);
 

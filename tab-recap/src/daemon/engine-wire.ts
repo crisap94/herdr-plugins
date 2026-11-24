@@ -1,14 +1,14 @@
 import { parseRestoreText, type Engine, type LedgerEvent, type RestoreText } from '@stateforge-labs/session-ledger';
 import { pluginEngine } from '#src/engine/engine-adapter.ts';
 import { tabRecaps, type TabRecaps } from '#src/engine/tab-recaps.ts';
-import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
+import type { RecapWritten } from '#src/recap/application/ledger-reconcile.ts';
 import { recapWritten, type EventStream } from '#src/recap/application/lane-events.ts';
 import type { CurateTasks } from '#src/recap/application/curate.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import type { Clock } from '#src/ports/clock.ts';
-import type { Enumerators } from '#src/ports/enumerators.ts';
-import type { Summarizer } from '#src/ports/summarizer.ts';
+import type { Enumerator } from '#src/ports/enumerators.ts';
+import type { Writer } from '#src/ports/summarizer.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { CloseEvidence, Pipeline } from '#src/recap/domain/pipeline.ts';
 import type { Debounce } from '#src/recap/domain/debounce.ts';
@@ -57,7 +57,7 @@ export interface WiredEngine {
     readonly viewers: Viewers;
 }
 
-async function runCurator(curate: CurateTasks, event: RunEvent, say: EngineLog): Promise<void> {
+async function runCurator(curate: CurateTasks, event: RecapWritten, say: EngineLog): Promise<void> {
     try {
         await curate.afterRun(event);
     } catch (error) {
@@ -65,7 +65,7 @@ async function runCurator(curate: CurateTasks, event: RunEvent, say: EngineLog):
     }
 }
 
-function ranRun(curate: CurateTasks, events: EventStream, board: () => Board, event: RunEvent, say: EngineLog): void {
+function ranRun(curate: CurateTasks, events: EventStream, board: () => Board, event: RecapWritten, say: EngineLog): void {
     void runCurator(curate, event, say);
     recapWritten(events, lanesOf(board(), event.tab), event.cause);
 }
@@ -76,7 +76,7 @@ export function wireEngine({ store, backends, transcripts, clock, repos, curate,
         source: { transcripts },
         store: { records: checkedRecords(store.records), ledger: checkedLedger(store.ledger) },
         environment: { clock, log, repos, mint: mintFactId },
-        models: { summarizer: (): Summarizer => backends.summarizer(), enumerator: (): Enumerators | null => backends.enumerator() },
+        models: { summarizer: (): Writer => backends.summarizer(), enumerator: (): Enumerator | null => backends.enumerator() },
         settings: {
             language: parseRecapLanguage,
             keepInput: parseKeepInput,

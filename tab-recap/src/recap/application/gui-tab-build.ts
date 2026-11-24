@@ -1,5 +1,5 @@
 import { messagesFor, type Messages } from '#src/i18n/index.ts';
-import type { TabRecap } from '#src/ports/recap-records.ts';
+import type { Recap } from '#src/ports/recap-records.ts';
 import type { TabViewRecord } from '#src/ports/tab-views.ts';
 import { must } from '#src/protocol/result.ts';
 import { renderRecap } from '#src/recap/application/recap-shape.ts';
@@ -64,20 +64,20 @@ function versionsOf(view: TabViewRecord | null, reads: GuiReads): GuiVersions {
     return { plugin: reads.plugin, daemon, stale: reads.plugin !== null && daemon !== reads.plugin ? YES : NO };
 }
 
-function groupsFor(view: TabViewRecord | null, recap: TabRecap): readonly GuiGroup[] {
+function groupsFor(view: TabViewRecord | null, recap: Recap): readonly GuiGroup[] {
     return groupsOf(view?.lanes ?? [], recap.tasks).map((group): GuiGroup => ({
         task: group.task === null ? null : orElse(parseNonEmptyText(group.task.id), null),
         lanes: group.lanes.map((lane) => parsePaneId(lane.pane)).flatMap((pane) => (pane.kind === 'ok' ? [pane.value] : [])),
     }));
 }
 
-const nameOf = (recap: TabRecap): NonEmptyText => orElse(parseNonEmptyText(recap.tasks[0]?.name), orElse(parseNonEmptyText(recap.tab), UNKNOWN));
+const nameOf = (recap: Recap): NonEmptyText => orElse(parseNonEmptyText(recap.tasks[0]?.name), orElse(parseNonEmptyText(recap.tab), UNKNOWN));
 
 const lanesOf = (view: TabViewRecord | null, draw: LaneDraw): readonly GuiLane[] => (view?.lanes ?? []).map((lane) => guiLaneOf(lane, draw)).filter((lane): lane is GuiLane => lane !== null);
 
 const breaksOf = (reads: GuiReads, messages: Messages): readonly GuiBreak[] => (reads.expanded?.breaks ?? []).map((each) => breakOf(each, messages));
 
-const claudeRecapsOf = (recap: TabRecap): readonly Text[] => recap.lanes.flatMap((lane) => orElse(parseText(lane.claudeRecap), null) ?? []);
+const claudeRecapsOf = (recap: Recap): readonly Text[] => recap.lanes.flatMap((lane) => orElse(parseText(lane.claudeRecap), null) ?? []);
 
 const expandedOf = (reads: GuiReads, task: RecapTask): ExpandedTask | undefined => reads.expanded?.tasks.find((each) => textOf(each.name) === task.name);
 
@@ -85,7 +85,7 @@ const websOf = (view: TabViewRecord | null, reads: GuiReads): TaskDraw['webs'] =
 
 const sessionOf = (reads: GuiReads): GuiTab['session'] => (reads.expanded === null ? null : guiSessionOf(reads.expanded.session));
 
-export function guiTabOf(recap: TabRecap, view: TabViewRecord | null, now: Instant, reads: GuiReads = BLANK_READS): GuiTab {
+export function guiTabOf(recap: Recap, view: TabViewRecord | null, now: Instant, reads: GuiReads = BLANK_READS): GuiTab {
     const messages = messagesFor(reads.locale);
     const lanes = lanesOf(view, { reads, messages, now, recap });
     const taskDraw: TaskDraw = { now, messages, reads, webs: websOf(view, reads) };

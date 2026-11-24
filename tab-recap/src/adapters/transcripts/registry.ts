@@ -6,7 +6,7 @@ import type { ScreenWants } from './screen.ts';
 import type { ScreenReader } from '#src/ports/screens.ts';
 import { TranscriptRegistry, type TranscriptReaders } from '#src/ports/transcript-registry.ts';
 import { type AgentKind, parseAgentKind } from '#src/recap/domain/ids.ts';
-import type { Transcripts } from '#src/ports/transcripts.ts';
+import type { SessionReader } from '#src/ports/transcripts.ts';
 import { supported } from '#src/ports/capability.ts';
 import type { Support } from '#src/ports/capability.ts';
 import type { HistoryWhy, InFlightWhy } from '#src/ports/capability-reasons.ts';
@@ -26,7 +26,7 @@ export function replayKindOfPath(flag: Text | null, file: FsPath): RegisteredKin
     return registeredKindOf(textOf(flag ?? harnessOfTranscriptPath(file) ?? (file.includes(CODEX_HOME_MARKER) ? 'codex' : 'claude')));
 }
 
-type ReaderSet = Readonly<Record<RegisteredKind, Support<() => Transcripts, HistoryWhy>>>;
+type ReaderSet = Readonly<Record<RegisteredKind, Support<() => SessionReader, HistoryWhy>>>;
 
 
 const READERS = {
@@ -42,7 +42,7 @@ export const IN_FLIGHT_CAPABILITIES = {
 } satisfies Readonly<Record<RegisteredKind, Support<'reader', InFlightWhy>>>;
 
 function readersOf(readers: ReaderSet): TranscriptReaders {
-    return new Map(Object.entries(readers).flatMap(([kind, capability]): [AgentKind, Transcripts][] => capability.kind === 'supported' ? [[must(parseAgentKind(kind)), capability.value()]] : []));
+    return new Map(Object.entries(readers).flatMap(([kind, capability]): [AgentKind, SessionReader][] => capability.kind === 'supported' ? [[must(parseAgentKind(kind)), capability.value()]] : []));
 }
 
 function unavailableReason(kind: AgentKind): Text {
@@ -65,5 +65,5 @@ export function replayTranscriptRegistry(): TranscriptRegistry {
     const claude = READERS.claude;
     const codex = READERS.codex;
     if (claude.kind !== 'supported' || codex.kind !== 'supported') throw new Error('Replay readers are unavailable');
-    return new TranscriptRegistry(new Map<AgentKind, Transcripts>([[must(parseAgentKind('claude')), claude.value()], [must(parseAgentKind('codex')), codex.value()]]), null, unavailableReason);
+    return new TranscriptRegistry(new Map<AgentKind, SessionReader>([[must(parseAgentKind('claude')), claude.value()], [must(parseAgentKind('codex')), codex.value()]]), null, unavailableReason);
 }

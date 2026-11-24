@@ -49,10 +49,10 @@ import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { InFlightReason } from '#src/ports/autocompact-reasons.ts';
 import { duration, instant } from '#src/recap/domain/time.ts';
 import type { DeciderPort } from '#src/ports/decider.ts';
-import type { Summarizer, Written } from '#src/ports/summarizer.ts';
+import type { Writer, Written } from '#src/ports/summarizer.ts';
 import type { ScreenOutcome, ScreenReader } from '#src/ports/screens.ts';
 import { UNREAD, sourcePathOf } from '#src/ports/transcripts.ts';
-import type { Chunk, ChunkResult, Located, Mark, Transcripts } from '#src/ports/transcripts.ts';
+import type { Chunk, ChunkResult, Located, Mark, SessionReader } from '#src/ports/transcripts.ts';
 import { NO_REPOS } from '#test/support.ts';
 import { memoryStore, storeRead } from '#test/db/support.ts';
 import { opencodeFixture } from '#test/opencode-fixture.ts';
@@ -86,7 +86,7 @@ const today = (): string => { const day = new Date(); return join(String(day.get
 
 interface Row {
     readonly kind: Kind;
-    readonly reader: Transcripts;
+    readonly reader: SessionReader;
     readonly empty: Lane;
     readonly recorded: Lane;
     readonly unplaced: Lane;
@@ -309,7 +309,7 @@ test('a registered transcript reader without in-flight support shows its declare
     const base = ROWS.find((row) => row.kind === 'codex');
     assert.ok(base);
     const why: InFlightReason = 'unregistered-reader';
-    const reader: Transcripts = {
+    const reader: SessionReader = {
         agent: agentKind('codex'), inFlight: { kind: 'unsupported', why }, locate: (placed) => base.reader.locate(placed),
         read: (source, was, budget) => base.reader.read(source, was, budget), latestPrompt: (source, budget) => base.reader.latestPrompt(source, budget),
     };
@@ -340,10 +340,10 @@ test('gemini refuses: not compactable, `no reader for gemini` in the recap, and 
     assert.match(world.toasts.join('\n'), /No agent here can be compacted/);
 
     const store = memoryStore();
-    const writer: Summarizer = { backend: textOf('fake'), contract: 'strict', write: (): Promise<Written> => Promise.resolve({ kind: 'written', text: textOf('{"ops":[]}'), costUsd: brand<number, 'Usd'>(0) }) };
+    const writer: Writer = { backend: textOf('fake'), contract: 'strict', write: (): Promise<Written> => Promise.resolve({ kind: 'written', text: textOf('{"ops":[]}'), costUsd: brand<number, 'Usd'>(0) }) };
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId,
         repos: NO_REPOS, transcripts: registryWith({}), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger),
-        clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Summarizer => writer,
+        clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Writer => writer,
         language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined,
     });
     await job.refreshNow(tabId('w1:t1'), [gemini]);

@@ -4,7 +4,7 @@ import { resolveSource } from '#src/recap/application/handoff-source.ts';
 import type { SourceDeps } from '#src/recap/application/handoff-source.ts';
 import { HANDOFF_CLOSED_WINDOW_MS } from '#src/recap/application/handoff-limits.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
-import type { RecapRecords, TabRecap } from '#src/ports/recap-records.ts';
+import type { Records, Recap } from '#src/ports/recap-records.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
@@ -30,13 +30,13 @@ const board = [
 
 const task = (key: string, lanes: readonly string[]): RecapTask => ({ id: textOf(key), name: textOf(key), lanes: lanes.map((lane) => paneIdOf(lane)), sections: null, markdown: textOf('') });
 
-const recapWith = (...tasks: readonly RecapTask[]): TabRecap => ({ ...blankRecap(tabId('w1:t1')), tasks });
+const recapWith = (...tasks: readonly RecapTask[]): Recap => ({ ...blankRecap(tabId('w1:t1')), tasks });
 
-const readingOf = (recap: TabRecap | null): Pick<RecapRecords, 'readRecap'> => ({ readRecap: () => recap });
+const readingOf = (recap: Recap | null): Pick<Records, 'readRecap'> => ({ readRecap: () => recap });
 
 interface Parts {
     readonly lanes?: readonly Lane[];
-    readonly recap?: TabRecap | null;
+    readonly recap?: Recap | null;
     readonly records?: SourceDeps['records'];
     readonly facts?: readonly Fact[];
 }
@@ -106,7 +106,7 @@ test('closed facts count only inside the closed window', () => {
 });
 
 test('a source that cannot be read is unknown', () => {
-    const broken: Pick<RecapRecords, 'readRecap'> = { readRecap: () => { throw new Error('store locked'); } };
+    const broken: Pick<Records, 'readRecap'> = { readRecap: () => { throw new Error('store locked'); } };
     assert.deepEqual(resolveSource('live', SOURCE, depsOf({ records: broken })), { kind: 'unknown', why: 'Error' });
 });
 

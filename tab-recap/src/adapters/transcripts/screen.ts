@@ -10,7 +10,7 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
 import { SCREEN_PREFIX } from '#src/ports/screens.ts';
 import type { ScreenReader } from '#src/ports/screens.ts';
-import type { ChunkResult, InFlightCapability, Located, Position, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import type { ChunkResult, InFlightCapability, Located, Position, PromptResult, SessionReader } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { sourcePathOf, cursorOf, grewOf } from '#src/ports/transcripts.ts';
 
@@ -22,7 +22,7 @@ export type ScreenWants = (agent: AgentKind) => Presence;
 
 const hashOf = (text: Text): Text => must(parseText(createHash('sha1').update(text).digest('hex').slice(0, 16)));
 
-export class ScreenTranscripts implements Transcripts {
+export class ScreenTranscripts implements SessionReader {
     readonly agent = must(parseAgentKind(SCREEN_READER_ID));
     readonly inFlight: InFlightCapability = { kind: 'unsupported', why: 'screen' };
     private readonly screens: ScreenReader;

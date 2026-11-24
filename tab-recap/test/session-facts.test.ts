@@ -12,7 +12,7 @@ import { en } from '#src/i18n/en.ts';
 import type { Messages } from '#src/i18n/messages.ts';
 import { es } from '#src/i18n/es.ts';
 import { sessionLines, spanOf } from '#src/recap/render/session-lines.ts';
-import type { Transcripts } from '#src/ports/transcripts.ts';
+import type { SessionReader } from '#src/ports/transcripts.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './fakes/cause.ts';
 import { cursor } from '#test/db/support.ts';
@@ -86,7 +86,7 @@ test('edit counts: per path, most edited first, ties by path', () => {
     assert.deepEqual(countEdits([]), []);
 });
 
-const reader = (agent: string, entries: readonly { role: 'tool' | 'agent'; kind?: 'edit' | 'shell'; text: Text }[] | 'unreadable'): Transcripts => ({
+const reader = (agent: string, entries: readonly { role: 'tool' | 'agent'; kind?: 'edit' | 'shell'; text: Text }[] | 'unreadable'): SessionReader => ({
     agent: agentKind(agent), inFlight: { kind: 'unsupported', why: 'unregistered-reader' }, locate: () => Promise.resolve({ kind: 'located', source: sourcePathOf('x') }), latestPrompt: () => Promise.resolve({ kind: 'prompt', text: null }),
     read: () => Promise.resolve(entries === 'unreadable' ? unknown({ why: 'unreadable', detail: causeOf('x') }) : { kind: 'chunk', entries, title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(0), tail: null }, grew: grewOf(false) }),
 });
@@ -103,7 +103,7 @@ test('edit calls are counted through each lane\'s own reader; screens, unreadabl
 
 test('the edit counts read each transcript with the one shared read budget, 4 MiB', async () => {
     const budgets: number[] = [];
-    const recording: Transcripts = {
+    const recording: SessionReader = {
         ...reader('claude', [{ role: 'tool', kind: 'edit', text: textOf('src/a.ts') }]),
         read: (source, was, budget) => {
             budgets.push(budget);
@@ -118,7 +118,7 @@ test('the edit counts read each transcript with the one shared read budget, 4 Mi
 test('the cache answers at once with what it has and refreshes in the background once a minute', async () => {
     let reads = 0;
     const entries = [{ role: 'tool' as const, kind: 'edit' as const, text: textOf('src/a.ts') }];
-    const counting: Transcripts = { ...reader('claude', entries), read: (...args) => { reads += 1; return reader('claude', entries).read(...args); } };
+    const counting: SessionReader = { ...reader('claude', entries), read: (...args) => { reads += 1; return reader('claude', entries).read(...args); } };
     const cache = new EditCache(new EditTally(registryWith({ claude: counting })), must(parseMilliseconds(60_000)));
     assert.deepEqual(cache.of([cursor('w1:p1')], instant(0)), [], 'the first look does not wait');
     await new Promise((resolve) => { setTimeout(resolve, 20); });

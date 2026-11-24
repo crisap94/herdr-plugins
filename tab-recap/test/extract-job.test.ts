@@ -7,7 +7,7 @@ import { countedWriter } from '#src/recap/application/counted-writer.ts';
 import type { Extracted, Ground } from '#src/recap/application/extract-job.ts';
 import { numbered, severalOf } from '#src/recap/application/ledger-input.ts';
 import { writerContext } from '#src/recap/application/writer-context.ts';
-import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
+import type { RecapRequest, Writer, Written } from '#src/ports/summarizer.ts';
 import { gateName } from '#src/recap/domain/gates/gatekeeper.ts';
 import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
 import { factOf } from './fakes/facts.ts';
@@ -27,9 +27,9 @@ const ground: Ground = {
 const add = (section: string, text: string): Record<string, unknown> => ({ op: 'add', section, text, anchor: 'go' });
 const ops = (...list: readonly Record<string, unknown>[]): string => JSON.stringify({ ops: list });
 
-function writer(answers: readonly string[], backend = 'fake', contract: 'strict' | 'free-text' = 'strict'): { summarizer: Summarizer; calls: RecapRequest[] } {
+function writer(answers: readonly string[], backend = 'fake', contract: 'strict' | 'free-text' = 'strict'): { summarizer: Writer; calls: RecapRequest[] } {
     const calls: RecapRequest[] = [];
-    const summarizer: Summarizer = { backend: textOf(backend), contract, write: (request): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: textOf(answers[Math.min(calls.length - 1, answers.length - 1)] ?? ''), costUsd: brand<number, 'Usd'>(0.5) }); } };
+    const summarizer: Writer = { backend: textOf(backend), contract, write: (request): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'written', text: textOf(answers[Math.min(calls.length - 1, answers.length - 1)] ?? ''), costUsd: brand<number, 'Usd'>(0.5) }); } };
     return { summarizer, calls };
 }
 
@@ -118,7 +118,7 @@ test('the replay counting wrapper preserves a custom writer contract', async () 
 
 test('a harness that fails outright is not retried', async () => {
     const calls: RecapRequest[] = [];
-    const failing: Summarizer = { backend: textOf('fake'), contract: 'strict', write: (request): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'unknown', why: { why: 'timeout', after: 5 as never } }); } };
+    const failing: Writer = { backend: textOf('fake'), contract: 'strict', write: (request): Promise<Written> => { calls.push(request); return Promise.resolve({ kind: 'unknown', why: { why: 'timeout', after: 5 as never } }); } };
     const done = await extract(failing, requestOf(), ground);
     assert.equal(calls.length, 1);
     assert.equal(done.kind, 'failed');

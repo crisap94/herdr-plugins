@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { ASK_BACK_CHARS, deduplicated, enumerate, enumerateAsked } from '@stateforge-labs/session-ledger/unstable/recap/application/enumerate.ts';
 import type { AgentTurns, EnumerateRun } from '@stateforge-labs/session-ledger/unstable/recap/application/enumerate.ts';
 import { correctionDocument } from '@stateforge-labs/session-ledger/unstable/recap/application/correction-input.ts';
-import type { Enumerators, Enumerated } from '@stateforge-labs/session-ledger/unstable/ports/enumerators.ts';
+import type { Enumerator, Enumerated } from '@stateforge-labs/session-ledger/unstable/ports/enumerators.ts';
 import type { InputCandidate, RecapInput } from '@stateforge-labs/session-ledger/unstable/ports/recap-input.ts';
 import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
@@ -17,13 +17,13 @@ const NOW = 1_700_000_000_000;
 
 const candidate = (text: string, flagged: boolean): InputCandidate => ({ section: 'next', text: textOf(text), why: null, ref: null, at: null, anchor: textOf(text), agent: textOf('claude'), flagged: brand<boolean, 'Flagged'>(flagged) });
 
-const silentEnumerator = (): Enumerators => ({
+const silentEnumerator = (): Enumerator => ({
     backend: textOf('fake'),
     job: textOf('enumerate'),
     write: async (): Promise<Enumerated> => ({ kind: 'unknown', why: { why: 'not-found', what: textOf('model') } }),
 });
 
-const run = (enumerator: Enumerators): EnumerateRun => ({
+const run = (enumerator: Enumerator): EnumerateRun => ({
     enumerator,
     language: textOf('en'),
     tab: { id: textOf('tab-1'), now: instant(NOW), zone: textOf('UTC') },

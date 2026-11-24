@@ -1,7 +1,7 @@
 import { isUnknownRead, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import { countOf, type Count } from '#src/recap/domain/count.ts';
 import { isScreenSource } from '#src/ports/screens.ts';
-import type { LaneCursor } from '#src/ports/recap-records.ts';
+import type { SessionCursor } from '#src/ports/recap-records.ts';
 import { isUnknown, type Unknown } from '#src/ports/unknowable.ts';
 import { UNREAD, type Position, sourcePathOf, cursorOf } from '#src/ports/transcripts.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
@@ -17,7 +17,7 @@ export interface FreshnessInput {
     readonly tab: TabId;
     readonly agent: AgentKind;
     readonly source: FsPath | null;
-    readonly cursor: LaneCursor | null;
+    readonly cursor: SessionCursor | null;
     readonly status: LaneStatus;
     readonly refresh: RefreshStatus;
 }

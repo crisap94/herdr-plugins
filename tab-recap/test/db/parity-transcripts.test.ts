@@ -6,7 +6,7 @@ import { MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
-import type { LaneCursor } from '#src/ports/recap-records.ts';
+import type { SessionCursor } from '#src/ports/recap-records.ts';
 import { normalise } from './parity.ts';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { sourcePathOf, cursorOf } from '#src/ports/transcripts.ts';
@@ -41,7 +41,7 @@ const seedBoth = (db: Database): void => {
     seedRow(2, 'p1', 's0', 0, 300)(db);
 };
 
-const lane = (pane: string, transcript: string, cursor: number, text: string | null = null): LaneCursor => ({ pane: paneId(pane), agent: agentKind('claude'), transcript: sourcePathOf(transcript), cursor: cursorOf(cursor), tail: parseTextOrNull(text), title: parseTextOrNull(text), lastPrompt: parseTextOrNull(text), claudeRecap: parseTextOrNull(text) });
+const lane = (pane: string, transcript: string, cursor: number, text: string | null = null): SessionCursor => ({ pane: paneId(pane), agent: agentKind('claude'), transcript: sourcePathOf(transcript), cursor: cursorOf(cursor), tail: parseTextOrNull(text), title: parseTextOrNull(text), lastPrompt: parseTextOrNull(text), claudeRecap: parseTextOrNull(text) });
 
 const memory = (seed: (db: Database) => void): Database => {
     const opened = openDatabase(fsPathOf(MEMORY));
@@ -54,7 +54,7 @@ const memory = (seed: (db: Database) => void): Database => {
 
 const sourceOf = (db: Database, id: Uint8Array): string | null => (db.prepare('SELECT source FROM transcript WHERE id = ?').get(id) as { source: string } | null)?.source ?? null;
 
-function rawAttach(db: Database, tab: string, lanes: readonly LaneCursor[], at: number): Moved[] {
+function rawAttach(db: Database, tab: string, lanes: readonly SessionCursor[], at: number): Moved[] {
     db.prepare('UPDATE transcript SET attached = 0 WHERE tab_id = ?').run(tab);
     return lanes.map((each, position) => {
         const was = db.prepare('SELECT cursor FROM transcript WHERE tab_id = ? AND pane = ? AND source = ?').get(tab, each.pane, each.transcript) as { cursor: number } | null;
@@ -73,7 +73,7 @@ const shape = (db: Database, moved: readonly Moved[]): unknown => moved.map((eac
 
 const dumpOf = (db: Database): unknown => db.prepare(DUMP_SQL).all();
 
-function attachSteps(seed: (db: Database) => void, steps: readonly { tab: string; lanes: readonly LaneCursor[]; at: number }[]): void {
+function attachSteps(seed: (db: Database) => void, steps: readonly { tab: string; lanes: readonly SessionCursor[]; at: number }[]): void {
     const raw = memory(seed);
     const built = memory(seed);
     try {

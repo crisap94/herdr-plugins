@@ -3,12 +3,12 @@ import type { Applied, CloseOp, Fact, TaskId } from '#src/contract/facts.ts';
 import type { ScopeId, SessionKey } from '#src/contract/ids.ts';
 import type { Instant, TabId, Text } from '#src/contract/kernel.ts';
 import type { Curated, Curator } from '#src/contract/models.ts';
-import type { LaneCursor } from '#src/ports/recap-records.ts';
+import type { SessionCursor } from '#src/ports/recap-records.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import type { Stories as LedgerStories } from '#src/ports/stories.ts';
 import { curatorInput } from '#src/recap/application/curator-input.ts';
-import type { CurateWhy, RunEvent } from '#src/recap/application/ledger-reconcile.ts';
+import type { CurateWhy, RecapWritten } from '#src/recap/application/ledger-reconcile.ts';
 import { answerTextOf } from '#src/recap/application/recap-shape.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
@@ -152,7 +152,7 @@ const curateTask = async (round: Round, marks: Marks): Promise<void> => {
     }
 };
 
-const oneTask = async (round: Round, marks: Marks, reconciling: Reconcile, lanes: readonly LaneCursor[]): Promise<Reconciled> => {
+const oneTask = async (round: Round, marks: Marks, reconciling: Reconcile, lanes: readonly SessionCursor[]): Promise<Reconciled> => {
     try {
         const reconciled = await reconciling.task(round, lanes, 'open');
         await curateTask(round, marks);
@@ -200,7 +200,7 @@ const reconcileScope = async (round: ScopeRound, why: CurateWhy, reconciling: Re
 
 export interface Curating {
     readonly request: (scope: ScopeId) => Promise<void>;
-    readonly afterRun: (scope: ScopeId, event: RunEvent) => Promise<void>;
+    readonly afterRun: (scope: ScopeId, event: RecapWritten) => Promise<void>;
 }
 
 export function curate(plugs: EnginePlugs, bridge: CurateBridge): Curating {

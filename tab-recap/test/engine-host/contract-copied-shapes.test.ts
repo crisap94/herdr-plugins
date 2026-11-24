@@ -7,9 +7,6 @@ const repository = new URL('../../../', import.meta.url);
 const shapesDir = new URL('packages/session-ledger/gates/copied-shapes/', repository);
 
 const NAME_MAP: Readonly<Record<string, string>> = {
-    TabRecap: 'Recap',
-    LaneCursor: 'SessionCursor',
-    LaneMark: 'SessionMark',
     AutocompactStyle: 'DecisionStyle',
     SkipRow: 'Skip',
     LastDecisionRow: 'LastDecision',
@@ -126,7 +123,8 @@ const differencesOf = (copied: Copied, contractText: string, originText: string)
     return want === have ? [] : [`${label}: differs from ${row.origin}\n  main:     ${want}\n  contract: ${have}`];
 };
 
-const RECORD_ROW: Copied = { contract: 'packages/session-ledger/src/contract/records.ts', row: { export: 'Recap', origin: 'packages/session-ledger/src/ports/recap-records.ts', originName: 'TabRecap' } };
+const RECORD_ROW: Copied = { contract: 'packages/session-ledger/src/contract/records.ts', row: { export: 'Recap', origin: 'packages/session-ledger/src/ports/recap-records.ts' } };
+const DECIDED_ROW: Copied = { contract: 'packages/session-ledger/src/compaction-timing/contract.ts', row: { export: 'Decided', origin: 'packages/session-ledger/src/ports/decider.ts', originName: 'DecidedAnswers' } };
 const SECTION_ROW: Copied = { contract: 'packages/session-ledger/src/contract/facts.ts', row: { export: 'Section', origin: 'packages/session-ledger/src/recap/domain/fact.ts', originConst: 'SECTION_IDS' } };
 
 test('every copied declaration of the contract equals its declaration on main', () => {
@@ -141,11 +139,15 @@ test('a copied field whose type drifts from main is reported', () => {
     assert.equal(differencesOf(RECORD_ROW, drifted, read(RECORD_ROW.row.origin)).length, 1);
 });
 
-test('the name map lets a renamed copy match, and the unmapped name does not', () => {
-    const origin = read(RECORD_ROW.row.origin);
-    assert.deepEqual(differencesOf(RECORD_ROW, read(RECORD_ROW.contract), origin), []);
-    const unmapped = read(RECORD_ROW.contract).replace('readonly lanes: readonly SessionCursor[];', 'readonly lanes: readonly LaneCursor[];');
-    assert.equal(differencesOf(RECORD_ROW, unmapped, origin).length, 1);
+test('a copy exported under another name matches its origin through originName and the name map, and an unmapped name does not', () => {
+    assert.ok(allRows().some(({ row }) => row.export === DECIDED_ROW.row.export && row.originName === DECIDED_ROW.row.originName));
+    const origin = read(DECIDED_ROW.row.origin);
+    assert.deepEqual(differencesOf(DECIDED_ROW, read(DECIDED_ROW.contract), origin), []);
+    const unmapped = read(DECIDED_ROW.contract).replace("readonly tokens: Brand<number, 'TokenAmount'>;", 'readonly tokens: UnmappedAmount;');
+    assert.notEqual(unmapped, read(DECIDED_ROW.contract));
+    assert.equal(differencesOf(DECIDED_ROW, unmapped, origin).length, 1);
+    const withoutOriginName: Copied = { contract: DECIDED_ROW.contract, row: { export: 'Decided', origin: DECIDED_ROW.row.origin } };
+    assert.equal(differencesOf(withoutOriginName, read(DECIDED_ROW.contract), origin).length, 1);
 });
 
 test('a literal union that loses a member of its constant array is reported', () => {

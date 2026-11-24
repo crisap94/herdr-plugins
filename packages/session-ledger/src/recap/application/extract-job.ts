@@ -4,7 +4,7 @@ import { brand, type Brand } from '#src/recap/domain/brand.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { InputFact } from '#src/ports/recap-input.ts';
-import type { Correction, RecapRequest, Summarizer } from '#src/ports/summarizer.ts';
+import type { Correction, RecapRequest, Writer } from '#src/ports/summarizer.ts';
 import { addStats, correctionOf, NO_STATS } from '#src/recap/domain/gates/gatekeeper.ts';
 import type { GateStats } from '#src/recap/domain/gates/gatekeeper.ts';
 import type { Gate } from '#src/recap/domain/gates/gate.ts';
@@ -111,7 +111,7 @@ const keepOf = (follow: Followed): readonly Tasked[] => (follow !== undefined &&
 
 const whyOf = (follow: Followed): Text => (follow !== undefined && 'correction' in follow ? follow.correction : textOf('unknown'));
 
-export async function extract(summarizer: Summarizer, request: RecapRequest, ground: Ground): Promise<Extracted> {
+export async function extract(summarizer: Writer, request: RecapRequest, ground: Ground): Promise<Extracted> {
     let cost = usd(0);
     let stats = NO_STATS;
     let follow: Followed;

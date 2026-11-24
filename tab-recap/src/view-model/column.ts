@@ -3,7 +3,7 @@ import type { Break, ColumnTask, ColumnView, CompactionRow, RecapColumn, Row, St
 import { parseAgentName, parseBranchName, parseDirectory, parseDuration, parseFromScreen, parseInstant, parsePaneId, parseProse, parseQueued, parseRunning, parseTaskName, parseTitle, parseTokens, parseWebBase } from '@stateforge-labs/recap-view';
 import type { CompactionRow as LoggedCompaction } from '#src/ports/compaction-records.ts';
 import type { BoundaryBreak } from '#src/ports/boundaries.ts';
-import type { LaneCursor, TabRecap } from '#src/ports/recap-records.ts';
+import type { SessionCursor, Recap } from '#src/ports/recap-records.ts';
 import { isScreenSource } from '#src/ports/screens.ts';
 import type { LaneWebRecord, TabLaneRecord, TabViewRecord } from '#src/ports/tab-views.ts';
 import type { Messages } from '#src/i18n/messages.ts';
@@ -16,7 +16,7 @@ export { wordingOf };
 
 export interface PluginColumnView extends Omit<ColumnView<string>, 'rows' | 'daemonVersion' | 'recap' | 'wording' | 'compactions'> {
     readonly tab: TabViewRecord | null;
-    readonly recap: TabRecap | null;
+    readonly recap: Recap | null;
     readonly messages: Messages;
     readonly compactions?: readonly LoggedCompaction[];
 }
@@ -41,7 +41,7 @@ function laneExtras(lane: TabLaneRecord): Partial<Row> {
     };
 }
 
-export function rowOf(lane: TabLaneRecord, cursor: LaneCursor | undefined): Row {
+export function rowOf(lane: TabLaneRecord, cursor: SessionCursor | undefined): Row {
     return {
         ...laneExtras(lane),
         id: parsePaneId(lane.pane),
@@ -54,7 +54,7 @@ export function rowOf(lane: TabLaneRecord, cursor: LaneCursor | undefined): Row 
     };
 }
 
-function columnRowOf(lane: TabLaneRecord, cursor: LaneCursor | undefined): Row {
+function columnRowOf(lane: TabLaneRecord, cursor: SessionCursor | undefined): Row {
     return { ...rowOf(lane, cursor), title: maybe(cursor?.title ?? lane.title, parseTitle), lastPrompt: maybe(lane.lastPrompt ?? cursor?.lastPrompt ?? null, parseProse) };
 }
 
@@ -62,7 +62,7 @@ export function columnTaskOf(task: RecapTask): ColumnTask {
     return { name: parseTaskName(task.name), members: task.lanes.map(parsePaneId), sections: task.sections, markdown: parseProse(task.markdown) };
 }
 
-export function recapColumnOf(recap: TabRecap): RecapColumn {
+export function recapColumnOf(recap: Recap): RecapColumn {
     return { tasks: recap.tasks.map(columnTaskOf), at: maybe(recap.at, parseInstant), running: parseRunning(recap.running), backend: maybe(recap.backend, parseAgentName), error: maybe(recap.error, parseProse) };
 }
 

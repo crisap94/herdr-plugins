@@ -2,7 +2,7 @@ import { parseFactIndex } from '#src/recap/domain/fact-index.ts';
 import { knownOr } from '#src/ports/guarded-reads.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
-import type { Ledger } from '#src/ports/ledger.ts';
+import type { FactStore } from '#src/ports/ledger.ts';
 import type { LinkedDecision } from '#src/ports/autocompact-records.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import { LANE_CLOSED } from '#src/recap/domain/lane-closed.ts';
@@ -32,7 +32,7 @@ export interface Link {
 
 export type Verified = { readonly kind: 'checked'; readonly checked: Checked } | { readonly kind: 'closed'; readonly at: ClosePoint };
 
-type History = ReturnType<Ledger['historyOf']>;
+type History = ReturnType<FactStore['historyOf']>;
 
 export interface Drafted extends Briefed {
     readonly history: History;

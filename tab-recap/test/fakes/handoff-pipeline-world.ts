@@ -5,8 +5,8 @@ import type { HandoffLane, HandoffRenderInput, HandoffRenderResult } from '#src/
 import { handoffId } from '#test/support/ids.ts';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
-import type { LaneCursor, LastRun } from '#src/ports/recap-records.ts';
-import type { Entry, Transcripts } from '#src/ports/transcripts.ts';
+import type { SessionCursor, LastRun } from '#src/ports/recap-records.ts';
+import type { Entry, SessionReader } from '#src/ports/transcripts.ts';
 import type { WorksiteReaderPort } from '#src/ports/worksite-reader.ts';
 import { fact } from './fact-at.ts';
 import { MemoryWorksite } from './worksite-reader.ts';
@@ -23,7 +23,7 @@ export const OTHER_ID = handoffId('hnd_01j3tt8z1efcd9tfr14d2pf2dc');
 export const SOURCE_FILE = 'session.jsonl';
 export const LAST_RUN: LastRun = { at: instant(NOW - 60_000), cause: 'turn-ended' };
 export const LANE: HandoffLane = { tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), status: 'idle', cwd: asText('/repo') };
-export const CURSOR: LaneCursor = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf(SOURCE_FILE), cursor: cursorOf(0), tail: null, title: null, lastPrompt: null, claudeRecap: null };
+export const CURSOR: SessionCursor = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf(SOURCE_FILE), cursor: cursorOf(0), tail: null, title: null, lastPrompt: null, claudeRecap: null };
 
 export const FACTS: readonly Fact[] = [
     fact('g1', 'goal', 'Ship the parser', NOW - 5_000),
@@ -37,7 +37,7 @@ export const FACTS: readonly Fact[] = [
     fact('c1', 'rules', 'Old rule', NOW - 3_600_000, { state: 'closed', closedAt: instant(NOW - 3_600_000), closedWhy: 'superseded' }),
 ];
 
-export function claudeReader(prompts: number): Transcripts {
+export function claudeReader(prompts: number): SessionReader {
     const entries: Entry[] = Array.from({ length: prompts }, (_, index): Entry => ({ role: 'user', text: brand<string, 'Text'>(`prompt ${index}`) }));
     return {
         agent: agentKind('claude'),

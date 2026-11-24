@@ -13,7 +13,7 @@ import { must } from '#src/protocol/result.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import { parseSessionId } from '#src/recap/domain/ids.ts';
 import { agentKind } from '#test/support/ids.ts';
-import type { Transcripts } from '#src/ports/transcripts.ts';
+import type { SessionReader } from '#src/ports/transcripts.ts';
 import type { ModelWindows } from '#src/ports/model-catalogue.ts';
 import { sourcePathOf } from '#src/ports/transcripts.ts';
 import { countOf } from '#src/recap/domain/count.ts';
@@ -68,7 +68,7 @@ const launchFixture = (home: string, proc: string, cwd: string, launch: Launch, 
     write(join(proc, String(PID), 'cmdline'), (launch.cmdline ?? ['claude']).map((arg) => `${arg}${NUL}`).join(''));
 };
 
-function reader(model: string, tokens: number): Transcripts {
+function reader(model: string, tokens: number): SessionReader {
     return {
         agent: agentKind('claude'),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },

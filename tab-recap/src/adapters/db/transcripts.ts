@@ -1,7 +1,7 @@
 import type { Database } from 'bun:sqlite';
 import { and, desc, eq, ne, sql } from 'drizzle-orm';
 import { must } from '#src/protocol/result.ts';
-import type { LaneCursor } from '#src/ports/recap-records.ts';
+import type { SessionCursor } from '#src/ports/recap-records.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parsePaneId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
@@ -44,7 +44,7 @@ export class TranscriptStore {
         this.orm = ormOf(db);
     }
 
-    attach(tab: TabId, lanes: readonly LaneCursor[], at: Instant): readonly TranscriptMove[] {
+    attach(tab: TabId, lanes: readonly SessionCursor[], at: Instant): readonly TranscriptMove[] {
         this.orm.update(transcript).set({ attached: 0 }).where(eq(transcript.tabId, tab)).run();
         return lanes.map((lane, position) => {
             const pane = must(parsePaneId(lane.pane));

@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import type { Engine, FollowedSession, HistoryFact as LedgerHistoryFact, LedgerEvent, RestoreText, ScopeId, SessionKey } from '@stateforge-labs/session-ledger';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { createEngine, type Engine as LegacyEngine, type EnginePlugs } from '#src/recap/application/engine.ts';
-import type { RunEvent } from '#src/recap/application/ledger-reconcile.ts';
+import type { RecapWritten } from '#src/recap/application/ledger-reconcile.ts';
 import { tabId, agentKind, paneId } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
@@ -15,8 +15,8 @@ import { FULL_WRITER_VIEW } from '#src/recap/domain/writer-view.ts';
 import { memoryStore, storeRead } from '#test/db/support.ts';
 import { NO_REPOS } from '#test/support.ts';
 import type { Store } from '#src/adapters/db/database.ts';
-import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
-import type { ChunkResult, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import type { RecapRequest, Writer, Written } from '#src/ports/summarizer.ts';
+import type { ChunkResult, Located, PromptResult, SessionReader } from '#src/ports/transcripts.ts';
 import { pluginEngine, type PluginEnginePlugs } from '#src/engine/engine-adapter.ts';
 import { tabRecaps, type TabRecaps } from '#src/engine/tab-recaps.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
@@ -37,7 +37,7 @@ if (first === undefined || second === undefined) {
 }
 const reversed: readonly Lane[] = [second, first];
 
-const reader: Transcripts = {
+const reader: SessionReader = {
     agent: agentKind('claude'),
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
     locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
@@ -48,7 +48,7 @@ const reader: Transcripts = {
 interface World {
     readonly store: Store;
     readonly asked: RecapRequest[];
-    readonly ran: RunEvent[];
+    readonly ran: RecapWritten[];
     readonly events: LedgerEvent[];
     readonly plugs: Omit<EnginePlugs, 'ran'>;
 }
@@ -56,9 +56,9 @@ interface World {
 function world(): World {
     const store = memoryStore();
     const asked: RecapRequest[] = [];
-    const ran: RunEvent[] = [];
+    const ran: RecapWritten[] = [];
     const events: LedgerEvent[] = [];
-    const summarizer: Summarizer = {
+    const summarizer: Writer = {
         backend: textOf('fake'),
         contract: 'strict',
         write: (request: RecapRequest): Promise<Written> => {
@@ -69,7 +69,7 @@ function world(): World {
     const plugs: Omit<EnginePlugs, 'ran'> = {
         source: { transcripts: registryWith({ claude: reader }) },
         store: { records: checkedRecords(store.records), ledger: checkedLedger(store.ledger) },
-        models: { summarizer: (): Summarizer => summarizer, enumerator: () => null },
+        models: { summarizer: (): Writer => summarizer, enumerator: () => null },
         environment: { clock: { now: (): ReturnType<typeof instant> => instant(9) }, repos: NO_REPOS, mint: mintFactId, log: (): void => undefined },
         settings: { language: (): Text => brand<string, 'Text'>('en'), writerView: () => FULL_WRITER_VIEW, keepInput: (): KeepInput => brand<boolean, 'KeepInput'>(true) },
     };
@@ -85,7 +85,7 @@ interface Driver {
 }
 
 function legacyDriver(at: World): LegacyEngine {
-    return createEngine({ ...at.plugs, ran: (event: RunEvent): void => { at.ran.push(event); } });
+    return createEngine({ ...at.plugs, ran: (event: RecapWritten): void => { at.ran.push(event); } });
 }
 
 function adapterDriver(at: World): TabRecaps {

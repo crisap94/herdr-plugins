@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { extract } from '#src/recap/application/extract-job.ts';
 import type { Extracted, Ground } from '#src/recap/application/extract-job.ts';
-import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
+import type { RecapRequest, Writer, Written } from '#src/ports/summarizer.ts';
 import { writerContext } from '#src/recap/application/writer-context.ts';
 import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
 import { gateName } from '#src/recap/domain/gates/gatekeeper.ts';
@@ -27,9 +27,9 @@ const groundOf = (over: { readonly language?: string; readonly agents?: readonly
     grounds: [{ key: textOf('t1'), tab: textOf('w1:t1'), shown: new Map(), open: [], closedLately: [], source: textOf('go'), language: textOf(over.language ?? 'en'), agents: (over.agents ?? ['claude', 'a1']).map(textOf) }],
 });
 
-function writer(...texts: readonly string[]): { summarizer: Summarizer; asked: RecapRequest[] } {
+function writer(...texts: readonly string[]): { summarizer: Writer; asked: RecapRequest[] } {
     const asked: RecapRequest[] = [];
-    const summarizer: Summarizer = {
+    const summarizer: Writer = {
         backend: textOf('fake'),
         contract: 'strict',
         write: (request): Promise<Written> => {
@@ -42,7 +42,7 @@ function writer(...texts: readonly string[]): { summarizer: Summarizer; asked: R
 
 const retryDoc = (request: RecapRequest | undefined): string => (request === undefined ? '' : writerContext(request));
 
-const run = (summarizer: Summarizer, ground = groundOf()): Promise<Extracted> => extract(summarizer, requestOf({ entries: [{ role: 'user', text: textOf('go') }] }), ground);
+const run = (summarizer: Writer, ground = groundOf()): Promise<Extracted> => extract(summarizer, requestOf({ entries: [{ role: 'user', text: textOf('go') }] }), ground);
 const texts = (done: Extracted): readonly string[] => (done.kind === 'ops' ? done.tasks.flatMap((task) => task.ops.flatMap((op) => (op.op === 'add' ? op.text : []))) : []);
 
 test('the adapter: an add or update becomes the item it would put in the recap; a close puts nothing; a decision\'s why is its reason clause', () => {

@@ -1,9 +1,9 @@
 import { checkedLedger, checkedRecords, knownOr, type GuardedLedger, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
-import type { Enumerators } from '#src/ports/enumerators.ts';
-import type { LaneRepo } from '#src/ports/lane-repo.ts';
-import type { Summarizer } from '#src/ports/summarizer.ts';
+import type { Enumerator } from '#src/ports/enumerators.ts';
+import type { Workplaces } from '#src/ports/lane-repo.ts';
+import type { Writer } from '#src/ports/summarizer.ts';
 import { UNREAD, cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
-import type { ChunkResult, Entry, InFlightCapability, Located, PromptResult, Transcripts } from '#src/ports/transcripts.ts';
+import type { ChunkResult, Entry, InFlightCapability, Located, PromptResult, SessionReader } from '#src/ports/transcripts.ts';
 import { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { capabilityWording } from '#src/ports/capability-reasons.ts';
 import { isUnknown, saying } from '#src/ports/unknowable.ts';
@@ -45,15 +45,15 @@ export function mergedWindows(entries: readonly Entry[], mergeTurns: PositiveCou
 }
 
 export interface TypedReplayDeps {
-    readonly reader: Transcripts;
-    readonly summarizer: () => Summarizer;
+    readonly reader: SessionReader;
+    readonly summarizer: () => Writer;
     readonly records: GuardedRecapRecords;
     readonly ledger: GuardedLedger;
-    readonly repos: LaneRepo;
+    readonly repos: Workplaces;
     readonly language: Text;
     readonly log: (line: Text) => void;
     readonly pipeline?: Pipeline;
-    readonly enumerator?: () => Enumerators | null;
+    readonly enumerator?: () => Enumerator | null;
     readonly writerView: WriterView;
     readonly mint: () => FactId;
 }
@@ -79,7 +79,7 @@ const endOf = (window: readonly Entry[] | undefined, from: Instant): Instant => 
 
 const unavailable = (kind: AgentKind): Text => capabilityWording('history-unavailable', must(parseText(kind)));
 
-function windowed(base: Transcripts, file: SessionPath, windows: readonly (readonly Entry[])[], at: Position): Transcripts {
+function windowed(base: SessionReader, file: SessionPath, windows: readonly (readonly Entry[])[], at: Position): SessionReader {
     const read = (): Promise<ChunkResult> => Promise.resolve({
         kind: 'chunk', entries: windows[at.turn] ?? [], title: null, lastPrompt: null, claudeRecap: null, notes: [], position: { cursor: cursorOf(at.turn + 1), tail: null }, grew: grewOf(true),
     });
@@ -107,7 +107,7 @@ function engineOf(deps: TypedReplayDeps, file: SessionPath, windows: readonly (r
     }));
 }
 
-async function entriesOf(reader: Transcripts, file: SessionPath, size: Count): Promise<readonly Entry[]> {
+async function entriesOf(reader: SessionReader, file: SessionPath, size: Count): Promise<readonly Entry[]> {
     const result = await reader.read(sourcePathOf(file), UNREAD, size);
     if (isUnknown(result)) throw new Error(`cannot read ${file}: ${saying(result.why)}`);
     return result.entries;

@@ -8,13 +8,13 @@ import { TranscriptRegistry } from '@stateforge-labs/session-ledger/unstable/por
 import { isScreenSource, SCREEN_PREFIX } from '@stateforge-labs/session-ledger/unstable/ports/transcript-source.ts';
 import { countOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/count.ts';
 import { NO_RUNNING, runningOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/in-flight.ts';
-import { sourcePathOf, type Transcripts } from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
+import { sourcePathOf, type SessionReader } from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
 import { agentKindOf, paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 import { causeOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/failure-cause.ts';
 import { exitCodeOf, isUnknown, saying, unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
 import { text, tabId, paneId, running } from '@stateforge-labs/session-ledger/testkit';
 
-const readerOf = (agent: string): Transcripts => ({
+const readerOf = (agent: string): SessionReader => ({
     agent: agentKindOf(agent),
     locate: async () => ({ kind: 'located', source: sourcePathOf(agent) }),
     read: async () => unknown({ why: 'not-found', what: text(agent) }),
@@ -67,7 +67,7 @@ test('an unknown result is told apart and said in words', () => {
 });
 
 test('an in-flight capability answers with a running count read from a source within a budget', async () => {
-    const reader: Transcripts = {
+    const reader: SessionReader = {
         ...readerOf('claude'),
         inFlight: { kind: 'supported', split: { kind: 'separates' }, read: async (_source, budget) => ({ kind: 'in-flight', count: budget > countOf(0) ? runningOf(2) : NO_RUNNING, background: [] }) },
     };

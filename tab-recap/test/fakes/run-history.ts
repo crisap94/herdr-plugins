@@ -1,8 +1,8 @@
-import type { FailedRun, LastRun, RecapRecords, RecordedRun } from '#src/ports/recap-records.ts';
+import type { FailedRun, LastRun, Records, RecordedRun } from '#src/ports/recap-records.ts';
 
 type Entry = LastRun & { readonly tab: string; readonly error: string | null };
 
-export class MemoryRunHistory implements Pick<RecapRecords, 'recordRun' | 'failRun' | 'lastRunOf'> {
+export class MemoryRunHistory implements Pick<Records, 'recordRun' | 'failRun' | 'lastRunOf'> {
     private readonly runs: Entry[] = [];
 
     recordRun(run: RecordedRun): void {

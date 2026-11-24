@@ -12,7 +12,7 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { DeciderPort } from '#src/ports/decider.ts';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
-import type { Transcripts } from '#src/ports/transcripts.ts';
+import type { SessionReader } from '#src/ports/transcripts.ts';
 import { memoryStore } from './db/support.ts';
 import { decidedOf, textOf } from './fakes/decider-fixtures.ts';
 import { SAFE, candidateFor } from './autocompact-world.ts';
@@ -31,7 +31,7 @@ interface Scripted {
     readonly lane: ReturnType<typeof laneFrom>;
 }
 
-const transcripts: Transcripts = {
+const transcripts: SessionReader = {
     agent: agentKind('claude'),
     locate: () => Promise.resolve({ kind: 'located', source: sourcePathOf('transcript') }),
     read: () => Promise.reject(new Error('not read here')),

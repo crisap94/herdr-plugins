@@ -16,7 +16,7 @@ import { factsOfTabAt } from '#src/adapters/db/imported.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { scratchStore } from '#src/adapters/db/scratch.ts';
-import type { RecapRequest, Summarizer, Written } from '#src/ports/summarizer.ts';
+import type { RecapRequest, Writer, Written } from '#src/ports/summarizer.ts';
 import { styleFor } from '#src/adapters/os/terminal-style.ts';
 import type { JudgePort, JudgeTask } from '#src/ports/judge.ts';
 import { judgedReport } from '#src/recap/application/replay-judge.ts';
@@ -37,9 +37,9 @@ const FILE = join(import.meta.dirname, 'fixtures', 'replay-claude.jsonl');
 const add = (section: string, text: string, why?: string): Record<string, unknown> => ({ op: 'add', section, text, ...(why === undefined ? {} : { why }) });
 const QUOTES = ['Add a cart to the shop', 'Use SQLite for it, no server', 'also add totals', 'open a merge request', 'can guests keep their basket?', 'cookie is fine'];
 
-function scripted(answers: readonly (readonly Record<string, unknown>[])[]): { summarizer: Summarizer; shown: string[] } {
+function scripted(answers: readonly (readonly Record<string, unknown>[])[]): { summarizer: Writer; shown: string[] } {
     const shown: string[] = [];
-    const summarizer: Summarizer = {
+    const summarizer: Writer = {
         backend: textOf('fake'),
         contract: 'strict',
         write: (request: RecapRequest): Promise<Written> => {

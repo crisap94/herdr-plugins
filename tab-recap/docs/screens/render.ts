@@ -8,7 +8,7 @@ import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import type { Messages } from '#src/i18n/messages.ts';
 import { blankRecap } from '#src/ports/recap-records.ts';
-import type { TabRecap } from '#src/ports/recap-records.ts';
+import type { Recap } from '#src/ports/recap-records.ts';
 import { cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import type { LaneWebRecord, TabViewRecord } from '#src/ports/tab-views.ts';
 import { draftFrom, initial, withAvailable } from '#src/recap/application/setup-keys.ts';
@@ -158,7 +158,7 @@ const FIXTURES: Readonly<Record<'en' | 'es', Fixture>> = {
 const WEB: LaneWebRecord = { base: textOf('https://git.example/team/shop'), forge: 'gitlab', branch: textOf('feat/payments-v2') };
 const VERSION = '1.8.1';
 
-const lane = (pane: string, agent: string, prompt: string, title: string | null): TabRecap['lanes'][number] =>
+const lane = (pane: string, agent: string, prompt: string, title: string | null): Recap['lanes'][number] =>
     ({ pane: must(parsePaneId(pane)), agent: must(parseAgentKind(agent)), transcript: sourcePathOf(`${agent}.jsonl`), cursor: cursorOf(1), tail: null, title: parseTextOrNull(title), lastPrompt: textOf(prompt), claudeRecap: null });
 
 function columnView(fixture: Fixture): ColumnView {
@@ -169,7 +169,7 @@ function columnView(fixture: Fixture): ColumnView {
             { pane: paneIdOf('w1:p2'), agent: must(parseAgentKind('codex')), status: textOf('working'), title: null, cwd: null, lastPrompt: null, web: WEB, context: { tokens: countOf(61_000), window: countOf(258_400), source: 'agent' } },
         ],
     };
-    const recap: TabRecap = {
+    const recap: Recap = {
         ...blankRecap(must(parseTabId('w1:t1'))), at: instant(NOW - 120_000), backend: textOf(fixture.backend), tasks: [{ id: textOf('t1'), name: textOf(''), lanes: [paneIdOf('w1:p1'), paneIdOf('w1:p2')], sections: fixture.sections, markdown: renderRecap(fixture.sections, fixture.messages.locale) }],
         lanes: [lane('w1:p1', 'claude', fixture.prompts[0], fixture.title), lane('w1:p2', 'codex', fixture.prompts[1], null)],
     };

@@ -8,7 +8,7 @@ import { GitWorksite } from '#src/adapters/git/worksite.ts';
 import { TranscriptInFlight } from '#src/adapters/transcripts/in-flight.ts';
 import { LOCAL_REQUESTER, type AskBook, type AskEntry, type AskKey } from '#src/ports/ask-ledger.ts';
 import type { HandoffAnswerStore } from '#src/ports/handoff-answers.ts';
-import type { LaneRepo } from '#src/ports/lane-repo.ts';
+import type { Workplaces } from '#src/ports/lane-repo.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import type { HandoffAskRecord, RequestPort } from '#src/ports/requests.ts';
@@ -226,7 +226,7 @@ export interface HandoffWiring {
     readonly store: Store;
     readonly fleet: Fleet;
     readonly transcripts: TranscriptRegistry;
-    readonly repos: LaneRepo;
+    readonly repos: Workplaces;
     readonly claims: LaneClaims;
     readonly recaps: Pick<TabRecaps, 'refresh' | 'flush'>;
     readonly board: () => Board;

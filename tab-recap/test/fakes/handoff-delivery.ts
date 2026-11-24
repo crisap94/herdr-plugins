@@ -2,7 +2,7 @@ import { must } from '#src/protocol/result.ts';
 import { handoffPlanner } from '#src/adapters/capability/handoff-plans.ts';
 import { kindOf } from '#test/fakes/agent-kind.ts';
 import type { AgentLookup, AgentPanes, Prompted, PromptStance, PromptWaitFor } from '#src/ports/agents.ts';
-import type { Located, PromptResult, Transcripts, ChunkResult } from '#src/ports/transcripts.ts';
+import type { Located, PromptResult, SessionReader, ChunkResult } from '#src/ports/transcripts.ts';
 import { unknown, type Unknown } from '#src/ports/unknowable.ts';
 import { causeOf } from './cause.ts';
 import type { Acquired } from '#src/recap/application/typing-lease.ts';
@@ -78,7 +78,7 @@ export function worldOf(over: Partial<World> = {}): World {
     };
 }
 
-function transcriptsOf(world: World): Transcripts {
+function transcriptsOf(world: World): SessionReader {
     return {
         agent: agentKind(world.agent),
         locate: async (lane: Lane): Promise<Located> => {

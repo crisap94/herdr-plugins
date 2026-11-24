@@ -3,9 +3,9 @@ import { test } from 'node:test';
 import { createEngine, parseSessionId, type SessionId } from '@stateforge-labs/session-ledger';
 import { createEngineWorld, cursorAt, followed, key, scope, session, agentKind, text } from '@stateforge-labs/session-ledger/testkit';
 import { CursorCarry } from '@stateforge-labs/session-ledger/unstable/recap/application/cursor-carry.ts';
-import type { LaneCursor } from '@stateforge-labs/session-ledger/unstable/ports/recap-records.ts';
+import type { SessionCursor } from '@stateforge-labs/session-ledger/unstable/ports/recap-records.ts';
 import { agentKindOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
-import { grewOf, UNREAD, type Located, type Position, type Transcripts } from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
+import { grewOf, UNREAD, type Located, type Position, type SessionReader } from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
 import { paneId, sourcePath } from '@stateforge-labs/session-ledger/testkit';
 
 const sessionOf = (id: string): SessionId => {
@@ -14,9 +14,9 @@ const sessionOf = (id: string): SessionId => {
     return read.value;
 };
 
-const cursorOf = (transcript: string, cursor = 0, agent = 'claude'): LaneCursor => ({ pane: paneId('p1'), agent: agentKind(agent), transcript: sourcePath(transcript), cursor: cursorAt(cursor), tail: null, title: null, lastPrompt: null, claudeRecap: null });
+const cursorOf = (transcript: string, cursor = 0, agent = 'claude'): SessionCursor => ({ pane: paneId('p1'), agent: agentKind(agent), transcript: sourcePath(transcript), cursor: cursorAt(cursor), tail: null, title: null, lastPrompt: null, claudeRecap: null });
 
-const readerOf = (asked: string[], same: boolean): Transcripts => ({
+const readerOf = (asked: string[], same: boolean): SessionReader => ({
     agent: agentKindOf('claude'),
     inFlight: { kind: 'unsupported', why: 'in-flight-unavailable' },
     locate: () => Promise.resolve({ kind: 'unknown', why: { why: 'not-found', what: text('unused') } }),

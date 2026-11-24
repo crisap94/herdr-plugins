@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { messagesFor } from '#src/i18n/index.ts';
 import type { CompactionRow } from '#src/ports/compaction-records.ts';
-import { recapRunningOf, type LaneCursor, type TabRecap } from '#src/ports/recap-records.ts';
+import { recapRunningOf, type SessionCursor, type Recap } from '#src/ports/recap-records.ts';
 import type { TabLaneRecord } from '#src/ports/tab-views.ts';
 import type { ColumnView } from '#src/recap/render/present.ts';
 import { factsOfBare } from '#test/support/session-readings.ts';
@@ -23,9 +23,9 @@ import { laneRecord, viewRecord } from '#test/support/tab-view-records.ts';
 
 const lane = (pane: string, status: string): TabLaneRecord => laneRecord({ pane, agent: 'claude', status, title: `title ${pane}`, cwd: '/repo', web: { base: 'https://gitlab.example/repo', forge: 'gitlab', branch: 'main' } });
 
-const cursor = (pane: string, transcript: string): LaneCursor => ({ pane: paneId(pane), agent: agentKind('claude'), transcript: sourcePathOf(transcript), cursor: cursorOf(4), tail: null, title: null, lastPrompt: textOf('ship it'), claudeRecap: textOf('harness words') });
+const cursor = (pane: string, transcript: string): SessionCursor => ({ pane: paneId(pane), agent: agentKind('claude'), transcript: sourcePathOf(transcript), cursor: cursorOf(4), tail: null, title: null, lastPrompt: textOf('ship it'), claudeRecap: textOf('harness words') });
 
-const recap: TabRecap = {
+const recap: Recap = {
     tab: tabId('t1'),
     lanes: [cursor('p1', '/logs/p1.jsonl'), cursor('p2', 'screen:p2')],
     tasks: [{ id: textOf('k1'), name: textOf('build'), lanes: [paneIdOf('p1'), paneIdOf('p2')], sections: null, markdown: textOf('# build') }],

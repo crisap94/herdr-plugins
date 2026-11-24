@@ -1,15 +1,15 @@
-import type { CheckedLedger, Ledger } from '#src/ports/ledger.ts';
-import type { CheckedRecapRecords, RecapRecords } from '#src/ports/recap-records.ts';
+import type { CheckedLedger, FactStore } from '#src/ports/ledger.ts';
+import type { CheckedRecapRecords, Records } from '#src/ports/recap-records.ts';
 import { isUnknown, type Unknown } from '#src/ports/unknowable.ts';
 
 type RecordReads = 'readRecap' | 'lastRunOf';
 type LedgerReads = 'openOf' | 'recentlyClosed' | 'allOf' | 'keysOf';
-type Read = RecapRecords[RecordReads] | Ledger[LedgerReads];
+type Read = Records[RecordReads] | FactStore[LedgerReads];
 type Guarded<F extends Read> = { read(...args: Parameters<F>): ReturnType<F> | Unknown }['read'];
 
-export type GuardedRecapRecords = Omit<RecapRecords, RecordReads> & { readonly [K in RecordReads]: Guarded<RecapRecords[K]> };
+export type GuardedRecapRecords = Omit<Records, RecordReads> & { readonly [K in RecordReads]: Guarded<Records[K]> };
 
-export type GuardedLedger = Omit<Ledger, LedgerReads> & { readonly [K in LedgerReads]: Guarded<Ledger[K]> };
+export type GuardedLedger = Omit<FactStore, LedgerReads> & { readonly [K in LedgerReads]: Guarded<FactStore[K]> };
 
 export const isUnknownRead = <T>(read: T | Unknown): read is Extract<T | Unknown, Unknown> => typeof read === 'object' && read !== null && 'kind' in read && typeof read.kind === 'string' && isUnknown({ kind: read.kind });
 
@@ -36,7 +36,7 @@ export const checkedLedger = (ledger: GuardedLedger): CheckedLedger => ({
     historyOf: ledger.historyOf.bind(ledger),
 });
 
-export const fallbackLedger = (ledger: GuardedLedger, unreported: (failure: Unknown) => void): Ledger => ({
+export const fallbackLedger = (ledger: GuardedLedger, unreported: (failure: Unknown) => void): FactStore => ({
     openOf: orElse(ledger.openOf.bind(ledger), []),
     recentlyClosed: orElseOf2(ledger.recentlyClosed.bind(ledger), []),
     allOf: (task) => { const found = ledger.allOf(task); if (isUnknownRead(found)) { unreported(found); return []; } return found; },

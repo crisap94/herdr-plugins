@@ -11,13 +11,13 @@ import { must } from '#src/protocol/result.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { tabId } from '#test/support/ids.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { blankRecap, type RecapRecords } from '#src/ports/recap-records.ts';
+import { blankRecap, type Records } from '#src/ports/recap-records.ts';
 import type { TabViewStore } from '#src/ports/tab-views.ts';
 
 const SAMPLE_TAB = 'w1';
 const SAMPLE_NEED = 'n1';
 
-const records: RecapRecords = {
+const records: Records = {
     readRecap: (tab) => blankRecap(tab),
     lastRunOf: () => null,
     beginRun: () => undefined,

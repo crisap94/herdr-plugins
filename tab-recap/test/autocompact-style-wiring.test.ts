@@ -22,7 +22,7 @@ import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { DecidedAnswersResult, DeciderPort } from '#src/ports/decider.ts';
-import type { InFlightResult, Located, Transcripts } from '#src/ports/transcripts.ts';
+import type { InFlightResult, Located, SessionReader } from '#src/ports/transcripts.ts';
 import { memoryStore } from './db/support.ts';
 import { decidedOf, textOf } from './fakes/decider-fixtures.ts';
 import { agentKind } from '#test/support/ids.ts';
@@ -40,7 +40,7 @@ function keeping(keeps: number): DeciderPort {
     return { label: textOf('fake'), ask: (_s, questions): Promise<DecidedAnswersResult> => Promise.resolve(decidedOf(Object.fromEntries([...questions.keys()].map((id): [string, number] => [id, keeps])))) };
 }
 
-function inertTranscripts(): Transcripts {
+function inertTranscripts(): SessionReader {
     return {
         agent: agentKind('claude'),
         locate: (): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf('s') }),
@@ -57,7 +57,7 @@ async function decisionUnder(keys: Readonly<Record<string, string>>, closes: num
         label: textOf('fake'),
         ask: (_state, questions): Promise<DecidedAnswersResult> => Promise.resolve(decidedOf(Object.fromEntries([...questions.keys()].map((id) => [id, id === 'closes_request' ? closes : 0.15])))),
     };
-    const transcripts: Transcripts = {
+    const transcripts: SessionReader = {
         agent: agentKind('claude'),
         locate: () => Promise.resolve({ kind: 'located', source: sourcePathOf('transcript') }),
         read: () => Promise.reject(new Error('not read here')),

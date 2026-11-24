@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseLegacyHidden, parseLegacyRecapFile, parseLegacyViewFile, parseLegacyVisibility, type LegacyViewFile } from '#src/ports/legacy-store-files.ts';
-import type { TabRecap } from '#src/ports/recap-records.ts';
+import type { Recap } from '#src/ports/recap-records.ts';
 import type { VisibilityAsk } from '#src/ports/requests.ts';
 import { must, type Result } from '#src/protocol/result.ts';
 import type { HiddenState } from '#src/recap/domain/board.ts';
@@ -63,7 +63,7 @@ export class LegacyStoreFiles {
         }
     }
 
-    recaps(): readonly TabRecap[] {
+    recaps(): readonly Recap[] {
         return this.names('recaps').flatMap((name) => {
             const file = attempt(() => parseLegacyRecapFile(JSON.parse(readFileSync(this.file('recaps', name), 'utf8'))));
             return file === null ? [] : [file];

@@ -1,4 +1,4 @@
-import type { Ledger } from '#src/ports/ledger.ts';
+import type { FactStore } from '#src/ports/ledger.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { brand } from '#src/recap/domain/brand.ts';
@@ -18,7 +18,7 @@ export interface GroundWorld {
     readonly tasks: readonly TaskShape[];
     readonly built: Built;
     readonly entries: readonly Entry[];
-    readonly ledger: Omit<Ledger, 'keysOf'>;
+    readonly ledger: Omit<FactStore, 'keysOf'>;
     readonly now: Instant;
     readonly language: Text;
 }

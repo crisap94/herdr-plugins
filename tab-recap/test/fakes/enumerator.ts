@@ -1,6 +1,6 @@
 import { brand } from '#src/recap/domain/brand.ts';
 import { textOf } from '#src/recap/domain/text.ts';
-import type { Enumerated, Enumerators } from '#src/ports/enumerators.ts';
+import type { Enumerated, Enumerator } from '#src/ports/enumerators.ts';
 import { unknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
@@ -9,9 +9,9 @@ export type Reply = string | ((document: string, call: number) => string);
 
 export const FAIL = 'fail';
 
-export function scripted(replies: readonly Reply[]): { readonly enumerator: Enumerators; readonly documents: string[] } {
+export function scripted(replies: readonly Reply[]): { readonly enumerator: Enumerator; readonly documents: string[] } {
     const documents: string[] = [];
-    const enumerator: Enumerators = {
+    const enumerator: Enumerator = {
         backend: must(parseText('fake/enumerator')), job: must(parseText('fake · low')),
         write: (document): Promise<Enumerated> => {
             documents.push(document);
