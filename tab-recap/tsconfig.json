@@ -26,7 +26,6 @@
     "bin",
     "test",
     "docs/screens/render.ts",
-    "ci/*.ts",
     "gates/*.ts",
     "gates/bin/*.ts",
     "gates/migrations/*.ts",

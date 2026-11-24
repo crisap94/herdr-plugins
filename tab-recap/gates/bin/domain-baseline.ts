@@ -3,9 +3,8 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { basename, dirname, join, relative } from 'node:path';
 import { err, ok, type Result } from './result.ts';
 import { CATEGORIES, type Counts, type Finding } from './domain-findings.ts';
-import type { Lanes } from './lane-map.ts';
 
-const LANE_FILE = /^(.+)\.json$/;
+const BASELINE_FILE = /^(.+)\.json$/;
 
 type Fields = Readonly<Record<string, unknown>>;
 
@@ -51,17 +50,12 @@ const baselineFile = (path: string): Result<Counts, string> => {
     }
 };
 
-const strayOf = (name: string, rows: Counts, lanes: Lanes | null, merged: Counts): string | undefined => {
-    const lane = LANE_FILE.exec(name)?.[1] ?? '';
-    const owned = lanes === null ? null : new Set(lanes[lane] ?? []);
-    const stray = Object.keys(rows).find((file) => (owned !== null && !owned.has(file)) || file in merged);
-    if (stray === undefined) {
-        return undefined;
-    }
-    return stray in merged ? `${name}: ${stray} has a row in two baseline files` : `${name}: ${stray} is not a file of lane ${lane}`;
+const strayOf = (name: string, rows: Counts, merged: Counts): string | undefined => {
+    const stray = Object.keys(rows).find((file) => file in merged);
+    return stray === undefined ? undefined : `${name}: ${stray} has a row in two baseline files`;
 };
 
-export const loadBaseline = (path: string, lanes: Lanes | null): Result<Counts, string> => {
+export const loadBaseline = (path: string): Result<Counts, string> => {
     if (!existsSync(path)) {
         return ok({});
     }
@@ -69,12 +63,12 @@ export const loadBaseline = (path: string, lanes: Lanes | null): Result<Counts, 
         return baselineFile(path);
     }
     const merged: Record<string, Counts[string]> = {};
-    for (const name of readdirSync(path).filter((entry) => LANE_FILE.test(entry)).toSorted()) {
+    for (const name of readdirSync(path).filter((entry) => BASELINE_FILE.test(entry)).toSorted()) {
         const rows = baselineFile(join(path, name));
         if (rows.kind === 'err') {
             return rows;
         }
-        const stray = strayOf(name, rows.value, lanes, merged);
+        const stray = strayOf(name, rows.value, merged);
         if (stray !== undefined) {
             return err(stray);
         }
@@ -141,25 +135,13 @@ const sortedRow = (row: Counts[string]): Counts[string] => Object.fromEntries(CA
 const rowsOf = (counts: Counts, files: readonly string[]): string =>
     `${JSON.stringify(Object.fromEntries(files.toSorted().map((file) => [file, sortedRow(counts[file] ?? {})])), null, 2)}\n`;
 
-export const writeBaseline = (dir: string, counts: Counts, lanes: Lanes | null): Result<string, string> => {
-    if (lanes === null) {
-        if (existsSync(dir) && statSync(dir).isDirectory()) {
-            return err(`${dir} is a folder: write one file with --write-baseline <file>, then split its rows by source folder`);
-        }
-        mkdirSync(dirname(dir), { recursive: true });
-        writeFileSync(dir, rowsOf(counts, Object.keys(counts)));
-        return ok(`${Object.keys(counts).length} rows in ${dir}`);
+export const writeBaseline = (dir: string, counts: Counts): Result<string, string> => {
+    if (existsSync(dir) && statSync(dir).isDirectory()) {
+        return err(`${dir} is a folder: write one file with --write-baseline <file>, then split its rows by source folder`);
     }
-    const owner = new Map(Object.entries(lanes).flatMap(([name, files]) => files.map((file): [string, string] => [file, name])));
-    const stray = Object.keys(counts).find((file) => !owner.has(file));
-    if (stray !== undefined) {
-        return err(`${stray} belongs to no lane: regenerate ci/lanes.json`);
-    }
-    mkdirSync(dir, { recursive: true });
-    for (const lane of Object.keys(lanes)) {
-        writeFileSync(join(dir, `${lane}.json`), rowsOf(counts, Object.keys(counts).filter((file) => owner.get(file) === lane)));
-    }
-    return ok(`${Object.keys(lanes).length} baseline files in ${dir}`);
+    mkdirSync(dirname(dir), { recursive: true });
+    writeFileSync(dir, rowsOf(counts, Object.keys(counts)));
+    return ok(`${Object.keys(counts).length} rows in ${dir}`);
 };
 
 export const guard = (base: Counts, head: Counts, renamed: ReadonlyMap<string, string> = new Map()): readonly string[] =>

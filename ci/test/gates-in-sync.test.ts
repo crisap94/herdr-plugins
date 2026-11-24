@@ -22,7 +22,6 @@ const SYNCED = [
     'bin/domain-exceptions.ts',
     'bin/domain-report.ts',
     'bin/domain-baseline.ts',
-    'bin/lane-map.ts',
     'bin/result.ts',
 ] as const;
 

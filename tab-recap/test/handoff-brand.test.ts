@@ -14,7 +14,7 @@ import { freshnessTextOf } from '#src/recap/render/freshness.ts';
 import type { HandoffParts } from '#src/recap/render/handoff-markdown.ts';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
-const SCANNED = ['bin', 'ci', 'docs', 'src', 'test'];
+const SCANNED = ['bin', 'docs', 'src', 'test'];
 const BRAND_MODULES = {
     HandoffText: 'src/recap/domain/handoff-sanitize.ts',
     FreshnessBlock: 'src/recap/render/freshness.ts',

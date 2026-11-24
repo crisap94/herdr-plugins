@@ -81,9 +81,7 @@ bun gates/bin/check-domain-types.ts --json                                # ever
   migration (named by file, derived from the latest `tab-recap-v*` tag), and the one brand function. An entry that no finding
   hits fails.
 - **No baseline.** The `ci/domain-types-baseline/` folder is gone and every finding fails lint. The packages keep their own baselines, moves files and checks under their `gates/` folders.
-- **Work lanes.** `ci/lanes.json` gives every file of `src/` and `test/` to exactly one work lane. A lane's merge request edits only
-  its files, its exception file and its own `legacy.ts` (`tab-recap/test/`, with its fakes and fixtures, is open to every lane without a label, to adapt it to its own signature changes; another lane's source is not, except in a merge request that carries the label `lane-scope::adapts`, which the lead sets after reading it. The check enforces the label, never a foreign baseline, exception file, `legacy.ts`, lane key or `.gitlab-ci.yml`; the rest is review practice, not a guarantee of `lane-scope`: the merge request adapts only call sites and implementers of the signatures it narrows, lists every foreign file and why in the description, never converts a foreign file's own findings, and at most one such merge request touches a given foreign file at a time) (the old export other lanes still call, counted under
-  `legacy` until the last caller moves). A lane lists a new file under its own key of `ci/lanes.json` (`bun ci/lanes-generate.ts` writes it; changing another lane's key fails `lane-scope`), and a new file starts at zero findings.
+- **Ownership.** `ci/tracks.json` gives every file to one track by explicit globs and `track-scope` checks each merge request against them. The B1 to B8 entries list the plugin files no other track owns; a new file starts at zero domain-type findings.
 
 ## Changing the database schema
 
@@ -172,7 +170,7 @@ else any `fixed`/`changed` a patch; only `internal` means no release.
    nothing when the release exists.
 
 `[Unreleased]` in the changelog stays empty: entries are written only by `release:prepare`
-(a hand-written entry makes it stop). To preview a release, run `bash tab-recap/ci/next-release.sh`
+(a hand-written entry makes it stop). To preview a release, run `bash ci/next-release.sh`
 with `CI_API_V4_URL`, `CI_PROJECT_ID` and a token in the environment. If a release is wrong, fix it
 with a new patch version; never move a tag.
 
