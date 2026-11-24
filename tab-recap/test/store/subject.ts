@@ -4,19 +4,20 @@ import { join } from 'node:path';
 import type { Database } from 'bun:sqlite';
 import type { Subject } from '@stateforge-labs/session-ledger/testkit';
 import type { MigrationHistory, NewerResult, OpenResult, ReadOnlyResult, ReadyResult, Role, StoreSubject, StoreWorld } from '@stateforge-labs/session-ledger-sqlite/testkit';
-import { backupsOf } from '#src/adapters/db/backup.ts';
-import { closeDatabase, connectReadOnly, MEMORY, writeTx } from '#src/adapters/db/connection.ts';
+import { backupsOf } from '@stateforge-labs/session-ledger-sqlite/unstable/backup.ts';
+import { closeDatabase, connectReadOnly, IN_MEMORY, writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { openDatabase, openForRole, type Opened, type StaleDatabase } from '#src/adapters/db/open.ts';
 import { must } from '@stateforge-labs/session-ledger';
 import { parseFsPath, fsPathOf } from '#src/recap/domain/fs-path.ts';
-import { versionOf } from '#src/adapters/db/migrate.ts';
+import { versionOf } from '@stateforge-labs/session-ledger-sqlite/unstable/migrate.ts';
+import type { StoreEvent } from '@stateforge-labs/session-ledger-sqlite/unstable/open.ts';
 
 const handles = new WeakMap<ReadyResult, Database>();
 
-const readyOver = (db: Database): ReadyResult => {
+const readyOver = (db: Database, events: readonly StoreEvent[]): ReadyResult => {
     const result: ReadyResult = {
         kind: 'ready',
-        events: null,
+        events,
         exec: (sql: string) => {
             db.exec(sql);
         },
@@ -41,9 +42,9 @@ const newerOver = (db: Database, found: number, known: number, backup: string | 
 
 const openedOver = (opened: Opened | StaleDatabase): OpenResult => {
     if (opened.kind === 'ready') {
-        return readyOver(opened.db);
+        return readyOver(opened.db, opened.events);
     }
-    if (opened.kind === 'newer-db') {
+    if (opened.kind === 'newer-store') {
         return newerOver(opened.db, opened.found, opened.known, opened.backup);
     }
     return { kind: 'stale', found: opened.found, known: opened.known, close: opened.close };
@@ -51,7 +52,7 @@ const openedOver = (opened: Opened | StaleDatabase): OpenResult => {
 
 const pluginStore: StoreSubject = {
     name: 'plugin store',
-    memory: MEMORY,
+    memory: IN_MEMORY,
     open: (path: string, history: MigrationHistory, role: Role): OpenResult => openedOver(role === 'owner' ? openDatabase(fsPathOf(path), history) : openForRole(must(parseFsPath(path)), history, role)),
     openReadOnly: (path: string): ReadOnlyResult => {
         const db = connectReadOnly(path);
@@ -71,7 +72,7 @@ const pluginStore: StoreSubject = {
         if (db === undefined) {
             throw new Error('transaction needs a ready store');
         }
-        return writeTx(db, work);
+        return writeTransaction(db, work);
     },
     backupsOf: (path: string) => backupsOf(path),
 };

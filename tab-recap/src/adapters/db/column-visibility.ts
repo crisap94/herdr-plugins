@@ -5,7 +5,7 @@ import { textOf } from '@stateforge-labs/session-ledger';
 import { NOTHING_HIDDEN } from '#src/ports/column-visibility.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import { columnState, tabVisibility } from './drizzle/index.ts';
-import { writeTx } from './connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { flag, guarded, text } from './rows.ts';
 
@@ -31,7 +31,7 @@ export class ColumnVisibilityRepository implements ColumnVisibility {
     }
 
     writeHidden(state: HiddenState): void {
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             this.orm.insert(columnState).values({ id: COLUMN_STATE_ID, allHidden: state.all ? 1 : 0 })
                 .onConflictDoUpdate({ target: columnState.id, set: { allHidden: sql`excluded.all_hidden` } })
                 .run();

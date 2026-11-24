@@ -10,7 +10,7 @@ import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import { parseUsd, type Usd } from '@stateforge-labs/session-ledger';
 import { guarded } from './rows.ts';
-import { writeTx } from './connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { autocompactDecision, autocompactSkip } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { idOf, typeIdOf } from './typeid.ts';
@@ -61,7 +61,7 @@ export class DecisionLedgerRepository implements DecisionLedger {
 
     record(d: DecisionDraft): DecisionId {
         const id = ids.next();
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             this.orm.insert(autocompactDecision).values({
                 id, tabId: d.scope, pane: d.key, agent: d.agent, at: d.at, mode: d.mode, share: d.share, tokens: d.tokens, window: d.window,
                 gate: d.gate, verdict: d.verdict, answers: JSON.stringify(Object.fromEntries(d.answers)), coverage: d.coverage === null ? null : JSON.stringify(Object.fromEntries(d.coverage)),
@@ -75,7 +75,7 @@ export class DecisionLedgerRepository implements DecisionLedger {
 
     link(id: DecisionId, compactionId: CompactionId): void {
         const [key, target] = [idOf('decision', uncheckedTypeId(id)), idOf('compaction', uncheckedTypeId(compactionId))];
-        if (key !== null && target !== null) writeTx(this.db, () => { this.attachTo(key, target); });
+        if (key !== null && target !== null) writeTransaction(this.db, () => { this.attachTo(key, target); });
     }
 
     linkLatest(tab: ScopeId, pane: SessionKey, compactionId: CompactionId): LinkedDecision | null {
@@ -83,7 +83,7 @@ export class DecisionLedgerRepository implements DecisionLedger {
             .where(and(eq(autocompactDecision.tabId, tab), eq(autocompactDecision.pane, pane), eq(autocompactDecision.verdict, COMPACT), isNull(autocompactDecision.compactionId)))
             .orderBy(desc(autocompactDecision.at), desc(autocompactDecision.id)).limit(1).get() ?? null, null), idOf('compaction', uncheckedTypeId(compactionId))];
         if (row === null || target === null) return null;
-        writeTx(this.db, () => { this.attachTo(row.id, target); });
+        writeTransaction(this.db, () => { this.attachTo(row.id, target); });
         return { id: must(parseDecisionId(typeIdOf('decision', row.id))), gate: row.gate };
     }
 
@@ -94,7 +94,7 @@ export class DecisionLedgerRepository implements DecisionLedger {
         const flag = waited && block === 'blocks' ? 1 : 0;
         const reason = outcome.kind === 'unchecked' ? outcome.reason : null;
         if (key !== null) {
-            writeTx(this.db, () => {
+            writeTransaction(this.db, () => {
                 this.orm.update(autocompactDecision).set({
                     coverage: coverage === null ? null : JSON.stringify(Object.fromEntries(coverage)), coverageOutcome: outcome.kind, uncheckedReason: reason,
                     coverageMissing: missingOf(outcome, coverage), coverageMs,
@@ -137,12 +137,12 @@ export class DecisionLedgerRepository implements DecisionLedger {
 
     markRequested(id: DecisionId): void {
         const key = idOf('decision', uncheckedTypeId(id));
-        if (key !== null) writeTx(this.db, () => { this.orm.update(autocompactDecision).set({ requested: 1 }).where(eq(autocompactDecision.id, key)).run(); });
+        if (key !== null) writeTransaction(this.db, () => { this.orm.update(autocompactDecision).set({ requested: 1 }).where(eq(autocompactDecision.id, key)).run(); });
     }
 
     pruneSkips(keep: readonly PaneKey[]): void {
         const kept = new Set(keep.map((lane) => `${lane.tab}\u0000${lane.pane}`));
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             for (const skip of this.skips()) {
                 if (!kept.has(`${skip.scope}\u0000${skip.key}`)) {
                     this.orm.delete(autocompactSkip).where(and(eq(autocompactSkip.tabId, skip.scope), eq(autocompactSkip.pane, skip.key))).run();
@@ -152,7 +152,7 @@ export class DecisionLedgerRepository implements DecisionLedger {
     }
 
     skip(skip: SkipRow): void {
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             this.orm.insert(autocompactSkip).values({
                 tabId: skip.scope, pane: skip.key, agent: skip.agent, at: skip.at, gate: skip.gate, share: skip.share, detail: skip.detail,
             }).onConflictDoUpdate({

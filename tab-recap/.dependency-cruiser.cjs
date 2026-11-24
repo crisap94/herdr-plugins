@@ -81,7 +81,7 @@ module.exports = {
     {
       name: 'no-orphans',
       severity: 'error',
-      from: { orphan: true, pathNot: ['\\.d\\.ts$', '^src/(wire|view-model|pane|adapters/hooks|daemon/view|daemon/slots)/'] },
+      from: { orphan: true, pathNot: ['\\.d\\.ts$'] },
       to: {},
     },
     {

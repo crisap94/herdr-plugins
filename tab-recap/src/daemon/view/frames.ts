@@ -15,11 +15,11 @@ import type { Clock } from '@stateforge-labs/session-ledger';
 import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '@stateforge-labs/session-ledger';
-import { footer, present, presentBar } from '#src/recap/render/present.ts';
-import type { ColumnView, Markdown } from '#src/recap/render/present.ts';
-import { coloured } from '#src/recap/render/wrap.ts';
+import { footer, present, presentBar } from '#src/view-model/present.ts';
+import type { ColumnView, Markdown } from '#src/view-model/present.ts';
+import { coloured } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import { wordingOf } from '#src/view-model/wording.ts';
-import type { Style } from '#src/recap/render/wrap.ts';
+import type { Style } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import type { Role } from '#src/wire/view/protocol.ts';
 
 const GUTTER: Count = must(parseCount(2));

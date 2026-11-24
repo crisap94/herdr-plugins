@@ -1,4 +1,4 @@
-import { MEMORY } from '../connection.ts';
+import { IN_MEMORY } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { storeOver } from '../database.ts';
 import { openDatabase } from '../open.ts';
 import { compareLegacyFiles } from './import-files.ts';
@@ -12,7 +12,7 @@ if (directory === undefined) {
     process.stderr.write('usage: node src/adapters/db/import/dry-run.ts [--dry-run] <state-dir>\n');
     process.exit(2);
 }
-const opened = openDatabase(fsPathOf(MEMORY));
+const opened = openDatabase(fsPathOf(IN_MEMORY));
 if (opened.kind !== 'ready') {
     throw new Error('an in-memory database cannot be newer');
 }

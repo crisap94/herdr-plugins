@@ -12,8 +12,8 @@ import { NO_SECTIONS, type RecapSections } from '@stateforge-labs/session-ledger
 import type { RecapTask } from '@stateforge-labs/session-ledger';
 import { parseNonEmptyText, parseText, type NonEmptyText, type Text, textOf } from '@stateforge-labs/session-ledger';
 import { type Instant } from '@stateforge-labs/session-ledger';
-import { groupsOf } from '#src/recap/render/groups.ts';
-import type { ExpandedTask } from '#src/recap/render/expanded.ts';
+import { groupsOf } from '#src/view-model/groups.ts';
+import type { ExpandedTask } from '#src/view-model/expanded.ts';
 import { parseCurating, parseTaskName } from '@stateforge-labs/recap-view';
 import { webOf } from '#src/view-model/column.ts';
 import { guiLaneOf, type LaneDraw } from './gui-tab-lanes.ts';

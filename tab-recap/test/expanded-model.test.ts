@@ -4,9 +4,9 @@ import { CURATING_MS, ExpandedModel, newestChange } from '#src/recap/application
 import type { ExpandedDeps } from '#src/recap/application/expanded-view.ts';
 import { blankRecap } from '@stateforge-labs/session-ledger';
 import type { TabViewRecord } from '#src/ports/tab-views.ts';
-import { expanded } from '#src/recap/render/expanded.ts';
+import { expanded } from '#src/view-model/expanded.ts';
 import { en } from '#src/i18n/en.ts';
-import { plain } from '#src/recap/render/wrap.ts';
+import { plain } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import { cursor, memoryStore, must, seed, recordOps } from '#test/db/support.ts';
 import { fact } from '#test/fakes/fact-at.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';

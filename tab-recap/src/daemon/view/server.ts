@@ -11,7 +11,7 @@ import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import { parseTabId, type ScopeId } from '#src/recap/domain/ids.ts';
 import type { Shown } from '@stateforge-labs/session-ledger';
 import { parseText, type Text } from '@stateforge-labs/session-ledger';
-import { coloured, plain, type Style } from '#src/recap/render/wrap.ts';
+import { coloured, plain, type Style } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import { claimOwnedSocket } from '#src/daemon/view/socket-folder.ts';
 import { LineSplitter, decodeClient, encode } from '#src/wire/view/codec.ts';
 import type { Ignored, Malformed } from '#src/wire/view/codec.ts';

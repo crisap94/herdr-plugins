@@ -10,7 +10,7 @@ import type { ParseFailure } from '@stateforge-labs/session-ledger';
 import { parseText } from '@stateforge-labs/session-ledger';
 import { parseInstant } from '@stateforge-labs/session-ledger';
 import type { WorktreeStatus } from '#src/recap/domain/worktree.ts';
-import { writeTx } from './connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { paneWorktree, worktreeStatus } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { guarded, isRow } from './rows.ts';
@@ -81,14 +81,14 @@ export class WorktreeStatusRepository implements WorktreeStatusWriter, WorktreeS
     }
 
     drop(root: Directory): void {
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             this.orm.delete(paneWorktree).where(eq(paneWorktree.root, root)).run();
             this.orm.delete(worktreeStatus).where(eq(worktreeStatus.root, root)).run();
         });
     }
 
     reset(): void {
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             this.orm.delete(paneWorktree).run();
             this.orm.delete(worktreeStatus).run();
         });

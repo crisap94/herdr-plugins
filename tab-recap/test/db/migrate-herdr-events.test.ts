@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Database } from 'bun:sqlite';
-import { MEMORY } from '#src/adapters/db/connection.ts';
-import { versionOf } from '#src/adapters/db/migrate.ts';
+import { IN_MEMORY } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
+import { versionOf } from '@stateforge-labs/session-ledger-sqlite/unstable/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
@@ -35,7 +35,7 @@ test('migration 12 from a v11 database: old rows kept, origin request and an ans
         assert.throws(() => { db.exec("INSERT INTO request (id, at, kind, target, origin) VALUES (X'00000000000000000000000000000005', 6, 'refresh', 'w1:t1', 'vibes')"); }, /CHECK/);
         assert.throws(() => { db.exec("INSERT INTO request (id, at, kind, target, answer) VALUES (X'00000000000000000000000000000006', 6, 'refresh', 'w1:t1', 'r7')"); }, /CHECK/, 'an answer belongs to a compaction request only');
         assert.throws(() => { db.exec("INSERT INTO compaction (id, tab_id, pane, agent, stage, started_at, stage_at, finished_at, origin) VALUES (X'00000000000000000000000000000007', 'w1:t1', 'w1:p1', 'claude', 'skipped', 4, 4, 4, 'vibes')"); }, /CHECK/);
-        assert.deepEqual(shape(db), shape(openDatabase(fsPathOf(MEMORY)).db), 'upgraded == fresh');
+        assert.deepEqual(shape(db), shape(openDatabase(fsPathOf(IN_MEMORY)).db), 'upgraded == fresh');
         assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(), []);
     } finally {
         rmSync(dir, { recursive: true, force: true });

@@ -9,7 +9,7 @@ import type { TabViewRecord } from '#src/ports/tab-views.ts';
 import type { Fact } from '@stateforge-labs/session-ledger';
 import type { DecisionCounts, DecisionLedger } from '@stateforge-labs/session-ledger';
 import { RUN_CAUSES, sessionFactsFrom, type RunCounts, type SessionReadings } from '#src/recap/domain/session-facts.ts';
-import type { ExpandedTask, ExpandedView } from '#src/recap/render/expanded.ts';
+import type { ExpandedTask, ExpandedView } from '#src/view-model/expanded.ts';
 import { must } from '@stateforge-labs/session-ledger';
 import { parseTabId, type ScopeId } from '#src/recap/domain/ids.ts';
 import { parseCount, type Count } from '@stateforge-labs/session-ledger';

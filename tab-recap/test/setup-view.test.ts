@@ -18,7 +18,7 @@ import { es } from '#src/i18n/es.ts';
 import { draftFrom, initial, step, tested, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Setup } from '#src/recap/application/setup-keys.ts';
 import { setupFooterLine, setupLines } from '#src/recap/render/setup.ts';
-import { plain, visibleLength } from '#src/recap/render/wrap.ts';
+import { plain, visibleLength } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 
 const models = { claude: textOf(''), codex: textOf('gpt-6-luna'), opencode: textOf(''), custom: textOf('') };
 const base = initial(draftFrom({ backend: 'codex', models }, { locale: undefined, recapLanguage: undefined }), { locale: environmentName(textOf('TAB_RECAP_LOCALE')) });

@@ -11,7 +11,7 @@ import type { Instant } from '@stateforge-labs/session-ledger';
 import { ask as asks } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { guarded } from './rows.ts';
-import { writeTx } from './connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 
 const SEEN: AskSighting = 'seen';
 const UNSEEN: AskSighting = 'unseen';
@@ -33,26 +33,26 @@ export class AskBookRepository implements AskBook {
     }
 
     record(ask: AskDraft): void {
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             this.orm.insert(asks).values({ exchange: ask.exchange, requester: ask.requester, id: ask.id, pane: ask.pane, at: ask.at, ref: ask.ref, outcome: null })
                 .onConflictDoNothing().run();
         });
     }
 
     attach(match: AskKey, ref: Text): void {
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             this.orm.update(asks).set({ ref }).where(and(eq(asks.exchange, match.exchange), eq(asks.id, match.id), eq(asks.pane, match.pane), isNull(asks.ref))).run();
         });
     }
 
     withdraw(identity: AskIdentity): void {
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             this.orm.delete(asks).where(and(eq(asks.exchange, identity.exchange), eq(asks.requester, identity.requester), eq(asks.id, identity.id), isNull(asks.outcome))).run();
         });
     }
 
     settle(match: AskKey, outcome: AskOutcome): void {
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             this.orm.update(asks).set({ outcome: outcomeText(outcome) }).where(and(eq(asks.exchange, match.exchange), eq(asks.id, match.id), eq(asks.pane, match.pane), isNull(asks.outcome))).run();
         });
     }
@@ -69,6 +69,6 @@ export class AskBookRepository implements AskBook {
     }
 
     prune(before: Instant): void {
-        writeTx(this.db, () => { this.orm.delete(asks).where(and(lt(asks.at, before), isNotNull(asks.outcome))).run(); });
+        writeTransaction(this.db, () => { this.orm.delete(asks).where(and(lt(asks.at, before), isNotNull(asks.outcome))).run(); });
     }
 }

@@ -5,7 +5,7 @@ import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { instant } from '@stateforge-labs/session-ledger';
 import { parseImportedChapterItem, type ImportedChapterRecord } from '#src/ports/imported-recaps.ts';
-import { connectReadOnly } from './connection.ts';
+import { connectReadOnly } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { all, blob, whole } from './rows.ts';
 
 const SECTION_ORDER = "CASE i.section WHEN 'goal' THEN 0 WHEN 'now' THEN 1 WHEN 'needs' THEN 2 WHEN 'done' THEN 3 WHEN 'decisions' THEN 4 WHEN 'next' THEN 5 WHEN 'links' THEN 6 ELSE 7 END";

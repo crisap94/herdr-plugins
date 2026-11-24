@@ -1,5 +1,5 @@
 import type { GuardedLedger, GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
-import { connectReadOnly } from './connection.ts';
+import { connectReadOnly } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { ClosedLanesRepository } from './closed-lanes.ts';
 import { LedgerRepository } from './ledger.ts';
 import type { ClosureReader, ClosureRuns } from '#src/ports/closed-lanes.ts';

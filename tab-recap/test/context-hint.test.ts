@@ -3,7 +3,7 @@ import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
-import { present } from '#src/recap/render/present.ts';
+import { present } from '#src/view-model/present.ts';
 import { LaneContexts } from '#src/recap/application/lane-contexts.ts';
 import { agentWindows } from '#src/adapters/capability/context-window.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';

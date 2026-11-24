@@ -10,7 +10,7 @@ import { parseInstant } from '@stateforge-labs/session-ledger';
 import { failureCauseOf, parseThrown } from '@stateforge-labs/session-ledger';
 import { parseTabViewRecord, type LiveLanes, type LiveLanesRead, type TabViewRecord, type TabViewStore } from '#src/ports/tab-views.ts';
 import { unreadableOf } from '@stateforge-labs/session-ledger';
-import { writeTx } from './connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { BadRow, guarded, isRow, one, text } from './rows.ts';
 import { lane as laneTable, tab as tabTable } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
@@ -113,7 +113,7 @@ export class TabViewRowStore implements TabViewStore, LiveLanes {
     }
 
     writeTab(view: TabViewRecord): void {
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             this.tabs.ensure(view.tab, view.at);
             this.orm.update(tabTable).set({ columnPane: view.column, viewAt: view.at, daemonVersion: view.daemonVersion ?? this.daemonVersion }).where(eq(tabTable.id, view.tab)).run();
             this.orm.delete(laneTable).where(eq(laneTable.tabId, view.tab)).run();

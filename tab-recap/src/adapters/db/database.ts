@@ -14,7 +14,7 @@ import type { RetentionPort, TabRetirement } from '#src/ports/retention.ts';
 import type { ClosureReader, ClosureRecorder, ClosureRuns, ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { LiveLanes, TabViewStore } from '#src/ports/tab-views.ts';
 import { ClosedLanesRepository } from './closed-lanes.ts';
-import { closeDatabase } from './connection.ts';
+import { closeDatabase } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { must } from '@stateforge-labs/session-ledger';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import type { Directory } from '@stateforge-labs/session-ledger';

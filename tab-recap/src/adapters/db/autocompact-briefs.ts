@@ -13,7 +13,7 @@ import { encode } from './checked-fact-codec.ts';
 import { autocompactBrief } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { idOf } from './typeid.ts';
-import { writeTx } from './connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 
 export class DecisionBriefsRepository implements DecisionBriefs {
     private readonly db: Database;
@@ -27,7 +27,7 @@ export class DecisionBriefsRepository implements DecisionBriefs {
     put(decisionId: DecisionId, brief: Text, appended: readonly FactIndex[], checked: readonly CheckedFact[], briefedAt: Instant): void {
         const id = idOf('decision', uncheckedTypeId(decisionId));
         if (id !== null) {
-            writeTx(this.db, () => {
+            writeTransaction(this.db, () => {
                 this.orm.insert(autocompactBrief).values({ decisionId: id, briefedAt, body: encode({ brief, appended, checked }) })
                     .onConflictDoUpdate({ target: autocompactBrief.decisionId, set: { briefedAt: sql`excluded.briefed_at`, body: sql`excluded.body` } })
                     .run();
@@ -36,6 +36,6 @@ export class DecisionBriefsRepository implements DecisionBriefs {
     }
 
     clearBefore(cutoff: Instant): Count {
-        return writeTx(this.db, () => must(parseCount(this.orm.delete(autocompactBrief).where(lt(autocompactBrief.briefedAt, cutoff)).returning({ id: autocompactBrief.decisionId }).all().length)));
+        return writeTransaction(this.db, () => must(parseCount(this.orm.delete(autocompactBrief).where(lt(autocompactBrief.briefedAt, cutoff)).returning({ id: autocompactBrief.decisionId }).all().length)));
     }
 }

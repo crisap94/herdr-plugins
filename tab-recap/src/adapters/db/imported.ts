@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import type { Fact } from '@stateforge-labs/session-ledger';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
-import { connectReadOnly } from './connection.ts';
+import { connectReadOnly } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { LedgerRows } from './ledger-rows.ts';
 import { all, text } from './rows.ts';
 import { textOf } from '@stateforge-labs/session-ledger';

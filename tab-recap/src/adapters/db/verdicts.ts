@@ -6,7 +6,7 @@ import type { RunId } from '#src/recap/domain/run-ids.ts';
 import type { Text } from '@stateforge-labs/session-ledger';
 import { parseText } from '@stateforge-labs/session-ledger';
 import { parseDisagreementRecord, parsePairRecord, parseVerdictRecord, type DisagreementRecord, type PairRecord, type VerdictRecord, type VerdictStore } from '#src/ports/verdicts.ts';
-import { writeTx } from './connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { verdict as verdicts } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { blob, guarded } from './rows.ts';
@@ -37,7 +37,7 @@ export class VerdictRowStore implements VerdictStore {
     }
 
     add(rows: readonly VerdictRecord[]): void {
-        writeTx(this.db, () => {
+        writeTransaction(this.db, () => {
             for (const verdict of rows) {
                 const run = idOf('run', uncheckedTypeId(verdict.run));
                 if (run === null) {

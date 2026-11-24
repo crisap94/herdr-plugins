@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import type { AnchorChecks } from '#src/ports/judge.ts';
 import { anchorsOf, withText } from '#src/recap/application/judge-anchors.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
-import { connectReadOnly } from './connection.ts';
+import { connectReadOnly } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { RunInputStore } from './run-inputs.ts';
 import { VerdictRowStore } from './verdicts.ts';
 

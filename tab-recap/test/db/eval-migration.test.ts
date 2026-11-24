@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { Database } from 'bun:sqlite';
-import { backupsOf } from '#src/adapters/db/backup.ts';
-import { MEMORY } from '#src/adapters/db/connection.ts';
-import { migrate, versionOf } from '#src/adapters/db/migrate.ts';
+import { backupsOf } from '@stateforge-labs/session-ledger-sqlite/unstable/backup.ts';
+import { IN_MEMORY } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
+import { migrate, versionOf } from '@stateforge-labs/session-ledger-sqlite/unstable/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
@@ -40,7 +40,7 @@ test('every registered migration runs from the oldest fixture; a fresh install h
     try {
         const upgraded = upgradedOldest(join(dir, 'a.db'));
         assert.equal(versionOf(upgraded), MIGRATIONS.length);
-        const fresh = openDatabase(fsPathOf(MEMORY));
+        const fresh = openDatabase(fsPathOf(IN_MEMORY));
         assert.equal(fresh.kind, 'ready');
         assert.deepEqual(names(upgraded), names(fresh.db));
         assert.ok(names(upgraded).includes('run_input') && names(upgraded).includes('verdict') && names(upgraded).includes('verdict_by_run'));

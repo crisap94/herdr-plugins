@@ -11,8 +11,6 @@ files:
   - "**/src/adapters/db/**"
   - "**/probes/recap-no-raw-prepare/**"
 ignores:
-  - "**/src/adapters/db/backup.ts"
-  - "**/src/adapters/db/migrate.ts"
   - "**/src/adapters/db/retention.ts"
   - "**/src/adapters/db/tab-views.ts"
   - "**/src/adapters/db/closed-lanes.ts"

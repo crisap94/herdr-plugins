@@ -6,7 +6,7 @@ import { uncheckedTabId } from '#src/recap/domain/ids.ts';
 import { textOf, type Text } from '@stateforge-labs/session-ledger';
 import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { agreeLines, candidateText, gateLines, reportText } from '#src/recap/render/eval.ts';
-import type { Style } from '#src/recap/render/wrap.ts';
+import type { Style } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import { installableHarnessSentence } from '@stateforge-labs/session-ledger';
 import { answerOf, candidatesOf, labelVerdicts } from './eval-label.ts';
 import type { Candidate } from './eval-label.ts';

@@ -9,7 +9,7 @@ import type { ImportedChapterRecord } from '#src/ports/imported-recaps.ts';
 import type { JudgePort, JudgeTask } from '#src/ports/judge.ts';
 import type { Operation } from '@stateforge-labs/session-ledger';
 import { comparisonText } from '#src/recap/render/compare.ts';
-import { plain } from '#src/recap/render/wrap.ts';
+import { plain } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import { cursor, memoryStore, recordOps } from '#test/db/support.ts';
 import { oneTask } from '#test/support.ts';
 import { MIN, T0 } from './imported-fixture.ts';

@@ -10,7 +10,7 @@ import { messagesFor } from '#src/i18n/index.ts';
 import { EMPTY_NOTE, stepNote } from '#src/recap/application/compact-keys.ts';
 import type { NoteEffect, NoteState } from '#src/recap/application/compact-keys.ts';
 import { compactFooterText, compactViewText } from '#src/recap/render/compact.ts';
-import { coloured } from '#src/recap/render/wrap.ts';
+import { coloured } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import { BEL, FRAME_END, FRAME_HOME, LINE_END, RESET_SGR, SCREEN_OFF, SCREEN_ON, TITLE_OSC } from '#src/adapters/os/tui.ts';
 import { isUnknown } from '@stateforge-labs/session-ledger';
 

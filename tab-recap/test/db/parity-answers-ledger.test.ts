@@ -7,7 +7,7 @@ import { AskBookRepository } from '#src/adapters/db/ask-ledger.ts';
 import { DecisionBriefsRepository } from '#src/adapters/db/autocompact-briefs.ts';
 import { ColumnVisibilityRepository } from '#src/adapters/db/column-visibility.ts';
 import { encode } from '#src/adapters/db/checked-fact-codec.ts';
-import { MEMORY } from '#src/adapters/db/connection.ts';
+import { IN_MEMORY } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { HandoffAnswerRepository } from '#src/adapters/db/handoff-answers.ts';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
@@ -40,7 +40,7 @@ const COORD = must(parseToolName('coord'));
 const CLI = must(parseToolName('cli'));
 
 const memory = (seed: (db: Database) => void): Database => {
-    const opened = openDatabase(fsPathOf(MEMORY));
+    const opened = openDatabase(fsPathOf(IN_MEMORY));
     if (opened.kind !== 'ready') {
         throw new Error('expected a ready database');
     }

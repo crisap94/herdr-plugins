@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { messagesFor, type Locale } from '#src/i18n/index.ts';
-import { figuresOf, stageLine } from '#src/recap/render/compaction-stage.ts';
-import { present } from '#src/recap/render/present.ts';
-import { plain } from '#src/recap/render/wrap.ts';
+import { figuresOf, stageLine } from '#src/view-model/compaction-stage.ts';
+import { present } from '#src/view-model/present.ts';
+import { plain } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import { blankRecap } from '@stateforge-labs/session-ledger';
 import type { CompactionRow } from '#src/ports/compaction-records.ts';
 import { parseDuration, parseTokens } from '@stateforge-labs/recap-view';

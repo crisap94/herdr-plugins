@@ -14,7 +14,7 @@ import type { HandoffRun } from '#src/recap/application/handoff-flow.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
-import { writeTx } from '#src/adapters/db/connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { LOCAL_REQUESTER } from '#src/ports/ask-ledger.ts';
 import type { AskEntry } from '#src/ports/ask-ledger.ts';
 import type { HandoffAskRecord } from '#src/ports/requests.ts';
@@ -139,7 +139,7 @@ test('on the SQLite store the restart finds the ask again (its id parses) and wr
     const store = memoryStore({ now: (): Instant => instant(NOW) });
     const runner = new HandoffRunner({
         flow: { execute: (): Promise<HandoffRun> => new Promise<HandoffRun>(() => undefined) },
-        asks: store.asks, answers: store.handoffs, claims: { release: (): void => undefined }, mirror: silentMirror(), transaction: <T>(work: () => T): T => writeTx(store.db, work), now: (): Instant => instant(NOW), log: (): void => undefined,
+        asks: store.asks, answers: store.handoffs, claims: { release: (): void => undefined }, mirror: silentMirror(), transaction: <T>(work: () => T): T => writeTransaction(store.db, work), now: (): Instant => instant(NOW), log: (): void => undefined,
     });
     const taken = row();
     void runner.take([taken]);
@@ -153,7 +153,7 @@ test('on the SQLite store a delivered handoff writes its answer and settles its 
     const store = memoryStore({ now: (): Instant => instant(NOW) });
     const runner = new HandoffRunner({
         flow: { execute: async (): Promise<HandoffRun> => unrendered({ kind: 'delivered' }) },
-        asks: store.asks, answers: store.handoffs, claims: { release: (): void => undefined }, mirror: silentMirror(), transaction: <T>(work: () => T): T => writeTx(store.db, work), now: (): Instant => instant(NOW), log: (): void => undefined,
+        asks: store.asks, answers: store.handoffs, claims: { release: (): void => undefined }, mirror: silentMirror(), transaction: <T>(work: () => T): T => writeTransaction(store.db, work), now: (): Instant => instant(NOW), log: (): void => undefined,
     });
     const taken = row();
     await runner.take([taken]);

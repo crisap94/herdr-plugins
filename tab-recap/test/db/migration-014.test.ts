@@ -1,20 +1,20 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MEMORY } from '#src/adapters/db/connection.ts';
+import { IN_MEMORY } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
-import { migrate } from '#src/adapters/db/migrate.ts';
+import { migrate } from '@stateforge-labs/session-ledger-sqlite/unstable/migrate.ts';
 import { SKIP_GATES } from '@stateforge-labs/session-ledger';
 
 test('migration 14 upgrades a real v13 store with rows and keeps both readable views usable', () => {
-    const old = openDatabase(fsPathOf(MEMORY), MIGRATIONS.slice(0, 13));
+    const old = openDatabase(fsPathOf(IN_MEMORY), MIGRATIONS.slice(0, 13));
     assert.equal(old.kind, 'ready');
     old.db.exec("INSERT INTO tab (id, first_seen, last_seen) VALUES ('w1:t1', 1, 2)");
     old.db.exec("INSERT INTO autocompact_decision (id, tab_id, pane, agent, at, mode, share, tokens, window, gate, verdict, answers) VALUES (X'00000000000000000000000000000001', 'w1:t1', 'w1:p1', 'claude', 1, 'shadow', 60, 600000, 1000000, 'ask', 'compact', '{}')");
     old.db.exec("INSERT INTO autocompact_skip (tab_id, pane, agent, at, gate, share, detail) VALUES ('w1:t1', 'w1:p2', 'claude', 2, 'in-flight', 60, 'running')");
     const db = old.db;
-    migrate(db);
+    migrate(db, MIGRATIONS);
     assert.equal(db.prepare('SELECT asked_verdict FROM autocompact_decision').get()?.['asked_verdict'], null);
     assert.equal(db.prepare('SELECT requested, asked_verdict FROM autocompact_decision_readable').get()?.['requested'], 0);
     assert.equal(db.prepare('SELECT gate FROM autocompact_skip_readable').get()?.['gate'], 'in-flight');

@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Database } from 'bun:sqlite';
-import { backupsOf } from '#src/adapters/db/backup.ts';
-import { MEMORY } from '#src/adapters/db/connection.ts';
-import { versionOf } from '#src/adapters/db/migrate.ts';
+import { backupsOf } from '@stateforge-labs/session-ledger-sqlite/unstable/backup.ts';
+import { IN_MEMORY } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
+import { versionOf } from '@stateforge-labs/session-ledger-sqlite/unstable/migrate.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
@@ -34,7 +34,7 @@ test('migration 9 from a v8 database with facts in it: they keep every column, g
         assert.deepEqual(opened.db.prepare('SELECT text, anchor FROM fact_readable').all().map((row) => Object.assign({}, row)), [{ text: 'Merged !256.', anchor: null }]);
         opened.db.exec("UPDATE fact SET anchor = 'the pipeline went green'");
         assert.throws(() => { opened.db.exec("UPDATE fact SET anchor = ''"); }, /CHECK/);
-        assert.deepEqual(shape(opened.db), shape(openDatabase(fsPathOf(MEMORY)).db), 'upgraded == fresh');
+        assert.deepEqual(shape(opened.db), shape(openDatabase(fsPathOf(IN_MEMORY)).db), 'upgraded == fresh');
         assert.deepEqual(opened.db.prepare('PRAGMA foreign_key_check').all(), []);
     } finally {
         rmSync(dir, { recursive: true, force: true });

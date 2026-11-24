@@ -10,7 +10,7 @@ import { countOf, type Count } from '@stateforge-labs/session-ledger';
 import { must } from '@stateforge-labs/session-ledger';
 import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import { databaseFile } from '../db/database.ts';
-import { BUSY_PRAGMA } from '../db/connection.ts';
+import { BUSY_PRAGMA } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 
 export interface StoredPoint {
     readonly id: Text;

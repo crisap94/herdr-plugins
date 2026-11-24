@@ -10,7 +10,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.ts';
-import { closeDatabase, connect } from '#src/adapters/db/connection.ts';
+import { closeDatabase, connect } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { storeOver } from '#src/adapters/db/database.ts';
 import { factsOfTabAt } from '#src/adapters/db/imported.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';

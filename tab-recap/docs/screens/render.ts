@@ -15,8 +15,8 @@ import { draftFrom, initial, withAvailable } from '#src/recap/application/setup-
 import type { Setup } from '#src/recap/application/setup-keys.ts';
 import { renderRecap } from '@stateforge-labs/session-ledger';
 import type { RecapSections } from '@stateforge-labs/session-ledger';
-import { present, presentBar } from '#src/recap/render/present.ts';
-import type { ColumnView } from '#src/recap/render/present.ts';
+import { present, presentBar } from '#src/view-model/present.ts';
+import type { ColumnView } from '#src/view-model/present.ts';
 import { catalogFor } from '#src/i18n/index.ts';
 import { setupLines } from '#src/recap/render/setup.ts';
 import { expandedLines } from './expanded-fixture.ts';

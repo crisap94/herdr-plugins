@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
-import { elapsed } from '#src/recap/render/wrap.ts';
+import { elapsed } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import { must } from '@stateforge-labs/session-ledger';
 import { parseCount } from '@stateforge-labs/session-ledger';
 

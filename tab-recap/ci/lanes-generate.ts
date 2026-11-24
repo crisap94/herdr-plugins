@@ -29,28 +29,12 @@ const FOLDER_LANES: readonly (readonly [string, Lane])[] = [
 ];
 
 const STO_FILES: readonly string[] = [
-    'src/adapters/db/backup.ts',
-    'src/adapters/db/connection.ts',
-    'src/adapters/db/migrate.ts',
     'src/adapters/db/open.ts',
     'src/adapters/db/rebuild.ts',
     'src/adapters/db/schema/migration.ts',
 ];
 
-const VIEW_FILES: readonly string[] = [
-    'src/recap/render/compaction-stage.ts',
-    'src/recap/render/expanded-regions.ts',
-    'src/recap/render/expanded.ts',
-    'src/recap/render/groups.ts',
-    'src/recap/render/hyperlink.ts',
-    'src/recap/render/linked.ts',
-    'src/recap/render/links.ts',
-    'src/recap/render/present.ts',
-    'src/recap/render/session-lines.ts',
-    'src/recap/render/timeline-breaks.ts',
-    'src/recap/render/timeline.ts',
-    'src/recap/render/wrap.ts',
-];
+const VIEW_FILES: readonly string[] = [];
 
 const TRACK_PREFIXES: readonly string[] = [
     'src/engine/',

@@ -8,7 +8,7 @@ import type { FactId, RunId } from '@stateforge-labs/session-ledger';
 import type { CloseOp, UpdateOp } from '@stateforge-labs/session-ledger';
 import { parseTabId } from '#src/recap/domain/ids.ts';
 import { textOf, type Text } from '@stateforge-labs/session-ledger';
-import { writeTx } from './connection.ts';
+import { writeTransaction } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { chapter, run as runs, task as tasks } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { guarded } from './rows.ts';
@@ -44,7 +44,7 @@ export class StoriesRepository implements Stories {
     }
 
     keep(run: CurationRun, change: CurationChange): Applied {
-        return writeTx(this.db, () => {
+        return writeTransaction(this.db, () => {
             const latest = this.orm.select({ id: runs.id }).from(runs)
                 .innerJoin(chapter, eq(chapter.id, runs.chapterId))
                 .where(eq(chapter.tabId, run.task.scope))

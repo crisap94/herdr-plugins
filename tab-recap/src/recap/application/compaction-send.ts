@@ -9,7 +9,7 @@ import { uncheckedMilliseconds, type SessionKey } from '#src/recap/domain/ids.ts
 import { parseText, textOf } from '@stateforge-labs/session-ledger';
 import { type Text as Prose } from '@stateforge-labs/session-ledger';
 import { duration, type Instant } from '@stateforge-labs/session-ledger';
-import { figuresOf } from '#src/recap/render/compaction-stage.ts';
+import { figuresOf } from '#src/view-model/compaction-stage.ts';
 import { COMPACT_FAILURES } from '#src/protocol/exchanges/compact.ts';
 import { confirmedOutcomeOf, outcomeOf, queuedOutcomeOf } from './compaction-outcome.ts';
 import type { QueuedDeps, Verdict } from './compaction-outcome.ts';

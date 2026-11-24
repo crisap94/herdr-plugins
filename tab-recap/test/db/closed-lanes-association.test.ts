@@ -4,7 +4,7 @@ import { rmSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Database } from 'bun:sqlite';
 import { ClosedLanesRepository } from '#src/adapters/db/closed-lanes.ts';
-import { connectReadOnly, MEMORY } from '#src/adapters/db/connection.ts';
+import { connectReadOnly, IN_MEMORY } from '@stateforge-labs/session-ledger-sqlite/unstable/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
@@ -24,7 +24,7 @@ const FOURTEEN = closedLaneDaysOf('14');
 const NOW = instant(Date.parse('2026-10-11T12:00:00Z'));
 
 const freshDb = (): Database => {
-    const opened = openDatabase(fsPathOf(MEMORY));
+    const opened = openDatabase(fsPathOf(IN_MEMORY));
     if (opened.kind !== 'ready') {
         throw new Error('a fresh in-memory database is never newer');
     }

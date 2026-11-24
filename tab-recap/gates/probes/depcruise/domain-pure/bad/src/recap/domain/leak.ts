@@ -1,3 +1,3 @@
-import type { ConnectionHandle } from '#src/adapters/db/connection.ts';
+import type { ConnectionHandle } from '../../adapters/db/connection.ts';
 
 export type Leak = ConnectionHandle;

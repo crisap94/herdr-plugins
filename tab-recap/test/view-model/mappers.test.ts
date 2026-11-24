@@ -4,7 +4,7 @@ import { messagesFor } from '#src/i18n/index.ts';
 import type { CompactionRow } from '#src/ports/compaction-records.ts';
 import { recapRunningOf, type SessionCursor, type Recap } from '@stateforge-labs/session-ledger';
 import type { TabLaneRecord } from '#src/ports/tab-views.ts';
-import type { ColumnView } from '#src/recap/render/present.ts';
+import type { ColumnView } from '#src/view-model/present.ts';
 import { factsOfBare } from '#test/support/session-readings.ts';
 import { columnTaskOf, columnViewOf, compactionRowOf, recapColumnOf, rowOf, webOf } from '#src/view-model/column.ts';
 import { wordingOf } from '#src/view-model/wording.ts';
