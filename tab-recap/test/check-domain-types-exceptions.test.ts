@@ -4,8 +4,12 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { applyEntries, parseEntries, parseEntry, releasedMigrations, type Entry } from '../bin/domain-exceptions.ts';
-import { categoryIn, compareFindings, type Finding } from '../bin/domain-findings.ts';
+import { applyEntries, parseEntries, parseEntry, releasedMigrations, type Entry, type Rules } from '../gates/bin/domain-exceptions.ts';
+import { categoryIn, compareFindings, type Finding } from '../gates/bin/domain-findings.ts';
+import { parseSettings, settingsOf } from '../gates/bin/domain-report.ts';
+
+const PLUGIN: Rules = { brandFile: 'src/recap/domain/brand.ts', contractFolders: ['src/wire/'], callbackContainers: true };
+const MIGRATIONS = { dir: 'src/adapters/db/schema', tags: 'tab-recap-v*' };
 
 const finding = (overrides: Partial<Finding>): Finding => ({
     file: 'src/domain/value.ts',
@@ -40,29 +44,29 @@ test('a file that is not a JSON array is refused', () => {
 });
 
 test('an exception matching no finding is stale, and the stale line begins not supported', () => {
-    const outcome = applyEntries([], [callback], []);
+    const outcome = applyEntries([], [callback], [], PLUGIN);
     assert.deepEqual(outcome.stale, ['not supported: exception src/domain/value.ts echo value matches no finding']);
 });
 
 test('an exception matching its finding removes that finding and leaves the others', () => {
     const other = finding({ parameter: 'other', site: 'parameter other' });
-    const outcome = applyEntries([finding({}), other], [callback], []);
+    const outcome = applyEntries([finding({}), other], [callback], [], PLUGIN);
     assert.deepEqual(outcome, { findings: [other], stale: [] });
 });
 
 test('a migration exception names a released migration file, or it is stale', () => {
     const migration: Entry = { class: 'migration', file: 'src/adapters/db/schema/001-initial.ts', reason: 'released' };
     const hit = finding({ file: 'src/adapters/db/schema/001-initial.ts', owner: 'column', parameter: 'name', site: 'parameter name' });
-    assert.deepEqual(applyEntries([hit], [migration], ['src/adapters/db/schema/001-initial.ts']), { findings: [], stale: [] });
-    assert.deepEqual(applyEntries([hit], [migration], []).findings, [hit]);
-    assert.deepEqual(applyEntries([hit], [migration], []).stale, [
+    assert.deepEqual(applyEntries([hit], [migration], ['src/adapters/db/schema/001-initial.ts'], PLUGIN), { findings: [], stale: [] });
+    assert.deepEqual(applyEntries([hit], [migration], [], PLUGIN).findings, [hit]);
+    assert.deepEqual(applyEntries([hit], [migration], [], PLUGIN).stale, [
         'not supported: exception src/adapters/db/schema/001-initial.ts names no released migration',
     ]);
 });
 
 test('a brand exception outside brand.ts is stale and excepts nothing', () => {
     const brand: Entry = { class: 'brand', file: 'src/domain/value.ts', function: 'echo', parameter: 'value', reason: 'brand' };
-    const outcome = applyEntries([finding({})], [brand], []);
+    const outcome = applyEntries([finding({})], [brand], [], PLUGIN);
     assert.equal(outcome.findings.length, 1);
     assert.equal(outcome.stale.length, 1);
 });
@@ -85,13 +89,13 @@ test('the brand exception covers the one cast inside the brand function of brand
     const brand: Entry = { class: 'brand', file: 'src/recap/domain/brand.ts', function: 'brand', parameter: null, reason: 'the one brand function casts its carrier' };
     const cast = finding({ file: 'src/recap/domain/brand.ts', category: 'assertion', owner: 'brand', parameter: null, site: 'type assertion' });
     const stray = finding({ file: 'src/recap/domain/brand.ts', category: 'assertion', owner: 'other', parameter: null, site: 'type assertion' });
-    assert.deepEqual(applyEntries([cast, stray], [brand], []), { findings: [stray], stale: [] });
+    assert.deepEqual(applyEntries([cast, stray], [brand], [], PLUGIN), { findings: [stray], stale: [] });
 });
 
 test('a callback exception never covers an assertion', () => {
     const entry: Entry = { class: 'callback', file: 'src/domain/value.ts', function: 'echo', parameter: null, reason: 'a Node callback' };
     const cast = finding({ category: 'assertion', parameter: null, site: 'type assertion' });
-    assert.deepEqual(applyEntries([cast], [entry], []).findings, [cast]);
+    assert.deepEqual(applyEntries([cast], [entry], [], PLUGIN).findings, [cast]);
 });
 
 test('a callback exception covers the container finding of its parameter and of its return, never an assertion', () => {
@@ -100,7 +104,7 @@ test('a callback exception covers the container finding of its parameter and of 
     const containerParameter = finding({ category: 'container', parameter: 'sizes', site: 'parameter sizes' });
     const containerReturn = finding({ category: 'container', parameter: null, site: 'return' });
     const assertion = finding({ category: 'assertion', parameter: null, site: 'type assertion' });
-    assert.deepEqual(applyEntries([containerParameter, containerReturn, assertion], [parameter, returned], []), {
+    assert.deepEqual(applyEntries([containerParameter, containerReturn, assertion], [parameter, returned], [], PLUGIN), {
         findings: [assertion],
         stale: [],
     });
@@ -116,94 +120,94 @@ test('the released migrations are the files of the latest release tag, not the r
         writeFileSync(join(dir, 'src/adapters/db/schema/index.ts'), 'export const b = 1;\n');
         git('add', '.');
         git('commit', '-q', '-m', 'one');
-        assert.deepEqual(releasedMigrations(dir), { kind: 'ok', value: [] });
+        assert.deepEqual(releasedMigrations(dir, MIGRATIONS), { kind: 'ok', value: [] });
         git('tag', 'tab-recap-v1.0.0');
         writeFileSync(join(dir, 'src/adapters/db/schema/002-later.ts'), 'export const c = 1;\n');
         git('add', '.');
         git('commit', '-q', '-m', 'two');
-        assert.deepEqual(releasedMigrations(dir), { kind: 'ok', value: ['src/adapters/db/schema/001-initial.ts'] });
+        assert.deepEqual(releasedMigrations(dir, MIGRATIONS), { kind: 'ok', value: ['src/adapters/db/schema/001-initial.ts'] });
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }
 });
 
-const wire: Entry = {
-    class: 'wire',
+const contract: Entry = {
+    class: 'contract',
     file: 'src/wire/view/protocol.ts',
     symbol: 'Hello',
     field: 'cols',
     reason: 'a plain field of the approved view wire contract',
 };
 
-const wireFinding = (overrides: Partial<Finding>): Finding =>
+const contractFinding = (overrides: Partial<Finding>): Finding =>
     finding({ file: 'src/wire/view/protocol.ts', category: 'property', owner: 'Hello', parameter: null, site: 'property cols', reason: 'resolves to number', ...overrides });
 
-test('a wire entry names a file, a symbol, a field and a reason', () => {
-    assert.deepEqual(parseEntry(wire), { kind: 'ok', value: wire });
+test('a contract entry names a file, a symbol, a field and a reason', () => {
+    assert.deepEqual(parseEntry(contract), { kind: 'ok', value: contract });
 });
 
-test('a wire entry without a symbol, a field or a reason is refused', () => {
-    assert.equal(parseEntry({ ...wire, symbol: '' }).kind, 'err');
-    assert.equal(parseEntry({ ...wire, field: undefined }).kind, 'err');
-    assert.equal(parseEntry({ ...wire, reason: '' }).kind, 'err');
+test('a contract entry without a symbol, a field or a reason is refused', () => {
+    assert.equal(parseEntry({ ...contract, symbol: '' }).kind, 'err');
+    assert.equal(parseEntry({ ...contract, field: undefined }).kind, 'err');
+    assert.equal(parseEntry({ ...contract, reason: '' }).kind, 'err');
 });
 
-test('a wire exception covers the property finding of its symbol and field, and no other field or symbol', () => {
-    const rows = wireFinding({ site: 'property rows' });
-    const resize = wireFinding({ owner: 'Resize' });
-    assert.deepEqual(applyEntries([wireFinding({}), rows, resize], [wire], []), { findings: [rows, resize], stale: [] });
+test('a contract exception covers the property finding of its symbol and field, and no other field or symbol', () => {
+    const rows = contractFinding({ site: 'property rows' });
+    const resize = contractFinding({ owner: 'Resize' });
+    assert.deepEqual(applyEntries([contractFinding({}), rows, resize], [contract], [], PLUGIN), { findings: [rows, resize], stale: [] });
 });
 
-test('a wire exception covers a container finding of a property, of a parameter and of a return', () => {
-    const lines: Entry = { ...wire, file: 'src/wire/view/paint.ts', symbol: 'paintOf', field: 'lines' };
-    const returned: Entry = { ...wire, file: 'src/wire/view/codec.ts', symbol: 'push', field: 'return' };
-    const frame: Entry = { ...wire, symbol: 'FrameMessage', field: 'lines' };
+test('a contract exception covers a container finding of a property, of a parameter and of a return', () => {
+    const lines: Entry = { ...contract, file: 'src/wire/view/paint.ts', symbol: 'paintOf', field: 'lines' };
+    const returned: Entry = { ...contract, file: 'src/wire/view/codec.ts', symbol: 'push', field: 'return' };
+    const frame: Entry = { ...contract, symbol: 'FrameMessage', field: 'lines' };
     const findings = [
-        wireFinding({ file: 'src/wire/view/paint.ts', category: 'container', owner: 'paintOf', parameter: 'lines', site: 'parameter lines' }),
-        wireFinding({ file: 'src/wire/view/codec.ts', category: 'container', owner: 'push', site: 'return' }),
-        wireFinding({ category: 'container', owner: 'FrameMessage', site: 'property lines' }),
+        contractFinding({ file: 'src/wire/view/paint.ts', category: 'container', owner: 'paintOf', parameter: 'lines', site: 'parameter lines' }),
+        contractFinding({ file: 'src/wire/view/codec.ts', category: 'container', owner: 'push', site: 'return' }),
+        contractFinding({ category: 'container', owner: 'FrameMessage', site: 'property lines' }),
     ];
-    assert.deepEqual(applyEntries(findings, [lines, returned, frame], []), { findings: [], stale: [] });
+    assert.deepEqual(applyEntries(findings, [lines, returned, frame], [], PLUGIN), { findings: [], stale: [] });
 });
 
-test('a wire exception covers the parameter finding of its function and parameter, and no other parameter or function', () => {
-    const entry: Entry = { ...wire, file: 'src/wire/view/paint.ts', symbol: 'paintOf', field: 'title' };
-    const title = wireFinding({ file: 'src/wire/view/paint.ts', category: 'parameter', owner: 'paintOf', parameter: 'title', site: 'parameter title' });
-    const colour = wireFinding({ file: 'src/wire/view/paint.ts', category: 'parameter', owner: 'paintOf', parameter: 'colour', site: 'parameter colour' });
-    const enter = wireFinding({ file: 'src/wire/view/paint.ts', category: 'parameter', owner: 'ENTER', parameter: 'title', site: 'parameter title' });
-    assert.deepEqual(applyEntries([title, colour, enter], [entry], []), { findings: [colour, enter], stale: [] });
+test('a contract exception covers the parameter finding of its function and parameter, and no other parameter or function', () => {
+    const entry: Entry = { ...contract, file: 'src/wire/view/paint.ts', symbol: 'paintOf', field: 'title' };
+    const title = contractFinding({ file: 'src/wire/view/paint.ts', category: 'parameter', owner: 'paintOf', parameter: 'title', site: 'parameter title' });
+    const colour = contractFinding({ file: 'src/wire/view/paint.ts', category: 'parameter', owner: 'paintOf', parameter: 'colour', site: 'parameter colour' });
+    const enter = contractFinding({ file: 'src/wire/view/paint.ts', category: 'parameter', owner: 'ENTER', parameter: 'title', site: 'parameter title' });
+    assert.deepEqual(applyEntries([title, colour, enter], [entry], [], PLUGIN), { findings: [colour, enter], stale: [] });
 });
 
-test('a wire exception names a return by the field return and covers only the return finding of its function', () => {
-    const entry: Entry = { ...wire, file: 'src/wire/paths.ts', symbol: 'viewSocketPath', field: 'return' };
-    const returned = wireFinding({ file: 'src/wire/paths.ts', category: 'return', owner: 'viewSocketPath', site: 'return' });
-    const parameter = wireFinding({ file: 'src/wire/paths.ts', category: 'parameter', owner: 'viewSocketPath', parameter: 'stateDir', site: 'parameter stateDir' });
-    const other = wireFinding({ file: 'src/wire/paths.ts', category: 'return', owner: 'hooksSocketPath', site: 'return' });
-    assert.deepEqual(applyEntries([returned, parameter, other], [entry], []), { findings: [parameter, other], stale: [] });
+test('a contract exception names a return by the field return and covers only the return finding of its function', () => {
+    const entry: Entry = { ...contract, file: 'src/wire/paths.ts', symbol: 'viewSocketPath', field: 'return' };
+    const returned = contractFinding({ file: 'src/wire/paths.ts', category: 'return', owner: 'viewSocketPath', site: 'return' });
+    const parameter = contractFinding({ file: 'src/wire/paths.ts', category: 'parameter', owner: 'viewSocketPath', parameter: 'stateDir', site: 'parameter stateDir' });
+    const other = contractFinding({ file: 'src/wire/paths.ts', category: 'return', owner: 'hooksSocketPath', site: 'return' });
+    assert.deepEqual(applyEntries([returned, parameter, other], [entry], [], PLUGIN), { findings: [parameter, other], stale: [] });
 });
 
-test('a wire exception never covers an assertion finding', () => {
-    const entry: Entry = { ...wire, file: 'src/wire/view/codec.ts', symbol: 'decodeClient', field: 'line' };
-    const cast = wireFinding({ file: 'src/wire/view/codec.ts', category: 'assertion', owner: 'decodeClient', parameter: 'line', site: 'type assertion' });
-    const outcome = applyEntries([cast], [entry], []);
+test('a contract exception never covers an assertion finding', () => {
+    const entry: Entry = { ...contract, file: 'src/wire/view/codec.ts', symbol: 'decodeClient', field: 'line' };
+    const cast = contractFinding({ file: 'src/wire/view/codec.ts', category: 'assertion', owner: 'decodeClient', parameter: 'line', site: 'type assertion' });
+    const outcome = applyEntries([cast], [entry], [], PLUGIN);
     assert.deepEqual(outcome.findings, [cast]);
     assert.deepEqual(outcome.stale, ['not supported: exception src/wire/view/codec.ts decodeClient line matches no finding']);
 });
 
-test('a wire exception for a parameter the function does not have is stale and excepts nothing', () => {
-    const entry: Entry = { ...wire, file: 'src/wire/view/codec.ts', symbol: 'decodeClient', field: 'text' };
-    const line = wireFinding({ file: 'src/wire/view/codec.ts', category: 'parameter', owner: 'decodeClient', parameter: 'line', site: 'parameter line' });
-    assert.deepEqual(applyEntries([line], [entry], []), {
+test('a contract exception for a parameter the function does not have is stale and excepts nothing', () => {
+    const entry: Entry = { ...contract, file: 'src/wire/view/codec.ts', symbol: 'decodeClient', field: 'text' };
+    const line = contractFinding({ file: 'src/wire/view/codec.ts', category: 'parameter', owner: 'decodeClient', parameter: 'line', site: 'parameter line' });
+    assert.deepEqual(applyEntries([line], [entry], [], PLUGIN), {
         findings: [line],
         stale: ['not supported: exception src/wire/view/codec.ts decodeClient text matches no finding'],
     });
 });
 
-test('a wire exception for a parameter or a return outside src/wire/ is stale and excepts nothing', () => {
-    const parameter: Entry = { ...wire, file: 'src/domain/value.ts', symbol: 'echo', field: 'value' };
-    const returned: Entry = { ...wire, file: 'src/domain/value.ts', symbol: 'echo', field: 'return' };
+test('a contract exception for a parameter or a return outside src/wire/ is stale and excepts nothing', () => {
+    const parameter: Entry = { ...contract, file: 'src/domain/value.ts', symbol: 'echo', field: 'value' };
+    const returned: Entry = { ...contract, file: 'src/domain/value.ts', symbol: 'echo', field: 'return' };
     const hits = [finding({}), finding({ category: 'return', parameter: null, site: 'return' })];
-    assert.deepEqual(applyEntries(hits, [parameter, returned], []), {
+    assert.deepEqual(applyEntries(hits, [parameter, returned], [], PLUGIN), {
         findings: hits,
         stale: [
             'not supported: exception src/domain/value.ts echo value is not under src/wire/',
@@ -216,28 +220,83 @@ test('a callback exception under src/wire/ still covers its parameter and its re
     const parameter: Entry = { class: 'callback', file: 'src/wire/paths.ts', function: 'viewSocketPath', parameter: 'stateDir', reason: 'a Node callback' };
     const returned: Entry = { ...parameter, parameter: null };
     const hits = [
-        wireFinding({ file: 'src/wire/paths.ts', category: 'parameter', owner: 'viewSocketPath', parameter: 'stateDir', site: 'parameter stateDir' }),
-        wireFinding({ file: 'src/wire/paths.ts', category: 'return', owner: 'viewSocketPath', site: 'return' }),
+        contractFinding({ file: 'src/wire/paths.ts', category: 'parameter', owner: 'viewSocketPath', parameter: 'stateDir', site: 'parameter stateDir' }),
+        contractFinding({ file: 'src/wire/paths.ts', category: 'return', owner: 'viewSocketPath', site: 'return' }),
     ];
-    assert.deepEqual(applyEntries(hits, [parameter, returned], []), { findings: [], stale: [] });
+    assert.deepEqual(applyEntries(hits, [parameter, returned], [], PLUGIN), { findings: [], stale: [] });
 });
 
-test('a wire exception outside src/wire/ is stale and excepts nothing', () => {
-    const entry: Entry = { ...wire, file: 'src/domain/value.ts', symbol: 'Size', field: 'width' };
+test('a contract exception outside src/wire/ is stale and excepts nothing', () => {
+    const entry: Entry = { ...contract, file: 'src/domain/value.ts', symbol: 'Size', field: 'width' };
     const hit = finding({ category: 'property', owner: 'Size', parameter: null, site: 'property width' });
-    assert.deepEqual(applyEntries([hit], [entry], []), {
+    assert.deepEqual(applyEntries([hit], [entry], [], PLUGIN), {
         findings: [hit],
         stale: ['not supported: exception src/domain/value.ts Size width is not under src/wire/'],
     });
 });
 
-test('a wire exception matching no finding is stale, and the stale line begins not supported', () => {
-    assert.deepEqual(applyEntries([], [wire], []).stale, ['not supported: exception src/wire/view/protocol.ts Hello cols matches no finding']);
+test('a contract exception matching no finding is stale, and the stale line begins not supported', () => {
+    assert.deepEqual(applyEntries([], [contract], [], PLUGIN).stale, ['not supported: exception src/wire/view/protocol.ts Hello cols matches no finding']);
 });
 
 test('a callback exception never covers a property or a container finding', () => {
     const entry: Entry = { class: 'callback', file: 'src/wire/view/protocol.ts', function: 'Hello', parameter: null, reason: 'a Node callback' };
-    const property = wireFinding({});
-    const container = wireFinding({ category: 'container', owner: 'FrameMessage', site: 'property lines' });
-    assert.deepEqual(applyEntries([property, container], [entry], []).findings, [property, container]);
+    const property = contractFinding({});
+    const container = contractFinding({ category: 'container', owner: 'FrameMessage', site: 'property lines' });
+    assert.deepEqual(applyEntries([property, container], [entry], [], PLUGIN).findings, [property, container]);
+});
+
+const DEFAULT_RULES: Rules = { brandFile: null, contractFolders: ['src/contract/', 'src/compaction-timing/'], callbackContainers: false };
+
+test('the default contract folders are src/contract/ and src/compaction-timing/; the plugin names src/wire/', () => {
+    const inContract = contractFinding({ file: 'src/contract/view.ts' });
+    const entry: Entry = { ...contract, file: 'src/contract/view.ts' };
+    assert.deepEqual(applyEntries([inContract], [entry], [], DEFAULT_RULES), { findings: [], stale: [] });
+    assert.deepEqual(applyEntries([inContract], [entry], [], PLUGIN).stale, [
+        'not supported: exception src/contract/view.ts Hello cols is not under src/wire/',
+    ]);
+    const timing: Entry = { ...contract, file: 'src/compaction-timing/clock.ts' };
+    assert.deepEqual(applyEntries([contractFinding({ file: 'src/compaction-timing/clock.ts' })], [timing], [], DEFAULT_RULES), { findings: [], stale: [] });
+    assert.deepEqual(applyEntries([], [contract], [], DEFAULT_RULES).stale, [
+        'not supported: exception src/wire/view/protocol.ts Hello cols is not under src/contract/ or src/compaction-timing/',
+    ]);
+});
+
+test('a callback exception covers a container finding only where callbackContainers is on', () => {
+    const entry: Entry = { class: 'callback', file: 'src/domain/value.ts', function: 'echo', parameter: 'sizes', reason: 'a Node callback' };
+    const container = finding({ category: 'container', parameter: 'sizes', site: 'parameter sizes' });
+    assert.deepEqual(applyEntries([container], [entry], [], PLUGIN), { findings: [], stale: [] });
+    assert.deepEqual(applyEntries([container], [entry], [], DEFAULT_RULES), {
+        findings: [container],
+        stale: ['not supported: exception src/domain/value.ts echo sizes matches no finding'],
+    });
+});
+
+test('the settings default to the package rules and take the plugin values from gates/config.json', () => {
+    assert.deepEqual(parseSettings({}), {
+        kind: 'ok',
+        value: {
+            brandFile: null,
+            extraBrandFiles: [],
+            exceptions: 'gates/domain-types-exceptions.json',
+            migrations: null,
+            inheritBaseline: null,
+            contractFolders: ['src/contract/', 'src/compaction-timing/'],
+            callbackContainers: false,
+        },
+    });
+    const dir = mkdtempSync(join(tmpdir(), 'settings-'));
+    try {
+        mkdirSync(join(dir, 'gates'));
+        writeFileSync(join(dir, 'gates', 'config.json'), JSON.stringify({ contractFolders: ['src/wire/'], callbackContainers: true, extraBrandFiles: ['packages/a/src/kernel.ts'] }));
+        const settings = settingsOf(dir);
+        assert.equal(settings.kind, 'ok');
+        assert.deepEqual([settings.value.contractFolders, settings.value.callbackContainers, settings.value.extraBrandFiles], [
+            ['src/wire/'],
+            true,
+            ['packages/a/src/kernel.ts'],
+        ]);
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
 });

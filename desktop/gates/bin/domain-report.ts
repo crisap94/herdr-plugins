@@ -2,25 +2,36 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { err, ok, type Result } from './result.ts';
 import { countsOf, filesAbove, guardAt, loadBaseline, ratchet, writeBaseline, type Git } from './domain-baseline.ts';
-import { applyEntries, loadEntries, releasedMigrations, type Migrations } from './domain-exceptions.ts';
+import { applyEntries, loadEntries, releasedMigrations, type Migrations, type Rules } from './domain-exceptions.ts';
 import { compareFindings, describeFinding, type Counts, type Finding } from './domain-findings.ts';
 import { loadLanes, type Lanes } from './lane-map.ts';
 
 const CONFIG = 'gates/config.json';
 const MOVES = 'gates/domain-types-moves.tsv';
 
-export interface Settings {
-    readonly brandFile: string | null;
+export interface Settings extends Rules {
+    readonly extraBrandFiles: readonly string[];
     readonly exceptions: string;
     readonly migrations: Migrations | null;
     readonly inheritBaseline: string | null;
 }
 
-const DEFAULTS: Settings = { brandFile: null, exceptions: 'gates/domain-types-exceptions.json', migrations: null, inheritBaseline: null };
+const DEFAULTS: Settings = {
+    brandFile: null,
+    extraBrandFiles: [],
+    exceptions: 'gates/domain-types-exceptions.json',
+    migrations: null,
+    inheritBaseline: null,
+    contractFolders: ['src/contract/', 'src/compaction-timing/'],
+    callbackContainers: false,
+};
 
 type Fields = Readonly<Record<string, unknown>>;
 
 const isFields = (input: unknown): input is Fields => typeof input === 'object' && input !== null && !Array.isArray(input);
+
+const textsOf = (input: unknown, fallback: readonly string[]): readonly string[] =>
+    Array.isArray(input) && input.every((item): item is string => typeof item === 'string') ? input : fallback;
 
 const migrationsOf = (input: unknown): Migrations | null =>
     isFields(input) && typeof input.dir === 'string' && typeof input.tags === 'string' ? { dir: input.dir, tags: input.tags } : null;
@@ -31,9 +42,12 @@ export const parseSettings = (input: unknown): Result<Settings, string> => {
     }
     return ok({
         brandFile: typeof input.brandFile === 'string' ? input.brandFile : null,
+        extraBrandFiles: textsOf(input.extraBrandFiles, DEFAULTS.extraBrandFiles),
         exceptions: typeof input.exceptions === 'string' ? input.exceptions : DEFAULTS.exceptions,
         migrations: migrationsOf(input.migrations),
         inheritBaseline: typeof input.inheritBaseline === 'string' ? input.inheritBaseline : null,
+        contractFolders: textsOf(input.contractFolders, DEFAULTS.contractFolders),
+        callbackContainers: input.callbackContainers === true,
     });
 };
 
@@ -64,7 +78,7 @@ export const settle = (root: string, settings: Settings, found: readonly Finding
     if (entries.kind === 'err') {
         return err(entries.error);
     }
-    const outcome = applyEntries(found, entries.value, released.value, settings.brandFile);
+    const outcome = applyEntries(found, entries.value, released.value, settings);
     return ok({ findings: outcome.findings.toSorted(compareFindings), stale: outcome.stale, counts: countsOf(outcome.findings) });
 };
 

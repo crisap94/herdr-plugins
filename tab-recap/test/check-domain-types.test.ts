@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const SCRIPT = join(ROOT, 'bin', 'check-domain-types.ts');
+const SCRIPT = join(ROOT, 'gates', 'bin', 'check-domain-types.ts');
 const PROBES = join(ROOT, 'gates', 'probes', 'domain-types');
 
 const run = (args: readonly string[]): { readonly status: number | null; readonly stdout: string; readonly stderr: string } => {

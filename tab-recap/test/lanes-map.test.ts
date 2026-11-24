@@ -60,7 +60,7 @@ test('a file that no longer exists fails the map check', () => {
 
 test('a lane merge request that edits only its own files and its own baseline passes', () => {
     const own = JSON.parse(readFileSync(join(ROOT, 'ci/lanes.json'), 'utf8')).lanes.B2[0];
-    const result = lane('B2', [`tab-recap/${String(own)}`, 'tab-recap/ci/domain-types-baseline/B2.json', 'tab-recap/ci/domain-types-exceptions/B2.json', 'tab-recap/src/recap/domain/legacy.ts', 'README.md']);
+    const result = lane('B2', [`tab-recap/${String(own)}`, 'tab-recap/ci/domain-types-baseline/B2.json', 'tab-recap/gates/domain-types-exceptions/B2.json', 'tab-recap/src/recap/domain/legacy.ts', 'README.md']);
     assert.equal(result.status, 0, String(result.stderr));
 });
 

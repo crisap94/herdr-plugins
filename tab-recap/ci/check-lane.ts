@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { dirname } from 'node:path';
-import { loadLanes, parseLanes, type Lanes } from '../bin/lane-map.ts';
+import { loadLanes, parseLanes, type Lanes } from '../gates/bin/lane-map.ts';
 
 const PREFIX = 'tab-recap/';
 const LANES_PATH = `${PREFIX}ci/lanes.json`;
@@ -74,7 +74,7 @@ function allowed(file: string): boolean {
     if (!file.startsWith(PREFIX)) return true;
     if (file === LANES_PATH) return foreignKeys().length === 0;
     if (openToEveryLane(file) || ownPaths.has(file) || adaptsForeignSource(file)) return true;
-    if (file === `${PREFIX}ci/domain-types-baseline/${lane}.json` || file === `${PREFIX}ci/domain-types-exceptions/${lane}.json`) return true;
+    if (file === `${PREFIX}ci/domain-types-baseline/${lane}.json` || file === `${PREFIX}gates/domain-types-exceptions/${lane}.json`) return true;
     return file.endsWith('/legacy.ts') && ownFolders.has(dirname(file));
 }
 

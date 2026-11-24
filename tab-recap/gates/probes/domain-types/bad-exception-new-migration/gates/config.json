@@ -1,0 +1,6 @@
+{
+  "exceptions": "gates/domain-types-exceptions",
+  "contractFolders": ["src/wire/"],
+  "callbackContainers": true,
+  "migrations": { "dir": "src/adapters/db/schema", "tags": "tab-recap-v*" }
+}

@@ -1,0 +1,22 @@
+path	tab-recap/ci/domain-types-exceptions	tab-recap/gates/domain-types-exceptions
+path	tab-recap/gates/probes/domain-types/bad-exception-stale/ci/domain-types-exceptions	tab-recap/gates/probes/domain-types/bad-exception-stale/gates/domain-types-exceptions
+path	tab-recap/gates/probes/domain-types/bad-exception-wire-outside/ci/domain-types-exceptions	tab-recap/gates/probes/domain-types/bad-exception-wire-outside/gates/domain-types-exceptions
+path	tab-recap/gates/probes/domain-types/bad-exception-wire-wrong-parameter/ci/domain-types-exceptions	tab-recap/gates/probes/domain-types/bad-exception-wire-wrong-parameter/gates/domain-types-exceptions
+path	tab-recap/gates/probes/domain-types/bad-exception-new-migration/ci/domain-types-exceptions	tab-recap/gates/probes/domain-types/bad-exception-new-migration/gates/domain-types-exceptions
+path	tab-recap/gates/probes/domain-types/good-exception-wire/ci/domain-types-exceptions	tab-recap/gates/probes/domain-types/good-exception-wire/gates/domain-types-exceptions
+path	tab-recap/gates/probes/domain-types/good-exception-callback/ci/domain-types-exceptions	tab-recap/gates/probes/domain-types/good-exception-callback/gates/domain-types-exceptions
+path	tab-recap/gates/probes/domain-types/good-exception-wire-function/ci/domain-types-exceptions	tab-recap/gates/probes/domain-types/good-exception-wire-function/gates/domain-types-exceptions
+text	ci/gate-graph.sh	gates/graph.sh	tab-recap/CLAUDE.md
+text	bun bin/check-domain-types.ts	bun gates/bin/check-domain-types.ts	tab-recap/CONTRIBUTING.md
+text	ci/domain-types-exceptions	gates/domain-types-exceptions	tab-recap/CONTRIBUTING.md
+text	ci/domain-types-exceptions	gates/domain-types-exceptions	tab-recap/CONTEXT.md
+text	ci/domain-types-exceptions	gates/domain-types-exceptions	tab-recap/ci/check-lane.ts
+text	'../bin/lane-map.ts'	'../gates/bin/lane-map.ts'	tab-recap/ci/check-lane.ts
+text	ci/domain-types-exceptions	gates/domain-types-exceptions	tab-recap/test/lanes-map.test.ts
+text	ci/domain-types-exceptions	gates/domain-types-exceptions	ci/test/pipeline-rules.test.ts
+text	ci/domain-types-exceptions	gates/domain-types-exceptions	ci/test/check-track.test.ts
+text	ci/domain-types-exceptions	gates/domain-types-exceptions	ci/tracks.json
+text	ROOT, 'bin', 'check-domain-types.ts'	ROOT, 'gates', 'bin', 'check-domain-types.ts'	tab-recap/test/check-domain-types.test.ts
+text	bash ci/gate-graph.sh	bash gates/graph.sh	tab-recap/ci/lint.sh
+text	bash ci/verify-bite.sh	bash gates/verify-bite.sh	tab-recap/ci/lint.sh
+text	bash ci/gate-rules.sh	bash gates/rules-bite.sh	tab-recap/ci/lint.sh

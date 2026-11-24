@@ -19,7 +19,7 @@
       "tab-recap/test/{engine-golden,engine-plain-session,engine-files,engine}.test.ts",
       "tab-recap/ci/engine-files.json",
       "tab-recap/ci/domain-types-baseline/ENG.json",
-      "tab-recap/ci/domain-types-exceptions/ENG.json",
+      "tab-recap/gates/domain-types-exceptions/ENG.json",
       "tab-recap/src/daemon/slots/timing.ts",
       "tab-recap/rules/graph/engine.cjs",
       "tab-recap/gates/probes/depcruise/engine-*/**",
@@ -33,7 +33,7 @@
       "!packages/session-ledger-sqlite/gates/bin/{check-domain-types.ts,domain-findings.ts,domain-syntax.ts,domain-exceptions.ts,domain-report.ts,domain-baseline.ts,lane-map.ts,result.ts}",
       { "lane": "STO" },
       "tab-recap/ci/domain-types-baseline/STO.json",
-      "tab-recap/ci/domain-types-exceptions/STO.json",
+      "tab-recap/gates/domain-types-exceptions/STO.json",
       "tab-recap/test/store/**",
       "ci/codemod/moves/STO-*.tsv"
     ],
@@ -92,7 +92,7 @@
       "!tab-recap/ci/{lanes.json,lanes-generate.ts,check-lane.ts,engine-files.json}",
       "!tab-recap/gates/probes/depcruise/{wire-self-contained,workspace-types-only}/**",
       "!tab-recap/gates/probes/domain-types/*exception-wire*/**",
-      "!tab-recap/ci/domain-types-*/**",
+      "!tab-recap/gates/domain-types-exceptions/**",
       "tab-recap/gates/**",
       "tab-recap/test/release.test.ts"
     ],
@@ -123,7 +123,7 @@
       "tab-recap/ci/{lanes-generate.ts,check-lane.ts}",
       "tab-recap/src/wire/**",
       "tab-recap/test/contracts/**",
-      "tab-recap/ci/domain-types-exceptions/FND.json",
+      "tab-recap/gates/domain-types-exceptions/FND.json",
       "tab-recap/gates/probes/depcruise/{wire-self-contained,workspace-types-only}/**",
       "tab-recap/gates/probes/domain-types/*exception-wire*/**",
       { "lane": "lead" }

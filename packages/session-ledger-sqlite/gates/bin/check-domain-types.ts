@@ -263,7 +263,7 @@ const check = (configPath: string): Result<Report, string> => {
     if (sources.length === 0) {
         return err(`no file under src/ in ${configPath}`);
     }
-    const brands = program.getSourceFiles().filter((file) => relative(root, file.fileName) === settings.value.brandFile || file.fileName.endsWith(`/${PACKAGE_BRAND_FILE}`));
+    const brands = program.getSourceFiles().filter((file) => relative(root, file.fileName) === settings.value.brandFile || [PACKAGE_BRAND_FILE, ...settings.value.extraBrandFiles].some((brand) => file.fileName.endsWith(`/${brand}`)));
     const scan: Scan = { checker, root, markers: markersOf(checker, brands), findings: [], declared: new Set(), queue: [] };
     sources.forEach((file) => scanFile(scan, file));
     for (let holder = scan.queue.pop(); holder !== undefined; holder = scan.queue.pop()) {

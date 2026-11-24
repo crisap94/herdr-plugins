@@ -35,7 +35,7 @@ until you handle it → a golden sequence in `test/fold.test.ts`.
 
 **Adding a port** is: the interface in `src/ports/` with a sum-typed result, one adapter, a test.
 
-## Red lines — each is a rule with a bad probe it must bite (ast-grep, or the module graph in `.dependency-cruiser.cjs` checked by `ci/gate-graph.sh`)
+## Red lines — each is a rule with a bad probe it must bite (ast-grep, or the module graph in `.dependency-cruiser.cjs` checked by `gates/graph.sh`)
 
 | rule | says |
 | --- | --- |
