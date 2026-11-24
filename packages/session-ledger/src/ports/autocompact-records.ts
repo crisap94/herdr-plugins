@@ -18,7 +18,7 @@ import { parseUsd } from '#src/recap/domain/usd.ts';
 
 export type DecisionMode = 'shadow' | 'on';
 export type DecisionGate = 'ask' | 'ceiling' | 'coverage';
-export type DecisionVerdict = 'compact' | 'wait' | 'undecided' | 'unknown';
+export type Verdict = 'compact' | 'wait' | 'undecided' | 'unknown';
 export type { SkipGate };
 export interface PassedCoverage {
     readonly kind: 'passed';
@@ -55,7 +55,7 @@ export interface LastDecisionRow {
     readonly at: Instant;
     readonly tokens: Count;
     readonly mode: DecisionMode;
-    readonly verdict: DecisionVerdict;
+    readonly verdict: Verdict;
     readonly gate: DecisionGate;
 }
 
@@ -78,8 +78,8 @@ export interface DecisionDraft {
     readonly tokens: Count;
     readonly window: Count;
     readonly gate: DecisionGate;
-    readonly verdict: DecisionVerdict;
-    readonly askedVerdict: DecisionVerdict | null;
+    readonly verdict: Verdict;
+    readonly askedVerdict: Verdict | null;
     readonly answers: AnswerTally;
     readonly coverage: AnswerTally | null;
     readonly decider: Text | null;
@@ -139,7 +139,7 @@ export interface DecisionLedger {
 
 const MODES: readonly DecisionMode[] = ['shadow', 'on'];
 const GATES: readonly DecisionGate[] = ['ask', 'ceiling', 'coverage'];
-const VERDICTS: readonly DecisionVerdict[] = ['compact', 'wait', 'undecided', 'unknown'];
+const VERDICTS: readonly Verdict[] = ['compact', 'wait', 'undecided', 'unknown'];
 const UNCHECKED_REASONS: readonly UncheckedReason[] = ['no-decider', 'decider-cannot-answer', 'no-brief'];
 
 interface Row {

@@ -3,7 +3,7 @@ import { policyOf } from './fakes/settings-readers.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { instant, duration } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
-import { Autocompact } from '#src/recap/application/autocompact.ts';
+import { SafePointWatch } from '#src/recap/application/autocompact.ts';
 import type { AutocompactDeps, IdleClaim } from '#src/recap/application/autocompact.ts';
 import { candidateOf } from '#src/daemon/autocompact.ts';
 import { ACTIVE } from '#src/recap/application/autocompact-gates.ts';
@@ -11,7 +11,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { parseLaneStatusAtDecision } from '#src/recap/domain/autocompact.ts';
-import type { AutocompactPolicy } from '#src/recap/domain/autocompact.ts';
+import type { Policy } from '#src/recap/domain/autocompact.ts';
 import { tuningFrom } from '#src/recap/domain/autocompact-style.ts';
 
 import type { CompactTuning } from '#src/recap/domain/autocompact-style.ts';
@@ -51,9 +51,9 @@ export interface LaneService {
     claimIdle(seen: Lane): IdleClaim;
 }
 
-export interface World { breakAt: number | null; readonly service: LaneService; readonly watch: Autocompact; readonly claims: LaneClaims; readonly queued: Set<string>;readonly events: string[]; awaiting: string | null; lateAwaiting: string | null; awaitingUnknown: boolean; known: boolean; gate: Promise<void> | null; byPane: Record<string, number>; readonly store: ReturnType<typeof memoryStore>; readonly requests: CompactAsk[]; readonly logs: string[]; readonly asked: number[]; readonly refreshed: string[]; readonly flushed: string[]; readonly reads: number[]; readonly clock: { at: number }; idleHold: IdleHold; policy: AutocompactPolicy; inFlight: number | 'unknown'; background: readonly BackgroundItem[]; share: number; decide: () => DecidedAnswersResult }
+export interface World { breakAt: number | null; readonly service: LaneService; readonly watch: SafePointWatch; readonly claims: LaneClaims; readonly queued: Set<string>;readonly events: string[]; awaiting: string | null; lateAwaiting: string | null; awaitingUnknown: boolean; known: boolean; gate: Promise<void> | null; byPane: Record<string, number>; readonly store: ReturnType<typeof memoryStore>; readonly requests: CompactAsk[]; readonly logs: string[]; readonly asked: number[]; readonly refreshed: string[]; readonly flushed: string[]; readonly reads: number[]; readonly clock: { at: number }; idleHold: IdleHold; policy: Policy; inFlight: number | 'unknown'; background: readonly BackgroundItem[]; share: number; decide: () => DecidedAnswersResult }
 
-export function world(over: Partial<AutocompactPolicy> = {}, recap = true, startedAt = 0, tuning: Partial<CompactTuning> = {}): World {
+export function world(over: Partial<Policy> = {}, recap = true, startedAt = 0, tuning: Partial<CompactTuning> = {}): World {
     const store = memoryStore();
     store.db.prepare('INSERT INTO tab (id, first_seen, last_seen) VALUES (?, 1, 1)').run(SCOPE);
     const [requests, logs, asked, refreshed, reads, events] = [[] as CompactAsk[], [] as string[], [] as number[], [] as string[], [] as number[], [] as string[]];
@@ -71,7 +71,7 @@ export function world(over: Partial<AutocompactPolicy> = {}, recap = true, start
         awaiting: () => { state.awaitingReads += 1; return Promise.resolve(awaitingOf(state)); },
         emit: (event) => { if (event.kind === 'session-skipped') events.push(`${event.key} autocompact-skipped ${event.gate}`); else if (event.kind === 'safe-point-decided') events.push(`${event.key} autocompact-decided ${event.verdict}-${event.share}`); },
     };
-    const watch = new Autocompact(deps);
+    const watch = new SafePointWatch(deps);
     const seen = (found: Lane): Candidate => { const candidate = candidateFor(found); statuses.set(candidate, found.status); return candidate; };
     const service: LaneService = { consider: (found) => watch.consider(seen(found)), prune: (found) => { watch.prune(found.map(seen)); }, claimIdle: (found) => watch.claimIdle(seen(found)) };
     const self: World = { get breakAt() { return state.breakAt; }, set breakAt(value: number | null) { state.breakAt = value; }, service, watch, claims, queued, store, requests, logs, asked, refreshed, flushed, reads, clock, events,

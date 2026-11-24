@@ -8,7 +8,7 @@ import { SLOT_TABLE } from '#src/daemon/slot-table.ts';
 import { parseSwitch, startSlots, taps, type Line, type SlotContext, type SlotKey, type Slots, type Switch } from '#src/daemon/slots.ts';
 import { emptyBoard, type Board } from '#src/recap/domain/board.ts';
 import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
-import type { Autocompact } from '#src/recap/application/autocompact.ts';
+import type { SafePointWatch } from '#src/recap/application/autocompact.ts';
 import { rows, world, type World } from '../autocompact-world.ts';
 import { seenLane } from '#test/support/seen.ts';
 
@@ -40,7 +40,7 @@ async function daemon(key: Switch): Promise<Daemon> {
         consider: (candidate: Candidate): Promise<void> => w.watch.consider(candidate),
     } as unknown as SlotContext;
     const slots = await startSlots(SLOT_TABLE.filter((entry) => entry.key === 'TAB_RECAP_TIMING_EVENTS'), context);
-    const sweep = new AutocompactSweep({ candidates, autocompact: (): Autocompact => w.watch, log: (): void => undefined });
+    const sweep = new AutocompactSweep({ candidates, autocompact: (): SafePointWatch => w.watch, log: (): void => undefined });
     return { w, emit: ledger.emit, slots, sweep };
 }
 

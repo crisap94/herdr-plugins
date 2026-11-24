@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { HarnessPortDecider } from '#src/adapters/job/decider.ts';
-import type { DeciderPort, Noul } from '#src/ports/decider.ts';
+import type { DeciderPort, Question } from '#src/ports/decider.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { HarnessAsk, HarnessPort, HarnessRun } from '#src/ports/harness.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
@@ -11,7 +11,7 @@ import { unknown } from '#src/ports/unknowable.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { documentOf, noulOf, textOf } from './fakes/decider-fixtures.ts';
 
-const questions: ReadonlyMap<Text, Noul> = new Map<Text, Noul>([
+const questions: ReadonlyMap<Text, Question> = new Map<Text, Question>([
     [textOf('closes_request'), noulOf('Does last_reply deliver what last_prompt asked for?', 'it reports done', 'it is an intermediate step')],
     [textOf('stuck'), noulOf('same step failing?', 'retries', 'progress')],
 ]);

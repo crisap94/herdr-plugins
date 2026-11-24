@@ -6,14 +6,14 @@ import type { Usd } from '#src/recap/domain/usd.ts';
 import type { Unknown } from '#src/ports/unknowable.ts';
 
 
-export interface NoulCriteria {
+export interface QuestionCriteria {
     readonly true: Text;
     readonly false: Text;
 }
 
-export interface Noul {
+export interface Question {
     readonly instructions: Text;
-    readonly criteria: NoulCriteria;
+    readonly criteria: QuestionCriteria;
 }
 
 export interface DecidedAnswers {
@@ -29,5 +29,5 @@ export type DecidedAnswersResult = DecidedAnswers | Unknown;
 
 export interface DeciderPort {
     readonly label: Text;
-    ask(state: Text, questions: ReadonlyMap<Text, Noul>): Promise<DecidedAnswersResult>;
+    ask(state: Text, questions: ReadonlyMap<Text, Question>): Promise<DecidedAnswersResult>;
 }

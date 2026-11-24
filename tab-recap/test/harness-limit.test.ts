@@ -8,7 +8,7 @@ import { HarnessPortDecider } from '#src/adapters/job/decider.ts';
 import { HarnessEnumerator } from '#src/adapters/job/enumerator.ts';
 import { RecapWriter } from '#src/adapters/job/writer.ts';
 import { instructions } from '#src/adapters/job/prompts/recap-instructions.ts';
-import type { Noul } from '#src/ports/decider.ts';
+import type { Question } from '#src/ports/decider.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import type { BackendHarness, HarnessAsk, HarnessChoice, HarnessRun } from '#src/ports/harness.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
@@ -22,7 +22,7 @@ import { must } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 
 const SETTINGS: HarnessChoice = { model: textOf(''), effort: 'low' };
-const QUESTIONS: ReadonlyMap<Text, Noul> = new Map<Text, Noul>([[textOf('stuck'), noulOf('same step failing?', 'retries', 'progress')]]);
+const QUESTIONS: ReadonlyMap<Text, Question> = new Map<Text, Question>([[textOf('stuck'), noulOf('same step failing?', 'retries', 'progress')]]);
 const LARGE = 1_000_000;
 
 function limited(limit: number | null): { harness: BackendHarness; calls: HarnessAsk[] } {

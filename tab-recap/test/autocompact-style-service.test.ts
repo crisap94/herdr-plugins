@@ -6,7 +6,7 @@ import { instant } from '#src/recap/domain/time.ts';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { AutocompactMode } from '#src/recap/domain/autocompact.ts';
+import type { WatchMode } from '#src/recap/domain/autocompact.ts';
 import type { DecidedAnswersResult } from '#src/ports/decider.ts';
 import type { DecisionMode } from '#src/ports/autocompact-records.ts';
 import { NOW, lane, rows, tuningOfKeys, world } from './autocompact-world.ts';
@@ -15,7 +15,7 @@ import { decidedOf } from './fakes/decider-fixtures.ts';
 
 const env = (keys: Readonly<Record<string, string>>) => (key: string): string | undefined => keys[key];
 
-function styled(keys: Readonly<Record<string, string>>, mode: AutocompactMode = 'on'): World {
+function styled(keys: Readonly<Record<string, string>>, mode: WatchMode = 'on'): World {
     return world({ ...policyOf(env(keys)), mode }, true, 0, tuningOfKeys(keys));
 }
 

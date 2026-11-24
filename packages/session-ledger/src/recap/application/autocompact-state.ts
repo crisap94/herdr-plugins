@@ -14,7 +14,7 @@ export interface OpenWorkItem {
     readonly text: Text;
 }
 
-export interface AutocompactState {
+export interface DeciderState {
     readonly last_prompt: Text | null;
     readonly last_reply: Text | null;
     readonly recent_turns: readonly Turn[];
@@ -66,7 +66,7 @@ const openItemOf = (fact: HistoryFact): readonly OpenWorkItem[] => {
     return [{ section: must(parseText(fact.section)), text: must(parseText(fact.text)) }];
 };
 
-export function autocompactState(recent: readonly Entry[], history: readonly HistoryFact[]): AutocompactState {
+export function autocompactState(recent: readonly Entry[], history: readonly HistoryFact[]): DeciderState {
     const open = history.filter((fact) => fact.state === 'open');
     const [prompt, reply] = [recent.findLast((entry) => entry.role === 'user'), recent.findLast((entry) => entry.role === 'agent')];
     const replyText = textOf(reply);

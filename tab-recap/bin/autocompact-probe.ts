@@ -3,7 +3,7 @@ import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import { deciderOf, isArm } from '#src/adapters/experiment/arms.ts';
 import { readPoints } from '#src/adapters/experiment/data.ts';
 import { appendJsonl, doneKeys, jsonLines } from '#src/adapters/experiment/io.ts';
-import type { DeciderPort, DecidedAnswersResult, Noul } from '#src/ports/decider.ts';
+import type { DeciderPort, DecidedAnswersResult, Question } from '#src/ports/decider.ts';
 import { saying } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
@@ -24,7 +24,7 @@ const value = (name: string): string | null => {
     return at < 0 ? null : (process.argv[at + 1] ?? null);
 };
 
-interface Job { readonly key: string; readonly kind: 'point' | 'brief'; readonly state: Text; readonly questions: ReadonlyMap<Text, Noul> }
+interface Job { readonly key: string; readonly kind: 'point' | 'brief'; readonly state: Text; readonly questions: ReadonlyMap<Text, Question> }
 
 interface BriefRow { readonly id: string; readonly brief: string; readonly facts: readonly unknown[] }
 

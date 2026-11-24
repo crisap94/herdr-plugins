@@ -1,4 +1,4 @@
-import { type DeciderPort, type DecidedAnswersResult, type Noul } from '#src/ports/decider.ts';
+import { type DeciderPort, type DecidedAnswersResult, type Question } from '#src/ports/decider.ts';
 import { isUnknown, unknown, type Unknown, exitCodeOf } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import type { JevModel, JevUrl } from '#src/recap/domain/autocompact.ts';
@@ -43,7 +43,7 @@ export class JevPortDecider implements DeciderPort {
         this.label = must(parseText(`jev · ${options.model}`));
     }
 
-    async ask(state: Text, questions: ReadonlyMap<Text, Noul>): Promise<DecidedAnswersResult> {
+    async ask(state: Text, questions: ReadonlyMap<Text, Question>): Promise<DecidedAnswersResult> {
         const key = this.options.key();
         if (key === null) return unknown({ why: 'not-found', what: textOf(NO_KEY) });
         const now = this.options.now ?? ((): Instant => instant(Date.now()));

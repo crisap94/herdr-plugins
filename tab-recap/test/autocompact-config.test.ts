@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { HarnessPortDecider } from '#src/adapters/job/decider.ts';
 import { JevPortDecider } from '#src/adapters/job/jev-decider.ts';
-import { COVERAGE_BY_DEFAULT, MINIMUM_DEFAULT, type AutocompactPercent, parseAutocompactCeiling, parseAutocompactKinds, parseAutocompactMode, parseAutocompactPercent, parseCooldownMs, parseCoverageBy, parseMissedFacts, parseShadowKinds } from '#src/recap/domain/autocompact.ts';
+import { COVERAGE_BY_DEFAULT, MINIMUM_DEFAULT, type AutocompactPercent, parseAutocompactCeiling, parseAutocompactKinds, parseWatchMode, parseAutocompactPercent, parseCooldownMs, parseCoverageBy, parseMissedFacts, parseShadowKinds } from '#src/recap/domain/autocompact.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { DECIDER_BY_CHOICES, DECIDER_DEFAULT, JOB_BY_CHOICES } from '#src/recap/domain/job.ts';
 import { coverageDeciderFor, deciderFor } from '#src/daemon/deciders.ts';
@@ -36,7 +36,7 @@ test('the policy defaults: shadow, minimum 10, ceiling 80, ten minutes, claude o
 });
 
 test('the mode: off, shadow or on (any case); anything else is shadow', () => {
-    assert.deepEqual([' ON ', 'Off', 'shadow', 'yes', '', undefined].map(parseAutocompactMode), ['on', 'off', 'shadow', 'shadow', 'shadow', 'shadow']);
+    assert.deepEqual([' ON ', 'Off', 'shadow', 'yes', '', undefined].map(parseWatchMode), ['on', 'off', 'shadow', 'shadow', 'shadow', 'shadow']);
 });
 
 test('the minimum is 10–95 (a % is allowed); outside it, or not a whole number, is 10', () => {

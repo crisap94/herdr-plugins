@@ -1,5 +1,5 @@
 import type { LastDecisionRow, DecisionMode } from '#src/ports/autocompact-records.ts';
-import type { AutocompactPolicy, Gate } from '#src/recap/domain/autocompact.ts';
+import type { Policy, Gate } from '#src/recap/domain/autocompact.ts';
 import { must } from '#src/protocol/result.ts';
 import type { CompactTuning } from '#src/recap/domain/autocompact-style.ts';
 import type { ContextUse } from '#src/recap/domain/compaction.ts';
@@ -33,18 +33,18 @@ export interface Marks {
     readonly lastDecisionAt: Instant | null;
 }
 
-export interface LanePolicy extends Omit<AutocompactPolicy, 'mode'> {
+export interface LanePolicy extends Omit<Policy, 'mode'> {
     readonly mode: DecisionMode;
 }
 
-export function policyForLane(policy: AutocompactPolicy, agent: AgentKind): LanePolicy | null {
+export function policyForLane(policy: Policy, agent: AgentKind): LanePolicy | null {
     if (policy.mode === 'off') return null;
     const registered = registeredKindOf(textOf(agent));
     const shadowed = registered !== null && policy.shadowKinds.includes(registered);
     return { ...policy, mode: shadowed ? 'shadow' : policy.mode };
 }
 
-export function reachOf(use: ContextUse, policy: AutocompactPolicy): CeilingReach {
+export function reachOf(use: ContextUse, policy: Policy): CeilingReach {
     return shareOf(use) >= policy.ceiling ? 'at-ceiling' : 'below-ceiling';
 }
 
@@ -57,7 +57,7 @@ export function idleMsOf(tuning: CompactTuning): Milliseconds | null {
 }
 
 export interface BackoffFacts {
-    readonly policy: AutocompactPolicy;
+    readonly policy: Policy;
     readonly last: LastDecisionRow | null;
     readonly now: Instant;
     readonly tokens: Count;

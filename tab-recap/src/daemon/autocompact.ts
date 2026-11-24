@@ -1,6 +1,6 @@
 import { knownOr } from '#src/ports/guarded-reads.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
-import { Autocompact, type Waiting } from '#src/recap/application/autocompact.ts';
+import { SafePointWatch, type Waiting } from '#src/recap/application/autocompact.ts';
 import { ACTIVE } from '#src/recap/application/autocompact-gates.ts';
 import type { Informer } from '#src/recap/application/informer.ts';
 import type { LaneContexts } from '#src/recap/application/lane-contexts.ts';
@@ -111,11 +111,11 @@ const inFlightOf = (flight: TranscriptInFlight, candidate: Candidate): Promise<O
     return lane === undefined ? Promise.resolve(unreadable(flightReason(textOf('no lane behind the candidate')))) : flightOf(flight, lane);
 };
 
-export function wireAutocompact(parts: AutocompactParts): Autocompact {
+export function wireAutocompact(parts: AutocompactParts): SafePointWatch {
     const { store } = parts;
     const flight = new TranscriptInFlight(parts.transcripts);
     const read = parts.config ?? loadSettings;
-    return new Autocompact({
+    return new SafePointWatch({
         policy: () => read().autocompact, tuning: (): CompactTuning => read().tuning, idleHold: () => read().holdIdle, decider: parts.decider, contexts: parts.contexts, inFlight: (candidate) => inFlightOf(flight, candidate), awaiting: parts.awaiting ?? awaitingPane, emit: (event) => { emitTo(parts.events, event); }, recent: (candidate) => { const lane = lanesBehind.get(candidate); return lane === undefined ? Promise.resolve([]) : parts.recent.of(lane); }, statusOf: (candidate) => parseLaneStatusAtDecision(lanesBehind.get(candidate)?.status), startedAt: instant(Date.now() - process.uptime() * 1000),
         ledger: store.ledger, sessions: signalsOf(store), activity: activityOf(parts), decisions: store.decisions, request: (ask) => { store.requests.requestCompact({ tab: must(parseTabId(ask.scope)), pane: must(parsePaneId(ask.key)), note: ask.note === null ? null : textOf(ask.note), origin: 'auto' }); },
         recaps: readinessOf(parts),

@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { autocompactState, type AutocompactState } from '../../tab-recap/src/recap/application/autocompact-state.ts';
+import { autocompactState, type DeciderState } from '../../tab-recap/src/recap/application/autocompact-state.ts';
 import { QUESTIONS } from '../../tab-recap/src/recap/application/autocompact-questions.ts';
 import { deciderInstructions } from '../../tab-recap/src/adapters/job/decider.ts';
 import type { Entry } from '../../packages/session-ledger/src/ports/transcripts.ts';
@@ -10,7 +10,7 @@ export type Side = 'true' | 'false' | 'open';
 
 export interface Evidence {
     readonly question: string;
-    readonly field: keyof AutocompactState;
+    readonly field: keyof DeciderState;
     readonly quote: string;
 }
 
@@ -32,7 +32,7 @@ export const QUESTION_IDS: readonly string[] = Object.keys(QUESTIONS);
 
 export const SYSTEM: string = deciderInstructions(QUESTIONS);
 
-export const stateOf = (item: DeciderItem): AutocompactState => autocompactState(item.input.recent, item.input.history);
+export const stateOf = (item: DeciderItem): DeciderState => autocompactState(item.input.recent, item.input.history);
 
 export function prompt(item: DeciderItem): Prompt {
     return { system: SYSTEM, user: JSON.stringify(stateOf(item)) };

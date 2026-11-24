@@ -2,7 +2,7 @@ import { blob, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { compositeKey } from './columns.ts';
 import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
 import type { UncheckedReason } from '#src/recap/domain/autocompact.ts';
-import type { DecisionGate, DecisionMode, DecisionVerdict } from '#src/ports/autocompact-records.ts';
+import type { DecisionGate, DecisionMode, Verdict } from '#src/ports/autocompact-records.ts';
 import { BLOB_MODE } from './constants.ts';
 
 export const autocompactDecision = sqliteTable('autocompact_decision', {
@@ -16,7 +16,7 @@ export const autocompactDecision = sqliteTable('autocompact_decision', {
     tokens: integer('tokens').notNull(),
     window: integer('window').notNull(),
     gate: text('gate').$type<DecisionGate>().notNull(),
-    verdict: text('verdict').$type<DecisionVerdict>().notNull(),
+    verdict: text('verdict').$type<Verdict>().notNull(),
     answers: text('answers').notNull(),
     coverage: text('coverage'),
     decider: text('decider'),
@@ -25,7 +25,7 @@ export const autocompactDecision = sqliteTable('autocompact_decision', {
     why: text('why'),
     compactionId: blob('compaction_id', { mode: BLOB_MODE }).$type<Uint8Array>(),
     requested: integer('requested').notNull(),
-    askedVerdict: text('asked_verdict').$type<DecisionVerdict>(),
+    askedVerdict: text('asked_verdict').$type<Verdict>(),
     coverageOutcome: text('coverage_outcome'),
     uncheckedReason: text('unchecked_reason').$type<UncheckedReason>(),
     coverageMissing: integer('coverage_missing'),

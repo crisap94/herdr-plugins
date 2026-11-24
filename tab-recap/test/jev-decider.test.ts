@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { JevPortDecider } from '#src/adapters/job/jev-decider.ts';
 import { jevKey } from '#src/adapters/job/jev-key.ts';
-import type { Noul } from '#src/ports/decider.ts';
+import type { Question } from '#src/ports/decider.ts';
 import type { EnvironmentName } from '#src/recap/domain/backend.ts';
 import { parseJevModel, parseJevUrl } from '#src/recap/domain/autocompact.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
@@ -12,7 +12,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import { documentOf, noulOf, textOf } from './fakes/decider-fixtures.ts';
 
 const SENTINEL = 'SENTINEL-KEY-123';
-const questions: ReadonlyMap<Text, Noul> = new Map<Text, Noul>([
+const questions: ReadonlyMap<Text, Question> = new Map<Text, Question>([
     [textOf('closes_request'), noulOf('Does last_reply deliver what last_prompt asked for?', 'it reports done', 'it is an intermediate step')],
     [textOf('stuck'), noulOf('same step failing?', 'retry', 'progress')],
 ]);
