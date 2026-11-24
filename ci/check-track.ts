@@ -11,11 +11,13 @@ type TrackMap = {
 type Branch =
     | { readonly kind: 'track'; readonly track: string; readonly deps: boolean }
     | { readonly kind: 'release' }
+    | { readonly kind: 'retired' }
     | { readonly kind: 'other' };
 
 const TRACK_BRANCH = /^track\/(FND|ENG|PHB|STO|VIEW|HOOK|PANE|CI|UP|HOST|SW)-/u;
 const DEPS_BRANCH = /^track\/FND-deps-/u;
 const RELEASE_BRANCH = /^release\//u;
+const RETIRED_LANE_BRANCH = /^lane\//u;
 const B_LANE = /^B[1-8]$/u;
 const PLUGIN = 'tab-recap/';
 const CROSSES = 'track-scope::crosses';
@@ -99,6 +101,7 @@ function branchOf(name: string): Branch {
     const track = TRACK_BRANCH.exec(name)?.[1];
     if (track !== undefined) return { kind: 'track', track, deps: DEPS_BRANCH.test(name) };
     if (RELEASE_BRANCH.test(name)) return { kind: 'release' };
+    if (RETIRED_LANE_BRANCH.test(name)) return { kind: 'retired' };
     return { kind: 'other' };
 }
 
@@ -207,6 +210,7 @@ function trackAllows(path: string, track: string): boolean {
 type Verdict = { readonly path: string; readonly problem: string | null; readonly foreign: boolean };
 
 function verdictOf(path: string): Verdict {
+    if (branch.kind === 'retired') return { path, problem: 'the lanes are closed: open a track/<TRACK>- branch', foreign: false };
     if (map.locked.some((glob) => matches(glob, path))) {
         return { path, problem: lockedAllows(path) ? null : 'locked', foreign: false };
     }

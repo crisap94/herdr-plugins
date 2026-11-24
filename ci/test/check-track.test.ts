@@ -55,10 +55,12 @@ function manifestChange(branch: string, before: Readonly<Record<string, unknown>
 
 const BASE_MANIFEST = { name: 'x', version: '1.0.0', scripts: { test: 'bun test' }, dependencies: { a: '1.0.0' } };
 
-test('rule 1: the branch name picks the track; a release branch edits only the release files; a lane branch or any other branch is held only to locked paths and package.json fields', () => {
+test('rule 1: the branch name picks the track; a release branch edits only the release files; a retired lane branch edits nothing; any other branch is held only to locked paths and package.json fields', () => {
     assert.equal(check('track/HOOK-h1a-receiver', ['tab-recap/src/adapters/hooks/receiver.ts']).status, 0);
     const lane = check('lane/B3-1-application', ['tab-recap/src/recap/application/engine.ts']);
-    assert.equal(lane.status, 0, lane.stderr);
+    assert.equal(lane.status, 1);
+    assert.match(lane.stderr, /the lanes are closed/u);
+    assert.equal(check('lane/B3-1-application', ['tab-recap/test/worksite-section.test.ts'], { TRACK_CROSSES: '1' }).status, 1);
     assert.equal(check('lane/B3-1-application', ['bun.lock']).status, 1);
     assert.equal(check('release/tab-recap-v3.0.3', ['CHANGELOG.md', 'tab-recap/herdr-plugin.toml']).status, 0);
     const release = check('release/tab-recap-v3.0.3', ['README.md']);
