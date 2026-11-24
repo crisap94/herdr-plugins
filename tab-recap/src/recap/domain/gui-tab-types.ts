@@ -2,7 +2,7 @@ import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { Count } from './count.ts';
 import type { Directory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
 import { isFields } from './fields.ts';
-import type { AgentKind, PaneId, TabId } from './ids.ts';
+import type { HarnessKind, SessionKey, ScopeId } from './ids.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 import type { GuiBreak, GuiCompaction, GuiContext, GuiCut, GuiFact, GuiGit, GuiGroup, GuiNote, GuiRegions, GuiSession, GuiStory, GuiTimelineRow, GuiVersions, GuiWeb, Flag, GuiLocale } from './gui-tab-parts.ts';
 import type { NonEmptyText, Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
@@ -45,8 +45,8 @@ export interface GuiTask extends GuiTaskV1 {
 }
 
 export interface GuiLaneV1 {
-    readonly pane: PaneId;
-    readonly agent: AgentKind;
+    readonly pane: SessionKey;
+    readonly agent: HarnessKind;
     readonly status: NonEmptyText;
     readonly title: Text | null;
     readonly cwd: Directory | null;
@@ -68,7 +68,7 @@ export interface GuiLane extends GuiLaneV1 {
 
 export interface GuiTabV1 {
     readonly version: typeof GUI_TAB_V1;
-    readonly tab: TabId;
+    readonly tab: ScopeId;
     readonly name: NonEmptyText;
     readonly status: NonEmptyText;
     readonly at: Instant;

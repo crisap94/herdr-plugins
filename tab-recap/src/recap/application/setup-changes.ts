@@ -4,7 +4,7 @@ import { BACKEND_IDS, environmentName, LEGACY_MODEL_KEYS, type EnvironmentName }
 import { blankRecap, hasRecap } from '#src/ports/recap-records.ts';
 import type { RequestPort } from '#src/ports/requests.ts';
 import type { LiveLanes } from '#src/ports/tab-views.ts';
-import { type TabId, parseTabId } from '#src/recap/domain/ids.ts';
+import { type ScopeId, parseTabId } from '#src/recap/domain/ids.ts';
 import type { DeciderBy, JobBy } from '#src/recap/domain/job.ts';
 import type { Draft, DraftState, EnvironmentReader, FieldId, Locks, Setup } from './setup-state.ts';
 import { FIELDS } from './setup-state.ts';
@@ -91,7 +91,7 @@ export interface RewriteStore {
     readonly requests: RequestPort;
 }
 
-export function requestRewrites(opener: TabId | null, store: RewriteStore): readonly TabId[] {
+export function requestRewrites(opener: ScopeId | null, store: RewriteStore): readonly ScopeId[] {
     const live = store.views.liveLanes();
     const seen = live.kind === 'read' ? live.lanes.map((lane) => lane.tab) : [];
     const tabs = [...new Set([...(opener === null ? [] : [opener]), ...seen])]

@@ -1,6 +1,6 @@
 import { ok, type Result } from '#src/protocol/result.ts';
 import type { BackendId } from './backend.ts';
-import type { TabId } from './timing-ids.ts';
+import type { ScopeId } from './timing-ids.ts';
 import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
 import { parseNonEmptyText } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
@@ -21,8 +21,8 @@ export interface AgentSessionPath {
 
 export type AgentSession = AgentSessionId | AgentSessionPath;
 
-export type { AgentKind, CompactionId, DecisionId, PaneId, TabId } from './timing-ids.ts';
-export function workspaceOfTab(tab: TabId): WorkspaceId | null {
+export type { HarnessKind, CompactionId, DecisionId, SessionKey, ScopeId } from './timing-ids.ts';
+export function workspaceOfTab(tab: ScopeId): WorkspaceId | null {
     const raw = String(tab);
     const colon = raw.indexOf(':');
     if (colon === -1 || raw.slice(colon + 1).trim() === '') {
@@ -74,13 +74,13 @@ export const uncheckedMilliseconds = brand<number, 'Milliseconds'>;
 
 export const uncheckedBackendText = brand<BackendId, 'Text'>;
 
-export const uncheckedTabId = brand<string, 'TabId'>;
+export const uncheckedTabId = brand<string, 'ScopeId'>;
 
 export const uncheckedRatio = brand<number, 'Probability'>;
 
-export const uncheckedPaneId = brand<string, 'PaneId'>;
+export const uncheckedPaneId = brand<string, 'SessionKey'>;
 
-export const uncheckedAgentKind = brand<string, 'AgentKind'>;
+export const uncheckedAgentKind = brand<string, 'HarnessKind'>;
 
 export const uncheckedWorkspaceId = brand<string, 'WorkspaceId'>;
 

@@ -1,5 +1,5 @@
 import type { FlushWhy } from '#src/contract/engine.ts';
-import { tabIdOf, type Lane, type PaneId, type TabId } from '#src/recap/domain/lane-shape.ts';
+import { tabIdOf, type Lane, type SessionKey, type ScopeId } from '#src/recap/domain/lane-shape.ts';
 import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import type { LastRun } from '#src/ports/recap-records.ts';
@@ -9,7 +9,7 @@ import { CLOSED_SHOWN_MS } from './ledger-input.ts';
 import { RecapJob, type RecapJobDeps } from './recap-job.ts';
 import { saying } from '#src/ports/unknowable.ts';
 
-export type ScopeId = TabId;
+export type { ScopeId };
 export type FollowedSession = Lane;
 
 export type EngineSource = Pick<RecapJobDeps, 'transcripts'>;
@@ -45,7 +45,7 @@ export interface Engine {
     flushAll(): Promise<void>;
 }
 
-const heldBy = (session: FollowedSession): PaneId => session.pane;
+const heldBy = (session: FollowedSession): SessionKey => session.pane;
 
 function restoreFactsOf(store: EngineStore, environment: EngineEnvironment, at: Instant, scope: ScopeId, session: FollowedSession): RestoreFacts {
     const id = tabIdOf(String(scope));

@@ -29,7 +29,7 @@ export function firstTask(recap: Recap | null): RecapTask {
 }
 
 export const agentOf = (id: string, over: Partial<InputAgent> = {}): InputAgent =>
-    ({ id: textOf(id), kind: brand<string, 'AgentKind'>('claude'), label: textOf(''), pane: brand<string, 'PaneId'>(`w1:p${id.slice(1)}`), source: 'transcript', cwd: null, repo: null, branch: null, files: [], ...over });
+    ({ id: textOf(id), kind: brand<string, 'HarnessKind'>('claude'), label: textOf(''), pane: brand<string, 'SessionKey'>(`w1:p${id.slice(1)}`), source: 'transcript', cwd: null, repo: null, branch: null, files: [], ...over });
 
 export function requestOf(over: Partial<RecapInput> & { readonly entries?: readonly Entry[]; readonly language?: Text; readonly previousLanguage?: Text; readonly correction?: Text } = {}): RecapRequest {
     const { entries = [], language = textOf('en'), previousLanguage = textOf('en'), correction, ...input } = over;

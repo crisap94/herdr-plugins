@@ -1,7 +1,7 @@
 import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { ContextUse, WindowSource } from '#src/recap/domain/compaction.ts';
 import type { RestoredLane } from '#src/recap/domain/closures.ts';
-import { parseAgentKind, parsePaneId, parseTabId, type AgentKind, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { parseAgentKind, parsePaneId, parseTabId, type HarnessKind, type SessionKey, type ScopeId } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
 import type { Forge } from '@stateforge-labs/session-ledger/unstable/ports/lane-repo.ts';
@@ -16,8 +16,8 @@ export interface LaneWebRecord {
 }
 
 export interface TabLaneRecord {
-    readonly pane: PaneId;
-    readonly agent: AgentKind;
+    readonly pane: SessionKey;
+    readonly agent: HarnessKind;
     readonly status: Text;
     readonly title: Text | null;
     readonly cwd: Text | null;
@@ -28,7 +28,7 @@ export interface TabLaneRecord {
 }
 
 export interface TabViewRecord {
-    readonly tab: TabId;
+    readonly tab: ScopeId;
     readonly column: Text | null;
     readonly lanes: readonly TabLaneRecord[];
     readonly at: Instant;
@@ -36,9 +36,9 @@ export interface TabViewRecord {
 }
 
 export interface TabViewStore {
-    readTab(tab: TabId): TabViewRecord | null;
+    readTab(tab: ScopeId): TabViewRecord | null;
     writeTab(view: TabViewRecord): void;
-    tabOf(pane: PaneId): TabId | null;
+    tabOf(pane: SessionKey): ScopeId | null;
 }
 
 export type LiveLanesRead = { readonly kind: 'read'; readonly lanes: readonly RestoredLane[] } | Unknown;

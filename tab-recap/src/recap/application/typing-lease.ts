@@ -4,7 +4,7 @@ import type { LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import type { PaneTokens } from '#src/ports/pane-tokens.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
-import { uncheckedMilliseconds, uncheckedTokenName, uncheckedTokenValue, uncheckedPaneId, type PaneId } from '#src/recap/domain/ids.ts';
+import { uncheckedMilliseconds, uncheckedTokenName, uncheckedTokenValue, uncheckedPaneId, type SessionKey } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { duration, parseMilliseconds, type Duration, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
 import { LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
@@ -53,11 +53,11 @@ export class PaneTypingLease {
         });
     }
 
-    release(pane: PaneId): Promise<void> {
+    release(pane: SessionKey): Promise<void> {
         return this.lease.release(pane);
     }
 
-    acquire(pane: PaneId, waitMs: Milliseconds = LEASE_WAIT_MS): Promise<Acquired> {
+    acquire(pane: SessionKey, waitMs: Milliseconds = LEASE_WAIT_MS): Promise<Acquired> {
         return this.lease.acquire(pane, Number(waitMs));
     }
 }

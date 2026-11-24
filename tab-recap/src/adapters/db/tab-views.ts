@@ -3,7 +3,7 @@ import { and, asc, eq, isNotNull, sql } from 'drizzle-orm';
 import { err, must, ok, type Result } from '#src/protocol/result.ts';
 import type { RestoredLane } from '#src/recap/domain/closures.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
-import { parseAgentKind, parsePaneId, parseTabId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { parseAgentKind, parsePaneId, parseTabId, type SessionKey, type ScopeId } from '#src/recap/domain/ids.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { parseInstant } from '#src/recap/domain/time.ts';
@@ -78,14 +78,14 @@ export class TabViewRowStore implements TabViewStore, LiveLanes {
         this.hasSince = one(db.prepare("SELECT 1 AS present FROM pragma_table_info('lane') WHERE name = 'since'")) !== null;
     }
 
-    tabOf(pane: PaneId): TabId | null {
+    tabOf(pane: SessionKey): ScopeId | null {
         return guarded(() => {
             const row = this.orm.select({ tab_id: laneTable.tabId }).from(laneTable).where(eq(laneTable.pane, pane)).limit(1).get();
             return row === undefined ? null : must(parseTabId(text(row, 'tab_id')));
         }, null);
     }
 
-    readTab(tab: TabId): TabViewRecord | null {
+    readTab(tab: ScopeId): TabViewRecord | null {
         return guarded((): TabViewRecord | null => {
             const row = this.orm.select({ column_pane: tabTable.columnPane, view_at: tabTable.viewAt, daemon_version: tabTable.daemonVersion }).from(tabTable)
                 .where(and(eq(tabTable.id, tab), isNotNull(tabTable.viewAt))).get();
@@ -121,7 +121,7 @@ export class TabViewRowStore implements TabViewStore, LiveLanes {
         });
     }
 
-    private insertLanes(tab: TabId, lanes: readonly Lane[]): void {
+    private insertLanes(tab: ScopeId, lanes: readonly Lane[]): void {
         lanes.forEach((lane, position) => {
             const webBase = columnOf(lane.web, 'base');
             const webForge = columnOf(lane.web, 'forge');

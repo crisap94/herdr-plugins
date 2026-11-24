@@ -1,7 +1,7 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Workplaces } from '#src/ports/lane-repo.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 import type { LaneWebRecord } from '#src/ports/tab-views.ts';
 
@@ -11,13 +11,13 @@ const keyOf = (web: LaneWebRecord | null | undefined): Text => textOf(web === nu
 
 export class LaneWebs {
     private readonly repos: Workplaces;
-    private readonly known = new Map<PaneId, LaneWebRecord | null>();
+    private readonly known = new Map<SessionKey, LaneWebRecord | null>();
 
     constructor(repos: Workplaces) {
         this.repos = repos;
     }
 
-    of(pane: PaneId): LaneWebRecord | null {
+    of(pane: SessionKey): LaneWebRecord | null {
         return this.known.get(pane) ?? null;
     }
 

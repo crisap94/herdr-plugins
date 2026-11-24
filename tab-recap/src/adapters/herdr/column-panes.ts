@@ -2,14 +2,14 @@ import type { SeenColumn } from '#src/recap/domain/fold.ts';
 import type { DeadColumn } from '#src/recap/domain/dead-columns.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
-import { parsePaneId, parseTabId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { parsePaneId, parseTabId, type SessionKey, type ScopeId } from '#src/recap/domain/ids.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import type { JsonObject } from './json-object.ts';
 
-export type AgentPaneSet = ReadonlySet<PaneId>;
-export type OptionalPaneId = PaneId | null;
+export type AgentPaneSet = ReadonlySet<SessionKey>;
+export type OptionalPaneId = SessionKey | null;
 export type OptionalText = Text | null;
-export type OptionalTabId = TabId | null;
+export type OptionalTabId = ScopeId | null;
 
 export const COLUMN_TITLE = 'tab-recap';
 export const BAR_TITLE = 'tab-recap:bar';
@@ -35,7 +35,7 @@ export function agentPanesIn(panes: readonly JsonObject[], agents: readonly Json
     return new Set([
         ...agents.map((agent) => parseOptionalPaneId(agent['pane_id'])),
         ...panes.filter((pane) => (parseOptionalText(pane['agent']) ?? '') !== '').map((pane) => parseOptionalPaneId(pane['pane_id'])),
-    ].filter((id): id is PaneId => id !== null));
+    ].filter((id): id is SessionKey => id !== null));
 }
 
 const titleShape = (title: OptionalText): Shape => (title === BAR_TITLE ? 'bar' : 'side');

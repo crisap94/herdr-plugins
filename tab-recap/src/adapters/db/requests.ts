@@ -1,7 +1,7 @@
 import type { Database } from 'bun:sqlite';
 import { and, asc, eq, isNotNull, isNull, or } from 'drizzle-orm';
 import { parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
-import type { HandoffId, PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { HandoffId, SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { Result } from '#src/protocol/result.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
@@ -41,11 +41,11 @@ export class RequestsStore implements RequestPort, CompactionAskQueue {
         this.orm = ormOf(db);
     }
 
-    compactQueued(tab: TabId, pane: PaneId): Queued {
+    compactQueued(tab: ScopeId, pane: SessionKey): Queued {
         return guarded((): Queued => (this.orm.select().from(requestTable).where(and(eq(requestTable.kind, 'compact'), eq(requestTable.target, tab), or(eq(requestTable.pane, pane), isNull(requestTable.pane)))).limit(1).all().length === 0 ? 'not-queued' : 'queued'), 'not-queued');
     }
 
-    request(tab: TabId): void {
+    request(tab: ScopeId): void {
         this.orm.insert(requestTable).values({ id: ids.next(), at: this.now(), kind: 'refresh', target: tab, origin: ORIGIN_DEFAULT, refreshFirst: 0 }).run();
     }
 
@@ -57,7 +57,7 @@ export class RequestsStore implements RequestPort, CompactionAskQueue {
         this.orm.insert(requestTable).values({ id: ids.next(), at: this.now(), kind: 'compact', target: request.tab, pane: request.pane, note: request.note, origin: request.origin ?? ORIGIN_DEFAULT, answer: request.answer ?? null, refreshFirst: 0 }).run();
     }
 
-    requestCurate(tab: TabId): void {
+    requestCurate(tab: ScopeId): void {
         this.orm.insert(requestTable).values({ id: ids.next(), at: this.now(), kind: 'curate', target: tab, origin: ORIGIN_DEFAULT, refreshFirst: 0 }).run();
     }
 
@@ -101,7 +101,7 @@ export class RequestsStore implements RequestPort, CompactionAskQueue {
         }), []);
     }
 
-    takeCurations(): readonly TabId[] {
+    takeCurations(): readonly ScopeId[] {
         return guarded(() => writeTx(this.db, () => {
             const rows = this.orm.select().from(requestTable).where(eq(requestTable.kind, 'curate')).orderBy(asc(requestTable.id)).all();
             this.orm.delete(requestTable).where(eq(requestTable.kind, 'curate')).run();
@@ -117,7 +117,7 @@ export class RequestsStore implements RequestPort, CompactionAskQueue {
         }), []);
     }
 
-    takeRequests(): readonly TabId[] {
+    takeRequests(): readonly ScopeId[] {
         return guarded(() => writeTx(this.db, () => {
             const rows = this.orm.select().from(requestTable).where(eq(requestTable.kind, 'refresh')).orderBy(asc(requestTable.id)).all();
             this.orm.delete(requestTable).where(eq(requestTable.kind, 'refresh')).run();

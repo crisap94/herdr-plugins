@@ -1,16 +1,16 @@
 import type { LiveLanes, LiveLanesRead, TabViewRecord, TabViewStore } from '#src/ports/tab-views.ts';
 import type { RestoredLane } from '#src/recap/domain/closures.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import { directoryOf } from './closed-values.ts';
 
 export class MemoryTabViews implements Pick<TabViewStore, 'writeTab' | 'tabOf'>, LiveLanes {
-    private readonly tabs = new Map<TabId, TabViewRecord>();
+    private readonly tabs = new Map<ScopeId, TabViewRecord>();
 
     writeTab(view: TabViewRecord): void {
         this.tabs.set(view.tab, view);
     }
 
-    tabOf(pane: PaneId): TabId | null {
+    tabOf(pane: SessionKey): ScopeId | null {
         return [...this.tabs.values()].find((view) => view.lanes.some((lane) => lane.pane === pane))?.tab ?? null;
     }
 

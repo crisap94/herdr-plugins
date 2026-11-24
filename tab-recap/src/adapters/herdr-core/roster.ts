@@ -1,5 +1,5 @@
 import { parsePaneId } from '#src/recap/domain/ids.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { parseNonEmptyText } from '#src/recap/domain/text.ts';
 import type { FleetFrame } from '#src/ports/fleet-source.ts';
@@ -47,14 +47,14 @@ export class HcCoreRoster {
         return this.known;
     }
 
-    panes(): readonly PaneId[] {
+    panes(): readonly SessionKey[] {
         return this.core.addresses().flatMap((address) => {
             const pane = parsePaneId(address);
             return pane.kind === 'ok' ? [pane.value] : [];
         });
     }
 
-    terminal(pane: PaneId): HcTerminal | null {
+    terminal(pane: SessionKey): HcTerminal | null {
         const address = parseHcAddress(pane);
         return address.kind === 'ok' ? this.core.get(address.value) : null;
     }

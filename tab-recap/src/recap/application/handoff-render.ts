@@ -3,16 +3,16 @@ import type { Count } from '#src/recap/domain/count.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
-import type { AgentKind, HandoffId, PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { HarnessKind, HandoffId, SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { ClosedView } from './closed-view.ts';
 
 export interface HandoffLane {
-    readonly tab: TabId;
-    readonly pane: PaneId;
-    readonly agent: AgentKind;
+    readonly tab: ScopeId;
+    readonly pane: SessionKey;
+    readonly agent: HarnessKind;
     readonly status: LaneStatus;
     readonly cwd: Text | null;
 }

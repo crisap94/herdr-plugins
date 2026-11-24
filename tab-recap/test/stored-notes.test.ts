@@ -12,7 +12,7 @@ import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import type { NoteToken } from '#src/recap/domain/coordination.ts';
 import { instant } from '#src/recap/domain/time.ts';
@@ -40,9 +40,9 @@ const alertAt = (pane: string, label: string, at: number, details: string[]): Pa
 });
 
 function stored(known: Record<string, WorktreeStatus>, tokens: Record<string, NoteToken[]>, mode: { gitNote: WorktreeSwitch }, alerts: Record<string, PaneAlert[]> = {}): ReturnType<typeof storedNotes> {
-    const statuses: WorktreeStatusReader = { statusOf: (pane: PaneId): WorktreeStatus | null => known[pane] ?? null };
-    const notes: PaneNoteReader = { notesOf: (pane: PaneId) => tokens[pane] ?? [] };
-    const raised: PaneAlertReader = { alertsOf: (pane: PaneId): readonly PaneAlert[] => alerts[pane] ?? [] };
+    const statuses: WorktreeStatusReader = { statusOf: (pane: SessionKey): WorktreeStatus | null => known[pane] ?? null };
+    const notes: PaneNoteReader = { notesOf: (pane: SessionKey) => tokens[pane] ?? [] };
+    const raised: PaneAlertReader = { alertsOf: (pane: SessionKey): readonly PaneAlert[] => alerts[pane] ?? [] };
     return storedNotes({ statuses, notes, alerts: raised, gitNote: (): WorktreeSwitch => mode.gitNote });
 }
 

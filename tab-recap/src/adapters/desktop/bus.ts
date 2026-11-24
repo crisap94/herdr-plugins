@@ -1,7 +1,7 @@
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { NO, YES, type Flag } from '#src/recap/domain/gui-tab-parts.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import type { Duration, Instant } from '#src/recap/domain/time.ts';
 import { BUS_RING } from './constants.ts';
 
@@ -10,7 +10,7 @@ export type BusTopic = 'index' | 'tab' | 'notice';
 export interface BusEvent {
     readonly seq: Count;
     readonly topic: BusTopic;
-    readonly tab: TabId | null;
+    readonly tab: ScopeId | null;
     readonly at: Instant;
 }
 
@@ -46,7 +46,7 @@ export class DesktopBus {
         return must(parseCount(this.waiters.size));
     }
 
-    publish(topic: BusTopic, tab: TabId | null): void {
+    publish(topic: BusTopic, tab: ScopeId | null): void {
         this.last = must(parseCount(this.last + 1));
         this.ring.push({ seq: this.current(), topic, tab, at: this.now() });
         while (this.ring.length > this.size) { this.ring.shift(); }

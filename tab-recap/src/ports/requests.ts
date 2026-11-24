@@ -1,6 +1,6 @@
 import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { AskDraft } from '#src/ports/ask-ledger.ts';
-import { parseHandoffId, parsePaneId, parseTabId, type HandoffId, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { parseHandoffId, parsePaneId, parseTabId, type HandoffId, type SessionKey, type ScopeId } from '#src/recap/domain/ids.ts';
 import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
@@ -16,13 +16,13 @@ export type Withdrawal = 'withdrawn' | 'not-found';
 export type Queued = 'queued' | 'not-queued';
 
 export interface VisibilityAsk {
-    readonly target: PaneId;
+    readonly target: SessionKey;
     readonly visibility: Visibility;
 }
 
 export interface CompactAsk {
-    readonly tab: TabId;
-    readonly pane: PaneId | null;
+    readonly tab: ScopeId;
+    readonly pane: SessionKey | null;
     readonly note: Text | null;
     readonly origin?: Origin;
     readonly answer?: Text;
@@ -31,9 +31,9 @@ export interface CompactAsk {
 export interface HandoffAskRecord {
     readonly id: HandoffId;
     readonly at: Instant;
-    readonly tab: TabId;
-    readonly pane: PaneId;
-    readonly toPane: PaneId;
+    readonly tab: ScopeId;
+    readonly pane: SessionKey;
+    readonly toPane: SessionKey;
     readonly refresh: RefreshFirst;
     readonly note: Text | null;
     readonly source: HandoffSource;
@@ -41,9 +41,9 @@ export interface HandoffAskRecord {
 }
 
 export interface HandoffAsk {
-    readonly tab: TabId;
-    readonly pane: PaneId;
-    readonly toPane: PaneId;
+    readonly tab: ScopeId;
+    readonly pane: SessionKey;
+    readonly toPane: SessionKey;
     readonly note: Text | null;
     readonly refresh: RefreshFirst;
     readonly source: HandoffSource;
@@ -64,24 +64,24 @@ export interface HandoffTaker {
 }
 
 export interface AnsweredPane {
-    readonly pane: PaneId;
+    readonly pane: SessionKey;
     readonly answer: Text;
 }
 
 export interface RequestPort extends HandoffAsker, HandoffTaker {
-    request(tab: TabId): void;
+    request(tab: ScopeId): void;
     requestVisibility(request: VisibilityAsk): void;
     requestCompact(request: CompactAsk): void;
-    requestCurate(tab: TabId): void;
-    takeRequests(): readonly TabId[];
+    requestCurate(tab: ScopeId): void;
+    takeRequests(): readonly ScopeId[];
     takeVisibility(): readonly VisibilityAsk[];
     takeCompactions(): readonly CompactAsk[];
-    takeCurations(): readonly TabId[];
+    takeCurations(): readonly ScopeId[];
     takeAnswered(): readonly AnsweredPane[];
 }
 
 export interface CompactionAskQueue {
-    compactQueued(tab: TabId, pane: PaneId): Queued;
+    compactQueued(tab: ScopeId, pane: SessionKey): Queued;
 }
 
 type Row = Record<string, unknown>;
@@ -94,7 +94,7 @@ const REFRESHES: readonly RefreshFirst[] = ['refresh-first', 'as-is'];
 
 const ORIGINS: readonly Origin[] = ['operator', 'auto', 'request'];
 
-function paneOf(row: Row): Result<PaneId | null, ParseFailure> {
+function paneOf(row: Row): Result<SessionKey | null, ParseFailure> {
     return row.pane === null ? ok(null) : parsePaneId(row.pane);
 }
 

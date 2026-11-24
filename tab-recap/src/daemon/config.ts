@@ -36,7 +36,7 @@ import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import { err, must, ok, type Result } from '#src/protocol/result.ts';
 import { parseText, textOf as uncheckedText, type Text } from '#src/recap/domain/text.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
-import { parseAgentKind, uncheckedAgentKind, type AgentKind } from '#src/recap/domain/ids.ts';
+import { parseAgentKind, uncheckedAgentKind, type HarnessKind } from '#src/recap/domain/ids.ts';
 import { capabilityOf } from '#src/recap/domain/lane-tokens.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
 import type { OptIn, TokenValue } from '#src/protocol/primitives.ts';
@@ -58,7 +58,7 @@ const switchOn = (setting: OptIn): Setting => ((setting === handoff.optIn ? load
 
 export const advertisedCapability = (): TokenValue => capabilityOf(switchOn);
 
-export const screenWanted = (agent: AgentKind): Presence => {
+export const screenWanted = (agent: HarnessKind): Presence => {
     const { screenAgents } = loadSettings();
     return screenAgents.includes(uncheckedAgentKind(ANY_KIND)) || screenAgents.includes(agent) ? 'present' : 'absent';
 };
@@ -193,7 +193,7 @@ const sizingFrom = (get: SettingGet): Sizing => ({
 
 const listOf = (raw: Text | undefined): readonly Text[] | undefined => raw?.split(',').flatMap((item) => (item.trim() === '' ? [] : [must(parseText(item.trim()))]));
 
-const policyFrom = (get: SettingGet, screenAgents: readonly AgentKind[]): Policy => ({
+const policyFrom = (get: SettingGet, screenAgents: readonly HarnessKind[]): Policy => ({
     ...DEFAULT_POLICY,
     kinds: [...new Set([...(listOf(get('TAB_RECAP_AGENTS')) ?? DEFAULT_POLICY.kinds), ...screenAgents.map((agent) => uncheckedText(agent))])],
     minTabCols: countOf(numberIn(get('TAB_RECAP_MIN_TAB_COLS'), POSITIVE) ?? DEFAULT_POLICY.minTabCols),
@@ -213,7 +213,7 @@ const writerViewFrom = (get: SettingGet): PrunedWriterView => prunedWriterView(
     nextHoursOf(numberIn(get('TAB_RECAP_WRITER_NEXT_HOURS'), NEXT_HOURS_BOUNDS, 'whole') ?? NEXT_HOURS_RANGE.fallback),
 );
 
-const screenAgentsFrom = (get: SettingGet): readonly AgentKind[] => screenKindsOf(get('TAB_RECAP_SCREEN_AGENTS')).flatMap((kind) => {
+const screenAgentsFrom = (get: SettingGet): readonly HarnessKind[] => screenKindsOf(get('TAB_RECAP_SCREEN_AGENTS')).flatMap((kind) => {
     const parsed = parseAgentKind(kind);
     return parsed.kind === 'ok' ? [parsed.value] : [];
 });

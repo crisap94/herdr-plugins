@@ -10,7 +10,7 @@ import type { DecisionCounts, DecisionLedger } from '#src/ports/autocompact-reco
 import { RUN_CAUSES, sessionFactsFrom, type RunCounts, type SessionReadings } from '#src/recap/domain/session-facts.ts';
 import type { ExpandedTask, ExpandedView } from '#src/recap/render/expanded.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseTabId, type TabId } from '#src/recap/domain/ids.ts';
+import { parseTabId, type ScopeId } from '#src/recap/domain/ids.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseCurating, parseInstant, parseProse, parseTaskName } from '@stateforge-labs/recap-view';
 import { viewBreakOf, webOf } from '#src/view-model/column.ts';
@@ -73,7 +73,7 @@ export class ExpandedModel {
         this.deps = deps;
     }
 
-    private taskOf(tab: TabId, task: TaskRef, now: Instant): FoundTask {
+    private taskOf(tab: ScopeId, task: TaskRef, now: Instant): FoundTask {
         const facts = knownOr(this.deps.ledger.allOf({ tab, key: task.id }), []);
         const story = this.deps.stories.read(tab, task.id);
         const change = newestChange(facts);
@@ -88,7 +88,7 @@ export class ExpandedModel {
         return { task: { name: parseTaskName(task.name), facts, story: toldOf(story), curating: parseCurating(stale && waiting !== undefined && now - waiting.at < CURATING_MS) }, asks };
     }
 
-    private sessionReads(tab: TabId): SessionReads {
+    private sessionReads(tab: ScopeId): SessionReads {
         const counted = parseTabId(tab);
         if (counted.kind !== 'ok') {
             return { firstSeen: null, runs: {}, compactions: [], ...(this.deps.autocompact === undefined ? {} : { autocompact: NO_DECISIONS }) };
@@ -102,7 +102,7 @@ export class ExpandedModel {
         };
     }
 
-    read(tab: TabId, view: TabViewRecord | null, now: Instant): ExpandedData {
+    read(tab: ScopeId, view: TabViewRecord | null, now: Instant): ExpandedData {
         const recap = knownOr(this.deps.records.readRecap(tab), null);
         const found = (recap?.tasks ?? []).map((task) => this.taskOf(tab, task, now));
         if (found.some((one) => one.asks === 'asks')) {

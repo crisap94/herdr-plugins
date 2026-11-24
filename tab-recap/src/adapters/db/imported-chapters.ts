@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { instant } from '#src/recap/domain/time.ts';
 import { parseImportedChapterItem, type ImportedChapterRecord } from '#src/ports/imported-recaps.ts';
 import { connectReadOnly } from './connection.ts';
@@ -19,7 +19,7 @@ const CHAPTERS = `SELECT c.n, r.id AS run, r.at FROM chapter c JOIN run r ON r.i
 const ITEMS = `SELECT ${FACT_KEY} AS key, i.section AS section, i.text AS text, ${FACT_KEY} AS fact FROM item i JOIN task t ON t.id = i.task_id JOIN run_task rt ON rt.run_id = i.run_id AND rt.task_id = i.task_id
   WHERE i.run_id = ? AND i.view = 'recap' ORDER BY rt.position, ${SECTION_ORDER}, i.position`;
 
-export function importedChaptersAt(path: FsPath, tab: TabId): readonly ImportedChapterRecord[] | null {
+export function importedChaptersAt(path: FsPath, tab: ScopeId): readonly ImportedChapterRecord[] | null {
     if (!existsSync(path)) {
         return null;
     }

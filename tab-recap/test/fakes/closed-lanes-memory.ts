@@ -3,7 +3,7 @@ import type { ClosedLane, ClosedLaneIdentity } from '#src/recap/domain/closures.
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import type { Count } from '#src/recap/domain/count.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { closedCutoffOf } from '#src/recap/domain/retention.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
@@ -31,7 +31,7 @@ export class MemoryClosedLanes implements ClosureRecorder, ClosureReader, Closur
         return record === undefined ? { kind: 'absent' } : { kind: 'row', record };
     }
 
-    listOf(tab: TabId, now: Instant): ClosedLaneList {
+    listOf(tab: ScopeId, now: Instant): ClosedLaneList {
         const cutoff = closedCutoffOf(now, this.days);
         const records = this.records
             .filter((row) => row.tab === tab && cutoff !== null && row.closedAt >= cutoff)
@@ -39,21 +39,21 @@ export class MemoryClosedLanes implements ClosureRecorder, ClosureReader, Closur
         return { kind: 'listed', records };
     }
 
-    protectedTabs(now: Instant): readonly TabId[] {
+    protectedTabs(now: Instant): readonly ScopeId[] {
         const cutoff = closedCutoffOf(now, this.days);
         return [...new Set(this.records.filter((row) => cutoff !== null && row.closedAt >= cutoff).map((row) => row.tab))].toSorted();
     }
 
-    expiredTabs(now: Instant): readonly TabId[] {
+    expiredTabs(now: Instant): readonly ScopeId[] {
         const cutoff = closedCutoffOf(now, this.days);
         return [...new Set(this.records.filter((row) => cutoff === null || row.closedAt < cutoff).map((row) => row.tab))].toSorted();
     }
 
-    countOf(tab: TabId): Count {
+    countOf(tab: ScopeId): Count {
         return must(parseCount(this.records.filter((row) => row.tab === tab).length));
     }
 
-    pruneTab(tab: TabId, now: Instant): Count {
+    pruneTab(tab: ScopeId, now: Instant): Count {
         const cutoff = closedCutoffOf(now, this.days);
         const expired = (row: ClosedLaneRecord): boolean => row.tab === tab && (cutoff === null || row.closedAt < cutoff);
         const kept = this.records.filter((row) => !expired(row));

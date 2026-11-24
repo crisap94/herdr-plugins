@@ -3,7 +3,7 @@ import { eq, sql } from 'drizzle-orm';
 import { err, ok, type Result } from '#src/protocol/result.ts';
 import type { PaneNoteReader, PaneNoteWriter } from '#src/ports/worktree-status.ts';
 import type { NoteToken } from '#src/recap/domain/coordination.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import { parseNonEmptyText, parseText, textOf } from '#src/recap/domain/text.ts';
 import { writeTx } from './connection.ts';
@@ -37,7 +37,7 @@ export class PaneNotesRepository implements PaneNoteWriter, PaneNoteReader {
         this.orm = ormOf(db);
     }
 
-    replace(pane: PaneId, notes: readonly NoteToken[]): void {
+    replace(pane: SessionKey, notes: readonly NoteToken[]): void {
         writeTx(this.db, () => {
             this.clear(pane);
             notes.forEach((note) => {
@@ -48,7 +48,7 @@ export class PaneNotesRepository implements PaneNoteWriter, PaneNoteReader {
         });
     }
 
-    forget(pane: PaneId): void {
+    forget(pane: SessionKey): void {
         this.clear(pane);
     }
 
@@ -56,14 +56,14 @@ export class PaneNotesRepository implements PaneNoteWriter, PaneNoteReader {
         this.orm.delete(paneNote).run();
     }
 
-    notesOf(pane: PaneId): readonly NoteToken[] {
+    notesOf(pane: SessionKey): readonly NoteToken[] {
         return guarded(() => this.orm.select({ label: paneNote.label, value: paneNote.value }).from(paneNote).where(eq(paneNote.pane, pane)).orderBy(paneNote.label).all().flatMap((row) => {
             const parsed = parsePaneNoteRow(row);
             return parsed.kind === 'ok' ? [parsed.value] : [];
         }), []);
     }
 
-    private clear(pane: PaneId): void {
+    private clear(pane: SessionKey): void {
         this.orm.delete(paneNote).where(eq(paneNote.pane, pane)).run();
     }
 }

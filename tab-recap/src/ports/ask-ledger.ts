@@ -5,7 +5,7 @@ import type { ExchangeName, RequestId, Refusal, ToolName } from '#src/protocol/p
 import { outcomeOf } from '#src/recap/domain/ask-outcome.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import { parsePaneId } from '#src/recap/domain/ids.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
@@ -20,7 +20,7 @@ export interface AskEntry {
     readonly exchange: ExchangeName;
     readonly requester: Requester;
     readonly id: RequestId;
-    readonly pane: PaneId;
+    readonly pane: SessionKey;
     readonly at: Instant;
     readonly ref: Text | null;
     readonly outcome: AskOutcome | null;
@@ -30,7 +30,7 @@ export interface AskDraft {
     readonly exchange: ExchangeName;
     readonly requester: Requester;
     readonly id: RequestId;
-    readonly pane: PaneId;
+    readonly pane: SessionKey;
     readonly at: Instant;
     readonly ref: Text | null;
 }
@@ -38,7 +38,7 @@ export interface AskDraft {
 export interface AskKey {
     readonly exchange: ExchangeName;
     readonly id: RequestId;
-    readonly pane: PaneId;
+    readonly pane: SessionKey;
 }
 
 export interface AskIdentity {

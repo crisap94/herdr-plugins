@@ -11,7 +11,7 @@ import type {
     FilePath,
     FromScreen,
     Instant,
-    PaneId,
+    SessionKey,
     Prose,
     Queued,
     RepoName,
@@ -60,7 +60,7 @@ export interface Break {
 }
 
 export interface Row {
-    readonly id: PaneId;
+    readonly id: SessionKey;
     readonly agent: AgentName;
     readonly state: RowState;
     readonly title: Title | null;
@@ -75,7 +75,7 @@ export interface Row {
 
 export interface ColumnTask {
     readonly name: TaskName;
-    readonly members: readonly PaneId[];
+    readonly members: readonly SessionKey[];
     readonly sections: RecapSections | null;
     readonly markdown: Prose;
 }
@@ -89,7 +89,7 @@ export interface RecapColumn {
 }
 
 export interface CompactionRow {
-    readonly pane: PaneId;
+    readonly pane: SessionKey;
     readonly agent?: AgentName;
     readonly startedAt?: Instant;
     readonly stage: Stage;

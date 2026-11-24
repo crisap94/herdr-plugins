@@ -3,7 +3,7 @@ import type { FleetPaneTokens } from '#src/ports/fleet-source.ts';
 import { parseWireText, type WireText } from '#src/protocol/primitives.ts';
 import type { CompactRequestQueue } from '#src/recap/application/compact-requests.ts';
 import { notesOf } from '#src/recap/domain/coordination.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import type { HandoffExchangeWiring } from './handoff-exchange-wiring.ts';
 import { FsGitDirWatcher } from '#src/adapters/git/dir-watch.ts';
 import { GitWorktreeLocator, GitWorktreeProbe } from '#src/adapters/git/worktree-status.ts';
@@ -54,7 +54,7 @@ const wireMap = (tokens: FleetPaneTokens): ReadonlyMap<WireText, WireText> => {
     return wire;
 };
 
-export function routePaneTokens(worktrees: Worktrees, answers: CompactRequestQueue, exchange: HandoffExchangeWiring): (pane: PaneId, tokens: FleetPaneTokens) => void {
+export function routePaneTokens(worktrees: Worktrees, answers: CompactRequestQueue, exchange: HandoffExchangeWiring): (pane: SessionKey, tokens: FleetPaneTokens) => void {
     return (pane, tokens) => {
         const text = new Map([...tokens].map(([name, raw]): [Text, Text] => [textOf(name), textOf(raw)]));
         worktrees.feed.update(pane, notesOf(text));

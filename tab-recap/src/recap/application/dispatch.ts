@@ -2,7 +2,7 @@ import { lanesOf } from '#src/recap/domain/board.ts';
 import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import type { Board, Shape } from '#src/recap/domain/board.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import { workspaceOfTab } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
@@ -52,11 +52,11 @@ export interface LaneDispatchDeps {
 }
 
 export interface PaneSource<Found> {
-    of(pane: PaneId): Found | null;
+    of(pane: SessionKey): Found | null;
     refresh(lane: Lane): Promise<Presence>;
 }
 
-export type ReadPane<Found> = (pane: PaneId) => Found | null;
+export type ReadPane<Found> = (pane: SessionKey) => Found | null;
 
 export interface Lookups {
     readonly prompts?: ReadPane<Text>;
@@ -64,7 +64,7 @@ export interface Lookups {
     readonly contexts?: ReadPane<ContextUse>;
 }
 
-export function viewOf(board: Board, tab: TabId, at: Instant, lookups: Lookups = {}): TabViewRecord {
+export function viewOf(board: Board, tab: ScopeId, at: Instant, lookups: Lookups = {}): TabViewRecord {
     const { prompts = (): null => null, webs = (): null => null, contexts = (): null => null } = lookups;
     const column = board.columns.get(tab)?.pane;
     return {
@@ -141,7 +141,7 @@ export class LaneDispatch {
         }
     }
 
-    private retire(tab: TabId, at: Instant): void {
+    private retire(tab: ScopeId, at: Instant): void {
         try {
             if (this.deps.retirements?.retire(tab, at) === 'retired') {
                 this.deps.log(must(parseText(`tab ${tab}: gone from herdr, its tasks are retired`)));
@@ -172,16 +172,16 @@ export class LaneDispatch {
         }
     }
 
-    private publish(tab: TabId): void {
+    private publish(tab: ScopeId): void {
         this.deps.views.writeTab(viewOf(this.deps.board(), tab, instant(Date.now()), { prompts: (pane) => this.deps.prompts.of(pane), webs: (pane) => this.deps.webs.of(pane), contexts: (pane) => this.deps.contexts?.of(pane) ?? null }));
     }
 
-    private failed(tab: TabId, why: Text): void {
+    private failed(tab: ScopeId, why: Text): void {
         this.deps.log(must(parseText(`tab ${tab}: column not opened (${why})`)));
         this.deps.feedback({ kind: 'column-failed', tab });
     }
 
-    private async shut(tab: TabId, pane: PaneId): Promise<void> {
+    private async shut(tab: ScopeId, pane: SessionKey): Promise<void> {
         const done = await this.deps.columns.close(pane);
         if (isUnknown(done)) {
             this.deps.log(must(parseText(`tab ${tab}: column not closed (${pane}, ${saying(done.why)})`)));
@@ -189,7 +189,7 @@ export class LaneDispatch {
         }
     }
 
-    private async open(tab: TabId, shape: Shape): Promise<void> {
+    private async open(tab: ScopeId, shape: Shape): Promise<void> {
         const layout = await this.deps.columns.layout(tab);
         if (isUnknown(layout)) {
             this.failed(tab, must(parseText(saying(layout.why))));
@@ -215,7 +215,7 @@ export class LaneDispatch {
         this.deps.feedback({ kind: 'column-opened', tab, pane: opened.pane, shape, at: instant(Date.now()) });
     }
 
-    private async narrow(tab: TabId, pane: PaneId, axis: Axis, cells: Count): Promise<void> {
+    private async narrow(tab: ScopeId, pane: SessionKey, axis: Axis, cells: Count): Promise<void> {
         const after = await this.deps.columns.layout(tab);
         if (isUnknown(after)) {
             return;

@@ -2,7 +2,7 @@ import type { Database } from 'bun:sqlite';
 import { and, asc, count, eq } from 'drizzle-orm';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
 import { parseCompactionTokensRecord, type CompactionTokensRecord, type SessionSourcePort } from '#src/ports/session-source.ts';
@@ -17,14 +17,14 @@ export class SessionSourceStore implements SessionSourcePort {
         this.orm = ormOf(db);
     }
 
-    firstSeen(tab: TabId): Instant | null {
+    firstSeen(tab: ScopeId): Instant | null {
         return guarded((): Instant | null => {
             const seen = this.orm.select({ firstSeen: tabs.firstSeen }).from(tabs).where(eq(tabs.id, tab)).get()?.firstSeen ?? null;
             return seen === null ? null : must(parseInstant(seen));
         }, null);
     }
 
-    runsByCause(tab: TabId): Readonly<Record<Text, Count>> {
+    runsByCause(tab: ScopeId): Readonly<Record<Text, Count>> {
         return guarded((): Readonly<Record<Text, Count>> => Object.fromEntries(this.orm.select({ cause: run.cause, n: count() }).from(run)
             .innerJoin(chapter, eq(chapter.id, run.chapterId))
             .where(eq(chapter.tabId, tab))
@@ -32,7 +32,7 @@ export class SessionSourceStore implements SessionSourcePort {
             .map((row): [Text, Count] => [must(parseText(row.cause)), must(parseCount(row.n))])), {});
     }
 
-    compactions(tab: TabId): readonly CompactionTokensRecord[] {
+    compactions(tab: ScopeId): readonly CompactionTokensRecord[] {
         return guarded((): readonly CompactionTokensRecord[] => this.orm.select({ tokensBefore: compaction.tokensBefore, tokensAfter: compaction.tokensAfter, origin: compaction.origin }).from(compaction)
             .where(and(eq(compaction.tabId, tab), eq(compaction.stage, 'compacted')))
             .orderBy(asc(compaction.startedAt), asc(compaction.id)).all()

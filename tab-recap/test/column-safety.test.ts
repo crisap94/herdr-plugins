@@ -14,7 +14,7 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { observe } from '#src/recap/domain/fold.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
-import { uncheckedRatio, type PaneId } from '#src/recap/domain/ids.ts';
+import { uncheckedRatio, type SessionKey } from '#src/recap/domain/ids.ts';
 import { paneId } from '#test/support/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
@@ -26,7 +26,7 @@ import type { SeenLane } from '#src/recap/domain/lane.ts';
 
 const pane = (id: string, title: string, extra: Record<string, unknown> = {}): Record<string, unknown> =>
     ({ pane_id: id, tab_id: 'w1:t1', terminal_title_stripped: title, agent: null, label: null, ...extra });
-const none = new Set<PaneId>();
+const none = new Set<SessionKey>();
 
 test('columnsIn: only an EXACT title, no agent, and the manifest label when herdr reports one', () => {
     const panes = [

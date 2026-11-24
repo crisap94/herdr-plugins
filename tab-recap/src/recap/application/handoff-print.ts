@@ -10,7 +10,7 @@ import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { parseAgentKind, parseTabId } from '#src/recap/domain/ids.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
@@ -35,12 +35,12 @@ export interface PrintStore {
 }
 
 interface TargetStatus {
-    status(pane: PaneId): Promise<AgentLookup>;
+    status(pane: SessionKey): Promise<AgentLookup>;
 }
 
 export interface PrintDeps {
     readonly openStore: () => PrintStore;
-    readonly flush: (tab: TabId, why: 'handoff print') => Promise<void>;
+    readonly flush: (tab: ScopeId, why: 'handoff print') => Promise<void>;
     readonly transcripts: TranscriptRegistry;
     readonly worksite: WorksiteDeps;
     readonly tokens: PaneTokens;
@@ -54,7 +54,7 @@ const refusedWith = (reason: Extract<HandoffOutcome, { readonly kind: 'refused' 
 
 const transcriptOf = (cursor: SessionCursor | null): FsPath | null => (cursor === null || cursor.transcript === '' ? null : fsPathOf(cursor.transcript));
 
-const laneOf = (tab: TabId, lane: TabLaneRecord): HandoffLane => ({
+const laneOf = (tab: ScopeId, lane: TabLaneRecord): HandoffLane => ({
     tab,
     pane: lane.pane,
     agent: must(parseAgentKind(lane.agent)),
@@ -63,7 +63,7 @@ const laneOf = (tab: TabId, lane: TabLaneRecord): HandoffLane => ({
 });
 
 interface Live {
-    readonly tab: TabId;
+    readonly tab: ScopeId;
     readonly lanes: readonly TabLaneRecord[];
 }
 
@@ -154,7 +154,7 @@ export class PrintedHandoffs implements HandoffPrintService {
         return result.kind === 'text' ? { kind: 'text', text: textOf(result.text), info: await this.targetInfo(request.to) } : result;
     }
 
-    private async targetInfo(to: PaneId | null): Promise<Text | null> {
+    private async targetInfo(to: SessionKey | null): Promise<Text | null> {
         if (to === null) {
             return null;
         }

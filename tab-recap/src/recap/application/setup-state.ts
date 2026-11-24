@@ -18,7 +18,7 @@ import type { TelemetryTags } from '#src/recap/domain/telemetry-tags.ts';
 import { compactNoteOf } from '#src/recap/domain/compact-note.ts';
 import type { CompactNote } from '#src/recap/domain/compact-note.ts';
 import { countOf, type Count } from '#src/recap/domain/count.ts';
-import type { AgentKind } from '#src/recap/domain/ids.ts';
+import type { HarnessKind } from '#src/recap/domain/ids.ts';
 import type { Usd } from '#src/recap/domain/usd.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 
@@ -95,7 +95,7 @@ export interface Setup {
     readonly draft: Draft;
     readonly stored: Draft;
     readonly locks: Locks;
-    readonly available: readonly AgentKind[] | null;
+    readonly available: readonly HarnessKind[] | null;
     readonly row: Count;
     readonly part: Count;
     readonly editing: Editing | null;
@@ -119,7 +119,7 @@ export interface SaveEffect {
 export interface TestEffect {
     readonly kind: 'test';
     readonly draft: Draft;
-    readonly available: readonly AgentKind[];
+    readonly available: readonly HarnessKind[];
 }
 
 export interface CloseEffect {
@@ -185,7 +185,7 @@ export const fieldOf = (state: Setup): FieldId => {
     return isPlainRow(row) ? row : (JOB_FIELDS[row]?.[state.part] ?? 'harness');
 };
 
-export function modelTarget(draft: Draft, available: readonly AgentKind[] | null): BackendId | null {
+export function modelTarget(draft: Draft, available: readonly HarnessKind[] | null): BackendId | null {
     const backend = pick(draft.backend, (available ?? []).map((name) => textOf(name)));
     return backend === null || !hasModel(backend) ? null : backend;
 }

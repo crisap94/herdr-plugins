@@ -3,7 +3,7 @@ import { parseCount } from './count.ts';
 import type { Count } from './count.ts';
 import { parseDirectory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
 import type { Directory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
-import type { PaneId } from './ids.ts';
+import type { SessionKey } from './ids.ts';
 import type { Lane } from './lane.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
 import type { PorcelainReading } from './porcelain.ts';
@@ -116,21 +116,21 @@ export interface LaneGlance {
 }
 
 export interface PaneAttach {
-    readonly pane: PaneId;
+    readonly pane: SessionKey;
     readonly cwd: Directory | null;
 }
 
 export interface WorktreeMoves {
-    readonly known: ReadonlyMap<PaneId, LaneGlance>;
+    readonly known: ReadonlyMap<SessionKey, LaneGlance>;
     readonly attach: readonly PaneAttach[];
-    readonly detach: readonly PaneId[];
-    readonly ended: readonly PaneId[];
+    readonly detach: readonly SessionKey[];
+    readonly ended: readonly SessionKey[];
 }
 
-export function movesOf(known: ReadonlyMap<PaneId, LaneGlance>, lanes: ReadonlyMap<PaneId, Lane>): WorktreeMoves {
+export function movesOf(known: ReadonlyMap<SessionKey, LaneGlance>, lanes: ReadonlyMap<SessionKey, Lane>): WorktreeMoves {
     const attach: PaneAttach[] = [];
-    const ended: PaneId[] = [];
-    const next = new Map<PaneId, LaneGlance>();
+    const ended: SessionKey[] = [];
+    const next = new Map<SessionKey, LaneGlance>();
     for (const [pane, lane] of lanes) {
         const before = known.get(pane);
         next.set(pane, { cwd: lane.cwd, status: lane.status });

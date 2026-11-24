@@ -1,9 +1,9 @@
 import { textOf } from '#src/recap/domain/text.ts';
-import type { AgentKind, SessionId } from '#src/recap/domain/ids.ts';
+import type { HarnessKind, SessionId } from '#src/recap/domain/ids.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import type { HcTerminal } from './sdk-core.ts';
 
-export function seenOfHcTerminal(terminal: HcTerminal, session: SessionId | null, agent: AgentKind): SeenLane {
+export function seenOfHcTerminal(terminal: HcTerminal, session: SessionId | null, agent: HarnessKind): SeenLane {
     return {
         paneId: textOf(terminal.address),
         tabId: textOf(terminal.tab),

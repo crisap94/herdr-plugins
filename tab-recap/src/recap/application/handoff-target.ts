@@ -1,6 +1,6 @@
 import { READY } from '#src/recap/domain/status.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffPlan } from '#src/recap/domain/handoff-plan.ts';
 import type { HandoffPlanCatalogue } from '#src/ports/handoff-plans.ts';
@@ -29,7 +29,7 @@ export interface TargetDeps {
     readonly lanes: readonly Lane[];
     readonly plans: HandoffPlanCatalogue;
     readonly inFlight: InFlightReader;
-    readonly awaiting: (pane: PaneId) => Promise<Waiting>;
+    readonly awaiting: (pane: SessionKey) => Promise<Waiting>;
 }
 
 export type TranscriptHold = 'own' | 'shared';
@@ -65,7 +65,7 @@ export async function readinessOf(lane: Lane, plan: HandoffPlan, deps: Pick<Targ
     return { kind: 'ready', transcript: hold };
 }
 
-export async function resolveTarget(source: PaneId | null, target: PaneId, deps: TargetDeps): Promise<TargetResolution> {
+export async function resolveTarget(source: SessionKey | null, target: SessionKey, deps: TargetDeps): Promise<TargetResolution> {
     if (source !== null && source === target) {
         return { kind: 'refused', reason: 'source-equals-target' };
     }

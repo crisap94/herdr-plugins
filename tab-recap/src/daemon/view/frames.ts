@@ -13,7 +13,7 @@ import { worktreeSwitch } from '#src/daemon/worktree-switch.ts';
 import { must } from '#src/protocol/result.ts';
 import type { Clock } from '#src/ports/clock.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { footer, present, presentBar } from '#src/recap/render/present.ts';
 import type { ColumnView, Markdown } from '#src/recap/render/present.ts';
@@ -28,7 +28,7 @@ const ZERO: Count = must(parseCount(0));
 
 export interface Screen {
     readonly role: Role;
-    readonly tab: TabId;
+    readonly tab: ScopeId;
     readonly cols: Count;
     readonly rows: Count;
     readonly style: Style;

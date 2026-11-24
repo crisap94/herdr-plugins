@@ -1,12 +1,12 @@
 import { blob, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { BriefOrigin, Stage } from '#src/ports/compaction-records.ts';
 import { BLOB_MODE } from './constants.ts';
 
 export const compaction = sqliteTable('compaction', {
     id: blob('id', { mode: BLOB_MODE }).$type<Uint8Array>().primaryKey().notNull(),
-    tabId: text('tab_id').$type<TabId>().notNull(),
-    pane: text('pane').$type<PaneId>().notNull(),
+    tabId: text('tab_id').$type<ScopeId>().notNull(),
+    pane: text('pane').$type<SessionKey>().notNull(),
     agent: text('agent').notNull(),
     stage: text('stage').$type<Stage>().notNull(),
     brief: text('brief').$type<BriefOrigin>(),

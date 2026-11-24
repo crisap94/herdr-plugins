@@ -4,7 +4,7 @@ import type { BoundaryBreak, BoundaryLog } from '#src/ports/boundaries.ts';
 import { must } from '#src/protocol/result.ts';
 import type { BoundaryKind, Trigger } from '#src/recap/domain/boundary.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import { duration, instant, type Instant } from '#src/recap/domain/time.ts';
 import { boundary, chapter, compaction, transcript } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
@@ -21,7 +21,7 @@ export class BoundaryLogRepository implements BoundaryLog {
         this.orm = ormOf(db);
     }
 
-    breaksOf(tab: TabId): readonly BoundaryBreak[] {
+    breaksOf(tab: ScopeId): readonly BoundaryBreak[] {
         return guarded((): readonly BoundaryBreak[] => this.orm.select({
             kind: boundary.kind,
             at: boundary.at,
@@ -48,11 +48,11 @@ export class BoundaryLogRepository implements BoundaryLog {
             }), []);
     }
 
-    chapterCount(tab: TabId): Count {
+    chapterCount(tab: ScopeId): Count {
         return guarded(() => must(parseCount(this.orm.select({ n: count() }).from(chapter).where(eq(chapter.tabId, tab)).get()?.n ?? 0)), NONE);
     }
 
-    lastBreakAt(tab: TabId, pane: PaneId): Instant | null {
+    lastBreakAt(tab: ScopeId, pane: SessionKey): Instant | null {
         return guarded(() => {
             const at = this.orm.select({ at: max(boundary.at) }).from(boundary)
                 .innerJoin(transcript, eq(transcript.id, boundary.transcriptId))

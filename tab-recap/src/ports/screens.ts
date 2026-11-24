@@ -1,5 +1,5 @@
 import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { Text } from '#src/recap/domain/text.ts';
@@ -11,5 +11,5 @@ export type ScreenOutcome =
     | Unknown;
 
 export interface ScreenReader {
-    readScreen(pane: PaneId, lines: Count): Promise<ScreenOutcome>;
+    readScreen(pane: SessionKey, lines: Count): Promise<ScreenOutcome>;
 }

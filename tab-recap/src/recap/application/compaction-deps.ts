@@ -17,7 +17,7 @@ import type { Records } from './compaction-trail.ts';
 import type { LaneEvents } from './lane-events.ts';
 import type { LaneClaims } from './lane-claims.ts';
 import type { RecapRefresh } from './recap-wait.ts';
-import type { PaneId, SessionId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, SessionId, ScopeId } from '#src/recap/domain/ids.ts';
 import type { Duration, Instant } from '#src/recap/domain/time.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
@@ -30,9 +30,9 @@ export interface BriefPort { enabled(): Presence; job(): Text | null; write(docu
 
 export interface CoveragePort { check(brief: Text, facts: readonly CheckedFact[]): Promise<CheckedCoverage> }
 
-export interface TypingPort { acquire(pane: PaneId): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: PaneId): Promise<void> }
+export interface TypingPort { acquire(pane: SessionKey): Promise<'taken' | 'busy' | 'unavailable'>; release(pane: SessionKey): Promise<void> }
 
-export interface LaneWebs { of(pane: PaneId): LaneWebRecord | null }
+export interface LaneWebs { of(pane: SessionKey): LaneWebRecord | null }
 
 export interface RestoreHandoff { offer(session: SessionId, text: Text): void; take(session: SessionId): Text | null }
 
@@ -51,7 +51,7 @@ export interface CompactionPorts {
     readonly checkedBriefs?: DecisionBriefs;
     ceilingOverride?(): Presence;
     missedFacts?(): MissedFacts;
-    answer?(id: RequestId, pane: PaneId, stage: AnswerStage): void;
+    answer?(id: RequestId, pane: SessionKey, stage: AnswerStage): void;
     readonly asks?: Pick<AskBook, 'attach'>;
     readonly typing?: TypingPort;
     readonly events?: LaneEvents;
@@ -62,9 +62,9 @@ export interface CompactionPorts {
     pause(ms: Duration): Promise<void>;
     now(): Instant;
     readonly webs: LaneWebs;
-    lanes(tab: TabId): readonly Lane[];
-    listsPane(pane: PaneId): Presence;
-    focused(tab: TabId): Promise<PaneId | null>;
+    lanes(tab: ScopeId): readonly Lane[];
+    listsPane(pane: SessionKey): Presence;
+    focused(tab: ScopeId): Promise<SessionKey | null>;
     refresh: RecapRefresh;
     target(): CompactTarget;
     messages(): Messages;

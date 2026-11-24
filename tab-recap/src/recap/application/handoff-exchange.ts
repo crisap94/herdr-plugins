@@ -12,7 +12,7 @@ import type { Board } from '#src/recap/domain/board.ts';
 import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
 import type { HandoffOffer, HandoffRefusal, RefreshAsk } from '#src/recap/domain/handoff-ask.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import { parseHandoffId, parsePaneId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
@@ -30,7 +30,7 @@ interface Unparsed {
 }
 
 interface IncomingRequest {
-    readonly target: PaneId | null;
+    readonly target: SessionKey | null;
     readonly refresh: RefreshAsk;
 }
 
@@ -76,7 +76,7 @@ export class HandoffExchangeResponder {
         this.deps = deps;
     }
 
-    onPaneTokens(pane: PaneId, tokens: TokenEntries): void {
+    onPaneTokens(pane: SessionKey, tokens: TokenEntries): void {
         const wire = new Map<WireText, WireText>();
         for (const [name, raw] of tokens) {
             const key = parseWireText(name);
@@ -97,7 +97,7 @@ export class HandoffExchangeResponder {
         }
     }
 
-    private consider(pane: PaneId, tool: Text, id: Text, request: IncomingRequest | null): void {
+    private consider(pane: SessionKey, tool: Text, id: Text, request: IncomingRequest | null): void {
         const offer = this.deps.offer();
         if (offer === 'sharing-off') {
             this.remember(pane, tool, id, { kind: 'off' });
@@ -124,7 +124,7 @@ export class HandoffExchangeResponder {
         this.queue(source, request.target, tool, id, request.refresh);
     }
 
-    private queue(source: Lane, target: PaneId, tool: Text, id: Text, refresh: RefreshAsk): void {
+    private queue(source: Lane, target: SessionKey, tool: Text, id: Text, refresh: RefreshAsk): void {
         const key = { exchange: HANDOFF_EXCHANGE, id: must(parseRequestId(id, GRAMMAR)), pane: source.pane };
         const requester = must(parseToolName(tool));
         const route: Route = { source: source.pane, target, id };
@@ -137,7 +137,7 @@ export class HandoffExchangeResponder {
         this.deps.mirror.queued(route);
     }
 
-    private refuse(pane: PaneId, tool: Text, id: Text, reason: HandoffRefusal): void {
+    private refuse(pane: SessionKey, tool: Text, id: Text, reason: HandoffRefusal): void {
         this.remember(pane, tool, id, { kind: 'settled' });
         const stage = parseWireText(terminalStage({ kind: 'refused', reason }));
         const write = stage.kind === 'err' ? refuse(stage.error, 'TokenValue') : answerWrite(handoff, must(parseRequestId(id, GRAMMAR)), stage.value);
@@ -146,7 +146,7 @@ export class HandoffExchangeResponder {
         }
     }
 
-    private remember(pane: PaneId, tool: Text, id: Text, outcome: AskOutcome): void {
+    private remember(pane: SessionKey, tool: Text, id: Text, outcome: AskOutcome): void {
         const key = { exchange: HANDOFF_EXCHANGE, id: must(parseRequestId(id, GRAMMAR)), pane };
         this.deps.asks.record({ ...key, requester: must(parseToolName(tool)), at: this.deps.now(), ref: null });
         this.deps.asks.settle(key, outcome);

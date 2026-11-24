@@ -1,10 +1,10 @@
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { lanesOf, tabsWithLanes, type Board } from '#src/recap/domain/board.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import type { Pacing } from '#src/recap/domain/pacing.ts';
 
 export function onBeatOf(beat: (board: Board) => void, recaps: Pick<TabRecaps, 'sync' | 'turnEnded'>, board: () => Board, pacing: Pacing): () => void {
-    let followed: ReadonlySet<TabId> = new Set();
+    let followed: ReadonlySet<ScopeId> = new Set();
     let shown: Board | null = null;
     let startedUp = pacing.kind !== 'smart';
     return (): void => {

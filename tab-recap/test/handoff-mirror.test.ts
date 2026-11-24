@@ -20,7 +20,7 @@ import { parseText } from '#src/recap/domain/text.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
 import type { Done } from '#src/ports/columns.ts';
 import type { LaneTokenMap, LaneTokenReporter } from '#src/ports/lane-tokens.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
@@ -37,7 +37,7 @@ class DeferredTokens implements LaneTokenReporter {
     readonly landed: Array<Readonly<Record<string, string | null>>> = [];
     private readonly releases: Array<() => void> = [];
 
-    report(_pane: PaneId, written: LaneTokenMap): Promise<Done> {
+    report(_pane: SessionKey, written: LaneTokenMap): Promise<Done> {
         const tokens = Object.fromEntries(written);
         this.issued.push(tokens);
         return new Promise((resolve) => {
@@ -175,7 +175,7 @@ test('a first report that fails, even in its log, does not stop the later stages
     const reports: Array<Readonly<Record<string, string | null>>> = [];
     let failing = true;
     const tokens: LaneTokenReporter = {
-        report(_pane: PaneId, written: LaneTokenMap): Promise<Done> {
+        report(_pane: SessionKey, written: LaneTokenMap): Promise<Done> {
             reports.push(Object.fromEntries(written));
             return failing ? Promise.reject(new Error('socket closed')) : Promise.resolve({ kind: 'done' });
         },
@@ -200,7 +200,7 @@ test('a report that never settles delays the later stages of its pane by the bou
         const reports: Array<Readonly<Record<string, string | null>>> = [];
         let first = true;
         const tokens: LaneTokenReporter = {
-            report(_pane: PaneId, written: LaneTokenMap): Promise<Done> {
+            report(_pane: SessionKey, written: LaneTokenMap): Promise<Done> {
                 reports.push(Object.fromEntries(written));
                 if (first) {
                     first = false;

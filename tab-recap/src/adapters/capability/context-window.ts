@@ -1,6 +1,6 @@
 import { claudeContextWindow, ClaudeWindow } from '@stateforge-labs/harness-adapters/claude';
 import type { Observed, WindowBasis, WindowOf } from '#src/recap/domain/compaction.ts';
-import type { AgentKind } from '#src/recap/domain/ids.ts';
+import type { HarnessKind } from '#src/recap/domain/ids.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import { parseText, textOf } from '#src/recap/domain/text.ts';
 import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
@@ -46,7 +46,7 @@ const WINDOW_SOURCES = {
     opencode: supported(exactWindow),
 } satisfies Readonly<Record<RegisteredKind, Support<Source, ContextWindowWhy>>>;
 
-export function windowOfAgent(kind: AgentKind | null, catalogue: ModelWindows): WindowOf {
+export function windowOfAgent(kind: HarnessKind | null, catalogue: ModelWindows): WindowOf {
     const registered = kind === null ? null : registeredKindOf(textOf(kind));
     const capability = registered === null ? supported(exactWindow) : WINDOW_SOURCES[registered];
     const source = capability.kind === 'supported' ? capability.value : noWindow;
@@ -54,7 +54,7 @@ export function windowOfAgent(kind: AgentKind | null, catalogue: ModelWindows): 
 }
 
 export function agentWindows(catalogue: ModelWindows): ContextWindowLookup {
-    return { windowOf: (kind: AgentKind) => windowOfAgent(kind, catalogue) };
+    return { windowOf: (kind: HarnessKind) => windowOfAgent(kind, catalogue) };
 }
 
 export function claudeWindowFor(catalogue: ModelWindows): WindowOf {

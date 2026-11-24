@@ -1,6 +1,6 @@
 import { brand, type Brand } from './brand.ts';
 import type { Count } from './count.ts';
-import type { PaneId } from './lane-shape.ts';
+import type { SessionKey } from './lane-shape.ts';
 import { instant, type Duration, type Instant } from './time.ts';
 
 export const PLUGIN_WITHIN_MS = 10 * 60_000;
@@ -10,9 +10,9 @@ export type Trigger = 'auto' | 'manual' | 'plugin';
 
 export type OwnTrigger = 'auto' | 'manual';
 
-export interface SessionMark { readonly pane: PaneId; readonly at: Instant; readonly cursor: Count; readonly tokensBefore?: Count; readonly tokensAfter?: Count; readonly tookMs?: Duration; readonly trigger?: OwnTrigger; }
+export interface SessionMark { readonly pane: SessionKey; readonly at: Instant; readonly cursor: Count; readonly tokensBefore?: Count; readonly tokensAfter?: Count; readonly tookMs?: Duration; readonly trigger?: OwnTrigger; }
 
-export interface Planned { readonly kind: BoundaryKind; readonly pane: PaneId; readonly at: Instant; readonly trigger: Trigger | null; readonly cursor: Count; readonly tokensBefore: Count | null; readonly tokensAfter: Count | null; readonly tookMs: Duration | null; }
+export interface Planned { readonly kind: BoundaryKind; readonly pane: SessionKey; readonly at: Instant; readonly trigger: Trigger | null; readonly cursor: Count; readonly tokensBefore: Count | null; readonly tokensAfter: Count | null; readonly tookMs: Duration | null; }
 
 type Ordering = -1 | 0 | 1;
 

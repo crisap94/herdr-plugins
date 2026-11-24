@@ -1,7 +1,7 @@
 import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
 import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
 import type { HandoffPlan, HandoffPlanResult, LocatedBy, SettleTime } from '#src/recap/domain/handoff-plan.ts';
-import type { AgentKind } from '#src/recap/domain/ids.ts';
+import type { HarnessKind } from '#src/recap/domain/ids.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { duration } from '#src/recap/domain/time.ts';
@@ -25,7 +25,7 @@ const HANDOFF_PLANS = {
 } satisfies Readonly<Record<RegisteredKind, Support<HandoffPlan, 'no-plan'>>>;
 
 export const handoffPlanner: HandoffPlanCatalogue = {
-    forKind(kind: AgentKind): HandoffPlanResult {
+    forKind(kind: HarnessKind): HandoffPlanResult {
         const registered = registeredKindOf(textOf(kind));
         if (registered === null) {
             return { kind: 'unsupported', reason: 'no-plan' };

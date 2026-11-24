@@ -1,14 +1,14 @@
 import { blob, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { compositeKey } from './columns.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { UncheckedReason } from '#src/recap/domain/autocompact.ts';
 import type { DecisionGate, DecisionMode, Verdict } from '#src/ports/autocompact-records.ts';
 import { BLOB_MODE } from './constants.ts';
 
 export const autocompactDecision = sqliteTable('autocompact_decision', {
     id: blob('id', { mode: BLOB_MODE }).$type<Uint8Array>().primaryKey().notNull(),
-    tabId: text('tab_id').$type<TabId>().notNull(),
-    pane: text('pane').$type<PaneId>().notNull(),
+    tabId: text('tab_id').$type<ScopeId>().notNull(),
+    pane: text('pane').$type<SessionKey>().notNull(),
     agent: text('agent').notNull(),
     at: integer('at').notNull(),
     mode: text('mode').$type<DecisionMode>().notNull(),
@@ -43,8 +43,8 @@ export const autocompactBrief = sqliteTable('autocompact_brief', {
 export const autocompactSkip = sqliteTable(
     'autocompact_skip',
     {
-        tabId: text('tab_id').$type<TabId>().notNull(),
-        pane: text('pane').$type<PaneId>().notNull(),
+        tabId: text('tab_id').$type<ScopeId>().notNull(),
+        pane: text('pane').$type<SessionKey>().notNull(),
         agent: text('agent').notNull(),
         at: integer('at').notNull(),
         gate: text('gate').notNull(),

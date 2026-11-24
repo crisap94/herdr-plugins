@@ -5,7 +5,7 @@ import type { WorktreeStatusReader, WorktreeStatusWriter } from '#src/ports/work
 import { parseCount } from '#src/recap/domain/count.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import { parseText } from '#src/recap/domain/text.ts';
 import { parseInstant } from '#src/recap/domain/time.ts';
@@ -72,7 +72,7 @@ export class WorktreeStatusRepository implements WorktreeStatusWriter, WorktreeS
             .run();
     }
 
-    bind(pane: PaneId, root: Directory | null): void {
+    bind(pane: SessionKey, root: Directory | null): void {
         if (root === null) {
             this.orm.delete(paneWorktree).where(eq(paneWorktree.pane, pane)).run();
         } else {
@@ -94,7 +94,7 @@ export class WorktreeStatusRepository implements WorktreeStatusWriter, WorktreeS
         });
     }
 
-    statusOf(pane: PaneId): WorktreeStatus | null {
+    statusOf(pane: SessionKey): WorktreeStatus | null {
         return guarded(() => {
             const row = this.orm.select({
                 root: worktreeStatus.root,

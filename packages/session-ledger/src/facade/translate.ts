@@ -7,7 +7,7 @@ import { isClosedWhy, isSection, type ClosedWhy, type Section } from '#src/recap
 import type { RecapWritten as ReconcileWritten } from '#src/recap/application/ledger-reconcile.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
-import type { AgentKind, Lane, PaneId, SessionId, TabId, WorkspaceId } from '#src/recap/domain/lane-shape.ts';
+import type { Lane, SessionId, WorkspaceId } from '#src/recap/domain/lane-shape.ts';
 import { RECAP_CAUSES } from '#src/recap/domain/recap-cause.ts';
 import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '#src/recap/domain/text.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
@@ -15,21 +15,21 @@ import { must, type Result } from '#src/protocol/result.ts';
 
 const valueOf = <T>(read: Result<T, ParseFailure>): T | null => (read.kind === 'ok' ? read.value : null);
 
-const innerText = (raw: ScopeId | SessionKey | HarnessKind | LedgerSessionId | TabId): NonEmptyText | null => valueOf(parseNonEmptyText(raw));
+const innerText = (raw: ScopeId | SessionKey | HarnessKind | LedgerSessionId): NonEmptyText | null => valueOf(parseNonEmptyText(raw));
 
-export const tabOf = (scope: ScopeId): TabId | null => {
+export const tabOf = (scope: ScopeId): ScopeId | null => {
     const text = innerText(scope);
-    return text === null ? null : brand<string, 'TabId'>(text);
+    return text === null ? null : brand<string, 'ScopeId'>(text);
 };
 
-const paneOf = (key: SessionKey): PaneId | null => {
+const paneOf = (key: SessionKey): SessionKey | null => {
     const text = innerText(key);
-    return text === null ? null : brand<string, 'PaneId'>(text);
+    return text === null ? null : brand<string, 'SessionKey'>(text);
 };
 
-const agentOf = (harness: HarnessKind): AgentKind | null => {
+const agentOf = (harness: HarnessKind): HarnessKind | null => {
     const text = innerText(harness);
-    return text === null ? null : brand<string, 'AgentKind'>(text);
+    return text === null ? null : brand<string, 'HarnessKind'>(text);
 };
 
 const sessionOf = (session: LedgerSessionId): SessionId | null => {
@@ -39,7 +39,7 @@ const sessionOf = (session: LedgerSessionId): SessionId | null => {
 
 const cwdOf = (cwd: LedgerDirectory): Directory | null => valueOf(parseDirectory(cwd));
 
-const workspaceOf = (tab: TabId): WorkspaceId | null => {
+const workspaceOf = (tab: ScopeId): WorkspaceId | null => {
     const colon = tab.indexOf(':');
     if (colon === -1 || tab.slice(0, colon).trim() === '' || tab.slice(colon + 1).trim() === '') {
         const text = innerText(tab);

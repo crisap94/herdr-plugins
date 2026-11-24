@@ -22,7 +22,7 @@ import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import { exitCodeOf, messageKeyOf, type HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { instant } from '#src/recap/domain/time.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import { closedOf, listingOf, paneOf, problem, sourceProblem, targetProblem } from './handoff-closed.ts';
 import type { HandoffProblem, HandoffValues, ListingArguments } from './handoff-closed.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
@@ -32,14 +32,14 @@ export type { HandoffProblem, HandoffValues } from './handoff-closed.ts';
 export type DeliverArguments = Omit<DeliverRequest, 'refresh'> & { readonly refresh: boolean };
 
 export type HandoffArguments =
-    | { readonly mode: 'print'; readonly from: PaneId; readonly to: PaneId | null; readonly note: string | null; readonly closed: ClosedLaneIdentity | null }
+    | { readonly mode: 'print'; readonly from: SessionKey; readonly to: SessionKey | null; readonly note: string | null; readonly closed: ClosedLaneIdentity | null }
     | ({ readonly mode: 'deliver' } & DeliverArguments)
     | ListingArguments;
 
 export interface HandoffWiring {
     readonly printer: HandoffPrintService;
     readonly deliver: (request: DeliverArguments) => Promise<HandoffOutcome>;
-    readonly list: (tab: TabId) => ClosedListing;
+    readonly list: (tab: ScopeId) => ClosedListing;
 }
 
 export interface HandoffReport {
@@ -94,7 +94,7 @@ function shapeProblem(values: HandoffValues, positionals: readonly string[], clo
     return sourceProblem(values.from ?? [], closed) ?? targetProblem(values, closed);
 }
 
-function printOf(values: HandoffValues, from: PaneId, note: string | null, closed: ClosedLaneIdentity | null): HandoffArguments | HandoffProblem {
+function printOf(values: HandoffValues, from: SessionKey, note: string | null, closed: ClosedLaneIdentity | null): HandoffArguments | HandoffProblem {
     const raw = values.to?.[0];
     if (raw === undefined) {
         return { mode: 'print', from, to: null, note, closed };
@@ -103,7 +103,7 @@ function printOf(values: HandoffValues, from: PaneId, note: string | null, close
     return to === null ? problem('--to needs a pane id') : { mode: 'print', from, to, note, closed };
 }
 
-function deliverOf(values: HandoffValues, from: PaneId, note: Text | null, closed: ClosedLaneIdentity | null): HandoffArguments | HandoffProblem {
+function deliverOf(values: HandoffValues, from: SessionKey, note: Text | null, closed: ClosedLaneIdentity | null): HandoffArguments | HandoffProblem {
     const raw = values.to?.[0];
     if (raw === undefined) {
         return problem('--to is required unless --print');
@@ -165,7 +165,7 @@ function printerOf(): HandoffPrintService {
     });
 }
 
-function listerOf(): (tab: TabId) => ClosedListing {
+function listerOf(): (tab: ScopeId) => ClosedListing {
     return (tab) => {
         const store = openPrintStore(databaseFile(stateDirectory()), loadSettings().closedLaneDays);
         try {

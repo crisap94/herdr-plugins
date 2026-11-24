@@ -2,7 +2,7 @@ import type { Applied, HistoryFact, FactStore } from '#src/ports/ledger.ts';
 import type { Fact, FactId, TaskId } from '#src/recap/domain/fact.ts';
 import { sameTask } from '#src/recap/domain/fact.ts';
 import { apply } from '#src/recap/domain/ops.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 import type { Operation, RunRef } from '#src/recap/domain/ops.ts';
@@ -49,11 +49,11 @@ export class MemoryLedger implements FactStore {
         return { changed: folded.changed, refused: folded.refused };
     }
 
-    keysOf(tab: TabId): readonly Text[] {
+    keysOf(tab: ScopeId): readonly Text[] {
         return [...new Set(this.facts.filter((fact) => fact.task.tab === tab).map((fact) => textOf(fact.task.key)))];
     }
 
-    historyOf(tab: TabId, pane: PaneId): readonly HistoryFact[] {
+    historyOf(tab: ScopeId, pane: SessionKey): readonly HistoryFact[] {
         return this.facts
             .filter((fact) => fact.task.tab === tab && this.holders.get(`${tab}\u001f${fact.task.key}`)?.has(pane) === true)
             .toSorted((a, b) => b.lastAt - a.lastAt)

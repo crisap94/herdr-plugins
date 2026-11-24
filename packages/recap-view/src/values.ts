@@ -3,7 +3,7 @@ import type { Brand } from './kernel.ts';
 export type Instant = Brand<number, 'Instant'>;
 export type Duration = Brand<number, 'Duration'>;
 export type Tokens = Brand<number, 'Tokens'>;
-export type PaneId = Brand<string, 'PaneId'>;
+export type SessionKey = Brand<string, 'SessionKey'>;
 export type AgentName = Brand<string, 'AgentName'>;
 export type AgentLabel = Brand<string, 'AgentLabel'>;
 export type Title = Brand<string, 'Title'>;
@@ -40,12 +40,14 @@ export function parseTokens(input: unknown): Tokens {
     throw new TypeError('Tokens is a number');
 }
 
-const isPaneId = (input: unknown): input is PaneId => typeof input === 'string';
+const isPaneId = (input: unknown): input is SessionKey => typeof input === 'string';
 
-export function parsePaneId(input: unknown): PaneId {
+export function parseSessionKey(input: unknown): SessionKey {
     if (isPaneId(input)) return input;
     throw new TypeError('PaneId is a string');
 }
+
+export const parsePaneId = parseSessionKey;
 
 const isAgentName = (input: unknown): input is AgentName => typeof input === 'string';
 

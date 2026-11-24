@@ -1,5 +1,5 @@
 import type { ClosedWhy, Fact, Section, TaskId } from '#src/recap/domain/fact.ts';
-import type { PaneId, TabId } from '#src/recap/domain/lane-shape.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/lane-shape.ts';
 import type { Refusal } from '#src/recap/domain/ops.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
@@ -20,8 +20,8 @@ export interface FactStore {
     openOf(task: TaskId): readonly Fact[];
     recentlyClosed(task: TaskId, sinceMs: Instant): readonly Fact[];
     allOf(task: TaskId): readonly Fact[];
-    keysOf(tab: TabId): readonly Text[];
-    historyOf(tab: TabId, pane: PaneId): readonly HistoryFact[];
+    keysOf(tab: ScopeId): readonly Text[];
+    historyOf(tab: ScopeId, pane: SessionKey): readonly HistoryFact[];
 }
 
 export interface Applied {

@@ -20,7 +20,7 @@ import { Briefing } from './compaction-briefing.ts';
 import { Sender, type Placed, type Placement } from './compaction-send.ts';
 import { scopeOf } from './compaction-targets.ts';
 import { Trail } from './compaction-trail.ts';
-import type { AgentKind, CompactionId, PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { HarnessKind, CompactionId, SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import { parseAnswerStage, type AnswerStage } from '#src/protocol/primitives.ts';
@@ -32,14 +32,14 @@ type Gate = { readonly kind: 'refused'; readonly refusal: Refusal } | ({ readonl
 type Queueing = 'queues' | 'waits';
 
 interface Start {
-    readonly tab: TabId;
-    readonly pane: PaneId;
-    readonly agent: AgentKind;
+    readonly tab: ScopeId;
+    readonly pane: SessionKey;
+    readonly agent: HarnessKind;
     readonly stage: 'briefing' | 'compacting';
     readonly writer: Text | null;
 }
 
-interface TypedAt { readonly lane: Lane; readonly tab: TabId; readonly request: CompactAsk; readonly trail: Trail }
+interface TypedAt { readonly lane: Lane; readonly tab: ScopeId; readonly request: CompactAsk; readonly trail: Trail }
 
 interface CoverageStop { readonly lane: Lane; readonly checked: Checked; readonly flow: CoverageFlow; readonly trail: Trail; readonly said: (text: Text) => Text; readonly messages: Messages['compaction'] }
 
@@ -62,7 +62,7 @@ export class Compactor {
         }
     }
 
-    private queueing(agent: AgentKind): Queueing {
+    private queueing(agent: HarnessKind): Queueing {
         const plan = this.deps.compactionPlans.forKind(agent, textOf(''));
         return plan.kind === 'supported' && plan.plan.whileWorking.kind === 'queues' ? 'queues' : 'waits';
     }
@@ -82,14 +82,14 @@ export class Compactor {
         return { kind: 'refused', refusal: { stage: 'skipped', reason, why: must(parseText(badge[state.status])), toast: must(parseText(compaction.skipped(must(parseText(agent)), must(parseText(state.status))))) } };
     }
 
-    private answerOne(request: CompactAsk | null, pane: PaneId, stage: AnswerStage): void {
+    private answerOne(request: CompactAsk | null, pane: SessionKey, stage: AnswerStage): void {
         const id = request?.answer === undefined ? null : parseAskId(request.answer);
         if (id !== null && pane !== '') {
             this.deps.answer?.(id, pane, stage);
         }
     }
 
-    private answer(request: CompactAsk | null, pane: PaneId, stage: AnswerStage): void {
+    private answer(request: CompactAsk | null, pane: SessionKey, stage: AnswerStage): void {
         this.answerOne(request, pane, stage);
         for (const joined of this.deps.claims.joinedOf(pane)) {
             this.answerOne(joined, pane, stage);
@@ -114,7 +114,7 @@ export class Compactor {
         return 'absent';
     }
 
-    private async refuse(lane: Lane, tab: TabId, trail: Trail | null, refusal: Refusal, asked: Asked): Promise<void> {
+    private async refuse(lane: Lane, tab: ScopeId, trail: Trail | null, refusal: Refusal, asked: Asked): Promise<void> {
         const { origin, request } = asked;
         if (trail === null) {
             const pane = lane.pane;
@@ -138,7 +138,7 @@ export class Compactor {
         this.logClosed(lane, point);
     }
 
-    private async gated(lane: Lane, tab: TabId, trail: Trail | null, point: ClosePoint, asked: Asked = { origin: 'operator', request: null }): Promise<Gate> {
+    private async gated(lane: Lane, tab: ScopeId, trail: Trail | null, point: ClosePoint, asked: Asked = { origin: 'operator', request: null }): Promise<Gate> {
         const gate = await this.gateOf(lane, point);
         if (gate.kind === 'refused') {
             await this.refuse(lane, tab, trail, gate.refusal, asked);
@@ -153,13 +153,13 @@ export class Compactor {
         return id;
     }
 
-    private ended(request: CompactAsk, pane: PaneId, id: CompactionId, end: CompactionFinish, reason: CompactFailure | null): void {
+    private ended(request: CompactAsk, pane: SessionKey, id: CompactionId, end: CompactionFinish, reason: CompactFailure | null): void {
         this.answer(request, pane, must(parseAnswerStage(finalAnswerOf(end.stage, reason))));
         if (end.why === textOf(LANE_CLOSED)) return;
         this.deps.events?.lane(pane, end.stage === 'compacted' ? COMPACT_EVENTS.done : COMPACT_EVENTS.failed, textOf(end.stage === 'compacted' ? id : `${id}:${end.why ?? end.stage}`));
     }
 
-    private opened(lane: Lane, tab: TabId, request: CompactAsk): Trail {
+    private opened(lane: Lane, tab: ScopeId, request: CompactAsk): Trail {
         const pane = lane.pane;
         const id = this.begun(request, { tab, pane, agent: lane.agent, stage: this.deps.brief.enabled() === 'present' ? 'briefing' : 'compacting', writer: this.deps.brief.job() });
         this.answer(request, pane, must(parseAnswerStage(COMPACT_STAGES.running)));
@@ -167,13 +167,13 @@ export class Compactor {
         return new Trail(this.deps.compactions, id, () => this.deps.now(), (end, reason) => { this.ended(request, pane, id, end, reason); });
     }
 
-    private beginning(agent: AgentKind, placement: Placement): Text {
+    private beginning(agent: HarnessKind, placement: Placement): Text {
         const { compaction } = this.deps.messages();
         if (placement === 'queued') return must(parseText(compaction.startedQueued(must(parseText(agent)))));
         return must(parseText(this.deps.brief.enabled() === 'present' ? compaction.writing(must(parseText(agent))) : compaction.started(must(parseText(agent)))));
     }
 
-    private async compact(lane: Lane, tab: TabId, request: CompactAsk, placement: Placement): Promise<void> {
+    private async compact(lane: Lane, tab: ScopeId, request: CompactAsk, placement: Placement): Promise<void> {
         const { compaction } = this.deps.messages();
         const [pane, agent, auto] = [lane.pane, lane.agent, request.origin === 'auto'];
         const trail = this.opened(lane, tab, request);

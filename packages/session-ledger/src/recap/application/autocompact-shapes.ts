@@ -6,7 +6,7 @@ import type { ContextUse } from '#src/recap/domain/compaction.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import { shareOf } from '#src/recap/domain/compaction.ts';
 import type { Flight } from '#src/recap/domain/in-flight.ts';
-import type { AgentKind, Placement } from '#src/recap/domain/timing-ids.ts';
+import type { HarnessKind, Placement } from '#src/recap/domain/timing-ids.ts';
 import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { parseMilliseconds, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
@@ -37,7 +37,7 @@ export interface LanePolicy extends Omit<Policy, 'mode'> {
     readonly mode: DecisionMode;
 }
 
-export function policyForLane(policy: Policy, agent: AgentKind): LanePolicy | null {
+export function policyForLane(policy: Policy, agent: HarnessKind): LanePolicy | null {
     if (policy.mode === 'off') return null;
     const registered = registeredKindOf(textOf(agent));
     const shadowed = registered !== null && policy.shadowKinds.includes(registered);

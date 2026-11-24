@@ -2,7 +2,7 @@ import { AgentStatus } from '@stateforge-labs/herdr-sdk';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { usePlugin } from './client.ts';
 import { parseJsonObject, type JsonObject } from './json-object.ts';
-import { parseAgentKind, type PaneId, type TabId } from '#src/recap/domain/ids.ts';
+import { parseAgentKind, type SessionKey, type ScopeId } from '#src/recap/domain/ids.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { parseMilliseconds, type Duration, type Milliseconds } from '#src/recap/domain/time.ts';
@@ -41,7 +41,7 @@ export class HerdrAgentPanes implements AgentPanes {
         this.pause = pause;
     }
 
-    async status(pane: PaneId): Promise<AgentLookup> {
+    async status(pane: SessionKey): Promise<AgentLookup> {
         try {
             const fields = objectOf(parseJsonObject((await this.wire('agent.get', { target: pane }))['agent']));
             const agent = parseAgentKind(fields['agent']);
@@ -57,7 +57,7 @@ export class HerdrAgentPanes implements AgentPanes {
         }
     }
 
-    async prompt(pane: PaneId, text: Text, wait: PromptWaitFor | undefined, behavior: PromptStance): Promise<Prompted> {
+    async prompt(pane: SessionKey, text: Text, wait: PromptWaitFor | undefined, behavior: PromptStance): Promise<Prompted> {
         const params: JsonObject = wait === undefined
             ? { target: pane, text }
             : { target: pane, text, wait: { until: wait.until, timeout_ms: Number(wait.timeout) } };
@@ -76,7 +76,7 @@ export class HerdrAgentPanes implements AgentPanes {
         }
     }
 
-    async typeLine(pane: PaneId, line: CompactionLine, behavior: LineBehavior): Promise<Prompted> {
+    async typeLine(pane: SessionKey, line: CompactionLine, behavior: LineBehavior): Promise<Prompted> {
         if (line.pieces.some((piece) => /[\r\n]/u.test(piece))) {
             return unknown({ why: 'unreadable', detail: causeOf(must(parseText('a typed line has no line break'))) });
         }
@@ -92,7 +92,7 @@ export class HerdrAgentPanes implements AgentPanes {
         }
     }
 
-    async askNote(tab: TabId, pane: PaneId | null): Promise<Done> {
+    async askNote(tab: ScopeId, pane: SessionKey | null): Promise<Done> {
         try {
             await this.wire('plugin.pane.open', {
                 plugin_id: this.plugin.id,

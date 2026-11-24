@@ -10,7 +10,7 @@ import { parseJson, type JsonObject } from './json-object.ts';
 import { refusalOfTokens } from './token-refusal.ts';
 import { HerdrAgentPanes, herdrWire } from './agents.ts';
 import { OWNERS } from '#src/recap/domain/token-registry.ts';
-import { parseAgentKind, uncheckedPaneId, uncheckedRatio, uncheckedWorkspaceId, type PaneId, type TabId, type WorkspaceId } from '#src/recap/domain/ids.ts';
+import { parseAgentKind, uncheckedPaneId, uncheckedRatio, uncheckedWorkspaceId, type SessionKey, type ScopeId, type WorkspaceId } from '#src/recap/domain/ids.ts';
 import type { Probability } from '#src/recap/domain/probability.ts';
 import { countOf, parseCount, type Count } from '#src/recap/domain/count.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
@@ -91,7 +91,7 @@ export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, Harne
         }
     }
 
-    async layout(tab: TabId): Promise<ColumnLayoutResult> {
+    async layout(tab: ScopeId): Promise<ColumnLayoutResult> {
         try {
             const found = parseJsonList((await this.rawSnapshot())['layouts']).find((candidate) => candidate['tab_id'] === String(tab));
             if (found === undefined) {
@@ -116,7 +116,7 @@ export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, Harne
         }
     }
 
-    async open(tab: TabId, target: Text, shape: Shape): Promise<OpenResult> {
+    async open(tab: ScopeId, target: Text, shape: Shape): Promise<OpenResult> {
         try {
             const result = parseJson(await usePlugin((client) => client.call('plugin.pane.open', {
                 plugin_id: PLUGIN_ID,
@@ -134,7 +134,7 @@ export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, Harne
         }
     }
 
-    async show(tab: TabId): Promise<Done> {
+    async show(tab: ScopeId): Promise<Done> {
         return this.call(() => usePlugin((client) => client.call('plugin.pane.open', {
             plugin_id: PLUGIN_ID,
             entrypoint: COLUMN_ENTRYPOINT,
@@ -146,7 +146,7 @@ export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, Harne
         })));
     }
 
-    async setup(tab: TabId | null): Promise<SetupOpened> {
+    async setup(tab: ScopeId | null): Promise<SetupOpened> {
         try {
             await usePlugin((client) => client.call('plugin.pane.open', {
                 plugin_id: PLUGIN_ID,
@@ -177,7 +177,7 @@ export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, Harne
         }
     }
 
-    async readScreen(pane: PaneId, lines: Count): Promise<ScreenOutcome> {
+    async readScreen(pane: SessionKey, lines: Count): Promise<ScreenOutcome> {
         try {
             const fields = parseJson(parseJson(await usePlugin((client) => client.call('pane.read', { pane_id: pane, source: 'recent_unwrapped', lines, format: 'text' })))['read']);
             return typeof fields['text'] === 'string'
@@ -188,13 +188,13 @@ export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, Harne
         }
     }
 
-    async report(pane: PaneId, tokens: LaneTokenMap, ttlMs: Milliseconds): Promise<Done> {
+    async report(pane: SessionKey, tokens: LaneTokenMap, ttlMs: Milliseconds): Promise<Done> {
         const record = Object.fromEntries(tokens);
         const refused = refusalOfTokens(tokens, OWNERS.writable);
         return refused ?? this.call(() => usePlugin((client) => client.call('pane.report_metadata', { pane_id: pane, source: PLUGIN_ID, tokens: record, ttl_ms: Number(ttlMs) })));
     }
 
-    async read(pane: PaneId): Promise<PaneTokensResult> {
+    async read(pane: SessionKey): Promise<PaneTokensResult> {
         return readPaneTokens(pane);
     }
 
@@ -217,11 +217,11 @@ export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, Harne
         return done.kind === 'done' ? { kind: 'shown' } : done;
     }
 
-    async resize(pane: PaneId, direction: ResizeDirection, amount: Probability): Promise<Done> {
+    async resize(pane: SessionKey, direction: ResizeDirection, amount: Probability): Promise<Done> {
         return this.guarded(RESIZE, pane, () => usePlugin((client) => client.call('pane.resize', { pane_id: String(pane), direction, amount })));
     }
 
-    async close(pane: PaneId): Promise<Done> {
+    async close(pane: SessionKey): Promise<Done> {
         return this.guarded(CLOSE, pane, () => useAdmin((client) => client.call('pane.close', { pane_id: String(pane) })));
     }
 
@@ -252,7 +252,7 @@ export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, Harne
         }
     }
 
-    private async refuseAgent(verb: Text, pane: PaneId): Promise<Refusal> {
+    private async refuseAgent(verb: Text, pane: SessionKey): Promise<Refusal> {
         try {
             const snapshot = await this.rawSnapshot();
             if (!agentPanesIn(parseJsonList(snapshot['panes']), parseJsonList(snapshot['agents'])).has(pane)) {
@@ -266,7 +266,7 @@ export class HerdrFleetPorts implements FleetFeed, ColumnPanes, ModalHost, Harne
         }
     }
 
-    private async guarded<T>(verb: Text, pane: PaneId, run: () => Promise<T>): Promise<Done> {
+    private async guarded<T>(verb: Text, pane: SessionKey, run: () => Promise<T>): Promise<Done> {
         return (await this.refuseAgent(verb, pane)) ?? this.call(run);
     }
 }

@@ -1,11 +1,11 @@
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 
 export interface PrintAsk {
-    readonly from: PaneId;
-    readonly to: PaneId | null;
+    readonly from: SessionKey;
+    readonly to: SessionKey | null;
     readonly note: Text | null;
     readonly closed: ClosedLaneIdentity | null;
 }

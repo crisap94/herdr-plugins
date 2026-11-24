@@ -1,6 +1,6 @@
 import { blob, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { compositeKey } from './columns.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { BLOB_MODE } from './constants.ts';
 
 export const run = sqliteTable('run', {
@@ -45,7 +45,7 @@ export const runInput = sqliteTable('run_input', {
 
 export const task = sqliteTable('task', {
     id: blob('id', { mode: BLOB_MODE }).$type<Uint8Array>().primaryKey().notNull(),
-    tabId: text('tab_id').$type<TabId>().notNull(),
+    tabId: text('tab_id').$type<ScopeId>().notNull(),
     key: text('key').notNull(),
     storyText: text('story_text'),
     storyAt: integer('story_at'),

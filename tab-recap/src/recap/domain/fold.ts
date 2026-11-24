@@ -6,7 +6,7 @@ import type { Board, HiddenState, Placement, Visibility, VisibilityTarget } from
 import { closureOf, closuresBetween, incarnating } from './closures.ts';
 import type { ClosedLane, RestoredLane } from './closures.ts';
 import { deadColumnsAfter } from './dead-columns.ts';
-import type { PaneId, TabId } from './ids.ts';
+import type { SessionKey, ScopeId } from './ids.ts';
 import type { Intent, RecapCause } from './intent.ts';
 import { parsePaneId, parseTabId, parseSessionId } from './ids.ts';
 import type { ColumnOpenedObservation, Reconciliation, SessionObservation, StatusObservation, SwitchedObservation } from './seen.ts';
@@ -24,11 +24,11 @@ export interface RestoredObservation {
 }
 
 export interface DetectedObservation { readonly kind: 'detected'; readonly lane: SeenLane }
-export interface ClosedObservation { readonly kind: 'closed'; readonly pane: PaneId }
+export interface ClosedObservation { readonly kind: 'closed'; readonly pane: SessionKey }
 export interface ReconciledObservation { readonly kind: 'reconciled'; readonly seen: Reconciliation }
-export interface ColumnFailedObservation { readonly kind: 'column-failed'; readonly tab: TabId }
-export interface FocusedObservation { readonly kind: 'focused'; readonly tab: TabId }
-export interface RequestedObservation { readonly kind: 'requested'; readonly tab: TabId }
+export interface ColumnFailedObservation { readonly kind: 'column-failed'; readonly tab: ScopeId }
+export interface FocusedObservation { readonly kind: 'focused'; readonly tab: ScopeId }
+export interface RequestedObservation { readonly kind: 'requested'; readonly tab: ScopeId }
 export interface VisibilityObservation { readonly kind: 'visibility'; readonly target: VisibilityTarget; readonly hidden: Visibility }
 export interface HiddenRestoredObservation { readonly kind: 'hidden-restored'; readonly state: HiddenState }
 
@@ -51,7 +51,7 @@ interface Step {
 
 const step = (board: Board, intents: readonly Intent[] = [], watchSet: WatchSet = 'unchanged'): Step => ({ board, intents, watchSet });
 
-function recapsOf(board: Board, tabs: readonly TabId[], cause: RecapCause): readonly Intent[] {
+function recapsOf(board: Board, tabs: readonly ScopeId[], cause: RecapCause): readonly Intent[] {
     return [...new Set(tabs)]
         .map((tab) => ({ tab, lanes: lanesOf(board, tab) }))
         .filter(({ lanes }) => lanes.length > 0)
@@ -81,7 +81,7 @@ function closedIntents(closures: readonly ClosedLane[]): readonly Intent[] {
     return closures.map((closed) => ({ kind: 'lane-closed', closed }));
 }
 
-function onClosed(board: Board, pane: PaneId, now: Instant, policy: Policy): Step {
+function onClosed(board: Board, pane: SessionKey, now: Instant, policy: Policy): Step {
     const lane = board.lanes.get(pane);
     if (lane !== undefined) {
         return step({ ...board, lanes: without(board.lanes, pane) }, [...closedIntents([closureOf(lane, now)]), { kind: 'publish', tab: lane.tab }], 'changed');
@@ -122,7 +122,7 @@ function onStatus(board: Board, seen: StatusObservation): Step {
 }
 
 function turnsEndedBetween(before: Board, after: Board): readonly Intent[] {
-    const tabs: TabId[] = [];
+    const tabs: ScopeId[] = [];
     for (const [pane, lane] of after.lanes) {
         const prior = before.lanes.get(pane);
         if (prior !== undefined && endsTurn(prior.status, lane.status) === 'present') {
@@ -132,9 +132,9 @@ function turnsEndedBetween(before: Board, after: Board): readonly Intent[] {
     return recapsOf(after, tabs, 'turn-ended');
 }
 
-interface Extra { readonly tab: TabId; readonly pane: PaneId }
+interface Extra { readonly tab: ScopeId; readonly pane: SessionKey }
 
-interface ColumnsAfter { readonly columns: ReadonlyMap<TabId, Placement>; readonly extras: readonly Extra[] }
+interface ColumnsAfter { readonly columns: ReadonlyMap<ScopeId, Placement>; readonly extras: readonly Extra[] }
 
 function columnsAfter(board: Board, seen: Reconciliation): ColumnsAfter {
     const alive = new Set(seen.panes);
@@ -161,12 +161,12 @@ function goneTabs(board: Board, seen: Reconciliation, now: Instant): readonly In
         return [];
     }
     const live = new Set<string>([...seen.tabs, ...seen.lanes.map((lane) => lane.tabId), ...seen.columns.map((column) => column.tabId)]);
-    const known = new Set<TabId>([...board.widths.keys(), ...board.columns.keys(), ...[...board.lanes.values()].map((lane) => lane.tab), ...(board.persisted ?? []).map((lane) => lane.tab)]);
+    const known = new Set<ScopeId>([...board.widths.keys(), ...board.columns.keys(), ...[...board.lanes.values()].map((lane) => lane.tab), ...(board.persisted ?? []).map((lane) => lane.tab)]);
     return [...known].filter((tab) => !live.has(tab)).map((tab) => ({ kind: 'tab-gone', tab, at: now }));
 }
 
 function seenTabs(board: Board, seen: Reconciliation): Pick<Board, 'widths' | 'focused'> {
-    const widths = new Map<TabId, Count>();
+    const widths = new Map<ScopeId, Count>();
     for (const [tab, width] of seen.widths) {
         const id = parseTabId(tab);
         if (id.kind === 'ok') {
@@ -178,7 +178,7 @@ function seenTabs(board: Board, seen: Reconciliation): Pick<Board, 'widths' | 'f
 }
 
 function onReconciled(board: Board, seen: Reconciliation, now: Instant, policy: Policy): Step {
-    const lanes = new Map<PaneId, Lane>();
+    const lanes = new Map<SessionKey, Lane>();
     for (const raw of seen.lanes.filter((lane) => wantsKind(policy, lane.agent) === 'present')) {
         const fresh = laneFrom(raw);
         const prior = board.lanes.get(fresh.pane) ?? board.persisted?.find((lane) => lane.pane === fresh.pane);
@@ -212,7 +212,7 @@ function onRestored(board: Board, lanes: readonly RestoredLane[]): Step {
     return step({ ...board, persisted: lanes });
 }
 
-function onColumnOpened(board: Board, tab: TabId, placed: Placement): Step {
+function onColumnOpened(board: Board, tab: ScopeId, placed: Placement): Step {
     const next: Board = { ...board, columns: put(board.columns, tab, placed), opening: removed(board.opening, tab) };
     return step(next, [{ kind: 'publish', tab }]);
 }

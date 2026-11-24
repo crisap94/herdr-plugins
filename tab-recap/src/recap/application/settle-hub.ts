@@ -1,7 +1,7 @@
 import type { AgentPanes } from '#src/ports/agents.ts';
 import type { LaneSettler, Settling } from '#src/ports/lane-settling.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
-import { uncheckedMilliseconds, type PaneId } from '#src/recap/domain/ids.ts';
+import { uncheckedMilliseconds, type SessionKey } from '#src/recap/domain/ids.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { laneStatus, READY, type LaneStatus } from '#src/recap/domain/status.ts';
 import type { Instant, Milliseconds } from '#src/recap/domain/time.ts';
@@ -30,14 +30,14 @@ interface Heard {
 
 export class SettleHub implements LaneSettler {
     private readonly deps: SettleHubDeps;
-    private readonly waiters = new Map<PaneId, Set<Waiter>>();
-    private readonly last = new Map<PaneId, Heard>();
+    private readonly waiters = new Map<SessionKey, Set<Waiter>>();
+    private readonly last = new Map<SessionKey, Heard>();
 
     constructor(deps: SettleHubDeps) {
         this.deps = deps;
     }
 
-    heard(pane: PaneId, status: LaneStatus): void {
+    heard(pane: SessionKey, status: LaneStatus): void {
         const at = this.deps.now();
         this.last.set(pane, { status: laneStatus(status), at });
         if (!READY.has(status)) {
@@ -50,7 +50,7 @@ export class SettleHub implements LaneSettler {
         }
     }
 
-    async settled(pane: PaneId, since: Instant, timeoutMs: Milliseconds): Promise<Settling> {
+    async settled(pane: SessionKey, since: Instant, timeoutMs: Milliseconds): Promise<Settling> {
         const heard = this.last.get(pane);
         if (heard !== undefined && heard.at >= since && READY.has(heard.status)) {
             return { kind: 'settled', status: heard.status };
@@ -62,7 +62,7 @@ export class SettleHub implements LaneSettler {
         return pushed.kind === 'settled' ? pushed : this.once(pane);
     }
 
-    private pushed(pane: PaneId, since: Instant, timeoutMs: Milliseconds): Promise<Settling> {
+    private pushed(pane: SessionKey, since: Instant, timeoutMs: Milliseconds): Promise<Settling> {
         return new Promise((resolve) => {
             const waiters = this.waiters.get(pane) ?? new Set<Waiter>();
             this.waiters.set(pane, waiters);
@@ -78,12 +78,12 @@ export class SettleHub implements LaneSettler {
         });
     }
 
-    private async once(pane: PaneId): Promise<Settling> {
+    private async once(pane: SessionKey): Promise<Settling> {
         const state = await this.deps.agents.status(pane);
         return !isUnknown(state) && READY.has(state.status) ? { kind: 'settled', status: state.status } : { kind: 'timeout' };
     }
 
-    private async polled(pane: PaneId, timeoutMs: Milliseconds): Promise<Settling> {
+    private async polled(pane: SessionKey, timeoutMs: Milliseconds): Promise<Settling> {
         await this.deps.pause(SETTLE);
         for (let waited: number = SETTLE_MS; waited < timeoutMs; waited += POLL_MS) {
             const state = await this.deps.agents.status(pane);

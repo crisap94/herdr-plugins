@@ -4,7 +4,7 @@ import type { ExtensionPort, PaneNote, PaneNotesResult } from '#src/ports/extens
 import type { TabLaneRecord } from '#src/ports/tab-views.ts';
 import type { PaneAlertReader } from '#src/ports/pane-alerts.ts';
 import type { PaneNoteReader, WorktreeStatusReader } from '#src/ports/worktree-status.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 import { changedOf } from '#src/recap/domain/worktree.ts';
 import type { WorktreeStatus, WorktreeSwitch } from '#src/recap/domain/worktree.ts';
@@ -36,7 +36,7 @@ class StoredNotes implements ExtensionPort {
     }
 
     notes(lanes: readonly TabLaneRecord[] = [], locale: Locale = 'en'): PaneNotesResult {
-        const byPane = new Map<PaneId, readonly PaneNote[]>();
+        const byPane = new Map<SessionKey, readonly PaneNote[]>();
         const showGit = this.deps.gitNote() === 'on';
         for (const lane of lanes) {
             const found = [...this.alertNotes(lane.pane), ...(showGit ? this.gitNotes(lane.pane, locale) : []), ...this.tokenNotes(lane.pane)];
@@ -47,16 +47,16 @@ class StoredNotes implements ExtensionPort {
         return { kind: 'notes', byPane };
     }
 
-    private alertNotes(pane: PaneId): readonly PaneNote[] {
+    private alertNotes(pane: SessionKey): readonly PaneNote[] {
         return this.deps.alerts.alertsOf(pane).map((alert): PaneNote => ({ label: alert.label, at: alert.at, details: alert.details }));
     }
 
-    private gitNotes(pane: PaneId, locale: Locale): readonly PaneNote[] {
+    private gitNotes(pane: SessionKey, locale: Locale): readonly PaneNote[] {
         const status = this.deps.statuses.statusOf(pane);
         return status === null ? [] : [gitNoteOf(status, locale)];
     }
 
-    private tokenNotes(pane: PaneId): readonly PaneNote[] {
+    private tokenNotes(pane: SessionKey): readonly PaneNote[] {
         return this.deps.notes.notesOf(pane).map((note): PaneNote => ({ label: note.label, at: null, details: [note.value] }));
     }
 }

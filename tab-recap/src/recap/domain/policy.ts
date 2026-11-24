@@ -1,6 +1,6 @@
 import { added, lanesOf, put, removed, tabsWithLanes, without } from './board.ts';
 import type { Board, Placement, Shape } from './board.ts';
-import type { PaneId, TabId } from './ids.ts';
+import type { SessionKey, ScopeId } from './ids.ts';
 import type { Intent } from './intent.ts';
 import { isHidden } from './visibility.ts';
 import { parseCount } from './count.ts';
@@ -52,22 +52,22 @@ export function screenSetting(setting: Text | undefined): Text {
     return kinds.includes(ANY_KIND) ? textOf('all') : textOf(kinds.join(','));
 }
 
-export function lingering(board: Board, pane: PaneId, now: Instant, policy: Policy): Presence {
+export function lingering(board: Board, pane: SessionKey, now: Instant, policy: Policy): Presence {
     const since = board.closing.get(pane);
     return since !== undefined && elapsed(since, now) < policy.closeGrace ? 'present' : 'absent';
 }
 
-export function shapeFor(board: Board, tab: TabId, policy: Policy): Shape {
+export function shapeFor(board: Board, tab: ScopeId, policy: Policy): Shape {
     const width = board.widths.get(tab);
     return width === undefined || width >= policy.minTabCols ? 'side' : 'bar';
 }
 
-function isGivenUp(board: Board, tab: TabId, now: Instant): Presence {
+function isGivenUp(board: Board, tab: ScopeId, now: Instant): Presence {
     const until = board.givenUp.get(tab);
     return until !== undefined && now < until ? 'present' : 'absent';
 }
 
-export function deserves(board: Board, tab: TabId, now: Instant, policy: Policy): Presence {
+export function deserves(board: Board, tab: ScopeId, now: Instant, policy: Policy): Presence {
     return (board.enabled
         && isHidden(board, tab) === 'absent'
         && (policy.onlyTabs.length === 0 || policy.onlyTabs.includes(textOf(tab)))
@@ -90,7 +90,7 @@ interface RetryStep {
     readonly intents: readonly Intent[];
 }
 
-function retried(board: Board, tab: TabId, now: Instant, policy: Policy): RetryStep {
+function retried(board: Board, tab: ScopeId, now: Instant, policy: Policy): RetryStep {
     if (isGivenUp(board, tab, now) === 'present') {
         return { board, again: 'absent', intents: [] };
     }
@@ -99,9 +99,9 @@ function retried(board: Board, tab: TabId, now: Instant, policy: Policy): RetryS
 }
 
 function closed(board: Board, now: Instant, policy: Policy): [Board, Intent[]] {
-    const flips = (tab: TabId, placed: Placement): Presence =>
+    const flips = (tab: ScopeId, placed: Placement): Presence =>
         placed.shape !== shapeFor(board, tab, policy) && isGivenUp(board, tab, now) === 'absent' ? 'present' : 'absent';
-    const unwanted = (tab: TabId): Presence =>
+    const unwanted = (tab: ScopeId): Presence =>
         !board.enabled || isHidden(board, tab) === 'present' || lanesOf(board, tab).length === 0 ? 'present' : 'absent';
     const closing = new Map(board.closing);
     const intents: Intent[] = [];
@@ -135,7 +135,7 @@ export function settle(board: Board, now: Instant, policy: Policy): [Board, read
     return [afterOpen, [...closing, ...opening]];
 }
 
-export function spend(board: Board, tab: TabId, now: Instant, policy: Policy): [Board, readonly Intent[]] {
+export function spend(board: Board, tab: ScopeId, now: Instant, policy: Policy): [Board, readonly Intent[]] {
     const recent = (board.reopens.get(tab) ?? []).filter((at) => elapsed(at, now) < policy.reopenWindow);
     const history = [...recent, now];
     const next: Board = { ...board, reopens: put(board.reopens, tab, history), opening: removed(board.opening, tab) };

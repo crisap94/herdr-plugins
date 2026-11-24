@@ -1,4 +1,5 @@
-import type { Brand, Instant, TabId, Text } from './kernel.ts';
+import type { Brand, Instant, Text } from './kernel.ts';
+import type { ScopeId } from './ids.ts';
 
 export interface HistoryFact {
     readonly section: Section;
@@ -15,7 +16,7 @@ export type FactId = Brand<string, 'FactId'>;
 export type RunId = Brand<string, 'RunId'>;
 
 export interface TaskId {
-    readonly tab: TabId;
+    readonly tab: ScopeId;
     readonly key: Text;
 }
 

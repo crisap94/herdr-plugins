@@ -1,4 +1,4 @@
-import type { AgentKind } from '#src/recap/domain/ids.ts';
+import type { HarnessKind } from '#src/recap/domain/ids.ts';
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
 import { RUBRIC_TEXT } from '#src/adapters/job/prompts/rubric.ts';
@@ -67,7 +67,7 @@ function printMechanical(done: Replayed, file: string, beside: string | null, ra
     }
 }
 
-function counted(config: Settings, available: readonly AgentKind[], dir: string, runtime: HarnessRuntime): { readonly writer: Writer; readonly enumerator: Enumerator | null; readonly calls: { writer: number; enumeration: number } } {
+function counted(config: Settings, available: readonly HarnessKind[], dir: string, runtime: HarnessRuntime): { readonly writer: Writer; readonly enumerator: Enumerator | null; readonly calls: { writer: number; enumeration: number } } {
     const calls = { writer: 0, enumeration: 0 };
     const made = summarizerFor(config, availableIn(available), must(parseDirectory(join(dir, 'summarizer'))), runtime);
     const writer = countedWriter(made, () => { calls.writer += 1; });
@@ -76,7 +76,7 @@ function counted(config: Settings, available: readonly AgentKind[], dir: string,
     return { writer, enumerator, calls };
 }
 
-async function replayed(input: { readonly file: string; readonly reader: SessionReader; readonly options: EvalRequest; readonly size: number; readonly judge: string }, scratch: Scratch, parts: { readonly config: Settings; readonly available: readonly AgentKind[]; readonly runtime: HarnessRuntime }): Promise<void> {
+async function replayed(input: { readonly file: string; readonly reader: SessionReader; readonly options: EvalRequest; readonly size: number; readonly judge: string }, scratch: Scratch, parts: { readonly config: Settings; readonly available: readonly HarnessKind[]; readonly runtime: HarnessRuntime }): Promise<void> {
     const { config, available, runtime } = parts;
     const { writer, enumerator, calls } = counted(config, available, scratch.dir, runtime);
     const pipeline = input.options.pipeline ?? config.pipeline;

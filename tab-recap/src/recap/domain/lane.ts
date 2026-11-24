@@ -1,6 +1,6 @@
 import { must } from '#src/protocol/result.ts';
 import { parseAgentKind, parsePaneId, parseSessionId, parseTabId, parseWorkspaceId } from './ids.ts';
-import type { AgentKind, PaneId, SessionId, TabId, WorkspaceId } from './ids.ts';
+import type { HarnessKind, SessionKey, SessionId, ScopeId, WorkspaceId } from './ids.ts';
 import { laneStatus } from './status.ts';
 import type { LaneStatus } from './status.ts';
 import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
@@ -20,10 +20,10 @@ export interface SeenLane {
 }
 
 export interface Lane {
-    readonly pane: PaneId;
-    readonly tab: TabId;
+    readonly pane: SessionKey;
+    readonly tab: ScopeId;
     readonly workspace: WorkspaceId;
-    readonly agent: AgentKind;
+    readonly agent: HarnessKind;
     readonly status: LaneStatus;
     readonly session: SessionId | null;
     readonly cwd: Directory | null;

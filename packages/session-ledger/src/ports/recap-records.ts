@@ -3,7 +3,7 @@ import type { SessionMark } from '#src/recap/domain/boundary.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
-import type { AgentKind, PaneId, TabId } from '#src/recap/domain/lane-shape.ts';
+import type { HarnessKind, SessionKey, ScopeId } from '#src/recap/domain/lane-shape.ts';
 import type { Refusal } from '#src/recap/domain/ops.ts';
 import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
@@ -22,8 +22,8 @@ export type Recapped = Brand<boolean, 'Recapped'>;
 export const recappedOf = brand<boolean, 'Recapped'>;
 
 export interface SessionCursor {
-    readonly pane: PaneId;
-    readonly agent: AgentKind;
+    readonly pane: SessionKey;
+    readonly agent: HarnessKind;
     readonly transcript: SourcePath;
     readonly cursor: Cursor;
     readonly tail: Text | null;
@@ -33,7 +33,7 @@ export interface SessionCursor {
 }
 
 export interface Recap {
-    readonly tab: TabId;
+    readonly tab: ScopeId;
     readonly lanes: readonly SessionCursor[];
     readonly tasks: readonly RecapTask[];
     readonly at: Instant | null;
@@ -44,14 +44,14 @@ export interface Recap {
     readonly language: Text;
 }
 
-export function blankRecap(tab: TabId): Recap {
+export function blankRecap(tab: ScopeId): Recap {
     return { tab, lanes: [], tasks: [], at: null, running: recapRunningOf(false), backend: null, error: null, costUsd: brand<number, 'Usd'>(0), language: brand<string, 'Text'>('en') };
 }
 
 export const hasRecap = (recap: Recap): Recapped => recappedOf(recap.tasks.some((task) => task.markdown !== ''));
 
 export interface RunFacts {
-    readonly tab: TabId;
+    readonly tab: ScopeId;
     readonly at: Instant;
     readonly cause: RecapCause | 'imported';
     readonly backend: Text | null;
@@ -78,7 +78,7 @@ export interface FailedRun extends RunFacts {
 
 export interface Advance {
     readonly marks?: readonly SessionMark[];
-    readonly tab: TabId;
+    readonly tab: ScopeId;
     readonly at: Instant;
     readonly error: Text | null;
     readonly lanes: readonly SessionCursor[];
@@ -90,9 +90,9 @@ export interface LastRun {
 }
 
 export interface Records {
-    readRecap(tab: TabId): Recap | null;
-    lastRunOf(tab: TabId): LastRun | null;
-    beginRun(tab: TabId, backend: Text | null, at: Instant): void;
+    readRecap(tab: ScopeId): Recap | null;
+    lastRunOf(tab: ScopeId): LastRun | null;
+    beginRun(tab: ScopeId, backend: Text | null, at: Instant): void;
     recordRun(run: RecordedRun): void;
     failRun(run: FailedRun): void;
     advance(move: Advance): void;

@@ -5,7 +5,7 @@ import { ScreenTranscripts } from './screen.ts';
 import type { ScreenWants } from './screen.ts';
 import type { ScreenReader } from '#src/ports/screens.ts';
 import { TranscriptRegistry, type TranscriptReaders } from '#src/ports/transcript-registry.ts';
-import { type AgentKind, parseAgentKind } from '#src/recap/domain/ids.ts';
+import { type HarnessKind, parseAgentKind } from '#src/recap/domain/ids.ts';
 import type { SessionReader } from '#src/ports/transcripts.ts';
 import { supported } from '#src/ports/capability.ts';
 import type { Support } from '#src/ports/capability.ts';
@@ -42,10 +42,10 @@ export const IN_FLIGHT_CAPABILITIES = {
 } satisfies Readonly<Record<RegisteredKind, Support<'reader', InFlightWhy>>>;
 
 function readersOf(readers: ReaderSet): TranscriptReaders {
-    return new Map(Object.entries(readers).flatMap(([kind, capability]): [AgentKind, SessionReader][] => capability.kind === 'supported' ? [[must(parseAgentKind(kind)), capability.value()]] : []));
+    return new Map(Object.entries(readers).flatMap(([kind, capability]): [HarnessKind, SessionReader][] => capability.kind === 'supported' ? [[must(parseAgentKind(kind)), capability.value()]] : []));
 }
 
-function unavailableReason(kind: AgentKind): Text {
+function unavailableReason(kind: HarnessKind): Text {
     const subject = must(parseText(kind));
     const registered = registeredKindOf(textOf(kind));
     if (registered === null) return capabilityWording('history-unavailable', subject);
@@ -65,5 +65,5 @@ export function replayTranscriptRegistry(): TranscriptRegistry {
     const claude = READERS.claude;
     const codex = READERS.codex;
     if (claude.kind !== 'supported' || codex.kind !== 'supported') throw new Error('Replay readers are unavailable');
-    return new TranscriptRegistry(new Map<AgentKind, SessionReader>([[must(parseAgentKind('claude')), claude.value()], [must(parseAgentKind('codex')), codex.value()]]), null, unavailableReason);
+    return new TranscriptRegistry(new Map<HarnessKind, SessionReader>([[must(parseAgentKind('claude')), claude.value()], [must(parseAgentKind('codex')), codex.value()]]), null, unavailableReason);
 }

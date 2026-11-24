@@ -1,7 +1,7 @@
 import type { EnginePlugs, Stories } from '#src/contract/engine.ts';
 import type { Fact, TaskId } from '#src/contract/facts.ts';
 import type { ScopeId } from '#src/contract/ids.ts';
-import type { Count, Instant, TabId, Text } from '#src/contract/kernel.ts';
+import type { Count, Instant, Text } from '#src/contract/kernel.ts';
 import type { Curator } from '#src/contract/models.ts';
 import type { RecapTask } from '#src/contract/records.ts';
 import type { Curators } from '#src/ports/curators.ts';
@@ -19,8 +19,8 @@ const TAIL_BYTES = 256 * 1024;
 const note = brand<string, 'Text'>;
 
 const count = brand<number, 'Count'>;
-const tabOf = brand<string, 'TabId'>;
-const paneOf = brand<string, 'PaneId'>;
+const tabOf = brand<string, 'ScopeId'>;
+const paneOf = brand<string, 'SessionKey'>;
 
 export interface CurateBridge {
     readonly ledger: CheckedLedger;
@@ -69,7 +69,7 @@ const plainLedger = (ledger: CheckedLedger, log: (line: Text) => void): FactStor
         openOf: (task: TaskId) => { const found = ledger.openOf(task); return 'kind' in found ? [] : found; },
         recentlyClosed: (task: TaskId, sinceMs: Instant) => { const found = ledger.recentlyClosed(task, sinceMs); return 'kind' in found ? [] : found; },
         allOf: (task: TaskId) => skipped(ledger.allOf(task)),
-        keysOf: (tab: TabId): readonly Text[] => { const found = ledger.keysOf(tab); return 'kind' in found ? [] : found.map((key) => note(key)); },
+        keysOf: (tab: ScopeId): readonly Text[] => { const found = ledger.keysOf(tab); return 'kind' in found ? [] : found.map((key) => note(key)); },
     };
 };
 

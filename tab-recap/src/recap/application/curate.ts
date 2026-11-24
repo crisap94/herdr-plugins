@@ -8,7 +8,7 @@ import type { CloseOp } from '#src/recap/domain/ops.ts';
 import { parseText, parseTextOrNull, textOf } from '#src/recap/domain/text.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { parseTabId } from '#src/recap/domain/ids.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
@@ -53,7 +53,7 @@ export class CurateTasks {
         }
     }
 
-    async run(tab: TabId, why: CurateWhy = 'open'): Promise<void> {
+    async run(tab: ScopeId, why: CurateWhy = 'open'): Promise<void> {
         const recap = this.deps.records.readRecap(tab);
         if (isUnknownRead(recap)) {
             return;
@@ -67,7 +67,7 @@ export class CurateTasks {
         }
     }
 
-    private async one(tab: TabId, task: RecapTask, how: CurateScope): Promise<Presence> {
+    private async one(tab: ScopeId, task: RecapTask, how: CurateScope): Promise<Presence> {
         try {
             const reconciled = await this.reconciling.task(tab, { id: must(parseText(task.id)), name: must(parseText(task.name)), lanes: task.lanes.map((member) => member) }, how.lanes, how.why);
             if (how.why === 'open') {
@@ -87,7 +87,7 @@ export class CurateTasks {
         return due ? 'present' : 'absent';
     }
 
-    private async curate(tab: TabId, task: RecapTask): Promise<void> {
+    private async curate(tab: ScopeId, task: RecapTask): Promise<void> {
         const { deps } = this;
         const [key, now] = [must(parseText(`${tab}\u0000${task.id}`)), deps.clock()];
         const facts = deps.ledger.allOf({ tab, key: task.id });

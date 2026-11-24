@@ -3,7 +3,7 @@ import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import { isSection, type FactId, type RunId, type Section } from '#src/recap/domain/fact.ts';
 import { gateName } from '#src/recap/domain/gates/gatekeeper.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
-import { parseTabId, type TabId } from '#src/recap/domain/ids.ts';
+import { parseTabId, type ScopeId } from '#src/recap/domain/ids.ts';
 import { parsePresence, type Presence } from '#src/recap/domain/presence.ts';
 import { parseFactId, parseRunId } from '#src/recap/domain/run-ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
@@ -19,7 +19,7 @@ export type InputFilter = 'any' | 'with-input';
 
 export interface RunRecord {
     readonly id: RunId;
-    readonly tab: TabId;
+    readonly tab: ScopeId;
     readonly at: Instant;
     readonly language: Text;
     readonly backend: Text | null;
@@ -44,7 +44,7 @@ export interface JudgeEntry {
 }
 
 export interface RunFilter {
-    readonly tab: TabId | null;
+    readonly tab: ScopeId | null;
     readonly since: Instant | null;
     readonly limit: Count;
     readonly input: InputFilter;

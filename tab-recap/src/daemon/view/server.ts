@@ -8,7 +8,7 @@ import type { FrameSource, Screen } from '#src/daemon/view/frames.ts';
 import type { Connection, IntentSink } from '#src/daemon/view/intents.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { parseTabId, type TabId } from '#src/recap/domain/ids.ts';
+import { parseTabId, type ScopeId } from '#src/recap/domain/ids.ts';
 import type { Shown } from '#src/recap/domain/pacing.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import { coloured, plain, type Style } from '#src/recap/render/wrap.ts';
@@ -35,7 +35,7 @@ export interface ViewServerOptions {
 
 export interface ViewServer {
     readonly connections: () => Count;
-    readonly watching: (tab: TabId) => Shown;
+    readonly watching: (tab: ScopeId) => Shown;
     readonly refresh: () => void;
     readonly stop: (why: 'shutdown') => Promise<void>;
 }
@@ -267,7 +267,7 @@ export async function startViewServer(options: ViewServerOptions): Promise<ViewS
     const bound = await stat(options.socketPath);
     return {
         connections: () => must(parseCount(hub.sessions.size)),
-        watching: (tab: TabId): Shown => ([...hub.sessions.values()].some((session) => session.tab === tab) ? 'shown' : 'hidden'),
+        watching: (tab: ScopeId): Shown => ([...hub.sessions.values()].some((session) => session.tab === tab) ? 'shown' : 'hidden'),
         refresh: () => { for (const session of hub.sessions.values()) { paint(hub, session); } },
         stop: (why) => stopAll(hub, server, options.socketPath, bound, why),
     };

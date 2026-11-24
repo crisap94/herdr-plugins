@@ -62,7 +62,7 @@ export async function inputOf(seen: readonly Observed[], world: InputWorld): Pro
     const input: RecapInput = {
         tab: { id: world.tab, now: world.now, zone: textOf(Intl.DateTimeFormat().resolvedOptions().timeZone) },
         agents,
-        tasks: seen.length > 1 ? world.tasks.map(({ id, name, lanes }) => ({ id: textOf(id), name: textOf(name), lanes: lanes.map(brand<string, 'PaneId'>) })) : [],
+        tasks: seen.length > 1 ? world.tasks.map(({ id, name, lanes }) => ({ id: textOf(id), name: textOf(name), lanes: lanes.map(brand<string, 'SessionKey'>) })) : [],
         ledgers: numbering.ledgers,
         notes: seen.flatMap((one, index) => notesOf(one, idOf(count(index)))),
         transcripts: seen.flatMap((one, index) => (one.chunk === null ? [] : [{ agent: idOf(count(index)), entries: one.chunk.entries }])),

@@ -1,5 +1,5 @@
 import { blob, integer, sqliteView, text } from 'drizzle-orm/sqlite-core';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { BLOB_MODE } from './constants.ts';
 
 export const runReadable = sqliteView('run_readable', {
@@ -15,13 +15,13 @@ export const runReadable = sqliteView('run_readable', {
 
 export const taskReadable = sqliteView('task_readable', {
     id: text('id'),
-    tabId: text('tab_id').$type<TabId>(),
+    tabId: text('tab_id').$type<ScopeId>(),
     key: text('key'),
 }).existing();
 
 export const factReadable = sqliteView('fact_readable', {
     id: text('id'),
-    tabId: text('tab_id').$type<TabId>(),
+    tabId: text('tab_id').$type<ScopeId>(),
     taskId: text('task_id'),
     section: text('section'),
     text: text('text'),
@@ -38,7 +38,7 @@ export const factReadable = sqliteView('fact_readable', {
 
 export const openFacts = sqliteView('open_facts', {
     id: blob('id', { mode: BLOB_MODE }).$type<Uint8Array>(),
-    tabId: text('tab_id').$type<TabId>(),
+    tabId: text('tab_id').$type<ScopeId>(),
     taskId: blob('task_id', { mode: BLOB_MODE }).$type<Uint8Array>(),
     section: text('section'),
     text: text('text'),
@@ -64,7 +64,7 @@ export const handoffAnswerReadable = sqliteView('handoff_answer_readable', {
 }).existing();
 
 export const lastGoodRun = sqliteView('last_good_run', {
-    tabId: text('tab_id').$type<TabId>(),
+    tabId: text('tab_id').$type<ScopeId>(),
     runId: blob('run_id', { mode: BLOB_MODE }).$type<Uint8Array>(),
 }).existing();
 

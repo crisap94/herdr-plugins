@@ -4,7 +4,7 @@ import type { Directory } from '#src/recap/domain/directory.ts';
 import { must } from '#src/protocol/result.ts';
 import { guiFileName } from '#src/recap/domain/gui-tab.ts';
 import { NO } from '#src/recap/domain/gui-tab-parts.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { parseText, type NonEmptyText, type Text } from '#src/recap/domain/text.ts';
 import { API_FILE, API_NO_INDEX, API_VERSION, INDEX_FILE } from '../constants.ts';
 import type { ApiContext, ApiCall, Handler } from './call.ts';
@@ -26,7 +26,7 @@ function fileText(dir: Directory, name: NonEmptyText): Text | null {
     }
 }
 
-function tabFile(tab: TabId | null): NonEmptyText | null {
+function tabFile(tab: ScopeId | null): NonEmptyText | null {
     const name = tab === null ? null : guiFileName(tab);
     return name === null || name === INDEX_FILE || name === API_FILE ? null : name;
 }

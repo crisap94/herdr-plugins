@@ -1,6 +1,6 @@
 import type { BoundaryKind, Trigger } from '#src/recap/domain/boundary.ts';
 import type { Count } from '#src/recap/domain/count.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { Duration, Instant } from '#src/recap/domain/time.ts';
 
 export interface BoundaryBreak {
@@ -13,7 +13,7 @@ export interface BoundaryBreak {
 }
 
 export interface BoundaryLog {
-    breaksOf(tab: TabId): readonly BoundaryBreak[];
-    chapterCount(tab: TabId): Count;
-    lastBreakAt(tab: TabId, pane: PaneId): Instant | null;
+    breaksOf(tab: ScopeId): readonly BoundaryBreak[];
+    chapterCount(tab: ScopeId): Count;
+    lastBreakAt(tab: ScopeId, pane: SessionKey): Instant | null;
 }

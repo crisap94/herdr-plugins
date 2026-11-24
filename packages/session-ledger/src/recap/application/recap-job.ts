@@ -1,7 +1,7 @@
 import { brand } from '#src/recap/domain/brand.ts';
 import type { Count } from '#src/contract/kernel.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import type { Lane, TabId } from '#src/recap/domain/lane-shape.ts';
+import type { Lane, ScopeId } from '#src/recap/domain/lane-shape.ts';
 import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { Clock } from '#src/ports/clock.ts';
@@ -49,7 +49,7 @@ export interface RecapJobDeps {
     writerView(): WriterView;
     debounce?(): Debounce;
     pacing?(): Pacing;
-    visible?(tab: TabId): Shown;
+    visible?(tab: ScopeId): Shown;
     enumerator?(): Enumerator | null;
     ran?(event: RecapWritten): void;
     mint(): FactId;
@@ -70,7 +70,7 @@ export class RecapJob {
 
     constructor(deps: RecapJobDeps) { this.deps = deps; }
 
-    request(tab: TabId, lanes: readonly Lane[], cause: RecapCause): void {
+    request(tab: ScopeId, lanes: readonly Lane[], cause: RecapCause): void {
         const key = String(tab);
         const slot: Slot = this.slots.get(key) ?? { tab, timer: null, flight: 'idle', pending: null, lastStart: null, lastLanes: new Set(), waiting: [], deferred: 'none' };
         this.slots.set(key, slot);
@@ -81,7 +81,7 @@ export class RecapJob {
         this.arm(slot, tab);
     }
 
-    private paced(slot: Slot, scope: TabId, lanes: Pending['lanes'], cause: RecapCause, pacing: SmartPacing): void {
+    private paced(slot: Slot, scope: ScopeId, lanes: Pending['lanes'], cause: RecapCause, pacing: SmartPacing): void {
         const shown = this.deps.visible?.(scope) ?? 'shown';
         slot.pending = pacedOf(slot, lanes, cause, { pacing, shown, now: this.deps.clock.now() });
         if (shown !== 'hidden' || slot.deferred === 'deferred' || slot.pending.urge !== 'paced' || slot.pending.start.kind !== 'at' || lanes.some((seat) => seat.status === 'blocked')) return;
@@ -89,7 +89,7 @@ export class RecapJob {
         this.deps.log(`recap ${String(scope)}: deferred (not visible)`);
     }
 
-    flush(scope: TabId, why: FlushWhy = 'requested'): Promise<void> {
+    flush(scope: ScopeId, why: FlushWhy = 'requested'): Promise<void> {
         const slot = this.slots.get(String(scope));
         if (slot !== undefined) this.release(slot, why);
         return this.idle(scope);
@@ -108,7 +108,7 @@ export class RecapJob {
         this.arm(slot, slot.tab);
     }
 
-    private arm(slot: Slot, tab: TabId): void {
+    private arm(slot: Slot, tab: ScopeId): void {
         if (slot.flight === 'flying') return;
         if (slot.timer !== null) clearTimeout(slot.timer);
         const pending = slot.pending;
@@ -119,7 +119,7 @@ export class RecapJob {
         }, pending.start.kind === 'after' ? pending.start.delay : Math.max(0, pending.start.deadline - Number(this.deps.clock.now())));
     }
 
-    private async fly(slot: Slot, tab: TabId, pending: Pending): Promise<void> {
+    private async fly(slot: Slot, tab: ScopeId, pending: Pending): Promise<void> {
         slot.timer = null;
         slot.flight = 'flying';
         slot.deferred = 'none';
@@ -141,9 +141,9 @@ export class RecapJob {
         if (slot.pending !== null && slot.pending.burst !== null && slot.waiting.length > 0) slot.pending = { ...slot.pending, start: AT_ONCE };
     }
 
-    refreshNow(tab: TabId, lanes: readonly Lane[]): Promise<void> { this.request(tab, lanes, 'requested'); return this.idle(tab); }
+    refreshNow(tab: ScopeId, lanes: readonly Lane[]): Promise<void> { this.request(tab, lanes, 'requested'); return this.idle(tab); }
 
-    idle(scope: TabId): Promise<void> {
+    idle(scope: ScopeId): Promise<void> {
         const slot = this.slots.get(String(scope));
         return slot === undefined || (slot.flight === 'idle' && slot.timer === null) ? Promise.resolve() : new Promise((resolve) => { slot.waiting.push(resolve); });
     }
@@ -179,7 +179,7 @@ export class RecapJob {
         }
     }
 
-    private async recap(tab: TabId, lanes: readonly Lane[], cause: RecapCause, run: Run): Promise<void> {
+    private async recap(tab: ScopeId, lanes: readonly Lane[], cause: RecapCause, run: Run): Promise<void> {
         const prior = this.deps.records.readRecap(tab) ?? blankRecap(tab);
         if ('kind' in prior) return this.skipped(tab, prior);
         const found = this.deps.ledger.keysOf(tab);
@@ -193,7 +193,7 @@ export class RecapJob {
         await this.summarize(prior, readings, { want, was: hasRecap(prior) ? textOf(prior.language) : want, switched: switched(moved), cause, keys }, run);
     }
 
-    private skipped(tab: TabId, failure: Unknown): void { this.deps.log(`recap ${String(tab)}: skipped, ${saying(failure.why)}`); }
+    private skipped(tab: ScopeId, failure: Unknown): void { this.deps.log(`recap ${String(tab)}: skipped, ${saying(failure.why)}`); }
 
     private switchedOf(prior: Recap, keys: readonly Text[], want: Text, cause: RecapCause): boolean | Unknown {
         if (!hasRecap(prior)) return false;
@@ -271,6 +271,6 @@ export class RecapJob {
     private written(base: Omit<RecordedRun, 'tasks' | 'changed' | 'refused' | 'marks' | 'input' | 'gateStats'>, run: WrittenRun): void {
         const owner = { tab: base.tab }, marks = marksOf(run.readings, base.at, ADVANCED), before = run.tasks.map((task) => ({ task, facts: this.deps.ledger.allOf({ ...owner, key: task.id }) })), entries = run.parts.flatMap((r) => (r.chunk?.entries ?? []).filter((entry) => entry.role === 'user' && entry.queued !== true).map((entry) => ({ key: r.lane.pane, at: entry.at ?? base.at })));
         this.deps.records.recordRun({ ...base, tasks: run.tasks, ...foldedRun(throwingLedger(this.deps.ledger), run.asked.tasks, { owner, at: base.at, language: base.language, mint: () => this.deps.mint() }), gateStats: run.asked.stats, marks, ...(this.deps.keepInput?.() ?? true ? { input: writerContext(run.request) } : {}) });
-        this.deps.ran?.({ tab: brand<string, 'TabId'>(base.tab), turns: count(entries.length), boundary: brand<boolean, 'Boundary'>(marks.length > 0), cause: textOf(base.cause), entries, established: accomplishedOf(before, run.tasks.map((task) => ({ task, facts: this.deps.ledger.allOf({ ...owner, key: task.id }) })), base.at, (failure) => this.deps.log(`recap ${base.cause}: accomplishments not reported, ${saying(failure.why)}`)) });
+        this.deps.ran?.({ tab: brand<string, 'ScopeId'>(base.tab), turns: count(entries.length), boundary: brand<boolean, 'Boundary'>(marks.length > 0), cause: textOf(base.cause), entries, established: accomplishedOf(before, run.tasks.map((task) => ({ task, facts: this.deps.ledger.allOf({ ...owner, key: task.id }) })), base.at, (failure) => this.deps.log(`recap ${base.cause}: accomplishments not reported, ${saying(failure.why)}`)) });
     }
 }

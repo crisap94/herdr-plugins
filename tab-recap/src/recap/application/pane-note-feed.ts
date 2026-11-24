@@ -1,19 +1,19 @@
 import type { PaneNoteWriter } from '#src/ports/worktree-status.ts';
 import type { NoteToken } from '#src/recap/domain/coordination.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import { notesKey } from '#src/recap/domain/pane-notes.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 
 export class PaneNoteFeed {
     private readonly store: PaneNoteWriter;
-    private readonly written = new Map<PaneId, Text>();
+    private readonly written = new Map<SessionKey, Text>();
 
     constructor(store: PaneNoteWriter) {
         this.store = store;
         store.reset();
     }
 
-    update(pane: PaneId, notes: readonly NoteToken[]): void {
+    update(pane: SessionKey, notes: readonly NoteToken[]): void {
         const key = notesKey(notes);
         if (this.written.get(pane) === key) {
             return;
@@ -26,7 +26,7 @@ export class PaneNoteFeed {
         }
     }
 
-    forget(pane: PaneId): void {
+    forget(pane: SessionKey): void {
         if (this.written.delete(pane)) {
             this.store.forget(pane);
         }

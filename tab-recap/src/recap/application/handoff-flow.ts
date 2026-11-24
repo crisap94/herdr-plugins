@@ -4,7 +4,7 @@ import { knownOr } from '#src/ports/guarded-reads.ts';
 import type { HandoffAskRecord } from '#src/ports/requests.ts';
 import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
-import { type PaneId, type TabId, parseTabId } from '#src/recap/domain/ids.ts';
+import { type SessionKey, type ScopeId, parseTabId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { instant, type Duration, type Instant } from '#src/recap/domain/time.ts';
@@ -36,7 +36,7 @@ export interface HandoffFlowDeps {
     readonly target: Omit<TargetDeps, 'lanes'>;
     readonly claims: Pick<LaneClaims, 'has' | 'claimAll' | 'release'>;
     readonly refresh: RecapRefresh;
-    readonly flush: (tab: TabId, why: 'handoff') => Promise<void>;
+    readonly flush: (tab: ScopeId, why: 'handoff') => Promise<void>;
     readonly render: HandoffRender;
     readonly sender: Pick<HandoffSender, 'send'>;
     readonly pause: (span: Duration) => Promise<void>;
@@ -104,11 +104,11 @@ export class HandoffFlow {
         }
     }
 
-    private holdsOf(request: HandoffAskRecord): readonly PaneId[] {
+    private holdsOf(request: HandoffAskRecord): readonly SessionKey[] {
         return request.source.kind === 'live' ? [request.pane, request.toPane] : [request.toPane];
     }
 
-    private releaseAll(panes: readonly PaneId[]): void {
+    private releaseAll(panes: readonly SessionKey[]): void {
         for (const pane of panes) {
             this.deps.claims.release(pane);
         }
@@ -134,7 +134,7 @@ export class HandoffFlow {
         return resolveTarget(source, request.toPane, { ...this.deps.target, lanes: this.deps.lanes() });
     }
 
-    private async refreshed(tab: TabId): Promise<RefreshStatus> {
+    private async refreshed(tab: ScopeId): Promise<RefreshStatus> {
         try {
             return await this.deps.refresh(tab, this.deps.lanes().filter((lane) => lane.tab === tab));
         } catch (error) {

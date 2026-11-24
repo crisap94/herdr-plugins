@@ -9,11 +9,11 @@ import type { GuiReads } from '#src/recap/application/gui-tab-reads.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import { GUI_TAB_VERSION, encodeGuiTab, guiFileName } from '#src/recap/domain/gui-tab.ts';
 import { parseGuiVersion } from '#src/recap/domain/gui-tab-types.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import type { NonEmptyText } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
 
-function publishedBy(daemon: string, tab: TabId): string | null {
+function publishedBy(daemon: string, tab: ScopeId): string | null {
     try {
         const text = readFileSync(join(daemon, guiFileName(tab)), 'utf8');
         const version = parseGuiVersion(JSON.parse(text));
@@ -25,7 +25,7 @@ function publishedBy(daemon: string, tab: TabId): string | null {
 
 const now = (): Instant => instant(Date.now());
 
-export function desktopDocumentCommand(tab: TabId): number {
+export function desktopDocumentCommand(tab: ScopeId): number {
     const dir = must(parseDirectory(join(stateDirectory(), 'gui')));
     const published = publishedBy(dir, tab);
     if (published !== null) {

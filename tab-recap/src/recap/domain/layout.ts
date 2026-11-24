@@ -1,7 +1,7 @@
 import { countOf } from './count.ts';
 import type { Count } from './count.ts';
 import { uncheckedRatio } from './ids.ts';
-import type { PaneId } from './ids.ts';
+import type { SessionKey } from './ids.ts';
 import type { Presence } from './presence.ts';
 import type { Probability } from './probability.ts';
 import type { Text } from './text.ts';
@@ -14,7 +14,7 @@ export interface Rect {
 }
 
 export interface Placed {
-    readonly paneId: PaneId;
+    readonly paneId: SessionKey;
     readonly rect: Rect;
 }
 

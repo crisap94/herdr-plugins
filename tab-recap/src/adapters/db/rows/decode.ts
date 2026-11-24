@@ -1,6 +1,6 @@
 import type { Statement } from 'bun:sqlite';
 import { countOf, type Count } from '#src/recap/domain/count.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 import { BadRow, type Column, type Row } from '../row-guard.ts';
 
@@ -39,7 +39,7 @@ export type Flag = 'set' | 'unset';
 
 export const flag = (row: Row, key: Column): Flag => (whole(row, key) === 1 ? 'set' : 'unset');
 
-export type Bound = TabId | Uint8Array;
+export type Bound = ScopeId | Uint8Array;
 
 export const all = (statement: Statement, ...params: readonly Bound[]): readonly Row[] => statement.all(...params);
 

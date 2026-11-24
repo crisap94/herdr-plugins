@@ -1,14 +1,14 @@
 import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
 import type { CompactionLog } from '#src/ports/compaction-records.ts';
 import type { Board } from '#src/recap/domain/board.ts';
-import { parsePaneId, type PaneId } from '#src/recap/domain/ids.ts';
+import { parsePaneId, type SessionKey } from '#src/recap/domain/ids.ts';
 import type { SettleHub } from '#src/recap/application/settle-hub.ts';
 import { laneStatus, type LaneStatus } from '#src/recap/domain/status.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { StatusEvent } from './slots.ts';
 
 export interface StatusPush {
-    readonly pane: PaneId;
+    readonly pane: SessionKey;
     readonly status: LaneStatus;
 }
 

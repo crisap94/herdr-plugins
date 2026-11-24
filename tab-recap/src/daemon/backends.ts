@@ -1,4 +1,4 @@
-import type { AgentKind } from '#src/recap/domain/ids.ts';
+import type { HarnessKind } from '#src/recap/domain/ids.ts';
 import { join } from 'node:path';
 import { HarnessBrief } from '#src/adapters/job/brief.ts';
 import { HarnessJudge } from '#src/adapters/job/judge.ts';
@@ -31,9 +31,9 @@ import { jobTagFor } from './harness-makers.ts';
 export { AUTO_ORDER, pick } from '#src/recap/domain/backend.ts';
 export type Available = readonly BackendId[];
 
-const isBackendId = (id: AgentKind): id is AgentKind & BackendId => BACKEND_IDS.some((known) => known === id);
+const isBackendId = (id: HarnessKind): id is HarnessKind & BackendId => BACKEND_IDS.some((known) => known === id);
 
-export function availableIn(ids: readonly AgentKind[]): Available {
+export function availableIn(ids: readonly HarnessKind[]): Available {
     return ids.filter(isBackendId);
 }
 

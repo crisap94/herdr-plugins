@@ -10,7 +10,7 @@ import { parseCount } from '#src/recap/domain/count.ts';
 import { parseDirectory } from '#src/recap/domain/directory.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { PerfCounter } from '#src/recap/domain/perf.ts';
@@ -102,7 +102,7 @@ function rig(): Rig {
 }
 
 const laneAt = (pane: string, cwd: string | null, status: string, tab = 'w1:t1'): Lane => laneFrom(seenLane({ paneId: pane, tabId: tab, workspaceId: 'w1', agent: 'claude', status, cwd }));
-const boardOf = (...lanes: Lane[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((lane): [PaneId, Lane] => [lane.pane, lane])) });
+const boardOf = (...lanes: Lane[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((lane): [SessionKey, Lane] => [lane.pane, lane])) });
 
 test('two lanes of one repository share one watch and one first read; each pane is bound to the root', async () => {
     const { registry, located, reads, watching, bound, rows } = rig();

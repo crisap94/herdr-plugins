@@ -1,11 +1,11 @@
 import { blob, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { compositeKey } from './columns.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import { BLOB_MODE } from './constants.ts';
 
 export const fact = sqliteTable('fact', {
     id: blob('id', { mode: BLOB_MODE }).$type<Uint8Array>().primaryKey().notNull(),
-    tabId: text('tab_id').$type<TabId>().notNull(),
+    tabId: text('tab_id').$type<ScopeId>().notNull(),
     taskId: blob('task_id', { mode: BLOB_MODE }).$type<Uint8Array>().notNull(),
     section: text('section').notNull(),
     text: text('text').notNull(),
@@ -45,7 +45,7 @@ export const ask = sqliteTable('ask', {
     exchange: text('exchange').notNull(),
     requester: text('requester').notNull(),
     id: text('id').notNull(),
-    pane: text('pane').$type<PaneId>().notNull(),
+    pane: text('pane').$type<SessionKey>().notNull(),
     at: integer('at').notNull(),
     ref: text('ref'),
     outcome: text('outcome'),

@@ -40,8 +40,8 @@ const oneAgent = requestOf({
 });
 
 const twoAgents = requestOf({
-    agents: [agentOf('a1', { cwd: brand<string, 'Directory'>('/r/pay'), repo: brand<string, 'Directory'>('/r/pay'), branch: textOf('main') }), agentOf('a2', { kind: brand<string, 'AgentKind'>('codex'), source: 'screen' })],
-    tasks: [{ id: textOf('t1'), name: textOf('Payments'), lanes: [brand<string, 'PaneId'>('w1:p1'), brand<string, 'PaneId'>('w1:p2')] }, { id: textOf('t2'), name: textOf(''), lanes: [brand<string, 'PaneId'>('w1:p9')] }],
+    agents: [agentOf('a1', { cwd: brand<string, 'Directory'>('/r/pay'), repo: brand<string, 'Directory'>('/r/pay'), branch: textOf('main') }), agentOf('a2', { kind: brand<string, 'HarnessKind'>('codex'), source: 'screen' })],
+    tasks: [{ id: textOf('t1'), name: textOf('Payments'), lanes: [brand<string, 'SessionKey'>('w1:p1'), brand<string, 'SessionKey'>('w1:p2')] }, { id: textOf('t2'), name: textOf(''), lanes: [brand<string, 'SessionKey'>('w1:p9')] }],
     ledgers: [{ task: textOf('t1'), facts: [fact('f1', 'goal', 'Wire the payments', { agent: textOf('a2') })] }, { task: textOf('t2'), facts: [] }],
     entries: [user('wire it', '03:01')],
 });

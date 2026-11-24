@@ -12,7 +12,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import { UNREAD, sourcePathOf } from '#src/ports/transcripts.ts';
 import type { Chunk } from '#src/ports/transcripts.ts';
 import type { ScreenOutcome, ScreenReader } from '#src/ports/screens.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import { countOf, type Count } from '#src/recap/domain/count.ts';
 import { causeOf } from './fakes/cause.ts';
 import { seenLane } from '#test/support/seen.ts';
@@ -37,9 +37,9 @@ test('a screen is read without its chrome: borders, the empty prompt, key hints 
 });
 
 class FakeScreens implements ScreenReader {
-    asked: { pane: PaneId; lines: Count }[] = [];
+    asked: { pane: SessionKey; lines: Count }[] = [];
     next: ScreenOutcome = { kind: 'screen', text: textOf(SCREEN), revision: countOf(7), truncated: 'absent' };
-    readScreen(pane: PaneId, lines: Count): Promise<ScreenOutcome> {
+    readScreen(pane: SessionKey, lines: Count): Promise<ScreenOutcome> {
         this.asked.push({ pane, lines });
         return Promise.resolve(this.next);
     }

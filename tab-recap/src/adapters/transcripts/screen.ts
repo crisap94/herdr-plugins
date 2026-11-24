@@ -4,7 +4,7 @@ import { must } from '#src/protocol/result.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
 import { cleanScreen, screenEntries, steady } from '#src/recap/application/screen-text.ts';
 import type { ScreenChrome } from '#src/recap/application/screen-text.ts';
-import { parsePaneId, type AgentKind, parseAgentKind } from '#src/recap/domain/ids.ts';
+import { parsePaneId, type HarnessKind, parseAgentKind } from '#src/recap/domain/ids.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
@@ -18,7 +18,7 @@ const SCREEN_LINES = must(parseCount(200));
 export const SCREEN_READER_ID = '*';
 export const CLAUDE_SCREEN_CHROME: ScreenChrome = tuiChrome('claude');
 
-export type ScreenWants = (agent: AgentKind) => Presence;
+export type ScreenWants = (agent: HarnessKind) => Presence;
 
 const hashOf = (text: Text): Text => must(parseText(createHash('sha1').update(text).digest('hex').slice(0, 16)));
 

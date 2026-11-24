@@ -5,14 +5,14 @@ import type { Acquired } from './typing-lease.ts';
 import type { HandoffConfirmation } from './handoff-confirmation.ts';
 import type { Ready } from './handoff-target.ts';
 import { withTypingLease } from './typing-scope.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import { parseMilliseconds, type Milliseconds } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
 import { textOf, type Text } from '#src/recap/domain/text.ts';
 
 export interface HandoffTyping {
-    acquire(pane: PaneId, waitMs: Milliseconds): Promise<Acquired>;
-    release(pane: PaneId): Promise<void>;
+    acquire(pane: SessionKey, waitMs: Milliseconds): Promise<Acquired>;
+    release(pane: SessionKey): Promise<void>;
 }
 
 export interface HandoffSenderDeps {

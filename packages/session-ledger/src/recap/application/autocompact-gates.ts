@@ -5,7 +5,7 @@ import type { Flight } from '#src/recap/domain/in-flight.ts';
 import { must } from '#src/protocol/result.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { Count } from '#src/recap/domain/count.ts';
-import type { PaneId, Placement } from '#src/recap/domain/timing-ids.ts';
+import type { SessionKey, Placement } from '#src/recap/domain/timing-ids.ts';
 import type { CompactionActivity } from '#src/compaction-timing/contract.ts';
 import { instant, type Duration, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
 
@@ -23,7 +23,7 @@ export type Sameness = 'same' | 'changed';
 export type Recheck = 'due' | 'not-due';
 export type CeilingReach = 'at-ceiling' | 'below-ceiling';
 
-export function busyOf(reads: BusyReads, asked: ReadonlyMap<PaneId, Instant>, placed: Placement, now: Instant): Busy {
+export function busyOf(reads: BusyReads, asked: ReadonlyMap<SessionKey, Instant>, placed: Placement, now: Instant): Busy {
     const { tab, pane, candidate } = placed;
     const since = asked.get(pane);
     const own = reads.activity.activeFor(candidate.scope, candidate.key) || (since !== undefined && now - since < ASKED_FOR_MS) || reads.decisions.unlinkedCompactSince(tab, pane, instant(now - ASKED_FOR_MS)) === 'unlinked';

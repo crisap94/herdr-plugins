@@ -11,7 +11,7 @@ import { parseCount, type Count } from '#src/recap/domain/count.ts';
 import type { Probability } from '#src/recap/domain/probability.ts';
 import { parseUsd, type Usd } from '#src/recap/domain/usd.ts';
 import type { IdleHold } from '#src/recap/domain/idle-hold.ts';
-import { placementOf, type DecisionId, type PaneId, type Placement } from '#src/recap/domain/timing-ids.ts';
+import { placementOf, type DecisionId, type SessionKey, type Placement } from '#src/recap/domain/timing-ids.ts';
 import type { Candidate, CompactionActivity, CompactionAsk, RecapReadiness, SafePointEvent, SessionSignals } from '#src/compaction-timing/contract.ts';
 import { duration, instant, type Duration, type Instant } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
@@ -26,7 +26,7 @@ import { busyDetailOf, coverageBackoffActive, idleEligibility, idleMsOf, policyF
 
 export type Waiting = { readonly kind: 'clear' } | { readonly kind: 'waiting'; readonly value: Text } | Unknown;
 
-interface ContextsOf { of(pane: PaneId): ContextUse | null; }
+interface ContextsOf { of(pane: SessionKey): ContextUse | null; }
 
 export interface AutocompactDeps {
     policy(): Policy;
@@ -35,7 +35,7 @@ export interface AutocompactDeps {
     decider(): DeciderPort | null;
     readonly contexts: ContextsOf;
     inFlight(candidate: Candidate): Promise<Observed>;
-    awaiting?(pane: PaneId): Promise<Waiting>;
+    awaiting?(pane: SessionKey): Promise<Waiting>;
     emit?(event: SafePointEvent): void;
     recent(candidate: Candidate): Promise<readonly Entry[]>;
     statusOf(candidate: Candidate): LaneStatusAtDecision | null;
@@ -111,10 +111,10 @@ type Forcing = 'forced' | 'scheduled';
 
 export class SafePointWatch {
     private readonly deps: AutocompactDeps;
-    private readonly considering = new Set<PaneId>();
-    private readonly asked = new Map<PaneId, Instant>();
-    private readonly skipped = new Map<PaneId, SkipGate>();
-    private readonly held = new Set<PaneId>();
+    private readonly considering = new Set<SessionKey>();
+    private readonly asked = new Map<SessionKey, Instant>();
+    private readonly skipped = new Map<SessionKey, SkipGate>();
+    private readonly held = new Set<SessionKey>();
     private outage: DeciderHealth = 'reachable';
 
     constructor(deps: AutocompactDeps) {
@@ -231,7 +231,7 @@ export class SafePointWatch {
         return flightOf(unreadable(flightReason(saying(waiting.why))), NOT_AWAITING);
     }
 
-    private async waitingOf(pane: PaneId): Promise<Waiting> {
+    private async waitingOf(pane: SessionKey): Promise<Waiting> {
         return this.deps.awaiting === undefined ? { kind: 'clear' } : this.deps.awaiting(pane);
     }
 

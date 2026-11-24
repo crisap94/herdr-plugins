@@ -12,7 +12,7 @@ import { parseWireText, refuse } from '#src/protocol/primitives.ts';
 import { answerWrite } from '#src/protocol/responder.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
@@ -43,7 +43,7 @@ export function purgeAnsweredCompactions(requests: Pick<RequestPort, 'takeAnswer
     return must(parseCount(requests.takeAnswered().length));
 }
 
-async function sendAnswer(deps: RestartWiring, pane: PaneId, write: TokenWrite): Promise<void> {
+async function sendAnswer(deps: RestartWiring, pane: SessionKey, write: TokenWrite): Promise<void> {
     const done = await deps.tokens.report(pane, new Map([[write.name, write.value]]), ANSWER_TTL);
     if (isUnknown(done)) {
         deps.log(must(parseText(`ask on ${pane}: not answered (${saying(done.why)})`)));

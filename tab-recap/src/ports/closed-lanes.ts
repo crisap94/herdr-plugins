@@ -2,7 +2,7 @@ import type { TaskId } from '#src/recap/domain/fact.ts';
 import type { ClosedLane, ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
-import type { AgentKind, PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { HarnessKind, SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { TaskName } from '#src/recap/domain/task-name.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { LastRun } from '@stateforge-labs/session-ledger/unstable/ports/recap-records.ts';
@@ -14,9 +14,9 @@ export interface ClosureAssociation {
 }
 
 export interface ClosedLaneRecord {
-    readonly tab: TabId;
-    readonly pane: PaneId;
-    readonly agent: AgentKind;
+    readonly tab: ScopeId;
+    readonly pane: SessionKey;
+    readonly agent: HarnessKind;
     readonly closedAt: Instant;
     readonly cwd: Directory | null;
     readonly association: ClosureAssociation | null;
@@ -32,7 +32,7 @@ export interface ClosureRecorder {
 
 export interface ClosureReader {
     resolve(identity: ClosedLaneIdentity): ClosedLaneRead;
-    listOf(tab: TabId, now: Instant): ClosedLaneList;
+    listOf(tab: ScopeId, now: Instant): ClosedLaneList;
 }
 
 export interface ClosureRuns {
@@ -40,8 +40,8 @@ export interface ClosureRuns {
 }
 
 export interface ClosureSweep {
-    protectedTabs(now: Instant): readonly TabId[];
-    expiredTabs(now: Instant): readonly TabId[];
-    countOf(tab: TabId): Count;
-    pruneTab(tab: TabId, now: Instant): Count;
+    protectedTabs(now: Instant): readonly ScopeId[];
+    expiredTabs(now: Instant): readonly ScopeId[];
+    countOf(tab: ScopeId): Count;
+    pruneTab(tab: ScopeId, now: Instant): Count;
 }

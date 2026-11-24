@@ -1,11 +1,11 @@
 import type { CompactAsk } from '#src/ports/requests.ts';
 import type { ClaimKind } from '#src/recap/domain/lane-claim.ts';
-import type { PaneId } from '#src/recap/domain/ids.ts';
+import type { SessionKey } from '#src/recap/domain/ids.ts';
 
 type Held = { readonly kind: 'compaction'; readonly joined: CompactAsk[] } | { readonly kind: 'handoff' };
 
 export interface PaneClaim {
-    readonly pane: PaneId;
+    readonly pane: SessionKey;
     readonly kind: ClaimKind;
 }
 
@@ -13,9 +13,9 @@ export type ClaimOutcome = 'claimed' | 'taken';
 export type Holding = 'held' | 'free';
 
 export class LaneClaims {
-    private readonly held = new Map<PaneId, Held>();
+    private readonly held = new Map<SessionKey, Held>();
 
-    claim(pane: PaneId, kind: ClaimKind): ClaimOutcome {
+    claim(pane: SessionKey, kind: ClaimKind): ClaimOutcome {
         if (this.held.has(pane)) {
             return 'taken';
         }
@@ -34,31 +34,31 @@ export class LaneClaims {
         return 'claimed';
     }
 
-    has(pane: PaneId): Holding {
+    has(pane: SessionKey): Holding {
         return this.held.has(pane) ? 'held' : 'free';
     }
 
-    kindOf(pane: PaneId): ClaimKind | null {
+    kindOf(pane: SessionKey): ClaimKind | null {
         return this.held.get(pane)?.kind ?? null;
     }
 
-    join(pane: PaneId, request: CompactAsk): void {
+    join(pane: SessionKey, request: CompactAsk): void {
         const claim = this.held.get(pane);
         if (claim?.kind === 'compaction') {
             claim.joined.push(request);
         }
     }
 
-    joinedOf(pane: PaneId): readonly CompactAsk[] {
+    joinedOf(pane: SessionKey): readonly CompactAsk[] {
         const claim = this.held.get(pane);
         return claim?.kind === 'compaction' ? claim.joined : [];
     }
 
-    release(pane: PaneId): void {
+    release(pane: SessionKey): void {
         this.held.delete(pane);
     }
 
-    private put(pane: PaneId, kind: ClaimKind): void {
+    private put(pane: SessionKey, kind: ClaimKind): void {
         this.held.set(pane, kind === 'compaction' ? { kind, joined: [] } : { kind });
     }
 }

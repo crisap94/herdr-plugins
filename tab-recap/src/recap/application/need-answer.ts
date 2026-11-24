@@ -4,7 +4,7 @@ import { unknown, type Unknown, exitCodeOf } from '#src/ports/unknowable.ts';
 import { must } from '#src/protocol/result.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import type { TabId } from '#src/recap/domain/ids.ts';
+import type { ScopeId } from '#src/recap/domain/ids.ts';
 import type { CloseOp } from '#src/recap/domain/ops.ts';
 import { parseText, type NonEmptyText, textOf } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
@@ -24,7 +24,7 @@ export interface NeedAnswerDeps {
 
 const refused = (reason: NeedRefusal): NeedAnswer => ({ kind: 'refused', reason });
 
-function factOf(ledger: NeedAnswerDeps['ledger'], tab: TabId, id: NonEmptyText): Fact | null {
+function factOf(ledger: NeedAnswerDeps['ledger'], tab: ScopeId, id: NonEmptyText): Fact | null {
     for (const key of knownOr(ledger.keysOf(tab), [])) {
         const found = knownOr(ledger.allOf({ tab, key }), []).find((fact) => String(fact.id) === id);
         if (found !== undefined) { return found; }
@@ -45,7 +45,7 @@ export class AnsweredByHand {
         this.deps = deps;
     }
 
-    answer(tab: TabId, id: NonEmptyText): NeedAnswer {
+    answer(tab: ScopeId, id: NonEmptyText): NeedAnswer {
         const fact = factOf(this.deps.ledger, tab, id);
         const refusal = refusalOf(fact);
         if (fact === null || refusal !== null) { return refused(refusal ?? 'unknown-need'); }

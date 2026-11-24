@@ -6,7 +6,7 @@ import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
-import type { PaneId } from '#src/recap/domain/lane-shape.ts';
+import type { SessionKey } from '#src/recap/domain/lane-shape.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
 import type { CloseOp, Operation, UpdateOp } from '#src/recap/domain/ops.ts';
@@ -18,7 +18,8 @@ import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
 import type { Result } from '#src/protocol/result.ts';
 import { brand, type Brand } from '#src/recap/domain/brand.ts';
 import type { Boundary } from '#src/contract/events.ts';
-import type { Count, TabId } from '#src/contract/kernel.ts';
+import type { Count } from '#src/contract/kernel.ts';
+import type { ScopeId } from '#src/contract/ids.ts';
 import { answerTextOf } from './recap-shape.ts';
 import { reconcileInput } from './curator-input.ts';
 import { batch } from './job-kit/batch.ts';
@@ -41,7 +42,7 @@ export interface ReconcileClock {
 export interface CurateTarget {
     readonly id: Text;
     readonly name: Text;
-    readonly lanes: readonly PaneId[];
+    readonly lanes: readonly SessionKey[];
 }
 
 export interface ReconcileParts {
@@ -55,7 +56,7 @@ export interface ReconcileParts {
 }
 
 export interface ReconcileTask {
-    readonly tab: TabId;
+    readonly tab: ScopeId;
     readonly key: Text;
     readonly name: Text;
     readonly facts: readonly Fact[];
@@ -145,7 +146,7 @@ export const RECONCILE_EVERY = count(8);
 export type CurateWhy = 'open' | 'turns' | 'boundary';
 
 export interface RunTurn {
-    readonly key: PaneId;
+    readonly key: SessionKey;
     readonly at: Instant;
 }
 
@@ -156,7 +157,7 @@ export interface RunAccomplishment {
 }
 
 export interface RecapWritten {
-    readonly tab: TabId;
+    readonly tab: ScopeId;
     readonly turns: Count;
     readonly boundary: Boundary;
     readonly cause?: Text;
@@ -182,7 +183,7 @@ export class Reconciling {
     private readonly deps: ReconcilingDeps;
     private readonly lastRun = new Map<Text, Instant>();
     private readonly running = new Set<Text>();
-    private readonly turns = new Map<TabId, Count>();
+    private readonly turns = new Map<ScopeId, Count>();
 
     constructor(deps: ReconcilingDeps) {
         this.deps = deps;
@@ -194,17 +195,17 @@ export class Reconciling {
         return brand<boolean, 'Due'>(event.boundary || turns >= (this.deps.every?.() ?? RECONCILE_EVERY));
     }
 
-    settle(tab: TabId): void {
+    settle(tab: ScopeId): void {
         this.turns.set(tab, count(0));
     }
 
-    private wanted(key: Text, why: CurateWhy, tab: TabId, now: Instant): Wanted {
+    private wanted(key: Text, why: CurateWhy, tab: ScopeId, now: Instant): Wanted {
         const last = this.lastRun.get(key);
         const fresh = why !== 'open' || last === undefined || (this.turns.get(tab) ?? 0) > 0;
         return brand<boolean, 'Wanted'>(fresh && !this.running.has(key) && (last === undefined || now - last >= GAP_MS));
     }
 
-    async task(tab: TabId, task: CurateTarget, lanes: readonly SessionCursor[], why: CurateWhy): Promise<Ran> {
+    async task(tab: ScopeId, task: CurateTarget, lanes: readonly SessionCursor[], why: CurateWhy): Promise<Ran> {
         const { deps } = this;
         const [key, now] = [textOf(`${tab}\u0000${task.id}`), deps.clock()];
         const writer = deps.writer();

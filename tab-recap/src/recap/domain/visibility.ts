@@ -1,11 +1,11 @@
 import { added, allHiddenOf, removed, without } from './board.ts';
 import type { Board, HiddenState, Visibility, VisibilityTarget } from './board.ts';
 import { uncheckedTabId } from './ids.ts';
-import type { TabId } from './ids.ts';
+import type { ScopeId } from './ids.ts';
 import { textOf } from './text.ts';
 import type { Presence } from './presence.ts';
 
-export function isHidden(board: Board, tab: TabId): Presence {
+export function isHidden(board: Board, tab: ScopeId): Presence {
     return (board.allHidden ? !board.shown.has(tab) : board.hidden.has(tab)) ? 'present' : 'absent';
 }
 
@@ -13,7 +13,7 @@ export function restoreHidden(board: Board, state: HiddenState): Board {
     return { ...board, allHidden: state.all, hidden: new Set(state.hidden.map(uncheckedTabId)), shown: new Set(state.shown.map(uncheckedTabId)) };
 }
 
-function forgiven(board: Board, tab: TabId): Board {
+function forgiven(board: Board, tab: ScopeId): Board {
     return { ...board, reopens: without(board.reopens, tab), givenUp: without(board.givenUp, tab) };
 }
 

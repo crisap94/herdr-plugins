@@ -5,7 +5,7 @@ import type { TabViewStore } from '#src/ports/tab-views.ts';
 import { compactPreviewOf, type CompactPreview } from '#src/recap/application/compact-preview.ts';
 import { handoffMessageOf, type HandoffRead } from '#src/recap/application/handoff-message.ts';
 import { AnsweredByHand, type NeedAnswer } from '#src/recap/application/need-answer.ts';
-import type { PaneId, TabId } from '#src/recap/domain/ids.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { NonEmptyText, Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 
@@ -16,7 +16,7 @@ export interface EngineParts {
     readonly views: Pick<TabViewStore, 'readTab' | 'tabOf'>;
     readonly printer: HandoffPrintService;
     readonly now: () => Instant;
-    readonly republish: (tab: TabId) => void;
+    readonly republish: (tab: ScopeId) => void;
 }
 
 export class DesktopEngine {
@@ -28,17 +28,17 @@ export class DesktopEngine {
         this.answers = new AnsweredByHand({ ledger: parts.ledger, stories: parts.stories, now: parts.now });
     }
 
-    answer(tab: TabId, id: NonEmptyText): NeedAnswer {
+    answer(tab: ScopeId, id: NonEmptyText): NeedAnswer {
         const answered = this.answers.answer(tab, id);
         if (answered.kind === 'answered') { this.parts.republish(tab); }
         return answered;
     }
 
-    compactMessage(tab: TabId, pane: PaneId, note: Text): CompactPreview {
+    compactMessage(tab: ScopeId, pane: SessionKey, note: Text): CompactPreview {
         return compactPreviewOf(this.parts, tab, pane, note);
     }
 
-    handoffMessage(tab: TabId, from: PaneId, to: PaneId | null): Promise<HandoffRead> {
+    handoffMessage(tab: ScopeId, from: SessionKey, to: SessionKey | null): Promise<HandoffRead> {
         return handoffMessageOf(this.parts, tab, from, to);
     }
 }

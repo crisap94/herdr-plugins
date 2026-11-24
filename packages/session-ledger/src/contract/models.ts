@@ -1,5 +1,5 @@
-import type { AgentKind, Brand, Instant, PaneId, Text, Unknown, Usd } from './kernel.ts';
-import type { Directory } from './ids.ts';
+import type { Brand, Instant, Text, Unknown, Usd } from './kernel.ts';
+import type { Directory, HarnessKind, SessionKey } from './ids.ts';
 import type { ClosedWhy, Operation, Section } from './facts.ts';
 import type { AgentNote, Entry } from './session.ts';
 import type { CloseEvidence, HiddenCounts } from './settings.ts';
@@ -10,9 +10,9 @@ export type Several = Brand<boolean, 'Several'>;
 
 export interface InputAgent extends LaneHint {
     readonly id: Text;
-    readonly kind: AgentKind;
+    readonly kind: HarnessKind;
     readonly label: Text;
-    readonly pane: PaneId;
+    readonly pane: SessionKey;
     readonly source: 'transcript' | 'screen';
 }
 
@@ -26,7 +26,7 @@ export interface LaneHint {
 export interface TaskGroup {
     readonly id: Text;
     readonly name: Text;
-    readonly lanes: readonly PaneId[];
+    readonly lanes: readonly SessionKey[];
 }
 
 export interface InputNote extends AgentNote {

@@ -2,7 +2,7 @@ import type { Database } from 'bun:sqlite';
 import { and, asc, desc, eq, exists, gte, isNotNull, or, sql } from 'drizzle-orm';
 import { renderRecap } from '#src/recap/application/recap-shape.ts';
 import { sectionsOfOpen } from '#src/recap/domain/ledger-view.ts';
-import { type TabId, parseAgentKind, parsePaneId } from '#src/recap/domain/ids.ts';
+import { type ScopeId, parseAgentKind, parsePaneId } from '#src/recap/domain/ids.ts';
 import { recapRunningOf } from '#src/ports/recap-records.ts';
 import { cursorOf as positionOf, sourcePathOf } from '#src/ports/transcripts.ts';
 import { usdOf } from '#src/recap/domain/usd.ts';
@@ -18,7 +18,7 @@ import { blob, flag, maybeText, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
 import { typeIdOf } from './typeid.ts';
 import type { LedgerRows } from './ledger-rows.ts';
-import { paneIdOf, type PaneId } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { paneIdOf, type SessionKey } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
 
 interface LatestRun {
     readonly run: Uint8Array | null;
@@ -40,13 +40,13 @@ export class RecapReader {
         this.ledger = ledger;
     }
 
-    private tasksOf(tab: TabId, run: Uint8Array, language: Text): readonly RecapTask[] {
+    private tasksOf(tab: ScopeId, run: Uint8Array, language: Text): readonly RecapTask[] {
         const laneRows = this.orm.select({ task_id: runTaskLanes.taskId, pane: transcripts.pane })
             .from(runTaskLanes).innerJoin(transcripts, eq(transcripts.id, runTaskLanes.transcriptId)).where(eq(runTaskLanes.runId, run))
             .orderBy(asc(runTaskLanes.taskId), asc(runTaskLanes.position)).all();
         const taskRows = this.orm.select({ task_id: runTasks.taskId, key: tasks.key, name: runTasks.name, legacy_markdown: runTasks.legacyMarkdown })
             .from(runTasks).innerJoin(tasks, eq(tasks.id, runTasks.taskId)).where(eq(runTasks.runId, run)).orderBy(asc(runTasks.position)).all();
-        const lanes = new Map<string, PaneId[]>();
+        const lanes = new Map<string, SessionKey[]>();
         for (const row of laneRows) {
             const task = typeIdOf('task', blob(row, 'task_id'));
             lanes.set(task, [...(lanes.get(task) ?? []), paneIdOf(text(row, 'pane'))]);
@@ -62,7 +62,7 @@ export class RecapReader {
         });
     }
 
-    private facts(tab: TabId): LatestRun {
+    private facts(tab: ScopeId): LatestRun {
         const good = this.orm.select({ id: runs.id, at: runs.at, language: runs.language }).from(runs)
             .innerJoin(lastGoodRun, eq(lastGoodRun.runId, runs.id)).innerJoin(chapters, eq(chapters.id, runs.chapterId))
             .where(and(eq(lastGoodRun.tabId, tab), gte(chapters.n, retiredFloor(tab)))).get();
@@ -74,7 +74,7 @@ export class RecapReader {
         return { run: null, at: null, language: must(parseText(newest?.language ?? 'en')) };
     }
 
-    read(id: TabId): Recap | null {
+    read(id: ScopeId): Recap | null {
         const orm = this.orm;
         const row = orm.select({ running: tabs.running, backend: tabs.backend, error: tabs.error }).from(tabs)
             .where(and(eq(tabs.id, id), or(eq(tabs.running, 1), isNotNull(tabs.error), isNotNull(tabs.backend),

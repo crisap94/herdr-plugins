@@ -10,7 +10,7 @@ import { agentKind, cursorAt, paneId, sourcePath } from '@stateforge-labs/sessio
 
 const textOf = brand<string, 'Text'>;
 const count = brand<number, 'Count'>;
-const tabOf = brand<string, 'TabId'>;
+const tabOf = brand<string, 'ScopeId'>;
 const boundaryOf = brand<boolean, 'Boundary'>;
 
 const entries: readonly Entry[] = [{ role: 'user', text: textOf('please add the retry to the uploader before friday') }, { role: 'agent', text: textOf('done, retry added') }];

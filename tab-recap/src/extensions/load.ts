@@ -2,11 +2,11 @@ import type { Locale } from '#src/i18n/messages.ts';
 import type { TabLaneRecord } from '#src/ports/tab-views.ts';
 import type { ExtensionPort, PaneNote } from '#src/ports/extension.ts';
 import { isUnknown } from '#src/ports/unknowable.ts';
-import { parsePaneId, type PaneId } from '#src/recap/domain/ids.ts';
+import { parsePaneId, type SessionKey } from '#src/recap/domain/ids.ts';
 import { parseText, type Text } from '#src/recap/domain/text.ts';
 
-export function notesByPaneOf(extensions: readonly ExtensionPort[], lanes?: readonly TabLaneRecord[], locale?: Locale): ReadonlyMap<PaneId, readonly PaneNote[]> {
-    const merged = new Map<PaneId, readonly PaneNote[]>();
+export function notesByPaneOf(extensions: readonly ExtensionPort[], lanes?: readonly TabLaneRecord[], locale?: Locale): ReadonlyMap<SessionKey, readonly PaneNote[]> {
+    const merged = new Map<SessionKey, readonly PaneNote[]>();
     for (const extension of extensions) {
         const result = extension.notes?.(lanes, locale);
         if (result === undefined || isUnknown(result)) {
