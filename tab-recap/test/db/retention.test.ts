@@ -7,12 +7,12 @@ import type { Store } from '#src/adapters/db/database.ts';
 import { removeExpiredTabs } from '#src/recap/application/retention.ts';
 import { tabId } from '#test/support/ids.ts';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { cursor, memoryStore, recordOps } from './support.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { usdOf } from '#src/recap/domain/usd.ts';
-import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { usdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 const DAY = 86_400_000;
 const NOW = Date.parse('2026-10-07T12:00:00Z');

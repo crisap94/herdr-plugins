@@ -1,8 +1,8 @@
-import { textOf } from '#src/recap/domain/text.ts';
-import { parseUsd } from '#src/recap/domain/usd.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount, countOf } from '#src/recap/domain/count.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { parseUsd } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, countOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -10,7 +10,7 @@ import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { NOW, lane, world } from './autocompact-world.ts';
 import type { World } from './autocompact-world.ts';
-import { brand } from '#src/recap/domain/brand.ts';
+import { brand } from '@stateforge-labs/session-ledger';
 import { seenLane } from '#test/support/seen.ts';
 
 const at = (pane: string, status: string): Lane => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status }));

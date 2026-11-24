@@ -1,6 +1,6 @@
-import { READBACK as QUESTIONS } from '#src/recap/domain/questions.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { READBACK as QUESTIONS } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import { RUBRIC } from './rubric-text.ts';
 import type { AnchorCheck, AnchorChecks, JudgeTask } from '#src/ports/judge.ts';
 import { ANCHORS_PER_CHECK } from '#src/recap/application/judge-anchors.ts';

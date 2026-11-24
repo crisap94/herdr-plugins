@@ -6,7 +6,7 @@ import { failureStage, answerValue } from '#src/protocol/exchange.ts';
 import { stageOf } from './fakes/wire-tokens.ts';
 import { parseIdText } from '#src/protocol/primitives.ts';
 import { compact, COMPACT_FAILURES, COMPACT_STAGES } from '#src/protocol/exchanges/compact.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { take } from './fakes/protocol-exchanges.ts';
 
 const readRequest = (raw: string): ReturnType<typeof take> => take(REGISTRY, { 'compact-req-coordinator': raw }, () => false);

@@ -1,4 +1,4 @@
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { instant, type Fact, type RecapRequest, type RecordedRun, type Unknown } from '@stateforge-labs/session-ledger';
@@ -26,7 +26,7 @@ import {
     type Subject,
 } from '@stateforge-labs/session-ledger/testkit';
 import { tabId, usd } from '@stateforge-labs/session-ledger/testkit';
-import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger';
 
 const request = (): RecapRequest => ({
     input: { tab: { id: textOf('tab-1'), now: instant(0), zone: textOf('UTC') }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] },

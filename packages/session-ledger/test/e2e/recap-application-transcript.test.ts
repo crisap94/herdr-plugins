@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { chunksOf } from '@stateforge-labs/session-ledger/unstable/recap/application/chunking.ts';
-import { enumerateInput, stubId } from '@stateforge-labs/session-ledger/unstable/recap/application/enumerate-input.ts';
-import type { EnumerateMaterial } from '@stateforge-labs/session-ledger/unstable/recap/application/enumerate-input.ts';
-import { itemsOf, transcriptOf, turnsOf } from '@stateforge-labs/session-ledger/unstable/recap/application/writer-transcript.ts';
-import type { Clock } from '@stateforge-labs/session-ledger/unstable/recap/application/writer-transcript.ts';
-import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { Entry } from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
+import { chunksOf } from '@stateforge-labs/session-ledger';
+import { enumerateInput, stubId } from '@stateforge-labs/session-ledger';
+import type { EnumerateMaterial } from '@stateforge-labs/session-ledger';
+import { itemsOf, transcriptOf, turnsOf } from '@stateforge-labs/session-ledger';
+import type { LegacyClock as Clock } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
+import type { Entry } from '@stateforge-labs/session-ledger';
 
 const text = brand<string, 'Text'>;
 const count = brand<number, 'Count'>;

@@ -5,7 +5,7 @@ import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { migrate } from '#src/adapters/db/migrate.ts';
-import { LANE_STATUSES } from '#src/recap/domain/autocompact.ts';
+import { LANE_STATUSES } from '@stateforge-labs/session-ledger';
 
 test('migration 18 upgrades a v17 store with a decision: the row reads as not recorded, the readable view shows the column, and only the three statuses are accepted', () => {
     const old = openDatabase(fsPathOf(MEMORY), MIGRATIONS.slice(0, 17));

@@ -6,12 +6,12 @@ import { MEMORY } from '#src/adapters/db/connection.ts';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
-import type { SessionCursor } from '#src/ports/recap-records.ts';
+import type { SessionCursor } from '@stateforge-labs/session-ledger';
 import { normalise } from './parity.ts';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
-import { sourcePathOf, cursorOf } from '#src/ports/transcripts.ts';
-import { parseTextOrNull } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { sourcePathOf, cursorOf } from '@stateforge-labs/session-ledger';
+import { parseTextOrNull } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 
 interface Moved {
     readonly id: Uint8Array;

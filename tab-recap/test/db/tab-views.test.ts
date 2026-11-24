@@ -12,8 +12,8 @@ import { TabViewRowStore } from '#src/adapters/db/tab-views.ts';
 import { laneRecord, viewRecord } from '#test/support/tab-view-records.ts';
 import type { TabLaneRecord, TabViewRecord } from '#src/ports/tab-views.ts';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { memoryStore, must, openFixture, scratchDir } from './support.ts';
 
 const lane = (pane: string, over: Record<string, unknown> = {}): TabLaneRecord => laneRecord({ pane, agent: 'claude', status: 'idle', title: null, cwd: null, ...over });

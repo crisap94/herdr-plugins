@@ -1,7 +1,7 @@
-import { err, ok, type Result } from '#src/protocol/result.ts';
-import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
+import { err, ok, type Result } from '@stateforge-labs/session-ledger';
+import { brand, type Brand } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
 
 export type FactIndex = Brand<number, 'FactIndex'>;
 

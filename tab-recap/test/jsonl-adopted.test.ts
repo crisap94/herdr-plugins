@@ -6,10 +6,10 @@ import { join } from 'node:path';
 import { fitText, unfencedText } from '#src/adapters/job/prompts/recap-prompt.ts';
 
 import { parseLine, readLines, tailSpan } from '#src/adapters/transcripts/jsonl.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 
 const count = (n: number): Count => must(parseCount(n));
 const text = (s: string): Text => must(parseText(s));

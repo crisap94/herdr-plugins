@@ -1,6 +1,6 @@
-import { err, ok, type Result } from '#src/protocol/result.ts';
-import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
+import { err, ok, type Result } from '@stateforge-labs/session-ledger';
+import { brand, type Brand } from '@stateforge-labs/session-ledger';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
 
 export type Kappa = Brand<number, 'Kappa'>;
 

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { HerdrTransportError, Method } from '@stateforge-labs/herdr-sdk';
 import { createFakeHerdr } from '@stateforge-labs/herdr-sdk/test-kit';
 import { usePlugin, resetHerdrClients } from '#src/adapters/herdr/client.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { subscribeTopics } from '#src/adapters/herdr/subscriptions.ts';
 
 test('a transport failure on a shared call leaves a live event subscription open', async () => {

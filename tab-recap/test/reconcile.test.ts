@@ -1,13 +1,13 @@
-import { brand } from '#src/recap/domain/brand.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { brand } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { instructions } from '#src/adapters/job/prompts/recap-instructions.ts';
-import type { InputCandidate } from '#src/ports/recap-input.ts';
-import type { Entry } from '#src/ports/transcripts.ts';
-import { CONTEXT_CHARS, reconcileRequest } from '#src/recap/application/reconcile.ts';
-import { writerContext } from '#src/recap/application/writer-context.ts';
+import type { InputCandidate } from '@stateforge-labs/session-ledger';
+import type { Entry } from '@stateforge-labs/session-ledger';
+import { CONTEXT_CHARS, reconcileRequest } from '@stateforge-labs/session-ledger';
+import { writerContext } from '@stateforge-labs/session-ledger';
 import { agentOf, requestOf } from '#test/support.ts';
 import { dtdTest, validate } from '#test/xmllint.ts';
 

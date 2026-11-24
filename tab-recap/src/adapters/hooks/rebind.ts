@@ -1,9 +1,9 @@
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { parseLine, parseMessage, type Line } from '#src/daemon/slots.ts';
 import type { FleetSnapshotResult } from '#src/ports/fleet-source.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import { type SessionId, parsePaneId } from '#src/recap/domain/ids.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import type { HookHarness } from '#src/wire/hooks/contract.ts';
 
 export type RebindMode = 'on' | 'off';

@@ -1,10 +1,10 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
-import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
+import { isUnknown } from '@stateforge-labs/session-ledger';
+import type { TranscriptRegistry } from '@stateforge-labs/session-ledger';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 const TAIL_BYTES = countOf(256 * 1024);
 const REMEMBERED = 200;

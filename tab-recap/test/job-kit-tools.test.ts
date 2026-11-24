@@ -1,17 +1,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { Tasked } from '#src/recap/application/ops-answer.ts';
-import { judge } from '#src/recap/application/ops-gating.ts';
-import { stageFor } from '#src/recap/application/job-kit/stage.ts';
-import type { Stage } from '#src/recap/application/job-kit/stage.ts';
-import { callOf, submitted } from '#src/recap/application/job-kit/writer-tools.ts';
-import type { CallVerdict, KitGround } from '#src/recap/application/job-kit/writer-tools.ts';
-import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
-import type { Operation } from '#src/recap/domain/ops.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import type { Tasked } from '@stateforge-labs/session-ledger';
+import { judge } from '@stateforge-labs/session-ledger';
+import { stageFor } from '@stateforge-labs/session-ledger';
+import type { Stage } from '@stateforge-labs/session-ledger';
+import { callOf, submitted } from '@stateforge-labs/session-ledger';
+import type { CallVerdict, KitGround } from '@stateforge-labs/session-ledger';
+import { LEDGER_GATES } from '@stateforge-labs/session-ledger';
+import type { Operation } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { factOf } from './fakes/facts.ts';
-import { factIdOf } from '#src/recap/domain/fact.ts';
+import { factIdOf } from '@stateforge-labs/session-ledger';
 
 const textOf = brand<string, 'Text'>;
 const NOW = 10 * 3_600_000;

@@ -1,6 +1,6 @@
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { parsePid } from '#src/recap/domain/pid.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -12,14 +12,14 @@ import { bindingsIn, boundKeysIn, herdrConfigPathOf, bunAtLeast, bunMajorOf } fr
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
-import { blankRecap } from '#src/ports/recap-records.ts';
+import { blankRecap } from '@stateforge-labs/session-ledger';
 import type { TabViewRecord } from '#src/ports/tab-views.ts';
 import { present, presentBar } from '#src/recap/render/present.ts';
 import { visibleLength } from '#src/recap/render/wrap.ts';
 import { oneTask } from '#test/support.ts';
 import { tabId } from '#test/support/ids.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { viewRecord } from '#test/support/tab-view-records.ts';
 
 const noGlow = (): null => null;

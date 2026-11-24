@@ -1,10 +1,10 @@
-import { must, type Result } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import type { ContextUse } from '#src/recap/domain/compaction.ts';
+import { must, type Result } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
+import type { ContextUse } from '@stateforge-labs/session-ledger';
 import type { Origin } from '#src/recap/domain/origin.ts';
 import { RUN_CAUSES, sessionFactsFrom, type AutocompactCounts, type RunCounts, type SessionFacts } from '#src/recap/domain/session-facts.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 
 const okOrNull = <T, E>(parsed: Result<T, E>): T | null => (parsed.kind === 'ok' ? parsed.value : null);
 

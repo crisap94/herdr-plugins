@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { continuationNote } from '#src/recap/domain/continuation-note.ts';
-import { awaitedNames, backgroundItem, backgroundLabel, backgroundTool, NOT_AWAITING } from '#src/recap/domain/in-flight.ts';
-import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
-import { must } from '#src/protocol/result.ts';
+import { continuationNote } from '@stateforge-labs/session-ledger/compaction-timing';
+import { awaitedNames, backgroundItem, backgroundLabel, backgroundTool, NOT_AWAITING } from '@stateforge-labs/session-ledger';
+import { parseText, type Text, textOf } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 import { unfencedText } from '#src/adapters/job/prompts/recap-prompt.ts';
 
 const text = (value: string): Text => must(parseText(value));

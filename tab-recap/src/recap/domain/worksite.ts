@@ -1,6 +1,6 @@
-import type { Count } from './count.ts';
-import type { Directory } from './directory.ts';
-import type { Text } from './text.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
+import type { Directory } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
 
 export interface EditedFile {
     readonly path: Text;

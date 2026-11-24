@@ -1,6 +1,6 @@
 import { test } from 'node:test';
-import { environmentName } from '#src/recap/domain/backend.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { environmentName } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { apply, rawSettingsFrom, settingIds, settingsOf } from '../../bin/desktop-settings-model.ts';
 import { draftFrom, type Draft } from '#src/recap/application/setup-keys.ts';

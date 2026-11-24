@@ -5,7 +5,7 @@ import type { TabLaneRecord } from '#src/ports/tab-views.ts';
 import type { PaneAlertReader } from '#src/ports/pane-alerts.ts';
 import type { PaneNoteReader, WorktreeStatusReader } from '#src/ports/worktree-status.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { changedOf } from '#src/recap/domain/worktree.ts';
 import type { WorktreeStatus, WorktreeSwitch } from '#src/recap/domain/worktree.ts';
 

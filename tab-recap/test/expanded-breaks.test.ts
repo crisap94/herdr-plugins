@@ -12,9 +12,9 @@ import { NOW, sampleView } from '#test/fakes/expanded-fixture.ts';
 import { fact } from '#test/fakes/fact-at.ts';
 import { parseCurating, parseTaskName } from '@stateforge-labs/recap-view';
 import { viewBreakOf } from '#src/view-model/column.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { duration, instant } from '#src/recap/domain/time.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { duration, instant } from '@stateforge-labs/session-ledger';
 
 const at = (clock: string, day = '2026-10-07'): number => Date.parse(`${day}T${clock}:00Z`);
 const BREAKS: readonly BoundaryBreak[] = [

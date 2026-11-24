@@ -3,12 +3,12 @@ import { join } from 'node:path';
 import { readPoints } from '#src/adapters/experiment/data.ts';
 import { appendJsonl, doneKeys } from '#src/adapters/experiment/io.ts';
 import type { Point } from '#src/adapters/experiment/point.ts';
-import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
+import { QUESTIONS } from '@stateforge-labs/session-ledger/compaction-timing';
 import { drawsOf, shuffledBy } from '#src/experiment/seeded.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 const asText = (value: string): Text => must(parseText(value));
 const asFsPath = (value: string): FsPath => must(parseFsPath(value));
 

@@ -1,10 +1,10 @@
-import { must, type Result } from '#src/protocol/result.ts';
-import { parseThreshold } from '#src/recap/domain/autocompact-verdict.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { must, type Result } from '@stateforge-labs/session-ledger';
+import { parseThreshold } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import { parseKappa, type Kappa } from '#src/recap/domain/kappa.ts';
-import { parseProbability, type Probability } from '#src/recap/domain/probability.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { parseMilliseconds, type Milliseconds } from '#src/recap/domain/time.ts';
+import { parseProbability, type Probability } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import { parseMilliseconds, type Milliseconds } from '@stateforge-labs/session-ledger';
 
 
 export type Label = 0 | 1;

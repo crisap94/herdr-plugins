@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { itemsOf, sectionsOf, type ItemRow } from '#src/adapters/db/sections-rows.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
-import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import { parseText, textOf } from '@stateforge-labs/session-ledger';
+import { NO_SECTIONS } from '@stateforge-labs/session-ledger';
 
 test('sections ⇄ item rows: the goal is one row, a list one row per bullet, an empty section no rows', () => {
     const sections = { goal: textOf('ship'), now: [textOf('a'), textOf('b')], needs: [], done: [textOf('x'), textOf('y'), textOf('z')], decisions: [], next: [textOf('n')], links: [textOf('f.ts')], rules: [textOf('no force push')] };

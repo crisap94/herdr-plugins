@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { must } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
-import { CEILING_DEFAULT, COOLDOWN_DEFAULT_MS, MINIMUM_MAX, MINIMUM_MIN, MISSED_FACTS, MISSED_FACTS_DEFAULT, parseAutocompactCeiling, parseWatchMode, parseAutocompactPercent, parseBackoff, parseBriefRetention, parseCeilingPolicy, parseCooldownMs, parseMissedFacts } from '@stateforge-labs/session-ledger/unstable/recap/domain/autocompact.ts';
-import { millisecondsWithin, parseAutocompactStyle, probabilityWithin, STYLE_DEFAULT, STYLE_NUMBERS, STYLES, styleOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/autocompact-style.ts';
-import { MUST_BE_LOW, ONE_MUST_BE_HIGH, parseThreshold, THRESHOLDS, verdictOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/autocompact-verdict.ts';
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import { parseMilliseconds } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { CEILING_DEFAULT, COOLDOWN_DEFAULT_MS, MINIMUM_MAX, MINIMUM_MIN, MISSED_FACTS, MISSED_FACTS_DEFAULT, parseAutocompactCeiling, parseWatchMode, parseAutocompactPercent, parseBackoff, parseBriefRetention, parseCeilingPolicy, parseCooldownMs, parseMissedFacts } from '@stateforge-labs/session-ledger';
+import { millisecondsWithin, parseAutocompactStyle, probabilityWithin, STYLE_DEFAULT, STYLE_NUMBERS, STYLES, styleOf } from '@stateforge-labs/session-ledger';
+import { MUST_BE_LOW, ONE_MUST_BE_HIGH, parseThreshold, THRESHOLDS } from '@stateforge-labs/session-ledger';
+import { verdictOf } from '@stateforge-labs/session-ledger/compaction-timing';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { parseMilliseconds } from '@stateforge-labs/session-ledger';
 
 const pair = (id: string, value: number): [string, number] => [id, value];
 

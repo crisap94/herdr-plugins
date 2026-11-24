@@ -1,6 +1,6 @@
 import { parseDirectory, parseHarnessKind, parseScopeId, parseSessionId, parseSessionKey, type Directory as LedgerDirectory, type Engine, type FollowedSession, type HarnessKind, type ScopeId, type SessionId as LedgerSessionId, type SessionKey } from '@stateforge-labs/session-ledger';
-import { engineOver, type FacadePlugs } from '@stateforge-labs/session-ledger/unstable/facade/create-engine.ts';
-import type { Directory } from '#src/recap/domain/directory.ts';
+import { engineOver, type FacadePlugs } from '@stateforge-labs/session-ledger';
+import type { Directory } from '@stateforge-labs/session-ledger';
 import type { ParseFailure, Result } from '@stateforge-labs/session-ledger';
 import type { SessionId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';

@@ -1,6 +1,6 @@
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { parseMilliseconds, type Milliseconds } from '#src/recap/domain/time.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
+import { parseMilliseconds, type Milliseconds } from '@stateforge-labs/session-ledger';
 
 
 export type Job<T, R> = (item: T, index: Count, lane: Count) => Promise<R>;

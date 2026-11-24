@@ -1,5 +1,5 @@
 import { probabilitiesOf } from '../../tab-recap/src/adapters/job/decider.ts';
-import { verdictOf, type Verdict } from '../../tab-recap/src/recap/domain/autocompact-verdict.ts';
+import { verdictOf, type Verdict } from '../../packages/session-ledger/src/recap/domain/autocompact-verdict.ts';
 import type { Answer, Graded, Mark } from '../lib/types.ts';
 import { QUESTION_IDS, type DeciderItem, type Side } from './prompt.ts';
 import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';

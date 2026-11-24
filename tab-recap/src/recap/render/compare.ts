@@ -1,7 +1,7 @@
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { percent } from '#src/recap/application/eval-report.ts';
 import type { ChapterResult, Comparison, Side } from '#src/recap/application/compare-imported.ts';
 import type { Share } from '#src/recap/application/judge-coverage.ts';

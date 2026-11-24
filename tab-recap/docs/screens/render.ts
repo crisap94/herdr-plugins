@@ -1,30 +1,30 @@
 // The README's screenshots, step one: the plugin's own views, drawn from invented data into HTML.
 // `bun docs/screens/render.ts [outDir]` writes one page per screen; `shoot.mjs` turns them into PNGs.
 // Gated like the code: it only calls the pure views (`present`, `presentBar`, `setupLines`).
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import type { Messages } from '#src/i18n/messages.ts';
-import { blankRecap } from '#src/ports/recap-records.ts';
-import type { Recap } from '#src/ports/recap-records.ts';
-import { cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
+import { blankRecap } from '@stateforge-labs/session-ledger';
+import type { Recap } from '@stateforge-labs/session-ledger';
+import { cursorOf, sourcePathOf } from '@stateforge-labs/session-ledger';
 import type { LaneWebRecord, TabViewRecord } from '#src/ports/tab-views.ts';
 import { draftFrom, initial, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Setup } from '#src/recap/application/setup-keys.ts';
-import { renderRecap } from '#src/recap/application/recap-shape.ts';
-import type { RecapSections } from '#src/recap/domain/shape.ts';
+import { renderRecap } from '@stateforge-labs/session-ledger';
+import type { RecapSections } from '@stateforge-labs/session-ledger';
 import { present, presentBar } from '#src/recap/render/present.ts';
 import type { ColumnView } from '#src/recap/render/present.ts';
 import { catalogFor } from '#src/i18n/index.ts';
 import { setupLines } from '#src/recap/render/setup.ts';
 import { expandedLines } from './expanded-fixture.ts';
 import { uncheckedAgentKind, parseAgentKind, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import { textOf, parseTextOrNull } from '#src/recap/domain/text.ts';
-import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import { textOf, parseTextOrNull } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 export interface Page {
     /** file name without extension */

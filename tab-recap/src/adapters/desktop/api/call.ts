@@ -1,8 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { RequestPort } from '#src/ports/requests.ts';
-import type { Directory } from '#src/recap/domain/directory.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { Directory } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
 import type { DesktopBus } from '../bus.ts';
 import type { DesktopEngine } from '../engine.ts';
 import type { OpenLeases } from '../lease.ts';

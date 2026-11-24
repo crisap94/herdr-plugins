@@ -2,11 +2,11 @@ import { createTypingLease, type Acquired, type LeaseEvent, type PaneTokenStore,
 import { err, ok, must as mustOwner, owner } from '@stateforge-labs/herdr-sdk/pane-tokens';
 import type { LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import type { PaneTokens } from '#src/ports/pane-tokens.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
-import { must } from '#src/protocol/result.ts';
+import { isUnknown } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 import { uncheckedMilliseconds, uncheckedTokenName, uncheckedTokenValue, uncheckedPaneId, type SessionKey } from '#src/recap/domain/ids.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { duration, parseMilliseconds, type Duration, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import { duration, parseMilliseconds, type Duration, type Instant, type Milliseconds } from '@stateforge-labs/session-ledger';
 import { LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
 
 const TOOL = 'tab-recap';

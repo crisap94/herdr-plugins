@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Directory } from '#src/recap/domain/directory.ts';
+import type { Directory } from '@stateforge-labs/session-ledger';
 import { NO, YES, type Flag } from '#src/recap/domain/gui-tab-parts.ts';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { INDEX_FILE } from '../constants.ts';

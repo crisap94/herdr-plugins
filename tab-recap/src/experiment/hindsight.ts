@@ -1,7 +1,7 @@
-import { must } from '#src/protocol/result.ts';
-import type { Entry } from '#src/ports/transcripts.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import type { Entry } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 
 export const HINDSIGHT_ENTRIES = 6;
 export const HINDSIGHT_CHARS = 8_000;

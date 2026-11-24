@@ -1,15 +1,15 @@
-import { err, ok } from '#src/protocol/result.ts';
-import type { Result } from '#src/protocol/result.ts';
+import { err, ok } from '@stateforge-labs/session-ledger';
+import type { Result } from '@stateforge-labs/session-ledger';
 import { parseAgentKind, parseCompactionId, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
 import type { HarnessKind, CompactionId, SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
-import type { Count } from '#src/recap/domain/count.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { Duration, Instant } from '#src/recap/domain/time.ts';
-import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import { parseDuration, parseInstant } from '#src/recap/domain/time.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Duration, Instant } from '@stateforge-labs/session-ledger';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
+import { parseDuration, parseInstant } from '@stateforge-labs/session-ledger';
 
 export type ActiveStage = 'briefing' | 'compacting' | 'restoring';
 export type EndStage = 'compacted' | 'failed' | 'unconfirmed' | 'skipped';

@@ -1,12 +1,12 @@
 import { test } from 'node:test';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { HerdrAgentPanes } from '#src/adapters/herdr/agents.ts';
 import type { Wire } from '#src/adapters/herdr/agents.ts';
 import { compactionLine, parseCompactionPiece } from '#src/recap/domain/compaction-plan.ts';
-import { duration, parseMilliseconds } from '#src/recap/domain/time.ts';
+import { duration, parseMilliseconds } from '@stateforge-labs/session-ledger';
 import { paneId } from '#test/support/ids.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 function agents(fail: string | null = null): { agents: HerdrAgentPanes; calls: { method: string; params: unknown }[] } {
     const calls: { method: string; params: unknown }[] = [];

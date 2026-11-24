@@ -1,7 +1,7 @@
 import type { GuiFact } from '#src/recap/domain/gui-tab-parts.ts';
 import type { GuiLane, GuiTab, GuiTask } from '#src/recap/domain/gui-tab.ts';
-import type { NonEmptyText, Text } from '#src/recap/domain/text.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import type { NonEmptyText, Text } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 
 const BLOCKED = 'blocked';
 const OPEN = 'open';

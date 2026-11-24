@@ -1,7 +1,7 @@
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import type { RecapSections } from '#src/recap/domain/shape.ts';
-import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
+import type { RecapSections } from '@stateforge-labs/session-ledger';
+import { parseText, type Text, textOf } from '@stateforge-labs/session-ledger';
 
 type ListSection = 'now' | 'needs' | 'done' | 'decisions' | 'next' | 'links' | 'rules';
 export type Section = 'goal' | ListSection;

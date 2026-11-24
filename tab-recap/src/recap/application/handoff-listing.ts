@@ -1,7 +1,7 @@
 import type { ClosedLaneRecord, ClosureReader } from '#src/ports/closed-lanes.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
+import { isUnknown } from '@stateforge-labs/session-ledger';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import type { Instant } from '@stateforge-labs/session-ledger';
 
 export type ClosedListing = { readonly kind: 'listed'; readonly records: readonly ClosedLaneRecord[] } | { readonly kind: 'unreadable' };
 

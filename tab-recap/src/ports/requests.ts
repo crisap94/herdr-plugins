@@ -1,11 +1,11 @@
-import { err, ok, type Result } from '#src/protocol/result.ts';
+import { err, ok, type Result } from '@stateforge-labs/session-ledger';
 import type { AskDraft } from '#src/ports/ask-ledger.ts';
 import { parseHandoffId, parsePaneId, parseTabId, type HandoffId, type SessionKey, type ScopeId } from '#src/recap/domain/ids.ts';
 import type { HandoffSource } from '#src/recap/domain/handoff-source.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
-import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import { parseInstant, type Instant } from '@stateforge-labs/session-ledger';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
 
 export type Visibility = 'hidden' | 'shown' | 'toggle';
 

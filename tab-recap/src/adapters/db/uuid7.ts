@@ -1,4 +1,4 @@
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 
 type Ordering = -1 | 0 | 1;
 

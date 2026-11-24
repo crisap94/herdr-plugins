@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseAskEntry, parseRequester } from '#src/ports/ask-ledger.ts';
-import { parseSkipRow, parseCoverageRecord, parseStoredDecisionRow } from '#src/ports/autocompact-records.ts';
+import { parseSkipRow, parseCoverageRecord, parseStoredDecisionRow } from '@stateforge-labs/session-ledger';
 import { parseBriefOrigin, parseCompactionRow, parseStage } from '#src/ports/compaction-records.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { duration } from '#src/recap/domain/time.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { duration } from '@stateforge-labs/session-ledger';
 
 const ask = { exchange: 'handoff', requester: 'claude', id: 'req-1', pane: 'p1', at: 100, ref: null, outcome: 'done' };
 const skip = { tab: 't1', pane: 'p1', agent: 'claude', at: 200, gate: 'busy', share: 42, detail: null };

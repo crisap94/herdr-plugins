@@ -1,13 +1,13 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { isAbsolute, join } from 'node:path';
-import { parseCount } from '#src/recap/domain/count.ts';
-import type { Count } from '#src/recap/domain/count.ts';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import { parseSessionId } from '#src/recap/domain/ids.ts';
 import type { SessionId } from '#src/recap/domain/ids.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import { parseText } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
 import type { ClaudeLaunch, ClaudeLaunchEnv, ClaudeLaunches } from '#src/ports/claude-launch.ts';
 import { COMPACT_PERCENT_KEY, COMPACT_WINDOW_KEY, parseCompactPercentEnv, parseCompactWindowEnv } from './claude-compact-env.ts';
 

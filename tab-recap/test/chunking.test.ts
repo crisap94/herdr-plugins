@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { Entry } from '#src/ports/transcripts.ts';
-import { CHUNK_CHARS, chunksOf, newestOf } from '#src/recap/application/chunking.ts';
-import { brand } from '#src/recap/domain/brand.ts';
+import type { Entry } from '@stateforge-labs/session-ledger';
+import { CHUNK_CHARS, chunksOf, newestOf } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
 import { longTurn, START } from '#test/fakes/long-turn.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 
 const CLOCK = { now: brand<number, 'Instant'>(START + 3_600_000), zone: brand<string, 'Text'>('UTC') };
 const count = brand<number, 'Count'>;

@@ -1,16 +1,16 @@
-import { err, ok } from '#src/protocol/result.ts';
-import type { Result } from '#src/protocol/result.ts';
+import { err, ok } from '@stateforge-labs/session-ledger';
+import type { Result } from '@stateforge-labs/session-ledger';
 import { parseExchangeName, parseRequestId, parseToolName } from '#src/protocol/primitives.ts';
 import type { ExchangeName, RequestId, Refusal, ToolName } from '#src/protocol/primitives.ts';
 import { outcomeOf } from '#src/recap/domain/ask-outcome.ts';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import { parsePaneId } from '#src/recap/domain/ids.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
-import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import { parseInstant } from '#src/recap/domain/time.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
+import { parseInstant } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 
 export const LOCAL_REQUESTER = 'cli';
 

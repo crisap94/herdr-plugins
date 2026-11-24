@@ -1,11 +1,11 @@
-import { COMPACTABLE } from '#src/recap/domain/compaction.ts';
-import type { CompactTarget } from '#src/recap/domain/compaction.ts';
+import { COMPACTABLE } from '@stateforge-labs/session-ledger';
+import type { CompactTarget } from '@stateforge-labs/session-ledger';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import { parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
 import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { CompactAsk } from '#src/ports/requests.ts';
 import type { CompactionPorts } from './compaction-deps.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 export interface TargetWhere {
     readonly pane: SessionKey | null;

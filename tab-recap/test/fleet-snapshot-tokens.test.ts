@@ -10,7 +10,7 @@ import { HerdrFleetPorts } from '#src/adapters/herdr/fleet.ts';
 import { notesOf } from '#src/recap/domain/coordination.ts';
 import type { TokenName, TokenValue } from '#src/protocol/primitives.ts';
 import { paneId } from '#test/support/ids.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 const longNote = 'n'.repeat(81);
 const longName = 'x'.repeat(33);

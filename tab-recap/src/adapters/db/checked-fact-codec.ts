@@ -1,7 +1,7 @@
 import { gunzipSync, gzipSync } from 'node:zlib';
-import { parseCheckedFact, type CheckedFact } from '#src/recap/domain/autocompact.ts';
+import { parseCheckedFact, type CheckedFact } from '@stateforge-labs/session-ledger';
 import { parseFactIndex, type FactIndex } from '#src/recap/domain/fact-index.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import { isRow } from './rows.ts';
 
 export interface CheckedBriefRecord {

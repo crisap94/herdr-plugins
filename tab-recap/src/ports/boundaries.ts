@@ -1,7 +1,7 @@
-import type { BoundaryKind, Trigger } from '#src/recap/domain/boundary.ts';
-import type { Count } from '#src/recap/domain/count.ts';
+import type { BoundaryKind, Trigger } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
 import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
-import type { Duration, Instant } from '#src/recap/domain/time.ts';
+import type { Duration, Instant } from '@stateforge-labs/session-ledger';
 
 export interface BoundaryBreak {
     readonly kind: BoundaryKind;

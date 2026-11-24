@@ -1,7 +1,7 @@
 import type { Database } from 'bun:sqlite';
 import type { AskBook, AskDraft } from '#src/ports/ask-ledger.ts';
 import type { HandoffAsk, HandoffAskQueue, HandoffAsker } from '#src/ports/requests.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { writeTx } from './connection.ts';
 
 export class HandoffQueueRepository implements HandoffAskQueue {

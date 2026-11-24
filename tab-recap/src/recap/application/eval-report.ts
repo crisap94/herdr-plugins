@@ -1,12 +1,12 @@
 import type { RunRecord } from '#src/ports/run-inputs.ts';
 import type { VerdictRecord } from '#src/ports/verdicts.ts';
-import { must } from '#src/protocol/result.ts';
-import { countOf, parseCount, type Count } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { countOf, parseCount, type Count } from '@stateforge-labs/session-ledger';
 import { uncheckedRatio } from '#src/recap/domain/ids.ts';
-import type { Probability } from '#src/recap/domain/probability.ts';
+import type { Probability } from '@stateforge-labs/session-ledger';
 import type { RunId } from '#src/recap/domain/run-ids.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
-import { usdOf, type Usd } from '#src/recap/domain/usd.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
+import { usdOf, type Usd } from '@stateforge-labs/session-ledger';
 import type { Grade } from './judge-answer.ts';
 import { plus } from './judge-coverage.ts';
 import type { Measured } from './judge-coverage.ts';

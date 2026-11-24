@@ -1,7 +1,7 @@
 import type { JsonObject } from '@stateforge-labs/harness-adapters/runtime';
 import type { AnswerSchema } from '#src/ports/harness.ts';
-import { SECTION_IDS, WRITER_CLOSES } from '#src/recap/domain/fact.ts';
-import type { ClosedWhy } from '#src/recap/domain/fact.ts';
+import { SECTION_IDS, WRITER_CLOSES } from '@stateforge-labs/session-ledger';
+import type { ClosedWhy } from '@stateforge-labs/session-ledger';
 
 const FACT_ID = { type: 'string', minLength: 1 } as const;
 const TEXT = { type: 'string' } as const;

@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createEngine } from '@stateforge-labs/session-ledger/unstable/recap/application/engine.ts';
-import { legacyPlugsOf } from '@stateforge-labs/session-ledger/unstable/facade/plugs.ts';
-import { laneOf } from '@stateforge-labs/session-ledger/unstable/facade/translate.ts';
+import { legacyCreateEngine as createEngine } from '@stateforge-labs/session-ledger';
+import { legacyPlugsOf } from '@stateforge-labs/session-ledger';
+import { laneOf } from '@stateforge-labs/session-ledger';
 import { createEngineWorld, createMemoryStore, factOf, followed, key, running, scope, session, tabId, text, usd } from '@stateforge-labs/session-ledger/testkit';
 import { instant } from '@stateforge-labs/session-ledger';
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import { tabIdOf, paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
-import { type RecapTask } from '@stateforge-labs/session-ledger/unstable/recap/domain/tasks.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf, paneIdOf } from '@stateforge-labs/session-ledger';
+import { type RecapTask } from '@stateforge-labs/session-ledger';
 
 const tab = 'tab-1';
 

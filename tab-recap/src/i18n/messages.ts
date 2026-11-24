@@ -1,11 +1,11 @@
-import type { Count } from '#src/recap/domain/count.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
 import type { Pid } from '#src/recap/domain/pid.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { MissedFacts, UncheckedReason } from '#src/recap/domain/autocompact.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { MissedFacts, UncheckedReason } from '@stateforge-labs/session-ledger';
 import type { DeciderBy } from '#src/recap/domain/job.ts';
 import type { Refusal } from '#src/host/policy.mjs';
-import type { ClosedWhy } from '#src/recap/domain/fact.ts';
+import type { ClosedWhy } from '@stateforge-labs/session-ledger';
 import type { HandoffMessageKey } from '#src/recap/domain/handoff-outcome.ts';
 import type { ClosePoint } from '#src/recap/domain/lane-closed.ts';
 

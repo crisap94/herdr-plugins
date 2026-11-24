@@ -1,17 +1,17 @@
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import { requestOf } from '#test/support.ts';
 import assert from 'node:assert/strict';
 import { ask, choice, customHarness, fakeOutput, fakeRuntime, libraryHarness } from '#test/fakes/harness-runtime.ts';
 import { splitArgv } from '#src/adapters/harness/custom.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
 import { readFileSync } from 'node:fs';
 import { HarnessBrief } from '#src/adapters/job/brief.ts';
 import { RecapWriter } from '#src/adapters/job/writer.ts';
 import { instructions, messageText } from '#src/adapters/job/prompts/recap-prompt.ts';
 import type { HarnessChoice } from '#src/ports/harness.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
+import { isUnknown } from '@stateforge-labs/session-ledger';
 
 const request = requestOf({ entries: [{ role: 'user', text: textOf('hi') }] });
 

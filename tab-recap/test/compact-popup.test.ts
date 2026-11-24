@@ -1,4 +1,4 @@
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
@@ -8,8 +8,8 @@ import { EMPTY_NOTE, noteOf, stepNote } from '#src/recap/application/compact-key
 import type { NoteState } from '#src/recap/application/compact-keys.ts';
 import { NOTE_LIMIT } from '#src/recap/application/compaction-message.ts';
 import { compactFooterText, compactViewText } from '#src/recap/render/compact.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText, textOf } from '@stateforge-labs/session-ledger';
 import { plain, visibleLength } from '#src/recap/render/wrap.ts';
 
 const ESC = String.fromCodePoint(0x1b);

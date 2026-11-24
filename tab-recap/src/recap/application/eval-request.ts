@@ -1,9 +1,9 @@
 import { parseArgs } from 'node:util';
-import { must } from '#src/protocol/result.ts';
-import { parsePositiveCount, type PositiveCount } from '#src/recap/domain/count.ts';
-import { PIPELINES, type Pipeline } from '#src/recap/domain/pipeline.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parsePositiveCount, type PositiveCount } from '@stateforge-labs/session-ledger';
+import { PIPELINES, type Pipeline } from '@stateforge-labs/session-ledger';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 
 export type EvalMode = 'sample' | 'label' | 'agree' | 'gates' | 'replay';
 

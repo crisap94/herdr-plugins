@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { edgePane, moveFor, parentSplit, targetCols } from '#src/recap/domain/layout.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 import { SIZING, placedOf, ratioOf, rectOf as rect, splitOf } from './fakes/layout-values.ts';
 
 test('a side column splits the pane on the right edge, tallest first', () => {

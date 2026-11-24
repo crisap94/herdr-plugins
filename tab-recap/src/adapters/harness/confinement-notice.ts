@@ -1,5 +1,5 @@
 import type { BackendHarness, LogLine } from '#src/ports/harness.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
+import { isUnknown } from '@stateforge-labs/session-ledger';
 import { confinementNotice } from '#src/recap/domain/confinement-notice.ts';
 
 export const noticing = (harness: BackendHarness, log: LogLine | undefined): BackendHarness =>

@@ -12,12 +12,12 @@ The eval builds the same call from the plugin's own code. Only the transport cha
 
 | Step | Plugin code, imported unchanged |
 |---|---|
-| Document (user message) | `reconcileInput({ ...item.input, rubric: RUBRIC.items }).document` (`tab-recap/src/recap/application/curator-input.ts`, `tab-recap/src/adapters/job/prompts/rubric.ts`) |
+| Document (user message) | `reconcileInput({ ...item.input, rubric: RUBRIC.items }).document` (`packages/session-ledger/src/recap/application/curator-input.ts`, `tab-recap/src/adapters/job/prompts/rubric.ts`) |
 | Instructions (system message) | `RECONCILE_CURATOR_INSTRUCTIONS` (`tab-recap/src/adapters/job/prompts/curator-reconcile-instructions.ts`) |
 | Fence removal | `unfenced(text)` (`tab-recap/src/adapters/job/prompts/recap-prompt.ts`), as `HarnessCurator.write` does |
-| Parser | `reconciliationOf(unfenced(text), built.facts, built.tail)` (`tab-recap/src/recap/domain/reconciliation.ts`) |
-| Gates | `judge(LEDGER_GATES, ops, ground, item.input.clock.now)` (`tab-recap/src/recap/application/ops-gating.ts`, `tab-recap/src/recap/domain/gates/ledger-gates.ts`), with `ops` and `ground` built as `reconcileTask` builds them (`tab-recap/src/recap/application/ledger-reconcile.ts`) |
-| Quote test | `quotedIn(quote, text)` (`tab-recap/src/recap/domain/quote.ts`), the test the parser itself uses |
+| Parser | `reconciliationOf(unfenced(text), built.facts, built.tail)` (`packages/session-ledger/src/recap/domain/reconciliation.ts`) |
+| Gates | `judge(LEDGER_GATES, ops, ground, item.input.clock.now)` (`packages/session-ledger/src/recap/application/ops-gating.ts`, `packages/session-ledger/src/recap/domain/gates/ledger-gates.ts`), with `ops` and `ground` built as `reconcileTask` builds them (`packages/session-ledger/src/recap/application/ledger-reconcile.ts`) |
+| Quote test | `quotedIn(quote, text)` (`packages/session-ledger/src/recap/domain/quote.ts`), the test the parser itself uses |
 
 `built` is the value `reconcileInput` returns. `ground` is `{ key: 'k', tab: 't', shown: built.facts, open: [...built.facts.values()], closedLately: [], source: '', language: item.input.language, agents: ['claude', item.input.name.toLowerCase()] }`. The plugin fills `agents` with the lane's agent and title; the eval uses `claude` and the task name.
 
@@ -45,7 +45,7 @@ The plan names the file `dataset/items.jsonl`; this eval follows its brief and t
 | `input` | `{ name, language, clock: { now, zone }, open: Fact[], tail: Entry[] }` |
 | `expected` | See 2.2 |
 
-`Fact` and `Entry` are the plugin's types (`tab-recap/src/recap/domain/fact.ts`, `tab-recap/src/ports/transcripts.ts`). Fact ids in `expected` are the document ids (`f1`, `f2`, ...) that the model sees: `fN` is `input.open[N-1]`.
+`Fact` and `Entry` are the plugin's types (`packages/session-ledger/src/recap/domain/fact.ts`, `packages/session-ledger/src/ports/transcripts.ts`). Fact ids in `expected` are the document ids (`f1`, `f2`, ...) that the model sees: `fN` is `input.open[N-1]`.
 
 ### 2.2 The expected answer
 

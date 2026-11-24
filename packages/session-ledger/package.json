@@ -10,8 +10,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./compaction-timing": "./src/compaction-timing/index.ts",
-    "./testkit": "./testkit/index.ts",
-    "./unstable/*": "./src/*"
+    "./testkit": "./testkit/index.ts"
   },
   "imports": {
     "#src/*": "./src/*",

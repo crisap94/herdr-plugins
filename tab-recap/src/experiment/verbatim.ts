@@ -1,5 +1,5 @@
-import { must } from '#src/protocol/result.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 
 const PATH = /(?:~|\.{1,2})?\/[\w.@+-]+(?:\/[\w.@+-]+)+|\b[\w.-]+\/[\w.-]+\.\w{1,6}\b/g;
 const HASH = /\b(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}\b/g;

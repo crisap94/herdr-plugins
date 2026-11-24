@@ -1,7 +1,7 @@
 import { test } from 'node:test';
-import { environmentName } from '#src/recap/domain/backend.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import type { Directory } from '#src/recap/domain/directory.ts';
+import { environmentName } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import type { Directory } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';

@@ -1,7 +1,7 @@
-import { err, ok } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
-import type { Result } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
-import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import type { Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
+import { err, ok } from '@stateforge-labs/session-ledger';
+import type { Result } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import type { Brand } from '@stateforge-labs/session-ledger';
 
 export const LIMITS = {
     valueMax: 80,

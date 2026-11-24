@@ -7,7 +7,7 @@ import type { Observation, Outcome } from '#src/recap/domain/fold.ts';
 import { paneId } from '#test/support/ids.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { seenLane, sessionObservation } from '#test/support/seen.ts';
 
 const lane = (session: string | null, agent = 'claude'): SeenLane => (seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent, status: 'idle', session }));

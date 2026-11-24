@@ -1,8 +1,8 @@
-import { must } from '#src/protocol/result.ts';
-import type { Count } from '#src/recap/domain/count.ts';
-import type { ClosedWhy, Section } from '#src/recap/domain/fact.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
+import type { ClosedWhy, Section } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 
 export type Standing = 'good' | 'failed';
 

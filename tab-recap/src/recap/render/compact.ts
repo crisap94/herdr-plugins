@@ -1,7 +1,7 @@
 import type { Messages } from '#src/i18n/messages.ts';
-import { must } from '#src/protocol/result.ts';
-import type { Count } from '#src/recap/domain/count.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import type { NoteState } from '#src/recap/application/compact-keys.ts';
 import { coloured, visibleLength, wrap } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import type { Style } from '@stateforge-labs/recap-view/unstable/wrap.ts';

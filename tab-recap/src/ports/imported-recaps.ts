@@ -1,9 +1,9 @@
-import { err, ok, type Result } from '#src/protocol/result.ts';
-import type { Count } from '#src/recap/domain/count.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { err, ok, type Result } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import { bornOf, type Born } from '#src/recap/domain/run-ids.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
-import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
+import type { Instant } from '@stateforge-labs/session-ledger';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
 
 export interface ImportedChapterItem {
     readonly key: Text;

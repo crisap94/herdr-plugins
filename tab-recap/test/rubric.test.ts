@@ -4,7 +4,7 @@ import { RUBRIC, rubricText } from '#src/adapters/job/prompts/rubric.ts';
 import { instructions } from '#src/adapters/job/prompts/recap-prompt.ts';
 import { checkIds, examplesOf, RUBRIC_TEXT } from '#test/rubric.ts';
 import { requestOf } from '#test/support.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 const SECTIONS = ['goal', 'now', 'needs', 'done', 'decisions', 'next', 'rules', 'links'];
 

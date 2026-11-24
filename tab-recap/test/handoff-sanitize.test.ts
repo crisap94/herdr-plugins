@@ -1,5 +1,5 @@
 import { test } from 'node:test';
-import { textOf as asText } from '#src/recap/domain/text.ts';
+import { textOf as asText } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { cleanHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import { vetHandoffText } from '#src/recap/domain/handoff-vetting.ts';

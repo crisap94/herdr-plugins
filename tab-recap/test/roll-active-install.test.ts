@@ -4,9 +4,9 @@ import { HerdrActiveInstalls } from '#src/adapters/herdr/active-install.ts';
 import { parseVersion, type Line } from '#src/daemon/slots.ts';
 import { startRoll, type Activity, type Successor } from '#src/daemon/view/roll.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { JsonObject } from '#src/adapters/herdr/json-object.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText } from '@stateforge-labs/session-ledger';
 
 const ID = must(parseText('tab-recap'));
 const present = (): 'present' => 'present';

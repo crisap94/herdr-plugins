@@ -2,10 +2,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { guidanceOf, MESSAGE_LIMIT, restoreFrom, restoreOf } from '#src/recap/application/compaction-message.ts';
 import type { Material } from '#src/recap/application/compaction-message.ts';
-import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
-import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
+import { NO_SECTIONS } from '@stateforge-labs/session-ledger';
+import { parseText, type Text, textOf } from '@stateforge-labs/session-ledger';
 import type { LaneWebRecord } from '#src/ports/tab-views.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 
 const web: LaneWebRecord = { base: textOf('https://git.example/team/app'), forge: 'gitlab', branch: textOf('feat/cart') };
 const sections = {

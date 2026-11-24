@@ -1,6 +1,6 @@
 import { compactionMaterialInput, type CompactionMaterial as TypedMaterial } from '../../tab-recap/src/recap/application/compaction-material.ts';
-import { textOf } from '../../tab-recap/src/recap/domain/text.ts';
-import { instant } from '../../tab-recap/src/recap/domain/time.ts';
+import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
+import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
 
 export interface CompactionMaterial extends Omit<TypedMaterial, 'agent' | 'note' | 'lastBreakAt' | 'clock'> {
     readonly agent: { readonly kind: string; readonly label: string; readonly repo: string | null; readonly branch: string | null };

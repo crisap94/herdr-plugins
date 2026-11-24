@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CLAUDE_SCREEN_CHROME } from '#src/adapters/transcripts/screen.ts';
 import { cleanScreen } from '#src/recap/application/screen-text.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 test('screen chrome filtering keeps the old output for Claude chrome, box lines, spinners, and repeated lines', () => {
     const corpus = [

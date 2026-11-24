@@ -1,16 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { closeWhyGate } from '#src/recap/domain/gates/g10-close-why.ts';
-import { duplicateGate } from '#src/recap/domain/gates/g2-ledger-duplicate.ts';
-import { unknownIdGate } from '#src/recap/domain/gates/g6-unknown-id.ts';
-import { correctionOf, gatekeeper } from '#src/recap/domain/gates/gatekeeper.ts';
-import type { GateContext } from '#src/recap/domain/gates/gate.ts';
-import { jaccard } from '#src/recap/domain/gates/jaccard.ts';
-import type { Operation } from '#src/recap/domain/ops.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { closeWhyGate } from '@stateforge-labs/session-ledger';
+import { duplicateGate } from '@stateforge-labs/session-ledger';
+import { unknownIdGate } from '@stateforge-labs/session-ledger';
+import { correctionOf, gatekeeper } from '@stateforge-labs/session-ledger';
+import type { GateContext } from '@stateforge-labs/session-ledger';
+import { jaccard } from '@stateforge-labs/session-ledger';
+import type { Operation } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { factOf } from './fakes/facts.ts';
-import { factIdOf } from '#src/recap/domain/fact.ts';
+import { factIdOf } from '@stateforge-labs/session-ledger';
 
 const NOW = 10 * 3_600_000;
 const f4 = factOf('done', 'Released tab-recap 1.10.0 through the pipeline');

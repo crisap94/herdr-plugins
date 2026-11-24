@@ -4,21 +4,21 @@ import { OpencodeTranscripts } from './opencode/transcripts.ts';
 import { ScreenTranscripts } from './screen.ts';
 import type { ScreenWants } from './screen.ts';
 import type { ScreenReader } from '#src/ports/screens.ts';
-import { TranscriptRegistry, type TranscriptReaders } from '#src/ports/transcript-registry.ts';
+import { TranscriptRegistry, type TranscriptReaders } from '@stateforge-labs/session-ledger';
 import { type HarnessKind, parseAgentKind } from '#src/recap/domain/ids.ts';
-import type { SessionReader } from '#src/ports/transcripts.ts';
+import type { LegacySessionReader as SessionReader } from '@stateforge-labs/session-ledger';
 import { supported } from '#src/ports/capability.ts';
 import type { Support } from '#src/ports/capability.ts';
-import type { HistoryWhy, InFlightWhy } from '#src/ports/capability-reasons.ts';
-import { capabilityWording } from '#src/ports/capability-reasons.ts';
-import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
-import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
+import type { HistoryWhy, InFlightWhy } from '@stateforge-labs/session-ledger';
+import { capabilityWording } from '@stateforge-labs/session-ledger';
+import { registeredKindOf } from '@stateforge-labs/session-ledger';
+import type { RegisteredKind } from '@stateforge-labs/session-ledger';
 import { harnessOfTranscriptPath } from '@stateforge-labs/harness-adapters';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText, type Text, textOf } from '@stateforge-labs/session-ledger';
 
-export { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
+export { TranscriptRegistry } from '@stateforge-labs/session-ledger';
 
 const CODEX_HOME_MARKER = '/.codex/';
 

@@ -1,9 +1,6 @@
 const { readdirSync } = require('node:fs');
 const { join } = require('node:path');
-const brandImporters = require('./gates/brand-importers.json');
 
-const exact = (path) => `^${path.replace(/[.]/g, '\\.')}$`;
-const brandFile = exact('src/recap/domain/brand.ts');
 const ledger = '^\\.\\./packages/session-ledger/src/';
 const graphRules = join(__dirname, 'rules', 'graph');
 const fragments = readdirSync(graphRules).filter((name) => name.endsWith('.cjs')).toSorted().flatMap((name) => require(join(graphRules, name)));
@@ -43,7 +40,7 @@ module.exports = {
       name: 'protocol-self-contained',
       severity: 'error',
       from: { path: '^src/protocol/(?!exchanges/)' },
-      to: { pathNot: ['^src/protocol/', brandFile, ledger] },
+      to: { pathNot: ['^src/protocol/', ledger] },
     },
     {
       name: 'protocol-exchanges-self-contained',
@@ -62,12 +59,6 @@ module.exports = {
       severity: 'error',
       from: { pathNot: ['^src/adapters/herdr/fleet\\.ts$', '^src/transport/'] },
       to: { path: '^src/transport/' },
-    },
-    {
-      name: 'brand-importers',
-      severity: 'error',
-      from: { pathNot: [...brandImporters.map(exact), brandFile, ledger] },
-      to: { path: [brandFile, exact('../packages/session-ledger/src/recap/domain/brand.ts')] },
     },
     {
       name: 'drizzle-adapter-only',
@@ -90,7 +81,7 @@ module.exports = {
     {
       name: 'no-orphans',
       severity: 'error',
-      from: { orphan: true, pathNot: ['\\.d\\.ts$', '^src/(wire|engine|view-model|pane|adapters/hooks|daemon/view|daemon/slots)/'] },
+      from: { orphan: true, pathNot: ['\\.d\\.ts$', '^src/(wire|view-model|pane|adapters/hooks|daemon/view|daemon/slots)/'] },
       to: {},
     },
     {

@@ -1,18 +1,18 @@
-import { inFlightReason } from '#src/ports/autocompact-reasons.ts';
-import { capabilityWording } from '#src/ports/capability-reasons.ts';
+import { inFlightReason } from '@stateforge-labs/session-ledger';
+import { capabilityWording } from '@stateforge-labs/session-ledger';
 import type { InFlightReader, InFlightRead } from '#src/ports/in-flight.ts';
-import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
-import { isUnknown, saying } from '#src/ports/unknowable.ts';
-import type { Unknown } from '#src/ports/unknowable.ts';
+import type { TranscriptRegistry } from '@stateforge-labs/session-ledger';
+import { isUnknown, saying } from '@stateforge-labs/session-ledger';
+import type { Unknown } from '@stateforge-labs/session-ledger';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
-import type { Directory } from '#src/recap/domain/directory.ts';
+import { registeredKindOf } from '@stateforge-labs/session-ledger';
+import type { Directory } from '@stateforge-labs/session-ledger';
 import type { SessionId } from '#src/recap/domain/ids.ts';
-import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
+import type { RegisteredKind } from '@stateforge-labs/session-ledger';
 import { IN_FLIGHT_CAPABILITIES } from './registry.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText, textOf } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 const TAIL_BYTES = 512 * 1024;
 

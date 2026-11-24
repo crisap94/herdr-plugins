@@ -1,6 +1,6 @@
 import type { CodexToolUse } from '@stateforge-labs/harness-adapters/codex';
-import { must } from '#src/protocol/result.ts';
-import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger';
 import { toolBriefOf } from '../jsonl.ts';
 import type { Row } from '../jsonl.ts';
 import { shellCall, squashText } from '../tool-calls.ts';

@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import type { DeciderPort } from '#src/ports/decider.ts';
+import type { DeciderPort } from '@stateforge-labs/session-ledger';
 import type { HarnessChoice, HarnessPort } from '#src/ports/harness.ts';
 import { loadSettings, settingReader } from '#src/daemon/config.ts';
-import { parseJevModel, parseJevUrl } from '#src/recap/domain/autocompact.ts';
+import { parseJevModel, parseJevUrl } from '@stateforge-labs/session-ledger';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
-import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
-import { must } from '#src/protocol/result.ts';
+import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 import { LIBRARY_IDS, LibraryHarnessPort } from '../harness/library.ts';
 import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
 import type { Acknowledgement, HarnessRuntime } from '../harness/library.ts';

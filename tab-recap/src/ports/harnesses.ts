@@ -1,5 +1,5 @@
 import type { HarnessKind } from '#src/recap/domain/ids.ts';
-import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
+import type { Unknown } from '@stateforge-labs/session-ledger';
 
 export interface HarnessesAvailable {
     readonly kind: 'available';

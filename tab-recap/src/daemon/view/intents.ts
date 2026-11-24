@@ -1,11 +1,11 @@
 import { beginCompact, type CompactStart } from '#src/recap/application/compact-start.ts';
 import { parseLine, parseMessage, type Line } from '#src/daemon/slots.ts';
 import type { Done } from '#src/ports/columns.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { CompactNote } from '#src/recap/domain/compact-note.ts';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import type { Intent } from '#src/wire/view/keys.ts';
 import type { Role } from '#src/wire/view/protocol.ts';
 

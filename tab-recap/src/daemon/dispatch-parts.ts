@@ -1,6 +1,6 @@
 import type { Store } from '#src/adapters/db/database.ts';
 import type { Fleet } from '#src/ports/fleet.ts';
-import type { SafePointWatch } from '#src/recap/application/autocompact.ts';
+import type { SafePointWatch } from '@stateforge-labs/session-ledger';
 import { candidateOf } from './autocompact.ts';
 import { LaneDispatch } from '#src/recap/application/dispatch.ts';
 import type { Sharing } from '#src/recap/application/dispatch.ts';
@@ -14,8 +14,8 @@ import type { Board } from '#src/recap/domain/board.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { TranscriptRegistry } from '@stateforge-labs/session-ledger';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { loadSettings } from './config.ts';
 

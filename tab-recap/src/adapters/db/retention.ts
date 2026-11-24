@@ -1,11 +1,11 @@
 import type { Database } from 'bun:sqlite';
 import { and, asc, count, eq, gte, isNull, lt, max, sql } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { RemovedCounts, RetentionPort, Retirement, TabRetirement } from '#src/ports/retention.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import type { Instant } from '@stateforge-labs/session-ledger';
 import { writeTx } from './connection.ts';
 import { boundary, chapter, compaction, fact, run, tab as tabs, tabVisibility } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';

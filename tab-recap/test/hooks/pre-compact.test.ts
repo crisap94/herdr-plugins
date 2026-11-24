@@ -8,15 +8,15 @@ import { startHookEndpoint, type PreCompactReceiver } from '#src/adapters/hooks/
 import { createPreCompacts } from '#src/adapters/hooks/pre-compacts.ts';
 import { createReceiver, type ReceiverDeps } from '#src/adapters/hooks/receiver.ts';
 import { createTurnEnds } from '#src/adapters/hooks/turn-ends.ts';
-import type { IdleClaim } from '#src/recap/application/autocompact.ts';
-import { must } from '#src/protocol/result.ts';
+import type { IdleClaim } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText } from '@stateforge-labs/session-ledger';
 import { parseSessionId } from '#src/recap/domain/ids.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
 import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import type { HookReceiver } from '#src/wire/hooks/contract.ts';
 import { seenLane } from '#test/support/seen.ts';
 

@@ -1,12 +1,12 @@
-import { textOf } from '#src/recap/domain/text.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { numbered, severalOf } from '#src/recap/application/ledger-input.ts';
+import { numbered, severalOf } from '@stateforge-labs/session-ledger';
 import { agentOf } from '#test/support.ts';
 import { factOf } from './fakes/facts.ts';
-import { FULL_WRITER_VIEW } from '#src/recap/domain/writer-view.ts';
+import { FULL_WRITER_VIEW } from '@stateforge-labs/session-ledger';
 
 const [old, fresh] = [factOf('now', 'Old', { lastAt: instant(10) }), factOf('now', 'Fresh', { lastAt: instant(90), agent: textOf('orchestrator') })];
 const shut = factOf('done', 'Shut', { state: 'closed', closedWhy: 'done', closedAt: instant(95), lastAt: instant(95) });

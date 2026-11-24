@@ -1,8 +1,8 @@
 import type { RunCause } from './session-facts.ts';
 import type { LaneStatus } from './status.ts';
-import type { Count } from './count.ts';
-import type { Text } from './text.ts';
-import type { Instant } from './time.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 
 export const REFRESH_STATUSES = ['not-requested', 'refreshed', 'failed', 'timed-out'] as const;
 export type RefreshStatus = (typeof REFRESH_STATUSES)[number];

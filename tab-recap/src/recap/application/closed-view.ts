@@ -1,7 +1,7 @@
-import type { Directory } from '#src/recap/domain/directory.ts';
+import type { Directory } from '@stateforge-labs/session-ledger';
 import type { HarnessKind } from '#src/recap/domain/ids.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
-import type { LastRun } from '#src/ports/recap-records.ts';
+import type { Instant } from '@stateforge-labs/session-ledger';
+import type { LastRun } from '@stateforge-labs/session-ledger';
 
 export interface ClosedView {
     readonly closedAt: Instant;

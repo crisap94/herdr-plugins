@@ -1,9 +1,9 @@
-import { tokensOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/compaction.ts';
+import { tokensOf } from '@stateforge-labs/session-ledger';
 import type { CompactionRow } from './model.ts';
 import { assertSeconds, parseWords, parseWordsOrNull } from './wording.ts';
 import type { TextWording } from './wording.ts';
 import type { Style } from './wrap.ts';
-import { countOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 export function stageClockOf(since: number, now: number): string {
     const seconds = Math.max(0, Math.floor((now - since) / 1000));

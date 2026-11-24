@@ -1,17 +1,17 @@
 import { isUnknownRead, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
-import { countOf, type Count } from '#src/recap/domain/count.ts';
+import { countOf, type Count } from '@stateforge-labs/session-ledger';
 import { isScreenSource } from '#src/ports/screens.ts';
-import type { SessionCursor } from '#src/ports/recap-records.ts';
-import { isUnknown, type Unknown } from '#src/ports/unknowable.ts';
-import { UNREAD, type Position, sourcePathOf, cursorOf } from '#src/ports/transcripts.ts';
-import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
+import type { SessionCursor } from '@stateforge-labs/session-ledger';
+import { isUnknown, type Unknown } from '@stateforge-labs/session-ledger';
+import { UNREAD, type Position, sourcePathOf, cursorOf } from '@stateforge-labs/session-ledger';
+import type { TranscriptRegistry } from '@stateforge-labs/session-ledger';
 import { newerPromptsOf, type Freshness, type RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
 import type { ClosedView } from './closed-view.ts';
 import { TRANSCRIPT_READ_BUDGET_BYTES } from './transcript-read-budget.ts';
 import type { HarnessKind, ScopeId } from '#src/recap/domain/ids.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 export interface FreshnessInput {
     readonly tab: ScopeId;

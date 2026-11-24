@@ -5,10 +5,10 @@ import { MemoryHandoffAnswers } from './fakes/handoff-answers.ts';
 import { deliverHandoff, type DaemonReading, type DeliverDeps } from '#src/recap/application/handoff-request.ts';
 import type { HandoffAskRecord } from '#src/ports/requests.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import { must } from '#src/protocol/result.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 import { parsePid } from '#src/recap/domain/pid.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { NOW } from './fakes/handoff-flow-harness.ts';
 
 const RUNNING: DaemonReading = { pid: must(parsePid(4242)), version: textOf('2.4.0') };

@@ -1,14 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ADVANCED, marksOf, NOT_ADVANCED } from '#src/recap/application/boundaries.ts';
-import type { Read } from '#src/recap/application/boundaries.ts';
-import { compactedFrom, settledBefore, triggerOf } from '#src/recap/domain/boundary.ts';
+import { ADVANCED, marksOf, NOT_ADVANCED } from '@stateforge-labs/session-ledger';
+import type { Read } from '@stateforge-labs/session-ledger';
+import { compactedFrom, settledBefore, triggerOf } from '@stateforge-labs/session-ledger';
 import { paneId } from '#test/support/ids.ts';
-import type { Chunk, Mark } from '#src/ports/transcripts.ts';
-import { instant, duration } from '#src/recap/domain/time.ts';
-import { grewOf, cursorOf } from '#src/ports/transcripts.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import type { Chunk, Mark } from '@stateforge-labs/session-ledger';
+import { instant, duration } from '@stateforge-labs/session-ledger';
+import { grewOf, cursorOf } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '@stateforge-labs/session-ledger';
 
 const AT = Date.parse('2026-10-07T16:38:09.490Z');
 const read = (marks: readonly Mark[], pane = 'w1:p1'): Read => ({

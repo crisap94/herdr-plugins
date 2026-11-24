@@ -1,6 +1,6 @@
 import { test } from 'node:test';
-import { environmentName } from '#src/recap/domain/backend.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { environmentName } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { compactNoteOf } from '#src/recap/domain/compact-note.ts';
 import { beginCompact } from '#src/recap/application/compact-start.ts';
@@ -12,7 +12,7 @@ import { changes, draftFrom, initial, locksOf } from '#src/recap/application/set
 import type { Draft } from '#src/recap/application/setup-keys.ts';
 import type { Done } from '#src/ports/columns.ts';
 import type { CompactAsk } from '#src/ports/requests.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import { unknown } from '@stateforge-labs/session-ledger';
 import { causeOf } from './fakes/cause.ts';
 import { readerOf } from '#test/fakes/environment.ts';
 

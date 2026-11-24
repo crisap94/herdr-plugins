@@ -1,9 +1,9 @@
-import { err, ok, type Result } from '#src/protocol/result.ts';
-import type { RunId } from '#src/recap/domain/fact.ts';
+import { err, ok, type Result } from '@stateforge-labs/session-ledger';
+import type { RunId } from '@stateforge-labs/session-ledger';
 import { parseRunId } from '#src/recap/domain/run-ids.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
-import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import { parseInstant, type Instant } from '@stateforge-labs/session-ledger';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
 
 export type Outcome = 'pass' | 'fail';
 

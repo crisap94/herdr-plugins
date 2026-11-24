@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { promises as fsp } from 'node:fs';
 import { join } from 'node:path';
 import { GitDeadline, layeredFs } from '#src/adapters/git/layered-fs.ts';
-import { must } from '#src/protocol/result.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import type { WorktreeWatch } from '#src/recap/domain/worktree.ts';
-import { parseDirectory } from '#src/recap/domain/directory.ts';
+import { parseDirectory } from '@stateforge-labs/session-ledger';
 import { makeRepo, makeLinked, scratch } from './fixtures/git-repo.ts';
 
 const far = (): ReturnType<typeof instant> => instant(Date.now() + 60_000);

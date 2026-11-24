@@ -1,4 +1,4 @@
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { fleetFrame } from '#test/support/frames.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,7 +11,7 @@ import type { Board } from '#src/recap/domain/board.ts';
 import { paneId, tabId, agentKind } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import type { FleetFeed, FleetFrame, FleetSnapshotResult, FleetStreamResult } from '#src/ports/fleet-source.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';

@@ -1,8 +1,8 @@
 import { catalogFor } from '#src/i18n/index.ts';
 import { uncheckedAgentKind } from '#src/recap/domain/ids.ts';
-import { environmentName } from '#src/recap/domain/backend.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { environmentName } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { WriteStream } from 'node:tty';
@@ -12,10 +12,10 @@ import { en } from '#src/i18n/en.ts';
 import { present, presentBar } from '#src/recap/render/present.ts';
 import { coloured, plain } from '#src/recap/render/wrap.ts';
 import { setupLines } from '#src/recap/render/setup.ts';
-import { blankRecap } from '#src/ports/recap-records.ts';
+import { blankRecap } from '@stateforge-labs/session-ledger';
 import { draftFrom, initial, withAvailable } from '#src/recap/application/setup-keys.ts';
 import { oneTask } from '#test/support.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
 import { viewRecord } from '#test/support/tab-view-records.ts';
 

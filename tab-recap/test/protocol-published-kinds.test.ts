@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { KINDS_VERSION } from '#src/protocol/kinds.ts';
-import { REGISTERED_KINDS } from '#src/recap/domain/registered-kinds.ts';
+import { REGISTERED_KINDS } from '@stateforge-labs/session-ledger';
 
 const PUBLISHED_KINDS: Readonly<Record<number, readonly string[]>> = {
     1: ['claude', 'codex', 'opencode', 'hermes'],

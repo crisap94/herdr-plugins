@@ -1,9 +1,10 @@
-import { brand } from '#src/recap/domain/brand.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import type { Enumerated, Enumerator } from '#src/ports/enumerators.ts';
-import { unknown } from '#src/ports/unknowable.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { brand } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import type { Enumerated } from '@stateforge-labs/session-ledger';
+import type { LegacyEnumerator as Enumerator } from '@stateforge-labs/session-ledger';
+import { unknown } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
 
 export type Reply = string | ((document: string, call: number) => string);
 

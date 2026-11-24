@@ -1,14 +1,14 @@
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { CLOSED_SHOWN_MS, numbered, severalOf, taskFactsOf, writerFacts } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-input.ts';
-import { isoSecond, localTime } from '@stateforge-labs/session-ledger/unstable/recap/application/local-time.ts';
-import { FULL_WRITER_VIEW } from '@stateforge-labs/session-ledger/unstable/recap/domain/writer-view.ts';
-import { TRANSCRIPT_BUDGET, writerContext } from '@stateforge-labs/session-ledger/unstable/recap/application/writer-context.ts';
-import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { RecapInput } from '@stateforge-labs/session-ledger/unstable/ports/recap-input.ts';
-import type { RecapRequest } from '@stateforge-labs/session-ledger/unstable/ports/summarizer.ts';
+import { CLOSED_SHOWN_MS, numbered, severalOf, taskFactsOf, writerFacts } from '@stateforge-labs/session-ledger';
+import { isoSecond, localTime } from '@stateforge-labs/session-ledger';
+import { FULL_WRITER_VIEW } from '@stateforge-labs/session-ledger';
+import { TRANSCRIPT_BUDGET, writerContext } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
+import type { RecapInput } from '@stateforge-labs/session-ledger';
+import type { RecapRequest } from '@stateforge-labs/session-ledger';
 
 const text = brand<string, 'Text'>;
 const count = brand<number, 'Count'>;

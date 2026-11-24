@@ -1,18 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { InputCandidate } from '#src/ports/recap-input.ts';
-import type { Entry } from '#src/ports/transcripts.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import { chunksOf } from '#src/recap/application/chunking.ts';
-import { deduplicated, enumerate, enumerateAsked } from '#src/recap/application/enumerate.ts';
-import type { EnumerateRun } from '#src/recap/application/enumerate.ts';
-import { enumerateInput } from '#src/recap/application/enumerate-input.ts';
-import { triggersOf } from '#src/recap/application/triggers.ts';
+import type { InputCandidate } from '@stateforge-labs/session-ledger';
+import type { Entry } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import { chunksOf } from '@stateforge-labs/session-ledger';
+import { deduplicated, enumerate, enumerateAsked } from '@stateforge-labs/session-ledger';
+import type { EnumerateRun } from '@stateforge-labs/session-ledger';
+import { enumerateInput } from '@stateforge-labs/session-ledger';
+import { triggersOf } from '@stateforge-labs/session-ledger';
 import { longTurn, START } from '#test/fakes/long-turn.ts';
 import { answer, FAIL, scripted } from '#test/fakes/enumerator.ts';
 import type { Reply } from '#test/fakes/enumerator.ts';
 import { dtdTest, validate } from '#test/xmllint.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 
 const textOf = brand<string, 'Text'>;
 const count = brand<number, 'Count'>;

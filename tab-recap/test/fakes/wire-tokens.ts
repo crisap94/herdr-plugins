@@ -1,5 +1,5 @@
 import { parseWireText, type RequestId, type WireText } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { parseAskId } from '#src/recap/domain/compact-request.ts';
 import type { TokenMap } from '#src/protocol/tokens.ts';
 

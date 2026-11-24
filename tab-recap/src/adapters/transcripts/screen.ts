@@ -1,18 +1,19 @@
 import { createHash } from 'node:crypto';
 import { tuiChrome } from '@stateforge-labs/harness-adapters/tui';
-import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
 import { cleanScreen, screenEntries, steady } from '#src/recap/application/screen-text.ts';
 import type { ScreenChrome } from '#src/recap/application/screen-text.ts';
 import { parsePaneId, type HarnessKind, parseAgentKind } from '#src/recap/domain/ids.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '@stateforge-labs/session-ledger';
 import { SCREEN_PREFIX } from '#src/ports/screens.ts';
 import type { ScreenReader } from '#src/ports/screens.ts';
-import type { ChunkResult, InFlightCapability, Located, Position, PromptResult, SessionReader } from '#src/ports/transcripts.ts';
-import { unknown } from '#src/ports/unknowable.ts';
-import { sourcePathOf, cursorOf, grewOf } from '#src/ports/transcripts.ts';
+import type { ChunkResult, InFlightCapability, Located, Position, PromptResult } from '@stateforge-labs/session-ledger';
+import type { LegacySessionReader as SessionReader } from '@stateforge-labs/session-ledger';
+import { unknown } from '@stateforge-labs/session-ledger';
+import { sourcePathOf, cursorOf, grewOf } from '@stateforge-labs/session-ledger';
 
 const SCREEN_LINES = must(parseCount(200));
 export const SCREEN_READER_ID = '*';

@@ -1,16 +1,16 @@
-import { must } from '#src/protocol/result.ts';
-import type { Fact } from '#src/recap/domain/fact.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import type { Fact } from '@stateforge-labs/session-ledger';
 import { byteBudgetOf } from '#src/recap/domain/byte-budget.ts';
 import type { RestoreContent } from '#src/recap/domain/restore-content.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import type { LastRun } from '#src/ports/recap-records.ts';
+import { parseText } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
+import type { LastRun } from '@stateforge-labs/session-ledger';
 import { fitRestore } from '#src/recap/render/restore-markdown.ts';
 import { groupedFactsOf } from './handoff-groups.ts';
 import { HANDOFF_BUDGET_BYTES } from './handoff-limits.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 export interface RestoreFacts {
     readonly at: Instant;

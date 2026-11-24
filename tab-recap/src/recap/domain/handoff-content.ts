@@ -1,8 +1,8 @@
-import { SECTION_IDS } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
-import type { FactId } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
+import { SECTION_IDS } from '@stateforge-labs/session-ledger';
+import type { FactId } from '@stateforge-labs/session-ledger';
 import type { HandoffReason } from './handoff-outcome.ts';
-import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { Count } from './count.ts';
+import type { Instant } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
 import type { Freshness } from './freshness.ts';
 import type { HandoffText } from './handoff-sanitize.ts';
 import type { WorksiteSnapshot } from './worksite.ts';

@@ -5,10 +5,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { unwrapPastedContent } from '@stateforge-labs/harness-adapters/claude';
 import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.ts';
-import type { Located } from '#src/ports/transcripts.ts';
+import type { Located } from '@stateforge-labs/session-ledger';
 import { laneWith } from './fakes/handoff-delivery.ts';
 import { sourcePathOf, fsPathOf } from './fakes/transcript-lines.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 const BODY = 'Handoff of the parser refactor.\n\nNext steps:\n  - finish the lexer\n  - run the suite';
 const wrapped = (body: string, id = 'a1b2'): string => `\n\n<pasted_content id="${id}">\n${body}\n</pasted_content id="${id}">\n`;

@@ -1,4 +1,4 @@
-import { err, ok, type Result } from '#src/protocol/result.ts';
+import { err, ok, type Result } from '@stateforge-labs/session-ledger';
 import { FORBIDDEN, FORBIDDEN_PHRASE_PATTERN } from './forbidden-words.ts';
 import type { HandoffText } from './handoff-sanitize.ts';
 

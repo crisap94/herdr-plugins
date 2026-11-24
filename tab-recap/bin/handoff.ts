@@ -21,11 +21,11 @@ import { serializeClosedListing } from '#src/recap/render/closed-listing.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import { exitCodeOf, messageKeyOf, type HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import { closedOf, listingOf, paneOf, problem, sourceProblem, targetProblem } from './handoff-closed.ts';
 import type { HandoffProblem, HandoffValues, ListingArguments } from './handoff-closed.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 export type { HandoffProblem, HandoffValues } from './handoff-closed.ts';
 

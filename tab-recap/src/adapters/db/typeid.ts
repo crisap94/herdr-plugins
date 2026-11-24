@@ -1,5 +1,5 @@
 import { uncheckedTypeId, type TypeId } from '#src/recap/domain/type-id.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 const ALPHABET = '0123456789abcdefghjkmnpqrstvwxyz';
 

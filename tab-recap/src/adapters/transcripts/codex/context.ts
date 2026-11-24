@@ -1,8 +1,8 @@
-import type { Observed } from '#src/recap/domain/compaction.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { ContextObserved as Observed } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
 import { contextUsage, readRollout } from '@stateforge-labs/harness-adapters/codex';
-import { countOf } from '#src/recap/domain/count.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 export function codexObservedOf(lines: readonly Text[]): Observed | null {
     const usage = contextUsage(readRollout(lines).rows);

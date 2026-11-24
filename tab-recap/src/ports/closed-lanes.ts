@@ -1,12 +1,12 @@
-import type { TaskId } from '#src/recap/domain/fact.ts';
+import type { TaskId } from '@stateforge-labs/session-ledger';
 import type { ClosedLane, ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
-import type { Count } from '#src/recap/domain/count.ts';
-import type { Directory } from '#src/recap/domain/directory.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
+import type { Directory } from '@stateforge-labs/session-ledger';
 import type { HarnessKind, SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { TaskName } from '#src/recap/domain/task-name.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
-import type { LastRun } from '@stateforge-labs/session-ledger/unstable/ports/recap-records.ts';
-import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
+import type { Instant } from '@stateforge-labs/session-ledger';
+import type { LastRun } from '@stateforge-labs/session-ledger';
+import type { Unknown } from '@stateforge-labs/session-ledger';
 
 export interface ClosureAssociation {
     readonly task: TaskId;

@@ -1,9 +1,9 @@
 import { COMPACT_EVENTS } from '#src/protocol/exchanges/compact.ts';
 import { HANDOFF_EVENTS } from '#src/protocol/exchanges/handoff.ts';
 import { LIMITS } from '#src/protocol/primitives.ts';
-import type { Count } from './count.ts';
-import { textOf, type Text } from './text.ts';
-import type { Instant } from './time.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 
 export const EVENT_TOKEN = 'tab-recap-event';
 export const EVENT_TTL_MS = 3_600_000;

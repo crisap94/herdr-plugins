@@ -3,18 +3,19 @@ import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
 import { HarnessEnumerator } from '#src/adapters/job/enumerator.ts';
-import type { SessionCursor } from '#src/ports/recap-records.ts';
-import { UNREAD, cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
-import type { ChunkResult, Entry, Position, SessionReader } from '#src/ports/transcripts.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import type { SessionCursor } from '@stateforge-labs/session-ledger';
+import { UNREAD, cursorOf, grewOf, sourcePathOf } from '@stateforge-labs/session-ledger';
+import type { ChunkResult, Entry, Position } from '@stateforge-labs/session-ledger';
+import type { LegacySessionReader as SessionReader } from '@stateforge-labs/session-ledger';
+import { unknown } from '@stateforge-labs/session-ledger';
 import { causeOf } from './fakes/cause.ts';
 import { tailOf } from '#src/recap/application/transcript-tail.ts';
 import { SCREEN_READER_ID } from '#src/adapters/transcripts/screen.ts';
 import { cursor } from '#test/db/support.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText, textOf } from '@stateforge-labs/session-ledger';
 import { agentKind } from '#test/support/ids.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 
 const reader = (agent: string, bySource: Readonly<Record<string, readonly Entry[]>>, asked: { source: string; was: Position }[] = []): SessionReader => ({
     agent: agentKind(agent),

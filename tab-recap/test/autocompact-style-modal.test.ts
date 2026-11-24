@@ -1,8 +1,8 @@
 import { catalogFor } from '#src/i18n/index.ts';
 import { uncheckedAgentKind } from '#src/recap/domain/ids.ts';
-import { environmentName } from '#src/recap/domain/backend.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { environmentName } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
@@ -10,7 +10,7 @@ import { es } from '#src/i18n/es.ts';
 import { changes, draftFrom, initial, locksOf, step, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Draft, Locks, Setup } from '#src/recap/application/setup-keys.ts';
 import { setupLines } from '#src/recap/render/setup.ts';
-import type { AutocompactStyle } from '#src/recap/domain/autocompact-style.ts';
+import type { AutocompactStyle } from '@stateforge-labs/session-ledger';
 import { readerOf } from '#test/fakes/environment.ts';
 
 const models = { claude: textOf(''), codex: textOf('gpt-6-luna'), opencode: textOf(''), custom: textOf('') };

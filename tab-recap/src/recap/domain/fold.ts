@@ -1,6 +1,6 @@
-import { must } from '#src/protocol/result.ts';
-import { textOf } from './text.ts';
-import type { Count } from './count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
 import { lanesOf, seededOf, put, removed, tabOfColumn, tabsWithLanes, without } from './board.ts';
 import type { Board, HiddenState, Placement, Visibility, VisibilityTarget } from './board.ts';
 import { closureOf, closuresBetween, incarnating } from './closures.ts';
@@ -15,7 +15,7 @@ import type { Lane, SeenLane } from './lane.ts';
 import { lingering, settle, spend, wantsKind } from './policy.ts';
 import type { Policy } from './policy.ts';
 import { endsTurn, laneStatus } from './status.ts';
-import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import type { Instant } from '@stateforge-labs/session-ledger';
 import { hiddenState, restoreHidden, withVisibility } from './visibility.ts';
 
 export interface RestoredObservation {

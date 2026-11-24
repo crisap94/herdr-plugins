@@ -1,15 +1,15 @@
-import { textOf, type Text } from '#src/recap/domain/text.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
-import type { Workplaces } from '#src/ports/lane-repo.ts';
-import type { SessionCursor } from '#src/ports/recap-records.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
+import { isUnknown } from '@stateforge-labs/session-ledger';
+import type { Workplaces } from '@stateforge-labs/session-ledger';
+import type { SessionCursor } from '@stateforge-labs/session-ledger';
 import type { LastCommitOutcome, UncommittedOutcome, WorksiteReaderPort } from '#src/ports/worksite-reader.ts';
 import { coordinationNamesOf } from '#src/recap/domain/coordination.ts';
 import { FILES_SHOWN } from '#src/recap/domain/session-facts.ts';
 import type { WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 import type { EditSource } from './edit-tally.ts';
 import { HANDOFF_PATHS_SHOWN } from './handoff-limits.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseDirectory } from '#src/recap/domain/directory.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseDirectory } from '@stateforge-labs/session-ledger';
 
 export interface WorksiteInput {
     readonly directory: Text | null;

@@ -1,7 +1,7 @@
-import { must } from '#src/protocol/result.ts';
-import { parseDirectory } from '#src/recap/domain/directory.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseDirectory } from '@stateforge-labs/session-ledger';
 import { storeRead } from '#test/db/support.ts';
-import type { Directory } from '#src/recap/domain/directory.ts';
+import type { Directory } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, rmSync } from 'node:fs';

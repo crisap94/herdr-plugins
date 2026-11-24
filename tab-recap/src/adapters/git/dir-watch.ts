@@ -1,7 +1,7 @@
 import { watch } from 'node:fs/promises';
 import { join } from 'node:path';
-import { parseDirectory } from '#src/recap/domain/directory.ts';
-import type { Directory } from '#src/recap/domain/directory.ts';
+import { parseDirectory } from '@stateforge-labs/session-ledger';
+import type { Directory } from '@stateforge-labs/session-ledger';
 import type { WorktreeWatch } from '#src/recap/domain/worktree.ts';
 import type { GitDirWatch, GitDirWatcher } from '#src/ports/worktree-status.ts';
 

@@ -1,5 +1,5 @@
 import type { ScopeId } from '#src/recap/domain/ids.ts';
-import type { Shown } from '#src/recap/domain/pacing.ts';
+import type { Shown } from '@stateforge-labs/session-ledger';
 import type { Board } from '#src/recap/domain/board.ts';
 
 export type Watching = (tab: ScopeId) => Shown;

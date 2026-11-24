@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 export { MIN_BUN, bunAtLeast } from '#src/host/policy.mjs';
 

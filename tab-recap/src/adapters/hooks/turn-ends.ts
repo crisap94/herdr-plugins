@@ -1,9 +1,9 @@
 import type { StatusEvent } from '#src/daemon/slots.ts';
-import type { Clock } from '#src/ports/clock.ts';
+import type { Clock } from '@stateforge-labs/session-ledger';
 import type { Board } from '#src/recap/domain/board.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
 import { endsTurn } from '#src/recap/domain/status.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import type { Instant } from '@stateforge-labs/session-ledger';
 import { STATUS_COVERS_MS } from '#src/wire/hooks/turn-signal.ts';
 
 export interface TurnEnds {

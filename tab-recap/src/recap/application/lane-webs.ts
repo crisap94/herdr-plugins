@@ -1,8 +1,8 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { Workplaces } from '#src/ports/lane-repo.ts';
+import type { Workplaces } from '@stateforge-labs/session-ledger';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 import type { LaneWebRecord } from '#src/ports/tab-views.ts';
 
 const REMEMBERED = 200;

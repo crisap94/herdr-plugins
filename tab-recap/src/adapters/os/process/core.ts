@@ -1,10 +1,10 @@
 import type { spawn } from 'node:child_process';
 import type { KillMode, ProcessOptions, ProcessOutcome, ProcessPort } from '#src/ports/process-control.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import type { Count } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
 
 export type Spawner = typeof spawn;
 

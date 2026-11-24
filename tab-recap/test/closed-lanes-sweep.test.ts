@@ -6,10 +6,10 @@ import type { ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { RemovedCounts, RetentionPort } from '#src/ports/retention.ts';
 import { tabId } from '#test/support/ids.ts';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import { countOf, type Count } from '#src/recap/domain/count.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import { countOf, type Count } from '@stateforge-labs/session-ledger';
 import { countFrom } from './fakes/closed-values.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import type { Instant } from '@stateforge-labs/session-ledger';
 
 const DAY = 86_400_000;
 const NOW = instant(100 * DAY);

@@ -1,14 +1,14 @@
-import type { Text } from '#src/recap/domain/text.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
 import { byteBudgetOf } from '#src/recap/domain/byte-budget.ts';
-import { isUnknown, saying } from '#src/ports/unknowable.ts';
+import { isUnknown, saying } from '@stateforge-labs/session-ledger';
 import type { PaneTokens } from '#src/ports/pane-tokens.ts';
 import type { HandoffReference } from '#src/recap/render/handoff-markdown.ts';
 import { omittedTotal } from '#src/recap/render/handoff-markdown.ts';
 import { freshnessTextOf } from '#src/recap/render/freshness.ts';
 import { worksiteTextOf } from '#src/recap/render/worksite.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { buildHandoffContent } from './handoff-content.ts';
 import { closedFreshnessOf, freshnessOf } from './freshness-block.ts';
 import type { FreshnessDeps } from './freshness-block.ts';
@@ -18,7 +18,7 @@ import { handoffTextOf } from './handoff-text.ts';
 import type { HandoffLog } from './handoff-mirror.ts';
 import { worksiteOf } from './worksite-section.ts';
 import type { WorksiteDeps } from './worksite-section.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
 
 export interface HandoffPipelineDeps {

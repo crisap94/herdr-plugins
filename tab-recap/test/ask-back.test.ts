@@ -1,12 +1,12 @@
-import { textOf } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { InputCandidate, InputFact } from '#src/ports/recap-input.ts';
-import { askBackFor, MAX_FACT_QUESTIONS, THIN_CHARS, wanted } from '#src/recap/application/ask-back.ts';
+import type { InputCandidate, InputFact } from '@stateforge-labs/session-ledger';
+import { askBackFor, MAX_FACT_QUESTIONS, THIN_CHARS, wanted } from '@stateforge-labs/session-ledger';
 import { JUDGE_INSTRUCTIONS, READBACK_QUESTIONS } from '#src/adapters/job/prompts/judge-instructions.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import { READBACK } from '#src/recap/domain/questions.ts';
+import { brand } from '@stateforge-labs/session-ledger';
+import { READBACK } from '@stateforge-labs/session-ledger';
 
 const count = brand<number, 'Count'>;
 const asText = brand<string, 'Text'>;

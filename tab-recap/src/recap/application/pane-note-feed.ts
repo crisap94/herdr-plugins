@@ -2,7 +2,7 @@ import type { PaneNoteWriter } from '#src/ports/worktree-status.ts';
 import type { NoteToken } from '#src/recap/domain/coordination.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
 import { notesKey } from '#src/recap/domain/pane-notes.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
 
 export class PaneNoteFeed {
     private readonly store: PaneNoteWriter;

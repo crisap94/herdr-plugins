@@ -1,8 +1,8 @@
 import { messageUsage, modelRef } from '@stateforge-labs/harness-adapters/opencode';
 import type { OpenCodeMessage } from '@stateforge-labs/harness-adapters/opencode';
-import type { Observed } from '#src/recap/domain/compaction.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { parseTextOrNull } from '#src/recap/domain/text.ts';
+import type { ContextObserved as Observed } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { parseTextOrNull } from '@stateforge-labs/session-ledger';
 
 export function opencodeObserved(message: OpenCodeMessage): Observed | null {
     const usage = messageUsage(message);

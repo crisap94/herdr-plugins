@@ -1,10 +1,10 @@
 import type { AgentPanes } from '#src/ports/agents.ts';
 import type { LaneSettler, Settling } from '#src/ports/lane-settling.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
+import { isUnknown } from '@stateforge-labs/session-ledger';
 import { uncheckedMilliseconds, type SessionKey } from '#src/recap/domain/ids.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { laneStatus, READY, type LaneStatus } from '#src/recap/domain/status.ts';
-import type { Instant, Milliseconds } from '#src/recap/domain/time.ts';
+import type { Instant, Milliseconds } from '@stateforge-labs/session-ledger';
 
 const SETTLE_MS = 4000;
 const POLL_MS = 2000;

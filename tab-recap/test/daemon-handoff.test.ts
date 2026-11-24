@@ -1,6 +1,6 @@
-import { countOf } from '#src/recap/domain/count.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { HandoffRunner } from '#src/daemon/handoff.ts';
@@ -20,7 +20,7 @@ import type { AskEntry } from '#src/ports/ask-ledger.ts';
 import type { HandoffAskRecord } from '#src/ports/requests.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
 import { parseRequestId } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { HandoffAnswerStore } from '#src/ports/handoff-answers.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
 import { memoryStore } from './db/support.ts';

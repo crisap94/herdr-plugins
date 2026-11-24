@@ -1,13 +1,13 @@
 import { createHash } from 'node:crypto';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { Correction, RecapRequest } from '#src/ports/summarizer.ts';
-import type { InputFact } from '#src/ports/recap-input.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import type { Correction, RecapRequest } from '@stateforge-labs/session-ledger';
+import type { InputFact } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { instructions } from '#src/adapters/job/prompts/recap-instructions.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { positiveCount } from '#src/recap/domain/writer-view.ts';
+import { brand } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { positiveCount } from '@stateforge-labs/session-ledger';
 import { requestOf } from '#test/support.ts';
 
 const MAIN_DIGEST = '9f6881c8ac20bf119018ba96ca42d7f84c5e0a650a9f59f51ec04d58ddbd86bf';

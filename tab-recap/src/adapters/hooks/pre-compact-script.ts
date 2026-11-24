@@ -1,6 +1,6 @@
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import { HOOK_LIMITS, PRE_COMPACT_CLAUDE_PATH } from '#src/wire/hooks/contract.ts';
 
 const quoted = (path: FsPath): Text => must(parseText(`'${path.replaceAll("'", "'\\''")}'`));

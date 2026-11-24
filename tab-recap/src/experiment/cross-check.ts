@@ -1,6 +1,6 @@
-import type { DeciderState } from '#src/recap/application/autocompact-state.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import type { DeciderState } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
 import { agentTextOf } from './hindsight.ts';
 import type { Hindsight } from './hindsight.ts';
 import { verbatimLabel } from './verbatim.ts';

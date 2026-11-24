@@ -5,8 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { databaseFile, openStoreAt } from '#src/adapters/db/database.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseDirectory } from '#src/recap/domain/directory.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseDirectory } from '@stateforge-labs/session-ledger';
 
 test('a reader on a current file writes a request that the owner reads', () => {
     const dir = mkdtempSync(join(tmpdir(), 'tab-recap-role-'));

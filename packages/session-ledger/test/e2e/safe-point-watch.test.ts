@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { harness, key, scope, text } from '@stateforge-labs/session-ledger/testkit';
-import { SafePointWatch, type AutocompactDeps } from '@stateforge-labs/session-ledger/unstable/recap/application/autocompact.ts';
-import { policyFrom } from '@stateforge-labs/session-ledger/unstable/recap/domain/autocompact.ts';
-import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { SafePointWatch, type AutocompactDeps } from '@stateforge-labs/session-ledger';
+import { policyFrom } from '@stateforge-labs/session-ledger/compaction-timing';
+import { instant } from '@stateforge-labs/session-ledger';
 import type { SafePointEvent } from '@stateforge-labs/session-ledger/compaction-timing';
 
 type Skipped = Parameters<AutocompactDeps['decisions']['skip']>[0];

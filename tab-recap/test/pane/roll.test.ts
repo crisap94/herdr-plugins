@@ -4,11 +4,11 @@ import { SLOT_TABLE } from '#src/daemon/slot-table.ts';
 import { defaultOn } from '#src/daemon/slots/roll.ts';
 import { parseVersion, type Line, type Version } from '#src/daemon/slots.ts';
 import { startRoll, type Activity, type RollParts, type Successor } from '#src/daemon/view/roll.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import { unknown } from '@stateforge-labs/session-ledger';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { must } from '#src/protocol/result.ts';
+import { parseText } from '@stateforge-labs/session-ledger';
+import { causeOf } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 
 interface Fake {
     readonly parts: RollParts;

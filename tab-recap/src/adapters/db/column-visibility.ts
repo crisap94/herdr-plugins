@@ -1,7 +1,7 @@
 import type { Database } from 'bun:sqlite';
 import { eq, sql } from 'drizzle-orm';
 import { allHiddenOf, type HiddenState } from '#src/recap/domain/board.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { NOTHING_HIDDEN } from '#src/ports/column-visibility.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import { columnState, tabVisibility } from './drizzle/index.ts';

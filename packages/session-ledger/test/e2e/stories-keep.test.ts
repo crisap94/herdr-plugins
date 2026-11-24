@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { UNREAD, createEngine, type Chunk, type Fact, type TaskId } from '@stateforge-labs/session-ledger';
-import { grewOf } from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
+import { grewOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
 import { createEngineWorld, followed, key, scope, session, type Behaviour, type CuratedAnswer, type WrittenAnswer } from '@stateforge-labs/session-ledger/testkit';
-import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
-import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 
 const TAB = scope('one');
 const MINUTES = 60_000;

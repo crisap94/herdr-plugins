@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { defaultOn, slot } from '#src/daemon/slots/hooks.ts';
 import { parseRoot, parseSwitch, startSlots, type Line, type SlotContext, type SlotEntry, type StatusEvent, type Switch } from '#src/daemon/slots.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 
 const SOCKET = join('hooks', 'hooks.sock');
 

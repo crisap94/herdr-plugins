@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import type { Operation } from '@stateforge-labs/session-ledger/unstable/recap/domain/ops.ts';
-import type { Tasked } from '@stateforge-labs/session-ledger/unstable/recap/application/ops-answer.ts';
-import { listedIn, live, stageFor, staged, submittedStage, toolOf } from '@stateforge-labs/session-ledger/unstable/recap/application/job-kit/stage.ts';
-import type { Stage, Staging } from '@stateforge-labs/session-ledger/unstable/recap/application/job-kit/stage.ts';
-import { factIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { brand } from '@stateforge-labs/session-ledger';
+import type { Operation } from '@stateforge-labs/session-ledger';
+import type { Tasked } from '@stateforge-labs/session-ledger';
+import { listedIn, live, stageFor, staged, submittedStage, toolOf } from '@stateforge-labs/session-ledger';
+import type { Stage, Staging } from '@stateforge-labs/session-ledger';
+import { factIdOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 const text = brand<string, 'Text'>;
 

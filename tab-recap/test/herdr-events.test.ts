@@ -1,8 +1,8 @@
 import { test } from 'node:test';
-import { environmentName } from '#src/recap/domain/backend.ts';
+import { environmentName } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { herdrEventsFrom } from '#src/recap/domain/herdr-events.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { changes, draftFrom, initial, locksOf } from '#src/recap/application/setup-keys.ts';
 import type { Draft } from '#src/recap/application/setup-keys.ts';
 import { readerOf } from '#test/fakes/environment.ts';

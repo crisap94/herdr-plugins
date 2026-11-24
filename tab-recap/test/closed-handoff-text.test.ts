@@ -6,9 +6,9 @@ import type { ClosedLaneRecord } from '#src/ports/closed-lanes.ts';
 import { freshnessTextOf } from '#src/recap/render/freshness.ts';
 import { serializeClosedListing } from '#src/recap/render/closed-listing.ts';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { directoryOf, taskNameOf } from './fakes/closed-values.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 const CLOSED_AT = instant(Date.parse('2026-10-11T09:00:00Z'));
 const DEL = 127;

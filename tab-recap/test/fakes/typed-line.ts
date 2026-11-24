@@ -1,6 +1,6 @@
 import type { CompactionLine } from '#src/recap/domain/compaction-plan.ts';
 import type { Prompted } from '#src/ports/agents.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import { unknown } from '@stateforge-labs/session-ledger';
 import { causeOf } from './cause.ts';
 
 export function lineBreakRefusal(line: CompactionLine): Prompted | null {

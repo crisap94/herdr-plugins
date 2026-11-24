@@ -1,7 +1,7 @@
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import { type SessionKey, type ScopeId, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 
 export interface HandoffValues {
     readonly from?: readonly string[];

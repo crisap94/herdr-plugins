@@ -13,15 +13,15 @@ import type { Board } from '#src/recap/domain/board.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import type { FleetFeed, FleetFrame, FleetSnapshotResult, FleetStreamResult } from '#src/ports/fleet-source.ts';
 import type { CompactAsk } from '#src/ports/requests.ts';
 import { parseToolName } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import { type Instant } from '#src/recap/domain/time.ts';
+import { type Instant } from '@stateforge-labs/session-ledger';
 import { boardSeeded, reconciliation, seenLane } from '#test/support/seen.ts';
 
 const PANE = 'w1:p1';

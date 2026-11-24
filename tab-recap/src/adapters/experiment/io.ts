@@ -1,9 +1,9 @@
 import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 
 import type { Row } from '#src/adapters/transcripts/jsonl.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
-import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger';
 
 export const jsonLines = (path: Text): readonly Text[] => (existsSync(path) ? readFileSync(path, 'utf8').split('\n').filter((line) => line.trim() !== '').map((line) => textOf(line)) : []);
 

@@ -1,10 +1,10 @@
 import type { LaneStatus } from '#src/recap/domain/status.ts';
 import type { CompactionLine } from '#src/recap/domain/compaction-plan.ts';
 import type { HarnessKind, SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { Duration, Milliseconds } from '#src/recap/domain/time.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Duration, Milliseconds } from '@stateforge-labs/session-ledger';
 import type { Done } from './columns.ts';
-import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
+import type { Unknown } from '@stateforge-labs/session-ledger';
 
 export type Prompted = { readonly kind: 'sent' } | { readonly kind: 'blocked' } | Unknown;
 

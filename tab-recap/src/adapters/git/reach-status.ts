@@ -1,11 +1,11 @@
 import { statusMatrix, walk, TREE, STAGE } from 'isomorphic-git';
 import type { WalkerEntry, WalkerMap } from 'isomorphic-git';
-import { err, ok, type Result } from '#src/protocol/result.ts';
+import { err, ok, type Result } from '@stateforge-labs/session-ledger';
 import { parseGitPath } from '#src/recap/domain/git-path.ts';
 import type { GitPath } from '#src/recap/domain/git-path.ts';
-import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
 import { HEAD_REF } from './constants.ts';
 import type { Handle } from './reach.ts';
 

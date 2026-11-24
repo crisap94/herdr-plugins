@@ -5,10 +5,10 @@ import { parseJsonList, parseJsonText } from './json.ts';
 import { parseJsonObject, type JsonObject } from './json-object.ts';
 import { PLUGIN_ID } from './fleet.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { must } from '#src/protocol/result.ts';
-import { unknown, type Unknown } from '#src/ports/unknowable.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import { causeOf } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { unknown, type Unknown } from '@stateforge-labs/session-ledger';
 import type { ActiveInstallRead, ActiveInstalls } from '#src/ports/active-install.ts';
 
 export type PluginListWire = () => Promise<JsonObject>;

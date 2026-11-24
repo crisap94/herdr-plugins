@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { aucOf, brierOf, jaccardOf, kappaOf, quantileMs, undecidedShare, wordsIn } from '#src/experiment/stats.ts';
 import type { Label, ScoredLabel } from '#src/experiment/stats.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { brand } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 const near = (a: number | null, b: number): void => { assert.ok(a !== null && Math.abs(a - b) < 1e-9, `${String(a)} ≠ ${b}`); };
 const probability = brand<number, 'Probability'>;

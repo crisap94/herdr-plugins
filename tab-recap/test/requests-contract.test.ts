@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { RequestPort } from '#src/ports/requests.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { paneId, tabId } from '#test/support/ids.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '@stateforge-labs/session-ledger';
 import { memoryStore } from './db/support.ts';
 import { MemoryRequests } from './fakes/requests.ts';
 

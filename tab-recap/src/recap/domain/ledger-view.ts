@@ -1,7 +1,7 @@
-import type { Fact } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
-import { CAPS } from '@stateforge-labs/session-ledger/unstable/recap/domain/shape.ts';
-import type { ListSection, RecapSections } from '@stateforge-labs/session-ledger/unstable/recap/domain/shape.ts';
-import { textOf, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import type { Fact } from '@stateforge-labs/session-ledger';
+import { CAPS } from '@stateforge-labs/session-ledger';
+import type { ListSection, RecapSections } from '@stateforge-labs/session-ledger';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 type Ordering = -1 | 0 | 1;
 

@@ -1,11 +1,11 @@
 import type { ClaudeCompact, ClaudeRecord } from '@stateforge-labs/harness-adapters/claude';
 import * as claude from '@stateforge-labs/harness-adapters/claude';
-import type { AgentNote, Chunk, Entry, Mark } from '#src/ports/transcripts.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
+import type { AgentNote, Chunk, Entry, Mark } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText, type Text, textOf } from '@stateforge-labs/session-ledger';
 import { namedCallOf, toolEntryOf } from '../tool-calls.ts';
-import { instant, duration, type Instant } from '#src/recap/domain/time.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { instant, duration, type Instant } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 const AWAY_SUBTYPE = claude.ClaudeSystemSubtype.enum['away_summary'];
 

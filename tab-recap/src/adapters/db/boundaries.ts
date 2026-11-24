@@ -1,15 +1,15 @@
 import type { Database } from 'bun:sqlite';
 import { and, desc, eq, max, ne, sql } from 'drizzle-orm';
-import { chapterStart, compactedFrom } from '#src/recap/domain/boundary.ts';
-import type { SessionMark, Planned } from '#src/recap/domain/boundary.ts';
+import { chapterStart, compactedFrom } from '@stateforge-labs/session-ledger';
+import type { SessionMark, Planned } from '@stateforge-labs/session-ledger';
 import { type ScopeId } from '#src/recap/domain/ids.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import type { Instant } from '@stateforge-labs/session-ledger';
 import { boundary, chapter, compaction, transcript } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import type { TranscriptMove, TranscriptStore } from './transcripts.ts';
 import { ids } from './uuid7.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 export interface Found {
     readonly at: Instant;

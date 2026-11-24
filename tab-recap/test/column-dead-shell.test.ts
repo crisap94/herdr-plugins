@@ -14,8 +14,8 @@ import { observe } from '#src/recap/domain/fold.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { columnOpenedObservation } from '#test/support/seen.ts';
 
 type Raw = Record<string, unknown>;

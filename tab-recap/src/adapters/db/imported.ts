@@ -1,11 +1,11 @@
 import { existsSync } from 'node:fs';
-import type { Fact } from '#src/recap/domain/fact.ts';
+import type { Fact } from '@stateforge-labs/session-ledger';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { connectReadOnly } from './connection.ts';
 import { LedgerRows } from './ledger-rows.ts';
 import { all, text } from './rows.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 export function factsOfTabAt(path: FsPath, tab: ScopeId): readonly Fact[] | null {
     if (!existsSync(path)) {

@@ -1,5 +1,5 @@
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import type { Intent } from '#src/wire/view/keys.ts';
 
 export type Local = Extract<Intent, { readonly kind: 'scroll' | 'page' | 'jump' }>;

@@ -1,5 +1,5 @@
-import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Database } from 'bun:sqlite';

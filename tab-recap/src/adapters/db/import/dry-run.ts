@@ -3,9 +3,9 @@ import { storeOver } from '../database.ts';
 import { openDatabase } from '../open.ts';
 import { compareLegacyFiles } from './import-files.ts';
 import { LegacyStoreFiles } from './legacy-files.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { fsPathOf, parseFsPath } from '#src/recap/domain/fs-path.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 
 const directory = process.argv.slice(2).find((argument) => !argument.startsWith('--'));
 if (directory === undefined) {

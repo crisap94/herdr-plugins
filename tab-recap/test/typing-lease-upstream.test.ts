@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { LEASE_RETRY_MS, LEASE_TTL_MS as UPSTREAM_TTL_MS, leaseBlocked as upstreamBlocked, leaseToken, must, owner } from '@stateforge-labs/herdr-sdk/pane-tokens';
 import { RETRY_MS } from '#src/recap/application/typing-lease.ts';
 import { LEASE, LEASE_TTL_MS, leaseBlocked } from '#src/recap/domain/typing-lease.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { tokenEntries } from './fakes/token-entries.ts';
 
 const tab = must(owner('tab-recap'));

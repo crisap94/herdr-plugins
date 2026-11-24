@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
-import { autocompactState, type DeciderState } from '../../tab-recap/src/recap/application/autocompact-state.ts';
-import { QUESTIONS } from '../../tab-recap/src/recap/application/autocompact-questions.ts';
+import { autocompactState, type DeciderState } from '../../packages/session-ledger/src/recap/application/autocompact-state.ts';
+import { QUESTIONS } from '../../packages/session-ledger/src/recap/application/autocompact-questions.ts';
 import { deciderInstructions } from '../../tab-recap/src/adapters/job/decider.ts';
 import type { Entry } from '../../packages/session-ledger/src/ports/transcripts.ts';
 import type { HistoryFact } from '../../packages/session-ledger/src/ports/ledger.ts';

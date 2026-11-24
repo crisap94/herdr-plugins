@@ -5,10 +5,10 @@ import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { codexSettings } from '#src/adapters/hooks/codex-settings.ts';
 import { harnessSettings, installHooks, uninstallHooks, type InstallIo } from '#src/adapters/hooks/install.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { NO, YES } from '#src/recap/domain/gui-tab-parts.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText } from '@stateforge-labs/session-ledger';
 import { hookShimPath } from '#src/wire/paths.ts';
 
 const SAMPLE = new URL('./fixtures/codex-settings.sample.json', import.meta.url);

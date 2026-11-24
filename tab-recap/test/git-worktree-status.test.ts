@@ -6,9 +6,9 @@ import { join } from 'node:path';
 import { branch, checkout, commit } from 'isomorphic-git';
 import { FsGitDirWatcher } from '#src/adapters/git/dir-watch.ts';
 import { GitWorktreeLocator, GitWorktreeProbe } from '#src/adapters/git/worktree-status.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseDirectory } from '#src/recap/domain/directory.ts';
-import type { Directory } from '#src/recap/domain/directory.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseDirectory } from '@stateforge-labs/session-ledger';
+import type { Directory } from '@stateforge-labs/session-ledger';
 import { AUTHOR, makeLinked, makeRepo, stage } from './fixtures/git-repo.ts';
 
 const fs = { promises: fsp };

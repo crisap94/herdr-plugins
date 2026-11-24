@@ -1,9 +1,9 @@
-import type { Unknown } from '#src/ports/unknowable.ts';
+import type { Unknown } from '@stateforge-labs/session-ledger';
 import type { GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
-import type { Advance, FailedRun, LastRun, RecordedRun, Recap } from '#src/ports/recap-records.ts';
+import type { Instant } from '@stateforge-labs/session-ledger';
+import type { Advance, FailedRun, LastRun, RecordedRun, Recap } from '@stateforge-labs/session-ledger';
 
 export class PublishingRecords implements GuardedRecapRecords {
     private readonly inner: GuardedRecapRecords;

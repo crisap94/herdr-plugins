@@ -1,16 +1,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { duplicate } from '#src/recap/domain/gates/duplicate.ts';
-import type { Context, Gate, GatedSection, Item } from '#src/recap/domain/gates/item-gate.ts';
-import { wrongLanguage } from '#src/recap/domain/gates/language.ts';
-import { unresolved } from '#src/recap/domain/gates/link.ts';
-import { narrator } from '#src/recap/domain/gates/narrator.ts';
-import { pronounOpener } from '#src/recap/domain/gates/pronoun.ts';
-import { notSpecific } from '#src/recap/domain/gates/specific.ts';
-import { withoutWhy } from '#src/recap/domain/gates/why.ts';
-import { jaccard, tokensOf } from '#src/recap/domain/gates/words.ts';
+import { brand } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { duplicate } from '@stateforge-labs/session-ledger';
+import type { Context, GatedSection, Item } from '@stateforge-labs/session-ledger';
+import type { ItemGate as Gate } from '@stateforge-labs/session-ledger';
+import { wrongLanguage } from '@stateforge-labs/session-ledger';
+import { unresolved } from '@stateforge-labs/session-ledger';
+import { narrator } from '@stateforge-labs/session-ledger';
+import { pronounOpener } from '@stateforge-labs/session-ledger';
+import { notSpecific } from '@stateforge-labs/session-ledger';
+import { withoutWhy } from '@stateforge-labs/session-ledger';
+import { wordJaccard as jaccard, wordTokensOf as tokensOf } from '@stateforge-labs/session-ledger';
 import { examplesOf } from '#test/rubric.ts';
 
 const count = brand<number, 'Count'>;

@@ -1,14 +1,14 @@
 import { humanText, parseMessage, parsePart } from '@stateforge-labs/harness-adapters/opencode';
 import type { OpenCodeMessage, OpenCodePart } from '@stateforge-labs/harness-adapters/opencode';
 import type { OpenCodeStore, StoredMessage } from '@stateforge-labs/harness-adapters/opencode/store';
-import type { AgentNote, Entry, Mark } from '#src/ports/transcripts.ts';
-import { parseInstant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import type { AgentNote, Entry, Mark } from '@stateforge-labs/session-ledger';
+import { parseInstant } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 import { opencodeObserved } from './context.ts';
 import { namedCallOf, toolEntryOf } from '../tool-calls.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { instant, duration } from '#src/recap/domain/time.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { instant, duration } from '@stateforge-labs/session-ledger';
 
 type PartRole = 'user' | 'assistant';
 

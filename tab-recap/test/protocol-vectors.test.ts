@@ -16,8 +16,8 @@ import { idGrammarOf } from '../src/protocol/codec.ts';
 import type { ParsedValue } from '../src/protocol/codec.ts';
 import { parseIdText, parseRequestId, parseTokenValue } from '../src/protocol/primitives.ts';
 import type { Refusal, RequestId, TokenValue } from '../src/protocol/primitives.ts';
-import type { Result } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
-import { must } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
+import type { Result } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 import { snapshotOf } from './fakes/token-map.ts';
 
 type Refused = { readonly kind: 'refused'; readonly reason: string; readonly subject: string };

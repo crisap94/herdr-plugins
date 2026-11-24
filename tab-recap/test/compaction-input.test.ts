@@ -2,12 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { compactionMaterialInput as compactionInput } from '#src/recap/application/compaction-material.ts';
 import type { CompactionMaterial } from '#src/recap/application/compaction-material.ts';
-import type { HistoryFact } from '#src/ports/ledger.ts';
-import type { Entry } from '#src/ports/transcripts.ts';
-import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
+import type { HistoryFact } from '@stateforge-labs/session-ledger';
+import type { Entry } from '@stateforge-labs/session-ledger';
+import { NO_SECTIONS } from '@stateforge-labs/session-ledger';
 import { dtdTest, validate } from '#test/xmllint.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 
 const at = (clock: string): number => Date.parse(`2026-10-07T${clock}:00Z`);
 const NOW = Date.parse('2026-10-07T10:00:00Z');

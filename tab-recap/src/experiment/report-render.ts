@@ -1,10 +1,10 @@
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import type { Kappa } from '#src/recap/domain/kappa.ts';
-import type { Probability } from '#src/recap/domain/probability.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import type { Milliseconds } from '#src/recap/domain/time.ts';
-import type { Usd } from '#src/recap/domain/usd.ts';
+import type { Probability } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import type { Milliseconds } from '@stateforge-labs/session-ledger';
+import type { Usd } from '@stateforge-labs/session-ledger';
 import type { CountMean } from './stats.ts';
 
 

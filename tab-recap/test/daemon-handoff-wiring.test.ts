@@ -1,4 +1,4 @@
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { handoffRestartOf, pollHandoffs, pruneHandoffAnswers } from '#src/daemon/handoff.ts';
@@ -6,7 +6,7 @@ import { LOCAL_REQUESTER } from '#src/ports/ask-ledger.ts';
 import type { AskEntry } from '#src/ports/ask-ledger.ts';
 import type { HandoffAskRecord } from '#src/ports/requests.ts';
 import { parseRequestId } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { HANDOFF_ANSWER_TTL_MS } from '#src/recap/application/handoff-limits.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import { paneId } from '#test/support/ids.ts';

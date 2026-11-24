@@ -5,8 +5,8 @@ import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffPlan } from '#src/recap/domain/handoff-plan.ts';
 import type { HandoffPlanCatalogue } from '#src/ports/handoff-plans.ts';
 import type { InFlightReader } from '#src/ports/in-flight.ts';
-import type { Waiting } from './autocompact.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import type { Waiting } from '@stateforge-labs/session-ledger';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 export type TargetRefusal = Extract<HandoffOutcome, { readonly kind: 'refused'; readonly reason: 'source-equals-target' | 'not-a-lane' | 'status-not-ready' | 'in-flight' }>;
 

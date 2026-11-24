@@ -1,15 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { gateFrom, jevFrom, parseGatePercent, policyFrom } from '#src/recap/domain/autocompact.ts';
-import type { GateFacts } from '#src/recap/domain/autocompact.ts';
-import { tuningFrom } from '#src/recap/domain/autocompact-style.ts';
-import { backgroundItem, backgroundLabel, backgroundTool, flightOf, flightReason, NOT_AWAITING, observedFrom, runningCount } from '#src/recap/domain/in-flight.ts';
-import type { Flight } from '#src/recap/domain/in-flight.ts';
-import { parseText, type Text, textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import { duration, instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { Milliseconds } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import { must } from '#src/protocol/result.ts';
-import { countOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/count.ts';
+import { jevFrom, parseGatePercent } from '@stateforge-labs/session-ledger';
+import { gateOf as gateFrom, policyFrom } from '@stateforge-labs/session-ledger/compaction-timing';
+import type { GateFacts } from '@stateforge-labs/session-ledger';
+import { tuningFrom } from '@stateforge-labs/session-ledger/compaction-timing';
+import { backgroundItem, backgroundLabel, backgroundTool, flightOf, flightReason, NOT_AWAITING, observedFrom, runningCount } from '@stateforge-labs/session-ledger';
+import type { Flight } from '@stateforge-labs/session-ledger';
+import { parseText, type Text, textOf } from '@stateforge-labs/session-ledger';
+import { duration, instant } from '@stateforge-labs/session-ledger';
+import type { Milliseconds } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 const NOW = 10_000_000;
 const flight = (count: number): Flight => flightOf(observedFrom(runningCount(countOf(count)), [backgroundItem(backgroundTool(textOf('Monitor')), backgroundLabel(textOf('mrs')))], flightReason(textOf(`${count} running`))), NOT_AWAITING);

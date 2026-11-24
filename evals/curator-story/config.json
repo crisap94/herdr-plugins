@@ -5,14 +5,14 @@
     "repetitions": 3,
     "input": {
         "shape": "{ name: string, language: 'en' | 'es', facts: Fact[], clock: { now: number, zone: string } }",
-        "builder": "tab-recap/src/recap/application/curator-input.ts#curatorInput({ ...input, rubric: RUBRIC.items })",
+        "builder": "packages/session-ledger/src/recap/application/curator-input.ts#curatorInput({ ...input, rubric: RUBRIC.items })",
         "rubric": "tab-recap/src/adapters/job/prompts/rubric.ts#RUBRIC.items",
         "system": "tab-recap/src/adapters/job/prompts/curator-instructions.ts#CURATOR_INSTRUCTIONS",
         "user": "curatorInput(...).document",
         "unfence": "tab-recap/src/adapters/job/prompts/recap-prompt.ts#unfenced(text)",
         "parser": "tab-recap/src/recap/domain/curation.ts#curationOf(unfenced(text), openIds)",
         "openIds": "the ids of curatorInput(...).facts whose state is 'open'",
-        "language": "tab-recap/src/recap/domain/gates/language.ts#languageOfLine",
+        "language": "packages/session-ledger/src/recap/domain/gates/language.ts#languageOfLine",
         "tokens": "evals/curator-story/tokens.ts#outsideOf({ names: expected.names_and_numbers, times: expected.times, facts: input.facts.length }, story)"
     },
     "shipped": { "name": "codex-luna-medium", "backend": "codex", "model": "gpt-6-luna", "effort": "medium", "shipped": true },

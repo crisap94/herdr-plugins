@@ -1,15 +1,15 @@
-import { brand } from '#src/recap/domain/brand.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { brand } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { InputFact } from '#src/ports/recap-input.ts';
-import type { Correction } from '#src/ports/summarizer.ts';
+import type { InputFact } from '@stateforge-labs/session-ledger';
+import type { Correction } from '@stateforge-labs/session-ledger';
 import { instructions } from '#src/adapters/job/prompts/recap-instructions.ts';
-import { writerContext } from '#src/recap/application/writer-context.ts';
+import { writerContext } from '@stateforge-labs/session-ledger';
 import { agentOf, requestOf } from './support.ts';
 import { dtdTest, validate } from './xmllint.ts';
-import { factIdOf } from '#src/recap/domain/fact.ts';
+import { factIdOf } from '@stateforge-labs/session-ledger';
 
 const at = (clock: string): number => Date.parse(`2026-10-06T${clock}:00Z`);
 const fact = (id: string, over: Partial<InputFact> = {}): InputFact =>

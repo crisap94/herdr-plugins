@@ -6,7 +6,7 @@ import type { FreshnessBlock } from '#src/recap/render/freshness.ts';
 import type { HandoffReference } from '#src/recap/render/handoff-markdown.ts';
 import type { WorksiteBlock } from '#src/recap/render/worksite.ts';
 import { HANDOFF_BUDGET_BYTES } from './handoff-limits.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 export interface RenderedBlocks {
     readonly reference: HandoffReference;

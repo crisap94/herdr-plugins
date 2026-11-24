@@ -5,7 +5,6 @@ import { loadLanes, parseLanes, type Lanes } from '../gates/bin/lane-map.ts';
 const PREFIX = 'tab-recap/';
 const LANES_PATH = `${PREFIX}ci/lanes.json`;
 const PIPELINE = '.gitlab-ci.yml';
-const ENGINE_MANIFEST = `${PREFIX}ci/engine-files.json`;
 
 const adapts = process.env['LANE_ADAPTS'] === '1';
 const lane = process.argv[2];
@@ -59,14 +58,14 @@ function foreignKeys(): readonly string[] {
     return [...new Set([...Object.keys(base), ...Object.keys(lanes)])].filter((name) => name !== lane && JSON.stringify(base[name]) !== JSON.stringify(lanes[name]));
 }
 
-const FROZEN_KEYS: ReadonlySet<string> = new Set(['ENG', 'STO', 'VIEW']);
+const FROZEN_KEYS: ReadonlySet<string> = new Set(['STO', 'VIEW']);
 
 function adaptsForeignSource(file: string): boolean {
     return adapts && otherOwner.has(file) && file.startsWith(`${PREFIX}src/`) && !file.endsWith('/legacy.ts') && !FROZEN_KEYS.has(otherOwner.get(file) ?? '');
 }
 
 function openToEveryLane(file: string): boolean {
-    return file === ENGINE_MANIFEST || file.startsWith(`${PREFIX}test/`);
+    return file.startsWith(`${PREFIX}test/`);
 }
 
 function allowed(file: string): boolean {

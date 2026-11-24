@@ -1,20 +1,20 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { compareImported, withoutLedgers } from '#src/recap/application/compare-imported.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { bornOf } from '#src/recap/domain/run-ids.ts';
-import { parseUsd, usdOf } from '#src/recap/domain/usd.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
+import { parseUsd, usdOf } from '@stateforge-labs/session-ledger';
+import { parseText, textOf } from '@stateforge-labs/session-ledger';
 import type { ImportedChapterRecord } from '#src/ports/imported-recaps.ts';
 import type { JudgePort, JudgeTask } from '#src/ports/judge.ts';
-import type { Operation } from '#src/recap/domain/ops.ts';
+import type { Operation } from '@stateforge-labs/session-ledger';
 import { comparisonText } from '#src/recap/render/compare.ts';
 import { plain } from '#src/recap/render/wrap.ts';
 import { cursor, memoryStore, recordOps } from '#test/db/support.ts';
 import { oneTask } from '#test/support.ts';
 import { MIN, T0 } from './imported-fixture.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
 
 const add = (section: 'goal' | 'done' | 'next', text: string): Operation => ({ op: 'add', section, text: textOf(text), why: null, ref: null, at: null, agent: null });

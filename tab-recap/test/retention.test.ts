@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { cutoffAt, DEFAULT_CLOSED_LANE_DAYS, DEFAULT_KEEP_DAYS, inWindow, tabKeepCountOf } from '#src/recap/domain/retention.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
 
 const DAY = 86_400_000;

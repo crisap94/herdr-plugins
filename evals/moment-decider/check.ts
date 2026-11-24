@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { autocompactState, OPEN_WORK_SHOWN, TURNS_SHOWN, type DeciderState } from '../../tab-recap/src/recap/application/autocompact-state.ts';
-import { QUESTIONS } from '../../tab-recap/src/recap/application/autocompact-questions.ts';
+import { autocompactState, OPEN_WORK_SHOWN, TURNS_SHOWN, type DeciderState } from '../../packages/session-ledger/src/recap/application/autocompact-state.ts';
+import { QUESTIONS } from '../../packages/session-ledger/src/recap/application/autocompact-questions.ts';
 import { deciderInstructions, probabilitiesOf } from '../../tab-recap/src/adapters/job/decider.ts';
-import { verdictOf } from '../../tab-recap/src/recap/domain/autocompact-verdict.ts';
+import { verdictOf } from '../../packages/session-ledger/src/recap/domain/autocompact-verdict.ts';
 import { SECTION_IDS, CLOSED_WHY } from '../../packages/session-ledger/src/recap/domain/fact.ts';
 import type { Entry } from '../../packages/session-ledger/src/ports/transcripts.ts';
 import type { HistoryFact } from '../../packages/session-ledger/src/ports/ledger.ts';

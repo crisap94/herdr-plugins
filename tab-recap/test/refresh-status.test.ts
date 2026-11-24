@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { refreshStatusOf } from '#src/recap/domain/freshness.ts';
 import { refreshWithin } from '#src/daemon/refresh-status.ts';
 import { memoryStore, recordOps } from './db/support.ts';
-import { duration, instant } from '#src/recap/domain/time.ts';
+import { duration, instant } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { usdOf } from '#src/recap/domain/usd.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { usdOf } from '@stateforge-labs/session-ledger';
 
 const never = (): Promise<void> => new Promise<void>(() => undefined);
 

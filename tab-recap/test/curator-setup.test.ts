@@ -1,6 +1,6 @@
 import { catalogFor } from '#src/i18n/index.ts';
 import { uncheckedAgentKind } from '#src/recap/domain/ids.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import { curateJobOf } from './fakes/settings-readers.ts';
 import assert from 'node:assert/strict';
@@ -9,16 +9,16 @@ import { es } from '#src/i18n/es.ts';
 import { changes, draftFrom, initial, locksOf, step, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Setup } from '#src/recap/application/setup-keys.ts';
 import { curatorFor } from '#src/daemon/backends.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseDirectory } from '#src/recap/domain/directory.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseDirectory } from '@stateforge-labs/session-ledger';
 import type { JobSetting } from '#src/recap/domain/job.ts';
 import { HarnessCurator } from '#src/adapters/job/curator.ts';
 import type { HarnessAsk, HarnessChoice, HarnessPort, HarnessRun, StructuredSupport } from '#src/ports/harness.ts';
-import { parseUsd } from '#src/recap/domain/usd.ts';
+import { parseUsd } from '@stateforge-labs/session-ledger';
 import { CURATE_DEFAULT } from '#src/recap/domain/job.ts';
 import { setupLines } from '#src/recap/render/setup.ts';
 import { fakeOutput, fakeRuntime } from '#test/fakes/harness-runtime.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
+import { parseText, textOf } from '@stateforge-labs/session-ledger';
 import { readerOf } from '#test/fakes/environment.ts';
 
 const models = { claude: textOf(''), codex: textOf('gpt-6-luna'), opencode: textOf(''), custom: textOf('') };

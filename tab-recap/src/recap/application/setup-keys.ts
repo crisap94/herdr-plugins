@@ -1,9 +1,9 @@
 import { changes, dirty } from './setup-changes.ts';
 import { CHOICES, TEXTS } from './setup-fields.ts';
-import { environmentName } from '#src/recap/domain/backend.ts';
-import { countOf, type Count } from '#src/recap/domain/count.ts';
+import { environmentName } from '@stateforge-labs/session-ledger';
+import { countOf, type Count } from '@stateforge-labs/session-ledger';
 import type { HarnessKind } from '#src/recap/domain/ids.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 import { fieldOf, JOB_FIELDS, modelTarget, rowOf, ROWS } from './setup-state.ts';
 import type { Editing, FieldId, LanguageChange, Setup, Stepped, TestState } from './setup-state.ts';
 

@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { queuedOutcomeOf, verdictOf } from '#src/recap/application/compaction-outcome.ts';
 import type { QueuedDeps } from '#src/recap/application/compaction-outcome.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { laneStatus } from '#src/recap/domain/status.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
 import { extractClaude, extractCodex } from './fakes/transcript-lines.ts';
 import { seenLane } from '#test/support/seen.ts';
 

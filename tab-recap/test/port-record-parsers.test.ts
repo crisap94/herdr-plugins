@@ -4,7 +4,7 @@ import { parseCompactionTokensRecord } from '#src/ports/session-source.ts';
 import { parseDisagreementRecord, parsePairRecord, parseVerdictRecord } from '#src/ports/verdicts.ts';
 import { parseGateTally, parseRunEntry, parseRunRecord } from '#src/ports/run-inputs.ts';
 import { parseLaneWebRecord, parseTabLaneRecord, parseTabViewRecord } from '#src/ports/tab-views.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 const web = { base: 'https://gitlab.example/repo', forge: 'gitlab', branch: 'main' };
 

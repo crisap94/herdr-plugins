@@ -8,8 +8,8 @@ import {
 } from '@stateforge-labs/session-ledger-sqlite/unstable/open.ts';
 import { MIGRATIONS } from './schema/index.ts';
 import type { Migration } from './schema/migration.ts';
-import { must } from '#src/protocol/result.ts';
-import { countOf, parseCount, type Count } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { countOf, parseCount, type Count } from '@stateforge-labs/session-ledger';
 import { fsPathOf, type FsPath } from '#src/recap/domain/fs-path.ts';
 
 export type Role = 'owner' | 'reader';

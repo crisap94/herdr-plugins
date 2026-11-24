@@ -1,9 +1,9 @@
 import { CAPABILITY_TOKEN, type SettingCheck } from '#src/protocol/capability.ts';
 import { compact } from '#src/protocol/exchanges/compact.ts';
 import { parseTokenName, parseTokenValue, type TokenName, type TokenValue } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
-import type { Milliseconds, Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { Count } from './count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import type { Milliseconds, Instant } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
 import { ANSWER_TOKENS, OWNERS, answerNameOf } from './token-registry.ts';
 import { CAPABILITY_VALUE, PROTOCOL_VERSION, capabilityValueOf } from './lane-capability.ts';
 import { API_TOKEN, NEEDS_TOKEN, RECAP_TOKEN, SHARE_TOKEN } from './lane-token-names.ts';

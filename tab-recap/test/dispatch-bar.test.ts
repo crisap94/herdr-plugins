@@ -7,7 +7,7 @@ import type { Board } from '#src/recap/domain/board.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 import type { ColumnPanes, ColumnLayoutResult } from '#src/ports/columns.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';
 import type { TabViewStore } from '#src/ports/tab-views.ts';

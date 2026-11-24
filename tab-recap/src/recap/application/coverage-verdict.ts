@@ -1,10 +1,10 @@
 import type { Messages } from '#src/i18n/index.ts';
-import { must } from '#src/protocol/result.ts';
-import { unreachable } from '#src/recap/domain/autocompact.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { unreachable } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { Checked, CoverageFlow } from './compaction-coverage.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { parseCount } from '@stateforge-labs/session-ledger';
 
 export function coverageWhy(outcome: Checked['outcome'], why: Text | null, messages: Messages): Text | null {
     switch (outcome.kind) {

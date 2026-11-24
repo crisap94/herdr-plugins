@@ -12,12 +12,12 @@ The recap writer turns one writer input (the fact ledger of a tab plus the new t
 | Piece | Plugin code used unchanged |
 |---|---|
 | System prompt | `instructions(request)` in `tab-recap/src/adapters/job/prompts/recap-instructions.ts` |
-| User document | `writerContext(request, TRANSCRIPT_BUDGET)` in `tab-recap/src/recap/application/writer-context.ts` |
-| Parser | `parseAnswer(text, resolving)` in `tab-recap/src/recap/application/ops-answer.ts`, after `unfenced` from `prompts/recap-prompt.ts` |
-| Gates | `LEDGER_GATES` through `judge(gates, ops, ground, now)` in `tab-recap/src/recap/application/ops-gating.ts` (it also applies the kept operations to the ledger and reports ledger refusals as gate `L`) |
-| Ledger state after the answer | `apply` in `tab-recap/src/recap/domain/ops.ts` |
+| User document | `writerContext(request, TRANSCRIPT_BUDGET)` in `packages/session-ledger/src/recap/application/writer-context.ts` |
+| Parser | `parseAnswer(text, resolving)` in `packages/session-ledger/src/recap/application/ops-answer.ts`, after `unfenced` from `prompts/recap-prompt.ts` |
+| Gates | `LEDGER_GATES` through `judge(gates, ops, ground, now)` in `packages/session-ledger/src/recap/application/ops-gating.ts` (it also applies the kept operations to the ledger and reports ledger refusals as gate `L`) |
+| Ledger state after the answer | `apply` in `packages/session-ledger/src/recap/domain/ops.ts` |
 
-`item.input` is a `RecapRequest` (`tab-recap/src/ports/summarizer.ts`): `{ input: RecapInput, language, previousLanguage }`. It goes into both builders as it is.
+`item.input` is a `RecapRequest` (`packages/session-ledger/src/ports/summarizer.ts`): `{ input: RecapInput, language, previousLanguage }`. It goes into both builders as it is.
 
 **The ground the gates need is built from the item alone.** The plugin's `groundOf` reads the live store; here the same fields come from `item.input`, as `groundOf` in `check-dataset.ts` does: one task `t1`; `shown` maps each ledger id (`f1`…) to a `Fact` made from the `InputFact`; `open` and `closedLately` (closed in the last 24 hours) come from the same facts; `source` is `anchorSource(input)`; `agents` are the lower-cased id, label and kind. `check-dataset.ts` runs a reference answer for every item through this path with no refusal, which shows the path works from outside the plugin.
 

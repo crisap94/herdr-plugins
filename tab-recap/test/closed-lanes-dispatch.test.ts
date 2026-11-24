@@ -6,7 +6,7 @@ import type { ClosedLane } from '#src/recap/domain/closures.ts';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
 import { silentClosures } from './fakes/silent-closures.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import type { ColumnPanes } from '#src/ports/columns.ts';
 import type { ClosureRecorder } from '#src/ports/closed-lanes.ts';
 import type { ColumnVisibility } from '#src/ports/column-visibility.ts';

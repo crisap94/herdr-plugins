@@ -1,6 +1,6 @@
 import { chmod, mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
 import { claimSocket, type Claim } from '#src/wire/socket-claim.ts';
 
 const OWNER_ONLY_DIRECTORY = 0o700;

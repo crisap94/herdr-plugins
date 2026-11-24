@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { CallKind } from '#src/ports/transcripts.ts';
+import type { CallKind } from '@stateforge-labs/session-ledger';
 import { codexCalls, namedCall } from './fakes/transcript-lines.ts';
 
 const claudeNative: readonly (readonly [string, CallKind])[] = [

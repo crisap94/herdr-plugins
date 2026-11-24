@@ -1,8 +1,8 @@
-import type { DeciderState } from '#src/recap/application/autocompact-state.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import type { Probability } from '#src/recap/domain/probability.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import type { DeciderState } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
+import type { Probability } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import { crossCheck } from './cross-check.ts';
 import type { Hindsight } from './hindsight.ts';
 import { questionScore, type Labels, type ScoredReps } from './report-metrics.ts';

@@ -4,13 +4,13 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcripts.ts';
-import { touchedFiles } from '#src/recap/application/lane-hints.ts';
-import { UNREAD } from '#src/ports/transcripts.ts';
+import { touchedFiles } from '@stateforge-labs/session-ledger';
+import { UNREAD } from '@stateforge-labs/session-ledger';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { opencodeFixture } from '#test/opencode-fixture.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { extractClaude, extractCodex, codexCalls, isPlainRead, namedCall as callOf, fsPathOf, sourcePathOf } from './fakes/transcript-lines.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 import { seenLane } from '#test/support/seen.ts';
 
 const rows = (list: readonly object[]): string[] => list.map((row) => JSON.stringify(row));

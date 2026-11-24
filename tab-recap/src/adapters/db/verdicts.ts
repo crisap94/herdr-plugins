@@ -1,10 +1,10 @@
 import { uncheckedTypeId } from '#src/recap/domain/type-id.ts';
 import type { Database } from 'bun:sqlite';
 import { and, asc, eq, isNotNull, sql } from 'drizzle-orm';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { RunId } from '#src/recap/domain/run-ids.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
 import { parseDisagreementRecord, parsePairRecord, parseVerdictRecord, type DisagreementRecord, type PairRecord, type VerdictRecord, type VerdictStore } from '#src/ports/verdicts.ts';
 import { writeTx } from './connection.ts';
 import { verdict as verdicts } from './drizzle/index.ts';

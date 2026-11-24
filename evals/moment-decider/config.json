@@ -5,12 +5,12 @@
     "repetitions": 3,
     "input": {
         "shape": "{ recent: Entry[], history: HistoryFact[] }",
-        "builder": "tab-recap/src/recap/application/autocompact-state.ts#autocompactState",
-        "questions": "tab-recap/src/recap/application/autocompact-questions.ts#QUESTIONS",
+        "builder": "packages/session-ledger/src/recap/application/autocompact-state.ts#autocompactState",
+        "questions": "packages/session-ledger/src/recap/application/autocompact-questions.ts#QUESTIONS",
         "system": "tab-recap/src/adapters/job/decider.ts#deciderInstructions(QUESTIONS)",
         "user": "JSON.stringify(autocompactState(input.recent, input.history))",
         "parser": "tab-recap/src/adapters/job/decider.ts#probabilitiesOf(text, Object.keys(QUESTIONS))",
-        "gate": "tab-recap/src/recap/domain/autocompact-verdict.ts#verdictOf(answers, THRESHOLDS)"
+        "gate": "packages/session-ledger/src/recap/domain/autocompact-verdict.ts#verdictOf(answers, THRESHOLDS)"
     },
     "questions": ["closes_request", "announces_continuation", "asks_detailed_choice", "needs_verbatim", "changes_subject", "stuck"],
     "shipped": { "name": "codex-sol-low", "backend": "codex", "model": "gpt-6.1-sol", "effort": "low", "shipped": true },

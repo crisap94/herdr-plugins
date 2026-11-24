@@ -3,7 +3,7 @@ import { EXCHANGES } from '#src/protocol/exchanges/index.ts';
 import { handoff } from '#src/protocol/exchanges/handoff.ts';
 import { KINDS_VERSION } from '#src/protocol/kinds.ts';
 import type { TokenValue } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 
 export const PROTOCOL_VERSION = '1';
 export const capabilityValueOf = (isOn: SettingCheck): TokenValue => must(capabilityValueTyped(EXCHANGES, KINDS_VERSION, isOn));

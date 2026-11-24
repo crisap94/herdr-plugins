@@ -1,8 +1,8 @@
-import { hintFor, sizeOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/compaction.ts';
+import { hintFor, sizeOf } from '@stateforge-labs/session-ledger';
 import { sectionOf } from '@stateforge-labs/session-ledger';
-import type { SectionId } from '@stateforge-labs/session-ledger/unstable/i18n/sections.ts';
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import { headlineOf, renderRecap } from '@stateforge-labs/session-ledger/unstable/recap/application/recap-shape.ts';
+import type { I18nSectionId as SectionId } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { headlineOf, renderRecap } from '@stateforge-labs/session-ledger';
 import type { ColumnTask, RecapColumn, Row, RowState, TextColumnView } from './model.ts';
 import { assertAmount, assertCount, assertPercent, parseWords, parseWordsOrNull } from './wording.ts';
 import type { TextWording } from './wording.ts';
@@ -12,7 +12,7 @@ import { linked } from './linked.ts';
 import type { Group } from './groups.ts';
 import { coloured, elapsed, plainMarkdown, visibleLength, wrap } from './wrap.ts';
 import type { Style } from './wrap.ts';
-import { countOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 export type Markdown = (markdown: string, width: number) => readonly string[] | null;
 

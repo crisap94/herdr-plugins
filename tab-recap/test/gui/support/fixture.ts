@@ -2,21 +2,21 @@ import { ExpandedModel, type ExpandedDeps } from '#src/recap/application/expande
 import { guiIndexRow } from '#src/recap/application/gui-index-build.ts';
 import { guiTabOf } from '#src/recap/application/gui-tab-build.ts';
 import { BLANK_READS } from '#src/recap/application/gui-tab-reads.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount, countOf } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, countOf } from '@stateforge-labs/session-ledger';
 import { guiFileName, type GuiTab } from '#src/recap/domain/gui-tab.ts';
 import { parseTabId } from '#src/recap/domain/ids.ts';
 import { tabId } from '#test/support/ids.ts';
-import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import { blankRecap } from '#src/ports/recap-records.ts';
+import { NO_SECTIONS } from '@stateforge-labs/session-ledger';
+import { parseText, textOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
+import { blankRecap } from '@stateforge-labs/session-ledger';
 import type { TabViewRecord } from '#src/ports/tab-views.ts';
 import { cursor, memoryStore, must as present, seed, storeRead } from '#test/db/support.ts';
 import { fact } from '#test/fakes/fact-at.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { GUI_DIR, NOW, world } from './herdr.ts';
-import { tabIdOf, paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { tabIdOf, paneIdOf } from '@stateforge-labs/session-ledger';
 import { viewRecord } from '#test/support/tab-view-records.ts';
 
 export const MIN = 60_000;

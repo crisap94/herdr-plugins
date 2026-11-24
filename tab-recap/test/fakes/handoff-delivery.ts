@@ -1,9 +1,10 @@
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { handoffPlanner } from '#src/adapters/capability/handoff-plans.ts';
 import { kindOf } from '#test/fakes/agent-kind.ts';
 import type { AgentLookup, AgentPanes, Prompted, PromptStance, PromptWaitFor } from '#src/ports/agents.ts';
-import type { Located, PromptResult, SessionReader, ChunkResult } from '#src/ports/transcripts.ts';
-import { unknown, type Unknown } from '#src/ports/unknowable.ts';
+import type { Located, PromptResult, ChunkResult } from '@stateforge-labs/session-ledger';
+import type { LegacySessionReader as SessionReader } from '@stateforge-labs/session-ledger';
+import { unknown, type Unknown } from '@stateforge-labs/session-ledger';
 import { causeOf } from './cause.ts';
 import type { Acquired } from '#src/recap/application/typing-lease.ts';
 import type { CurrentSession } from '#src/recap/application/lane-recent.ts';
@@ -17,8 +18,8 @@ import type { Lane } from '#src/recap/domain/lane.ts';
 import { registryWith } from './transcript-registry.ts';
 import { agentKind } from '#test/support/ids.ts';
 import { type SessionId, parseSessionId } from '#src/recap/domain/ids.ts';
-import { sourcePathOf } from '#src/ports/transcripts.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { sourcePathOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { seenLane } from '#test/support/seen.ts';
 import type { BareLane } from '#test/support/seen.ts';
 

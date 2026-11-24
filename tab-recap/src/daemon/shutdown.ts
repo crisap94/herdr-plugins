@@ -1,6 +1,6 @@
 import type { ColumnPanes } from '#src/ports/columns.ts';
-import { isUnknown, saying } from '#src/ports/unknowable.ts';
-import { duration, type Duration } from '#src/recap/domain/time.ts';
+import { isUnknown, saying } from '@stateforge-labs/session-ledger';
+import { duration, type Duration } from '@stateforge-labs/session-ledger';
 import { withinBy } from './bounded.ts';
 import { parseLine, type Line } from './slots.ts';
 

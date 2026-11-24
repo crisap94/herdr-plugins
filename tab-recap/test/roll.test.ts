@@ -1,13 +1,13 @@
-import { textOf } from '#src/recap/domain/text.ts';
-import { duration } from '#src/recap/domain/time.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { duration } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { shouldRoll } from '#src/adapters/os/plugin-version.ts';
 import { shutDownWithin } from '#src/daemon/shutdown.ts';
 import type { ClosedEvery } from '#src/ports/columns.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import { unknown } from '@stateforge-labs/session-ledger';
 import { causeOf } from './fakes/cause.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 const pause = (ms: number): Promise<void> => new Promise((resolve) => { setTimeout(resolve, ms); });
 

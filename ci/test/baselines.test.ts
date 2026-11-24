@@ -25,9 +25,6 @@ const foundation = JSON.parse(readFileSync(join(ROOT, 'ci', 'baselines', 'founda
 
 const sha256 = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex');
 
-const countsOf = (record: Readonly<Record<string, unknown>>): Record<string, number> =>
-    Object.fromEntries(Object.entries(record).map(([key, value]) => [key, Array.isArray(value) ? value.length : -1]));
-
 describe('foundation baselines', () => {
     test('every key of table PL 6.2 is present', () => {
         expect(foundation.commit).toMatch(/^[0-9a-f]{40}$/);
@@ -54,10 +51,5 @@ describe('foundation baselines', () => {
     test('the engine golden fixtures hash to golden.one and golden.full', () => {
         expect(sha256(join(PLUGIN, 'test', 'fixtures', 'engine-golden-one.txt'))).toBe(foundation.golden.one);
         expect(sha256(join(PLUGIN, 'test', 'fixtures', 'engine-golden-full.txt'))).toBe(foundation.golden.full);
-    });
-
-    test('the engine manifest has as many entries per key as engineFiles', () => {
-        const manifest = JSON.parse(readFileSync(join(PLUGIN, 'ci', 'engine-files.json'), 'utf8')) as Readonly<Record<string, unknown>>;
-        expect(countsOf(manifest)).toEqual({ ...foundation.engineFiles });
     });
 });

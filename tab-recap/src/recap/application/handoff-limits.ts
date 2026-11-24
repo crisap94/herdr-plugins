@@ -1,6 +1,6 @@
-import { CLOSED_SHOWN_MS } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-input.ts';
+import { CLOSED_SHOWN_MS } from '@stateforge-labs/session-ledger';
 import { RECAP_WAIT_MS } from './recap-wait.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 export const HANDOFF_BUDGET_BYTES = 16_384;
 export const HANDOFF_DONE_SHOWN = 15;

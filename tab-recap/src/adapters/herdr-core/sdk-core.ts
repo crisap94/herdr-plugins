@@ -1,9 +1,9 @@
-import { unknown, exitCodeOf } from '#src/ports/unknowable.ts';
-import type { Unknown } from '#src/ports/unknowable.ts';
-import { must } from '#src/protocol/result.ts';
-import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
-import { duration } from '#src/recap/domain/time.ts';
+import { unknown, exitCodeOf } from '@stateforge-labs/session-ledger';
+import type { Unknown } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { causeOf } from '@stateforge-labs/session-ledger';
+import { parseText, textOf } from '@stateforge-labs/session-ledger';
+import { duration } from '@stateforge-labs/session-ledger';
 import type { Unknown as CoreUnknown } from '@stateforge-labs/herdr-sdk/core';
 export * from '@stateforge-labs/herdr-sdk/core';
 export function unknownOfCore(failure: CoreUnknown): Unknown {

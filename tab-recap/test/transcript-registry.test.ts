@@ -3,8 +3,8 @@ import test from 'node:test';
 import { daemonTranscriptRegistry, modalTranscriptRegistry, replayTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
 import { SCREEN_READER_ID } from '#src/adapters/transcripts/screen.ts';
 import type { ScreenReader } from '#src/ports/screens.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { agentKind } from '#test/support/ids.ts';
 import { readerKindOf } from './fakes/transcript-lines.ts';
 

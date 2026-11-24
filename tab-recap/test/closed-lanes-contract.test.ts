@@ -10,8 +10,8 @@ import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 import { MemoryClosedLanes } from './fakes/closed-lanes-memory.ts';
 import { directoryOf } from './fakes/closed-values.ts';
 

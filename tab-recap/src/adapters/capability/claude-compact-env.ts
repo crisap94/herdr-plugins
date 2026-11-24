@@ -1,6 +1,6 @@
-import { parseCount } from '#src/recap/domain/count.ts';
-import type { Count } from '#src/recap/domain/count.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
 
 export const MIN_CLAUDE_WINDOW = 100_000;
 export const COMPACT_WINDOW_KEY = 'CLAUDE_CODE_AUTO_COMPACT_WINDOW';

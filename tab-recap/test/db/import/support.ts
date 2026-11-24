@@ -1,12 +1,12 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileKey, LegacyStoreFiles } from '#src/adapters/db/import/legacy-files.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
-import { renderRecap } from '#src/recap/application/recap-shape.ts';
+import { renderRecap } from '@stateforge-labs/session-ledger';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
-import { cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { cursorOf, sourcePathOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 export const keyOf = (tab: string): string => fileKey(tabId(tab));
 export const filesAt = (dir: string): LegacyStoreFiles => new LegacyStoreFiles(must(parseFsPath(dir)));

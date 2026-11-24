@@ -1,15 +1,15 @@
-import type { AnswerTally } from '#src/ports/autocompact-records.ts';
-import type { DeciderPort, Question } from '#src/ports/decider.ts';
-import type { HistoryFact } from '#src/ports/ledger.ts';
-import { isUnknown, saying } from '#src/ports/unknowable.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCheckedFact, type CheckedFact } from '#src/recap/domain/autocompact.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import type { AnswerTally } from '@stateforge-labs/session-ledger';
+import type { DeciderPort, Question } from '@stateforge-labs/session-ledger';
+import type { HistoryFact } from '@stateforge-labs/session-ledger';
+import { isUnknown, saying } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCheckedFact, type CheckedFact } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import { parseProbability, type Probability } from '#src/recap/domain/probability.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import type { Usd } from '#src/recap/domain/usd.ts';
-import type { Section } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
+import { parseProbability, type Probability } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import type { Usd } from '@stateforge-labs/session-ledger';
+import type { Section } from '@stateforge-labs/session-ledger';
 
 const COVERED: ReadonlySet<Section> = new Set<Section>(['goal', 'now', 'needs', 'decisions', 'next', 'rules']);
 const BLOCKING: ReadonlySet<Section> = new Set<Section>(['goal', 'needs', 'decisions', 'rules']);

@@ -1,17 +1,17 @@
 import { compactCommand } from '@stateforge-labs/harness-adapters';
 import { acceptsStall, compactionLine, needsIdle, retriesOnSelfFailure, parseCompactionPiece, parseConfirmationReads, QUEUES, unsupported } from '#src/recap/domain/compaction-plan.ts';
 import type { CompactionPlanResult } from '#src/recap/domain/compaction-plan.ts';
-import { duration } from '#src/recap/domain/time.ts';
-import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
-import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
+import { duration } from '@stateforge-labs/session-ledger';
+import { registeredKindOf } from '@stateforge-labs/session-ledger';
+import type { RegisteredKind } from '@stateforge-labs/session-ledger';
 import type { HarnessKind } from '#src/recap/domain/ids.ts';
-import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '@stateforge-labs/session-ledger';
 import type { CompactionPlanner } from '#src/ports/compaction-plans.ts';
 import { supported } from '#src/ports/capability.ts';
 import type { Support } from '#src/ports/capability.ts';
-import type { CompactionWhy } from '#src/ports/capability-reasons.ts';
-import { capabilityWording } from '#src/ports/capability-reasons.ts';
-import { must } from '#src/protocol/result.ts';
+import type { CompactionWhy } from '@stateforge-labs/session-ledger';
+import { capabilityWording } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 
 type PlanHarness = Parameters<typeof compactCommand>[0];
 type PlanFor = (guidance: Text) => CompactionPlanResult;

@@ -69,7 +69,7 @@ test('rule 1: the branch name picks the track; a lane branch leaves files to lan
 });
 
 test('rule 2: a changed path belongs to the first track whose globs match it, then to its B lane, then to FND', () => {
-    const engine = check('track/HOOK-x', ['tab-recap/src/recap/application/engine.ts']);
+    const engine = check('track/HOOK-x', ['packages/session-ledger/src/index.ts']);
     assert.equal(engine.status, 1);
     assert.match(engine.stderr, /owned by ENG/u);
     const store = check('track/HOOK-x', ['tab-recap/src/adapters/db/open.ts']);
@@ -81,7 +81,7 @@ test('rule 2: a changed path belongs to the first track whose globs match it, th
     const wire = check('track/HOOK-x', ['tab-recap/src/wire/view/codec.ts']);
     assert.match(wire.stderr, /owned by FND/u);
     assert.equal(check('track/FND-W1-wire', ['tab-recap/src/wire/view/codec.ts']).status, 0);
-    assert.equal(check('track/ENG-E2b-move', ['tab-recap/src/recap/application/engine.ts', 'packages/session-ledger/src/index.ts']).status, 0);
+    assert.equal(check('track/ENG-E2b-move', ['tab-recap/src/engine/engine-adapter.ts', 'packages/session-ledger/src/index.ts']).status, 0);
     assert.equal(check('track/ENG-x', ['packages/session-ledger/gates/graph.sh']).status, 1);
     assert.equal(check('track/FND-1c-gates', ['packages/session-ledger/gates/graph.sh']).status, 0);
 });
@@ -96,9 +96,6 @@ test('rule 3: shared paths admit the tracks they name, and tests are open except
     assert.equal(foreign.status, 1);
     assert.match(foreign.stderr, /owned by B3/u);
     assert.equal(check('track/PHB-b37-counts', [`tab-recap/${String(bTest)}`]).status, 0);
-    const engTest = laneFiles('ENG').find((file) => file.startsWith('test/'));
-    assert.notEqual(engTest, undefined);
-    assert.equal(check('track/HOOK-x', [`tab-recap/${String(engTest)}`]).status, 0);
 });
 
 test('rule 4: locked paths open only to their named branches, and the crossing label does not lift them', () => {

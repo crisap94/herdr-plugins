@@ -1,4 +1,4 @@
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { HandoffAnswerStore } from '#src/ports/handoff-answers.ts';

@@ -1,10 +1,10 @@
 import type { Database } from 'bun:sqlite';
 import { and, asc, count, eq } from 'drizzle-orm';
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import { parseInstant, type Instant } from '@stateforge-labs/session-ledger';
 import { parseCompactionTokensRecord, type CompactionTokensRecord, type SessionSourcePort } from '#src/ports/session-source.ts';
 import { chapter, compaction, run, tab as tabs } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';

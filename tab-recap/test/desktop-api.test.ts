@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tabId } from '#test/support/ids.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { apiProblems } from '#test/gui-schema-support.ts';
 import { call, json, publishIndex, startRig } from '#test/desktop-api-support.ts';
 

@@ -1,4 +1,4 @@
-import { textOf, parseText, type Text } from '#src/recap/domain/text.ts';
+import { textOf, parseText, type Text } from '@stateforge-labs/session-ledger';
 import { isUncheckedSessionId, isUncheckedSessionPath, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
 import type { AgentSession, SessionKey, SessionId, ScopeId } from '#src/recap/domain/ids.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';

@@ -1,18 +1,18 @@
-import { parseUsd } from '#src/recap/domain/usd.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseAutocompactPercent } from '#src/recap/domain/autocompact.ts';
-import { parseCount, countOf } from '#src/recap/domain/count.ts';
+import { parseUsd } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseAutocompactPercent } from '@stateforge-labs/session-ledger';
+import { parseCount, countOf } from '@stateforge-labs/session-ledger';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { detailOf } from '#src/recap/application/autocompact-gates.ts';
+import { detailOf } from '@stateforge-labs/session-ledger';
 import { lane, NOW, rows, world } from './autocompact-world.ts';
-import type { DecidedAnswersResult } from '#src/ports/decider.ts';
-import type { DecisionDraft } from '#src/ports/autocompact-records.ts';
-import { awaitedNames, backgroundItem, backgroundLabel, backgroundTool, flightOf, flightReason, NOT_AWAITING, NOTHING_IN_FLIGHT, observedFrom, runningCount } from '#src/recap/domain/in-flight.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import { duration, instant } from '#src/recap/domain/time.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import type { DecidedAnswersResult } from '@stateforge-labs/session-ledger';
+import type { DecisionDraft } from '@stateforge-labs/session-ledger';
+import { awaitedNames, backgroundItem, backgroundLabel, backgroundTool, flightOf, flightReason, NOT_AWAITING, NOTHING_IN_FLIGHT, observedFrom, runningCount } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import { duration, instant } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 const monitor = backgroundItem(backgroundTool(textOf('Monitor')), backgroundLabel(textOf('open merge requests')));
 

@@ -4,10 +4,10 @@ import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.ts';
-import { UNREAD, type Located, type Position, cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
+import { UNREAD, type Located, type Position, cursorOf, sourcePathOf } from '@stateforge-labs/session-ledger';
 import { sameStart } from '#src/adapters/transcripts/jsonl.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import { fsPathOf } from './fakes/transcript-lines.ts';
 

@@ -1,9 +1,9 @@
-import { textOf } from '#src/recap/domain/text.ts';
-import { parseUsd } from '#src/recap/domain/usd.ts';
-import type { Directory } from '#src/recap/domain/directory.ts';
-import { must } from '#src/protocol/result.ts';
-import { countOf, parseCount } from '#src/recap/domain/count.ts';
-import { duration, instant } from '#src/recap/domain/time.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { parseUsd } from '@stateforge-labs/session-ledger';
+import type { Directory } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { countOf, parseCount } from '@stateforge-labs/session-ledger';
+import { duration, instant } from '@stateforge-labs/session-ledger';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

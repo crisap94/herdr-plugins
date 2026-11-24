@@ -1,7 +1,7 @@
 import type { CurrentSession } from '#src/recap/application/lane-recent.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import type { Fleet } from './fleet.ts';
-import type { NonEmptyText } from '#src/recap/domain/text.ts';
+import type { NonEmptyText } from '@stateforge-labs/session-ledger';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
 import type { FlushWhy } from '#src/recap/domain/flush-why.ts';
 

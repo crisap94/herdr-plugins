@@ -1,12 +1,12 @@
 import { test } from 'node:test';
-import { countOf } from '#src/recap/domain/count.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { tokenEntries } from './fakes/token-entries.ts';
 import assert from 'node:assert/strict';
 import { awaitingOf, notesOf } from '#src/recap/domain/coordination.ts';
 import { leaseBlocked, LEASE } from '#src/recap/domain/typing-lease.ts';
 import { eventValue, seqOf, VALUE_MAX } from '#src/recap/domain/event-token.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 
 test('awaiting: the first non-empty `awaiting` or `awaiting-<tool>` names what the pane waits for; an empty one or a look-alike is not a wait', () => {
     assert.equal(awaitingOf(tokenEntries({ 'awaiting-coordinator': 'reviewer' })), 'reviewer');

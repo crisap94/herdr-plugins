@@ -1,7 +1,7 @@
-import type { Count } from '#src/recap/domain/count.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { Milliseconds } from '#src/recap/domain/time.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Milliseconds } from '@stateforge-labs/session-ledger';
 
 export type RunEnding = 'finished' | 'timed-out';
 

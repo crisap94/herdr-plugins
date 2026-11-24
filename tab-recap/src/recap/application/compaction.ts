@@ -1,6 +1,6 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { Messages } from '#src/i18n/index.ts';
-import { isUnknown, saying } from '#src/ports/unknowable.ts';
+import { isUnknown, saying } from '@stateforge-labs/session-ledger';
 import { READY } from '#src/recap/domain/status.ts';
 import type { CompactionFinish } from '#src/ports/compaction-records.ts';
 import type { CompactAsk } from '#src/ports/requests.ts';
@@ -10,7 +10,7 @@ import { failureStage } from '#src/protocol/exchange.ts';
 import { COMPACT_EVENTS, COMPACT_FAILURES, COMPACT_STAGES, type CompactFailure } from '#src/protocol/exchanges/compact.ts';
 import { laneBusyRefusal, laneClosedRefusal, splitByClaim, type Asked, type Refusal } from './compaction-lanes.ts';
 import { LANE_CLOSED, type ClosePoint } from '#src/recap/domain/lane-closed.ts';
-import { withNote } from '#src/recap/domain/continuation-note.ts';
+import { withNote } from '@stateforge-labs/session-ledger';
 import { clean } from './compaction-brief.ts';
 import type { CoverageFlow, Briefed, Checked } from './compaction-coverage.ts';
 import { blockedByCoverage } from './coverage-verdict.ts';
@@ -22,9 +22,9 @@ import { scopeOf } from './compaction-targets.ts';
 import { Trail } from './compaction-trail.ts';
 import type { HarnessKind, CompactionId, SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger';
 import { parseAnswerStage, type AnswerStage } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 
 
 type Gate = { readonly kind: 'refused'; readonly refusal: Refusal } | ({ readonly kind: 'proceed' } & Placed);

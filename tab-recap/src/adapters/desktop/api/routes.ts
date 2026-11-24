@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Directory } from '#src/recap/domain/directory.ts';
-import { must } from '#src/protocol/result.ts';
+import type { Directory } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 import { guiFileName } from '#src/recap/domain/gui-tab.ts';
 import { NO } from '#src/recap/domain/gui-tab-parts.ts';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
-import { parseText, type NonEmptyText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type NonEmptyText, type Text } from '@stateforge-labs/session-ledger';
 import { API_FILE, API_NO_INDEX, API_VERSION, INDEX_FILE } from '../constants.ts';
 import type { ApiContext, ApiCall, Handler } from './call.ts';
 import { sendEmpty, sendFailure, sendJson } from './reply.ts';

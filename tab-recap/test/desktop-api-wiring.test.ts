@@ -10,14 +10,15 @@ import { desktopFrontend } from '#src/adapters/desktop/frontend.ts';
 import { parseSocketPath } from '#src/adapters/herdr-core/sdk-core.ts';
 import { DesktopBus } from '#src/adapters/desktop/bus.ts';
 import { GuiPublisher } from '#src/adapters/desktop/publisher.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import { parseDirectory } from '#src/recap/domain/directory.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import { parseDirectory } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { blankRecap, type Records, type Recap } from '#src/ports/recap-records.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
+import { blankRecap, type Recap } from '@stateforge-labs/session-ledger';
+import { type LegacyRecords as Records } from '@stateforge-labs/session-ledger';
 import type { TabViewStore } from '#src/ports/tab-views.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 const DEAD_SOCKET = must(parseSocketPath(join(mkdtempSync(join(tmpdir(), 'tr-core-')), 'none.sock')));
 

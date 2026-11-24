@@ -1,5 +1,5 @@
-import type { Count } from '#src/recap/domain/count.ts';
-import { parseProbability, type Probability } from '#src/recap/domain/probability.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
+import { parseProbability, type Probability } from '@stateforge-labs/session-ledger';
 import { present } from './stats.ts';
 
 

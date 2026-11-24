@@ -1,7 +1,7 @@
 import type { HandoffOutcome } from './handoff-outcome.ts';
-import type { Count } from './count.ts';
-import type { Text } from './text.ts';
-import type { Duration } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Duration } from '@stateforge-labs/session-ledger';
 
 export interface SettleEvidence {
     readonly trials: Count;

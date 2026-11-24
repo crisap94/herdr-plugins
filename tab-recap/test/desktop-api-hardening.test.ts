@@ -7,9 +7,9 @@ import { request } from 'node:http';
 import { DesktopApi } from '#src/adapters/desktop/api/server.ts';
 import { DesktopBus } from '#src/adapters/desktop/bus.ts';
 import { OpenLeases } from '#src/adapters/desktop/lease.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseDirectory } from '#src/recap/domain/directory.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseDirectory } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { call, startRig } from './desktop-api-support.ts';
 
 const now = (): ReturnType<typeof instant> => instant(1);

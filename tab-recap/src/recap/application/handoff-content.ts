@@ -1,15 +1,15 @@
 import type { Freshness } from '#src/recap/domain/freshness.ts';
-import { textOf as asText } from '#src/recap/domain/text.ts';
+import { textOf as asText } from '@stateforge-labs/session-ledger';
 import type { HandoffContent } from '#src/recap/domain/handoff-content.ts';
 import { cleanHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import type { HandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import { vetHandoffText } from '#src/recap/domain/handoff-vetting.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 import type { WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 import { NOTE_LIMIT } from './compaction-message.ts';
 import { groupedFactsOf } from './handoff-groups.ts';
-import type { TaskFacts } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-input.ts';
+import type { TaskFacts } from '@stateforge-labs/session-ledger';
 
 export interface HandoffInput {
     readonly at: Instant;

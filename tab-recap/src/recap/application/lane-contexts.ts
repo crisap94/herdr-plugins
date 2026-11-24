@@ -1,17 +1,18 @@
-import { contextOf } from '#src/recap/domain/compaction.ts';
-import type { ContextUse, Observed } from '#src/recap/domain/compaction.ts';
+import { contextOf } from '@stateforge-labs/session-ledger';
+import type { ContextUse } from '@stateforge-labs/session-ledger';
+import type { ContextObserved as Observed } from '@stateforge-labs/session-ledger';
 import type { CompactLimits } from '#src/ports/compact-limits.ts';
 import type { ContextWindowLookup } from '#src/ports/context-windows.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { parseCount, countOf } from '#src/recap/domain/count.ts';
-import type { Count } from '#src/recap/domain/count.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { ObservedResult } from '#src/ports/transcripts.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
-import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
+import { parseCount, countOf } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
+import { parseText, textOf } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { ObservedResult } from '@stateforge-labs/session-ledger';
+import { isUnknown } from '@stateforge-labs/session-ledger';
+import type { TranscriptRegistry } from '@stateforge-labs/session-ledger';
 
 const TAIL_BYTES = countOf(256 * 1024);
 const REMEMBERED = 200;

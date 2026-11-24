@@ -3,7 +3,6 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import ts from 'typescript';
-import { ENGINE_FILES_PATH, engineOf } from './move-map.ts';
 
 interface Edge {
     readonly from: string;
@@ -16,7 +15,6 @@ interface Specifier {
     readonly kind: Edge['kind'];
 }
 
-const ROOT = new URL('../../', import.meta.url);
 const PACKAGE_ROOT = new URL('../../../packages/session-ledger/', import.meta.url);
 
 const TIMING: readonly string[] = [
@@ -41,25 +39,7 @@ const TIMING: readonly string[] = [
     'src/recap/application/autocompact-line.ts',
 ];
 
-const ENGINE: readonly string[] = engineOf(JSON.parse(readFileSync(ENGINE_FILES_PATH, 'utf8')));
-
-const STUB_CARRIED: readonly Edge[] = [];
-
 const ALLOWED_PREFIXES: readonly string[] = ['src/compaction-timing/', 'src/protocol/', 'src/contract/', 'src/ports/', 'src/recap/domain/'];
-
-const STUB_LINE = /^export \* from '@stateforge-labs\/session-ledger\/unstable\/[^']+';$/u;
-const REEXPORT_LINE = /^export (?:type )?\{[^}]*\} from '\.\/legacy\.ts';$/u;
-
-const keyOf = (edge: Edge): string => `${edge.from}|${edge.to}|${edge.kind}`;
-
-const byKey = (left: Edge, right: Edge): number => {
-    const leftKey = keyOf(left);
-    const rightKey = keyOf(right);
-    if (leftKey === rightKey) {
-        return 0;
-    }
-    return leftKey < rightKey ? -1 : 1;
-};
 
 const specifiersOf = (file: string, root: URL = PACKAGE_ROOT): readonly Specifier[] => {
     const source = ts.createSourceFile(file, readFileSync(new URL(file, root), 'utf8'), ts.ScriptTarget.Latest, true);
@@ -99,32 +79,10 @@ const packageEdgesOf = (file: string): readonly Edge[] =>
         return target === undefined ? [] : [{ from: file, to: target, kind }];
     });
 
-const stubEdgesOf = (file: string): readonly Edge[] =>
-    specifiersOf(file, ROOT).flatMap(({ spec, kind }) => {
-        const target = targetOf(file, spec);
-        return target === undefined ? [] : [{ from: file, to: target, kind }];
-    });
-
 const isFile = (root: URL, file: string): boolean => existsSync(new URL(file, root)) && statSync(new URL(file, root)).isFile();
 
 test('every timing file exists in the package', () => {
     assert.deepEqual(TIMING.filter((file) => !isFile(PACKAGE_ROOT, file)), []);
-});
-
-test('each old path of a timing file is a stub: only re-export lines, one of them from the package', () => {
-    for (const file of TIMING) {
-        const lines = readFileSync(new URL(file, ROOT), 'utf8').split('\n').filter((line) => line !== '');
-        assert.equal(lines.filter((line) => STUB_LINE.test(line)).length, 1, `${file} has one package re-export line`);
-        assert.ok(lines.every((line) => STUB_LINE.test(line) || REEXPORT_LINE.test(line)), `${file} holds only export lines`);
-        const [first = ''] = lines;
-        assert.ok(STUB_LINE.test(first), `${file} starts with the package re-export`);
-        assert.ok(first.includes(`/unstable/${file.slice('src/'.length)}'`), `${file} re-exports its own package path`);
-    }
-});
-
-test('the stubs carry exactly the re-exports of legacy.ts that the files had before the move', () => {
-    const carried = TIMING.flatMap(stubEdgesOf).filter((edge) => edge.to.endsWith('/legacy.ts')).toSorted(byKey);
-    assert.deepEqual(carried, STUB_CARRIED.toSorted(byKey));
 });
 
 test('a timing file in the package imports only its own set, the kernel, contract, protocol, port and domain files', () => {
@@ -139,8 +97,4 @@ test('no timing file in the package imports or re-exports a legacy.ts or reaches
     assert.deepEqual(legacy, []);
     const sources = TIMING.map((file) => readFileSync(new URL(file, PACKAGE_ROOT), 'utf8'));
     assert.deepEqual(sources.filter((source) => source.includes('tab-recap/') || source.includes('legacy.ts')), []);
-});
-
-test('the timing set does not overlap the engine files that were moved earlier', () => {
-    assert.deepEqual(TIMING.filter((file) => ENGINE.includes(file)), []);
 });

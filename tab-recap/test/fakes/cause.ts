@@ -1,6 +1,6 @@
-import { must } from '#src/protocol/result.ts';
-import { causeOf as domainCauseOf } from '#src/recap/domain/failure-cause.ts';
-import type { FailureCause } from '#src/recap/domain/failure-cause.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { causeOf as domainCauseOf } from '@stateforge-labs/session-ledger';
+import type { FailureCause } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
 
 export const causeOf = (text: string): FailureCause => domainCauseOf(must(parseText(text)));

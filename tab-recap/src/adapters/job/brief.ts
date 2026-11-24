@@ -1,11 +1,11 @@
 import type { BriefWriter, BriefWritten } from '#src/ports/compaction-briefs.ts';
 import type { HarnessAsk, HarnessChoice, HarnessPort } from '#src/ports/harness.ts';
-import { isUnknown, unknown } from '#src/ports/unknowable.ts';
-import { must } from '#src/protocol/result.ts';
+import { isUnknown, unknown } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 import { BRIEF_INSTRUCTIONS } from './prompts/brief-instructions.ts';
-import { leaf } from '#src/recap/application/xml.ts';
-import { causeOf } from '#src/recap/domain/failure-cause.ts';
-import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
+import { leaf } from '@stateforge-labs/session-ledger';
+import { causeOf } from '@stateforge-labs/session-ledger';
+import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger';
 import { unfencedText } from './prompts/recap-prompt.ts';
 
 export class HarnessBrief implements BriefWriter {

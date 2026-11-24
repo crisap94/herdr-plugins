@@ -1,10 +1,10 @@
 import type { Origin } from './origin.ts';
-import { parseCount, type Count } from './count.ts';
-import { must } from '#src/protocol/result.ts';
-import { shareOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/compaction.ts';
-import type { ContextUse } from '@stateforge-labs/session-ledger/unstable/recap/domain/compaction.ts';
-import { parseText, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import { elapsed, type Duration, type Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { shareOf } from '@stateforge-labs/session-ledger';
+import type { ContextUse } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import { elapsed, type Duration, type Instant } from '@stateforge-labs/session-ledger';
 
 export const RUN_CAUSES = ['turn-ended', 'focused', 'requested'] as const;
 export type RunCause = (typeof RUN_CAUSES)[number];

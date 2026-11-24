@@ -1,5 +1,5 @@
-import { instant } from '#src/recap/domain/time.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { AskBookRepository } from '#src/adapters/db/ask-ledger.ts';
@@ -8,7 +8,7 @@ import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import type { AskBook } from '#src/ports/ask-ledger.ts';
 import { parseExchangeName, parseToolName } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
 import { paneId } from '#test/support/ids.ts';

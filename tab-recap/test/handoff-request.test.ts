@@ -9,10 +9,10 @@ import { type HandoffId } from '#src/recap/domain/ids.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
 import { NOW } from './fakes/handoff-flow-harness.ts';
 import { HANDOFF_POLL_MS, HANDOFF_WAIT_MS, HANDOFF_WAIT_REFRESH_MS } from '#src/recap/application/handoff-limits.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger';
 import { parsePid } from '#src/recap/domain/pid.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 
 const SOURCE = paneId('w1:p1');
 const TARGET = paneId('w1:p2');

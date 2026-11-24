@@ -1,16 +1,16 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { accomplishedOf, foldedRun, throwingLedger } from '@stateforge-labs/session-ledger/unstable/recap/application/run-fold.ts';
-import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import type { Fact, TaskId } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
-import type { Operation } from '@stateforge-labs/session-ledger/unstable/recap/domain/ops.ts';
-import type { CheckedLedger } from '@stateforge-labs/session-ledger/unstable/ports/ledger.ts';
-import { unknown, type Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
-import { instant, type Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { accomplishedOf, foldedRun, throwingLedger } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import type { Fact, TaskId } from '@stateforge-labs/session-ledger';
+import type { Operation } from '@stateforge-labs/session-ledger';
+import type { CheckedLedger } from '@stateforge-labs/session-ledger';
+import { unknown, type Unknown } from '@stateforge-labs/session-ledger';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { text } from '@stateforge-labs/session-ledger/testkit';
-import { textOf, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import { factIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
-import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
+import { factIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '@stateforge-labs/session-ledger';
 
 const HOUR = 3_600_000;
 const AT = 100 * HOUR;

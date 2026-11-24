@@ -1,5 +1,5 @@
-import { instant } from '#src/recap/domain/time.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { tabId, paneId, agentKind } from '#test/support/ids.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

@@ -4,7 +4,7 @@ import { promises as fsp, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { init, resolveRef, setConfig } from 'isomorphic-git';
 import { GitWorksite } from '#src/adapters/git/worksite.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { makeRepo, scratch, stage, unstage } from './fixtures/git-repo.ts';
 
 const fs = { promises: fsp };

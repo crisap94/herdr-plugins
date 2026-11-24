@@ -1,11 +1,11 @@
-import { parseUsd } from '#src/recap/domain/usd.ts';
-import { countOf, parseCount } from '#src/recap/domain/count.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { must as mustParsed } from '#src/protocol/result.ts';
+import { parseUsd } from '@stateforge-labs/session-ledger';
+import { countOf, parseCount } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { must as mustParsed } from '@stateforge-labs/session-ledger';
 import { uncheckedRatio, parseCompactionId, parseDecisionId, parseTabId } from '#src/recap/domain/ids.ts';
 import { agentKind } from '#test/support/ids.ts';
-import { instant, duration } from '#src/recap/domain/time.ts';
-import { must } from '#src/protocol/result.ts';
+import { instant, duration } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { paneId, tabId } from '#test/support/ids.ts';

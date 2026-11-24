@@ -1,8 +1,8 @@
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { HiddenState } from '#src/recap/domain/board.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import { parseText } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
 import type { LiveLanes } from '#src/ports/tab-views.ts';
 
 type RestoredObservation = Observation | null;

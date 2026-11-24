@@ -1,13 +1,13 @@
 import type { GuardedLedger, GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import type { HandoffPrintService } from '#src/ports/handoff-print.ts';
-import type { Stories } from '#src/ports/stories.ts';
+import type { LegacyStories as Stories } from '@stateforge-labs/session-ledger';
 import type { TabViewStore } from '#src/ports/tab-views.ts';
 import { compactPreviewOf, type CompactPreview } from '#src/recap/application/compact-preview.ts';
 import { handoffMessageOf, type HandoffRead } from '#src/recap/application/handoff-message.ts';
 import { AnsweredByHand, type NeedAnswer } from '#src/recap/application/need-answer.ts';
 import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
-import type { NonEmptyText, Text } from '#src/recap/domain/text.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import type { NonEmptyText, Text } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 
 export interface EngineParts {
     readonly ledger: Pick<GuardedLedger, 'keysOf' | 'allOf'>;

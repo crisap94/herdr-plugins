@@ -1,8 +1,8 @@
 import type { JudgeEntry } from '#src/ports/run-inputs.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { element, leaf } from '@stateforge-labs/session-ledger/unstable/recap/application/xml.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import { element, leaf } from '@stateforge-labs/session-ledger';
 
 interface ScoringParts { readonly rubric: Text; readonly input: Text; readonly items: readonly JudgeEntry[]; readonly state?: readonly JudgeEntry[] }
 

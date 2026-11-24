@@ -1,6 +1,6 @@
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { Unknown } from './unknowable.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Unknown } from '@stateforge-labs/session-ledger';
 
 export interface ActiveInstall {
     readonly kind: 'install';

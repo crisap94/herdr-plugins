@@ -1,19 +1,19 @@
-import { flightReason, observedFrom, runningCount, unreadable, runningOf } from '#src/recap/domain/in-flight.ts';
+import { flightReason, observedFrom, runningCount, unreadable, runningOf } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TranscriptInFlight } from '#src/adapters/transcripts/in-flight.ts';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { flightOf } from '#src/recap/application/in-flight.ts';
 import type { InFlightReader, InFlightRead } from '#src/ports/in-flight.ts';
-import type { Located, InFlightResult } from '#src/ports/transcripts.ts';
-import type { SessionReader } from '#src/ports/transcripts.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import type { Located, InFlightResult } from '@stateforge-labs/session-ledger';
+import type { LegacySessionReader as SessionReader } from '@stateforge-labs/session-ledger';
+import { unknown } from '@stateforge-labs/session-ledger';
 import { causeOf } from './fakes/cause.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { agentKind } from '#test/support/ids.ts';
-import { sourcePathOf } from '#src/ports/transcripts.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { sourcePathOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
 import { seenLane } from '#test/support/seen.ts';
 
 const claude = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 'sess-1', cwd: '/repo' }));

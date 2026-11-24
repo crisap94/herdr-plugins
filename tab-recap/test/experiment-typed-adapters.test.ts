@@ -1,4 +1,4 @@
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -8,10 +8,10 @@ import { appendJsonl, doneKeys, jsonLines } from '#src/adapters/experiment/io.ts
 import { Labeller } from '#src/adapters/experiment/labeller.ts';
 import type { HarnessRuntime } from '#src/adapters/harness/library.ts';
 import type { HarnessPort } from '#src/ports/harness.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { parseUsd } from '#src/recap/domain/usd.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import { parseUsd } from '@stateforge-labs/session-ledger';
 
 const txt = (value: string): Text => must(parseText(value));
 const fsp = (value: string): FsPath => must(parseFsPath(value));

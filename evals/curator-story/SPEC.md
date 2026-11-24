@@ -12,7 +12,7 @@ The eval builds the same call from the plugin's own code. Only the transport cha
 
 | Step | Plugin code, imported unchanged |
 |---|---|
-| Document (user message) | `curatorInput({ ...item.input, rubric: RUBRIC.items }).document` (`tab-recap/src/recap/application/curator-input.ts`, `tab-recap/src/adapters/job/prompts/rubric.ts`) |
+| Document (user message) | `curatorInput({ ...item.input, rubric: RUBRIC.items }).document` (`packages/session-ledger/src/recap/application/curator-input.ts`, `tab-recap/src/adapters/job/prompts/rubric.ts`) |
 | Instructions (system message) | `CURATOR_INSTRUCTIONS` (`tab-recap/src/adapters/job/prompts/curator-instructions.ts`) |
 | Fence removal | `unfenced(text)` (`tab-recap/src/adapters/job/prompts/recap-prompt.ts`), as `HarnessCurator.write` does |
 | Parser and gate | `curationOf(unfenced(text), openIds)` (`tab-recap/src/recap/domain/curation.ts`); `openIds` are the ids of `curatorInput(...).facts` whose state is `open`, as `Curate.store` computes them |

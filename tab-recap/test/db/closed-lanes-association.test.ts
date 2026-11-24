@@ -14,7 +14,7 @@ import type { ClosedLane } from '#src/recap/domain/closures.ts';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { closedDaysOf as closedLaneDaysOf } from '../fakes/closed-days.ts';
 import { directoryOf } from '../fakes/closed-values.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { scratchDir } from './support.ts';
 
 const BEFORE = 18;

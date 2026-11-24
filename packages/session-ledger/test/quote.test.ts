@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { pieceOf, QUOTE_CHARS, quotedIn } from '@stateforge-labs/session-ledger/unstable/recap/domain/quote.ts';
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import { countOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/count.ts';
+import { pieceOf, QUOTE_CHARS, quotedIn } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 test('a quote is found by its words: whitespace, line ends and punctuation do not matter, case does', () => {
     const text = 'The   pipeline\nwas green, then `npm test` failed on part6.';

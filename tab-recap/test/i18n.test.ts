@@ -3,8 +3,8 @@ import { requestOf } from '#test/support.ts';
 import assert from 'node:assert/strict';
 import { instructions, messageText } from '#src/adapters/job/prompts/recap-prompt.ts';
 import { languageNameOf, messagesFor, recapLanguageOfSetting } from '#src/i18n/index.ts';
-import { SECTIONS, sectionOf } from '#src/i18n/sections.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { SECTIONS, sectionOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { localeFrom } from '#src/daemon/config.ts';
 import type { Locale } from '#src/i18n/index.ts';
 

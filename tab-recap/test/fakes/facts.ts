@@ -1,8 +1,8 @@
-import type { Fact, FactId, RunId, Section, TaskId } from '#src/recap/domain/fact.ts';
-import type { RunRef } from '#src/recap/domain/ops.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import type { Fact, FactId, RunId, Section, TaskId } from '@stateforge-labs/session-ledger';
+import type { RunRef } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '@stateforge-labs/session-ledger';
 
 export const TASK: TaskId = { scope: tabIdOf('w1:t1'), key: textOf('t1') };
 

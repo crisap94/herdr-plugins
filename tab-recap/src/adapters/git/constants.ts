@@ -1,5 +1,5 @@
-import { duration } from '#src/recap/domain/time.ts';
-import type { Duration } from '#src/recap/domain/time.ts';
+import { duration } from '@stateforge-labs/session-ledger';
+import type { Duration } from '@stateforge-labs/session-ledger';
 
 export const GIT_DIR_NAME = '.git';
 export const GITDIR_PREFIX = 'gitdir:';

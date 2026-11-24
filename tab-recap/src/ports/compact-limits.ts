@@ -1,7 +1,7 @@
-import type { Count } from '#src/recap/domain/count.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
 import type { HarnessKind, SessionId } from '#src/recap/domain/ids.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { Directory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Directory } from '@stateforge-labs/session-ledger';
 
 export interface CompactLimit {
     readonly window: Count | null;

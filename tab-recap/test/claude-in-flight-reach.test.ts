@@ -5,9 +5,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ClaudeTranscripts, KEPT_UNKNOWN_MAX } from '#src/adapters/transcripts/claude/transcripts.ts';
 import { CLAUDE_SPLIT } from '#src/adapters/transcripts/claude/in-flight.ts';
-import { sourcePathOf } from '#src/ports/transcripts.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { runningOf } from '#src/recap/domain/in-flight.ts';
+import { sourcePathOf } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { runningOf } from '@stateforge-labs/session-ledger';
 import { claudeInFlight, fsPathOf } from './fakes/transcript-lines.ts';
 
 const TAIL = 512 * 1024;

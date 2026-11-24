@@ -18,9 +18,9 @@ import { uncheckedRatio, type SessionKey } from '#src/recap/domain/ids.ts';
 import { paneId } from '#test/support/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import { isUnknown } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { reconciliation as reconciliationOfSeen, seenLane, switchedObservation } from '#test/support/seen.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 

@@ -1,13 +1,13 @@
 import type { ClosedLane } from './closures.ts';
 import type { Lane } from './lane.ts';
 import type { HiddenState, Shape } from './board.ts';
-import type { Count } from './count.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
 import type { SessionKey, ScopeId } from './ids.ts';
-import type { RecapCause } from '@stateforge-labs/session-ledger/unstable/recap/domain/recap-cause.ts';
-import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import type { RecapCause } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 
-export { RECAP_CAUSES } from '@stateforge-labs/session-ledger/unstable/recap/domain/recap-cause.ts';
-export type { RecapCause } from '@stateforge-labs/session-ledger/unstable/recap/domain/recap-cause.ts';
+export { RECAP_CAUSES } from '@stateforge-labs/session-ledger';
+export type { RecapCause } from '@stateforge-labs/session-ledger';
 
 export type Intent =
     | { readonly kind: 'open-column'; readonly tab: ScopeId; readonly shape: Shape }

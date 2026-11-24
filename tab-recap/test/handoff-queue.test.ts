@@ -1,4 +1,4 @@
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { AskBookRepository } from '#src/adapters/db/ask-ledger.ts';
@@ -7,10 +7,10 @@ import type { Store } from '#src/adapters/db/database.ts';
 import type { AskDraft } from '#src/ports/ask-ledger.ts';
 import type { HandoffAsk } from '#src/ports/requests.ts';
 import { parseToolName } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText } from '@stateforge-labs/session-ledger';
 import { memoryStore } from './db/support.ts';
 import { rid } from './fakes/ask-ledger.ts';
 

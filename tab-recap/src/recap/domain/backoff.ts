@@ -1,5 +1,5 @@
-import type { Count } from './count.ts';
-import { duration, type Duration } from './time.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
+import { duration, type Duration } from '@stateforge-labs/session-ledger';
 
 export const BACKOFF_BASE_MS = 2_000;
 export const BACKOFF_MAX_MS = 60_000;

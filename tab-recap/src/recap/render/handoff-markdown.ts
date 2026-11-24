@@ -1,10 +1,10 @@
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import type { HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
 import type { HandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
-import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import type { FreshnessBlock } from '#src/recap/render/freshness.ts';
 import { utcMinuteOf } from '#src/recap/render/utc-minute.ts';
 import type { WorksiteBlock } from '#src/recap/render/worksite.ts';

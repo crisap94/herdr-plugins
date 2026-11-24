@@ -1,9 +1,9 @@
-import type { RecapSections } from '#src/recap/domain/shape.ts';
-import type { Operation } from '#src/recap/domain/ops.ts';
-import { isSection } from '#src/recap/domain/fact.ts';
+import type { RecapSections } from '@stateforge-labs/session-ledger';
+import type { Operation } from '@stateforge-labs/session-ledger';
+import { isSection } from '@stateforge-labs/session-ledger';
 import { itemsOf } from '../sections-rows.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import { must } from '#src/protocol/result.ts';
+import { parseText } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 import { whyOf } from './items-to-facts.ts';
 
 export const opsOfSections = (sections: RecapSections): readonly Operation[] =>

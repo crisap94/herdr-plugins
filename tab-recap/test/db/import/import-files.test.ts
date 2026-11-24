@@ -8,10 +8,10 @@ import { canonicalRecap, holdingOf, recapDifferenceLines, viewDifferenceLines } 
 import { memoryStore, scratchDir } from '../support.ts';
 import { everyShape, filesAt, put, sections } from './support.ts';
 import { tabId } from '#test/support/ids.ts';
-import { recapRunningOf, type Recap } from '#src/ports/recap-records.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { usdOf } from '#src/recap/domain/usd.ts';
+import { recapRunningOf, type Recap } from '@stateforge-labs/session-ledger';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { usdOf } from '@stateforge-labs/session-ledger';
 
 const options = { now: (): Instant => instant(Date.UTC(2026, 9, 5, 12, 0, 0)) };
 const count = (store: ReturnType<typeof memoryStore>, table: string): number => (store.db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n;

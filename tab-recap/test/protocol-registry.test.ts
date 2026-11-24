@@ -6,9 +6,9 @@ import type { Exchange } from '#src/protocol/exchange.ts';
 import { buildRegistry } from '#src/protocol/registry.ts';
 import type { RegistryRefusal } from '#src/protocol/registry.ts';
 import { parseAnswerStage, parseExchangeName, parseExchangeVersion, parseFieldName, parseIdText, parseRequestId, parseRequestPrefix, parseTokenName, parseTokenValue, parseToolName } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { AnswerStage, RequestId, RequestPrefix, TokenName } from '#src/protocol/primitives.ts';
-import type { Result } from '#src/protocol/result.ts';
+import type { Result } from '@stateforge-labs/session-ledger';
 import { compact } from '#src/protocol/exchanges/compact.ts';
 
 const brand = <T, E>(result: Result<T, E>): T => {

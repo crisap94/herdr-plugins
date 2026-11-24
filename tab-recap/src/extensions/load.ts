@@ -1,9 +1,9 @@
 import type { Locale } from '#src/i18n/messages.ts';
 import type { TabLaneRecord } from '#src/ports/tab-views.ts';
 import type { ExtensionPort, PaneNote } from '#src/ports/extension.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
+import { isUnknown } from '@stateforge-labs/session-ledger';
 import { parsePaneId, type SessionKey } from '#src/recap/domain/ids.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 
 export function notesByPaneOf(extensions: readonly ExtensionPort[], lanes?: readonly TabLaneRecord[], locale?: Locale): ReadonlyMap<SessionKey, readonly PaneNote[]> {
     const merged = new Map<SessionKey, readonly PaneNote[]>();

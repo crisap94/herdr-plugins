@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import { outcomesOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/index.ts';
-import type { GatedSection, Item } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/index.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import { outcomesOf } from '@stateforge-labs/session-ledger';
+import type { GatedSection, Item } from '@stateforge-labs/session-ledger';
 
 const CONTEXT = { language: textOf('en'), agents: ['a1', 'a2', 'claude', 'codex'].map(textOf), earlier: [] as readonly Item[] };
 

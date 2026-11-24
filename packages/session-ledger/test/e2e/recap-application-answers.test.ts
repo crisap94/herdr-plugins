@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { answeredBy, parseFields, type AnswerGround } from '@stateforge-labs/session-ledger/unstable/recap/application/enumerate-answer.ts';
-import { RECONCILE_EVERY, Reconciling, reconcileTask, type ReconcilingDeps, type RecapWritten } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-reconcile.ts';
-import type { Curated, Curators } from '@stateforge-labs/session-ledger/unstable/ports/curators.ts';
-import type { Entry } from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
-import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { answeredBy, parseFields, type AnswerGround } from '@stateforge-labs/session-ledger';
+import { RECONCILE_EVERY, Reconciling, reconcileTask, type ReconcilingDeps } from '@stateforge-labs/session-ledger';
+import { type LegacyRecapWritten as RecapWritten } from '@stateforge-labs/session-ledger';
+import type { Curated, Curators } from '@stateforge-labs/session-ledger';
+import type { Entry } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { agentKind, cursorAt, paneId, sourcePath } from '@stateforge-labs/session-ledger/testkit';
 
 const textOf = brand<string, 'Text'>;

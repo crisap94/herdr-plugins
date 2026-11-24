@@ -1,15 +1,15 @@
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { parseAnswer, WHY_WORDS, type Resolving } from '@stateforge-labs/session-ledger/unstable/recap/application/ops-answer.ts';
-import { forTask, judge, keptOf, refusedIn, retryFor, type TaskGround } from '@stateforge-labs/session-ledger/unstable/recap/application/ops-gating.ts';
-import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import type { Fact } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
-import type { Operation } from '@stateforge-labs/session-ledger/unstable/recap/domain/ops.ts';
-import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { InputFact } from '@stateforge-labs/session-ledger/unstable/ports/recap-input.ts';
-import { factIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
-import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { parseAnswer, WHY_WORDS, type Resolving } from '@stateforge-labs/session-ledger';
+import { forTask, judge, keptOf, refusedIn, retryFor, type TaskGround } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import type { Fact } from '@stateforge-labs/session-ledger';
+import type { Operation } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
+import type { InputFact } from '@stateforge-labs/session-ledger';
+import { factIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '@stateforge-labs/session-ledger';
 
 const text = brand<string, 'Text'>;
 const count = brand<number, 'Count'>;

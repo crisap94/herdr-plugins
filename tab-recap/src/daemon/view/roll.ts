@@ -2,7 +2,7 @@ import { shouldRoll } from '#src/adapters/os/plugin-version.ts';
 import { parseLine, parseVersion, type Line, type Running, type Version } from '#src/daemon/slots.ts';
 import type { ActiveInstallRead } from '#src/ports/active-install.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 const textOrNull = (version: Version | null): Text | null => (version === null ? null : textOf(version));
 

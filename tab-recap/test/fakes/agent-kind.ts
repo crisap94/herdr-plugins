@@ -1,4 +1,4 @@
-import { brand } from '#src/recap/domain/brand.ts';
+import { brand } from '@stateforge-labs/session-ledger';
 import type { HarnessKind } from '#src/recap/domain/ids.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';

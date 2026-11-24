@@ -1,8 +1,8 @@
 import type { Done } from '#src/ports/columns.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
-import type { Milliseconds } from '#src/recap/domain/time.ts';
+import type { Milliseconds } from '@stateforge-labs/session-ledger';
 import type { LaneTokenMap, LaneTokenReporter } from '#src/ports/lane-tokens.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import { unknown } from '@stateforge-labs/session-ledger';
 import { causeOf } from './cause.ts';
 
 export interface Report {

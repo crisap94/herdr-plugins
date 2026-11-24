@@ -6,10 +6,10 @@ import { join } from 'node:path';
 import { readLabelled, readPoints } from '#src/adapters/experiment/data.ts';
 import { doneKeys } from '#src/adapters/experiment/io.ts';
 import type { Point } from '#src/adapters/experiment/point.ts';
-import { must } from '#src/protocol/result.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 
 const txt = (value: string): Text => must(parseText(value));
 

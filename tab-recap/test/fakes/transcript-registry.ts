@@ -1,8 +1,8 @@
-import { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
-import type { SessionReader } from '#src/ports/transcripts.ts';
-import { capabilityWording } from '#src/ports/capability-reasons.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import { must } from '#src/protocol/result.ts';
+import { TranscriptRegistry } from '@stateforge-labs/session-ledger';
+import type { LegacySessionReader as SessionReader } from '@stateforge-labs/session-ledger';
+import { capabilityWording } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 import { type HarnessKind } from '#src/recap/domain/ids.ts';
 import { agentKind } from '#test/support/ids.ts';
 

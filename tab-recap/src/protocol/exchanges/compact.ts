@@ -1,7 +1,7 @@
 import { COMPACT_FAILURES } from '../reasons.ts';
 import type { Exchange } from '../exchange.ts';
 import { parseAnswerStage, parseEventName, parseExchangeName, parseExchangeVersion, parseFieldName, parseOptIn, parseRequestPrefix } from '../primitives.ts';
-import { must } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 
 export const COMPACT_STAGES = { queued: 'queued', running: 'running', done: 'done' } as const;
 

@@ -1,10 +1,10 @@
 import type { RunInputReader, RunRecord } from '#src/ports/run-inputs.ts';
 import type { VerdictRecord } from '#src/ports/verdicts.ts';
-import { must } from '#src/protocol/result.ts';
-import type { Count } from '#src/recap/domain/count.ts';
-import type { Section } from '#src/recap/domain/fact.ts';
-import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
+import type { Section } from '@stateforge-labs/session-ledger';
+import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 import { ITEM_CHECKS } from './judge-answer.ts';
 
 export interface Candidate {

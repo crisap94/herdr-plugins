@@ -1,8 +1,8 @@
 import { dataOfFrame, fleetFrame } from '#test/support/frames.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import { duration } from '#src/adapters/herdr-core/sdk-core.ts';
 import { parseSessionId } from '#src/recap/domain/ids.ts';
 import { paneId, tabId } from '#test/support/ids.ts';

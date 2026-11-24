@@ -1,4 +1,4 @@
-import { textOf, type Text } from './text.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 import { collapsedText } from './text-collapse.ts';
 
 const AWAITING = /^awaiting(?:-.+)?$/;

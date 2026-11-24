@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { renderHandoff } from '#src/recap/application/handoff-pipeline.ts';
 import { exitCodeOf, messageKeyOf } from '#src/recap/domain/handoff-outcome.ts';
 import type { WorksiteReaderPort } from '#src/ports/worksite-reader.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import { unknown } from '@stateforge-labs/session-ledger';
 import { fact } from './fakes/fact-at.ts';
 import { ID, NOW, OTHER_ID, depsOf, inputOf, textOf } from './fakes/handoff-pipeline-world.ts';
-import { textOf as brandedText } from '#src/recap/domain/text.ts';
+import { textOf as brandedText } from '@stateforge-labs/session-ledger';
 
 const HEADINGS = ['Freshness', 'Goal', 'Now', 'Needs', 'Done', 'Decisions', 'Next', 'Links', 'Rules', 'Recently closed', 'Worksite'];
 

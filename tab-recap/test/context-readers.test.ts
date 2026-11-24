@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { CatalogueWindows } from '#src/adapters/capability/catalogue.ts';
 import { pathOrNull } from '#test/fakes/agent-kind.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcripts.ts';
 import { opencodeFixture } from '#test/opencode-fixture.ts';
 import { claudeObserved, codexObserved, fsPathOf, sourcePathOf } from './fakes/transcript-lines.ts';

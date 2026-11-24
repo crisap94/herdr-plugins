@@ -1,9 +1,9 @@
 import type { Outcome } from '#src/ports/verdicts.ts';
-import { err, must, ok, type Result } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
-import { objectIn } from '@stateforge-labs/session-ledger/unstable/recap/application/recap-shape.ts';
+import { err, must, ok, type Result } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
+import { objectIn } from '@stateforge-labs/session-ledger';
 
 export const ITEM_CHECKS: readonly Text[] = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7'].map((check) => must(parseText(check)));
 

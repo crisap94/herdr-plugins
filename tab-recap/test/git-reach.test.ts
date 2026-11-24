@@ -6,12 +6,12 @@ import { setConfig, addRemote } from 'isomorphic-git';
 import { handleOf, openRepo, unreadable, withinBudget } from '#src/adapters/git/reach.ts';
 import { aheadOf, branchOf, headLabelOf, lastCommitOf, originWebOf } from '#src/adapters/git/reach-history.ts';
 import { changesOf } from '#src/adapters/git/reach-status.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseDirectory } from '#src/recap/domain/directory.ts';
-import type { Directory } from '#src/recap/domain/directory.ts';
-import { duration, instant } from '#src/recap/domain/time.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseDirectory } from '@stateforge-labs/session-ledger';
+import type { Directory } from '@stateforge-labs/session-ledger';
+import { duration, instant } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
 import { makeLinked, makeRepo, scratch, slowDisk, stage, stuckDisk, unstage } from './fixtures/git-repo.ts';
 
 const far = (): Instant => instant(Date.now() + 60_000);

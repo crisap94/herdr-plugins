@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { posixProcess } from '#src/adapters/os/process/control-posix.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
 import { HerdrTransportError, Method } from '@stateforge-labs/herdr-sdk';
 import { createFakeHerdr } from '@stateforge-labs/herdr-sdk/test-kit';

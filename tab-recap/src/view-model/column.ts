@@ -1,15 +1,15 @@
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import type { Break, ColumnTask, ColumnView, CompactionRow, RecapColumn, Row, Style, Web, Wording } from '@stateforge-labs/recap-view';
 import { parseAgentName, parseBranchName, parseDirectory, parseDuration, parseFromScreen, parseInstant, parsePaneId, parseProse, parseQueued, parseRunning, parseTaskName, parseTitle, parseTokens, parseWebBase } from '@stateforge-labs/recap-view';
 import type { CompactionRow as LoggedCompaction } from '#src/ports/compaction-records.ts';
 import type { BoundaryBreak } from '#src/ports/boundaries.ts';
-import type { SessionCursor, Recap } from '#src/ports/recap-records.ts';
+import type { SessionCursor, Recap } from '@stateforge-labs/session-ledger';
 import { isScreenSource } from '#src/ports/screens.ts';
 import type { LaneWebRecord, TabLaneRecord, TabViewRecord } from '#src/ports/tab-views.ts';
 import type { Messages } from '#src/i18n/messages.ts';
-import type { RecapTask } from '#src/recap/domain/tasks.ts';
+import type { RecapTask } from '@stateforge-labs/session-ledger';
 import { laneStatus } from '#src/recap/domain/status.ts';
-import { sourcePathOf } from '#src/ports/transcripts.ts';
+import { sourcePathOf } from '@stateforge-labs/session-ledger';
 import { wordingOf } from '#src/view-model/wording.ts';
 
 export { wordingOf };

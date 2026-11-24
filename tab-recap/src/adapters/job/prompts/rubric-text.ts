@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
-import { must } from '#src/protocol/result.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 
 export interface Rubric {
     readonly items: Text;

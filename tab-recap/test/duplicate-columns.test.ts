@@ -11,7 +11,7 @@ import { paneId, tabId } from '#test/support/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import type { FleetFrame, FleetFeed, FleetSnapshotResult, FleetStreamResult } from '#src/ports/fleet-source.ts';
 import { columnOpenedObservation, reconciliation, seenLane } from '#test/support/seen.ts';

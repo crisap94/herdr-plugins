@@ -2,7 +2,7 @@ import { dataOfFrame } from '#test/support/frames.ts';
 import type { FleetFrame } from '#src/ports/fleet-source.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { parseCount } from '#src/adapters/herdr-core/sdk-core.ts';
 import { parseNonEmptyText } from '#src/adapters/herdr-core/sdk-core.ts';
 import { parseSessionId } from '#src/recap/domain/ids.ts';

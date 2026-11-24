@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import type { KillMode, ProcessPort } from '#src/ports/process-control.ts';
-import type { Count } from '#src/recap/domain/count.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
 import { runIn } from './core.ts';
 import type { Flavour, Spawner } from './core.ts';
 

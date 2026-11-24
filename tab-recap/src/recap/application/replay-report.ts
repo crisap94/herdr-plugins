@@ -1,10 +1,10 @@
-import { must } from '#src/protocol/result.ts';
-import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
-import { countOf, type Count } from '#src/recap/domain/count.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
-import { jaccard } from '#src/recap/domain/gates/jaccard.ts';
-import type { Fact } from '#src/recap/domain/fact.ts';
-import { localTime } from '@stateforge-labs/session-ledger/unstable/recap/application/local-time.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger';
+import { countOf, type Count } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
+import { jaccard } from '@stateforge-labs/session-ledger';
+import type { Fact } from '@stateforge-labs/session-ledger';
+import { localTime } from '@stateforge-labs/session-ledger';
 
 const pct = (part: Count, whole: Count): Text => textOf(whole === 0 ? 'n/a' : `${Math.round((100 * part) / whole)}%`);
 const words = (fact: Fact): Count => countOf(fact.text.split(/\s+/).filter((word) => word !== '').length);

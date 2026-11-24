@@ -1,7 +1,7 @@
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { lanesOf, tabsWithLanes, type Board } from '#src/recap/domain/board.ts';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
-import type { Pacing } from '#src/recap/domain/pacing.ts';
+import type { Pacing } from '@stateforge-labs/session-ledger';
 
 export function onBeatOf(beat: (board: Board) => void, recaps: Pick<TabRecaps, 'sync' | 'turnEnded'>, board: () => Board, pacing: Pacing): () => void {
     let followed: ReadonlySet<ScopeId> = new Set();

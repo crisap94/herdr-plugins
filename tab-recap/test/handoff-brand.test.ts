@@ -1,12 +1,12 @@
 import { test } from 'node:test';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { must } from '#src/protocol/result.ts';
-import type { FactId } from '#src/recap/domain/fact.ts';
-import { countOf, parseCount } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import type { FactId } from '@stateforge-labs/session-ledger';
+import { countOf, parseCount } from '@stateforge-labs/session-ledger';
 import type { HandoffEntry } from '#src/recap/domain/handoff-content.ts';
 import { vetHandoffText } from '#src/recap/domain/handoff-vetting.ts';
 import type { HandoffFit } from '#src/recap/render/handoff-budget.ts';

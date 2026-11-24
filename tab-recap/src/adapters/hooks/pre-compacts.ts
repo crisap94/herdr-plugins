@@ -1,6 +1,6 @@
 import type { SessionId } from '#src/recap/domain/ids.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { Instant } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
 
 export type HookRestore = { readonly kind: 'offered'; readonly text: Text } | { readonly kind: 'typed' } | { readonly kind: 'none' };
 

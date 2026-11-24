@@ -1,14 +1,14 @@
-import type { HistoryFact } from '#src/ports/ledger.ts';
-import type { Entry } from '#src/ports/transcripts.ts';
-import type { RecapSections } from '#src/recap/domain/shape.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import { settledBefore } from '#src/recap/domain/boundary.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { localTime } from '@stateforge-labs/session-ledger/unstable/recap/application/local-time.ts';
-import { turnsOf } from '@stateforge-labs/session-ledger/unstable/recap/application/writer-transcript.ts';
-import { element, leaf } from '@stateforge-labs/session-ledger/unstable/recap/application/xml.ts';
+import type { HistoryFact } from '@stateforge-labs/session-ledger';
+import type { Entry } from '@stateforge-labs/session-ledger';
+import type { RecapSections } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import { settledBefore } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
+import { localTime } from '@stateforge-labs/session-ledger';
+import { turnsOf } from '@stateforge-labs/session-ledger';
+import { element, leaf } from '@stateforge-labs/session-ledger';
 
 export const RECENT_BUDGET = must(parseCount(12_000));
 const NEST = '\n';

@@ -1,8 +1,8 @@
-import { must } from '#src/protocol/result.ts';
-import type { HistoryFact } from '#src/ports/ledger.ts';
-import { CAPS, NO_SECTIONS } from '#src/recap/domain/shape.ts';
-import type { RecapSections } from '#src/recap/domain/shape.ts';
-import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import type { HistoryFact } from '@stateforge-labs/session-ledger';
+import { CAPS, NO_SECTIONS } from '@stateforge-labs/session-ledger';
+import type { RecapSections } from '@stateforge-labs/session-ledger';
+import { parseText, type Text, textOf } from '@stateforge-labs/session-ledger';
 
 export function sectionsOf(history: readonly HistoryFact[]): RecapSections {
     const open = history.filter((fact) => fact.state === 'open');

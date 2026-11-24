@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { collapsedOf, renamedFrom } from '#src/adapters/git/reach-status.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import { parseGitPath } from '#src/recap/domain/git-path.ts';
 import type { GitPath } from '#src/recap/domain/git-path.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import { parseText } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
 
 const git = (path: string): GitPath => must(parseGitPath(path));
 const text = (value: string): Text => must(parseText(value));

@@ -1,0 +1,42 @@
+id: recap-brand-declarations
+language: typescript
+severity: error
+message: >-
+  A Brand<...> declaration outside the files that declare one today. A new brand of the host belongs in
+  the engine package, which owns the brand file, or in one of the listed files.
+note: >-
+  Replaces the importer list of brand.ts: the brand function and type come from the package root, so the
+  rule looks at where a brand is declared, not at who imports the brand file. Refuses a declaration whose
+  value holds Brand<...> at any depth, so Readonly<Brand<...>> is refused too. Using a brand is allowed.
+files:
+  - "**/src/**"
+  - "**/bin/**"
+  - "**/probes/recap-brand-declarations/**"
+ignores:
+  - "**/src/adapters/hooks/settings.ts"
+  - "**/src/daemon/engine-wire.ts"
+  - "**/src/daemon/slots.ts"
+  - "**/src/protocol/primitives.ts"
+  - "**/src/recap/domain/board.ts"
+  - "**/src/recap/domain/byte-budget.ts"
+  - "**/src/recap/domain/compaction-plan.ts"
+  - "**/src/recap/domain/fact-index.ts"
+  - "**/src/recap/domain/fs-path.ts"
+  - "**/src/recap/domain/git-path.ts"
+  - "**/src/recap/domain/handoff-sanitize.ts"
+  - "**/src/recap/domain/ids.ts"
+  - "**/src/recap/domain/kappa.ts"
+  - "**/src/recap/domain/lane-closed.ts"
+  - "**/src/recap/domain/pid.ts"
+  - "**/src/recap/domain/retention.ts"
+  - "**/src/recap/domain/run-ids.ts"
+  - "**/src/recap/domain/task-name.ts"
+  - "**/src/recap/domain/type-id.ts"
+  - "**/src/recap/render/freshness.ts"
+  - "**/src/recap/render/worksite.ts"
+rule:
+  kind: type_alias_declaration
+  has:
+    kind: generic_type
+    regex: "^Brand<"
+    stopBy: end

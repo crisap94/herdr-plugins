@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { kindsWith } from '#src/recap/domain/registered-kinds.ts';
-import { compactableKinds, COMPACTABLE } from '#src/recap/domain/compaction.ts';
-import { REGISTERED_KINDS } from '#src/recap/domain/registered-kinds.ts';
-import { KINDS_DEFAULT } from '#src/recap/domain/autocompact.ts';
+import { kindsWith } from '@stateforge-labs/session-ledger';
+import { compactableKinds, COMPACTABLE } from '@stateforge-labs/session-ledger';
+import { REGISTERED_KINDS } from '@stateforge-labs/session-ledger';
+import { KINDS_DEFAULT } from '@stateforge-labs/session-ledger';
 import { defaultPolicyKinds, DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
-import { capable } from '@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts';
+import { capable } from '@stateforge-labs/session-ledger';
 
 test('eligibility lists preserve the current defaults', () => {
     assert.deepEqual(COMPACTABLE, ['claude', 'codex', 'opencode']);

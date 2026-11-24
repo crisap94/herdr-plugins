@@ -1,13 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { closeEvidenceGate } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/g13-close-evidence.ts';
-import type { GateContext } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/gate.ts';
-import { foldedOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/gates/words.ts';
-import type { CloseOp, Operation } from '@stateforge-labs/session-ledger/unstable/recap/domain/ops.ts';
-import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import { textOf, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import { factIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
+import { closeEvidenceGate } from '@stateforge-labs/session-ledger';
+import type { GateContext } from '@stateforge-labs/session-ledger';
+import { foldedOf } from '@stateforge-labs/session-ledger';
+import type { CloseOp, Operation } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
+import { factIdOf } from '@stateforge-labs/session-ledger';
 
 const SOURCE = foldedOf(textOf('Merged !256 after both pipelines went green.\nThe release is tagged: v1.9.0'));
 const context: GateContext = { now: instant(1), language: textOf('en'), agents: [], shown: new Map(), open: [], closedLately: [], source: SOURCE };

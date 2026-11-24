@@ -1,12 +1,12 @@
 import { languageSettingOf } from '#src/i18n/index.ts';
-import { MINIMUM_DEFAULT, parseAutocompactPercent } from '#src/recap/domain/autocompact.ts';
-import { hintSetting, targetSetting, windowSetting } from '#src/recap/domain/compaction.ts';
+import { MINIMUM_DEFAULT, parseAutocompactPercent } from '@stateforge-labs/session-ledger';
+import { hintSetting, targetSetting, windowSetting } from '@stateforge-labs/session-ledger';
 import { screenSetting } from '#src/recap/domain/policy.ts';
 import { COMPACT_NOTE_CHOICES } from '#src/recap/domain/compact-note.ts';
 import { DECIDER_BY_OPTIONS, EFFORT_CHOICES, HARNESS_CHOICES, JOB_BY_OPTIONS, LOCALE_CHOICES, MODE_CHOICES, STYLE_CHOICES, SWITCH_CHOICES, MISSED_CHOICES } from './setup-state.ts';
 import type { Draft, FieldId } from './setup-state.ts';
-import { countOf, type Count } from '#src/recap/domain/count.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { countOf, type Count } from '@stateforge-labs/session-ledger';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 export interface ChoiceField {
     readonly size: Count;
