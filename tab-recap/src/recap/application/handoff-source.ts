@@ -1,7 +1,7 @@
 import { isUnknownRead, type GuardedLedger, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
-import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
+import { failureCauseOf, parseThrown } from '@stateforge-labs/session-ledger';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
-import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
+import type { Fact, TaskId } from '@stateforge-labs/session-ledger';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
@@ -9,9 +9,9 @@ import { HANDOFF_CLOSED_WINDOW_MS } from './handoff-limits.ts';
 import { resolveClosedLane } from './closed-lane-source.ts';
 import type { ClosedSourceDeps } from './closed-lane-source.ts';
 import type { ClosedView } from './closed-view.ts';
-import { saying, type Unknown } from '#src/ports/unknowable.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { saying, type Unknown } from '@stateforge-labs/session-ledger';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 export interface SourceRequest {
     readonly tab: ScopeId;

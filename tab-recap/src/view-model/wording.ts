@@ -1,8 +1,8 @@
-import { countOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 import type { ChaptersWording, Wording, Words, WordsOrNull } from '@stateforge-labs/recap-view';
 import type { Catalog, ChaptersMessages } from '#src/i18n/messages.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText, type Text, type TextOrNull } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText, type Text, type TextOrNull } from '@stateforge-labs/session-ledger';
 
 const text = (said: Words): Text => must(parseText(said));
 

@@ -5,9 +5,9 @@ import type { ExpandedView } from '#src/recap/render/expanded.ts';
 import { plain } from '#src/recap/render/wrap.ts';
 import { fact } from './fact-at.ts';
 import { parseCurating, parseInstant, parseProse, parseTaskName } from '@stateforge-labs/recap-view';
-import { countOf } from '#src/recap/domain/count.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 
 export const NOW = Date.parse('2026-10-07T16:30:00Z');
 const at = (clock: string, day = '2026-10-07'): number => Date.parse(`${day}T${clock}:00Z`);

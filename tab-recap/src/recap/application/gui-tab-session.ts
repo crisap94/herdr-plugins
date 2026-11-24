@@ -1,10 +1,10 @@
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import { orElse } from '#src/recap/domain/gui-tab.ts';
 import type { GuiCompactions, GuiSession } from '#src/recap/domain/gui-tab-parts.ts';
 import type { SessionFacts } from '#src/recap/domain/session-facts.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { parseText } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 
 const ZERO: Count = must(parseCount(0));
 

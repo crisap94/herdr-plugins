@@ -3,7 +3,7 @@ import { startHookEndpoint } from '#src/adapters/hooks/endpoint.ts';
 import { createRebind } from '#src/adapters/hooks/rebind.ts';
 import { createTurnEnds } from '#src/adapters/hooks/turn-ends.ts';
 import type { Running, SlotContext } from '#src/daemon/slots.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { Board } from '#src/recap/domain/board.ts';
 import { lanesOf } from '#src/recap/domain/board.ts';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';

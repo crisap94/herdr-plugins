@@ -4,9 +4,9 @@ import { failureStage, type FailureStage } from '#src/protocol/exchange.ts';
 import type { ParsedValue } from '#src/protocol/codec.ts';
 import { LIMITS, parseRequestId } from '#src/protocol/primitives.ts';
 import type { RequestId } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { AskOutcome } from './ask-outcome.ts';
-import { textOf, type Text } from './text.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 export const COMPACT_EXCHANGE = compact.name;
 export const VALUE_MAX = LIMITS.valueMax;

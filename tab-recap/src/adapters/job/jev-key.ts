@@ -1,7 +1,7 @@
-import { must } from '#src/protocol/result.ts';
-import { environmentName, type EnvironmentName } from '#src/recap/domain/backend.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { environmentName, type EnvironmentName } from '@stateforge-labs/session-ledger';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
-import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
+import { parseText, type Text, textOf } from '@stateforge-labs/session-ledger';
 
 export const JEV_KEY_FILE = ['.config', 'typesafe-api-key'] as const;
 

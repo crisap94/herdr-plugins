@@ -1,15 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
-import type { RecordedRun } from '#src/ports/recap-records.ts';
+import type { RecordedRun } from '@stateforge-labs/session-ledger';
 import type { TabLaneRecord, TabViewStore } from '#src/ports/tab-views.ts';
 import { memoryStore } from './db/support.ts';
 import { MemoryRunHistory } from './fakes/run-history.ts';
 import { MemoryTabViews } from './fakes/tab-views-memory.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { tabId, paneId } from '#test/support/ids.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { usdOf } from '#src/recap/domain/usd.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { usdOf } from '@stateforge-labs/session-ledger';
 import { laneRecord, viewRecord } from '#test/support/tab-view-records.ts';
 
 interface Subject {

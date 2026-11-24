@@ -1,21 +1,22 @@
 import { knownOr, type GuardedLedger, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import type { BoundaryLog } from '#src/ports/boundaries.ts';
-import type { SessionCursor } from '#src/ports/recap-records.ts';
+import type { SessionCursor } from '@stateforge-labs/session-ledger';
 import type { RequestPort } from '#src/ports/requests.ts';
 import type { SessionSourcePort } from '#src/ports/session-source.ts';
-import type { Stories, Story } from '#src/ports/stories.ts';
+import type { Story } from '@stateforge-labs/session-ledger';
+import type { LegacyStories as Stories } from '@stateforge-labs/session-ledger';
 import type { TabViewRecord } from '#src/ports/tab-views.ts';
-import type { Fact } from '#src/recap/domain/fact.ts';
-import type { DecisionCounts, DecisionLedger } from '#src/ports/autocompact-records.ts';
+import type { Fact } from '@stateforge-labs/session-ledger';
+import type { DecisionCounts, DecisionLedger } from '@stateforge-labs/session-ledger';
 import { RUN_CAUSES, sessionFactsFrom, type RunCounts, type SessionReadings } from '#src/recap/domain/session-facts.ts';
 import type { ExpandedTask, ExpandedView } from '#src/recap/render/expanded.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { parseTabId, type ScopeId } from '#src/recap/domain/ids.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import { parseCurating, parseInstant, parseProse, parseTaskName } from '@stateforge-labs/recap-view';
 import { viewBreakOf, webOf } from '#src/view-model/column.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 
 export interface FileCount {
     readonly path: Text;

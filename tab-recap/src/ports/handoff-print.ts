@@ -1,7 +1,7 @@
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
 
 export interface PrintAsk {
     readonly from: SessionKey;

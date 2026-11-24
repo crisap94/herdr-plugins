@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CURATING_MS, ExpandedModel, newestChange } from '#src/recap/application/expanded-view.ts';
 import type { ExpandedDeps } from '#src/recap/application/expanded-view.ts';
-import { blankRecap } from '#src/ports/recap-records.ts';
+import { blankRecap } from '@stateforge-labs/session-ledger';
 import type { TabViewRecord } from '#src/ports/tab-views.ts';
 import { expanded } from '#src/recap/render/expanded.ts';
 import { en } from '#src/i18n/en.ts';
@@ -11,12 +11,12 @@ import { cursor, memoryStore, must, seed, recordOps } from '#test/db/support.ts'
 import { fact } from '#test/fakes/fact-at.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { NOW } from '#test/fakes/expanded-fixture.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { usdOf } from '#src/recap/domain/usd.ts';
-import { paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { usdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
 import { viewRecord } from '#test/support/tab-view-records.ts';
 import { uncheckedTabId } from '#src/recap/domain/ids.ts';
 

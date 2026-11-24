@@ -1,5 +1,5 @@
 import type { HandoffBody } from './handoff-content.ts';
-import type { Instant } from './time.ts';
+import type { Instant } from '@stateforge-labs/session-ledger';
 
 export interface RestoreBody extends Pick<HandoffBody, 'groups' | 'withheld'> {
     readonly kind: 'content';

@@ -1,8 +1,8 @@
 import type { JudgeEntry } from '#src/ports/run-inputs.ts';
 import type { VerdictRecord } from '#src/ports/verdicts.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
+import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger';
 
 export interface Share {
     readonly passed: Count;

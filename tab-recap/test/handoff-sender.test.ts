@@ -8,13 +8,13 @@ import type { Ready } from '#src/recap/application/handoff-target.ts';
 import { LEASE, LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
 import type { LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import { unknown } from '@stateforge-labs/session-ledger';
 import { causeOf } from './fakes/cause.ts';
 import type { Done } from '#src/ports/columns.ts';
 import { FakePanes } from './fakes/herdr-panes.ts';
 import { echoing, laneWith, leaseSpy, PANE, planWith, readyOf, senderOf, worldOf } from './fakes/handoff-delivery.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 const TEXT = textOf('Handoff of the parser refactor.\n\nNext steps: finish the lexer.');
 const DELIVERED: HandoffOutcome = { kind: 'delivered' };

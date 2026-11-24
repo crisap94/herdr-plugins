@@ -5,7 +5,7 @@ import { CAPABILITY_TOKEN } from '#src/protocol/capability.ts';
 import { EXCHANGES } from '#src/protocol/exchanges/index.ts';
 import { parseExchangeVersion } from '#src/protocol/primitives.ts';
 import { ownerTable } from '#src/protocol/owners.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { capabilityValue, handoffLike } from './fakes/protocol-exchanges.ts';
 import { defineExchange } from '#src/protocol/exchange.ts';
 import { parseExchangeName, parseRequestPrefix } from '#src/protocol/primitives.ts';

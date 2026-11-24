@@ -1,10 +1,10 @@
-import type { Clock } from '#src/ports/clock.ts';
+import type { Clock } from '@stateforge-labs/session-ledger';
 import type { RunInputReader } from '#src/ports/run-inputs.ts';
 import type { DecisionBriefs } from '#src/ports/autocompact-briefs.ts';
-import type { BriefRetention } from '#src/recap/domain/autocompact.ts';
-import { countOf, type Count } from '#src/recap/domain/count.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import type { BriefRetention } from '@stateforge-labs/session-ledger';
+import { countOf, type Count } from '@stateforge-labs/session-ledger';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 const DAY_MS = 86_400_000;
 

@@ -1,6 +1,8 @@
-import type { CheckedLedger, FactStore } from '#src/ports/ledger.ts';
-import type { CheckedRecapRecords, Records } from '#src/ports/recap-records.ts';
-import { isUnknown, type Unknown } from '#src/ports/unknowable.ts';
+import type { CheckedLedger } from '@stateforge-labs/session-ledger';
+import type { LegacyFactStore as FactStore } from '@stateforge-labs/session-ledger';
+import type { CheckedRecapRecords } from '@stateforge-labs/session-ledger';
+import type { LegacyRecords as Records } from '@stateforge-labs/session-ledger';
+import { isUnknown, type Unknown } from '@stateforge-labs/session-ledger';
 
 type RecordReads = 'readRecap' | 'lastRunOf';
 type LedgerReads = 'openOf' | 'recentlyClosed' | 'allOf' | 'keysOf';

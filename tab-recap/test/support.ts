@@ -1,18 +1,18 @@
-import type { Text } from '#src/recap/domain/text.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
-import type { Recap } from '#src/ports/recap-records.ts';
-import type { Workplaces } from '#src/ports/lane-repo.ts';
-import type { InputAgent, RecapInput } from '#src/ports/recap-input.ts';
-import type { RecapRequest } from '#src/ports/summarizer.ts';
-import type { Entry } from '#src/ports/transcripts.ts';
-import type { RecapSections } from '#src/recap/domain/shape.ts';
-import type { RecapTask } from '#src/recap/domain/tasks.ts';
+import type { Recap } from '@stateforge-labs/session-ledger';
+import type { Workplaces } from '@stateforge-labs/session-ledger';
+import type { InputAgent, RecapInput } from '@stateforge-labs/session-ledger';
+import type { RecapRequest } from '@stateforge-labs/session-ledger';
+import type { Entry } from '@stateforge-labs/session-ledger';
+import type { RecapSections } from '@stateforge-labs/session-ledger';
+import type { RecapTask } from '@stateforge-labs/session-ledger';
 import { opsOfSections } from '#src/adapters/db/import/sections-to-ops.ts';
-import type { TaskOps } from '#src/recap/domain/ops.ts';
-import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import type { TaskOps } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '@stateforge-labs/session-ledger';
 
 export const NO_REPOS: Workplaces = { repoOf: () => Promise.resolve({ kind: 'no-repo' }) };
 

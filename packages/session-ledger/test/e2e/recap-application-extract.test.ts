@@ -1,10 +1,11 @@
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { extract, OLD_CONTRACT, type Ground } from '@stateforge-labs/session-ledger/unstable/recap/application/extract-job.ts';
-import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { RecapRequest, Writer, Written } from '@stateforge-labs/session-ledger/unstable/ports/summarizer.ts';
+import { extract, OLD_CONTRACT, type Ground } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
+import type { RecapRequest, Written } from '@stateforge-labs/session-ledger';
+import type { LegacyWriter as Writer } from '@stateforge-labs/session-ledger';
 
 const text = brand<string, 'Text'>;
 

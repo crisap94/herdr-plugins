@@ -1,4 +1,5 @@
-import type { RecapRequest, Writer } from '#src/ports/summarizer.ts';
+import type { RecapRequest } from '@stateforge-labs/session-ledger';
+import type { LegacyWriter as Writer } from '@stateforge-labs/session-ledger';
 
 export function countedWriter(made: Writer, onWrite: () => void): Writer {
     return {

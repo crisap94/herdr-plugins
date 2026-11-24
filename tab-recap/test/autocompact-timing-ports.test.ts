@@ -10,17 +10,17 @@ import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { DeciderPort } from '#src/ports/decider.ts';
+import type { DeciderPort } from '@stateforge-labs/session-ledger';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
-import type { SessionReader } from '#src/ports/transcripts.ts';
+import type { LegacySessionReader as SessionReader } from '@stateforge-labs/session-ledger';
 import { memoryStore } from './db/support.ts';
 import { decidedOf, textOf } from './fakes/decider-fixtures.ts';
 import { SAFE, candidateFor } from './autocompact-world.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
 import { agentKind, paneId } from '#test/support/ids.ts';
-import { sourcePathOf } from '#src/ports/transcripts.ts';
-import { runningOf } from '#src/recap/domain/in-flight.ts';
+import { sourcePathOf } from '@stateforge-labs/session-ledger';
+import { runningOf } from '@stateforge-labs/session-ledger';
 import { seenLane } from '#test/support/seen.ts';
 
 interface Scripted {

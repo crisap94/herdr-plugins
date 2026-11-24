@@ -1,11 +1,11 @@
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { PaneNote } from '#src/ports/extension.ts';
 import type { CompactionRow } from '#src/ports/compaction-records.ts';
 import type { ExpandedData } from '#src/recap/application/expanded-view.ts';
-import type { Count } from '#src/recap/domain/count.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
 import type { GuiLocale } from '#src/recap/domain/gui-tab-parts.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import type { WorktreeStatus } from '#src/recap/domain/worktree.ts';
 
 export interface GuiReads {

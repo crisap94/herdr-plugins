@@ -1,10 +1,10 @@
 import { existsSync, readFileSync, rmSync, statSync, utimesSync } from 'node:fs';
 import { join } from 'node:path';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { parsePid, type Pid } from '#src/recap/domain/pid.ts';
 import { fsPathOf, type FsPath } from '#src/recap/domain/fs-path.ts';
-import type { Duration } from '#src/recap/domain/time.ts';
-import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
+import type { Duration } from '@stateforge-labs/session-ledger';
+import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger';
 import { writeAtomically } from './atomic-file.ts';
 
 export type Wedging = 'wedged' | 'beating';

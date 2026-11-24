@@ -1,8 +1,8 @@
-import { must } from '#src/protocol/result.ts';
-import { saying, type Unknown } from '#src/ports/unknowable.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { saying, type Unknown } from '@stateforge-labs/session-ledger';
 import { MESSAGE_LIMIT, NOTE_LIMIT } from '#src/recap/application/compaction-message.ts';
 import { parsePaneId, type SessionKey } from '#src/recap/domain/ids.ts';
-import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '#src/recap/domain/text.ts';
+import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '@stateforge-labs/session-ledger';
 import type { ApiCall, ApiContext, Handler } from './call.ts';
 import { API_FROM_PARAM, API_NOTE_PARAM, API_PANE_PARAM, API_TO_PARAM } from '../constants.ts';
 import type { DesktopEngine } from '../engine.ts';

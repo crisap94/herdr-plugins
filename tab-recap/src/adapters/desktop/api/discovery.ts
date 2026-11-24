@@ -1,10 +1,10 @@
 import { readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Count } from '#src/recap/domain/count.ts';
-import type { Directory } from '#src/recap/domain/directory.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
+import type { Directory } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
-import { textOf, type NonEmptyText } from '#src/recap/domain/text.ts';
+import { textOf, type NonEmptyText } from '@stateforge-labs/session-ledger';
 import { API_FILE, API_VERSION } from '../constants.ts';
 import { writeAtomically } from '../../os/atomic-file.ts';
 

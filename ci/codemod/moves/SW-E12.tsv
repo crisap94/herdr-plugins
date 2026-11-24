@@ -1,0 +1,375 @@
+drop	tab-recap/src/daemon/autocompact-sweep.ts
+drop	tab-recap/src/i18n/sections.ts
+drop	tab-recap/src/ports/autocompact-reasons.ts
+drop	tab-recap/src/ports/autocompact-records.ts
+drop	tab-recap/src/ports/capability-reasons.ts
+drop	tab-recap/src/ports/clock.ts
+drop	tab-recap/src/ports/curators.ts
+drop	tab-recap/src/ports/decider.ts
+drop	tab-recap/src/ports/enumerators.ts
+drop	tab-recap/src/ports/lane-repo.ts
+drop	tab-recap/src/ports/ledger.ts
+drop	tab-recap/src/ports/recap-input.ts
+drop	tab-recap/src/ports/recap-records.ts
+drop	tab-recap/src/ports/stories.ts
+drop	tab-recap/src/ports/summarizer.ts
+drop	tab-recap/src/ports/transcript-registry.ts
+drop	tab-recap/src/ports/transcript-source.ts
+drop	tab-recap/src/ports/transcripts.ts
+drop	tab-recap/src/ports/unknowable.ts
+drop	tab-recap/src/protocol/result.ts
+drop	tab-recap/src/recap/application/anchor-source.ts
+drop	tab-recap/src/recap/application/ask-back.ts
+drop	tab-recap/src/recap/application/autocompact-gates.ts
+drop	tab-recap/src/recap/application/autocompact-line.ts
+drop	tab-recap/src/recap/application/autocompact-questions.ts
+drop	tab-recap/src/recap/application/autocompact-shapes.ts
+drop	tab-recap/src/recap/application/autocompact-state.ts
+drop	tab-recap/src/recap/application/autocompact.ts
+drop	tab-recap/src/recap/application/boundaries.ts
+drop	tab-recap/src/recap/application/chunking.ts
+drop	tab-recap/src/recap/application/correction-input.ts
+drop	tab-recap/src/recap/application/curator-input.ts
+drop	tab-recap/src/recap/application/engine.ts
+drop	tab-recap/src/recap/application/enumerate-answer.ts
+drop	tab-recap/src/recap/application/enumerate-input.ts
+drop	tab-recap/src/recap/application/enumerate.ts
+drop	tab-recap/src/recap/application/extract-ground.ts
+drop	tab-recap/src/recap/application/extract-job.ts
+drop	tab-recap/src/recap/application/extract-pipeline.ts
+drop	tab-recap/src/recap/application/hidden-codec.ts
+drop	tab-recap/src/recap/application/job-kit/batch.ts
+drop	tab-recap/src/recap/application/job-kit/repair.ts
+drop	tab-recap/src/recap/application/job-kit/stage.ts
+drop	tab-recap/src/recap/application/job-kit/writer-tools.ts
+drop	tab-recap/src/recap/application/lane-hints.ts
+drop	tab-recap/src/recap/application/ledger-input.ts
+drop	tab-recap/src/recap/application/ledger-reconcile.ts
+drop	tab-recap/src/recap/application/local-time.ts
+drop	tab-recap/src/recap/application/ops-answer.ts
+drop	tab-recap/src/recap/application/ops-gating.ts
+drop	tab-recap/src/recap/application/recap-input.ts
+drop	tab-recap/src/recap/application/recap-job.ts
+drop	tab-recap/src/recap/application/recap-shape.ts
+drop	tab-recap/src/recap/application/reconcile.ts
+drop	tab-recap/src/recap/application/triggers.ts
+drop	tab-recap/src/recap/application/writer-candidates.ts
+drop	tab-recap/src/recap/application/writer-clip.ts
+drop	tab-recap/src/recap/application/writer-context.ts
+drop	tab-recap/src/recap/application/writer-transcript.ts
+drop	tab-recap/src/recap/application/xml.ts
+drop	tab-recap/src/recap/domain/autocompact-style.ts
+drop	tab-recap/src/recap/domain/autocompact.ts
+drop	tab-recap/src/recap/domain/autocompact-verdict.ts
+drop	tab-recap/src/recap/domain/backend.ts
+drop	tab-recap/src/recap/domain/boundary.ts
+drop	tab-recap/src/recap/domain/brand.ts
+drop	tab-recap/src/recap/domain/compaction.ts
+drop	tab-recap/src/recap/domain/continuation-note.ts
+drop	tab-recap/src/recap/domain/count.ts
+drop	tab-recap/src/recap/domain/debounce.ts
+drop	tab-recap/src/recap/domain/directory.ts
+drop	tab-recap/src/recap/domain/fact.ts
+drop	tab-recap/src/recap/domain/failure-cause.ts
+drop	tab-recap/src/recap/domain/gates/duplicate.ts
+drop	tab-recap/src/recap/domain/gates/g10-close-why.ts
+drop	tab-recap/src/recap/domain/gates/g11-anchor.ts
+drop	tab-recap/src/recap/domain/gates/g12-answered.ts
+drop	tab-recap/src/recap/domain/gates/g13-close-evidence.ts
+drop	tab-recap/src/recap/domain/gates/g2-ledger-duplicate.ts
+drop	tab-recap/src/recap/domain/gates/g6-unknown-id.ts
+drop	tab-recap/src/recap/domain/gates/gatekeeper.ts
+drop	tab-recap/src/recap/domain/gates/gate.ts
+drop	tab-recap/src/recap/domain/gates/index.ts
+drop	tab-recap/src/recap/domain/gates/item-gates.ts
+drop	tab-recap/src/recap/domain/gates/item-gate.ts
+drop	tab-recap/src/recap/domain/gates/jaccard.ts
+drop	tab-recap/src/recap/domain/gates/language.ts
+drop	tab-recap/src/recap/domain/gates/ledger-gates.ts
+drop	tab-recap/src/recap/domain/gates/link.ts
+drop	tab-recap/src/recap/domain/gates/narrator.ts
+drop	tab-recap/src/recap/domain/gates/pronoun.ts
+drop	tab-recap/src/recap/domain/gates/specific.ts
+drop	tab-recap/src/recap/domain/gates/why.ts
+drop	tab-recap/src/recap/domain/gates/words.ts
+drop	tab-recap/src/recap/domain/grouping.ts
+drop	tab-recap/src/recap/domain/idle-hold.ts
+drop	tab-recap/src/recap/domain/in-flight.ts
+drop	tab-recap/src/recap/domain/ops.ts
+drop	tab-recap/src/recap/domain/pacing.ts
+drop	tab-recap/src/recap/domain/parse-failure.ts
+drop	tab-recap/src/recap/domain/pipeline.ts
+drop	tab-recap/src/recap/domain/probability.ts
+drop	tab-recap/src/recap/domain/questions.ts
+drop	tab-recap/src/recap/domain/quote.ts
+drop	tab-recap/src/recap/domain/recap-cause.ts
+drop	tab-recap/src/recap/domain/reconciliation.ts
+drop	tab-recap/src/recap/domain/registered-kinds.ts
+drop	tab-recap/src/recap/domain/shape.ts
+drop	tab-recap/src/recap/domain/tasks.ts
+drop	tab-recap/src/recap/domain/text.ts
+drop	tab-recap/src/recap/domain/time.ts
+drop	tab-recap/src/recap/domain/timing-ids.ts
+drop	tab-recap/src/recap/domain/token-amount.ts
+drop	tab-recap/src/recap/domain/usd.ts
+drop	tab-recap/src/recap/domain/writer-view.ts
+text	'@stateforge-labs/session-ledger/unstable/contract/kernel.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/facade/create-engine.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/facade/curation.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/facade/plugs.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/facade/story-repair.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/facade/translate.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/i18n/sections.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/ports/capability-reasons.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/ports/curators.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/ports/enumerators.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/ports/lane-repo.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/ports/ledger.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/ports/recap-input.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/ports/recap-records.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/ports/summarizer.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/ports/transcript-registry.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/ports/transcript-source.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/ports/transcripts.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/ports/unknowable.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/protocol/result.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/anchor-source.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/ask-back.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/autocompact.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/boundaries.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/chunking.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/correction-input.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/curator-input.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/cursor-carry.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/engine.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/enumerate-answer.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/enumerate-input.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/enumerate.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/extract-ground.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/extract-job.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/extract-pipeline.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/hidden-codec.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/job-kit/stage.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/lane-hints.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/ledger-input.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/ledger-reconcile.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/local-time.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/ops-answer.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/ops-gating.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/pending-plan.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/recap-input.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/recap-shape.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/reconcile.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/run-fold.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/triggers.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/writer-candidates.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/writer-clip.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/writer-context.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/writer-transcript.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/application/xml.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/autocompact-style.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/autocompact-verdict.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/autocompact.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/backend.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/boundary.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/compaction.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/continuation-note.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/count.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/debounce.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/failure-cause.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/gates/g11-anchor.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/gates/g13-close-evidence.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/gates/gate.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/gates/gatekeeper.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/gates/index.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/gates/item-gate.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/gates/item-gates.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/gates/jaccard.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/gates/language.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/gates/link.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/gates/narrator.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/gates/specific.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/gates/words.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/grouping.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/idle-hold.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/in-flight.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/ops.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/pacing.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/pipeline.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/probability.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/quote.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/recap-cause.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/reconciliation.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/registered-kinds.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/shape.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/tasks.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/text.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/time.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/timing-ids.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/token-amount.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/usd.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'@stateforge-labs/session-ledger/unstable/recap/domain/writer-view.ts'	'@stateforge-labs/session-ledger'	{tab-recap,packages}/**
+text	'#src/daemon/autocompact-sweep.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/i18n/sections.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/ports/autocompact-reasons.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/ports/autocompact-records.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/ports/capability-reasons.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/ports/clock.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/ports/curators.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/ports/decider.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/ports/enumerators.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/ports/lane-repo.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/ports/ledger.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/ports/recap-input.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/ports/recap-records.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/ports/stories.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/ports/summarizer.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/ports/transcript-registry.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/ports/transcripts.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/ports/unknowable.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/protocol/result.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/ask-back.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/autocompact-gates.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/autocompact-questions.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/autocompact-state.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/autocompact.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/boundaries.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/chunking.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/curator-input.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/engine.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/enumerate-input.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/enumerate.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/extract-ground.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/extract-job.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/extract-pipeline.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/job-kit/batch.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/job-kit/repair.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/job-kit/stage.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/job-kit/writer-tools.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/lane-hints.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/ledger-input.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/ledger-reconcile.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/ops-answer.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/ops-gating.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/recap-input.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/recap-job.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/recap-shape.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/reconcile.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/triggers.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/writer-context.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/application/xml.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/autocompact-style.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/autocompact-verdict.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/autocompact.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/backend.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/boundary.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/brand.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/compaction.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/continuation-note.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/count.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/debounce.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/directory.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/fact.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/failure-cause.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/gates/duplicate.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/gates/g10-close-why.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/gates/g11-anchor.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/gates/g12-answered.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/gates/g2-ledger-duplicate.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/gates/g6-unknown-id.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/gates/gate.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/gates/gatekeeper.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/gates/index.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/gates/item-gate.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/gates/item-gates.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/gates/jaccard.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/gates/language.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/gates/ledger-gates.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/gates/link.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/gates/narrator.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/gates/pronoun.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/gates/specific.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/gates/why.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/gates/words.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/grouping.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/idle-hold.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/in-flight.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/ops.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/pacing.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/parse-failure.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/pipeline.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/probability.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/questions.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/quote.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/recap-cause.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/reconciliation.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/registered-kinds.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/shape.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/tasks.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/text.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/time.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/token-amount.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/usd.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'#src/recap/domain/writer-view.ts'	'@stateforge-labs/session-ledger'	tab-recap/{src,test,bin,docs}/**
+text	'./autocompact-sweep.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/daemon/main.ts
+text	'./unknowable.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/ports/active-install.ts
+text	'./autocompact-line.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/application/autocompact-listing.ts
+text	'./autocompact.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/application/handoff-target.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/backoff.ts
+text	'./time.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/backoff.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/board.ts
+text	'./text.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/board.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/byte-budget.ts
+text	'./text.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/compact-request.ts
+text	'./text.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/compaction-plan.ts
+text	'./text.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/coordination.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/event-token.ts
+text	'./text.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/event-token.ts
+text	'./time.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/event-token.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/fold.ts
+text	'./text.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/fold.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/freshness.ts
+text	'./text.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/freshness.ts
+text	'./time.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/freshness.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/gui-fit.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/gui-index.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/gui-tab-parts.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/gui-tab-types.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/gui-tab.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/handoff-content.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/handoff-plan.ts
+text	'./text.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/handoff-plan.ts
+text	'./backend.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/ids.ts
+text	'./timing-ids.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/ids.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/intent.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/job.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/lane-tokens.ts
+text	'./text.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/lane.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/layout.ts
+text	'./probability.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/layout.ts
+text	'./text.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/layout.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/number-in.ts
+text	'./text.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/number-in.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/perf.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/policy.ts
+text	'./registered-kinds.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/policy.ts
+text	'./text.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/policy.ts
+text	'./time.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/policy.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/porcelain.ts
+text	'./time.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/restore-content.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/seen.ts
+text	'./text.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/seen.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/session-facts.ts
+text	'./text.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/status.ts
+text	'./text.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/telemetry-tags.ts
+text	'./text.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/text-collapse.ts
+text	'./text.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/visibility.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/worksite.ts
+text	'./directory.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/worksite.ts
+text	'./text.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/worksite.ts
+text	'./count.ts'	'@stateforge-labs/session-ledger'	tab-recap/src/recap/domain/worktree.ts

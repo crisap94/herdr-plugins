@@ -1,8 +1,8 @@
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import { NO, YES, type Flag } from '#src/recap/domain/gui-tab-parts.ts';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
-import type { Duration, Instant } from '#src/recap/domain/time.ts';
+import type { Duration, Instant } from '@stateforge-labs/session-ledger';
 import { BUS_RING } from './constants.ts';
 
 export type BusTopic = 'index' | 'tab' | 'notice';

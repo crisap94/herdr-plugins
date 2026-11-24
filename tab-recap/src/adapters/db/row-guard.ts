@@ -1,5 +1,5 @@
-import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
-import { unreadableOf, type Unknown } from '#src/ports/unknowable.ts';
+import { failureCauseOf, parseThrown } from '@stateforge-labs/session-ledger';
+import { unreadableOf, type Unknown } from '@stateforge-labs/session-ledger';
 
 export interface Row {
     readonly [column: string]: unknown;

@@ -1,4 +1,4 @@
-import { EVIDENCE_CHARS } from '#src/recap/domain/reconciliation.ts';
+import { EVIDENCE_CHARS } from '@stateforge-labs/session-ledger';
 
 export const RECONCILE_CURATOR_INSTRUCTIONS = [
     'You check the ledger of facts kept about one piece of work done by AI coding agents against what was said and done last.',

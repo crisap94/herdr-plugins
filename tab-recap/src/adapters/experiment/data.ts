@@ -1,5 +1,5 @@
 import type { LabelledMoment } from '#src/experiment/kappa-report.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
 
 import { parseLabelledRecord, parsePoint } from './decode.ts';
 import { jsonLines } from './io.ts';

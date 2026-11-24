@@ -9,9 +9,9 @@ import type { HiddenState } from '#src/recap/domain/board.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
 import { parseAlertSource } from '#src/recap/domain/pane-alert.ts';
 import type { PaneAlert } from '#src/recap/domain/pane-alert.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
-import { instant, parseInstant } from '#src/recap/domain/time.ts';
-import { must } from '#src/protocol/result.ts';
+import { parseText, textOf } from '@stateforge-labs/session-ledger';
+import { instant, parseInstant } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 import { expectSameEffect, expectSameRows, withParity } from './parity.ts';
 import { hiddenStateOf } from '#test/support/seen.ts';
 

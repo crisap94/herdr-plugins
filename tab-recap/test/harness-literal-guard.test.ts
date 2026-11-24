@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { BACKEND_IDS } from '#src/recap/domain/backend.ts';
-import { REGISTERED_KINDS } from '#src/recap/domain/registered-kinds.ts';
+import { BACKEND_IDS } from '@stateforge-labs/session-ledger';
+import { REGISTERED_KINDS } from '@stateforge-labs/session-ledger';
 
 const RULE = readFileSync(new URL('../rules/recap-no-harness-literals.yml', import.meta.url), 'utf8');
 

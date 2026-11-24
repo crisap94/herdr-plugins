@@ -3,7 +3,7 @@ import type { DeadColumn } from '#src/recap/domain/dead-columns.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { Shape } from '#src/recap/domain/board.ts';
 import { parsePaneId, parseTabId, type SessionKey, type ScopeId } from '#src/recap/domain/ids.ts';
-import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger';
 import type { JsonObject } from './json-object.ts';
 
 export type AgentPaneSet = ReadonlySet<SessionKey>;

@@ -1,17 +1,18 @@
 import { claudeContextWindow, ClaudeWindow } from '@stateforge-labs/harness-adapters/claude';
-import type { Observed, WindowBasis, WindowOf } from '#src/recap/domain/compaction.ts';
+import type { WindowBasis, WindowOf } from '@stateforge-labs/session-ledger';
+import type { ContextObserved as Observed } from '@stateforge-labs/session-ledger';
 import type { HarnessKind } from '#src/recap/domain/ids.ts';
-import type { Count } from '#src/recap/domain/count.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
-import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
-import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
+import { parseText, textOf } from '@stateforge-labs/session-ledger';
+import { registeredKindOf } from '@stateforge-labs/session-ledger';
+import type { RegisteredKind } from '@stateforge-labs/session-ledger';
 import type { ContextWindowLookup } from '#src/ports/context-windows.ts';
 import type { ModelWindows } from '#src/ports/model-catalogue.ts';
 import { supported } from '#src/ports/capability.ts';
 import type { Support } from '#src/ports/capability.ts';
-import type { ContextWindowWhy } from '#src/ports/capability-reasons.ts';
+import type { ContextWindowWhy } from '@stateforge-labs/session-ledger';
 
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 type Source = (observed: Observed, catalogue: ModelWindows) => WindowBasis | null;
 

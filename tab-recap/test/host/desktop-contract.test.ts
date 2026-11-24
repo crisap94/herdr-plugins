@@ -7,11 +7,12 @@ import { API, DOC_VERSIONS, LONG_POLL, ROUTE } from 'herdr-desktop-mods/tab-reca
 import { ROUTES } from '#src/adapters/desktop/api/routes.ts';
 import { API_HEALTH_PATH, API_HOST, API_POLL_DEFAULT_S, API_VERSION } from '#src/adapters/desktop/constants.ts';
 import { GuiPublisher } from '#src/adapters/desktop/publisher.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseDirectory } from '#src/recap/domain/directory.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseDirectory } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { blankRecap, type Records } from '#src/ports/recap-records.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
+import { blankRecap } from '@stateforge-labs/session-ledger';
+import { type LegacyRecords as Records } from '@stateforge-labs/session-ledger';
 import type { TabViewStore } from '#src/ports/tab-views.ts';
 
 const SAMPLE_TAB = 'w1';

@@ -6,7 +6,7 @@ import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { TabViewRowStore } from '#src/adapters/db/tab-views.ts';
 import type { LiveLanes, TabLaneRecord, TabViewRecord, TabViewStore } from '#src/ports/tab-views.ts';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { MemoryTabViews } from './fakes/tab-views-memory.ts';
 import { laneRecord, viewRecord } from '#test/support/tab-view-records.ts';
 

@@ -1,12 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { gateFrom, parseGatePercent } from '#src/recap/domain/autocompact.ts';
-import type { GateFacts } from '#src/recap/domain/autocompact.ts';
-import { awaitedNames, backgroundItem, backgroundLabel, backgroundTool, flightDetail, flightOf, flightReason, holdsLane, NOT_AWAITING, NOTHING_IN_FLIGHT, observedFrom, runningCount, unreadable, ceilingOf } from '#src/recap/domain/in-flight.ts';
-import type { Awaiting, BackgroundItem, Flight } from '#src/recap/domain/in-flight.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { duration, instant } from '#src/recap/domain/time.ts';
+import { parseGatePercent } from '@stateforge-labs/session-ledger';
+import { gateOf as gateFrom } from '@stateforge-labs/session-ledger/compaction-timing';
+import type { GateFacts } from '@stateforge-labs/session-ledger';
+import { awaitedNames, backgroundItem, backgroundLabel, backgroundTool, flightDetail, flightOf, flightReason, holdsLane, NOT_AWAITING, NOTHING_IN_FLIGHT, observedFrom, runningCount, unreadable, ceilingOf } from '@stateforge-labs/session-ledger';
+import type { Awaiting, BackgroundItem, Flight } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { duration, instant } from '@stateforge-labs/session-ledger';
 
 const NOW = 10_000_000;
 const monitor = backgroundItem(backgroundTool(textOf('Monitor')), backgroundLabel(textOf('open merge requests')));

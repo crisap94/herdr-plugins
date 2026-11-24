@@ -1,13 +1,13 @@
-import { err, ok, type Result } from '#src/protocol/result.ts';
-import type { ContextUse, WindowSource } from '#src/recap/domain/compaction.ts';
+import { err, ok, type Result } from '@stateforge-labs/session-ledger';
+import type { ContextUse, WindowSource } from '@stateforge-labs/session-ledger';
 import type { RestoredLane } from '#src/recap/domain/closures.ts';
 import { parseAgentKind, parsePaneId, parseTabId, type HarnessKind, type SessionKey, type ScopeId } from '#src/recap/domain/ids.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { parseInstant, type Instant } from '#src/recap/domain/time.ts';
-import type { Forge } from '@stateforge-labs/session-ledger/unstable/ports/lane-repo.ts';
-import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
-import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import { parseInstant, type Instant } from '@stateforge-labs/session-ledger';
+import type { Forge } from '@stateforge-labs/session-ledger';
+import type { Unknown } from '@stateforge-labs/session-ledger';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 export interface LaneWebRecord {
     readonly base: Text;

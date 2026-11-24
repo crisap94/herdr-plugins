@@ -1,13 +1,13 @@
 import { knownOr, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import type { TabViewStore } from '#src/ports/tab-views.ts';
 import { NO, YES, type Flag } from '#src/recap/domain/gui-tab-parts.ts';
-import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
+import { NO_SECTIONS } from '@stateforge-labs/session-ledger';
 import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
 import { collapsedText } from '#src/recap/domain/text-collapse.ts';
 import { noteFromRequest } from './compact-start.ts';
 import { guidanceOf, NOTE_LIMIT, type Material } from './compaction-message.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 export type CompactRefusal = 'note-too-long' | 'unknown-pane';
 

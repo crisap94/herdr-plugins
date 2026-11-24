@@ -1,5 +1,5 @@
-import { countOf, type Count } from './count.ts';
-import type { Text } from './text.ts';
+import { countOf, type Count } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
 
 export interface NumberRange { readonly min: Count; readonly max: Count; }
 

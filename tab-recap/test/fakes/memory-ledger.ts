@@ -1,11 +1,12 @@
-import type { Applied, HistoryFact, FactStore } from '#src/ports/ledger.ts';
-import type { Fact, FactId, TaskId } from '#src/recap/domain/fact.ts';
-import { sameTask } from '#src/recap/domain/fact.ts';
-import { apply } from '#src/recap/domain/ops.ts';
+import type { Applied, HistoryFact } from '@stateforge-labs/session-ledger';
+import type { LegacyFactStore as FactStore } from '@stateforge-labs/session-ledger';
+import type { Fact, FactId, TaskId } from '@stateforge-labs/session-ledger';
+import { sameTask } from '@stateforge-labs/session-ledger';
+import { apply } from '@stateforge-labs/session-ledger';
 import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
-import type { Operation, RunRef } from '#src/recap/domain/ops.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
+import type { Operation, RunRef } from '@stateforge-labs/session-ledger';
 
 const HISTORY_LIMIT = 300;
 

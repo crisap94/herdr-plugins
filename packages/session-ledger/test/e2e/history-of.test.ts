@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { historyOf } from '@stateforge-labs/session-ledger/unstable/facade/translate.ts';
+import { historyOf } from '@stateforge-labs/session-ledger';
 import { text } from '@stateforge-labs/session-ledger/testkit';
 import { instant } from '@stateforge-labs/session-ledger';
 

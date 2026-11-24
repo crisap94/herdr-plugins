@@ -1,20 +1,20 @@
 import { knownOr, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import { blankRecap } from '#src/ports/recap-records.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import { blankRecap } from '@stateforge-labs/session-ledger';
 import type { TabViewRecord, TabViewStore } from '#src/ports/tab-views.ts';
 import { BLANK_READS, type GuiReads } from '#src/recap/application/gui-tab-reads.ts';
 import { guiIndexRow } from '#src/recap/application/gui-index-build.ts';
 import { guiTabOf } from '#src/recap/application/gui-tab-build.ts';
-import type { Directory } from '#src/recap/domain/directory.ts';
+import type { Directory } from '@stateforge-labs/session-ledger';
 import { fitGuiTab } from '#src/recap/domain/gui-fit.ts';
 import { GUI_TAB_LIMIT, encodeGuiTab, guiFileName, parseGuiIndex, type GuiIndex, type GuiTab } from '#src/recap/domain/gui-tab.ts';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
-import { parseNonEmptyText, textOf, type NonEmptyText } from '#src/recap/domain/text.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import { parseNonEmptyText, textOf, type NonEmptyText } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 import { writeAtomically } from '../os/atomic-file.ts';
 import type { DesktopBus } from './bus.ts';
 

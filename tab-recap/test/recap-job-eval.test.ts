@@ -1,22 +1,24 @@
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { test } from 'node:test';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import assert from 'node:assert/strict';
-import { RecapJob } from '#src/recap/application/recap-job.ts';
+import { RecapJob } from '@stateforge-labs/session-ledger';
 import { tabId, agentKind } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import type { RecapRequest, Writer, Written } from '#src/ports/summarizer.ts';
-import type { ChunkResult, Located, PromptResult, SessionReader } from '#src/ports/transcripts.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import type { RecapRequest, Written } from '@stateforge-labs/session-ledger';
+import type { LegacyWriter as Writer } from '@stateforge-labs/session-ledger';
+import type { ChunkResult, Located, PromptResult } from '@stateforge-labs/session-ledger';
+import type { LegacySessionReader as SessionReader } from '@stateforge-labs/session-ledger';
 import { memoryStore, runsOf } from '#test/db/support.ts';
 import { NO_REPOS } from '#test/support.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import type { KeepInput } from '#src/recap/application/recap-job.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import { cursorOf, grewOf, sourcePathOf } from '#src/ports/transcripts.ts';
+import { brand } from '@stateforge-labs/session-ledger';
+import type { LegacyKeepInput as KeepInput } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
+import { cursorOf, grewOf, sourcePathOf } from '@stateforge-labs/session-ledger';
 import { seenLane } from '#test/support/seen.ts';
 
 const transcripts: SessionReader = {

@@ -1,18 +1,18 @@
 import { test } from 'node:test';
 import { uncheckedAgentKind } from '#src/recap/domain/ids.ts';
-import { environmentName } from '#src/recap/domain/backend.ts';
+import { environmentName } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { changes, dirty, draftFrom, initial, locksOf, modelTarget, saved, step, tested, withAvailable } from '#src/recap/application/setup-keys.ts';
 import type { Draft, Effect, Locks, Setup } from '#src/recap/application/setup-keys.ts';
 import { requestRewrites } from '#src/recap/application/setup-changes.ts';
-import { blankRecap } from '#src/ports/recap-records.ts';
+import { blankRecap } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
 import { memoryStore, seed } from '#test/db/support.ts';
 import { oneTask } from '#test/support.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { usdOf } from '#src/recap/domain/usd.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { usdOf } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
 import { viewRecord } from '#test/support/tab-view-records.ts';
 import { readerOf } from '#test/fakes/environment.ts';
 

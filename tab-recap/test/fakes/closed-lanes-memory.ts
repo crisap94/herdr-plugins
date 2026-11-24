@@ -1,12 +1,12 @@
 import type { ClosedLaneList, ClosedLaneRead, ClosedLaneRecord, ClosureReader, ClosureRecorder, ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { ClosedLane, ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import type { Count } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
 import { closedCutoffOf } from '#src/recap/domain/retention.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import type { Instant } from '@stateforge-labs/session-ledger';
 
 const sameKey = (record: ClosedLaneRecord, closed: ClosedLane): boolean =>
     record.tab === closed.tab && record.pane === closed.pane && record.closedAt === closed.closedAt;

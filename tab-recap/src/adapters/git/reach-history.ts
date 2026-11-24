@@ -1,13 +1,13 @@
 import { getConfig, log, resolveRef, currentBranch, Errors } from 'isomorphic-git';
-import { ok, type Result } from '#src/protocol/result.ts';
+import { ok, type Result } from '@stateforge-labs/session-ledger';
 import type { AheadCount } from '#src/recap/domain/porcelain.ts';
 import type { BranchName } from '#src/recap/domain/porcelain.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
 import type { LastCommitRecord } from '#src/ports/worksite-reader.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { WebBase } from '#src/ports/lane-repo.ts';
+import { parseText, textOf } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { WebBase } from '@stateforge-labs/session-ledger';
 import { webOf } from './remote-web.ts';
 import {
     AHEAD_DEPTH,

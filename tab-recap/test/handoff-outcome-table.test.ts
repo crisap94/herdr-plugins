@@ -1,11 +1,11 @@
 import { test } from 'node:test';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { handoff, HANDOFF_EVENTS } from '#src/protocol/exchanges/handoff.ts';
 import { answerValue } from '#src/protocol/exchange.ts';
 import { stageOf } from './fakes/wire-tokens.ts';
 import { parseIdText } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { eventValue } from '#src/recap/domain/event-token.ts';
 import { HANDOFF_OUTCOME_ROWS } from '#src/recap/domain/handoff-outcome.ts';
 import { HANDOFF_EXCHANGE_REFUSALS } from '#src/protocol/reasons.ts';

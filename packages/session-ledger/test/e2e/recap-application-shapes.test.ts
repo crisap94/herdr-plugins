@@ -1,16 +1,16 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { askBackFor, MAX_FACT_QUESTIONS, THIN_CHARS, wanted } from '@stateforge-labs/session-ledger/unstable/recap/application/ask-back.ts';
-import { chunksOf, CHUNK_CHARS, newestOf } from '@stateforge-labs/session-ledger/unstable/recap/application/chunking.ts';
-import { answerTextOf, headlineOf, objectIn, renderRecap, tidy } from '@stateforge-labs/session-ledger/unstable/recap/application/recap-shape.ts';
-import { capStubs, MAX_STUBS, triggersOf, type Stub } from '@stateforge-labs/session-ledger/unstable/recap/application/triggers.ts';
-import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import { clipHead, clipTurn } from '@stateforge-labs/session-ledger/unstable/recap/application/writer-clip.ts';
-import { NO_SECTIONS } from '@stateforge-labs/session-ledger/unstable/recap/domain/shape.ts';
-import { parseText, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { Entry } from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
-import type { InputFact } from '@stateforge-labs/session-ledger/unstable/ports/recap-input.ts';
+import { askBackFor, MAX_FACT_QUESTIONS, THIN_CHARS, wanted } from '@stateforge-labs/session-ledger';
+import { chunksOf, CHUNK_CHARS, newestOf } from '@stateforge-labs/session-ledger';
+import { answerTextOf, headlineOf, objectIn, renderRecap, tidy } from '@stateforge-labs/session-ledger';
+import { capStubs, MAX_STUBS, triggersOf, type Stub } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import { clipHead, clipTurn } from '@stateforge-labs/session-ledger';
+import { NO_SECTIONS } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
+import type { Entry } from '@stateforge-labs/session-ledger';
+import type { InputFact } from '@stateforge-labs/session-ledger';
 
 const count = brand<number, 'Count'>;
 

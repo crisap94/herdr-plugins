@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import { CurateTasks } from '#src/recap/application/curate.ts';
 import type { CurateDeps } from '#src/recap/application/curate.ts';
 import type { GuardedLedger, GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
-import { blankRecap } from '#src/ports/recap-records.ts';
-import type { Recap } from '#src/ports/recap-records.ts';
-import { unknown, type Unknown } from '#src/ports/unknowable.ts';
+import { blankRecap } from '@stateforge-labs/session-ledger';
+import type { Recap } from '@stateforge-labs/session-ledger';
+import { unknown, type Unknown } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
 import { causeOf } from './fakes/cause.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { MemoryStories } from '#test/fakes/memory-stories.ts';
-import { brand } from '#src/recap/domain/brand.ts';
+import { brand } from '@stateforge-labs/session-ledger';
 
 const [textOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Instant'>];
 

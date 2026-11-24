@@ -5,7 +5,7 @@ import type { Intent } from './intent.ts';
 import type { DeadColumn, Reconciliation } from './seen.ts';
 import { spend } from './policy.ts';
 import type { Policy } from './policy.ts';
-import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import type { Instant } from '@stateforge-labs/session-ledger';
 
 export type { DeadColumn } from './seen.ts';
 

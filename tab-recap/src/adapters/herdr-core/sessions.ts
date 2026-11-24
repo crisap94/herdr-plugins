@@ -1,6 +1,6 @@
 import { claudeHome, claudeSessionIdOfPid } from '@stateforge-labs/harness-adapters/claude';
-import { parseDirectory } from '#src/recap/domain/directory.ts';
-import type { Directory } from '#src/recap/domain/directory.ts';
+import { parseDirectory } from '@stateforge-labs/session-ledger';
+import type { Directory } from '@stateforge-labs/session-ledger';
 import { parseSessionId } from '#src/recap/domain/ids.ts';
 import type { SessionId } from '#src/recap/domain/ids.ts';
 import type { HcTerminal, PositiveCount } from './sdk-core.ts';

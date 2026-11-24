@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { RUBRIC_TEXT } from '#src/adapters/job/prompts/rubric.ts';
 import { coverDocument, gradingDocument, readbackDocument, scoringDocument } from '#src/recap/application/judge-context.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
 import { dtdTest, validate } from '#test/xmllint.ts';
 import type { JudgeEntry } from '#src/ports/run-inputs.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
 
 const t = (value: string): Text => must(parseText(value));
 

@@ -4,9 +4,9 @@ import { WORKSITE_UNAVAILABLE, worksiteTextOf } from '#src/recap/render/worksite
 import { byteBudgetOf } from '#src/recap/domain/byte-budget.ts';
 import { FORBIDDEN } from '#src/recap/domain/forbidden-words.ts';
 import type { WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { brand } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 interface Plain {
     readonly directory: string;

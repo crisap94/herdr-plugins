@@ -1,9 +1,9 @@
 import { isToolInFlight, parsePart } from '@stateforge-labs/harness-adapters/opencode';
 import type { OpenCodeStore } from '@stateforge-labs/harness-adapters/opencode/store';
-import type { InFlightResult } from '#src/ports/transcripts.ts';
-import type { Count } from '#src/recap/domain/count.ts';
-import { runningOf } from '#src/recap/domain/in-flight.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { InFlightResult } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
+import { runningOf } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
 
 export function opencodeInFlight(store: Pick<OpenCodeStore, 'recentParts'>, session: Text, messageLimit: Count): InFlightResult {
     const count = store.recentParts(session, messageLimit).reduce((total, raw) => {

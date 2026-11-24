@@ -1,12 +1,12 @@
 import { test } from 'node:test';
-import type { Directory } from '#src/recap/domain/directory.ts';
+import type { Directory } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { databaseFile, openStoreAt } from '#src/adapters/db/database.ts';
 import { openCliStore } from '#src/daemon/cli-store.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 
 const DAY_MS = 86_400_000;

@@ -3,7 +3,7 @@ import { readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { writeAtomically } from '#src/adapters/os/atomic-file.ts';
 
 export const STOP_WAIT_MS = 30_000;

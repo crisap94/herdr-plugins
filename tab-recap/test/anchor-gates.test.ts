@@ -1,17 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { anchoredLine } from '#src/recap/application/replay-report.ts';
-import { anchorGate, quotedIn } from '#src/recap/domain/gates/g11-anchor.ts';
-import { answeredGate } from '#src/recap/domain/gates/g12-answered.ts';
-import { correctionOf, gatekeeper } from '#src/recap/domain/gates/gatekeeper.ts';
-import type { GateContext } from '#src/recap/domain/gates/gate.ts';
-import { foldedOf } from '#src/recap/domain/gates/words.ts';
-import type { Operation } from '#src/recap/domain/ops.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { anchorGate } from '@stateforge-labs/session-ledger';
+import { anchorQuotedIn as quotedIn } from '@stateforge-labs/session-ledger';
+import { answeredGate } from '@stateforge-labs/session-ledger';
+import { correctionOf, gatekeeper } from '@stateforge-labs/session-ledger';
+import type { GateContext } from '@stateforge-labs/session-ledger';
+import { foldedOf } from '@stateforge-labs/session-ledger';
+import type { Operation } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { factOf } from './fakes/facts.ts';
-import { factIdOf } from '#src/recap/domain/fact.ts';
+import { factIdOf } from '@stateforge-labs/session-ledger';
 
 const INPUT = foldedOf(textOf('Merged !256 after both pipelines went green.\n  The release is tagged:   v1.9.0 — "ship it"\nERROR: lint failed'));
 const decision = factOf('decisions', 'Keep SQLite', { why: textOf('one file to back up') });

@@ -1,5 +1,5 @@
-import { countOf } from '#src/recap/domain/count.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -7,9 +7,9 @@ import { lstatSync, mkdirSync, mkdtempSync, readdirSync, rmSync, truncateSync, u
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { recentTranscripts, sha256Of, withBoundaries } from '#src/adapters/experiment/files.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import { BOUNDARY_LITERAL, DAY_MS, SCAN_CHUNK_BYTES, SUBAGENT_SEGMENT } from '#src/adapters/experiment/file-constants.ts';
 
 const txt = (value: string): Text => must(parseText(value));

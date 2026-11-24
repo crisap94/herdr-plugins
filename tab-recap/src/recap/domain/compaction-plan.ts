@@ -1,8 +1,8 @@
-import { err, must, ok, type Result } from '#src/protocol/result.ts';
-import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
-import type { Duration } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { Text } from './text.ts';
+import { err, must, ok, type Result } from '@stateforge-labs/session-ledger';
+import { brand, type Brand } from '@stateforge-labs/session-ledger';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
+import type { Duration } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
 
 export type CompactionPiece = Brand<string, 'CompactionPiece'>;
 export type ConfirmationReads = Brand<number, 'ConfirmationReads'>;

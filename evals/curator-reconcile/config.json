@@ -6,15 +6,15 @@
     "repetitions": 3,
     "input": {
         "shape": "{ name: string, language: 'en', clock: { now: number, zone: string }, open: Fact[], tail: Entry[] }",
-        "builder": "tab-recap/src/recap/application/curator-input.ts#reconcileInput({ ...input, rubric: RUBRIC.items })",
+        "builder": "packages/session-ledger/src/recap/application/curator-input.ts#reconcileInput({ ...input, rubric: RUBRIC.items })",
         "rubric": "tab-recap/src/adapters/job/prompts/rubric.ts#RUBRIC.items",
         "system": "tab-recap/src/adapters/job/prompts/curator-reconcile-instructions.ts#RECONCILE_CURATOR_INSTRUCTIONS",
         "user": "reconcileInput(...).document",
         "unfence": "tab-recap/src/adapters/job/prompts/recap-prompt.ts#unfenced(text)",
-        "parser": "tab-recap/src/recap/domain/reconciliation.ts#reconciliationOf(unfenced(text), built.facts, built.tail)",
-        "gates": "tab-recap/src/recap/application/ops-gating.ts#judge(LEDGER_GATES, ops, ground, input.clock.now)",
+        "parser": "packages/session-ledger/src/recap/domain/reconciliation.ts#reconciliationOf(unfenced(text), built.facts, built.tail)",
+        "gates": "packages/session-ledger/src/recap/application/ops-gating.ts#judge(LEDGER_GATES, ops, ground, input.clock.now)",
         "ground": "{ key: 'k', tab: 't', shown: built.facts, open: [...built.facts.values()], closedLately: [], source: '', language: input.language, agents: ['claude', input.name.toLowerCase()] }",
-        "quote": "tab-recap/src/recap/domain/quote.ts#quotedIn(quote, text)"
+        "quote": "packages/session-ledger/src/recap/domain/quote.ts#quotedIn(quote, text)"
     },
     "shipped": { "name": "codex-luna-medium", "backend": "codex", "model": "gpt-6-luna", "effort": "medium", "shipped": true },
     "shippedBasis": "CURATE_DEFAULT in tab-recap/src/recap/domain/job.ts is { by: 'recap', model: '', effort: 'medium' }: the curator runs on the recap job's backend at medium effort. The inventory counts 2545 stored recap runs on codex/gpt-6-luna. The store does not record which model reconciled a ledger, and the owner's live configuration was not read, so this is the most likely shipped configuration, not a verified one.",

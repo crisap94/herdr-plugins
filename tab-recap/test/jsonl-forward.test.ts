@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { UNREAD, cursorOf } from '#src/ports/transcripts.ts';
+import { UNREAD, cursorOf } from '@stateforge-labs/session-ledger';
 import { readJsonl } from './fakes/transcript-lines.ts';
 
 const line = (n: number, size: number): string => `${JSON.stringify({ n, pad: 'x'.repeat(size - 1 - JSON.stringify({ n, pad: '' }).length) })}\n`;

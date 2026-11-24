@@ -1,8 +1,8 @@
 import type { SettingGet } from '#src/daemon/settings.ts';
-import { BACKEND_IDS, hasModel } from '#src/recap/domain/backend.ts';
-import type { BackendId } from '#src/recap/domain/backend.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { BACKEND_IDS, hasModel } from '@stateforge-labs/session-ledger';
+import type { BackendId } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 import { entriesOf } from '#src/recap/application/setup-changes.ts';
 import { CHOICES, TEXTS } from '#src/recap/application/setup-fields.ts';
 import { draftFrom, FIELDS } from '#src/recap/application/setup-state.ts';

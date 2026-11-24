@@ -1,5 +1,5 @@
 import { compactionPlanner } from '#src/adapters/capability/compaction-plans.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import type { CompactionPlanner } from '#src/ports/compaction-plans.ts';
 import { needsIdle } from '#src/recap/domain/compaction-plan.ts';
 

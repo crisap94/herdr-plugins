@@ -1,5 +1,5 @@
-import { textOf, type Text } from '#src/recap/domain/text.ts';
-import { environmentName, type EnvironmentName } from '#src/recap/domain/backend.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
+import { environmentName, type EnvironmentName } from '@stateforge-labs/session-ledger';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { join } from 'node:path';
 import { setValues } from '#src/adapters/os/config/file.ts';

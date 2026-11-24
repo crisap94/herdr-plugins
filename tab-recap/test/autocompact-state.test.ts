@@ -2,15 +2,15 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { HistoryFact } from '#src/ports/ledger.ts';
-import type { Entry } from '#src/ports/transcripts.ts';
-import { autocompactState, replyOf } from '#src/recap/application/autocompact-state.ts';
-import { QUESTIONS } from '#src/recap/application/autocompact-questions.ts';
-import { MUST_BE_LOW, ONE_MUST_BE_HIGH } from '#src/recap/domain/autocompact-verdict.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import type { HistoryFact } from '@stateforge-labs/session-ledger';
+import type { Entry } from '@stateforge-labs/session-ledger';
+import { autocompactState, replyOf } from '@stateforge-labs/session-ledger';
+import { QUESTIONS } from '@stateforge-labs/session-ledger/compaction-timing';
+import { MUST_BE_LOW, ONE_MUST_BE_HIGH } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import { textOf } from './fakes/decider-fixtures.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import type { Section } from '#src/recap/domain/fact.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import type { Section } from '@stateforge-labs/session-ledger';
 
 const unwrap = (raw: string): Text => {
     const parsed = parseText(raw);

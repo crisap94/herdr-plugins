@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { apply } from '#src/recap/domain/ops.ts';
-import type { Operation } from '#src/recap/domain/ops.ts';
+import { apply } from '@stateforge-labs/session-ledger';
+import type { Operation } from '@stateforge-labs/session-ledger';
 import { factOf, runAt } from './fakes/facts.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { factIdOf } from '#src/recap/domain/fact.ts';
-import { sweepOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/ops.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { factIdOf } from '@stateforge-labs/session-ledger';
+import { sweepOf } from '@stateforge-labs/session-ledger';
 
 const add = (section: 'next' | 'goal' | 'decisions' | 'done' | 'now', text: string, over: Partial<Operation & { op: 'add' }> = {}): Operation =>
     ({ op: 'add', section, text: textOf(text), why: null, ref: null, at: null, agent: null, ...over });

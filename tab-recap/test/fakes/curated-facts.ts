@@ -1,6 +1,6 @@
 import { fact } from './fact-at.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 export const NOW = Date.parse('2026-10-07T16:30:00Z');
 const MIN = 60_000;

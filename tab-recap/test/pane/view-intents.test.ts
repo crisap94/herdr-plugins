@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Line } from '#src/daemon/slots.ts';
 import { launchEnv, runIntent, type Connection, type IntentParts, type Launch } from '#src/daemon/view/intents.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { parseTabId, type ScopeId } from '#src/recap/domain/ids.ts';
 import type { CompactNote } from '#src/recap/domain/compact-note.ts';
 import type { Role } from '#src/wire/view/protocol.ts';

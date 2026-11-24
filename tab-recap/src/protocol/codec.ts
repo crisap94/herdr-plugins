@@ -1,5 +1,5 @@
-import { ok } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
-import type { Result } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
+import { ok } from '@stateforge-labs/session-ledger';
+import type { Result } from '@stateforge-labs/session-ledger';
 import { LIMITS, WORD_SHAPES, parseWord, refuse, parseRequestId, parseIdText, parseTokenValue, parseFieldText, parseFlagFieldText, parseRestText, parseSegmentStart, parseNextSegment, parseSegmentEnd } from './primitives.ts';
 import type { CharLimit, FieldName, FieldText, FieldValue, FlagText, IdGrammar, IdText, Presence, Refusal, RequestId, SegmentIndex, TokenValue, WireText, WordShape } from './primitives.ts';
 

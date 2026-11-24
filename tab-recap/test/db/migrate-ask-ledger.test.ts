@@ -9,7 +9,7 @@ import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { parseToolName } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
 import { scratchDir, shapeOf } from './support.ts';
 import { rid } from '../fakes/ask-ledger.ts';

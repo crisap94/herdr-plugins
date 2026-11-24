@@ -1,8 +1,8 @@
-import type { SessionCursor } from '#src/ports/recap-records.ts';
-import { UNREAD, type Entry, sourcePathOf } from '#src/ports/transcripts.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
-import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import type { SessionCursor } from '@stateforge-labs/session-ledger';
+import { UNREAD, type Entry, sourcePathOf } from '@stateforge-labs/session-ledger';
+import { isUnknown } from '@stateforge-labs/session-ledger';
+import type { TranscriptRegistry } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 const TAIL_BYTES = countOf(256 * 1024);
 

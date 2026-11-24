@@ -1,10 +1,10 @@
-import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
+import type { Unknown } from '@stateforge-labs/session-ledger';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
-import type { Count } from '#src/recap/domain/count.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
 
-export { SCREEN_PREFIX, isScreenSource } from '@stateforge-labs/session-ledger/unstable/ports/transcript-source.ts';
+export { SCREEN_PREFIX, isScreenSource } from '@stateforge-labs/session-ledger';
 
 export type ScreenOutcome =
     | { readonly kind: 'screen'; readonly text: Text; readonly revision: Count; readonly truncated: Presence }

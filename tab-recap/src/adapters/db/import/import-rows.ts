@@ -1,15 +1,15 @@
 import type { Database, Statement } from 'bun:sqlite';
 import type { HiddenState } from '#src/recap/domain/board.ts';
-import type { Recap } from '#src/ports/recap-records.ts';
-import type { RecapTask } from '#src/recap/domain/tasks.ts';
+import type { Recap } from '@stateforge-labs/session-ledger';
+import type { RecapTask } from '@stateforge-labs/session-ledger';
 import type { VisibilityAsk } from '#src/ports/requests.ts';
 import type { LegacyViewFile } from '#src/ports/legacy-store-files.ts';
 import { parseTabViewRecord } from '#src/ports/tab-views.ts';
-import type { FactId } from '#src/recap/domain/fact.ts';
-import { must } from '#src/protocol/result.ts';
+import type { FactId } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 import { parseFactId, parseRunId } from '#src/recap/domain/run-ids.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
 import { ColumnVisibilityRepository } from '../column-visibility.ts';
 import { LedgerRows } from '../ledger-rows.ts';
@@ -21,7 +21,7 @@ import { TranscriptStore } from '../transcripts.ts';
 import { typeIdOf } from '../typeid.ts';
 import { ids } from '../uuid7.ts';
 import { opsOfSections } from './sections-to-ops.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 export function attempt(db: Database, name: Text, work: () => void): Text | null {
     db.exec('SAVEPOINT piece');

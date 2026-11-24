@@ -1,12 +1,12 @@
-import { err, ok, must, type Result } from '#src/protocol/result.ts';
-import { parseCount, type Count } from './count.ts';
+import { err, ok, must, type Result } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import { isFields } from './fields.ts';
 import { parseAgentKind, parsePaneId, parseTabId, type HarnessKind, type SessionKey, type ScopeId } from './ids.ts';
-import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
 import { parseFlag, parseGuiStageId, type Flag, type GuiStageId } from './gui-tab-parts.ts';
 import { parseGuiWriting, type GuiWriting } from './gui-tab-types.ts';
-import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import { instant, parseInstant, type Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '@stateforge-labs/session-ledger';
+import { instant, parseInstant, type Instant } from '@stateforge-labs/session-ledger';
 
 export const INDEX_LANES_MAX = must(parseCount(8));
 export const HEADLINE_MAX = must(parseCount(160));

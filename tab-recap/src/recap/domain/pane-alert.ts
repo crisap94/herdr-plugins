@@ -1,9 +1,9 @@
-import type { Result } from '#src/protocol/result.ts';
+import type { Result } from '@stateforge-labs/session-ledger';
 import type { SessionKey } from './ids.ts';
-import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
-import { parseNonEmptyText } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import type { NonEmptyText, Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
+import { parseNonEmptyText } from '@stateforge-labs/session-ledger';
+import type { NonEmptyText, Text } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 
 export type AlertSource = NonEmptyText;
 

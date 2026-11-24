@@ -1,9 +1,9 @@
 import type { Enabled, Shape } from './board.ts';
-import type { Count } from './count.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
 import type { SessionKey, ScopeId } from './ids.ts';
 import type { SeenLane } from './lane.ts';
-import type { Text } from './text.ts';
-import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 
 export interface DeadColumn { readonly tab: ScopeId; readonly pane: SessionKey }
 

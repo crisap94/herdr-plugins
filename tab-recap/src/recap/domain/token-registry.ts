@@ -8,7 +8,7 @@ import { buildRegistry } from '#src/protocol/registry.ts';
 import type { Registry } from '#src/protocol/registry.ts';
 import { parseTokenName } from '#src/protocol/primitives.ts';
 import type { TokenName } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { API_TOKEN, NEEDS_TOKEN, RECAP_TOKEN, SHARE_TOKEN } from './lane-token-names.ts';
 import { EVENT_TOKEN } from './event-token.ts';
 import { LEASE } from './typing-lease.ts';

@@ -1,10 +1,10 @@
 import { isDeepStrictEqual } from 'node:util';
-import { must } from '#src/protocol/result.ts';
-import type { Recap } from '#src/ports/recap-records.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import type { Recap } from '@stateforge-labs/session-ledger';
 import type { LegacyViewFile } from '#src/ports/legacy-store-files.ts';
 import type { TabViewRecord } from '#src/ports/tab-views.ts';
-import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
-import { usdOf } from '#src/recap/domain/usd.ts';
+import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger';
+import { usdOf } from '@stateforge-labs/session-ledger';
 import { microsOf } from '../run-write.ts';
 
 export type Presence = 'present' | 'absent';

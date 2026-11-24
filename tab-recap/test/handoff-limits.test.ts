@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as limits from '#src/recap/application/handoff-limits.ts';
-import { CLOSED_SHOWN_MS } from '#src/recap/application/ledger-input.ts';
+import { CLOSED_SHOWN_MS } from '@stateforge-labs/session-ledger';
 import { RECAP_WAIT_MS } from '#src/recap/application/recap-wait.ts';
 
 test('the flow deadline is the take bound plus the longest flow', () => {

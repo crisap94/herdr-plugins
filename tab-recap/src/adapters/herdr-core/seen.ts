@@ -1,4 +1,4 @@
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import type { HarnessKind, SessionId } from '#src/recap/domain/ids.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import type { HcTerminal } from './sdk-core.ts';

@@ -1,6 +1,6 @@
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { parsePid } from '#src/recap/domain/pid.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
 import assert from 'node:assert/strict';
@@ -13,7 +13,7 @@ import { AsyncQueue } from '#src/recap/application/async-queue.ts';
 import { Informer } from '#src/recap/application/informer.ts';
 import type { Blindness } from '#src/recap/application/informer.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
-import { duration, instant } from '#src/recap/domain/time.ts';
+import { duration, instant } from '@stateforge-labs/session-ledger';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import type { FleetFrame, FleetFeed, FleetSnapshotResult, FleetStreamResult } from '#src/ports/fleet-source.ts';
 

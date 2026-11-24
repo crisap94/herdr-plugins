@@ -1,8 +1,8 @@
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import { HEADLINE_MAX, INDEX_LANES_MAX, LANE_NAME_MAX, type GuiIndexLane, type GuiIndexRow, type GuiLane, type GuiTab, type GuiTask } from '#src/recap/domain/gui-tab.ts';
 import { NO, YES } from '#src/recap/domain/gui-tab-parts.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import { oldestNeedOf, openNeedsOf, waitingSinceOf } from './gui-index-needs.ts';
 
 const URGENCY: readonly string[] = ['blocked', 'done', 'working', 'idle', 'unknown'];

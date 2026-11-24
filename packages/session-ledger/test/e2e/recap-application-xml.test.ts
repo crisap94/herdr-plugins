@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { attribute, clean, element, leaf, text } from '@stateforge-labs/session-ledger/unstable/recap/application/xml.ts';
-import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
+import { attribute, clean, element, leaf, text } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
 
 const t = brand<string, 'Text'>;
 const n = brand<number, 'Count'>;

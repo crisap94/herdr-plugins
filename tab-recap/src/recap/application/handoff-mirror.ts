@@ -1,11 +1,11 @@
 import type { AskKey, AskBook } from '#src/ports/ask-ledger.ts';
 import type { HandoffAskRecord } from '#src/ports/requests.ts';
 import type { LaneTokenReporter } from '#src/ports/lane-tokens.ts';
-import { isUnknown, saying } from '#src/ports/unknowable.ts';
+import { isUnknown, saying } from '@stateforge-labs/session-ledger';
 import { handoff, HANDOFF_EVENTS, HANDOFF_STAGES } from '#src/protocol/exchanges/handoff.ts';
 import { failureStage, terminalStage } from '#src/protocol/exchange.ts';
 import { parseRequestId, parseWireText, refuse } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { answerWrite } from '#src/protocol/responder.ts';
 import type { TokenWrite } from '#src/protocol/tokens.ts';
 import type { EventKind } from '#src/recap/domain/event-token.ts';
@@ -14,9 +14,9 @@ import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import { parseStoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { uncheckedMilliseconds, type SessionKey } from '#src/recap/domain/ids.ts';
-import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import { failureCauseOf, parseThrown } from '@stateforge-labs/session-ledger';
+import { parseText, textOf } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
 import type { LaneEvents } from './lane-events.ts';
 import { HANDOFF_ANSWER_TTL_MS } from './handoff-limits.ts';
 

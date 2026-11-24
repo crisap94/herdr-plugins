@@ -5,9 +5,9 @@ import { fileURLToPath } from 'node:url';
 import { Pidfile } from '#src/adapters/os/pidfile.ts';
 import { messagesOf, stateDirectory } from '#src/daemon/config.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
-import { duration } from '#src/recap/domain/time.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { duration } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
 
 const OK = 0;
 const WEDGED_MS = duration(180_000);

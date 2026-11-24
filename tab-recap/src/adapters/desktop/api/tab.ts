@@ -1,6 +1,6 @@
 import { NO } from '#src/recap/domain/gui-tab-parts.ts';
 import { parseTabId, type ScopeId } from '#src/recap/domain/ids.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
 import type { ApiCall, ApiContext, Handler } from './call.ts';
 import { listed } from './known.ts';
 import { sendFailure } from './reply.ts';

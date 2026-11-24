@@ -5,7 +5,7 @@ import ts from 'typescript';
 
 const packageRoot = join(dirname(new URL(import.meta.url).pathname), '..', '..');
 const importer = join(packageRoot, 'test', 'e2e', 'compaction-port.test.ts');
-const PORT = '@stateforge-labs/session-ledger/unstable/compaction-timing/engine-port.ts';
+const PORT = '../../src/compaction-timing/engine-port.ts';
 const ENTRY = '@stateforge-labs/session-ledger/compaction-timing';
 
 const NINETEEN = [
@@ -102,7 +102,7 @@ const contractHome = (path: string | undefined): boolean => path !== undefined &
 function exportsOf(specifier: string, replaced: string | null = null): readonly Exported[] {
     const options = compilerOptions();
     const resolved = ts.resolveModuleName(specifier, importer, options, ts.sys).resolvedModule;
-    assert.ok(resolved !== undefined, `${specifier} resolves through the exports map`);
+    assert.ok(resolved !== undefined, `${specifier} resolves`);
     const file = resolved.resolvedFileName;
     const host = ts.createCompilerHost(options);
     const readFile = host.readFile.bind(host);

@@ -1,17 +1,17 @@
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { numbered, severalOf, writerFacts } from '#src/recap/application/ledger-input.ts';
-import { inputOf, SEEN_BEFORE } from '#src/recap/application/recap-input.ts';
+import { numbered, severalOf, writerFacts } from '@stateforge-labs/session-ledger';
+import { inputOf, SEEN_BEFORE } from '@stateforge-labs/session-ledger';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import { keepNewestOf, nextHoursOf, prunedWriterView } from '#src/recap/domain/writer-view.ts';
+import { keepNewestOf, nextHoursOf, prunedWriterView } from '@stateforge-labs/session-ledger';
 import { factOf } from './fakes/facts.ts';
 import { agentOf, NO_REPOS } from '#test/support.ts';
-import { brand } from '#src/recap/domain/brand.ts';
+import { brand } from '@stateforge-labs/session-ledger';
 import { agentKind, paneId } from '#test/support/ids.ts';
-import { cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
-import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { cursorOf, sourcePathOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { seenLane } from '#test/support/seen.ts';
 
 const view = prunedWriterView(keepNewestOf(2), nextHoursOf(24));

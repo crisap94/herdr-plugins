@@ -1,16 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { groundOf } from '#src/recap/application/extract-ground.ts';
-import { judge } from '#src/recap/application/ops-gating.ts';
-import { inputOf } from '#src/recap/application/recap-input.ts';
+import { groundOf } from '@stateforge-labs/session-ledger';
+import { judge } from '@stateforge-labs/session-ledger';
+import { inputOf } from '@stateforge-labs/session-ledger';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { factOf } from '#test/fakes/facts.ts';
-import { keepNewestOf, nextHoursOf, prunedWriterView } from '#src/recap/domain/writer-view.ts';
-import type { Operation } from '#src/recap/domain/ops.ts';
+import { keepNewestOf, nextHoursOf, prunedWriterView } from '@stateforge-labs/session-ledger';
+import type { Operation } from '@stateforge-labs/session-ledger';
 import { NO_REPOS } from '#test/support.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { brand } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 
 const NOW = Date.parse('2026-10-06T03:05:00Z');
 

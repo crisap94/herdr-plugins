@@ -1,4 +1,4 @@
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { RecapRefresh } from './recap-wait.ts';
 import { knownOr } from '#src/ports/guarded-reads.ts';
 import type { HandoffAskRecord } from '#src/ports/requests.ts';
@@ -7,8 +7,8 @@ import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { type SessionKey, type ScopeId, parseTabId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
-import { instant, type Duration, type Instant } from '#src/recap/domain/time.ts';
-import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
+import { instant, type Duration, type Instant } from '@stateforge-labs/session-ledger';
+import { failureCauseOf, parseThrown } from '@stateforge-labs/session-ledger';
 import type { LaneClaims } from './lane-claims.ts';
 import type { HandoffRender, HandoffRenderResult, RenderMetrics } from './handoff-render.ts';
 import type { HandoffSender } from './handoff-sender.ts';
@@ -19,7 +19,7 @@ import type { ClosedSourceDeps } from './closed-lane-source.ts';
 import { DeliveryTracker } from './delivery-tracker.ts';
 import { resolveTarget } from './handoff-target.ts';
 import type { Ready, TargetDeps, TargetResolution } from './handoff-target.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 export interface ClosedFlowDeps {
     readonly closures: ClosedSourceDeps['closures'];

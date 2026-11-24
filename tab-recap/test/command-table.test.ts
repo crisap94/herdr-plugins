@@ -1,4 +1,4 @@
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';

@@ -1,4 +1,5 @@
-import type { FailedRun, LastRun, Records, RecordedRun } from '#src/ports/recap-records.ts';
+import type { FailedRun, LastRun, RecordedRun } from '@stateforge-labs/session-ledger';
+import type { LegacyRecords as Records } from '@stateforge-labs/session-ledger';
 
 type Entry = LastRun & { readonly tab: string; readonly error: string | null };
 

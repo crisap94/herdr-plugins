@@ -1,8 +1,8 @@
-import { must } from '#src/protocol/result.ts';
-import { brand, type Brand } from '#src/recap/domain/brand.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { brand, type Brand } from '@stateforge-labs/session-ledger';
 import type { LastRunCause, NewerPrompts, RefreshStatus, Freshness } from '#src/recap/domain/freshness.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
 import { utcMinuteOf } from '#src/recap/render/utc-minute.ts';
 

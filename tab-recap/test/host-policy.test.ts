@@ -5,7 +5,7 @@ import type { Platform, Refusal } from '#src/host/policy.mjs';
 import { bunHost, platformOf } from '#src/host/bun-host.mjs';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 const PLATFORMS: readonly Platform[] = ['macos', 'linux'];
 

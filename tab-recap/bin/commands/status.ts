@@ -8,8 +8,8 @@ import { STORED_NOTES_ID } from '#src/extensions/stored-notes.ts';
 import { bunHost } from '#src/host/bun-host.mjs';
 import { supportOf } from '#src/host/policy.mjs';
 import type { Messages } from '#src/i18n/index.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
 
 const OK = 0;
 

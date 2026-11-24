@@ -1,5 +1,5 @@
 import { test } from 'node:test';
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { parseHandoffId } from '#src/recap/domain/ids.ts';
 import { CLAIM_KINDS } from '#src/recap/domain/lane-claim.ts';

@@ -1,4 +1,4 @@
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { LiveLanes, LiveLanesRead, TabViewRecord, TabViewStore } from '#src/ports/tab-views.ts';
 import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import { parseTabId } from '#src/recap/domain/ids.ts';

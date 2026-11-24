@@ -1,6 +1,6 @@
-import type { Count } from '#src/recap/domain/count.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Unknown } from '@stateforge-labs/session-ledger';
 
 export interface LastCommitRecord {
     readonly hash: Text;

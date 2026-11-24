@@ -2,9 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { choice, fakeOutput, fakeRuntime, libraryHarness } from '#test/fakes/harness-runtime.ts';
 import { RecapWriter } from '#src/adapters/job/writer.ts';
-import { isUnknown } from '#src/ports/unknowable.ts';
+import { isUnknown } from '@stateforge-labs/session-ledger';
 import { requestOf } from '#test/support.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 const request = requestOf({ entries: [{ role: 'user', text: textOf('hi') }] });
 

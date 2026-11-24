@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { loadSettings } from '#src/daemon/config.ts';
-import { keepNewestOf, nextHoursOf } from '#src/recap/domain/writer-view.ts';
+import { keepNewestOf, nextHoursOf } from '@stateforge-labs/session-ledger';
 
 test('a view setting outside its range falls back', () => {
     const dir = mkdtempSync(join(tmpdir(), 'recap-config-'));

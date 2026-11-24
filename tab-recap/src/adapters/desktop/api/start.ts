@@ -1,5 +1,5 @@
-import { must } from '#src/protocol/result.ts';
-import { parseNonEmptyText, type NonEmptyText } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseNonEmptyText, type NonEmptyText } from '@stateforge-labs/session-ledger';
 import { API_ENV, API_OFF } from '../constants.ts';
 import { DesktopApi } from './server.ts';
 import type { ApiContext } from './call.ts';

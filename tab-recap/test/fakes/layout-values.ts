@@ -1,7 +1,7 @@
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 import { uncheckedPaneId, uncheckedRatio } from '#src/recap/domain/ids.ts';
 import type { Placed, Rect, Sizing, Split } from '#src/recap/domain/layout.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 export const ratioOf = uncheckedRatio;
 

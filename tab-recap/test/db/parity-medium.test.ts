@@ -6,11 +6,11 @@ import { TranscriptStore } from '#src/adapters/db/transcripts.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { RECAP_CAUSES } from '#src/recap/domain/intent.ts';
 import { expectSameEffect, expectSameRows, withParity } from './parity.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { paneId, tabId } from '#test/support/ids.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { usdOf } from '#src/recap/domain/usd.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { usdOf } from '@stateforge-labs/session-ledger';
 
 const hex = (bytes: Uint8Array): string => Buffer.from(bytes).toString('hex');
 const keyOf = (n: number): Uint8Array => Uint8Array.from({ length: 16 }, () => n);

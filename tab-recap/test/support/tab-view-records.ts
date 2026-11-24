@@ -1,4 +1,4 @@
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { parseTabLaneRecord, parseTabViewRecord, type TabLaneRecord, type TabViewRecord } from '#src/ports/tab-views.ts';
 
 export const viewRecord = (bare: unknown): TabViewRecord => must(parseTabViewRecord(bare));

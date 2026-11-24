@@ -1,10 +1,10 @@
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import { loadSettings, messagesOf } from '#src/daemon/config.ts';
 import { AUTOCOMPACT_USAGE, LISTED, listingOf, parseListingArgs, styleLine } from '#src/recap/application/autocompact-listing.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 export function autocompactCommand(argv: readonly string[]): number {
     const parsed = parseListingArgs(argv.map(textOf));

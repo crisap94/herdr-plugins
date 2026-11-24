@@ -1,16 +1,17 @@
 import type { Database } from 'bun:sqlite';
 import { and, asc, desc, eq, exists, gte, isNotNull, or, sql } from 'drizzle-orm';
-import { renderRecap } from '#src/recap/application/recap-shape.ts';
+import { renderRecap } from '@stateforge-labs/session-ledger';
 import { sectionsOfOpen } from '#src/recap/domain/ledger-view.ts';
 import { type ScopeId, parseAgentKind, parsePaneId } from '#src/recap/domain/ids.ts';
-import { recapRunningOf } from '#src/ports/recap-records.ts';
-import { cursorOf as positionOf, sourcePathOf } from '#src/ports/transcripts.ts';
-import { usdOf } from '#src/recap/domain/usd.ts';
-import type { RecapTask } from '#src/recap/domain/tasks.ts';
-import { parseText, parseTextOrNull, type Text, textOf } from '#src/recap/domain/text.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { must } from '#src/protocol/result.ts';
-import type { SessionCursor, Recap } from '#src/ports/recap-records.ts';
+import { recapRunningOf } from '@stateforge-labs/session-ledger';
+import { sourcePathOf } from '@stateforge-labs/session-ledger';
+import { cursorOf as positionOf } from '@stateforge-labs/session-ledger';
+import { usdOf } from '@stateforge-labs/session-ledger';
+import type { RecapTask } from '@stateforge-labs/session-ledger';
+import { parseText, parseTextOrNull, type Text, textOf } from '@stateforge-labs/session-ledger';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import type { SessionCursor, Recap } from '@stateforge-labs/session-ledger';
 import { chapter as chapters, lastGoodRun, run as runs, runTask as runTasks, runTaskLane as runTaskLanes, tab as tabs, task as tasks, transcript as transcripts } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { retiredFloor } from './retention.ts';
@@ -18,7 +19,7 @@ import { blob, flag, maybeText, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
 import { typeIdOf } from './typeid.ts';
 import type { LedgerRows } from './ledger-rows.ts';
-import { paneIdOf, type SessionKey } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { paneIdOf, type SessionKey } from '@stateforge-labs/session-ledger';
 
 interface LatestRun {
     readonly run: Uint8Array | null;

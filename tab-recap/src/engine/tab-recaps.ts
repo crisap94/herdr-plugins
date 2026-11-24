@@ -1,6 +1,6 @@
 import type { Engine, FollowedSession, SessionKey } from '@stateforge-labs/session-ledger';
-import type { HistoryFact } from '#src/ports/ledger.ts';
-import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
+import type { HistoryFact } from '@stateforge-labs/session-ledger';
+import type { RecapCause } from '@stateforge-labs/session-ledger';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
 import type { FlushWhy } from '#src/recap/domain/flush-why.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';

@@ -8,7 +8,7 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import { observe } from '#src/recap/domain/fold.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { relayEnvOf, shownTitle, titleOf } from '#src/pane/relay-env.ts';
 
 const ROOT = pathToFileURL(`${join(import.meta.dirname, '..')}/`);

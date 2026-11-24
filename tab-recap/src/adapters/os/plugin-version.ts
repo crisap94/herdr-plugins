@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fsPathOf, type FsPath } from '#src/recap/domain/fs-path.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 type Table = Readonly<Record<string, unknown>>;
 

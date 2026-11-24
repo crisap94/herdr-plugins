@@ -4,9 +4,9 @@ import { after } from 'node:test';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { environmentName } from '#src/recap/domain/backend.ts';
-import { must } from '#src/protocol/result.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { environmentName } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 import { loadSettings, recapLanguageSource, settingReader, parseSettingsFile } from '#src/daemon/config.ts';
 
 const isolatedConfigDir = mkdtempSync(join(tmpdir(), 'recap-config-isolated-'));

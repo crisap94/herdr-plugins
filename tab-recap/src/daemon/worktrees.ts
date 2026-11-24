@@ -12,8 +12,8 @@ import { SystemClock } from '#src/adapters/os/system-clock.ts';
 import { PaneNoteFeed } from '#src/recap/application/pane-note-feed.ts';
 import { PerfLedger } from '#src/recap/application/perf-ledger.ts';
 import { WorktreeRegistry } from '#src/recap/application/worktree-registry.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
-import { duration } from '#src/recap/domain/time.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
+import { duration } from '@stateforge-labs/session-ledger';
 import { WORKTREE_SAFETY_MS, WORKTREE_SETTLE_MS } from './timing.ts';
 import { worktreeSwitch } from './worktree-switch.ts';
 

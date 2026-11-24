@@ -1,12 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { gateFrom, parseGatePercent } from '#src/recap/domain/autocompact.ts';
-import type { GateFacts } from '#src/recap/domain/autocompact.ts';
-import { duration, instant } from '#src/recap/domain/time.ts';
-import { verdictOf } from '#src/recap/domain/autocompact-verdict.ts';
-import { flightOf, flightReason, NOT_AWAITING, observedFrom, runningCount, unreadable } from '#src/recap/domain/in-flight.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { parseGatePercent } from '@stateforge-labs/session-ledger';
+import { gateOf as gateFrom } from '@stateforge-labs/session-ledger/compaction-timing';
+import type { GateFacts } from '@stateforge-labs/session-ledger';
+import { duration, instant } from '@stateforge-labs/session-ledger';
+import { verdictOf } from '@stateforge-labs/session-ledger/compaction-timing';
+import { flightOf, flightReason, NOT_AWAITING, observedFrom, runningCount, unreadable } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 const running = (count: number): GateFacts['flight'] => flightOf(observedFrom(runningCount(countOf(count)), [], flightReason(textOf(`${count} running`))), NOT_AWAITING);
 const unreadableFlight = (): GateFacts['flight'] => flightOf(unreadable(flightReason(textOf('unreadable'))), NOT_AWAITING);

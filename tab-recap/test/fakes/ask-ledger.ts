@@ -1,9 +1,9 @@
 import type { AskEntry, AskIdentity, AskKey, AskBook, AskDraft, AskSighting, Requester } from '#src/ports/ask-ledger.ts';
 import { parseRequestId } from '#src/protocol/primitives.ts';
 import type { ExchangeName, RequestId } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 
 export const rid = (raw: string): RequestId => must(parseRequestId(raw, 'legacy-length'));

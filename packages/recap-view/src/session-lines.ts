@@ -1,9 +1,9 @@
-import { sizeOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/compaction.ts';
+import { sizeOf } from '@stateforge-labs/session-ledger';
 import type { SessionRecap } from './model.ts';
 import { assertCount } from './wording.ts';
 import type { TextWording } from './wording.ts';
 import { clockOf, dayOf } from './timeline.ts';
-import { countOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 const MINUTE = 60_000;
 

@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ASK_BACK_CHARS, deduplicated, enumerate, enumerateAsked } from '@stateforge-labs/session-ledger/unstable/recap/application/enumerate.ts';
-import type { AgentTurns, EnumerateRun } from '@stateforge-labs/session-ledger/unstable/recap/application/enumerate.ts';
-import { correctionDocument } from '@stateforge-labs/session-ledger/unstable/recap/application/correction-input.ts';
-import type { Enumerator, Enumerated } from '@stateforge-labs/session-ledger/unstable/ports/enumerators.ts';
-import type { InputCandidate, RecapInput } from '@stateforge-labs/session-ledger/unstable/ports/recap-input.ts';
-import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import type { Correction } from '@stateforge-labs/session-ledger/unstable/ports/summarizer.ts';
+import { ASK_BACK_CHARS, deduplicated, enumerate, enumerateAsked } from '@stateforge-labs/session-ledger';
+import type { AgentTurns, EnumerateRun } from '@stateforge-labs/session-ledger';
+import { correctionDocument } from '@stateforge-labs/session-ledger';
+import type { Enumerated } from '@stateforge-labs/session-ledger';
+import type { LegacyEnumerator as Enumerator } from '@stateforge-labs/session-ledger';
+import type { InputCandidate, RecapInput } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
+import type { Correction } from '@stateforge-labs/session-ledger';
 
 const textOf = brand<string, 'Text'>;
 const count = brand<number, 'Count'>;

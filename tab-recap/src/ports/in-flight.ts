@@ -1,7 +1,7 @@
-import type { Count } from '#src/recap/domain/count.ts';
-import type { BackgroundItem } from '#src/recap/domain/in-flight.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
+import type { BackgroundItem } from '@stateforge-labs/session-ledger';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
 
 export interface InFlightNotStarted {
     readonly kind: 'not-started';

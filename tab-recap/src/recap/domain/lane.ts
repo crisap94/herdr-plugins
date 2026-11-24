@@ -1,12 +1,12 @@
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { parseAgentKind, parsePaneId, parseSessionId, parseTabId, parseWorkspaceId } from './ids.ts';
 import type { HarnessKind, SessionKey, SessionId, ScopeId, WorkspaceId } from './ids.ts';
 import { laneStatus } from './status.ts';
 import type { LaneStatus } from './status.ts';
-import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import { parseDirectory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
-import type { Directory } from '@stateforge-labs/session-ledger/unstable/recap/domain/directory.ts';
-import { parseText, type Text } from './text.ts';
+import type { Instant } from '@stateforge-labs/session-ledger';
+import { parseDirectory } from '@stateforge-labs/session-ledger';
+import type { Directory } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 
 export interface SeenLane {
     readonly paneId: Text;

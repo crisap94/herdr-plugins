@@ -1,4 +1,4 @@
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { RestoreText } from '@stateforge-labs/session-ledger';
@@ -12,7 +12,7 @@ import { type SessionKey } from '#src/recap/domain/ids.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
 import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
 import { laneStatus, type LaneStatus } from '#src/recap/domain/status.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import type { HookAnswer, HookCall, HookSource } from '#src/wire/hooks/contract.ts';
 import { hookFixture, readHookCases, type HookCase, type HookEffect } from '#test/contracts/wire/fakes/fake-harness.ts';
 import { seenLane } from '#test/support/seen.ts';

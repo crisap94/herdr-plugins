@@ -4,14 +4,14 @@ import assert from 'node:assert/strict';
 import { rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { RecapWriter } from '#src/adapters/job/writer.ts';
-import { extract, OLD_CONTRACT } from '#src/recap/application/extract-job.ts';
-import type { Extracted, Ground } from '#src/recap/application/extract-job.ts';
-import { gateName } from '#src/recap/domain/gates/gatekeeper.ts';
-import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
+import { extract, OLD_CONTRACT } from '@stateforge-labs/session-ledger';
+import type { Extracted, Ground } from '@stateforge-labs/session-ledger';
+import { gateName } from '@stateforge-labs/session-ledger';
+import { LEDGER_GATES } from '@stateforge-labs/session-ledger';
 import { scratchDir } from '#test/db/support.ts';
 import { requestOf } from './support.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { brand } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 
 const textOf = brand<string, 'Text'>;
 const ground: Ground = {

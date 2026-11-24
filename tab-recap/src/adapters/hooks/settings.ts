@@ -1,7 +1,7 @@
 import { brand, isFields, type Brand, type Fields } from '@stateforge-labs/herdr-sdk/core';
-import { err, must, ok, type Result } from '#src/protocol/result.ts';
+import { err, must, ok, type Result } from '@stateforge-labs/session-ledger';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import type { HOOK_EVENTS, HookHarness } from '#src/wire/hooks/contract.ts';
 
 export type HookEvent = (typeof HOOK_EVENTS)[HookHarness][number];

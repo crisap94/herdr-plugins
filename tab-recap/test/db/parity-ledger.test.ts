@@ -2,11 +2,11 @@ import { describe, test } from 'node:test';
 import type { Database } from 'bun:sqlite';
 import { LedgerRows } from '#src/adapters/db/ledger-rows.ts';
 import { tabId } from '#test/support/ids.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { typeIdOf } from '#src/adapters/db/typeid.ts';
 import { expectSameRows, withParity } from './parity.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '@stateforge-labs/session-ledger';
 
 const keyOf = (n: number): Uint8Array => Uint8Array.from({ length: 16 }, () => n);
 const literal = (n: number): string => `X'${Buffer.from(keyOf(n)).toString('hex')}'`;

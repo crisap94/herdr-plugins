@@ -3,13 +3,13 @@ import { compactJobOf, placementOf } from './fakes/settings-readers.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { BRIEF_INSTRUCTIONS } from '#src/adapters/job/prompts/brief-instructions.ts';
-import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
+import { NO_SECTIONS } from '@stateforge-labs/session-ledger';
 import { BriefDesk, clean, FORBIDDEN, vetted } from '#src/recap/application/compaction-brief.ts';
 import { MESSAGE_LIMIT as BRIEF_LIMIT } from '#src/recap/application/compaction-message.ts';
 import type { BriefWriter } from '#src/ports/compaction-briefs.ts';
-import { unknown } from '#src/ports/unknowable.ts';
-import { duration } from '#src/recap/domain/time.ts';
-import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
+import { unknown } from '@stateforge-labs/session-ledger';
+import { duration } from '@stateforge-labs/session-ledger';
+import { parseText, type Text, textOf } from '@stateforge-labs/session-ledger';
 import { COMPACT_DEFAULT } from '#src/recap/domain/job.ts';
 
 const t = (raw: string): Text => {

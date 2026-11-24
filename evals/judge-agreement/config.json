@@ -6,7 +6,7 @@
     "repetitions": 3,
     "input": {
         "shape": "{ request: RecapRequest, items: DatasetRow[], state: DatasetRow[] }",
-        "writerInput": "tab-recap/src/recap/application/writer-context.ts#writerContext(input.request)",
+        "writerInput": "packages/session-ledger/src/recap/application/writer-context.ts#writerContext(input.request)",
         "builder": "tab-recap/src/recap/application/judge-context.ts#scoringDocument({ rubric: RUBRIC_TEXT, input: writerContext(input.request), items: input.items, state: input.state })",
         "rubric": "tab-recap/src/adapters/job/prompts/rubric.ts#RUBRIC_TEXT",
         "system": "tab-recap/src/adapters/job/prompts/judge-instructions.ts#judgeInstructions('score', new Map())",

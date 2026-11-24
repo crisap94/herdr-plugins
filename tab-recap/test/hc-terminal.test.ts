@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { parseAgentKind } from '#src/recap/domain/ids.ts';
 import { parseHcTerminal } from '#src/adapters/herdr-core/sdk-core.ts';
 import { seenOfHcTerminal } from '#src/adapters/herdr-core/seen.ts';

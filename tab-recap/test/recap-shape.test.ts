@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { answerTextOf, headlineOf, objectIn, renderRecap, tidy } from '#src/recap/application/recap-shape.ts';
-import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
+import { answerTextOf, headlineOf, objectIn, renderRecap, tidy } from '@stateforge-labs/session-ledger';
+import { NO_SECTIONS } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import { parseText, textOf } from '@stateforge-labs/session-ledger';
 
 const asText = brand<string, 'Text'>;
 const asCount = brand<number, 'Count'>;

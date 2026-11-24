@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createEngine, parseSessionId, type SessionId } from '@stateforge-labs/session-ledger';
 import { createEngineWorld, cursorAt, followed, key, scope, session, agentKind, text } from '@stateforge-labs/session-ledger/testkit';
-import { CursorCarry } from '@stateforge-labs/session-ledger/unstable/recap/application/cursor-carry.ts';
-import type { SessionCursor } from '@stateforge-labs/session-ledger/unstable/ports/recap-records.ts';
-import { agentKindOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
-import { grewOf, UNREAD, type Located, type Position, type SessionReader } from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
+import { CursorCarry } from '@stateforge-labs/session-ledger';
+import type { SessionCursor } from '@stateforge-labs/session-ledger';
+import { agentKindOf } from '@stateforge-labs/session-ledger';
+import { grewOf, UNREAD, type Located, type Position } from '@stateforge-labs/session-ledger';
+import { type LegacySessionReader as SessionReader } from '@stateforge-labs/session-ledger';
 import { paneId, sourcePath } from '@stateforge-labs/session-ledger/testkit';
 
 const sessionOf = (id: string): SessionId => {

@@ -12,11 +12,11 @@ import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcri
 import { opencodeFixture } from '#test/opencode-fixture.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { UNREAD } from '#src/ports/transcripts.ts';
-import type { Chunk, ChunkResult, Located } from '#src/ports/transcripts.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { UNREAD } from '@stateforge-labs/session-ledger';
+import type { Chunk, ChunkResult, Located } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { sourcePathOf, fsPathOf } from './fakes/transcript-lines.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 import { seenLane } from '#test/support/seen.ts';
 
 const scratch = (): string => mkdtempSync(join(tmpdir(), 'recap-readers-'));

@@ -1,6 +1,6 @@
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
+import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '@stateforge-labs/session-ledger';
 
 export const EXPANDED_EVERY_MS: Count = must(parseCount(5000));
 export const SETTLE_MS: Count = must(parseCount(3000));

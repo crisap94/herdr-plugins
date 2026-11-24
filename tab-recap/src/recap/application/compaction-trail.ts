@@ -1,7 +1,7 @@
 import type { ActiveStage, CompactionFinish, CompactionLog, StageNote } from '#src/ports/compaction-records.ts';
 import type { CompactFailure } from '#src/protocol/exchanges/compact.ts';
 import type { CompactionId } from '#src/recap/domain/ids.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import type { Instant } from '@stateforge-labs/session-ledger';
 
 export type Records = Pick<CompactionLog, 'begin' | 'advance' | 'finish'>;
 

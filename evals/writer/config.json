@@ -19,9 +19,9 @@
   "unit": "the first writer answer to one item, before any correction round",
   "prompt": {
     "system": "instructions(request) from tab-recap/src/adapters/job/prompts/recap-instructions.ts",
-    "user": "writerContext(request, TRANSCRIPT_BUDGET) from tab-recap/src/recap/application/writer-context.ts",
-    "parser": "parseAnswer from tab-recap/src/recap/application/ops-answer.ts",
-    "gates": "LEDGER_GATES through judge() from tab-recap/src/recap/application/ops-gating.ts"
+    "user": "writerContext(request, TRANSCRIPT_BUDGET) from packages/session-ledger/src/recap/application/writer-context.ts",
+    "parser": "parseAnswer from packages/session-ledger/src/recap/application/ops-answer.ts",
+    "gates": "LEDGER_GATES through judge() from packages/session-ledger/src/recap/application/ops-gating.ts"
   },
   "shipped": "codex-luna-medium",
   "shipped_basis": "the store shows the writer on codex/gpt-6-luna; medium is the plugin default of TAB_RECAP_EFFORT; the owner's live setting was not read",

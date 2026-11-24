@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseAnswer } from '#src/recap/application/ops-answer.ts';
-import type { Resolving } from '#src/recap/application/ops-answer.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
-import { brand } from '#src/recap/domain/brand.ts';
+import { parseAnswer } from '@stateforge-labs/session-ledger';
+import type { Resolving } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
 import { agentOf } from '#test/support.ts';
 
 const textOf = brand<string, 'Text'>;

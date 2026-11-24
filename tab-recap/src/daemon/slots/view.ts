@@ -12,7 +12,7 @@ export type ViewContext = Pick<SlotContext, 'root' | 'version' | 'store' | 'obse
 const glowFor = async (): Promise<GlowCache> => {
     const processes = await import('node:child_process');
     const glow = await import('../view/glow-cache.ts');
-    const text = await import('#src/recap/domain/text.ts');
+    const text = await import('@stateforge-labs/session-ledger');
     const run: GlowSpawn = async (args, input) => {
         try {
             const child = processes.spawn('glow', [...args], { timeout: 5000 });
@@ -51,7 +51,7 @@ const launcherFor = async (context: ViewContext): Promise<(launch: Launch) => vo
 
 const compactFor = async (context: ViewContext): Promise<CompactStart> => {
     const herdr = await import('#src/adapters/herdr/fleet.ts');
-    const text = await import('#src/recap/domain/text.ts');
+    const text = await import('@stateforge-labs/session-ledger');
     return {
         askNote(tab: ScopeId, pane: SessionKey | null): Promise<Done> {
             return new herdr.HerdrFleetPorts(text.textOf(context.root)).agents().askNote(tab, pane);
@@ -66,7 +66,7 @@ const compactFor = async (context: ViewContext): Promise<CompactStart> => {
 const intentsFor = async (context: ViewContext): Promise<IntentSink> => {
     const intents = await import('../view/intents.ts');
     const herdr = await import('#src/adapters/herdr/fleet.ts');
-    const text = await import('#src/recap/domain/text.ts');
+    const text = await import('@stateforge-labs/session-ledger');
     const config = await import('../config.ts');
     return intents.runIntent({
         observe: context.observe,

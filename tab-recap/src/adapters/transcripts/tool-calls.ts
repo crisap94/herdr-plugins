@@ -1,10 +1,10 @@
 import { toolClass, toolTarget, ToolClass } from '@stateforge-labs/harness-adapters';
-import type { CallKind, Entry } from '#src/ports/transcripts.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import type { CallKind, Entry } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 import { parseFilledText, toolBriefOf } from './jsonl.ts';
 import type { Row } from './jsonl.ts';
 

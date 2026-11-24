@@ -4,9 +4,9 @@ import { stripVTControlCharacters } from 'node:util';
 import { en } from '#src/i18n/en.ts';
 import { present, presentBar } from '#src/recap/render/present.ts';
 import { plain, visibleLength, wrap } from '#src/recap/render/wrap.ts';
-import { blankRecap } from '#src/ports/recap-records.ts';
+import { blankRecap } from '@stateforge-labs/session-ledger';
 import { oneTask } from '#test/support.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
 import { viewRecord } from '#test/support/tab-view-records.ts';
 

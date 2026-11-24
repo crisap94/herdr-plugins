@@ -1,10 +1,10 @@
-import { parseUsd } from '#src/recap/domain/usd.ts';
-import { parseCount, countOf } from '#src/recap/domain/count.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import { must as mustParsed } from '#src/protocol/result.ts';
+import { parseUsd } from '@stateforge-labs/session-ledger';
+import { parseCount, countOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
+import { must as mustParsed } from '@stateforge-labs/session-ledger';
 import { parseCompactionId } from '#src/recap/domain/ids.ts';
 import { agentKind } from '#test/support/ids.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { paneId, tabId } from '#test/support/ids.ts';

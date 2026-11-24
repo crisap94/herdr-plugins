@@ -1,10 +1,10 @@
-import { countOf } from './count.ts';
-import type { Count } from './count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
 import { uncheckedRatio } from './ids.ts';
 import type { SessionKey } from './ids.ts';
 import type { Presence } from './presence.ts';
-import type { Probability } from './probability.ts';
-import type { Text } from './text.ts';
+import type { Probability } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
 
 export interface Rect {
     readonly x: Count;

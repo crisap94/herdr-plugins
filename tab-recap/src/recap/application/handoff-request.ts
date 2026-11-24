@@ -1,6 +1,6 @@
-import type { Text } from '#src/recap/domain/text.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
 import type { Pid } from '#src/recap/domain/pid.ts';
-import { duration, type Duration, type Instant } from '#src/recap/domain/time.ts';
+import { duration, type Duration, type Instant } from '@stateforge-labs/session-ledger';
 import type { HandoffAnswerRecord, HandoffAnswerStore } from '#src/ports/handoff-answers.ts';
 import type { HandoffAsker, RefreshFirst } from '#src/ports/requests.ts';
 import type { TabViewStore } from '#src/ports/tab-views.ts';

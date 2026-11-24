@@ -1,5 +1,5 @@
-import type { Entry } from '#src/ports/transcripts.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import type { Entry } from '@stateforge-labs/session-ledger';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 export interface ScreenChrome {
     readonly boxOnly: RegExp;

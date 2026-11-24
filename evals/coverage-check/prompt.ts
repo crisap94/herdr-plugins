@@ -1,6 +1,6 @@
 import { deciderInstructions } from '../../tab-recap/src/adapters/job/decider.ts';
 import { KEPT_AT_LEAST, checkedFactsOf, probabilityRequired, questionsOf, unmetOf } from '../../tab-recap/src/recap/application/brief-coverage.ts';
-import type { CheckedFact } from '../../tab-recap/src/recap/domain/autocompact.ts';
+import type { CheckedFact } from '../../packages/session-ledger/src/recap/domain/autocompact.ts';
 import { parseProbability } from '../../packages/session-ledger/src/recap/domain/probability.ts';
 import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import type { HistoryFact } from '../../packages/session-ledger/src/ports/ledger.ts';

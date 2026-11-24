@@ -5,7 +5,7 @@ import { PassThrough } from 'node:stream';
 import type { Spawner } from '#src/adapters/os/process/core.ts';
 import { posixProcess } from '#src/adapters/os/process/control-posix.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
 
 interface Call { readonly command: string; readonly args: readonly string[]; readonly options: Record<string, unknown> }

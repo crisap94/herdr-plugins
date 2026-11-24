@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { environmentName, JOB_HARNESSES, jobEnvironmentNames } from '#src/recap/domain/backend.ts';
+import { environmentName, JOB_HARNESSES, jobEnvironmentNames } from '@stateforge-labs/session-ledger';
 import { scrubEnvironment, scrubbedEnv } from '#src/adapters/os/process/control.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 const fixtureEnvironment: NodeJS.ProcessEnv = {
     HERDR_ENV: 'scrub',

@@ -9,11 +9,11 @@ import { claudeWindowFor } from '#src/adapters/capability/context-window.ts';
 import { kindOf, pathOrNull } from '#test/fakes/agent-kind.ts';
 import { GitWorksite } from '#src/adapters/git/worksite.ts';
 import { commitFiles, makeRepo, scratch } from './fixtures/git-repo.ts';
-import { contextOf } from '#src/recap/domain/compaction.ts';
-import type { Observed } from '#src/recap/domain/compaction.ts';
+import { contextOf } from '@stateforge-labs/session-ledger';
+import type { ContextObserved as Observed } from '@stateforge-labs/session-ledger';
 import type { ModelWindows } from '#src/ports/model-catalogue.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 const seen = (model: string | null, window: number | null = null, tokens = 90_000, peak = tokens): Observed => ({ model: model === null ? null : textOf(model), window: window === null ? null : countOf(window), tokens: countOf(tokens), peak: countOf(peak) });
 

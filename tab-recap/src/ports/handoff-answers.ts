@@ -1,7 +1,7 @@
 import type { StoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 
 export interface HandoffAnswerRecord {
     readonly kind: StoredHandoffOutcome['kind'];

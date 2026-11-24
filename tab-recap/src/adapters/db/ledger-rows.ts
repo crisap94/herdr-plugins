@@ -1,13 +1,13 @@
 import { uncheckedTypeId } from '#src/recap/domain/type-id.ts';
 import type { Database } from 'bun:sqlite';
 import { and, asc, desc, eq, gte, or } from 'drizzle-orm';
-import type { Applied } from '#src/ports/ledger.ts';
-import { must } from '#src/protocol/result.ts';
-import { isClosedWhy, isSection } from '#src/recap/domain/fact.ts';
+import type { Applied } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { isClosedWhy, isSection } from '@stateforge-labs/session-ledger';
 import { parseFactId } from '#src/recap/domain/run-ids.ts';
-import type { Fact, FactId, TaskId } from '#src/recap/domain/fact.ts';
-import { apply } from '#src/recap/domain/ops.ts';
-import type { Operation, RunRef } from '#src/recap/domain/ops.ts';
+import type { Fact, FactId, TaskId } from '@stateforge-labs/session-ledger';
+import { apply } from '@stateforge-labs/session-ledger';
+import type { Operation, RunRef } from '@stateforge-labs/session-ledger';
 import { type ScopeId } from '#src/recap/domain/ids.ts';
 import { parseTaskName, type TaskName } from '#src/recap/domain/task-name.ts';
 
@@ -16,9 +16,9 @@ import { fact as factTable, task as taskTable } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { typeIdOf, idOf } from './typeid.ts';
 import { ids } from './uuid7.ts';
-import { textOf, parseTextOrNull, type Text } from '#src/recap/domain/text.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { sweepOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/ops.ts';
+import { textOf, parseTextOrNull, type Text } from '@stateforge-labs/session-ledger';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
+import { sweepOf } from '@stateforge-labs/session-ledger';
 
 const OPEN = 'open';
 const CLOSED = 'closed';

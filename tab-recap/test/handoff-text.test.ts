@@ -1,23 +1,24 @@
 import { test } from 'node:test';
-import { textOf as asText } from '#src/recap/domain/text.ts';
+import { textOf as asText } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { buildHandoffContent } from '#src/recap/application/handoff-content.ts';
 import { HANDOFF_BUDGET_BYTES, HANDOFF_WORKSITE_BYTES } from '#src/recap/application/handoff-limits.ts';
 import { handoffTextOf } from '#src/recap/application/handoff-text.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { RenderedBlocks } from '#src/recap/application/handoff-text.ts';
-import { taskFactsOf } from '#src/recap/application/ledger-input.ts';
-import type { FactId, Fact, TaskId } from '#src/recap/domain/fact.ts';
+import { taskFactsOf } from '@stateforge-labs/session-ledger';
+import type { FactId, Fact, TaskId } from '@stateforge-labs/session-ledger';
 import type { Freshness } from '#src/recap/domain/freshness.ts';
-import { parseCount, countOf as bytesCount } from '#src/recap/domain/count.ts';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import { countOf as bytesCount } from '@stateforge-labs/session-ledger';
 import { HANDOFF_GROUP_IDS } from '#src/recap/domain/handoff-content.ts';
 import type { HandoffBody, HandoffContent, HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
 import { byteBudgetOf } from '#src/recap/domain/byte-budget.ts';
 import type { ByteBudget } from '#src/recap/domain/byte-budget.ts';
 import { cleanHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import { handoffId } from '#test/support/ids.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { parseText } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import type { WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 import { fitHandoff } from '#src/recap/render/handoff-budget.ts';
 import type { FittedHandoff, HandoffFit } from '#src/recap/render/handoff-budget.ts';
@@ -26,8 +27,8 @@ import { omittedTotal, serializeHandoff } from '#src/recap/render/handoff-markdo
 import type { OmittedCounts } from '#src/recap/render/handoff-markdown.ts';
 import { worksiteTextOf } from '#src/recap/render/worksite.ts';
 import { fact } from './fakes/fact-at.ts';
-import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
-import { brand } from '#src/recap/domain/brand.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
 
 type ShownHandoff = Extract<FittedHandoff, { readonly kind: 'text' }>;
 

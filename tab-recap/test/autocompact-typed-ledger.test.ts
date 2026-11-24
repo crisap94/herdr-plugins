@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { DecisionLedgerRepository } from '#src/adapters/db/autocompact-records.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
 import { lane, SAFE, world } from './autocompact-world.ts';
 
 test('a sweep records a draft through the decision ledger and the same ledger reads back an equal stored row', async () => {

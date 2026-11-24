@@ -1,9 +1,9 @@
-import { parseDirectory } from '#src/recap/domain/directory.ts';
-import type { Directory } from '#src/recap/domain/directory.ts';
+import { parseDirectory } from '@stateforge-labs/session-ledger';
+import type { Directory } from '@stateforge-labs/session-ledger';
 import { parseTaskName } from '#src/recap/domain/task-name.ts';
 import type { TaskName } from '#src/recap/domain/task-name.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import type { Count } from '#src/recap/domain/count.ts';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
 
 export function countFrom(raw: number): Count {
     const parsed = parseCount(raw);

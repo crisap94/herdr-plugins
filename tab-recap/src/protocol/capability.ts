@@ -1,5 +1,5 @@
-import { ok, must } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
-import type { Result } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
+import { ok, must } from '@stateforge-labs/session-ledger';
+import type { Result } from '@stateforge-labs/session-ledger';
 import { parseOfferedName, parseOfferedVersion, parseTokenName, parseTokenValue, parseWireText, refuse } from './primitives.ts';
 import type { ExchangeVersion, OfferedName, OfferedVersion, OptIn, Refusal, TokenName, TokenValue, WireText } from './primitives.ts';
 import type { Exchange } from './exchange.ts';

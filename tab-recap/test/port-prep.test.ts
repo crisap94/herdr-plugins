@@ -8,11 +8,11 @@ import { observe } from '#src/recap/domain/fold.ts';
 import { paneId as paneOf, tabId } from '#test/support/ids.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { present } from '#src/recap/render/present.ts';
 import type { ExtensionPort, PaneNote, PaneNotesResult } from '#src/ports/extension.ts';
 import type { TabLaneRecord } from '#src/ports/tab-views.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { reconciliation, seenLane } from '#test/support/seen.ts';
 import { laneRecord, viewRecord } from '#test/support/tab-view-records.ts';
 

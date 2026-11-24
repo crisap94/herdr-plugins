@@ -1,5 +1,5 @@
 import type { FleetFrame } from '#src/ports/fleet-source.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 export const fleetFrame = (event: string, data: Readonly<Record<string, unknown>>): FleetFrame => ({ event: textOf(event), payload: textOf(JSON.stringify(data)) });
 

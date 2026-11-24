@@ -1,5 +1,5 @@
-import { must } from '#src/protocol/result.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import type { Locale } from './messages.ts';
 
 const NAMES: Readonly<Record<string, string>> = { en: 'en', english: 'en', inglés: 'en', ingles: 'en', es: 'es', spanish: 'es', español: 'es', espanol: 'es', castellano: 'es' };

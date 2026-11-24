@@ -14,7 +14,7 @@ The eval builds the same call from the plugin's own code. Only the transport cha
 
 | Step | Plugin code, imported unchanged |
 |---|---|
-| Writer input (what `run_input.document` stores) | `writerContext(item.input.request)` (`tab-recap/src/recap/application/writer-context.ts`), as `recap-job.ts:269` stores it |
+| Writer input (what `run_input.document` stores) | `writerContext(item.input.request)` (`packages/session-ledger/src/recap/application/writer-context.ts`), as `recap-job.ts:269` stores it |
 | Document (user message) | `scoringDocument({ rubric: RUBRIC_TEXT, input, items: item.input.items, state: item.input.state })` (`tab-recap/src/recap/application/judge-context.ts`, `tab-recap/src/adapters/job/prompts/rubric.ts`), as `judgeRun` builds it |
 | Instructions (system message) | `judgeInstructions('score', new Map())` (`tab-recap/src/adapters/job/prompts/judge-instructions.ts`): the shipped prompt with an empty anchor map |
 | Fence removal | `unfenced(text)` (`tab-recap/src/adapters/job/prompts/recap-prompt.ts`), as `HarnessJudge.ask` does |

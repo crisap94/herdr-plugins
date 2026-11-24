@@ -7,12 +7,12 @@ import { isReadingTool, parseToolInput, shellReadsOf, toolReads } from '#src/exp
 import { drawsOf, shuffledBy } from '#src/experiment/seeded.ts';
 import { stratifyMoments } from '#src/experiment/stratify.ts';
 import type { Moment } from '#src/experiment/stratify.ts';
-import { brand } from '#src/recap/domain/brand.ts';
+import { brand } from '@stateforge-labs/session-ledger';
 import { parseFactIndex } from '#src/recap/domain/fact-index.ts';
 import type { Label } from '#src/experiment/stats.ts';
 import { onlyInRecent, verbatimLabel } from '#src/experiment/verbatim.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText, type Text, textOf } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText, type Text, textOf } from '@stateforge-labs/session-ledger';
 
 const asText = (value: string): Text => must(parseText(value));
 const count = brand<number, 'Count'>;
@@ -133,11 +133,11 @@ test('pool: limit respected, order kept; retried: waits grow and the last answer
     assert.deepEqual(waits, [10, 20]);
 });
 
-import type { HistoryFact } from '#src/ports/ledger.ts';
+import type { HistoryFact } from '@stateforge-labs/session-ledger';
 import { kappaScores } from '#src/experiment/kappa-report.ts';
 import type { LabelledMoment } from '#src/experiment/kappa-report.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import type { Section } from '#src/recap/domain/fact.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import type { Section } from '@stateforge-labs/session-ledger';
 
 test('kappa rows: usable at 0.6 and enough points', () => {
     const ids = Array.from({ length: 12 }, (_, i) => `p${i}`);

@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { inFlightReason } from '#src/ports/autocompact-reasons.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import { must } from '#src/protocol/result.ts';
+import { inFlightReason } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 
 test('autocompact: unsupported reader reasons use the declared wording', () => {
     assert.deepEqual(

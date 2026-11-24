@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import type { PaneNoteWriter } from '#src/ports/worktree-status.ts';
 import { PaneNoteFeed } from '#src/recap/application/pane-note-feed.ts';
 import { PerfLedger } from '#src/recap/application/perf-ledger.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
 import type { NoteToken } from '#src/recap/domain/coordination.ts';
 import { paneId } from '#test/support/ids.ts';
 import type { UsageSample } from '#src/ports/process-usage.ts';
-import { duration, instant } from '#src/recap/domain/time.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { duration, instant } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 function store(): { readonly writer: PaneNoteWriter; readonly calls: string[] } {
     const calls: string[] = [];

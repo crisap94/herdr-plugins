@@ -1,7 +1,7 @@
 import type { ArmName } from '#src/adapters/experiment/arms.ts';
-import { must } from '#src/protocol/result.ts';
-import type { Probability } from '#src/recap/domain/probability.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import type { Probability } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 
 
 export const WITHIN_POINTS = 0.03;

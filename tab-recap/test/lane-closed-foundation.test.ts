@@ -7,13 +7,13 @@ import { observe } from '#src/recap/domain/fold.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import { paneId } from '#test/support/ids.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import { LANE_STATUSES, parseLaneStatusAtDecision } from '#src/recap/domain/autocompact.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import { LANE_STATUSES, parseLaneStatusAtDecision } from '@stateforge-labs/session-ledger';
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { CLOSE_POINTS } from '#src/recap/domain/lane-closed.ts';
-import { isUnknown, saying } from '#src/ports/unknowable.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { isUnknown, saying } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { reconciliation, seenLane } from '#test/support/seen.ts';
 
 const reconciled = (panes: readonly string[]): Observation => ({

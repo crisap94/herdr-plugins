@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createEngine } from '@stateforge-labs/session-ledger';
-import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import { acceptedRepair, storyRepair } from '@stateforge-labs/session-ledger/unstable/facade/story-repair.ts';
-import { STORY_TOO_LONG, STORY_WORDS, curationOf, parseOffer, parseStory, type Curation } from '@stateforge-labs/session-ledger/unstable/facade/curation.ts';
+import { brand } from '@stateforge-labs/session-ledger';
+import { acceptedRepair, storyRepair } from '@stateforge-labs/session-ledger';
+import { STORY_TOO_LONG, STORY_WORDS, curationOf, parseOffer, parseStory, type Curation } from '@stateforge-labs/session-ledger';
 import { createEngineWorld, engineCases, type EngineWorld } from '@stateforge-labs/session-ledger/testkit';
 
 const text = brand<string, 'Text'>;

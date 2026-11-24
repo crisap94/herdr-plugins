@@ -1,18 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { Chunk } from '#src/ports/transcripts.ts';
-import { FRESH, inputOf, SEEN_BEFORE } from '#src/recap/application/recap-input.ts';
-import { writerContext } from '#src/recap/application/writer-context.ts';
+import type { Chunk } from '@stateforge-labs/session-ledger';
+import { FRESH, inputOf, SEEN_BEFORE } from '@stateforge-labs/session-ledger';
+import { writerContext } from '@stateforge-labs/session-ledger';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import { FULL_WRITER_VIEW } from '#src/recap/domain/writer-view.ts';
+import { FULL_WRITER_VIEW } from '@stateforge-labs/session-ledger';
 import { NO_REPOS, requestOf } from '#test/support.ts';
 import { factOf } from './fakes/facts.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import { grewOf, cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { brand } from '@stateforge-labs/session-ledger';
+import { grewOf, cursorOf, sourcePathOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { agentKind, paneId } from '#test/support/ids.ts';
-import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { paneIdOf } from '@stateforge-labs/session-ledger';
 import { seenLane } from '#test/support/seen.ts';
 
 const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' }));

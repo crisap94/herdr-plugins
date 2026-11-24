@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseLegacyHidden, parseLegacyRecapFile, parseLegacyVisibility, parseLegacyViewFile } from '#src/ports/legacy-store-files.ts';
 import { agentKind, paneId } from '#test/support/ids.ts';
-import { cursorOf, sourcePathOf } from '#src/ports/transcripts.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { cursorOf, sourcePathOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { hiddenStateOf } from '#test/support/seen.ts';
 
 const cursor = { pane: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePathOf('/t/a.jsonl'), cursor: cursorOf(42), tail: textOf('tail'), title: textOf('build'), lastPrompt: textOf('fix it'), claudeRecap: null };

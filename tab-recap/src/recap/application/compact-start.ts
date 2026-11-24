@@ -3,7 +3,7 @@ import type { CompactAsk } from '#src/ports/requests.ts';
 import type { CompactNote } from '#src/recap/domain/compact-note.ts';
 import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import { collapsedText } from '#src/recap/domain/text-collapse.ts';
 import { NOTE_LIMIT } from './compaction-message.ts';
 

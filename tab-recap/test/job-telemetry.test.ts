@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ask, choice, fakeOutput, fakeRuntime, libraryHarness } from '#test/fakes/harness-runtime.ts';
 import { mergeJobAttributes, SCRUBBED_ENV_NAMES, scrubbedFrom, scrubEnvironment, scrubbedEnv, serializeJobAttributes } from '#src/adapters/os/process/control.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 import { JOB_TAGS } from '#src/recap/domain/job-tag.ts';
 import type { JobTag } from '#src/recap/domain/job-tag.ts';
 

@@ -10,14 +10,14 @@ import { restartAnswers } from '#src/recap/application/ask-restart.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
 import type { AnsweredPane, CompactAsk } from '#src/ports/requests.ts';
 import { parseToolName } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { paneId } from '#test/support/ids.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import { boardSeeded, seenLane } from '#test/support/seen.ts';
 
 const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));

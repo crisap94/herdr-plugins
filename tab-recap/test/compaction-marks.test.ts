@@ -4,10 +4,10 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcripts.ts';
-import { UNREAD } from '#src/ports/transcripts.ts';
+import { UNREAD } from '@stateforge-labs/session-ledger';
 import { opencodeFixture } from '#test/opencode-fixture.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { duration } from '#src/recap/domain/time.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { duration } from '@stateforge-labs/session-ledger';
 import { extractClaude, codexMarks, extractCodex, fsPathOf, sourcePathOf } from './fakes/transcript-lines.ts';
 
 const linesOf = (name: string): string[] => readFileSync(join(import.meta.dirname, 'fixtures', name), 'utf8').split('\n').filter((line) => line !== '');

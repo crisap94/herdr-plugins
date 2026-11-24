@@ -1,13 +1,13 @@
 import { knownOr, type GuardedLedger } from '#src/ports/guarded-reads.ts';
-import type { Stories } from '#src/ports/stories.ts';
-import { unknown, type Unknown, exitCodeOf } from '#src/ports/unknowable.ts';
-import { must } from '#src/protocol/result.ts';
-import type { Fact } from '#src/recap/domain/fact.ts';
-import { causeOf } from '#src/recap/domain/failure-cause.ts';
+import type { LegacyStories as Stories } from '@stateforge-labs/session-ledger';
+import { unknown, type Unknown, exitCodeOf } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import type { Fact } from '@stateforge-labs/session-ledger';
+import { causeOf } from '@stateforge-labs/session-ledger';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
-import type { CloseOp } from '#src/recap/domain/ops.ts';
-import { parseText, type NonEmptyText, textOf } from '#src/recap/domain/text.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import type { CloseOp } from '@stateforge-labs/session-ledger';
+import { parseText, type NonEmptyText, textOf } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 
 export type NeedRefusal = 'unknown-need' | 'not-a-need' | 'not-open';
 

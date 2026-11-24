@@ -1,12 +1,12 @@
-import { gateName } from '#src/recap/domain/gates/gatekeeper.ts';
-import type { GateStats } from '#src/recap/domain/gates/index.ts';
+import { gateName } from '@stateforge-labs/session-ledger';
+import type { GateStats } from '@stateforge-labs/session-ledger';
 import type { PairRecord } from '#src/ports/verdicts.ts';
-import { countOf, type Count } from '#src/recap/domain/count.ts';
+import { countOf, type Count } from '@stateforge-labs/session-ledger';
 import { uncheckedRatio } from '#src/recap/domain/ids.ts';
 import { trustedOf, type Trusted } from '#src/recap/domain/kappa.ts';
-import type { Probability } from '#src/recap/domain/probability.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { GateName } from '@stateforge-labs/session-ledger/unstable/contract/kernel.ts';
+import type { Probability } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { GateName } from '@stateforge-labs/session-ledger';
 import { inCheckOrder, percent } from './eval-report.ts';
 import { perCheck, WORST_PER_CHECK } from './judge-anchors.ts';
 import type { Disagreed } from './judge-anchors.ts';

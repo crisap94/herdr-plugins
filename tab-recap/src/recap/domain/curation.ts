@@ -1,5 +1,5 @@
-import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import { factIdOf, type FactId } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
+import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger';
+import { factIdOf, type FactId } from '@stateforge-labs/session-ledger';
 
 export const STORY_WORDS = 120;
 

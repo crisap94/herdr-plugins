@@ -1,4 +1,4 @@
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { parseAgentKind, parseHandoffId, parsePaneId, parseTabId, parseWorkspaceId } from '#src/recap/domain/ids.ts';
 import type { HarnessKind, HandoffId, SessionKey, ScopeId, WorkspaceId } from '#src/recap/domain/ids.ts';
 

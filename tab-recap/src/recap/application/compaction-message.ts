@@ -1,8 +1,8 @@
 import { linkify } from '#src/recap/render/links.ts';
 import type { LaneWebRecord } from '#src/ports/tab-views.ts';
-import type { RecapSections } from '#src/recap/domain/shape.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import type { RecapSections } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import { webOf } from '#src/view-model/column.ts';
 
 export const MESSAGE_LIMIT = 3000;

@@ -1,4 +1,4 @@
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { ClosedListing } from '#src/recap/application/handoff-listing.ts';

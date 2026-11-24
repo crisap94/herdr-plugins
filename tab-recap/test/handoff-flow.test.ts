@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import { paneId } from '#test/support/ids.ts';
 import assert from 'node:assert/strict';
-import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
 import { NOW, SOURCE, TARGET, TAB, TARGET_TAB, T1, TEXT, SETTLE_MS, SOURCE_LISTED, bothFree, harness, recapOf, request, task } from './fakes/handoff-flow-harness.ts';
 import { fact } from './fakes/fact-at.ts';
 import { DeliveryTracker } from '#src/recap/application/delivery-tracker.ts';

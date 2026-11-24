@@ -26,3 +26,7 @@ test('the package root resolves through its own exports map', async () => {
     const module: unknown = await import(String(manifest.name));
     assert.equal(typeof module, 'object');
 });
+
+test('the package has no unstable entry: the root, compaction-timing and the testkit are its only entries', () => {
+    assert.deepEqual(Object.keys(exportsMap()).toSorted(), ['.', './compaction-timing', './testkit']);
+});

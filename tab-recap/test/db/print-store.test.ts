@@ -12,12 +12,12 @@ import { TabViewRowStore } from '#src/adapters/db/tab-views.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { closedDaysOf as closedLaneDaysOf } from '../fakes/closed-days.ts';
 import { scratchDir } from './support.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { parseFsPath, fsPathOf } from '#src/recap/domain/fs-path.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { tabId, paneId } from '#test/support/ids.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { usdOf } from '#src/recap/domain/usd.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { usdOf } from '@stateforge-labs/session-ledger';
 import { viewRecord } from '#test/support/tab-view-records.ts';
 
 const BEFORE_HANDOFF = 18;

@@ -1,9 +1,9 @@
 import { existsSync } from 'node:fs';
-import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { parseImportedChapterItem, type ImportedChapterRecord } from '#src/ports/imported-recaps.ts';
 import { connectReadOnly } from './connection.ts';
 import { all, blob, whole } from './rows.ts';

@@ -9,7 +9,7 @@ import type { CompactAsk } from '#src/ports/requests.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { MemoryAskLedger } from './fakes/ask-ledger.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { paneId } from '#test/support/ids.ts';
 import { boardSeeded, seenLane } from '#test/support/seen.ts';
 

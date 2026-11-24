@@ -1,5 +1,5 @@
 import type { HarnessKind, AgentSession, SessionId } from '#src/recap/domain/ids.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
 
 export type SessionOf = (kind: Text, agentSession: AgentSession) => SessionId | null;
 

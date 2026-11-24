@@ -1,6 +1,6 @@
-import type { Text } from '#src/recap/domain/text.ts';
-import type { Usd } from '#src/recap/domain/usd.ts';
-import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Usd } from '@stateforge-labs/session-ledger';
+import type { Unknown } from '@stateforge-labs/session-ledger';
 
 export type JudgeTask = 'score' | 'readback' | 'grade' | 'cover';
 

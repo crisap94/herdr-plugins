@@ -8,18 +8,18 @@ import type { CompactionPorts } from '#src/recap/application/compaction-deps.ts'
 import { guidanceOf } from '#src/recap/application/compaction-message.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
 import { viewRecord } from '#test/support/tab-view-records.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
-import { must } from '#src/protocol/result.ts';
+import { parseText, textOf } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 import { compactPreviewOf } from '#src/recap/application/compact-preview.ts';
-import { blankRecap, type Recap } from '#src/ports/recap-records.ts';
-import { NO_SECTIONS, type RecapSections } from '#src/recap/domain/shape.ts';
+import { blankRecap, type Recap } from '@stateforge-labs/session-ledger';
+import { NO_SECTIONS, type RecapSections } from '@stateforge-labs/session-ledger';
 import type { LaneWebRecord, TabLaneRecord, TabViewRecord } from '#src/ports/tab-views.ts';
 import { requestNoteOf } from './fakes/compact-note.ts';
 import { cursor } from '#test/db/support.ts';
 import { apiProblems } from '#test/gui-schema-support.ts';
 import { add, api, OTHER_PANE, PANE, seedOther, seedRun, startWorld, TAB, type World } from '#test/desktop-engine-world.ts';
 import { BUN_CACHE_OFF } from './support/bun-env.ts';
-import { paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger';
 import { laneRecord } from '#test/support/tab-view-records.ts';
 
 const compactPath = (query: string): string => `/v1/tabs/${encodeURIComponent(TAB)}/compact-message?${query}`;

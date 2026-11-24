@@ -5,7 +5,7 @@ import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { migrate } from '#src/adapters/db/migrate.ts';
-import { SKIP_GATES } from '#src/recap/domain/autocompact.ts';
+import { SKIP_GATES } from '@stateforge-labs/session-ledger';
 
 test('migration 14 upgrades a real v13 store with rows and keeps both readable views usable', () => {
     const old = openDatabase(fsPathOf(MEMORY), MIGRATIONS.slice(0, 13));

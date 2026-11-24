@@ -1,8 +1,8 @@
 import { closeSync, openSync, readSync, statSync } from 'node:fs';
-import { must } from '#src/protocol/result.ts';
-import type { Count } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 
 
 export function linesBeforeOf(path: FsPath, end: Count, budget: Count): readonly Text[] {

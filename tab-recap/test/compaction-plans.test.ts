@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import { kindOf } from '#test/fakes/agent-kind.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { compactionPlanner } from '#src/adapters/capability/compaction-plans.ts';
 import { needsIdle, NotAReasonError, QUEUES } from '#src/recap/domain/compaction-plan.ts';

@@ -2,8 +2,8 @@ import { databaseFile, openStoreAt } from '#src/adapters/db/database.ts';
 import type { Store } from '#src/adapters/db/database.ts';
 import type { NewerDatabase, StaleDatabase } from '#src/adapters/db/open.ts';
 import type { Messages } from '#src/i18n/index.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import { loadSettings, stateDirectory } from './config.ts';
 
 export type CliOpened = Store | NewerDatabase | StaleDatabase;

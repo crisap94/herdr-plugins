@@ -1,15 +1,15 @@
-import type { HistoryFact } from '#src/ports/ledger.ts';
-import type { AnswerTally } from '#src/ports/autocompact-records.ts';
-import { must } from '#src/protocol/result.ts';
+import type { HistoryFact } from '@stateforge-labs/session-ledger';
+import type { AnswerTally } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 import { checkedFactsOf, correctionFor } from './brief-coverage.ts';
 import type { CheckedCoverage } from './brief-coverage.ts';
 import type { CompactionPorts } from './compaction-deps.ts';
-import { type CheckedFact, type CoverageOutcome } from '#src/recap/domain/autocompact.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { type CheckedFact, type CoverageOutcome } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { duration, type Duration } from '#src/recap/domain/time.ts';
-import { parseUsd, type Usd } from '#src/recap/domain/usd.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import { duration, type Duration } from '@stateforge-labs/session-ledger';
+import { parseUsd, type Usd } from '@stateforge-labs/session-ledger';
 
 export interface Briefed {
     readonly text: Text | null;

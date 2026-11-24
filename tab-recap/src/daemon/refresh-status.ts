@@ -4,7 +4,7 @@ import { refreshStatusOf } from '#src/recap/domain/freshness.ts';
 import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
 import type { Lane } from '#src/recap/domain/lane.ts';
-import { duration, type Duration } from '#src/recap/domain/time.ts';
+import { duration, type Duration } from '@stateforge-labs/session-ledger';
 import type { TabRecaps } from '#src/engine/tab-recaps.ts';
 import { RECAP_WAIT_MS, type RecapRefresh } from '#src/recap/application/recap-wait.ts';
 

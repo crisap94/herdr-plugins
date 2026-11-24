@@ -9,7 +9,7 @@ import { PROTOCOL } from '@stateforge-labs/herdr-sdk';
 import { paneId } from '#test/support/ids.ts';
 import { readPaneSession } from '#src/adapters/herdr/snapshot-reading.ts';
 const PONG = { protocol: PROTOCOL, version: 'test' };
-import { isUnknown } from '#src/ports/unknowable.ts';
+import { isUnknown } from '@stateforge-labs/session-ledger';
 
 async function fakeHerdr(reply: (method: string) => unknown): Promise<{ path: string; calls: string[]; done: () => void }> {
     const dir = mkdtempSync(join(tmpdir(), 'pane-session-'));

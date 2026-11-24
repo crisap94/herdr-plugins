@@ -20,7 +20,7 @@ import { viewSocketPath } from '#src/wire/paths.ts';
 import { LineSplitter, decodeDaemon, encode } from '#src/wire/view/codec.ts';
 import { PROTOCOL } from '#src/wire/view/protocol.ts';
 import type { DaemonMessage, Hello } from '#src/wire/view/protocol.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 
 const HELLO: Hello = { t: 'hello', protocol: PROTOCOL, version: '9.9.9', role: 'column', tab: 't1', pane: null, cols: 40, rows: 6, colour: false };
 

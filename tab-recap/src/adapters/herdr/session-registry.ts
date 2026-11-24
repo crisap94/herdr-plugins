@@ -1,10 +1,10 @@
-import { registeredKindOf } from '#src/recap/domain/registered-kinds.ts';
-import type { RegisteredKind } from '#src/recap/domain/registered-kinds.ts';
+import { registeredKindOf } from '@stateforge-labs/session-ledger';
+import type { RegisteredKind } from '@stateforge-labs/session-ledger';
 import type { AgentSession, SessionId } from '#src/recap/domain/ids.ts';
 import { sessionFromAgentSession } from '#src/recap/domain/session-identity.ts';
 import { supported } from '#src/ports/capability.ts';
 import type { Support } from '#src/ports/capability.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
 
 const SESSION_OF = {
     claude: supported(sessionFromAgentSession),

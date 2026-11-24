@@ -1,11 +1,11 @@
-import type { Clock } from '#src/ports/clock.ts';
+import type { Clock } from '@stateforge-labs/session-ledger';
 import type { PerfSink } from '#src/ports/perf-sink.ts';
 import type { ProcessUsage } from '#src/ports/process-usage.ts';
 import { bumped, NO_COUNTS, perfLine } from '#src/recap/domain/perf.ts';
 import type { PerfCounter, PerfCounts } from '#src/recap/domain/perf.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import { duration } from '#src/recap/domain/time.ts';
-import type { Duration, Instant } from '#src/recap/domain/time.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
+import { duration } from '@stateforge-labs/session-ledger';
+import type { Duration, Instant } from '@stateforge-labs/session-ledger';
 
 export interface PerfLedgerDeps {
     readonly usage: ProcessUsage;

@@ -1,7 +1,7 @@
 import type { TokenSnapshot } from '#src/protocol/requester.ts';
 import { parseTokenName, parseTokenValue } from '#src/protocol/primitives.ts';
 import type { TokenName, TokenValue } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { TokenMap, TokenWrite } from '#src/protocol/tokens.ts';
 
 export const snapshotOf = (tokens: Readonly<Record<string, string>>): TokenSnapshot =>

@@ -1,5 +1,5 @@
 import { test } from 'node:test';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
@@ -19,8 +19,8 @@ import type { WorkspaceList, WorkspaceTokenMap } from '#src/ports/workspace-toke
 import { uncheckedMilliseconds, uncheckedTokenName, uncheckedWorkspaceId, type WorkspaceId } from '#src/recap/domain/ids.ts';
 import type { LaneTokenFacts } from '#src/recap/domain/lane-tokens.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
 import { paneId } from '#test/support/ids.ts';
 import { boardSeeded, seenLane } from '#test/support/seen.ts';
 

@@ -1,4 +1,4 @@
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { storeRead } from '#test/db/support.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import { test } from 'node:test';
@@ -7,7 +7,7 @@ import { rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { openStoreAt } from '#src/adapters/db/database.ts';
 import { cursor, memoryStore, scratchDir } from './support.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { tabId, paneId } from '#test/support/ids.ts';
 
 test('refresh requests are taken once; one tab asked twice is one request', () => {

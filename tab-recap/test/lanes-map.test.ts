@@ -100,10 +100,6 @@ test('a lane cannot edit the pipeline file', () => {
     assert.equal(result.status, 1);
 });
 
-test('a lane merge request that grows or shrinks the engine closure may update the engine manifest', () => {
-    assert.equal(lane('B2', ['tab-recap/src/recap/domain/lane.ts', 'tab-recap/src/recap/domain/legacy.ts', 'tab-recap/ci/engine-files.json']).status, 0);
-});
-
 test('a lane merge request may edit the tests and fakes of another lane, and still not its source', () => {
     const other = JSON.parse(readFileSync(join(ROOT, 'ci/lanes.json'), 'utf8')).lanes.B3.find((file: string) => file.startsWith('test/'));
     assert.equal(lane('B2', [`tab-recap/${String(other)}`, 'tab-recap/test/fakes/ask-ledger.ts']).status, 0);
@@ -124,7 +120,7 @@ test('a foreign source edit fails without the adapts label and passes with it, b
 
 test('a foreign source edit of a frozen lane key fails even with the adapts label', () => {
     const lanes: Record<string, string[]> = JSON.parse(readFileSync(join(ROOT, 'ci/lanes.json'), 'utf8')).lanes;
-    for (const key of ['ENG', 'STO', 'VIEW']) {
+    for (const key of ['STO', 'VIEW']) {
         const file = lanes[key]?.find((entry) => entry.startsWith('src/') && entry.endsWith('.ts'));
         assert.ok(file !== undefined, `${key} owns no src/ file in ci/lanes.json`);
         const run = lane('B2', [`tab-recap/${file}`], { LANE_ADAPTS: '1' });
@@ -248,7 +244,7 @@ test('a file under every track prefix is in no key, and the generated map does n
     assert.equal(keyHolding(root, 'src/daemon/zz-control.ts'), 'B7', 'a file outside the prefixes still joins its folder lane');
 });
 
-test('the carve-out puts the engine manifest in ENG and the store and view lists in STO and VIEW, before the folders, and tests follow them', () => {
+test('the carve-out puts the store and view lists in STO and VIEW, before the folders, and tests follow them', () => {
     const files = [
         'src/protocol/result.ts',
         'src/recap/application/thing.ts',
@@ -263,14 +259,11 @@ test('the carve-out puts the engine manifest in ENG and the store and view lists
         'test/open.test.ts',
     ];
     const root = treeWith(files);
-    writeFileSync(join(root, 'ci/engine-files.json'), `${JSON.stringify({ engine: ['src/recap/application/thing.ts'], other: ['src/recap/application/other.ts'] }, null, 2)}\n`);
     writeFileSync(join(root, 'test/mixed.test.ts'), `${importOf('recap/application/thing.ts')}${importOf('protocol/result.ts')}`);
-    writeFileSync(join(root, 'test/engine-only.test.ts'), importOf('recap/application/thing.ts'));
     assert.equal(inTree(root, []).status, 0);
     const expected: Readonly<Record<string, string>> = {
-        'src/recap/application/thing.ts': 'ENG',
-        'test/thing.test.ts': 'ENG',
-        'test/engine-only.test.ts': 'ENG',
+        'src/recap/application/thing.ts': 'B3',
+        'test/thing.test.ts': 'B3',
         'src/recap/application/other.ts': 'B3',
         'src/adapters/db/open.ts': 'STO',
         'src/adapters/db/schema/migration.ts': 'STO',
@@ -283,10 +276,4 @@ test('the carve-out puts the engine manifest in ENG and the store and view lists
     };
     for (const [file, key] of Object.entries(expected)) assert.equal(keyHolding(root, file), key, file);
     assert.equal(inTree(root, ['--check']).status, 0);
-});
-
-test('without an engine manifest key ENG is empty and the engine file stays in its folder lane', () => {
-    const root = mapped(TREE);
-    assert.deepEqual(keysOf(root)['ENG'], []);
-    assert.equal(keyHolding(root, 'src/recap/application/thing.ts'), 'B3');
 });

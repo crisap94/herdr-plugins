@@ -1,10 +1,10 @@
-import { textOf } from '#src/recap/domain/text.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ARGV_BYTES, argvText, fitText, promptText } from '#src/adapters/job/prompts/recap-prompt.ts';
-import type { Entry } from '#src/ports/transcripts.ts';
+import type { Entry } from '@stateforge-labs/session-ledger';
 import { requestOf } from '#test/support.ts';
 
 test('fitBytes keeps what fits, drops the OLDEST lines first, and counts bytes not characters', () => {

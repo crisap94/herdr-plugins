@@ -6,12 +6,12 @@ import { typeIdOf } from '#src/adapters/db/typeid.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { expectSameEffect, expectSameRows, withParity } from './parity.ts';
 import { memoryStore } from './support.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { duration, instant } from '#src/recap/domain/time.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { duration, instant } from '@stateforge-labs/session-ledger';
 import { parseCompactionId } from '#src/recap/domain/ids.ts';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
-import { must } from '#src/protocol/result.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 const hex = (bytes: Uint8Array): string => Buffer.from(bytes).toString('hex');
 const keyOf = (n: number): Uint8Array => Uint8Array.from({ length: 16 }, () => n);

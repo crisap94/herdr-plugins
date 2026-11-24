@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseAnswers, parseCover, parseGrades, parseScore } from '#src/recap/application/judge-answer.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 
 const t = (value: string): Text => must(parseText(value));
 const SECTIONS = new Map<Text, Text>([[t('a/0'), t('goal')], [t('a/1'), t('done')]]);

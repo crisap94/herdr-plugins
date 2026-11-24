@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { brand } from '#src/recap/domain/brand.ts';
+import { brand } from '@stateforge-labs/session-ledger';
 import { decode, encode } from '#src/adapters/db/checked-fact-codec.ts';
 
 test('checked brief codec round-trips no facts, one fact and forty facts', () => {

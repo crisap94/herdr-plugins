@@ -8,7 +8,7 @@ import type { Board } from '#src/recap/domain/board.ts';
 import type { HandoffOffer } from '#src/recap/domain/handoff-ask.ts';
 import type { HandoffRequests } from '#src/recap/domain/handoff-requests.ts';
 import type { HerdrEvents } from '#src/recap/domain/herdr-events.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 
 export interface HandoffExchangeParts {
     readonly store: Pick<Store, 'asks' | 'db' | 'requests'>;

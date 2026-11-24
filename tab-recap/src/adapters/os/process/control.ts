@@ -1,7 +1,7 @@
 import { withJobAttribute } from '@stateforge-labs/harness-adapters/telemetry';
 import type { ProcessPort, ProcessRunner } from '#src/ports/process-control.ts';
-import { JOB_HARNESSES, jobEnvironmentNames } from '#src/recap/domain/backend.ts';
-import type { EnvironmentName } from '#src/recap/domain/backend.ts';
+import { JOB_HARNESSES, jobEnvironmentNames } from '@stateforge-labs/session-ledger';
+import type { EnvironmentName } from '@stateforge-labs/session-ledger';
 import { isJobTag, JOB_ATTRIBUTE_KEY } from '#src/recap/domain/job-tag.ts';
 import type { JobTag } from '#src/recap/domain/job-tag.ts';
 import { posixProcess } from './control-posix.ts';

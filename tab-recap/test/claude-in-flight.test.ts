@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CLAUDE_SPLIT } from '#src/adapters/transcripts/claude/in-flight.ts';
-import type { BackgroundSplit, InFlightResult } from '#src/ports/transcripts.ts';
-import { runningOf } from '#src/recap/domain/in-flight.ts';
+import type { BackgroundSplit, InFlightResult } from '@stateforge-labs/session-ledger';
+import { runningOf } from '@stateforge-labs/session-ledger';
 import { claudeInFlight } from './fakes/transcript-lines.ts';
 
 const FOREGROUND_ONLY: BackgroundSplit = { kind: 'foreground-only', why: 'codex-cells' };

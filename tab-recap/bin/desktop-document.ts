@@ -4,14 +4,14 @@ import { DesktopReads } from '#src/adapters/desktop/expanded.ts';
 import { GuiPublisher } from '#src/adapters/desktop/publisher.ts';
 import { notReadyLine, openCliStore } from '#src/daemon/cli-store.ts';
 import { messagesOf, stateDirectory } from '#src/daemon/config.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { GuiReads } from '#src/recap/application/gui-tab-reads.ts';
-import { parseDirectory } from '#src/recap/domain/directory.ts';
+import { parseDirectory } from '@stateforge-labs/session-ledger';
 import { GUI_TAB_VERSION, encodeGuiTab, guiFileName } from '#src/recap/domain/gui-tab.ts';
 import { parseGuiVersion } from '#src/recap/domain/gui-tab-types.ts';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
-import type { NonEmptyText } from '#src/recap/domain/text.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import type { NonEmptyText } from '@stateforge-labs/session-ledger';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 
 function publishedBy(daemon: string, tab: ScopeId): string | null {
     try {

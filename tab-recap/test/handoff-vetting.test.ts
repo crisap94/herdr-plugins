@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { FORBIDDEN_PHRASES, FORBIDDEN_WORDS } from '#src/recap/domain/forbidden-words.ts';
 import { cleanHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import { vetHandoffText } from '#src/recap/domain/handoff-vetting.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 const SAMPLES = ['recap', 'recaps', 'plugin', 'plugins', 'herdr', 'tab', 'tabs', 'tab-recap', 'recap column'];
 

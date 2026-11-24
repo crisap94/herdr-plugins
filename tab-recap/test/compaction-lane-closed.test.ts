@@ -1,5 +1,5 @@
-import { must } from '#src/protocol/result.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText, textOf } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Compaction } from '#src/recap/application/compaction.ts';
@@ -9,7 +9,7 @@ import { checkedOf } from './fakes/coverage-fixtures.ts';
 import type { PlainCoverage as Coverage } from './fakes/coverage-fixtures.ts';
 import type { CompactAsk } from '#src/ports/requests.ts';
 import type { AgentLookup, AgentPanes } from '#src/ports/agents.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import { unknown } from '@stateforge-labs/session-ledger';
 import { causeOf } from './fakes/cause.ts';
 import { compactionDeps, compacted, typingFleet } from '#test/fakes/compaction-fleet.ts';
 import type { Fleet } from '#test/fakes/compaction-fleet.ts';

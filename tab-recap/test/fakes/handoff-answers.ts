@@ -1,9 +1,9 @@
 import type { HandoffAnswerRecord, HandoffAnswerStore } from '#src/ports/handoff-answers.ts';
 import type { StoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffId } from '#src/recap/domain/ids.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import { must } from '#src/protocol/result.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 
 export class MemoryHandoffAnswers implements HandoffAnswerStore {
     private readonly now: () => number;

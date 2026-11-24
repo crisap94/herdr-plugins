@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { claudeSessions } from '#src/adapters/herdr-core/sessions.ts';
-import { parseDirectory } from '#src/recap/domain/directory.ts';
+import { parseDirectory } from '@stateforge-labs/session-ledger';
 import { parseHcTerminal } from '#src/adapters/herdr-core/sdk-core.ts';
 
 const agent = (address: string, state: string, extra: Record<string, unknown> = {}): Record<string, unknown> => ({

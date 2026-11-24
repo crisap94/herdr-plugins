@@ -1,14 +1,14 @@
 import type { Store } from '#src/adapters/db/database.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { modalTranscriptRegistry } from '#src/adapters/transcripts/registry.ts';
 import { EditCache, EditTally } from '#src/recap/application/edit-tally.ts';
 import { ExpandedModel } from '#src/recap/application/expanded-view.ts';
 import { expanded } from '#src/recap/render/expanded.ts';
 import type { ColumnView } from '#src/recap/render/present.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import { parseText } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
 import { coloured, wrap } from '#src/recap/render/wrap.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 
 export function expandedScreen(store: Store | null): (view: ColumnView, width: number) => readonly Text[] {
     const edits = new EditCache(new EditTally(modalTranscriptRegistry()));

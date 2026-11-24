@@ -1,8 +1,8 @@
 import { mergeResourceAttributes, serializeJobAttribute } from '@stateforge-labs/harness-adapters/telemetry';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { isJobTag, JOB_ATTRIBUTE_KEY } from '#src/recap/domain/job-tag.ts';
 import type { JobTag } from '#src/recap/domain/job-tag.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 
 export interface JobAttributesRecord {
     readonly [JOB_ATTRIBUTE_KEY]: JobTag;

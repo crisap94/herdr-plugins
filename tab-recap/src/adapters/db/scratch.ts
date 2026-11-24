@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { openStoreAt } from './database.ts';
 import type { Store } from './database.ts';

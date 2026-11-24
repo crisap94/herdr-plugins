@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { curatorInput, documentId, reconcileInput, stillTrueOf, TAIL_CHARS } from '@stateforge-labs/session-ledger/unstable/recap/application/curator-input.ts';
-import { brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import type { Fact } from '@stateforge-labs/session-ledger/unstable/recap/domain/fact.ts';
-import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { curatorInput, documentId, reconcileInput, stillTrueOf, TAIL_CHARS } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import type { Fact } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '@stateforge-labs/session-ledger';
 
 const text = brand<string, 'Text'>;
 const count = brand<number, 'Count'>;

@@ -1,10 +1,10 @@
 import { harnessSettings, installHooks, retireSharedShim, systemInstallIo, uninstallHooks, type InstallResult } from '#src/adapters/hooks/install.ts';
 import type { HarnessSettings } from '#src/adapters/hooks/settings.ts';
 import { settingGetter, stateDirectory } from '#src/daemon/config.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import { YES } from '#src/recap/domain/gui-tab-parts.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText } from '@stateforge-labs/session-ledger';
 
 const WORD = 'hooks';
 const SWITCH = 'TAB_RECAP_HOOKS';

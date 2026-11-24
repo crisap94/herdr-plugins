@@ -1,6 +1,6 @@
-import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import { duration } from '#src/recap/domain/time.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import { duration } from '@stateforge-labs/session-ledger';
 import type { ProcessUsage, UsageSample } from '#src/ports/process-usage.ts';
 
 const MIB = 1024 * 1024;

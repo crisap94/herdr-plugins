@@ -2,12 +2,12 @@ import { accessSync, constants } from 'node:fs';
 import { delimiter, join } from 'node:path';
 import { bunHost } from '#src/host/bun-host.mjs';
 import type { HarnessDirectory, HarnessList } from '#src/ports/harnesses.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import { parseAgentKind, type HarnessKind } from '#src/recap/domain/ids.ts';
-import { AUTO_ORDER } from '#src/recap/domain/backend.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { AUTO_ORDER } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 
 export const AUTO_PATH_KINDS: readonly HarnessKind[] = AUTO_ORDER.map((id) => must(parseAgentKind(id)));
 

@@ -11,9 +11,9 @@ import { startViewServer, parseSocketPath, type ViewServer } from '#src/daemon/v
 import type { Frame, FrameSource, Screen } from '#src/daemon/view/frames.ts';
 import { glowCache, type GlowSpawn } from '#src/daemon/view/glow-cache.ts';
 import { runIntent, type IntentParts, type IntentSink } from '#src/daemon/view/intents.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import { LineSplitter, decodeDaemon, encode } from '#src/wire/view/codec.ts';
 import { DEFAULT_TEXTS, PROTOCOL } from '#src/wire/view/protocol.ts';
 import type { DaemonMessage } from '#src/wire/view/protocol.ts';

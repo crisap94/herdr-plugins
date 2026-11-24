@@ -1,11 +1,11 @@
 import type { Database } from 'bun:sqlite';
 import { eq, sql } from 'drizzle-orm';
-import { err, ok, type Result } from '#src/protocol/result.ts';
+import { err, ok, type Result } from '@stateforge-labs/session-ledger';
 import type { PaneNoteReader, PaneNoteWriter } from '#src/ports/worktree-status.ts';
 import type { NoteToken } from '#src/recap/domain/coordination.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
-import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
-import { parseNonEmptyText, parseText, textOf } from '#src/recap/domain/text.ts';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
+import { parseNonEmptyText, parseText, textOf } from '@stateforge-labs/session-ledger';
 import { writeTx } from './connection.ts';
 import { paneNote } from './drizzle/index.ts';
 import { ormOf, type Orm } from './orm.ts';

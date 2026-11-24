@@ -1,7 +1,7 @@
 import { parsePaneId } from '#src/recap/domain/ids.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
-import { parseNonEmptyText } from '#src/recap/domain/text.ts';
+import { parseNonEmptyText } from '@stateforge-labs/session-ledger';
 import type { FleetFrame } from '#src/ports/fleet-source.ts';
 import { CoreRoster, parseHcAddress } from './sdk-core.ts';
 import type { Count as CoreCount, HcCoreFeed, HcPayload, HcTerminal } from './sdk-core.ts';

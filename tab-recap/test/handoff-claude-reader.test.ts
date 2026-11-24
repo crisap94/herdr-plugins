@@ -1,4 +1,4 @@
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { appendFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -13,7 +13,7 @@ import { registryWith } from './fakes/transcript-registry.ts';
 import { laneWith, planWith, readyOf } from './fakes/handoff-delivery.ts';
 import { fsPathOf } from './fakes/transcript-lines.ts';
 import { agentKind } from '#test/support/ids.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { type SessionId, parseSessionId } from '#src/recap/domain/ids.ts';
 
 const TEXT = 'Handoff of the parser refactor.\n\nNext steps:\n  - finish the lexer\n  - run the suite';

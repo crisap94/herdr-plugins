@@ -2,8 +2,8 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const LANES = ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8'] as const;
-const CARVED = ['ENG', 'STO', 'VIEW'] as const;
-const TEST_PRIORITY = ['B2', 'B1', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'ENG', 'STO', 'VIEW'] as const;
+const CARVED = ['STO', 'VIEW'] as const;
+const TEST_PRIORITY = ['B2', 'B1', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'STO', 'VIEW'] as const;
 const LEAD = 'lead';
 
 type Lane = typeof LANES[number] | typeof CARVED[number] | typeof LEAD;
@@ -74,17 +74,7 @@ const TRACK_PREFIXES: readonly string[] = [
     'test/command-table.test.ts',
 ];
 
-const ENGINE_MANIFEST = join(ROOT, 'ci/engine-files.json');
-
-function engineFiles(): readonly string[] {
-    if (!existsSync(ENGINE_MANIFEST)) return [];
-    const parsed: unknown = JSON.parse(readFileSync(ENGINE_MANIFEST, 'utf8'));
-    if (typeof parsed !== 'object' || parsed === null || !('engine' in parsed) || !Array.isArray(parsed.engine)) return [];
-    return parsed.engine.filter((file): file is string => typeof file === 'string');
-}
-
 const CARVED_FILES: readonly (readonly [ReadonlySet<string>, Lane])[] = [
-    [new Set(engineFiles()), 'ENG'],
     [new Set(STO_FILES), 'STO'],
     [new Set(VIEW_FILES), 'VIEW'],
 ];
@@ -155,7 +145,7 @@ function build(): Readonly<Record<Lane, readonly string[]>> {
         sourceByBasename.set(stem, file);
     }
     for (const stem of duplicated) sourceByBasename.delete(stem);
-    const lanes: Record<Lane, string[]> = { B1: [], B2: [], B3: [], B4: [], B5: [], B6: [], B7: [], B8: [], ENG: [], STO: [], VIEW: [], lead: [] };
+    const lanes: Record<Lane, string[]> = { B1: [], B2: [], B3: [], B4: [], B5: [], B6: [], B7: [], B8: [], STO: [], VIEW: [], lead: [] };
     for (const file of sources) lanes[laneOfSource(file)].push(file);
     for (const file of filesUnder('test')) lanes[laneOfTest(file, sourceByBasename)].push(file);
     for (const lane of Object.keys(lanes) as Lane[]) lanes[lane].sort();

@@ -1,14 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { RUBRIC } from '#src/adapters/job/prompts/rubric.ts';
-import { curatorInput } from '#src/recap/application/curator-input.ts';
+import { curatorInput } from '@stateforge-labs/session-ledger';
 import { curationOf } from '#src/recap/domain/curation.ts';
 import { facts, NOW } from '#test/fakes/curated-facts.ts';
 import { dtdTest, validate } from '#test/xmllint.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import { factIdOf } from '#src/recap/domain/fact.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { brand } from '@stateforge-labs/session-ledger';
+import { factIdOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 const text = brand<string, 'Text'>;
 

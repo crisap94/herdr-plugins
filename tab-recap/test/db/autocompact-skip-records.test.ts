@@ -1,12 +1,12 @@
-import { parseUsd } from '#src/recap/domain/usd.ts';
-import { must } from '#src/protocol/result.ts';
-import { countOf, parseCount } from '#src/recap/domain/count.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { parseUsd } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { countOf, parseCount } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { paneId, tabId, agentKind } from '#test/support/ids.ts';
-import type { DecisionDraft, SkipRow } from '#src/ports/autocompact-records.ts';
+import type { DecisionDraft, SkipRow } from '@stateforge-labs/session-ledger';
 import { memoryStore } from './support.ts';
 
 const skip = (over: Partial<SkipRow> = {}): SkipRow => ({ scope: tabId('w1:t1'), key: paneId('w1:p1'), agent: agentKind('claude'), at: instant(100), gate: 'busy', share: countOf(62), detail: textOf('this lane'), ...over });

@@ -2,7 +2,7 @@ import { added, allHiddenOf, removed, without } from './board.ts';
 import type { Board, HiddenState, Visibility, VisibilityTarget } from './board.ts';
 import { uncheckedTabId } from './ids.ts';
 import type { ScopeId } from './ids.ts';
-import { textOf } from './text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import type { Presence } from './presence.ts';
 
 export function isHidden(board: Board, tab: ScopeId): Presence {

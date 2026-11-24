@@ -1,5 +1,5 @@
 import { test } from 'node:test';
-import type { Directory } from '#src/recap/domain/directory.ts';
+import type { Directory } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -9,10 +9,10 @@ import { databaseFile, openStoreAt } from '#src/adapters/db/database.ts';
 import { cursor, recordOps } from '#test/db/support.ts';
 import { oneTask, withFacts } from '#test/support.ts';
 import { BUN_CACHE_OFF } from './support/bun-env.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { usdOf } from '#src/recap/domain/usd.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { usdOf } from '@stateforge-labs/session-ledger';
 
 const entry = join(import.meta.dirname, '..', 'bin', 'tab-recap.ts');
 

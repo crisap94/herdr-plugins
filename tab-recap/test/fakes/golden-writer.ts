@@ -1,6 +1,7 @@
-import { brand } from '#src/recap/domain/brand.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import type { RecapRequest, Writer, Written } from '#src/ports/summarizer.ts';
+import { brand } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import type { RecapRequest, Written } from '@stateforge-labs/session-ledger';
+import type { LegacyWriter as Writer } from '@stateforge-labs/session-ledger';
 
 const QUOTES = ['Add a cart to the shop', 'Use SQLite for it, no server', 'also add totals', 'open a merge request', 'can guests keep their basket?', 'cookie is fine'];
 const add = (section: string, text: string, anchor: string, why?: string): Record<string, unknown> => ({ op: 'add', section, text, anchor, ...(why === undefined ? {} : { why }) });

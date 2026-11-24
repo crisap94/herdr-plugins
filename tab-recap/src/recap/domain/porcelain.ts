@@ -1,5 +1,5 @@
-import type { Count } from './count.ts';
-import type { Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
 
 export type BranchName = Text;
 export type AheadCount = Count | null;

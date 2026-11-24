@@ -1,7 +1,7 @@
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import type { Probability } from '#src/recap/domain/probability.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
+import type { Probability } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
 import { countMean, flagShare, type CountMean, type Flag } from './stats.ts';
 import { verdictOfAnswer, type ScoredReps } from './report-metrics.ts';
 

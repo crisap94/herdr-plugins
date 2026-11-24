@@ -1,12 +1,12 @@
-import type { Clock } from '#src/ports/clock.ts';
+import type { Clock } from '@stateforge-labs/session-ledger';
 import type { ClosureSweep } from '#src/ports/closed-lanes.ts';
 import type { RetentionPort } from '#src/ports/retention.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import type { Count } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
 import { cutoffAt } from '#src/recap/domain/retention.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import type { Instant } from '@stateforge-labs/session-ledger';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 export interface SweepDeps {
     readonly retention: RetentionPort;

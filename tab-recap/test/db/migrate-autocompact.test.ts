@@ -10,7 +10,7 @@ import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { scratchDir } from './support.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 
 const shape = (db: Database): string[] => (db.prepare("SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { type: string; name: string; tbl_name: string; sql: string }[])
     .map((row) => `${row.type} ${row.name} ${row.tbl_name} ${row.sql.replaceAll(/\s+/g, ' ').replaceAll('"', '').replaceAll(/\s*\(\s*/g, '(').replaceAll(/\s*\)\s*/g, ')').replaceAll(/\s*,\s*/g, ',').trim()}`);

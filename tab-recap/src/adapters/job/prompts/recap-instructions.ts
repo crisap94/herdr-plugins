@@ -1,10 +1,10 @@
 import { languageNameOf } from '#src/i18n/index.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
-import { SECTIONS } from '#src/i18n/sections.ts';
-import type { Section } from '#src/i18n/sections.ts';
-import { CAPS, MAX_WORDS } from '#src/recap/domain/shape.ts';
-import type { RecapRequest } from '#src/ports/summarizer.ts';
-import { WHY_WORDS } from '#src/recap/application/ops-answer.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
+import { SECTIONS } from '@stateforge-labs/session-ledger';
+import type { I18nSection as Section } from '@stateforge-labs/session-ledger';
+import { CAPS, MAX_WORDS } from '@stateforge-labs/session-ledger';
+import type { RecapRequest } from '@stateforge-labs/session-ledger';
+import { WHY_WORDS } from '@stateforge-labs/session-ledger';
 import { RECONCILE_LINES } from './reconcile-instructions.ts';
 import { RUBRIC } from './rubric.ts';
 

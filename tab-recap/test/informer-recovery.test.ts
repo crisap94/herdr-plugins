@@ -6,10 +6,10 @@ import { Informer } from '#src/recap/application/informer.ts';
 import type { Blindness } from '#src/recap/application/informer.ts';
 import { watchSet } from '#src/recap/domain/board.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { sessionOfForKind } from '#src/adapters/herdr/session-registry.ts';
 import type { FleetFrame, FleetFeed, FleetSnapshotResult, FleetStreamResult, FleetTopic } from '#src/ports/fleet-source.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import { unknown } from '@stateforge-labs/session-ledger';
 import { causeOf } from './fakes/cause.ts';
 import { reconciliation, seenLane } from '#test/support/seen.ts';
 

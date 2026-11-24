@@ -1,9 +1,9 @@
 import type { Locale } from '#src/i18n/messages.ts';
 import type { TabLaneRecord } from '#src/ports/tab-views.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
-import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
+import type { Unknown } from '@stateforge-labs/session-ledger';
 
 export const DEFAULT_MARK = '⚑';
 

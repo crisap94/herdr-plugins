@@ -1,5 +1,5 @@
 import type { ServerResponse } from 'node:http';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
 
 export type ApiStatus = 200 | 202 | 204 | 400 | 401 | 403 | 404 | 405 | 409 | 413 | 429 | 500 | 503;
 

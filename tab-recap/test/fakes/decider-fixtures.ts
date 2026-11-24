@@ -1,10 +1,10 @@
-import { type DecidedAnswers, type Question } from '#src/ports/decider.ts';
-import { parseProbability, type Probability } from '#src/recap/domain/probability.ts';
-import { parseUsd } from '#src/recap/domain/usd.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { parseTokenAmount } from '#src/recap/domain/token-amount.ts';
-import { duration } from '#src/recap/domain/time.ts';
+import { type DecidedAnswers, type Question } from '@stateforge-labs/session-ledger';
+import { parseProbability, type Probability } from '@stateforge-labs/session-ledger';
+import { parseUsd } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import { parseTokenAmount } from '@stateforge-labs/session-ledger';
+import { duration } from '@stateforge-labs/session-ledger';
 
 export const textOf = (value: string): Text => must(parseText(value));
 

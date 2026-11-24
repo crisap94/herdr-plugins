@@ -1,9 +1,9 @@
-import { must } from '#src/protocol/result.ts';
-import { parseCount } from './count.ts';
-import type { Count } from './count.ts';
-import { parseText } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import type { Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import type { Duration } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Duration } from '@stateforge-labs/session-ledger';
 
 export type PerfCounter = 'status-tracked' | 'status-full' | 'locate' | 'git-dir-event' | 'status-coalesced' | 'failed';
 

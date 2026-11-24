@@ -7,13 +7,13 @@ import { createTurnEnds } from '#src/adapters/hooks/turn-ends.ts';
 import { NOT_QUEUED, Sender } from '#src/recap/application/compaction-send.ts';
 import { Trail } from '#src/recap/application/compaction-trail.ts';
 import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
-import { NO_SECTIONS } from '#src/recap/domain/shape.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { NO_SECTIONS } from '@stateforge-labs/session-ledger';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
 import { parseCompactionId } from '#src/recap/domain/ids.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { HookAnswer, HookCall } from '#src/wire/hooks/contract.ts';
-import type { Mark } from '#src/ports/transcripts.ts';
+import type { Mark } from '@stateforge-labs/session-ledger';
 import { compactionDeps, compacted, NOW, typingFleet, type Fleet } from '#test/fakes/compaction-fleet.ts';
 import { seenLane } from '#test/support/seen.ts';
 

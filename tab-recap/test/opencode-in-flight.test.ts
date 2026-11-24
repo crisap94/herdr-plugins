@@ -4,13 +4,13 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcripts.ts';
-import { splitReason } from '#src/ports/capability-reasons.ts';
+import { splitReason } from '@stateforge-labs/session-ledger';
 import { opencodeFixture, toolPart } from '#test/opencode-fixture.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import { must } from '#src/protocol/result.ts';
-import { sourcePathOf } from '#src/ports/transcripts.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { runningOf } from '#src/recap/domain/in-flight.ts';
+import { parseText } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { sourcePathOf } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { runningOf } from '@stateforge-labs/session-ledger';
 import { fsPathOf } from './fakes/transcript-lines.ts';
 
 test('opencode: all its in-flight work is foreground, and the capability says so by name', () => {

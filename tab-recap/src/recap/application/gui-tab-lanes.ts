@@ -1,24 +1,24 @@
 import type { Messages } from '#src/i18n/index.ts';
 import type { CompactionRow } from '#src/ports/compaction-records.ts';
 import { DEFAULT_MARK, type PaneNote } from '#src/ports/extension.ts';
-import type { Recap } from '#src/ports/recap-records.ts';
+import type { Recap } from '@stateforge-labs/session-ledger';
 import { isScreenSource } from '#src/ports/screens.ts';
 import type { LaneWebRecord, TabLaneRecord } from '#src/ports/tab-views.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { GIT_NOTE_MARK } from '#src/extensions/stored-notes.ts';
-import { hintFor, shareOf, type ContextUse } from '#src/recap/domain/compaction.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import { parseDirectory } from '#src/recap/domain/directory.ts';
+import { hintFor, shareOf, type ContextUse } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import { parseDirectory } from '@stateforge-labs/session-ledger';
 import { orElse, UNKNOWN, type GuiLane } from '#src/recap/domain/gui-tab.ts';
 import { NO, YES, type Flag, type GuiCompaction, type GuiContext, type GuiGit, type GuiNote, type GuiNoteKind, type GuiStage, type GuiWeb } from '#src/recap/domain/gui-tab-parts.ts';
 import { parseAgentKind, parsePaneId, type SessionKey } from '#src/recap/domain/ids.ts';
 import { changedOf } from '#src/recap/domain/worktree.ts';
-import { parseNonEmptyText, parseText, type Text } from '#src/recap/domain/text.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { parseNonEmptyText, parseText, type Text } from '@stateforge-labs/session-ledger';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { stageLine } from '#src/recap/render/compaction-stage.ts';
 import { plain } from '#src/recap/render/wrap.ts';
 import type { GuiReads } from './gui-tab-reads.ts';
-import { sourcePathOf } from '#src/ports/transcripts.ts';
+import { sourcePathOf } from '@stateforge-labs/session-ledger';
 
 export interface LaneDraw {
     readonly reads: GuiReads;

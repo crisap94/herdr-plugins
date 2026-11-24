@@ -1,5 +1,5 @@
 import type { Presence } from './presence.ts';
-import type { Text } from './text.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
 
 export type LaneStatus = 'working' | 'blocked' | 'idle' | 'done' | 'unknown';
 

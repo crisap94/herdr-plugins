@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createEngine, type Pacing } from '@stateforge-labs/session-ledger';
 import { createEngineWorld, duration, followed, key, scope, session, type Behaviour, type EngineWorld, type WrittenAnswer } from '@stateforge-labs/session-ledger/testkit';
-import { laneOf } from '@stateforge-labs/session-ledger/unstable/facade/translate.ts';
-import { AT_ONCE, laneSet, pacedOf, pendingOf } from '@stateforge-labs/session-ledger/unstable/recap/application/pending-plan.ts';
-import { PACING_TURN, parsePacing } from '@stateforge-labs/session-ledger/unstable/recap/domain/pacing.ts';
-import { instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import { laneOf } from '@stateforge-labs/session-ledger';
+import { AT_ONCE, laneSet, pacedOf, pendingOf } from '@stateforge-labs/session-ledger';
+import { PACING_TURN, parsePacing } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 
 const TAB = scope('tab-1');
 const OTHER = scope('tab-2');

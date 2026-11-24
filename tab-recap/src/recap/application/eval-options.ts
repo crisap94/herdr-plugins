@@ -1,5 +1,5 @@
-import { PIPELINES } from '#src/recap/domain/pipeline.ts';
-import type { Pipeline } from '#src/recap/domain/pipeline.ts';
+import { PIPELINES } from '@stateforge-labs/session-ledger';
+import type { Pipeline } from '@stateforge-labs/session-ledger';
 
 export { PIPELINES };
 export type { Pipeline };

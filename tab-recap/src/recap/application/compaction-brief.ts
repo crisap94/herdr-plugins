@@ -1,11 +1,11 @@
 import type { BriefWriter } from '#src/ports/compaction-briefs.ts';
-import { isUnknown, saying } from '#src/ports/unknowable.ts';
-import type { RecapSections } from '#src/recap/domain/shape.ts';
+import { isUnknown, saying } from '@stateforge-labs/session-ledger';
+import type { RecapSections } from '@stateforge-labs/session-ledger';
 import { FORBIDDEN, FORBIDDEN_PHRASE_PATTERN as PHRASES, FORBIDDEN_WORD_PATTERN as WORDS } from '#src/recap/domain/forbidden-words.ts';
 import { MESSAGE_LIMIT as BRIEF_LIMIT } from './compaction-message.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import type { Presence } from '#src/recap/domain/presence.ts';
 
 export { FORBIDDEN };

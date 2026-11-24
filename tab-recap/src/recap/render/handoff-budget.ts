@@ -1,12 +1,12 @@
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { fits } from '#src/recap/domain/byte-budget.ts';
 import type { ByteBudget } from '#src/recap/domain/byte-budget.ts';
 import { compareIds } from '#src/recap/domain/handoff-content.ts';
 import type { HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
-import { countOf, parseCount } from '#src/recap/domain/count.ts';
-import type { Count } from '#src/recap/domain/count.ts';
+import { countOf, parseCount } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
 import type { HandoffText } from '#src/recap/domain/handoff-sanitize.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
 import type { FreshnessBlock } from '#src/recap/render/freshness.ts';
 import type { WorksiteBlock } from '#src/recap/render/worksite.ts';
 import type { HandoffParts, HandoffReference, OmittedCounts } from './handoff-markdown.ts';

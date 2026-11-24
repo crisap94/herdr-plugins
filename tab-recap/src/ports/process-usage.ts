@@ -1,5 +1,5 @@
-import type { Count } from '#src/recap/domain/count.ts';
-import type { Duration } from '#src/recap/domain/time.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
+import type { Duration } from '@stateforge-labs/session-ledger';
 
 export interface UsageSample {
     readonly cpu: Duration;

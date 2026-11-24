@@ -1,8 +1,8 @@
 import type { Web } from '@stateforge-labs/recap-view';
-import { must } from '#src/protocol/result.ts';
-import type { Fact } from '#src/recap/domain/fact.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import type { Fact } from '@stateforge-labs/session-ledger';
 import type { GuiSpan } from '#src/recap/domain/gui-tab-parts.ts';
-import { parseText } from '#src/recap/domain/text.ts';
+import { parseText } from '@stateforge-labs/session-ledger';
 import { isSafeUrl } from '#src/recap/render/hyperlink.ts';
 import { linkify } from '#src/recap/render/links.ts';
 

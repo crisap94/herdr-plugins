@@ -8,11 +8,11 @@ import { openStoreAt } from '#src/adapters/db/database.ts';
 import { DesktopBus } from '#src/adapters/desktop/bus.ts';
 import { DesktopReads } from '#src/adapters/desktop/expanded.ts';
 import { OpenLeases } from '#src/adapters/desktop/lease.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import { parseDirectory } from '#src/recap/domain/directory.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import { parseDirectory } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 
 test('the bus counts, rings and resets', () => {
     let at = 10;

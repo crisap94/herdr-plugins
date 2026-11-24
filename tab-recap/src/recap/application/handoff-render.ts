@@ -1,12 +1,12 @@
-import type { SessionCursor } from '#src/ports/recap-records.ts';
-import type { Count } from '#src/recap/domain/count.ts';
-import type { Fact } from '#src/recap/domain/fact.ts';
+import type { SessionCursor } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
+import type { Fact } from '@stateforge-labs/session-ledger';
 import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HarnessKind, HandoffId, SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { LaneStatus } from '#src/recap/domain/status.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 import type { ClosedView } from './closed-view.ts';
 
 export interface HandoffLane {

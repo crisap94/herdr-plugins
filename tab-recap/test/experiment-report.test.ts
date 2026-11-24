@@ -5,9 +5,9 @@ import type { Labels, ScoredAnswer } from '#src/experiment/report-metrics.ts';
 import { choose } from '#src/experiment/report-rule.ts';
 import type { ArmRating } from '#src/experiment/report-rule.ts';
 import type { Label } from '#src/experiment/stats.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import type { Probability } from '#src/recap/domain/probability.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { brand } from '@stateforge-labs/session-ledger';
+import type { Probability } from '@stateforge-labs/session-ledger';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 const probability = brand<number, 'Probability'>;
 const milliseconds = brand<number, 'Milliseconds'>;

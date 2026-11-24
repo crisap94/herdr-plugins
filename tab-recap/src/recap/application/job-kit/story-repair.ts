@@ -1,13 +1,13 @@
-import { must } from '#src/protocol/result.ts';
-import type { Curated, Curators } from '#src/ports/curators.ts';
-import type { CurationRun } from '#src/ports/stories.ts';
-import type { Result } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import type { Curated, Curators } from '@stateforge-labs/session-ledger';
+import type { CurationRun } from '@stateforge-labs/session-ledger';
+import type { Result } from '@stateforge-labs/session-ledger';
 import type { Curation } from '#src/recap/domain/curation.ts';
 import { STORY_TOO_LONG } from '#src/recap/domain/curation.ts';
-import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { ReconcilingDeps } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-reconcile.ts';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
+import { parseText, textOf } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { ReconcilingDeps } from '@stateforge-labs/session-ledger';
 
 export type StoryReading = (answer: Curated) => Curation;
 

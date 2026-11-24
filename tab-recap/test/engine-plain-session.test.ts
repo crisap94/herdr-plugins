@@ -8,24 +8,25 @@ import { basename, dirname, join } from 'node:path';
 import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.ts';
 import { scratchStore } from '#src/adapters/db/scratch.ts';
 import type { Store } from '#src/adapters/db/database.ts';
-import { capabilityWording } from '#src/ports/capability-reasons.ts';
-import { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
-import { createEngine } from '#src/recap/application/engine.ts';
-import type { Engine, FollowedSession, ScopeId } from '#src/recap/application/engine.ts';
+import { capabilityWording } from '@stateforge-labs/session-ledger';
+import { TranscriptRegistry } from '@stateforge-labs/session-ledger';
+import { legacyCreateEngine as createEngine } from '@stateforge-labs/session-ledger';
+import type { ScopeId } from '@stateforge-labs/session-ledger';
+import type { LegacyEngine as Engine, LegacyFollowedSession as FollowedSession } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import { instant } from '#src/recap/domain/time.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
-import { FULL_WRITER_VIEW } from '#src/recap/domain/writer-view.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
+import { FULL_WRITER_VIEW } from '@stateforge-labs/session-ledger';
 import { NO_REPOS } from '#test/support.ts';
 import { closureOf } from '#test/support/closure.ts';
 import { writer } from '#test/fakes/golden-writer.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import { must } from '#src/protocol/result.ts';
-import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { brand } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '@stateforge-labs/session-ledger';
 import { fsPathOf } from './fakes/transcript-lines.ts';
 import { seenLane } from '#test/support/seen.ts';
 
@@ -104,6 +105,6 @@ test('the engine follows a plain Claude session with no herdr: runs per turn, fa
 
 test('the plain session and everything it imports reach no herdr, transport, daemon, column, setup or compact file', async () => {
     const closure = await closureOf(THIS_FILE);
-    assert.ok(closure.includes('src/recap/application/engine.ts') && closure.includes('src/adapters/transcripts/claude/transcripts.ts'), 'the walk reaches the engine and the reader');
+    assert.ok(closure.includes('src/adapters/transcripts/claude/transcripts.ts'), 'the walk reaches the reader');
     assert.deepEqual(closure.filter((file) => HERDR_SIDE.some((folder) => file.startsWith(folder))), []);
 });

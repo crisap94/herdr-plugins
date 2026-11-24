@@ -1,11 +1,12 @@
 import { test } from 'node:test';
 import { kindOf } from '#test/fakes/agent-kind.ts';
 import assert from 'node:assert/strict';
-import { contextOf, hintFor, sizeOf, hintOf, hintSetting, targetOf, targetSetting, windowOf } from '#src/recap/domain/compaction.ts';
-import type { ContextUse, Observed } from '#src/recap/domain/compaction.ts';
+import { contextOf, hintFor, sizeOf, hintOf, hintSetting, targetOf, targetSetting, windowOf } from '@stateforge-labs/session-ledger';
+import type { ContextUse } from '@stateforge-labs/session-ledger';
+import type { ContextObserved as Observed } from '@stateforge-labs/session-ledger';
 import { windowOfAgent } from '#src/adapters/capability/context-window.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 test('target: focused by default, all, or kinds', () => {
     assert.deepEqual(targetOf(undefined), { kind: 'focused' });

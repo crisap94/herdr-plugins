@@ -1,4 +1,4 @@
-import type { Duration } from '#src/recap/domain/time.ts';
+import type { Duration } from '@stateforge-labs/session-ledger';
 
 export type Bounded = 'done' | 'timeout';
 

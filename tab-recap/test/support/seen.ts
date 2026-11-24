@@ -1,12 +1,12 @@
 import { allHiddenOf, enabledOf, seededOf } from '#src/recap/domain/board.ts';
 import type { HiddenState, Seeded, Shape } from '#src/recap/domain/board.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 import type { DeadColumn } from '#src/recap/domain/dead-columns.ts';
 import type { ColumnOpenedObservation, Reconciliation, SeenColumn, SessionObservation, StatusObservation, SwitchedObservation } from '#src/recap/domain/fold.ts';
 import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 
 export interface BareLane {
     readonly paneId: string;

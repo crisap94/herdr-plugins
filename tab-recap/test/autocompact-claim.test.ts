@@ -1,4 +1,4 @@
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { tabId, paneId, agentKind } from '#test/support/ids.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

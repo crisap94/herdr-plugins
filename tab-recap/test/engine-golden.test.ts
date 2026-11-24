@@ -11,18 +11,18 @@ import type { Fact, Recap, RecapTask, SessionCursor } from '@stateforge-labs/ses
 import { PREFIXES } from '#src/adapters/db/typeid.ts';
 import { replayFile } from '#src/recap/application/replay.ts';
 import type { TypedReplayDeps } from '#src/recap/application/replay.ts';
-import { writerContext } from '#src/recap/application/writer-context.ts';
-import type { Pipeline } from '#src/recap/domain/pipeline.ts';
-import { FULL_WRITER_VIEW } from '#src/recap/domain/writer-view.ts';
+import { writerContext } from '@stateforge-labs/session-ledger';
+import type { Pipeline } from '@stateforge-labs/session-ledger';
+import { FULL_WRITER_VIEW } from '@stateforge-labs/session-ledger';
 import { NO_REPOS } from '#test/support.ts';
 import { answer, scripted as scriptedEnumerator } from '#test/fakes/enumerator.ts';
 import { writer } from '#test/fakes/golden-writer.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { tabId } from '#test/support/ids.ts';
-import { tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { must } from '#src/protocol/result.ts';
-import { countOf, parsePositiveCount } from '#src/recap/domain/count.ts';
+import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { countOf, parsePositiveCount } from '@stateforge-labs/session-ledger';
 import { parseSessionPath } from '#src/recap/domain/ids.ts';
 
 const FILE = join(import.meta.dirname, 'fixtures', 'replay-claude.jsonl');

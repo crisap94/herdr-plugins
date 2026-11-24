@@ -1,4 +1,4 @@
-import type { Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
 
 export type HerdrEvents = 'off' | 'on';
 

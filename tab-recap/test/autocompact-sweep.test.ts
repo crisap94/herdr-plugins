@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { AutocompactSweep, SWEEP_EVERY } from '#src/daemon/autocompact-sweep.ts';
-import type { Considers } from '#src/daemon/autocompact-sweep.ts';
+import { AutocompactSweep } from '@stateforge-labs/session-ledger';
+import { SWEEP_EVERY } from '@stateforge-labs/session-ledger/compaction-timing';
+import type { Considers } from '@stateforge-labs/session-ledger';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';

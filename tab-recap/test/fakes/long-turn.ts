@@ -1,6 +1,6 @@
-import type { Entry } from '#src/ports/transcripts.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import type { Entry } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 
 export const START = Date.parse('2026-10-07T09:00:00Z');
 

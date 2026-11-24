@@ -1,9 +1,9 @@
-import { ok, type Result } from '#src/protocol/result.ts';
-import type { BackendId } from './backend.ts';
-import type { ScopeId } from './timing-ids.ts';
-import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import { parseNonEmptyText } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
+import { ok, type Result } from '@stateforge-labs/session-ledger';
+import type { BackendId } from '@stateforge-labs/session-ledger';
+import type { ScopeId } from '@stateforge-labs/session-ledger';
+import { brand, type Brand } from '@stateforge-labs/session-ledger';
+import { parseNonEmptyText } from '@stateforge-labs/session-ledger';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
 
 export type HandoffId = Brand<string, 'HandoffId'>;
 export type WorkspaceId = Brand<string, 'WorkspaceId'>;
@@ -21,7 +21,7 @@ export interface AgentSessionPath {
 
 export type AgentSession = AgentSessionId | AgentSessionPath;
 
-export type { HarnessKind, CompactionId, DecisionId, SessionKey, ScopeId } from './timing-ids.ts';
+export type { HarnessKind, CompactionId, DecisionId, SessionKey, ScopeId } from '@stateforge-labs/session-ledger';
 export function workspaceOfTab(tab: ScopeId): WorkspaceId | null {
     const raw = String(tab);
     const colon = raw.indexOf(':');
@@ -88,4 +88,4 @@ export const uncheckedTokenName = brand<string, 'TokenName'>;
 
 export const uncheckedTokenValue = brand<string, 'TokenValue'>;
 
-export { parseAgentKind, parseCompactionId, parseDecisionId, parsePaneId, parseTabId } from './timing-ids.ts';
+export { parseAgentKind, parseCompactionId, parseDecisionId, parsePaneId, parseTabId } from '@stateforge-labs/session-ledger';

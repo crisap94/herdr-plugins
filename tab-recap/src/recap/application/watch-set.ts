@@ -1,6 +1,6 @@
 import type { SessionKey } from '#src/recap/domain/ids.ts';
 import type { FleetTopic } from '#src/ports/fleet-source.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 export const GLOBAL_TOPICS = [
     'pane.created',

@@ -1,9 +1,9 @@
 import type { Lane } from '#src/recap/domain/lane.ts';
 import type { LaneSettler, Settling } from '#src/ports/lane-settling.ts';
-import type { Mark } from '#src/ports/transcripts.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import type { Mark } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
-import { duration, parseDuration, type Duration, type Instant } from '#src/recap/domain/time.ts';
+import { duration, parseDuration, type Duration, type Instant } from '@stateforge-labs/session-ledger';
 
 export type Outcome = 'compacted' | 'failed' | 'unconfirmed';
 

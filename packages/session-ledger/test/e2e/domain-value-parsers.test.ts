@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { err, must, ok } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
-import { parseCount, parsePositiveCount } from '@stateforge-labs/session-ledger/unstable/recap/domain/count.ts';
-import { parseIdleHold } from '@stateforge-labs/session-ledger/unstable/recap/domain/idle-hold.ts';
-import { parseProbability } from '@stateforge-labs/session-ledger/unstable/recap/domain/probability.ts';
-import { parseNonEmptyText } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import { parseDuration, parseInstant, parseMilliseconds } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
-import { parseAgentKind, parseHarnessKind, parseScopeId, parseSessionKey, parseCompactionId, parseDecisionId, parsePaneId, parseTabId, placementOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/timing-ids.ts';
-import { parseTokenAmount } from '@stateforge-labs/session-ledger/unstable/recap/domain/token-amount.ts';
-import { parseUsd } from '@stateforge-labs/session-ledger/unstable/recap/domain/usd.ts';
+import { err, must, ok } from '@stateforge-labs/session-ledger';
+import { parseCount, parsePositiveCount } from '@stateforge-labs/session-ledger';
+import { parseIdleHold } from '@stateforge-labs/session-ledger';
+import { parseProbability } from '@stateforge-labs/session-ledger';
+import { parseNonEmptyText } from '@stateforge-labs/session-ledger';
+import { parseDuration, parseInstant, parseMilliseconds } from '@stateforge-labs/session-ledger';
+import { parseAgentKind, parseHarnessKind, parseScopeId, parseSessionKey, parseCompactionId, parseDecisionId, parsePaneId, parseTabId, placementOf } from '@stateforge-labs/session-ledger';
+import { parseTokenAmount } from '@stateforge-labs/session-ledger';
+import { parseUsd } from '@stateforge-labs/session-ledger';
 import { harness, key, scope } from '@stateforge-labs/session-ledger/testkit';
 
 test('ok and err build tagged results, and must unwraps ok and throws on err', () => {

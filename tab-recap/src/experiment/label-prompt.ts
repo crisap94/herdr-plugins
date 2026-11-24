@@ -1,7 +1,7 @@
-import type { Question } from '#src/ports/decider.ts';
-import { must } from '#src/protocol/result.ts';
+import type { Question } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 import type { FactIndex } from '#src/recap/domain/fact-index.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import type { Flag, Label } from './stats.ts';
 
 

@@ -1,7 +1,7 @@
-import { ok, type Result } from '#src/protocol/result.ts';
-import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
-import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
-import { parseNonEmptyText } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { ok, type Result } from '@stateforge-labs/session-ledger';
+import { brand, type Brand } from '@stateforge-labs/session-ledger';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
+import { parseNonEmptyText } from '@stateforge-labs/session-ledger';
 
 export type TaskName = Brand<string, 'TaskName'>;
 

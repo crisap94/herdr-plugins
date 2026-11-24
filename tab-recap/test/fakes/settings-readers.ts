@@ -1,11 +1,13 @@
-import { BACKEND_IDS, harnessLabels, type BackendChoice, type BackendId } from '#src/recap/domain/backend.ts';
-import { jevFrom, policyFrom, type Policy, type JevSettings } from '#src/recap/domain/autocompact.ts';
-import { tuningFrom, type CompactTuning } from '#src/recap/domain/autocompact-style.ts';
+import { BACKEND_IDS, harnessLabels, type BackendChoice, type BackendId } from '@stateforge-labs/session-ledger';
+import { jevFrom, type Policy, type JevSettings } from '@stateforge-labs/session-ledger';
+import { policyFrom } from '@stateforge-labs/session-ledger/compaction-timing';
+import { type CompactTuning } from '@stateforge-labs/session-ledger';
+import { tuningFrom } from '@stateforge-labs/session-ledger/compaction-timing';
 import { compactSettingOf, coverageSettingOf, curateSettingOf, deciderSettingOf, judgeSettingOf, keepDaysCountOf, placementFor } from '#src/recap/domain/job.ts';
 import type { DeciderSetting, JobPlacement, JobSetting } from '#src/recap/domain/job.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
-import type { Count } from '#src/recap/domain/count.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
+import type { Count } from '@stateforge-labs/session-ledger';
 
 export type RawReader = (key: string) => string | undefined;
 

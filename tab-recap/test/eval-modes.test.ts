@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { runEval } from '#src/recap/application/eval-run.ts';
 import type { VerdictRecord } from '#src/ports/verdicts.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { optionsOf, rig, seed, judgeOf } from '#test/eval-rig.ts';
 import { runsOf, verdictOf } from '#test/db/support.ts';
 

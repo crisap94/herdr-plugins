@@ -4,7 +4,7 @@ import { parseValue, serializeValue } from '#src/protocol/codec.ts';
 import type { FieldSpec, ParsedValue } from '#src/protocol/codec.ts';
 import { parseFieldName, parseFieldText, parseFlagText, parseRequestId, parseWireText } from '#src/protocol/primitives.ts';
 import type { FieldText, FlagValue, IdGrammar, RequestId, TokenValue, WireText } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 
 const ID_LEGACY: FieldSpec = { kind: 'id', grammar: 'legacy-length' };
 const ID_SAFE: FieldSpec = { kind: 'id', grammar: 'token-safe' };

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { compareIds, timeOf, Uuid7Generator } from '#src/adapters/db/uuid7.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 
 const fixed = (ms: number, fill = 0xab): ConstructorParameters<typeof Uuid7Generator>[0] => ({ now: (): Instant => instant(ms), random: (bytes): void => { bytes.fill(fill); } });
 

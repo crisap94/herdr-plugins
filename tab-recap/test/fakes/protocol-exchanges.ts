@@ -9,7 +9,7 @@ import type { Taking } from '#src/protocol/responder.ts';
 import type { TokenMap, TokenWrite } from '#src/protocol/tokens.ts';
 import { parseAnswerStage, parseExchangeName, parseExchangeVersion, parseFieldName, parseFlagText, parseRequestPrefix, parseTimingMs, parseTimingName, parseTokenName, parseToolName, parseTokenValue, parseWireText, refuse } from '#src/protocol/primitives.ts';
 import type { ExchangeName, ExchangeVersion, OptIn, Refusal, RequestId, TokenName, TokenValue, ToolName } from '#src/protocol/primitives.ts';
-import type { Result } from '#src/protocol/result.ts';
+import type { Result } from '@stateforge-labs/session-ledger';
 import type { ParsedValue } from '#src/protocol/codec.ts';
 
 export function unwrap<T, E>(result: Result<T, E>): T {

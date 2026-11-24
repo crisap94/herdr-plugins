@@ -1,24 +1,24 @@
 import { uncheckedTypeId } from '#src/recap/domain/type-id.ts';
 import { parseFactIndex } from '#src/recap/domain/fact-index.ts';
-import { parseUsd } from '#src/recap/domain/usd.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import { must as mustParsed } from '#src/protocol/result.ts';
-import { countOf, parseCount } from '#src/recap/domain/count.ts';
+import { parseUsd } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import { must as mustParsed } from '@stateforge-labs/session-ledger';
+import { countOf, parseCount } from '@stateforge-labs/session-ledger';
 import { uncheckedRatio, parseDecisionId, parseCompactionId, parseTabId } from '#src/recap/domain/ids.ts';
 import { agentKind } from '#test/support/ids.ts';
-import { instant, duration } from '#src/recap/domain/time.ts';
+import { instant, duration } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { paneId, tabId } from '#test/support/ids.ts';
-import type { AnswerTally, DecisionDraft } from '#src/ports/autocompact-records.ts';
+import type { AnswerTally, DecisionDraft } from '@stateforge-labs/session-ledger';
 import type { Store } from '#src/adapters/db/database.ts';
 import { memoryStore, must } from './support.ts';
 import { idOf } from '#src/adapters/db/typeid.ts';
 import { decode } from '#src/adapters/db/checked-fact-codec.ts';
-import { parseLaneStatusAtDecision } from '#src/recap/domain/autocompact.ts';
+import { parseLaneStatusAtDecision } from '@stateforge-labs/session-ledger';
 import { listingOf as listing } from '#src/recap/application/autocompact-listing.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
-import type { Probability } from '#src/recap/domain/probability.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
+import type { Probability } from '@stateforge-labs/session-ledger';
 
 const tallyOf = (record: Readonly<Record<string, number>>): AnswerTally => new Map(Object.entries(record).map(([key, value]): readonly [Text, Probability] => [textOf(key), uncheckedRatio(value)]));
 

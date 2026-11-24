@@ -11,10 +11,10 @@ import { boundaryOutcomes } from '#src/experiment/outcomes.ts';
 import type { BoundaryOutcome } from '#src/experiment/outcomes.ts';
 import { stratifyMoments } from '#src/experiment/stratify.ts';
 import type { Moment } from '#src/experiment/stratify.ts';
-import { must } from '#src/protocol/result.ts';
-import { countOf, parseCount } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { countOf, parseCount } from '@stateforge-labs/session-ledger';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 const asText = (value: string): Text => must(parseText(value));
 const asFsPath = (value: string): FsPath => must(parseFsPath(value));
 

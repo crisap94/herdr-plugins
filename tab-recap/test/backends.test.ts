@@ -9,13 +9,13 @@ import { dirsOf, PathHarnessDirectory, presenceOnPath } from '#src/adapters/harn
 import { Backends, intersect, pick } from '#src/daemon/backends.ts';
 import { backendFrom, modelsFrom, type BackendChoice } from '#src/daemon/config.ts';
 import type { HarnessList } from '#src/ports/harnesses.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import { unknown } from '@stateforge-labs/session-ledger';
 import { fakeRuntime } from '#test/fakes/harness-runtime.ts';
 import { causeOf } from './fakes/cause.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseDirectory } from '#src/recap/domain/directory.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseDirectory } from '@stateforge-labs/session-ledger';
 import { agentKind } from '#test/support/ids.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 const found = (...ids: string[]): HarnessList => ({ kind: 'available', ids: ids.map((id) => agentKind(id)) });
 const get = (values: Record<string, string>) => (key: string): Text | undefined => (values[key] === undefined ? undefined : textOf(values[key]));

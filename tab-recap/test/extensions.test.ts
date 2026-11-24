@@ -2,9 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { notesByPaneOf, warningTextsOf } from '#src/extensions/load.ts';
 import type { ExtensionPort, PaneNote, PaneNotesResult } from '#src/ports/extension.ts';
-import { unknown } from '#src/ports/unknowable.ts';
+import { unknown } from '@stateforge-labs/session-ledger';
 import { paneId } from '#test/support/ids.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 const note = (label: string): PaneNote => ({ label: textOf(label), at: null, details: [] });
 

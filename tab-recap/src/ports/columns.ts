@@ -1,10 +1,10 @@
 import type { Shape } from '#src/recap/domain/board.ts';
-import type { Count } from '#src/recap/domain/count.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
 import type { Placed, Split } from '#src/recap/domain/layout.ts';
 import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
-import type { Probability } from '#src/recap/domain/probability.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
+import type { Probability } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Unknown } from '@stateforge-labs/session-ledger';
 
 export type OpenResult = { readonly kind: 'opened'; readonly pane: SessionKey } | Unknown;
 

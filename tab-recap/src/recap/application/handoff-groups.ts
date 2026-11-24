@@ -1,15 +1,15 @@
-import { must } from '#src/protocol/result.ts';
-import { textOf as asText } from '#src/recap/domain/text.ts';
-import type { Fact } from '#src/recap/domain/fact.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { textOf as asText } from '@stateforge-labs/session-ledger';
+import type { Fact } from '@stateforge-labs/session-ledger';
 import type { HandoffBody, HandoffContent, HandoffEntry, HandoffGroup, HandoffGroupId } from '#src/recap/domain/handoff-content.ts';
 import { compareIds, HANDOFF_GROUP_IDS } from '#src/recap/domain/handoff-content.ts';
 import { cleanHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import { vetHandoffText } from '#src/recap/domain/handoff-vetting.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import type { Text } from '#src/recap/domain/text.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
+import { parseText } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 import { HANDOFF_CLOSED_SHOWN, HANDOFF_CLOSED_WINDOW_MS, HANDOFF_DONE_SHOWN, HANDOFF_LINKS_SHOWN } from './handoff-limits.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 export interface GroupedFacts {
     readonly at: Instant;

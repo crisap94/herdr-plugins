@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Derive, Event, Keys, Seen, Timeline } from './support/api.ts';
 import { loadGui, storage } from './support/register.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 
 const HOUR = 3_600_000;
 const NOW = Date.parse('2026-11-08T12:00:00Z');

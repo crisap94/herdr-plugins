@@ -1,16 +1,17 @@
-import { err, ok, type Result } from '#src/protocol/result.ts';
+import { err, ok, type Result } from '@stateforge-labs/session-ledger';
 import { allHiddenOf, type HiddenState } from '#src/recap/domain/board.ts';
-import type { RecapSections } from '#src/recap/domain/shape.ts';
-import type { RecapTask } from '#src/recap/domain/tasks.ts';
-import { parseTextOrNull, textOf, type Text } from '#src/recap/domain/text.ts';
-import { recapRunningOf, type SessionCursor, type Recap } from '#src/ports/recap-records.ts';
-import { cursorOf as positionOf, sourcePathOf } from '#src/ports/transcripts.ts';
+import type { RecapSections } from '@stateforge-labs/session-ledger';
+import type { RecapTask } from '@stateforge-labs/session-ledger';
+import { parseTextOrNull, textOf, type Text } from '@stateforge-labs/session-ledger';
+import { recapRunningOf, type SessionCursor, type Recap } from '@stateforge-labs/session-ledger';
+import { sourcePathOf } from '@stateforge-labs/session-ledger';
+import { cursorOf as positionOf } from '@stateforge-labs/session-ledger';
 import type { VisibilityAsk } from '#src/ports/requests.ts';
-import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
 import { uncheckedPaneId, parseAgentKind, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { usdOf } from '#src/recap/domain/usd.ts';
-import { paneIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
+import { usdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '@stateforge-labs/session-ledger';
 
 type Row = Record<string, unknown>;
 

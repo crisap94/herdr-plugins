@@ -1,4 +1,4 @@
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { emptyBoard } from '#src/recap/domain/board.ts';
@@ -10,7 +10,7 @@ import type { ClosedLane } from '#src/recap/domain/closures.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { reconciliation, seenColumn, seenLane, sessionObservation, statusObservation, switchedObservation } from '#test/support/seen.ts';
 
 const lane = (pane: string, tab: string, status = 'idle', agent = 'claude'): SeenLane =>

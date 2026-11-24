@@ -1,8 +1,8 @@
-import type { WebBase } from '#src/ports/lane-repo.ts';
-import type { Result } from '#src/protocol/result.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import type { Text } from '#src/recap/domain/text.ts';
+import type { WebBase } from '@stateforge-labs/session-ledger';
+import type { Result } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText } from '@stateforge-labs/session-ledger';
+import type { Text } from '@stateforge-labs/session-ledger';
 
 const SCP_LIKE = /^(?:[^@/:\s]+@)?([^/:\s]+):(?!\/)(.+)$/u;
 const CONTROL = /[\p{Cc}\s]/u;

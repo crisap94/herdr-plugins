@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { observe, request, withdraw } from '#src/protocol/requester.ts';
 import type { AnswerState } from '#src/protocol/requester.ts';
 import { parseFieldText, parseRequestId, parseTokenValue } from '#src/protocol/primitives.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { RequestId } from '#src/protocol/primitives.ts';
 import { compactLike, handoffLike, nameOf, parsedOf, toolOf, unwrap } from './fakes/protocol-exchanges.ts';
 

@@ -1,4 +1,4 @@
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -9,11 +9,11 @@ import { loadSettings } from '#src/daemon/config.ts';
 import { cleanScreen, screenEntries, steady } from '#src/recap/application/screen-text.ts';
 import { DEFAULT_POLICY, screenKindsOf, screenSetting, wantsKind } from '#src/recap/domain/policy.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import { UNREAD, sourcePathOf } from '#src/ports/transcripts.ts';
-import type { Chunk } from '#src/ports/transcripts.ts';
+import { UNREAD, sourcePathOf } from '@stateforge-labs/session-ledger';
+import type { Chunk } from '@stateforge-labs/session-ledger';
 import type { ScreenOutcome, ScreenReader } from '#src/ports/screens.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
-import { countOf, type Count } from '#src/recap/domain/count.ts';
+import { countOf, type Count } from '@stateforge-labs/session-ledger';
 import { causeOf } from './fakes/cause.ts';
 import { seenLane } from '#test/support/seen.ts';
 

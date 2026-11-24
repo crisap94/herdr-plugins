@@ -1,9 +1,9 @@
-import { parseProbability } from '#src/recap/domain/probability.ts';
+import { parseProbability } from '@stateforge-labs/session-ledger';
 import { probabilityRequired, type CheckedCoverage, type MissingPart } from '#src/recap/application/brief-coverage.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { usdOf } from '#src/recap/domain/usd.ts';
-import type { Section } from '#src/recap/domain/fact.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { usdOf } from '@stateforge-labs/session-ledger';
+import type { Section } from '@stateforge-labs/session-ledger';
 
 export interface PlainCoverage {
     readonly ok: boolean;

@@ -1,10 +1,10 @@
-import { brand, type Brand } from '@stateforge-labs/session-ledger/unstable/recap/domain/brand.ts';
+import { brand, type Brand } from '@stateforge-labs/session-ledger';
 import type { Lane } from './lane.ts';
 import type { SessionKey, ScopeId } from './ids.ts';
-import type { Count } from './count.ts';
+import type { Count } from '@stateforge-labs/session-ledger';
 import type { RestoredLane } from './closures.ts';
-import type { Text } from './text.ts';
-import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 
 export type Shape = 'side' | 'bar';
 

@@ -8,8 +8,8 @@ import { desktopDocumentCommand } from './desktop-document.ts';
 import { settingsCommand } from './desktop-settings.ts';
 import { enableDesktopDaemon, ensureDesktopDaemon, stopDesktopDaemon } from './desktop-daemon.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
-import { parseText } from '#src/recap/domain/text.ts';
-import { must } from '#src/protocol/result.ts';
+import { parseText } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 
 const OK = 0;
 const FAILED = 1;

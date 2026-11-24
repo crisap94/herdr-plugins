@@ -1,4 +1,4 @@
-import type { Text } from './text.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
 
 export type TelemetryTags = 'on' | 'off';
 

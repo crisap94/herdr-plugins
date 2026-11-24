@@ -1,11 +1,11 @@
 import { fitBytes, unfenced } from '@stateforge-labs/harness-adapters/text';
 
 import type { HarnessAsk } from '#src/ports/harness.ts';
-import type { RecapRequest } from '#src/ports/summarizer.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import { TRANSCRIPT_BUDGET, writerContext } from '#src/recap/application/writer-context.ts';
+import type { RecapRequest } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import { TRANSCRIPT_BUDGET, writerContext } from '@stateforge-labs/session-ledger';
 import { instructions } from './recap-instructions.ts';
 
 export { instructions };

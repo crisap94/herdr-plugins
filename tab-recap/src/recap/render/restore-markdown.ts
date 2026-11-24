@@ -1,5 +1,5 @@
 import type { ByteBudget } from '#src/recap/domain/byte-budget.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import type { RestoreBody } from '#src/recap/domain/restore-content.ts';
 import type { FittedHandoff } from './handoff-budget.ts';
 import { fitGroups } from './handoff-budget.ts';

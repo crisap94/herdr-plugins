@@ -1,10 +1,10 @@
-import { must } from '#src/protocol/result.ts';
-import { textOf as asText } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { textOf as asText } from '@stateforge-labs/session-ledger';
 import { fits, type ByteBudget } from '#src/recap/domain/byte-budget.ts';
-import { brand, type Brand } from '#src/recap/domain/brand.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { brand, type Brand } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import { cleanHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
-import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
+import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger';
 import type { WorksiteFacts, WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 
 export type WorksiteBlock = Brand<string, 'WorksiteBlock'>;

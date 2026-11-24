@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { continuationNote } from '@stateforge-labs/session-ledger/compaction-timing';
-import { cutNote, keepsNote, NOTE_LIMIT, type NoteLimit, parseContinuationNote, parseNoteLimit, withNote } from '@stateforge-labs/session-ledger/unstable/recap/domain/continuation-note.ts';
-import { awaitedNames, backgroundItem, backgroundLabel, backgroundTool } from '@stateforge-labs/session-ledger/unstable/recap/domain/in-flight.ts';
-import { err, must, ok } from '@stateforge-labs/session-ledger/unstable/protocol/result.ts';
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { cutNote, keepsNote, NOTE_LIMIT, type NoteLimit, parseContinuationNote, parseNoteLimit, withNote } from '@stateforge-labs/session-ledger';
+import { awaitedNames, backgroundItem, backgroundLabel, backgroundTool } from '@stateforge-labs/session-ledger';
+import { err, must, ok } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 const limit = (n: number): NoteLimit => must(parseNoteLimit(n));
 

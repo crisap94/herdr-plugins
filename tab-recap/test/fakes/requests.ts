@@ -2,7 +2,7 @@ import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import type { AnsweredPane, CompactAsk, HandoffAskRecord, HandoffAsk, RequestPort, VisibilityAsk, Withdrawal } from '#src/ports/requests.ts';
 import type { HandoffId, ScopeId } from '#src/recap/domain/ids.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 
 export class MemoryRequests implements RequestPort {
     private readonly now: () => number;

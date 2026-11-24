@@ -1,8 +1,8 @@
-import { must } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import { YES } from '#src/recap/domain/gui-tab-parts.ts';
-import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '#src/recap/domain/text.ts';
-import { duration, type Instant } from '#src/recap/domain/time.ts';
+import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '@stateforge-labs/session-ledger';
+import { duration, type Instant } from '@stateforge-labs/session-ledger';
 import { API_POLL_CAP_S, API_POLL_DEFAULT_S } from '../constants.ts';
 import type { BusRead } from '../bus.ts';
 import type { ApiCall, ApiContext } from './call.ts';

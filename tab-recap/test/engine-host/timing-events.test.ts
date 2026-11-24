@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import type { LedgerEvent } from '@stateforge-labs/session-ledger';
 import type { Candidate } from '@stateforge-labs/session-ledger/compaction-timing';
 import { candidatesOf } from '#src/daemon/autocompact.ts';
-import { AutocompactSweep } from '#src/daemon/autocompact-sweep.ts';
+import { AutocompactSweep } from '@stateforge-labs/session-ledger';
 import { SLOT_TABLE } from '#src/daemon/slot-table.ts';
 import { parseSwitch, startSlots, taps, type Line, type SlotContext, type SlotKey, type Slots, type Switch } from '#src/daemon/slots.ts';
 import { emptyBoard, type Board } from '#src/recap/domain/board.ts';
 import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
-import type { SafePointWatch } from '#src/recap/application/autocompact.ts';
+import type { SafePointWatch } from '@stateforge-labs/session-ledger';
 import { rows, world, type World } from '../autocompact-world.ts';
 import { seenLane } from '#test/support/seen.ts';
 

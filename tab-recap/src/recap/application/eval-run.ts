@@ -1,13 +1,13 @@
 import type { JudgePort } from '#src/ports/judge.ts';
 import type { InputFilter, RunFilter, RunInputReader } from '#src/ports/run-inputs.ts';
 import type { VerdictStore } from '#src/ports/verdicts.ts';
-import { countOf, type Count } from '#src/recap/domain/count.ts';
+import { countOf, type Count } from '@stateforge-labs/session-ledger';
 import { uncheckedTabId } from '#src/recap/domain/ids.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { agreeLines, candidateText, gateLines, reportText } from '#src/recap/render/eval.ts';
 import type { Style } from '#src/recap/render/wrap.ts';
-import { installableHarnessSentence } from '#src/recap/domain/backend.ts';
+import { installableHarnessSentence } from '@stateforge-labs/session-ledger';
 import { answerOf, candidatesOf, labelVerdicts } from './eval-label.ts';
 import type { Candidate } from './eval-label.ts';
 import type { EvalRequest } from './eval-request.ts';

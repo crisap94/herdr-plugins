@@ -1,6 +1,6 @@
 import type { FleetFrame } from '#src/ports/fleet-source.ts';
 import type { SeenLane } from '#src/recap/domain/lane.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 type FrameField = 'pane_id' | 'tab_id' | 'workspace_id' | 'agent' | 'agent_status' | 'cwd' | 'terminal_title_stripped';
 

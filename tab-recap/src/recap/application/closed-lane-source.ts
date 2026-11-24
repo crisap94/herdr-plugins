@@ -1,17 +1,17 @@
 import { isUnknownRead, type GuardedLedger } from '#src/ports/guarded-reads.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
-import type { Fact, TaskId } from '#src/recap/domain/fact.ts';
+import type { Fact, TaskId } from '@stateforge-labs/session-ledger';
 import { inWindow } from '#src/recap/domain/retention.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
-import type { Instant } from '#src/recap/domain/time.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import type { Instant } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
 import type { ClosureReader, ClosureRuns } from '#src/ports/closed-lanes.ts';
-import { isUnknown, unreadableOf } from '#src/ports/unknowable.ts';
-import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
-import type { Unknown } from '#src/ports/unknowable.ts';
+import { isUnknown, unreadableOf } from '@stateforge-labs/session-ledger';
+import { failureCauseOf, parseThrown } from '@stateforge-labs/session-ledger';
+import type { Unknown } from '@stateforge-labs/session-ledger';
 import type { HandoffLane } from './handoff-render.ts';
 import type { ClosedView } from './closed-view.ts';
-import { CLOSED_SHOWN_MS } from '@stateforge-labs/session-ledger/unstable/recap/application/ledger-input.ts';
+import { CLOSED_SHOWN_MS } from '@stateforge-labs/session-ledger';
 
 export type ClosedLaneResolution =
     | { readonly kind: 'found'; readonly task: TaskId; readonly facts: readonly Fact[]; readonly view: ClosedView }

@@ -1,14 +1,14 @@
 import { parseArgs } from 'node:util';
-import type { SkipRow, StoredDecisionRow } from '#src/ports/autocompact-records.ts';
-import type { Policy } from '#src/recap/domain/autocompact.ts';
-import type { CompactTuning } from '#src/recap/domain/autocompact-style.ts';
-import { moneyOf } from './autocompact-line.ts';
+import type { SkipRow, StoredDecisionRow } from '@stateforge-labs/session-ledger';
+import type { Policy } from '@stateforge-labs/session-ledger';
+import type { CompactTuning } from '@stateforge-labs/session-ledger';
+import { moneyOf } from '@stateforge-labs/session-ledger';
 import type { Messages } from '#src/i18n/index.ts';
-import { must, type Result } from '#src/protocol/result.ts';
-import { parseInstant, parseMilliseconds, type Instant, type Milliseconds } from '#src/recap/domain/time.ts';
-import type { Usd } from '#src/recap/domain/usd.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
-import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
+import { must, type Result } from '@stateforge-labs/session-ledger';
+import { parseInstant, parseMilliseconds, type Instant, type Milliseconds } from '@stateforge-labs/session-ledger';
+import type { Usd } from '@stateforge-labs/session-ledger';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
 
 export const AUTOCOMPACT_USAGE = 'USAGE: tab-recap autocompact [--all]';
 export const LISTED = 20;

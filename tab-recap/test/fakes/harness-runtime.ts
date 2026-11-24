@@ -8,7 +8,7 @@ import type { BackendHarness, HarnessAsk, HarnessChoice } from '#src/ports/harne
 import type { Effort } from '#src/recap/domain/effort.ts';
 import type { JobTag } from '#src/recap/domain/job-tag.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
 
 export { fakeOutput } from '@stateforge-labs/harness-adapters/testing';

@@ -3,13 +3,13 @@ import { tokenEntries } from './fakes/token-entries.ts';
 import assert from 'node:assert/strict';
 import { PaneTypingLease } from '#src/recap/application/typing-lease.ts';
 import { LEASE, LEASE_TTL_MS } from '#src/recap/domain/typing-lease.ts';
-import { saying, unknown } from '#src/ports/unknowable.ts';
+import { saying, unknown } from '@stateforge-labs/session-ledger';
 import { causeOf } from './fakes/cause.ts';
 import type { Done } from '#src/ports/columns.ts';
 import type { LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import type { PaneTokens, PaneTokensResult } from '#src/ports/pane-tokens.ts';
 import { FakePanes } from './fakes/herdr-panes.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { uncheckedMilliseconds } from '#src/recap/domain/ids.ts';
 import { paneId } from '#test/support/ids.ts';
 

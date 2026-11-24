@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { collapsedText } from '#src/recap/domain/text-collapse.ts';
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 import { plainText } from '#src/recap/domain/coordination.ts';
 import { requestNoteOf } from './fakes/compact-note.ts';
 

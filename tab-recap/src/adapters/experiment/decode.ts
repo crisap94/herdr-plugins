@@ -1,16 +1,16 @@
 import type { FollowingEntry, Hindsight } from '#src/experiment/hindsight.ts';
 import type { LabelledMoment } from '#src/experiment/kappa-report.ts';
 import type { Label } from '#src/experiment/stats.ts';
-import type { HistoryFact } from '#src/ports/ledger.ts';
-import type { CallKind, Entry } from '#src/ports/transcripts.ts';
-import type { Result } from '#src/protocol/result.ts';
-import type { DeciderState, OpenWorkItem, Turn } from '#src/recap/application/autocompact-state.ts';
-import { SKIP_GATES, type Gate } from '#src/recap/domain/autocompact.ts';
-import { parseCount } from '#src/recap/domain/count.ts';
-import { isClosedWhy, isSection } from '#src/recap/domain/fact.ts';
-import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
-import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
-import { parseInstant } from '#src/recap/domain/time.ts';
+import type { HistoryFact } from '@stateforge-labs/session-ledger';
+import type { CallKind, Entry } from '@stateforge-labs/session-ledger';
+import type { Result } from '@stateforge-labs/session-ledger';
+import type { DeciderState, OpenWorkItem, Turn } from '@stateforge-labs/session-ledger';
+import { SKIP_GATES, type Gate } from '@stateforge-labs/session-ledger';
+import { parseCount } from '@stateforge-labs/session-ledger';
+import { isClosedWhy, isSection } from '@stateforge-labs/session-ledger';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
+import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger';
+import { parseInstant } from '@stateforge-labs/session-ledger';
 
 import { parseRow, parseRows, type Row } from '../transcripts/jsonl.ts';
 import type { Point as PointShape } from './point.ts';

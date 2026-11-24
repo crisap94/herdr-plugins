@@ -1,10 +1,10 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
-import { err, must, ok, type Result } from '#src/protocol/result.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '#src/recap/domain/text.ts';
+import { err, must, ok, type Result } from '@stateforge-labs/session-ledger';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
+import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '@stateforge-labs/session-ledger';
 import { NO, YES, type Flag } from '#src/recap/domain/gui-tab-parts.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { API_BODY_CAP, API_HEALTH_PATH, API_HOST, API_LOCALHOST, API_TOKEN_BYTES } from '../constants.ts';
 import type { ApiContext } from './call.ts';
 import { removeDiscovery, writeDiscovery } from './discovery.ts';

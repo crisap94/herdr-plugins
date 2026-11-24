@@ -1,5 +1,5 @@
-import type { Text } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import type { Instant } from '@stateforge-labs/session-ledger/unstable/recap/domain/time.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Instant } from '@stateforge-labs/session-ledger';
 export const LEASE = 'typing-tab-recap';
 export const LEASE_TTL_MS = 60_000;
 const FOREIGN = /^typing-.+$/;

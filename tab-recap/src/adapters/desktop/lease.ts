@@ -1,8 +1,8 @@
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { must } from '#src/protocol/result.ts';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 import { NO, YES, type Flag } from '#src/recap/domain/gui-tab-parts.ts';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
-import { instant, type Instant } from '#src/recap/domain/time.ts';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { LEASE_CAP, LEASE_MS } from './constants.ts';
 
 export class OpenLeases {

@@ -12,10 +12,10 @@ import { LaneTokenPublisher, TICK_MS, TTL_MS } from '#src/recap/application/lane
 import { factsOf } from '#src/recap/application/lane-facts.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import type { Report } from './fakes/lane-tokens.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { countOf } from '@stateforge-labs/session-ledger';
 import { uncheckedTokenName } from '#src/recap/domain/ids.ts';
-import { instant, parseMilliseconds, type Instant } from '#src/recap/domain/time.ts';
-import { must } from '#src/protocol/result.ts';
+import { instant, parseMilliseconds, type Instant } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
 import { seenLane } from '#test/support/seen.ts';
 
 const facts = (over: Partial<LaneTokenFacts> = {}): LaneTokenFacts => ({ share: countOf(40), recapAt: instant(1000), needs: countOf(0), ...over });

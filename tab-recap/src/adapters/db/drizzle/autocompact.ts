@@ -1,8 +1,9 @@
 import { blob, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { compositeKey } from './columns.ts';
 import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
-import type { UncheckedReason } from '#src/recap/domain/autocompact.ts';
-import type { DecisionGate, DecisionMode, Verdict } from '#src/ports/autocompact-records.ts';
+import type { UncheckedReason } from '@stateforge-labs/session-ledger';
+import type { DecisionGate, DecisionMode } from '@stateforge-labs/session-ledger';
+import type { RecordedVerdict as Verdict } from '@stateforge-labs/session-ledger';
 import { BLOB_MODE } from './constants.ts';
 
 export const autocompactDecision = sqliteTable('autocompact_decision', {

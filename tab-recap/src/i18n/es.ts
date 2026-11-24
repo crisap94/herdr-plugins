@@ -1,10 +1,10 @@
 import type { Catalog, Messages } from './messages.ts';
 import { renderRefusal } from '#src/host/policy.mjs';
 import { SPANISH_REFUSAL } from './refusal.ts';
-import { must } from '#src/protocol/result.ts';
-import { parseText, textOf } from '#src/recap/domain/text.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import { parseText, textOf } from '@stateforge-labs/session-ledger';
 import { agoTextOf } from './relative.ts';
-import { BACKEND_IDS, harnessChoiceLabels, harnessLabels } from '#src/recap/domain/backend.ts';
+import { BACKEND_IDS, harnessChoiceLabels, harnessLabels } from '@stateforge-labs/session-ledger';
 
 export const spanish: Catalog = {
     locale: 'es',

@@ -1,9 +1,9 @@
 import type { Database } from 'bun:sqlite';
 import { sql } from 'drizzle-orm';
-import type { HistoryFact } from '#src/ports/ledger.ts';
-import { isClosedWhy, isSection } from '#src/recap/domain/fact.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import type { HistoryFact } from '@stateforge-labs/session-ledger';
+import { isClosedWhy, isSection } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import { ormOf, type Orm } from './orm.ts';
 import { retiredFloor } from './retention.ts';

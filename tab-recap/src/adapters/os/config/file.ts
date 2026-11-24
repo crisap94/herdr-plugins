@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
-import { must } from '#src/protocol/result.ts';
-import type { Result } from '#src/protocol/result.ts';
-import type { EnvironmentName } from '#src/recap/domain/backend.ts';
+import { must } from '@stateforge-labs/session-ledger';
+import type { Result } from '@stateforge-labs/session-ledger';
+import type { EnvironmentName } from '@stateforge-labs/session-ledger';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
-import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
 import { writeAtomically } from '../atomic-file.ts';
 
 export function setValues(path: FsPath, values: ReadonlyMap<EnvironmentName, Text>, parse: (text: Text) => Result<ReadonlyMap<EnvironmentName, Text>, ParseFailure>): void {

@@ -1,5 +1,5 @@
-import type { Text } from '#src/recap/domain/text.ts';
-import type { Unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
+import type { Text } from '@stateforge-labs/session-ledger';
+import type { Unknown } from '@stateforge-labs/session-ledger';
 
 export interface Shown {
     readonly kind: 'shown';

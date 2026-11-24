@@ -7,7 +7,7 @@ import type { MigrationHistory, NewerResult, OpenResult, ReadOnlyResult, ReadyRe
 import { backupsOf } from '#src/adapters/db/backup.ts';
 import { closeDatabase, connectReadOnly, MEMORY, writeTx } from '#src/adapters/db/connection.ts';
 import { openDatabase, openForRole, type Opened, type StaleDatabase } from '#src/adapters/db/open.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import { parseFsPath, fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { versionOf } from '#src/adapters/db/migrate.ts';
 

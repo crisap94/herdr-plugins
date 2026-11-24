@@ -1,17 +1,18 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { capabilityWording, inFlightReason, splitReason } from '@stateforge-labs/session-ledger/unstable/ports/capability-reasons.ts';
-import { textOf, parseTextOrNull } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import { usdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/usd.ts';
-import { blankRecap, hasRecap, recappedOf, recapRunningOf } from '@stateforge-labs/session-ledger/unstable/ports/recap-records.ts';
-import { TranscriptRegistry } from '@stateforge-labs/session-ledger/unstable/ports/transcript-registry.ts';
-import { isScreenSource, SCREEN_PREFIX } from '@stateforge-labs/session-ledger/unstable/ports/transcript-source.ts';
-import { countOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/count.ts';
-import { NO_RUNNING, runningOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/in-flight.ts';
-import { sourcePathOf, type SessionReader } from '@stateforge-labs/session-ledger/unstable/ports/transcripts.ts';
-import { agentKindOf, paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/lane-shape.ts';
-import { causeOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/failure-cause.ts';
-import { exitCodeOf, isUnknown, saying, unknown } from '@stateforge-labs/session-ledger/unstable/ports/unknowable.ts';
+import { capabilityWording, inFlightReason, splitReason } from '@stateforge-labs/session-ledger';
+import { textOf, parseTextOrNull } from '@stateforge-labs/session-ledger';
+import { usdOf } from '@stateforge-labs/session-ledger';
+import { blankRecap, hasRecap, recappedOf, recapRunningOf } from '@stateforge-labs/session-ledger';
+import { TranscriptRegistry } from '@stateforge-labs/session-ledger';
+import { isScreenSource, SCREEN_PREFIX } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { NO_RUNNING, runningOf } from '@stateforge-labs/session-ledger';
+import { sourcePathOf } from '@stateforge-labs/session-ledger';
+import { type LegacySessionReader as SessionReader } from '@stateforge-labs/session-ledger';
+import { agentKindOf, paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger';
+import { causeOf } from '@stateforge-labs/session-ledger';
+import { exitCodeOf, isUnknown, saying, unknown } from '@stateforge-labs/session-ledger';
 import { text, tabId, paneId, running } from '@stateforge-labs/session-ledger/testkit';
 
 const readerOf = (agent: string): SessionReader => ({

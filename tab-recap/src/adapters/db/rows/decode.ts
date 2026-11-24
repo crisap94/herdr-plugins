@@ -1,7 +1,7 @@
 import type { Statement } from 'bun:sqlite';
-import { countOf, type Count } from '#src/recap/domain/count.ts';
+import { countOf, type Count } from '@stateforge-labs/session-ledger';
 import type { ScopeId } from '#src/recap/domain/ids.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 import { BadRow, type Column, type Row } from '../row-guard.ts';
 
 export function text(row: Row, key: Column): Text {

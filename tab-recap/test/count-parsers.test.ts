@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseCount, parsePositiveCount } from '#src/recap/domain/count.ts';
+import { parseCount, parsePositiveCount } from '@stateforge-labs/session-ledger';
 
 test('a count accepts zero and every whole non-negative number', () => {
     assert.deepEqual(parseCount(0), { kind: 'ok', value: 0 });

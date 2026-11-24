@@ -1,13 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { Entry } from '#src/ports/transcripts.ts';
-import { capStubs, MAX_STUBS, triggersOf } from '#src/recap/application/triggers.ts';
-import type { Stub } from '#src/recap/application/triggers.ts';
-import { brand } from '#src/recap/domain/brand.ts';
-import { QUOTE_CHARS, quotedIn } from '#src/recap/domain/quote.ts';
+import type { Entry } from '@stateforge-labs/session-ledger';
+import { capStubs, MAX_STUBS, triggersOf } from '@stateforge-labs/session-ledger';
+import type { Stub } from '@stateforge-labs/session-ledger';
+import { brand } from '@stateforge-labs/session-ledger';
+import { QUOTE_CHARS, quotedIn } from '@stateforge-labs/session-ledger';
 import { longTurn } from '#test/fakes/long-turn.ts';
-import { textOf } from '#src/recap/domain/text.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 
 const shell = (text: string): Entry => ({ role: 'tool', kind: 'shell', text: textOf(text), at: instant(1_000) });
 const kindsOf = (entries: readonly Entry[]): readonly string[] => triggersOf(entries).map((stub) => stub.kind);

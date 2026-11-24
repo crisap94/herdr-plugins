@@ -1,6 +1,6 @@
-import { textOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/text.ts';
-import { countOf } from '#src/recap/domain/count.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { freshnessTextOf } from '#src/recap/render/freshness.ts';

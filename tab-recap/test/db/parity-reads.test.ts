@@ -3,15 +3,15 @@ import type { Database } from 'bun:sqlite';
 import assert from 'node:assert/strict';
 import { ClosedLanesRepository, parseClosedLaneRow } from '#src/adapters/db/closed-lanes.ts';
 import type { LedgerRows } from '#src/adapters/db/ledger-rows.ts';
-import type { Recap } from '#src/ports/recap-records.ts';
+import type { Recap } from '@stateforge-labs/session-ledger';
 import { RecapReader } from '#src/adapters/db/recap-read.ts';
 import { type ScopeId } from '#src/recap/domain/ids.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
-import { instant } from '#src/recap/domain/time.ts';
+import { instant } from '@stateforge-labs/session-ledger';
 import { closedDaysOf } from '../fakes/closed-days.ts';
 import { expectSameEffect, normalise, withParity } from './parity.ts';
-import { textOf } from '#src/recap/domain/text.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
 
 const keyOf = (n: number): Uint8Array => Uint8Array.from({ length: 16 }, () => n);
 const L = (n: number): string => `X'${Buffer.from(keyOf(n)).toString('hex')}'`;

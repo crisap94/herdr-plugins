@@ -1,13 +1,13 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseLegacyHidden, parseLegacyRecapFile, parseLegacyViewFile, parseLegacyVisibility, type LegacyViewFile } from '#src/ports/legacy-store-files.ts';
-import type { Recap } from '#src/ports/recap-records.ts';
+import type { Recap } from '@stateforge-labs/session-ledger';
 import type { VisibilityAsk } from '#src/ports/requests.ts';
-import { must, type Result } from '#src/protocol/result.ts';
+import { must, type Result } from '@stateforge-labs/session-ledger';
 import type { HiddenState } from '#src/recap/domain/board.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import type { Presence } from './equivalence.ts';
 
 type Kind = 'recaps' | 'tabs' | 'requests' | 'visibility';

@@ -7,7 +7,7 @@ import { receiverLayer } from '#src/adapters/hooks/layer.ts';
 import { parseLine, type Line } from '#src/daemon/slots.ts';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import { HOOK_EVENTS, HOOK_LIMITS, PRE_COMPACT_CLAUDE_PATH, type HookReceiver, type PreCompactAnswer, type PreCompactTrigger } from '#src/wire/hooks/contract.ts';
-import { parseText, type Text } from '#src/recap/domain/text.ts';
+import { parseText, type Text } from '@stateforge-labs/session-ledger';
 import { claimSocket } from '#src/wire/socket-claim.ts';
 
 export interface HookEndpointOptions {

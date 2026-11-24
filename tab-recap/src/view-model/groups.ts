@@ -1,6 +1,6 @@
 import { groupsOf as grouped } from '@stateforge-labs/recap-view/unstable/groups.ts';
 import type { TabLaneRecord } from '#src/ports/tab-views.ts';
-import type { RecapTask } from '#src/recap/domain/tasks.ts';
+import type { RecapTask } from '@stateforge-labs/session-ledger';
 import { columnTaskOf, rowOf } from './column.ts';
 
 export interface Group {

@@ -1,14 +1,14 @@
 import type { AgentPanes, PromptStance, Prompted } from '#src/ports/agents.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
-import { failureCauseOf, parseThrown } from '#src/recap/domain/failure-cause.ts';
+import { failureCauseOf, parseThrown } from '@stateforge-labs/session-ledger';
 import type { Acquired } from './typing-lease.ts';
 import type { HandoffConfirmation } from './handoff-confirmation.ts';
 import type { Ready } from './handoff-target.ts';
 import { withTypingLease } from './typing-scope.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
-import { parseMilliseconds, type Milliseconds } from '#src/recap/domain/time.ts';
-import { must } from '#src/protocol/result.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { parseMilliseconds, type Milliseconds } from '@stateforge-labs/session-ledger';
+import { must } from '@stateforge-labs/session-ledger';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 export interface HandoffTyping {
     acquire(pane: SessionKey, waitMs: Milliseconds): Promise<Acquired>;

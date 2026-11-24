@@ -1,8 +1,8 @@
-import { err, ok, type Result } from '#src/protocol/result.ts';
-import type { ParseFailure } from '@stateforge-labs/session-ledger/unstable/recap/domain/parse-failure.ts';
-import { countOf } from '#src/recap/domain/count.ts';
+import { err, ok, type Result } from '@stateforge-labs/session-ledger';
+import type { ParseFailure } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
 import type { Rect } from '#src/recap/domain/layout.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 export interface JsonObject {
     readonly [key: string]: unknown;

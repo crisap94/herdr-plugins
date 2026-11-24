@@ -1,8 +1,8 @@
 import type { Break } from './model.ts';
 import { assertCount, assertMinutes, assertSeconds } from './wording.ts';
 import type { TextChapters } from './wording.ts';
-import { tokensOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/compaction.ts';
-import { countOf } from '@stateforge-labs/session-ledger/unstable/recap/domain/count.ts';
+import { tokensOf } from '@stateforge-labs/session-ledger';
+import { countOf } from '@stateforge-labs/session-ledger';
 
 const RULE = '─';
 const SIDE = RULE.repeat(2);

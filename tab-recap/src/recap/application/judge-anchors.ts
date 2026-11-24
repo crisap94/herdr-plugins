@@ -1,10 +1,10 @@
 import type { AnchorCheck, AnchorChecks } from '#src/ports/judge.ts';
 import type { RunInputReader } from '#src/ports/run-inputs.ts';
 import type { DisagreementRecord } from '#src/ports/verdicts.ts';
-import { must } from '#src/protocol/result.ts';
+import { must } from '@stateforge-labs/session-ledger';
 import type { RunId } from '#src/recap/domain/run-ids.ts';
-import { parseCount, type Count } from '#src/recap/domain/count.ts';
-import { textOf, type Text } from '#src/recap/domain/text.ts';
+import { parseCount, type Count } from '@stateforge-labs/session-ledger';
+import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
 export const ANCHORS_PER_CHECK: Count = must(parseCount(5));
 export const WORST_PER_CHECK: Count = must(parseCount(3));

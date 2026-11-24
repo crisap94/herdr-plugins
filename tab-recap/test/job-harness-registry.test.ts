@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BACKEND_IDS, AUTO_ORDER, JOB_HARNESSES, LEGACY_MODEL_KEYS, MODEL_DEFAULTS } from '#src/recap/domain/backend.ts';
+import { BACKEND_IDS, AUTO_ORDER, JOB_HARNESSES, LEGACY_MODEL_KEYS, MODEL_DEFAULTS } from '@stateforge-labs/session-ledger';
 import { JOB_BY_CHOICES } from '#src/recap/domain/job.ts';
 import { MAKERS } from '#src/daemon/harness-makers.ts';
 

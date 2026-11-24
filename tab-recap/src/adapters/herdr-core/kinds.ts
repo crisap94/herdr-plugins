@@ -1,6 +1,6 @@
 import { parseAgentKind } from '#src/recap/domain/ids.ts';
 import type { HarnessKind } from '#src/recap/domain/ids.ts';
-import type { NonEmptyText } from '#src/recap/domain/text.ts';
+import type { NonEmptyText } from '@stateforge-labs/session-ledger';
 
 const KIND_OF_APP: ReadonlyMap<string, string> = new Map([['claude-code', 'claude'], ['codex', 'codex'], ['opencode', 'opencode']]);
 
