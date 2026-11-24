@@ -4,8 +4,13 @@ import { join } from 'node:path';
 import { err, ok, type Result } from './result.ts';
 import type { Category, Finding } from './domain-findings.ts';
 
-const CONTRACT_FOLDERS: readonly string[] = ['src/contract/', 'src/compaction-timing/'];
 const CONTRACT_CATEGORIES: ReadonlySet<Category> = new Set<Category>(['property', 'container', 'parameter', 'return']);
+
+export interface Rules {
+    readonly brandFile: string | null;
+    readonly contractFolders: readonly string[];
+    readonly callbackContainers: boolean;
+}
 
 export interface Migrations {
     readonly dir: string;
@@ -136,53 +141,56 @@ const entryLabel = (entry: Entry): string => {
     return entry.class === 'migration' ? entry.file : `${entry.file} ${entry.function} ${entry.parameter ?? 'return'}`;
 };
 
-const inContract = (file: string): boolean => CONTRACT_FOLDERS.some((folder) => file.startsWith(folder));
+const inContract = (rules: Rules, file: string): boolean => rules.contractFolders.some((folder) => file.startsWith(folder));
 
 const fieldOf = (finding: Finding): string => finding.parameter ?? finding.site.replace(/^property /, '');
 
-const matchesContract = (entry: Extract<Entry, { readonly class: 'contract' }>, finding: Finding): boolean =>
-    inContract(entry.file) &&
+const matchesContract = (entry: Extract<Entry, { readonly class: 'contract' }>, rules: Rules, finding: Finding): boolean =>
+    inContract(rules, entry.file) &&
     CONTRACT_CATEGORIES.has(finding.category) &&
     entry.symbol === finding.owner &&
     entry.field === fieldOf(finding);
 
-const matchesFunction = (entry: Extract<Entry, { readonly class: 'callback' | 'brand' }>, brandFile: string | null, finding: Finding): boolean => {
-    if (entry.class === 'brand' && entry.file !== brandFile) {
-        return false;
+const coversCategory = (entry: Extract<Entry, { readonly class: 'callback' | 'brand' }>, rules: Rules, finding: Finding): boolean => {
+    if (finding.category === 'parameter' || finding.category === 'return') {
+        return true;
     }
-    const castInBrand = entry.class === 'brand' && finding.category === 'assertion';
-    return (finding.category === 'parameter' || finding.category === 'return' || castInBrand) &&
-        entry.function === finding.owner &&
-        entry.parameter === finding.parameter;
+    return entry.class === 'brand' ? finding.category === 'assertion' : rules.callbackContainers && finding.category === 'container';
 };
 
-const matches = (entry: Entry, released: readonly string[], brandFile: string | null, finding: Finding): boolean => {
+const matchesFunction = (entry: Extract<Entry, { readonly class: 'callback' | 'brand' }>, rules: Rules, finding: Finding): boolean =>
+    (entry.class !== 'brand' || entry.file === rules.brandFile) &&
+    coversCategory(entry, rules, finding) &&
+    entry.function === finding.owner &&
+    entry.parameter === finding.parameter;
+
+const matches = (entry: Entry, released: readonly string[], rules: Rules, finding: Finding): boolean => {
     if (entry.file !== finding.file) {
         return false;
     }
     if (entry.class === 'migration') {
         return released.includes(entry.file);
     }
-    return entry.class === 'contract' ? matchesContract(entry, finding) : matchesFunction(entry, brandFile, finding);
+    return entry.class === 'contract' ? matchesContract(entry, rules, finding) : matchesFunction(entry, rules, finding);
 };
 
-const problemOf = (entry: Entry, released: readonly string[], brandFile: string | null, hits: number): string | undefined => {
+const problemOf = (entry: Entry, released: readonly string[], rules: Rules, hits: number): string | undefined => {
     if (entry.class === 'migration' && !released.includes(entry.file)) {
         return 'names no released migration';
     }
-    if (entry.class === 'brand' && entry.file !== brandFile) {
-        return `is not in ${brandFile ?? 'the brand file: gates/config.json names none'}`;
+    if (entry.class === 'brand' && entry.file !== rules.brandFile) {
+        return `is not in ${rules.brandFile ?? 'the brand file: gates/config.json names none'}`;
     }
-    if (entry.class === 'contract' && !inContract(entry.file)) {
-        return `is not under ${CONTRACT_FOLDERS.join(' or ')}`;
+    if (entry.class === 'contract' && !inContract(rules, entry.file)) {
+        return `is not under ${rules.contractFolders.join(' or ')}`;
     }
     return hits === 0 ? 'matches no finding' : undefined;
 };
 
-export const applyEntries = (findings: readonly Finding[], entries: readonly Entry[], released: readonly string[], brandFile: string | null): Outcome => {
-    const hits = entries.map((entry) => findings.filter((finding) => matches(entry, released, brandFile, finding)));
+export const applyEntries = (findings: readonly Finding[], entries: readonly Entry[], released: readonly string[], rules: Rules): Outcome => {
+    const hits = entries.map((entry) => findings.filter((finding) => matches(entry, released, rules, finding)));
     const stale = entries.flatMap((entry, index) => {
-        const problem = problemOf(entry, released, brandFile, hits[index]?.length ?? 0);
+        const problem = problemOf(entry, released, rules, hits[index]?.length ?? 0);
         return problem === undefined ? [] : [`not supported: exception ${entryLabel(entry)} ${problem}`];
     });
     const excepted = new Set(hits.flat());

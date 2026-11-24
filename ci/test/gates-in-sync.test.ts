@@ -73,9 +73,9 @@ function scratchTree(change: (root: string) => void): readonly string[] {
     }
 }
 
-test('the three packages are units: each holds gates/config.json', () => {
+test('the six units hold gates/config.json: the agent-sdk, the desktop, the plugin and the three packages', () => {
     const units = unitsOf(repository);
-    ['packages/recap-view', 'packages/session-ledger', 'packages/session-ledger-sqlite'].forEach((unit) => assert.ok(units.includes(unit), `${unit} has no gates/config.json`));
+    ['agent-sdk', 'desktop', 'tab-recap', 'packages/recap-view', 'packages/session-ledger', 'packages/session-ledger-sqlite'].forEach((unit) => assert.ok(units.includes(unit), `${unit} has no gates/config.json`));
 });
 
 test('every SYNCED runner file is present and byte-identical in every unit', () => {

@@ -288,7 +288,7 @@ test('path rules 11: with the baseline folder and lane map gone, domain-baseline
 
 test('the glob guard no longer matches the baseline folder, which is gone, and still matches a folder that exists', () => {
     assert.equal(onDisk('tab-recap/ci/domain-types-baseline/*.json'), false);
-    assert.equal(onDisk('tab-recap/ci/domain-types-exceptions/*.json'), true);
+    assert.equal(onDisk('tab-recap/gates/domain-types-exceptions/*.json'), true);
     assert.equal(onDisk('tab-recap/ci/no-such-folder/*.json'), false);
 });
 

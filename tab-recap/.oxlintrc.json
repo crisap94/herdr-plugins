@@ -103,6 +103,7 @@
     {
       "files": [
         "bin/**/*.ts",
+        "gates/**/*.ts",
         "bench/**/*.ts"
       ],
       "rules": {
@@ -120,7 +121,8 @@
     {
       "files": [
         "src/**/*.ts",
-        "bin/**/*.ts"
+        "bin/**/*.ts",
+        "gates/bin/**/*.ts"
       ],
       "rules": {
         "typescript/no-unsafe-assignment": "error",

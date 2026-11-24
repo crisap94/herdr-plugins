@@ -1,0 +1,3 @@
+{
+  "extraBrandFiles": ["packages/session-ledger/src/contract/kernel.ts", "packages/session-ledger/src/recap/domain/brand.ts", "packages/recap-view/src/kernel.ts"]
+}

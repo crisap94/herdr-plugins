@@ -183,7 +183,7 @@ test('probe owners: a domain-types probe whose folder name contains exception-wi
     const probes = [
         'tab-recap/gates/probes/domain-types/good-exception-wire/src/wire/frame.ts',
         'tab-recap/gates/probes/domain-types/bad-exception-wire-outside/expect',
-        'tab-recap/gates/probes/domain-types/bad-exception-wire-parameter/ci/domain-types-exceptions/lead.json',
+        'tab-recap/gates/probes/domain-types/bad-exception-wire-parameter/gates/domain-types-exceptions/lead.json',
     ];
     assert.equal(check('track/FND-W1-view-wire-contract', probes).status, 0);
     const refused = check('track/CI-x', [probes[0] ?? '']);

@@ -67,8 +67,8 @@ Every parameter, return and property in `tab-recap/src/` is a domain type: a `Br
 closed union of literals. Run the check from the plugin directory:
 
 ```bash
-bun bin/check-domain-types.ts                                          # what lint runs
-bun bin/check-domain-types.ts --json                                # every finding, by file and category
+bun gates/bin/check-domain-types.ts                                          # what lint runs
+bun gates/bin/check-domain-types.ts --json                                # every finding, by file and category
 ```
 
 - **Read a `not supported:` line.** It names the file, line, function and the parameter, return or property, says what the type
@@ -76,7 +76,7 @@ bun bin/check-domain-types.ts --json                                # every find
 - **Raw input is `unknown`, parsed once.** A parser is `parse<Name>(input: unknown): Result<Name, E>`, exported from the file that
   declares `<Name>`; a type guard lives in the same file. `unknown` anywhere else fails, including as a type argument (`Record<string, unknown>`, `Promise<unknown>`). A `Date`, a `Buffer` and a numeric `enum` fail too (use a branded instant, a branded byte value or a closed union of string literals; a string `enum` passes). A parameter or a return written as an inline literal union (`state: 'open' | 'closed'`) needs a named alias; a property may be typed by a literal or an inline union of literals. `brand()` is called only by the parser of
   the value it brands, and no other file casts to a brand.
-- **Exceptions are per symbol, never per file or folder.** `ci/domain-types-exceptions/<lane>.json` lists a file, a function and a
+- **Exceptions are per symbol, never per file or folder.** `gates/domain-types-exceptions/<lane>.json` lists a file, a function and a
   parameter or return with a reason, for one of three classes: a Node or third-party callback that forces a primitive, a released
   migration (named by file, derived from the latest `tab-recap-v*` tag), and the one brand function. An entry that no finding
   hits fails.

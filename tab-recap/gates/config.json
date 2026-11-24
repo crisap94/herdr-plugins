@@ -1,0 +1,20 @@
+{
+  "source": ["src", "bin", "test", "ci", "gates"],
+  "domain": "src",
+  "graph": ["src", "bin"],
+  "moduleCountExclude": "src/recap/domain/time.ts",
+  "probes": "gates/probes",
+  "exceptions": "gates/domain-types-exceptions",
+  "baseline": "gates/domain-types-baseline.json",
+  "inheritBaseline": null,
+  "brandFile": "src/recap/domain/brand.ts",
+  "extraBrandFiles": ["packages/session-ledger/src/contract/kernel.ts", "packages/session-ledger/src/recap/domain/brand.ts", "packages/recap-view/src/kernel.ts"],
+  "brandImporters": "gates/brand-importers.json",
+  "migrations": { "dir": "src/adapters/db/schema", "tags": "tab-recap-v*" },
+  "contractFolders": ["src/wire/"],
+  "callbackContainers": true,
+  "biteSeedDir": "src/recap/domain",
+  "context": "CONTEXT.md",
+  "builtins": [],
+  "declaredAhead": []
+}

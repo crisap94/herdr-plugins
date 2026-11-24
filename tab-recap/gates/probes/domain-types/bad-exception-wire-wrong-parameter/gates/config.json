@@ -1,0 +1,5 @@
+{
+  "exceptions": "gates/domain-types-exceptions",
+  "contractFolders": ["src/wire/"],
+  "callbackContainers": true
+}
