@@ -226,6 +226,7 @@ reply finish the request, is the agent about to continue, is it waiting for you 
 exact output only the last turns hold. Only a safe moment compacts; at `TAB_RECAP_AUTOCOMPACT_CEILING` (80 %) it
 compacts without asking. The brief is checked against your goal, open questions, decisions (with their reasons) and
 rules first, and a brief that loses one is written again once, then not used. Claude agents only, by default.
+Decisions are also taken when a piece of work finishes, not only on the timer; set `TAB_RECAP_TIMING_EVENTS=off` to keep the timer only.
 
 The decider is the recap writer's harness at low effort, or the TypeSafe `jev` API
 (`TAB_RECAP_AUTOCOMPACT_BY=jev`). With `jev`, the last prompt and reply, the recent turns, the goal and the open work go to
@@ -370,6 +371,7 @@ variables win over the file, except for the two language keys, where the file (w
 | `TAB_RECAP_KEEP_INPUT_DAYS` | `14` | days the input of each run is kept for the judge (`0` = never keep) |
 | `TAB_RECAP_KEEP_DAYS` | `30` | days a closed tab is kept before the daemon's daily retention pass removes it (`0` = keep everything) |
 | `TAB_RECAP_HOOKS` | `on` | the hook listener: Claude Code and Codex call the daemon at each turn's end (*restart*; see [Hooks](#hooks)) |
+| `TAB_RECAP_TIMING_EVENTS` | `on` | autocompact decisions are also taken when a piece of work finishes, not only on the timer; `off` keeps the timer only (*restart*) |
 | `TAB_RECAP_SELF_ROLL` | `on` | after a plugin upgrade the daemon restarts itself on the new code once no autocompact is running; `off` keeps the old code (*restart*; see [Self-roll](docs/REFERENCE.md#self-roll)) |
 | `TAB_RECAP_VIEW_SERVER` | `on` | the column, the bar and the modal draw from the daemon through the relay pane; `off` stops the daemon's view server and the Recap panes show that the daemon is not reachable; there is no in-process column any more (*restart*; see [Where the view draws from](docs/REFERENCE.md#what-the-recap-is)) |
 
