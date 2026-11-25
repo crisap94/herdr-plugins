@@ -2,7 +2,7 @@ import type { LedgerEvent } from '@stateforge-labs/session-ledger';
 import type { Candidate } from '@stateforge-labs/session-ledger/compaction-timing';
 import type { Mode, Running, SlotContext, SlotModule } from '../slots.ts';
 
-export const defaultOn: Mode = 'off';
+export const defaultOn: Mode = 'on';
 
 export const slot: SlotModule = {
     start: async (context: SlotContext): Promise<Running> => {

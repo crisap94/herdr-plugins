@@ -147,6 +147,7 @@ example take effect after the daemon restarts.
 | `TAB_RECAP_KEEP_DAYS` | `30` | days a closed tab's history is kept; `0` keeps everything |
 | `TAB_RECAP_HOOKS` | `on` | Claude Code and Codex call the daemon at each turn's end, so a recap is written once per turn; nothing is installed until `tab-recap hooks install` (restart) |
 | `TAB_RECAP_SELF_ROLL` | `on` | after a plugin upgrade the daemon restarts itself on the new code once idle; `off` keeps the old code until you restart it (restart) |
+| `TAB_RECAP_TIMING_EVENTS` | `on` | autocompact decisions are also taken when a piece of work finishes, not only on the timer; `off` keeps the timer only (restart) |
 | `TAB_RECAP_VIEW_SERVER` | `on` | the column, the bar and the modal draw from the daemon through the relay pane; `off` stops the daemon's view server and the Recap panes show that the daemon is not reachable; there is no in-process column any more (restart) |
 
 The models, compaction, handoff, autocompact and telemetry settings are in

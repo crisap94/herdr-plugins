@@ -52,11 +52,12 @@ test('EVT-5: with the key off an accomplishment causes no consideration', async 
     await d.slots.stop();
 });
 
-test('EVT-5: with the key unset the slot stays off', async () => {
+test('EVT-5: with the key unset the slot is on', async () => {
     const d = await daemon('unset');
     d.emit(accomplished('w1:t1'));
     await settle();
-    assert.equal(d.w.asked.length, 0);
+    assert.equal(d.w.asked.length, 2);
+    await d.slots.stop();
 });
 
 test('EVT-6: with the key on, one consideration per candidate of the event scope, none for other scopes', async () => {
