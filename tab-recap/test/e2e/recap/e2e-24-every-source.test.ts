@@ -5,7 +5,8 @@ import { appendFileSync, readFileSync, rmSync, statSync, writeFileSync } from 'n
 import { join } from 'node:path';
 import { adapterEnv } from '@stateforge-labs/harness-adapters';
 import { opencodeDatabasePath } from '@stateforge-labs/harness-adapters/opencode/store';
-import { textOf } from '@stateforge-labs/session-ledger';
+import { textOf, unknown } from '@stateforge-labs/session-ledger';
+import { causeOf } from '#test/fakes/cause.ts';
 import type { Recap, RecapRequest } from '@stateforge-labs/session-ledger';
 import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.ts';
 import { CodexTranscripts } from '#src/adapters/transcripts/codex/transcripts.ts';
@@ -362,8 +363,8 @@ const SCREEN = [
     '✻ Brewing… (12s · ↓ 1.2k tokens)',
 ].join('\n');
 
-function screens(): ScreenReader {
-    return { readScreen: (): Promise<ScreenOutcome> => Promise.resolve({ kind: 'screen', text: textOf(SCREEN), revision: countOf(7), truncated: 'absent' }) };
+function screens(text: string = SCREEN): ScreenReader {
+    return { readScreen: (): Promise<ScreenOutcome> => Promise.resolve({ kind: 'screen', text: textOf(text), revision: countOf(7), truncated: 'absent' }) };
 }
 
 test('a screen-only agent is read from its screen; the border, the empty prompt, the key hint and the spinner never reach the writer', async () => {
@@ -389,6 +390,72 @@ test('a screen read again with nothing new is not growth', async () => {
         await engine.refresh(world.scope, [world.seat('gemini')]);
         await engine.refresh(world.scope, [world.seat('gemini')]);
         assert.equal(world.requests.length, 1);
+    } finally {
+        world.dispose();
+    }
+});
+
+test('a screen drops every line of chrome, the leading indent and a line repeated right after itself, and no paragraph outgrows the excerpt clip', async () => {
+    const corpus = ['  Kept line', 'esc to interrupt', 'shift+tab to cycle', '? for shortcuts', '⏵⏵ prompt', 'bypass permissions on', '(ctrl+c to cancel)', '✻ Thinking… (12s · ↓ 1.2k tokens)', '❯ ', '────', '', 'same', 'same', 'other', 'same'].join('\n');
+    const world = sourceWorld();
+    try {
+        const engine = world.engineOver(underScratchHome(() => daemonTranscriptRegistry(screens(corpus), () => 'present')));
+        await engine.refresh(world.scope, [world.seat('gemini')]);
+        assert.deepEqual(entriesOf(world.requests[0]).map((entry) => entry.text), ['Kept line', 'same\nother\nsame']);
+    } finally {
+        world.dispose();
+    }
+    const long = sourceWorld();
+    try {
+        const engine = long.engineOver(underScratchHome(() => daemonTranscriptRegistry(screens('x'.repeat(5000)), () => 'present')));
+        await engine.refresh(long.scope, [long.seat('gemini')]);
+        const lengths = entriesOf(long.requests[0]).map((entry) => entry.text.length);
+        assert.deepEqual(lengths, [2000, 2000, 1000]);
+    } finally {
+        long.dispose();
+    }
+});
+
+test('a screen of only chrome is not growth, and a screen that cannot be read is an error in the recap and no model call', async () => {
+    const world = sourceWorld();
+    try {
+        const engine = world.engineOver(underScratchHome(() => daemonTranscriptRegistry(screens('────\n❯ \n'), () => 'present')));
+        await engine.refresh(world.scope, [world.seat('gemini')]);
+        assert.equal(world.requests.length, 0);
+    } finally {
+        world.dispose();
+    }
+    const gone = sourceWorld();
+    try {
+        const unreadable: ScreenReader = { readScreen: (): Promise<ScreenOutcome> => Promise.resolve(unknown({ why: 'unreachable', detail: causeOf(textOf('gone')) })) };
+        const engine = gone.engineOver(underScratchHome(() => daemonTranscriptRegistry(unreadable, () => 'present')));
+        await engine.refresh(gone.scope, [gone.seat('gemini')]);
+        assert.equal(gone.requests.length, 0);
+        assert.match(recapOf(gone)?.error ?? '', /src:p1: unreachable: gone/u);
+    } finally {
+        gone.dispose();
+    }
+});
+
+test('a screen is asked for its last 200 lines, its revision is the cursor, and a kind not asked for has no reader', async () => {
+    const world = sourceWorld();
+    try {
+        const asked: { readonly pane: string; readonly lines: number }[] = [];
+        const reader: ScreenReader = { readScreen: (pane, lines): Promise<ScreenOutcome> => { asked.push({ pane, lines }); return screens().readScreen(pane, lines); } };
+        const engine = world.engineOver(underScratchHome(() => daemonTranscriptRegistry(reader, (agent) => (agent === 'gemini' ? 'present' : 'absent'))));
+        await engine.refresh(world.scope, [world.seat('gemini')]);
+        assert.deepEqual(asked, [{ pane: 'src:p1', lines: 200 }]);
+        const sessions = recapOf(world)?.sessions ?? [];
+        assert.deepEqual(sessions.map((session) => [session.transcript, session.cursor]), [['screen:src:p1', 7]]);
+        const other = sourceWorld();
+        try {
+            const second = other.engineOver(underScratchHome(() => daemonTranscriptRegistry(reader, (agent) => (agent === 'gemini' ? 'present' : 'absent'))));
+            await second.refresh(other.scope, [other.seat('qwen')]);
+            assert.match(recapOf(other)?.error ?? '', /add it to TAB_RECAP_SCREEN_AGENTS to read its screen/u);
+            assert.equal(other.requests.length, 0);
+        } finally {
+            other.dispose();
+        }
     } finally {
         world.dispose();
     }
