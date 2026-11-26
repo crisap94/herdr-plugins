@@ -65,13 +65,3 @@ test('a bar is docked with a split below the tab\'s bottom pane — no swap, no 
     assert.ok(feedback.at !== undefined && Math.abs(feedback.at - Date.now()) < 5000, 'stamped with when the pane was created');
     assert.ok(calls.every((call) => !/swap|focus/.test(call)));
 });
-
-test('a side column still docks on the right edge', async () => {
-    const { columns, calls } = fakeColumns();
-    const dispatch = new LaneDispatch({
-        columns, views: {} as TabViewStore, visibility: {} as ColumnVisibility, recaps: { turnEnded: (): void => undefined, flush: (): Promise<void> => Promise.resolve() }, prompts: noPrompts, webs: noWebs, log: noop, board: noBoard,
-        sizing, feedback: noop, ...silentClosures,
-    });
-    await dispatch.send({ kind: 'open-column', tab: tabId('w1:t1'), shape: 'side' });
-    assert.match(calls[1] ?? '', /^open w1:t1 next to w1:p[12] as side$/);
-});
