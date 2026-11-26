@@ -1,0 +1,44 @@
+Victoria migration
+● bloqueado — te necesita · claude w1:p1
+⚑ idle hace 2 min · main · 2 unmerged · dirty
+› go
+
+codex
+● trabajando · codex w1:p2
+› run tests
+
+──────────────────────────────────────────────────────────────────────────────
+RESUMEN DE PESTAÑA · hace 3 min · claude/haiku · v3.7.6
+
+OBJETIVO
+Ship the uploader
+
+AHORA
+• Running CI on !940
+
+TE NECESITA
+• Approve the prod deploy
+
+HECHO
+• Added backoff
+
+DECISIONES
+• Retry three times
+
+SIGUIENTE
+• Add a retention sweep
+
+ENLACES
+• compaction records !34
+
+
+
+
+
+
+
+
+
+
+
+toca: pantalla completa · r · c · s · h · j/k

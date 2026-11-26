@@ -1,0 +1,140 @@
+LA SESIÓN HASTA AHORA · 16:30                                        │ DECISIONES
+The 2.0 engine is being built in four changes; the expanded view is  │ 11:30 Keep the guard out of sibling modules
+drawn from the ledger and waits on one answer.                       │       an import guard cannot stop sibling modules
+                                                                     │
+OBJETIVO                                                             │ SIGUIENTE
+Ship the expanded view in tab-recap 2.0                              │ • Draw the expanded view from the ledger
+                                                                     │
+AHORA                                                                │ REGLAS
+• Writing the timeline renderer                                      │ • Never touch the live checkout
+                                                                     │
+TE NECESITA                                                          │ ENLACES
+• Approve the migration number 007 for the story columns             │ • compaction records !34
+  esperando 3 h                                                      │
+• Which effort should the curator default to: low or medium?         │ SESIÓN
+  esperando 25 min                                                   │ inicio 16:30 · 0 min
+                                                                     │ turnos 14 (turno 14)
+CRONOLOGÍA                                                           │ compactaciones 2 (1 por ti · 1 auto) (39k → 3k · 800k → 14k) ·
+── compactado 800k → 14k · 16 s ──────────────────────────────────── │   capítulos 4
+14:02 Add a retention sweep to this change · cerrado: erróneo        │
+14:02 Merged !34 adding the compaction records                       │
+── compactado 39k → 3k ───────────────────────────────────────────── │
+2026-10-06                                                           │
+── sesión nueva ──────────────────────────────────────────────────── │
+17:10 Fixed the context share in src/recap/render/present.ts         │
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+q cerrar · r actualizar ahora · c compactar · s ajustes · h ocultar columna · j/k desplazar · g inicio

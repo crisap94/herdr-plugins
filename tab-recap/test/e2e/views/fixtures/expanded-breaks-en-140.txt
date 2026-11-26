@@ -1,0 +1,140 @@
+SESSION SO FAR · 16:30                                               │ DECISIONS
+The 2.0 engine is being built in four changes; the expanded view is  │ 11:30 Keep the guard out of sibling modules
+drawn from the ledger and waits on one answer.                       │       an import guard cannot stop sibling modules
+                                                                     │
+GOAL                                                                 │ NEXT
+Ship the expanded view in tab-recap 2.0                              │ • Draw the expanded view from the ledger
+                                                                     │
+NOW                                                                  │ RULES
+• Writing the timeline renderer                                      │ • Never touch the live checkout
+                                                                     │
+NEEDS YOU                                                            │ LINKS
+• Approve the migration number 007 for the story columns             │ • compaction records !34
+  waiting 3 h                                                        │
+• Which effort should the curator default to: low or medium?         │ SESSION
+  waiting 25 min                                                     │ started 16:30 · 0 min
+                                                                     │ turns 14 (turn 14)
+TIMELINE                                                             │ compactions 2 (1 by you · 1 auto) (39k → 3k · 800k → 14k) · chapters
+── compacted 800k → 14k · 16 s ───────────────────────────────────── │   4
+14:02 Add a retention sweep to this change · closed: wrong           │
+14:02 Merged !34 adding the compaction records                       │
+── compacted 39k → 3k ────────────────────────────────────────────── │
+2026-10-06                                                           │
+── new session ───────────────────────────────────────────────────── │
+17:10 Fixed the context share in src/recap/render/present.ts         │
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+q close · r recap now · c compact · s settings · h hide column · j/k scroll · g top
