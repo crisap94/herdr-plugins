@@ -1,7 +1,8 @@
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdirSync, symlinkSync, accessSync, constants } from 'node:fs';
+import { Database } from 'bun:sqlite';
+import { mkdirSync, readFileSync, symlinkSync, accessSync, constants } from 'node:fs';
 import { delimiter, join } from 'node:path';
 import { FakeHcCore } from '@stateforge-labs/herdr-sdk/core/test-kit';
 import { scratch, type Fixture } from '#test/fixtures/git-repo.ts';
@@ -10,6 +11,7 @@ import { BUN_CACHE_OFF } from '#test/support/bun-env.ts';
 const PLUGIN = join(import.meta.dirname, '..', '..', '..');
 const ENTRY = join(PLUGIN, 'bin', 'tab-recap-desktop.ts');
 const WITHIN = 15_000;
+const SETTLE_MS = 1500;
 
 interface Ran {
     readonly code: number | null;
@@ -79,11 +81,25 @@ before(async () => {
     };
 });
 
+async function endDaemon(pid: number): Promise<void> {
+    if (!alive(pid)) { return; }
+    process.kill(pid, 'SIGTERM');
+    for (let tries = 0; tries < 200 && alive(pid); tries += 1) { await nap(25); }
+    if (alive(pid)) { process.kill(pid, 'SIGKILL'); }
+}
+
+function pidfileDaemon(): number | null {
+    try {
+        const pid = Number.parseInt(readFileSync(join(state, 'daemon.pid'), 'utf8'), 10);
+        return Number.isInteger(pid) && pid > 0 ? pid : null;
+    } catch {
+        return null;
+    }
+}
+
 after(async () => {
-    if (started !== null && alive(started)) {
-        process.kill(started, 'SIGTERM');
-        for (let tries = 0; tries < 200 && alive(started); tries += 1) { await nap(25); }
-        if (alive(started)) { process.kill(started, 'SIGKILL'); }
+    for (const pid of new Set([started, pidfileDaemon()])) {
+        if (pid !== null) { await endDaemon(pid); }
     }
     await core.stop();
     fixture.clean();
@@ -117,6 +133,11 @@ test('a second start says the daemon is already running and starts none', { time
     const ran = await desktop('start');
     assert.equal(ran.code, 0, ran.stderr);
     assert.equal(ran.stdout.trim(), `tab-recap: daemon already running (pid ${String(started)})`);
+    await nap(SETTLE_MS);
+    const log = readFileSync(join(state, 'daemon.log'), 'utf8');
+    assert.equal(log.match(/ up, state in /gu)?.length, 1, 'exactly one daemon came up');
+    assert.doesNotMatch(log, /another daemon is running/u, 'no second daemon was launched');
+    assert.equal(await pidOfStatus(), started);
 });
 
 test('ensure leaves a running daemon alone', { timeout: 30_000 }, async () => {
@@ -133,12 +154,6 @@ test('doc for a tab with no recap fails with exit 1 and prints nothing', { timeo
     assert.match(ran.stderr, /no recap for t-none/);
 });
 
-test('refresh queues a request for the tab and says so', { timeout: 30_000 }, async () => {
-    const ran = await desktop('refresh', 't-one');
-    assert.equal(ran.code, 0, ran.stderr);
-    assert.match(ran.stdout, /t-one/);
-});
-
 test('stop ends the daemon and ensure then leaves it off', { timeout: 30_000 }, async () => {
     assert.notEqual(started, null);
     const pid = started as number;
@@ -149,4 +164,16 @@ test('stop ends the daemon and ensure then leaves it off', { timeout: 30_000 }, 
     assert.equal(alive(pid), false);
     assert.equal((await desktop('ensure')).code, 0);
     assert.match((await desktop('status')).stdout, /not running \(switched off\)/);
+});
+
+test('refresh queues one refresh request for the tab in the store and says so', { timeout: 30_000 }, async () => {
+    const ran = await desktop('refresh', 't-one');
+    assert.equal(ran.code, 0, ran.stderr);
+    assert.match(ran.stdout, /t-one/);
+    const db = new Database(join(state, 'tab-recap.db'), { readonly: true });
+    try {
+        assert.deepEqual(db.prepare("SELECT kind, target FROM request WHERE target = 't-one'").all().map((row) => Object.assign({}, row)), [{ kind: 'refresh', target: 't-one' }]);
+    } finally {
+        db.close();
+    }
 });
