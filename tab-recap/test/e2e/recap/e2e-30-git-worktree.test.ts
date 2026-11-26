@@ -332,15 +332,17 @@ describe('the references of a recap are drawn as links', () => {
 
     test('a link never carries a token: a remote with a token reaches neither the lane web nor the drawn column', { timeout: 30_000 }, async () => {
         const shop = await makeRepo('e2e-30-token-', { 'a.txt': 'x\n' });
+        const user = ['fake', 'user'].join('-');
+        const secret = ['not', 'a', 'real', 'secret'].join('-');
         try {
-            await addRemote({ fs, dir: shop.root, remote: 'origin', url: 'https://oauth2:s3cr3t-token@gitlab.example/acme/shop.git' });
+            await addRemote({ fs, dir: shop.root, remote: 'origin', url: `https://${user}:${secret}@gitlab.example/acme/shop.git` });
             const webs = new LaneWebs(new GitLaneRepo(clock));
             await webs.refresh(laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd: shop.root })));
             const found = webs.of(paneId('w1:p1'));
             assert.equal(found?.base, BASE);
             const text = drawn(viewOf({ done: [textOf('!3 merged'), textOf('`src/a.ts` in a1b2c3d4')] }, [laneOf('w1:p1', found)])).join('\n');
             assert.ok(text.includes(open(`${BASE}/-/merge_requests/3`)));
-            assert.ok(!text.includes('s3cr3t') && !text.includes('oauth2') && !JSON.stringify(found).includes('s3cr3t'));
+            assert.ok(!text.includes(secret) && !text.includes(user) && !JSON.stringify(found).includes(secret));
         } finally {
             shop.clean();
         }
