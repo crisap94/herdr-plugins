@@ -1,0 +1,7 @@
+{
+  "session_id": "fx-SessionStart-fork",
+  "transcript_path": "/home/user/.claude/projects/p/fx-SessionStart-fork.jsonl",
+  "cwd": "/tmp/work",
+  "hook_event_name": "SessionStart",
+  "source": "fork"
+}

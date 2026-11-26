@@ -30,6 +30,13 @@
         "@anthropic-ai/claude-agent-sdk",
       ],
     },
+    "claude-code": {
+      "name": "claude-code-session-ledger",
+      "dependencies": {
+        "@stateforge-labs/session-ledger": "workspace:*",
+        "agent-sdk-session-ledger": "workspace:*",
+      },
+    },
     "desktop": {
       "name": "herdr-desktop-mods",
       "version": "0.0.0",
@@ -82,7 +89,7 @@
     },
     "tab-recap": {
       "name": "herdr-tab-recap",
-      "version": "3.1.1",
+      "version": "3.7.6",
       "dependencies": {
         "@stateforge-labs/harness-adapters": "0.6.0",
         "@stateforge-labs/harness-hooks": "0.4.0",
@@ -277,6 +284,8 @@
     "call-bound": ["call-bound@1.0.4", "", { "dependencies": { "call-bind-apply-helpers": "^1.0.2", "get-intrinsic": "^1.3.0" } }, "sha512-+ys997U96po4Kx/ABpBCqhA9EuxJaQWDQg7295H4hBphv3IZg0boBKuwYpt4YXp6MZ5AmZQnU/tyMTlRpaSejg=="],
 
     "chalk": ["chalk@4.1.2", "", { "dependencies": { "ansi-styles": "^4.1.0", "supports-color": "^7.1.0" } }, "sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA=="],
+
+    "claude-code-session-ledger": ["claude-code-session-ledger@workspace:claude-code"],
 
     "clean-git-ref": ["clean-git-ref@2.0.1", "", {}, "sha512-bLSptAy2P0s6hU4PzuIMKmMJJSE6gLXGH1cntDu7bWJUksvuM+7ReOK61mozULErYvP6a15rnYl0zFDef+pyPw=="],
 

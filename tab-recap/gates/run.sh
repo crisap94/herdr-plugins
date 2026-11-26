@@ -3,7 +3,7 @@ set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 3
 case "${1:-}" in
     lint) ;;
-    test) bash gates/test.sh && TEST_HOST_LOCK= bash ../agent-sdk/gates/run.sh test; exit $? ;;
+    test) bash gates/test.sh && TEST_HOST_LOCK= bash ../agent-sdk/gates/run.sh test && TEST_HOST_LOCK= bash ../claude-code/gates/run.sh test; exit $? ;;
     *) echo "usage: bash tab-recap/gates/run.sh lint|test" >&2; exit 3 ;;
 esac
 

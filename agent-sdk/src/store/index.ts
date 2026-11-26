@@ -1,4 +1,4 @@
-import { openStore, type NewerStore, type StaleStore } from '@stateforge-labs/session-ledger-sqlite';
+import { openStore, type NewerStore, type Role, type StaleStore } from '@stateforge-labs/session-ledger-sqlite';
 import type { FactStore, Records, ScopeId, SessionMark } from '@stateforge-labs/session-ledger';
 import { HISTORY } from './history.ts';
 import { ledgerRowsOf } from './ledger-store.ts';
@@ -13,8 +13,8 @@ export interface LedgerStore {
 
 export type OpenedLedgerStore = LedgerStore | NewerStore | StaleStore;
 
-export function openLedgerStore(path: string): OpenedLedgerStore {
-    const opened = openStore(path, HISTORY, 'owner');
+export function openLedgerStore(path: string, role: Role = 'owner'): OpenedLedgerStore {
+    const opened = openStore(path, HISTORY, role);
     if (opened.kind !== 'ready') {
         return opened;
     }

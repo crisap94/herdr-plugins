@@ -15,6 +15,12 @@ Install a plugin with `herdr plugin install crisap94/herdr-plugins/<plugin>`.
 
 The repository root is a Bun workspace: one `bun.lock` at the root, and `bun install` works from the root or from a plugin's directory.
 
+## Other folders
+
+| folder | what it is | docs |
+| --- | --- | --- |
+| **claude-code** | experimental, not a herdr plugin and not released: the same ledger kept for a plain Claude Code session from its hooks, over the session-ledger engine | [README](claude-code/README.md) |
+
 ## Contributing
 
 Issues and pull requests are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers what every plugin shares: labels,

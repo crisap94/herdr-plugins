@@ -1,0 +1,33 @@
+id: host-facade-boundary
+language: typescript
+severity: error
+message: >-
+  claude-code src/ imports a bare specifier only from node:, @stateforge-labs/session-ledger (root export) or agent-sdk-session-ledger
+  (root export); never a relative path that climbs with `..`, never a string that names tab-recap/ or packages/session-ledger.
+note: >-
+  The one file that reaches tab-recap is src/plugs.ts, held by the rule host-plugs-boundary. The engine is reached through the
+  session-ledger facade only.
+files:
+  - "**/src/**"
+  - "**/probes/host-facade-boundary/**"
+ignores:
+  - "**/src/plugs.ts"
+rule:
+  any:
+    - all:
+        - kind: string_fragment
+        - inside:
+            kind: import_statement
+            stopBy: end
+        - regex: "^[^./]"
+        - not:
+            regex: "^(node:[a-z:/_]+|@stateforge-labs/session-ledger|agent-sdk-session-ledger)$"
+    - all:
+        - kind: string_fragment
+        - inside:
+            kind: import_statement
+            stopBy: end
+        - regex: "^\\.\\."
+    - all:
+        - kind: string_fragment
+        - regex: "tab-recap/|packages/session-ledger"

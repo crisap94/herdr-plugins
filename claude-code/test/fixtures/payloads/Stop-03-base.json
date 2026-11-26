@@ -1,0 +1,23 @@
+{
+  "session_id": "fx-Stop-3",
+  "transcript_path": "/home/user/.claude/projects/p/fx-Stop-3.jsonl",
+  "cwd": "/tmp/work",
+  "scratchpad_dir": "/home/user/.cache/tmp/-tmp-work/fx-Stop-3/scratchpad",
+  "prompt_id": "00000000-0000-4000-8000-000000000000",
+  "permission_mode": "auto",
+  "effort": {
+    "level": "medium"
+  },
+  "hook_event_name": "Stop",
+  "stop_hook_active": false,
+  "last_assistant_message": "PLACEHOLDER-last_assistant_message",
+  "background_tasks": [
+    {
+      "id": "PLACEHOLDER-id",
+      "type": "teammate",
+      "status": "running",
+      "description": "PLACEHOLDER-description"
+    }
+  ],
+  "session_crons": []
+}
