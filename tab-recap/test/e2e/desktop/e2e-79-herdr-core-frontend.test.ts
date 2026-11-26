@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { FakeFault, FakeHcCore, later } from '@stateforge-labs/herdr-sdk/core/test-kit';
-import { must, parseCount } from '@stateforge-labs/session-ledger';
+import { isUnknown, must, parseCount } from '@stateforge-labs/session-ledger';
 import { desktopFrontend } from '#src/adapters/desktop/frontend.ts';
 import { HcCoreFleet } from '#src/adapters/herdr-core/fleet.ts';
 import type { Frontend } from '#src/ports/frontend.ts';
@@ -249,7 +249,7 @@ test('a core that is not there leaves the fleet unknown and throws nothing', { t
         assert.equal((await lonely.fleet.readScreen(paneId('t1'), must(parseCount(5)))).kind, 'unknown');
         assert.equal((await lonely.fleet.agents().status(paneId('t1'))).kind, 'unknown');
         const session = await lonely.session(paneId('t1'));
-        assert.ok(session !== null && typeof session !== 'string');
+        assert.ok(session !== null && isUnknown(session), 'a core that is away gives an unknown session, never null (no session) or an id');
     } finally {
         if (lonely.fleet instanceof HcCoreFleet) { await lonely.fleet.shutdown(); }
         await away.stop();
