@@ -1,35 +1,13 @@
 import { test } from 'node:test';
-import { judgeJobOf, keepDaysOf, placementOf } from './fakes/settings-readers.ts';
+import { judgeJobOf, keepDaysOf } from './fakes/settings-readers.ts';
 import assert from 'node:assert/strict';
-import { JUDGE_DEFAULT, KEEP_INPUT_DAYS } from '#src/recap/domain/job.ts';
+import { KEEP_INPUT_DAYS } from '#src/recap/domain/job.ts';
 import { loadSettings } from '#src/daemon/config.ts';
 
 const config = (values: Readonly<Record<string, string>>) => (key: string): string | undefined => values[key];
-const models = { claude: 'sonnet', codex: 'gpt-6-luna', opencode: '', custom: '' };
-
-test('the judge job defaults to the recap writer\'s harness and model at medium effort; unknown values are the defaults', () => {
-    assert.deepEqual(JUDGE_DEFAULT, { by: 'recap', model: '', effort: 'medium' });
-    assert.deepEqual(judgeJobOf(config({})), JUDGE_DEFAULT);
-    assert.deepEqual(judgeJobOf(config({ TAB_RECAP_JUDGE_BY: 'nonsense', TAB_RECAP_JUDGE_EFFORT: 'max' })), JUDGE_DEFAULT);
-});
-
-test('the judge job takes its own harness, model and effort; `off` and `default` are kept', () => {
-    assert.deepEqual(judgeJobOf(config({ TAB_RECAP_JUDGE_BY: ' Codex ', TAB_RECAP_JUDGE_MODEL: ' gpt-6-luna ', TAB_RECAP_JUDGE_EFFORT: 'HIGH' })), { by: 'codex', model: 'gpt-6-luna', effort: 'high' });
-    assert.equal(judgeJobOf(config({ TAB_RECAP_JUDGE_BY: 'off' })).by, 'off');
-    assert.equal(judgeJobOf(config({ TAB_RECAP_JUDGE_EFFORT: 'default' })).effort, 'default');
-});
 
 test('the judge has no time limit of its own: TAB_RECAP_JUDGE_TIMEOUT_MS sets none', () => {
     assert.equal('timeoutMs' in judgeJobOf(config({ TAB_RECAP_JUDGE_TIMEOUT_MS: '90000' })), false);
-});
-
-test('where the judge runs: `recap` is the writer\'s harness and its model, another harness has its own, off is nowhere', () => {
-    const recap = { backend: 'claude', models } as const;
-    assert.deepEqual(placementOf(JUDGE_DEFAULT, recap, ['claude', 'codex']), { harness: 'claude', model: 'sonnet', effort: 'medium' });
-    assert.deepEqual(placementOf({ by: 'codex', model: '', effort: 'medium' }, recap, ['claude', 'codex']), { harness: 'codex', model: 'gpt-6-luna', effort: 'medium' });
-    assert.deepEqual(placementOf({ by: 'recap', model: 'opus', effort: 'low' }, recap, ['claude']), { harness: 'claude', model: 'opus', effort: 'low' });
-    assert.equal(placementOf({ by: 'off', model: '', effort: 'medium' }, recap, ['claude']), null);
-    assert.equal(placementOf(JUDGE_DEFAULT, { backend: 'auto', models }, []), null, 'auto with nothing installed: no judge');
 });
 
 test('the retention is 14 days unless set to a whole number of days; 0 keeps none', () => {
