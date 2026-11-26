@@ -2,7 +2,7 @@
   "name": "herdr-plugins",
   "private": true,
   "type": "module",
-  "workspaces": ["tab-recap", "packages/*", "desktop", "agent-sdk"],
+  "workspaces": ["tab-recap", "packages/*", "desktop", "agent-sdk", "claude-code"],
   "engines": { "bun": ">=1.4.4" },
   "trustedDependencies": ["@ast-grep/cli"],
   "scripts": {

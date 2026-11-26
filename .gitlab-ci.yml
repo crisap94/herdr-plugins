@@ -64,6 +64,7 @@ unit:root:
         - packages/*/gates/**/*
         - desktop/gates/**/*
         - agent-sdk/gates/**/*
+        - claude-code/gates/**/*
         - bun.lock
         - package.json
         - bunfig.toml
@@ -85,6 +86,7 @@ unit:root:
         - packages/**/*
         - desktop/**/*
         - agent-sdk/**/*
+        - claude-code/**/*
         - ci/**/*
         - evals/**/*
         - bun.lock
@@ -107,6 +109,7 @@ unit:root:
         - packages/**/*
         - desktop/**/*
         - agent-sdk/**/*
+        - claude-code/**/*
         - ci/codemod/**/*
         - bun.lock
         - package.json
@@ -131,6 +134,7 @@ unit:root:
         - packages/**/*
         - desktop/**/*
         - agent-sdk/**/*
+        - claude-code/**/*
         - ci/codemod/**/*
         - bun.lock
         - package.json
@@ -243,6 +247,32 @@ unit:root:
     - bash agent-sdk/gates/run.sh lint
     - bash agent-sdk/gates/run.sh test
     - bash agent-sdk/gates/run.sh typecheck
+
+"unit:claude-code":
+  extends: .unit
+  stage: check
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - claude-code/**/*
+        - agent-sdk/**/*
+        - tab-recap/src/**/*
+        - tab-recap/test/**/*
+        - packages/session-ledger/**/*
+        - packages/session-ledger-sqlite/**/*
+        - bun.lock
+        - package.json
+        - bunfig.toml
+        - tsconfig.json
+        - .gitlab-ci.yml
+        - ci/lib/**/*
+      exists:
+        - claude-code/gates/run.sh
+  script:
+    - bash claude-code/gates/run.sh lint
+    - bash claude-code/gates/run.sh test
+    - bash claude-code/gates/run.sh typecheck
 
 track-scope:
   extends: .tools

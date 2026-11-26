@@ -1,0 +1,27 @@
+id: host-plugs-boundary
+language: typescript
+severity: error
+message: >-
+  src/plugs.ts is the one file of the host that reaches tab-recap, and only for the Claude writer, the git workplaces, the restore
+  and brief renderers and the language setting; every other import is node: or @stateforge-labs/session-ledger (root export).
+note: >-
+  The list of tab-recap files is closed. Adding a file here is an owner decision, and goes away when the engine exports its own
+  Claude writer and renderers.
+files:
+  - "**/src/plugs.ts"
+  - "**/probes/host-plugs-boundary/**"
+rule:
+  all:
+    - kind: string_fragment
+    - inside:
+        kind: import_statement
+        stopBy: end
+    - any:
+        - all:
+            - regex: "^[^./]"
+            - not:
+                regex: "^(node:[a-z:/_]+|@stateforge-labs/session-ledger)$"
+        - all:
+            - regex: "^\\."
+            - not:
+                regex: "^\\.\\./\\.\\./tab-recap/src/(adapters/harness/(confinement-notice|library)|adapters/git/lane-repo|adapters/job/writer|recap/application/(compaction-brief|compaction-message|restore-text)|recap/domain/(byte-budget|effort|ledger-view)|recap/render/restore-markdown|i18n/index)\\.ts$"

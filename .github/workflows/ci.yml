@@ -29,7 +29,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        unit: [ci, tab-recap, packages/session-ledger, packages/session-ledger-sqlite, packages/recap-view, desktop, agent-sdk]
+        unit: [ci, tab-recap, packages/session-ledger, packages/session-ledger-sqlite, packages/recap-view, desktop, agent-sdk, claude-code]
     steps:
       - uses: actions/checkout@v5
         with:

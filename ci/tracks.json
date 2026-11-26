@@ -71,7 +71,9 @@
     "UP": [],
     "HOST": [
       "agent-sdk/**",
+      "claude-code/**",
       "desktop/**",
+      "openspec/changes/claude-code-host/**",
       "tab-recap/test/host/**",
       "ci/codemod/moves/HOST-*.tsv"
     ],

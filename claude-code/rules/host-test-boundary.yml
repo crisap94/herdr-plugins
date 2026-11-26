@@ -1,0 +1,16 @@
+id: host-test-boundary
+language: typescript
+severity: error
+message: >-
+  claude-code test/ never imports tab-recap/src or a package source by path; it goes through the host's own src, the session-ledger
+  root export, or the fixtures and fakes under tab-recap/test.
+files:
+  - "**/test/**"
+  - "**/probes/host-test-boundary/**"
+rule:
+  all:
+    - kind: string_fragment
+    - inside:
+        kind: import_statement
+        stopBy: end
+    - regex: "tab-recap/src/|packages/[^/]+/src/"

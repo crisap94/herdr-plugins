@@ -1,0 +1,19 @@
+{
+  "name": "claude-code-session-ledger",
+  "private": true,
+  "type": "module",
+  "description": "A ledger kept for a plain Claude Code session, driven by Claude Code hooks, over the session-ledger engine",
+  "engines": {
+    "bun": ">=1.4.4"
+  },
+  "scripts": {
+    "lint": "bash gates/run.sh lint",
+    "typecheck": "bash gates/run.sh typecheck",
+    "test": "bash gates/run.sh test"
+  },
+  "dependencies": {
+    "@stateforge-labs/session-ledger": "workspace:*",
+    "agent-sdk-session-ledger": "workspace:*"
+  },
+  "license": "MIT"
+}
