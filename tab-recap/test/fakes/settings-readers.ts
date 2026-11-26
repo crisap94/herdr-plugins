@@ -3,11 +3,10 @@ import { jevFrom, type Policy, type JevSettings } from '@stateforge-labs/session
 import { policyFrom } from '@stateforge-labs/session-ledger/compaction-timing';
 import { type CompactTuning } from '@stateforge-labs/session-ledger';
 import { tuningFrom } from '@stateforge-labs/session-ledger/compaction-timing';
-import { compactSettingOf, coverageSettingOf, curateSettingOf, deciderSettingOf, judgeSettingOf, keepDaysCountOf, placementFor } from '#src/recap/domain/job.ts';
+import { compactSettingOf, curateSettingOf, deciderSettingOf, judgeSettingOf, placementFor } from '#src/recap/domain/job.ts';
 import type { DeciderSetting, JobPlacement, JobSetting } from '#src/recap/domain/job.ts';
 import type { Effort } from '#src/recap/domain/effort.ts';
 import { textOf, type Text } from '@stateforge-labs/session-ledger';
-import type { Count } from '@stateforge-labs/session-ledger';
 
 export type RawReader = (key: string) => string | undefined;
 
@@ -23,10 +22,6 @@ export const compactJobOf = (reader: RawReader): JobSetting => compactSettingOf(
 export const curateJobOf = (reader: RawReader): JobSetting => curateSettingOf(typedReader(reader));
 
 export const deciderJobOf = (reader: RawReader): DeciderSetting => deciderSettingOf(typedReader(reader));
-
-export const coverageJobOf = (reader: RawReader): DeciderSetting => coverageSettingOf(typedReader(reader), deciderSettingOf(typedReader(reader)));
-
-export const keepDaysOf = (raw: string | undefined): Count => keepDaysCountOf(raw === undefined ? undefined : textOf(raw));
 
 export const policyOf = (reader: RawReader): Policy => policyFrom(typedReader(reader));
 
