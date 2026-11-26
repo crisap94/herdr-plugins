@@ -12,16 +12,16 @@ export type CompactionId = Brand<string, 'CompactionId'>;
 
 export interface Placement {
     readonly candidate: Candidate;
-    readonly tab: ScopeId;
-    readonly pane: SessionKey;
+    readonly scope: ScopeId;
+    readonly key: SessionKey;
     readonly agent: HarnessKind;
 }
 
 export function placementOf(candidate: Candidate): Placement {
     return {
         candidate,
-        tab: must(parseScopeId(candidate.scope)),
-        pane: must(parseSessionKey(candidate.key)),
+        scope: must(parseScopeId(candidate.scope)),
+        key: must(parseSessionKey(candidate.key)),
         agent: must(parseHarnessKind(candidate.harness)),
     };
 }

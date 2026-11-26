@@ -112,10 +112,10 @@ test('decision and compaction ids accept an empty string but not a non-string', 
     }
 });
 
-test('a placement names the tab, pane and agent of a candidate and keeps the candidate', () => {
+test('a placement names the scope, key and agent of a candidate and keeps the candidate', () => {
     const candidate = { scope: scope('tab-1'), key: key('pane-1'), harness: harness('claude'), ready: true };
     const placement = placementOf(candidate);
-    assert.deepEqual(placement, { candidate, tab: 'tab-1', pane: 'pane-1', agent: 'claude' });
+    assert.deepEqual(placement, { candidate, scope: 'tab-1', key: 'pane-1', agent: 'claude' });
     assert.equal(placement.candidate, candidate);
     const blankScope = { ...candidate, scope: '' as typeof candidate.scope };
     assert.throws(() => placementOf(blankScope), /refused a load-time constant/);
