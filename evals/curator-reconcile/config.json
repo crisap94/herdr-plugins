@@ -13,7 +13,7 @@
         "unfence": "tab-recap/src/adapters/job/prompts/recap-prompt.ts#unfenced(text)",
         "parser": "packages/session-ledger/src/recap/domain/reconciliation.ts#reconciliationOf(unfenced(text), built.facts, built.tail)",
         "gates": "packages/session-ledger/src/recap/application/ops-gating.ts#judge(LEDGER_GATES, ops, ground, input.clock.now)",
-        "ground": "{ key: 'k', tab: 't', shown: built.facts, open: [...built.facts.values()], closedLately: [], source: '', language: input.language, agents: ['claude', input.name.toLowerCase()] }",
+        "ground": "{ key: 'k', scope: 't', shown: built.facts, open: [...built.facts.values()], closedLately: [], source: '', language: input.language, agents: ['claude', input.name.toLowerCase()] }",
         "quote": "packages/session-ledger/src/recap/domain/quote.ts#quotedIn(quote, text)"
     },
     "shipped": { "name": "codex-luna-medium", "backend": "codex", "model": "gpt-6-luna", "effort": "medium", "shipped": true },

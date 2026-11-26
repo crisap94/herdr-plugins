@@ -18,7 +18,7 @@ import { unknown } from '@stateforge-labs/session-ledger';
 import { causeOf } from './fakes/cause.ts';
 import { instant } from '@stateforge-labs/session-ledger';
 import { textOf } from '@stateforge-labs/session-ledger';
-import { tabIdOf, paneIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf, paneIdOf } from '#src/recap/domain/ids.ts';
 import { seenLane } from '#test/support/seen.ts';
 
 const NOW = Date.parse('2026-10-11T10:00:00Z');

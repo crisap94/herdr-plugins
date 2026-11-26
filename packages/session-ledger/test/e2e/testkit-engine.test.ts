@@ -25,8 +25,8 @@ import {
     type FakeEngine,
     type Subject,
 } from '@stateforge-labs/session-ledger/testkit';
-import { tabId, usd } from '@stateforge-labs/session-ledger/testkit';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { usd } from '@stateforge-labs/session-ledger/testkit';
+import { scopeIdOf } from '@stateforge-labs/session-ledger';
 
 const request = (): RecapRequest => ({
     input: { scope: { id: textOf('tab-1'), now: instant(0), zone: textOf('UTC') }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] },
@@ -41,7 +41,7 @@ const listed = (value: readonly Fact[] | Unknown): readonly Fact[] => {
     throw new Error('the read was unknown');
 };
 
-const taskA = { scope: tabIdOf('tab-1'), key: textOf('a') };
+const taskA = { scope: scopeIdOf('tab-1'), key: textOf('a') };
 
 test('a directory is the path it was given', () => {
     assert.equal(String(directory('/work')), '/work');
@@ -166,7 +166,7 @@ test('the world hands out a manual clock, counter ids, and captures the log and 
     assert.deepEqual(world.events(), [event]);
 });
 
-const recordedOf = (changed: readonly Fact[]): RecordedRun => ({ scope: tabId('tab-1'), at: instant(9), cause: 'requested', backend: null, language: text('en'), costUsd: usd(0), error: null, sessions: [], tasks: [], changed, refused: [] });
+const recordedOf = (changed: readonly Fact[]): RecordedRun => ({ scope: scopeIdOf('tab-1'), at: instant(9), cause: 'requested', backend: null, language: text('en'), costUsd: usd(0), error: null, sessions: [], tasks: [], changed, refused: [] });
 
 test('recordRun keeps the changed facts it is given, and allOf returns them', () => {
     const store = createMemoryStore();

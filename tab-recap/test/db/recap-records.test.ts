@@ -13,7 +13,7 @@ import { instant } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { usdOf } from '@stateforge-labs/session-ledger';
-import { tabIdOf, paneIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf, paneIdOf } from '#src/recap/domain/ids.ts';
 
 const sections = { goal: textOf('ship'), now: [textOf('a')], needs: [], done: [textOf('b'), textOf('c')], decisions: [], next: [], links: [textOf('x.ts')], rules: [] };
 const shape = (id: string, lanes: readonly string[], name = ''): TaskShape => ({ id: textOf(id), name: textOf(name), sessions: lanes.map((lane) => paneIdOf(lane)) });

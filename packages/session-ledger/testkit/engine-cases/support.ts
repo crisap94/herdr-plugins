@@ -3,16 +3,16 @@ import type { Behaviour, WrittenAnswer } from '../world.ts';
 import type { EngineWorld } from '../world.ts';
 import { cursorAt, grew, text as textOf } from '../values.ts';
 
-export const panesOf = (world: EngineWorld, tab: ScopeId): readonly string[] => {
-    const recap = world.store.records.readRecap(tab);
+export const sessionKeysOf = (world: EngineWorld, scope: ScopeId): readonly string[] => {
+    const recap = world.store.records.readRecap(scope);
     if (recap === null || 'kind' in recap) {
         return [];
     }
     return recap.sessions.map((lane) => lane.key);
 };
 
-export const causeOf = (world: EngineWorld, tab: ScopeId): string | null => {
-    const last = world.store.records.lastRunOf(tab);
+export const causeOf = (world: EngineWorld, scope: ScopeId): string | null => {
+    const last = world.store.records.lastRunOf(scope);
     if (last === null || 'kind' in last) {
         return null;
     }
@@ -28,12 +28,12 @@ export const countOf = (world: EngineWorld, call: string): number => world.store
 
 export const NO_OPS: Behaviour<WrittenAnswer> = { kind: 'answer', value: { kind: 'written', text: JSON.stringify({ ops: [] }), costUsd: 0 } };
 
-export const cursorsOf = (world: EngineWorld, tab: ScopeId): readonly { readonly pane: string; readonly transcript: string; readonly cursor: number }[] => {
-    const recap = world.store.records.readRecap(tab);
+export const cursorsOf = (world: EngineWorld, scope: ScopeId): readonly { readonly key: string; readonly transcript: string; readonly cursor: number }[] => {
+    const recap = world.store.records.readRecap(scope);
     if (recap === null || 'kind' in recap) {
         return [];
     }
-    return recap.sessions.map((lane) => ({ pane: lane.key, transcript: lane.transcript, cursor: lane.cursor }));
+    return recap.sessions.map((lane) => ({ key: lane.key, transcript: lane.transcript, cursor: lane.cursor }));
 };
 
 export const chunkOf = (entries: readonly Entry[]): Behaviour<Chunk> => ({
@@ -53,8 +53,8 @@ export const blockedOps = (ops: readonly object[]): Behaviour<WrittenAnswer> => 
     after: { kind: 'answer', value: { kind: 'written', text: JSON.stringify({ ops }), costUsd: 0 } },
 });
 
-export const recapOf = (world: EngineWorld, tab: ScopeId): Recap | null => {
-    const recap = world.store.records.readRecap(tab);
+export const recapOf = (world: EngineWorld, scope: ScopeId): Recap | null => {
+    const recap = world.store.records.readRecap(scope);
     if (recap === null || 'kind' in recap) {
         return null;
     }

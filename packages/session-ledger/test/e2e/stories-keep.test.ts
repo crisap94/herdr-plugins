@@ -5,7 +5,7 @@ import { grewOf } from '@stateforge-labs/session-ledger';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { brand } from '@stateforge-labs/session-ledger';
 import { createEngineWorld, followed, key, scope, session, type Behaviour, type CuratedAnswer, type WrittenAnswer } from '@stateforge-labs/session-ledger/testkit';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { scopeIdOf } from '@stateforge-labs/session-ledger';
 import { instant } from '@stateforge-labs/session-ledger';
 
 const TAB = scope('one');
@@ -45,7 +45,7 @@ test('a curator answer with no story leaves the stored story as it was', async (
     if (only === undefined || recap.tasks.length !== 1) {
         throw new Error('the turn did not write one task');
     }
-    const task: TaskId = { scope: tabIdOf(TAB), key: textOf(key(only.id)) };
+    const task: TaskId = { scope: scopeIdOf(TAB), key: textOf(key(only.id)) };
     world.store.seed(null, [factOf('fct_1', task, 'open work', 1), factOf('fct_2', task, 'more work', 10 * MINUTES)]);
     world.setCurator(CURATED);
     await engine.curate(TAB);

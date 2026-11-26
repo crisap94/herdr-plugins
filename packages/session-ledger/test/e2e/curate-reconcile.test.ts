@@ -4,7 +4,8 @@ import { createEngine, curate, TranscriptRegistry } from '@stateforge-labs/sessi
 import { brand } from '@stateforge-labs/session-ledger';
 import { acceptedRepair, storyRepair } from '@stateforge-labs/session-ledger';
 import { STORY_TOO_LONG, STORY_WORDS, curationOf, parseOffer, parseStory, type Curation } from '@stateforge-labs/session-ledger';
-import { createEngineWorld, engineCases, tabId, type EngineWorld } from '@stateforge-labs/session-ledger/testkit';
+import { createEngineWorld, engineCases, type EngineWorld } from '@stateforge-labs/session-ledger/testkit';
+import { scopeIdOf } from '@stateforge-labs/session-ledger';
 
 const text = brand<string, 'Text'>;
 const open = new Set([text('f1'), text('f2'), text('f3')]);
@@ -88,6 +89,6 @@ test('a repaired answer is kept unless it is not JSON, not an object or not an a
 test('curate: with no reconcile setting the after-run leaves the curator alone, and a request on an empty scope asks it nothing', async () => {
     const world: EngineWorld = createEngineWorld();
     const curating = curate(world.plugs, { ledger: { allOf: () => [], keysOf: () => [], openOf: () => [], recentlyClosed: () => [], historyOf: () => [] }, readers: new TranscriptRegistry(new Map(), null, (kind) => text(`no reader for ${kind}`)) });
-    await curating.request(tabId('w1:t1'));
+    await curating.request(scopeIdOf('w1:t1'));
     assert.deepEqual(world.curatorCalls(), []);
 });

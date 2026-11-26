@@ -6,7 +6,8 @@ import { join } from 'node:path';
 import { openStore } from '@stateforge-labs/session-ledger-sqlite';
 import { handleOf } from '@stateforge-labs/session-ledger-sqlite/driver';
 import { instant } from '@stateforge-labs/session-ledger';
-import { agentKind, count, cursorAt, key, paneId, runConformance, scope, sourcePath, storeCases, text, usd, type StoreUnderTest, type Subject } from '@stateforge-labs/session-ledger/testkit';
+import { agentKind, count, cursorAt, key, runConformance, scope, sourcePath, storeCases, text, usd, type StoreUnderTest, type Subject } from '@stateforge-labs/session-ledger/testkit';
+import { sessionKeyOf } from '@stateforge-labs/session-ledger';
 import { HISTORY, openLedgerStore, type LedgerStore } from '../src/store/index.ts';
 
 const folders: string[] = [];
@@ -95,7 +96,7 @@ test('the history of a store that cannot be read is empty, as in the plugin', ()
 test('a recorded run is stored under the keys the file has always carried', () => {
     const path = temporaryFile();
     const first = readyAt(path);
-    const lane = { key: paneId('p1'), agent: agentKind('claude'), transcript: sourcePath('/t/p1.jsonl'), cursor: cursorAt(3), tail: null, title: text('T'), lastPrompt: text('P'), harnessRecap: text('R') };
+    const lane = { key: sessionKeyOf('p1'), agent: agentKind('claude'), transcript: sourcePath('/t/p1.jsonl'), cursor: cursorAt(3), tail: null, title: text('T'), lastPrompt: text('P'), harnessRecap: text('R') };
     first.records.recordRun({
         scope: scope('tab-1'),
         at: instant(100),
@@ -105,10 +106,10 @@ test('a recorded run is stored under the keys the file has always carried', () =
         costUsd: usd(0.5),
         error: null,
         sessions: [lane],
-        tasks: [{ id: text('a'), name: text('A'), sessions: [paneId('p1')] }],
+        tasks: [{ id: text('a'), name: text('A'), sessions: [sessionKeyOf('p1')] }],
         changed: [],
         refused: [],
-        marks: [{ key: paneId('p1'), at: instant(90), cursor: count(3), tokensBefore: count(9) }],
+        marks: [{ key: sessionKeyOf('p1'), at: instant(90), cursor: count(3), tokensBefore: count(9) }],
     });
     first.close();
     const reopened = openStore(path, HISTORY, 'owner');

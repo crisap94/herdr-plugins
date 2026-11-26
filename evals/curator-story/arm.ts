@@ -14,7 +14,7 @@ import { joinedCalled, type ArmedAnswer, type ArmRecord, type Asker, type Rounde
 import type { Called, Item } from '../lib/types.ts';
 import { built, type StoryItem } from './prompt.ts';
 import { joins, readAnswer } from './scoring.ts';
-import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
+import { scopeIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
 import { causeOf } from '../../packages/session-ledger/src/recap/domain/failure-cause.ts';
 
 // One job of the story eval, driven through the plugin's own storyAnswerOf.
@@ -47,7 +47,7 @@ export function storyRound(mode: RepairMode): (raw: Item, ask: Asker) => Promise
             const read = parseText(text);
             return curationOf(read.kind === 'ok' ? answerTextOf(read.value) : textOf(text), open);
         };
-        const run: CurationRun = { task: { scope: tabIdOf('t'), key: textOf('k') }, at: item.input.clock.now, language: textOf(item.input.language) };
+        const run: CurationRun = { task: { scope: scopeIdOf('t'), key: textOf('k') }, at: item.input.clock.now, language: textOf(item.input.language) };
         const kept = await storyAnswerOf({ repair: () => mode, log: (line: string) => { lines.push(line); } } as unknown as ReconcilingDeps, { writer, run, sent: parseText(document), first, reading });
         const final = kept.kind === 'curated' ? kept.text : first.text;
         const repairs = lines.filter((line) => line.includes(': story repair — ')).length;

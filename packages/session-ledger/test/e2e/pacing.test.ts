@@ -129,7 +129,7 @@ test('the pending plan starts an invisible turn at MAX_WAIT, a visible one by qu
     const first = pacedOf(slot, lanes, 'turn-ended', { pacing: paced, shown: 'shown', now: instant(1000) });
     assert.deepEqual(pacedOf({ ...slot, pending: first }, lanes, 'turn-ended', { pacing: paced, shown: 'shown', now: instant(1030) }).start, { kind: 'at', deadline: 1080 });
     assert.deepEqual(pacedOf({ ...slot, pending: first }, lanes, 'turn-ended', { pacing: paced, shown: 'shown', now: instant(1380) }).start, { kind: 'at', deadline: 1400 });
-    assert.deepEqual([...laneSet(lanes)], lanes.map((lane) => lane.pane));
+    assert.deepEqual([...laneSet(lanes)], lanes.map((lane) => lane.key));
 });
 
 test('a hidden tab logs one deferral per deferred run, a visible one logs none, and flush and flushAll log why they ran early', async () => {

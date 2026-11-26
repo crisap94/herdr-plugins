@@ -5,7 +5,7 @@ import { QUOTE_CHARS, quotedIn } from '#src/recap/domain/quote.ts';
 import type { Count } from '#src/contract/kernel.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { instant, type Instant } from '#src/recap/domain/time.ts';
-import { stubId, type MaterialTab } from './enumerate-input.ts';
+import { stubId, type MaterialScope } from './enumerate-input.ts';
 import type { Stub } from './triggers.ts';
 import { localTime } from './local-time.ts';
 import { brand } from '#src/recap/domain/brand.ts';
@@ -24,7 +24,7 @@ export interface AnswerGround {
     readonly agent: Text;
     readonly entries: readonly Entry[];
     readonly stubs: readonly Stub[];
-    readonly clock: Pick<MaterialTab, 'now' | 'zone'>;
+    readonly clock: Pick<MaterialScope, 'now' | 'zone'>;
 }
 
 export interface Answered {

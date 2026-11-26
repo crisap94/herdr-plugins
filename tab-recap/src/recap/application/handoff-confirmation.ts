@@ -6,7 +6,7 @@ import { parseSessionId } from '#src/recap/domain/ids.ts';
 import { duration, type Duration } from '@stateforge-labs/session-ledger';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffEvidence } from '#src/recap/domain/handoff-plan.ts';
-import type { FollowedSession } from '#src/recap/domain/lane.ts';
+import { seatOf, type FollowedSession } from '#src/recap/domain/lane.ts';
 import { failureCauseOf, parseThrown } from '@stateforge-labs/session-ledger';
 import { collapsedText } from '#src/recap/domain/text-collapse.ts';
 import { textOf, type Text } from '@stateforge-labs/session-ledger';
@@ -90,7 +90,7 @@ export class HandoffConfirmation {
     private async latestOf(lane: FollowedSession): Promise<LatestOf> {
         const current = await this.sessionOf(lane);
         const reader = this.deps.transcripts.readerFor(lane.agent);
-        const located = reader === undefined ? null : await reader.locate(current);
+        const located = reader === undefined ? null : await reader.locate(seatOf(current));
         if (reader === undefined || located === null || located.kind !== 'located') {
             return { lane: current, latest: { kind: 'prompt', text: null } };
         }

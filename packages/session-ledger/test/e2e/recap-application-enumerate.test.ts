@@ -27,7 +27,7 @@ const silentEnumerator = (): Enumerator => ({
 const run = (enumerator: Enumerator): EnumerateRun => ({
     enumerator,
     language: textOf('en'),
-    tab: { id: textOf('tab-1'), now: instant(NOW), zone: textOf('UTC') },
+    scope: { id: textOf('tab-1'), now: instant(NOW), zone: textOf('UTC') },
     log: () => undefined,
 });
 

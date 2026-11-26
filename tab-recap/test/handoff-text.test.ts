@@ -27,7 +27,7 @@ import { omittedTotal, serializeHandoff } from '#src/recap/render/handoff-markdo
 import type { OmittedCounts } from '#src/recap/render/handoff-markdown.ts';
 import { worksiteTextOf } from '#src/recap/render/worksite.ts';
 import { fact } from './fakes/fact-at.ts';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '#src/recap/domain/ids.ts';
 import { brand } from '@stateforge-labs/session-ledger';
 
 type ShownHandoff = Extract<FittedHandoff, { readonly kind: 'text' }>;

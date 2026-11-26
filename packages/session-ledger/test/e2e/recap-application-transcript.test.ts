@@ -49,7 +49,7 @@ test('the enumerate input carries the tab, the chunk and the questions', () => {
     assert.ok(chunk !== undefined);
     const material: EnumerateMaterial = {
         language: text('en'),
-        tab,
+        scope: tab,
         agent: text('claude'),
         chunk,
         position: { index: count(1), of: count(1) },

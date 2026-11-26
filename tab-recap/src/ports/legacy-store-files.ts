@@ -11,7 +11,7 @@ import type { ParseFailure } from '@stateforge-labs/session-ledger';
 import { uncheckedPaneId, parseAgentKind, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
 import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { usdOf } from '@stateforge-labs/session-ledger';
-import { paneIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '#src/recap/domain/ids.ts';
 
 type Row = Record<string, unknown>;
 

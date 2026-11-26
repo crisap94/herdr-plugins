@@ -112,7 +112,7 @@ export { foldedOf, jaccard as wordJaccard, tokensOf as wordTokensOf, wordsOf } f
 export { keptGrouping, type PlacedLane } from './recap/domain/grouping.ts';
 export { type IdleHold, parseIdleHold } from './recap/domain/idle-hold.ts';
 export { awaitedNames, backgroundItem, backgroundLabel, backgroundTool, ceilingOf, flightDetail, flightOf, flightReason, foregroundOf, holdingDetail, holdsLane, joinedDetail, keptDetail, NO_RUNNING, NOT_AWAITING, NOTHING_IN_FLIGHT, observedFrom, overridingDetail, runningCount, runningOf, unreadable } from './recap/domain/in-flight.ts';
-export { agentKindOf, paneIdOf, tabIdOf } from './recap/domain/followed-session-shape.ts';
+export { agentKindOf, sessionKeyOf, scopeIdOf } from './recap/domain/followed-session-shape.ts';
 export { apply, fold, foldSwept, sweepOf } from './recap/domain/ops.ts';
 export { PACING_TURN, parsePacing } from './recap/domain/pacing.ts';
 export { closeEvidenceOr, DEFAULT_PIPELINE, gatesOf, parseCloseEvidence, parsePipeline, pipelineOf, PIPELINES, retriesTargeted } from './recap/domain/pipeline.ts';

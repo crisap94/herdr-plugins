@@ -2,7 +2,7 @@ import type { Fact, FactId, RunId, Section, TaskId } from '@stateforge-labs/sess
 import type { RunRef } from '@stateforge-labs/session-ledger';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { instant } from '@stateforge-labs/session-ledger';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '#src/recap/domain/ids.ts';
 
 export const TASK: TaskId = { scope: tabIdOf('w1:t1'), key: textOf('t1') };
 

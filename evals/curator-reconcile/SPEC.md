@@ -19,7 +19,7 @@ The eval builds the same call from the plugin's own code. Only the transport cha
 | Gates | `judge(LEDGER_GATES, ops, ground, item.input.clock.now)` (`packages/session-ledger/src/recap/application/ops-gating.ts`, `packages/session-ledger/src/recap/domain/gates/ledger-gates.ts`), with `ops` and `ground` built as `reconcileTask` builds them (`packages/session-ledger/src/recap/application/ledger-reconcile.ts`) |
 | Quote test | `quotedIn(quote, text)` (`packages/session-ledger/src/recap/domain/quote.ts`), the test the parser itself uses |
 
-`built` is the value `reconcileInput` returns. `ground` is `{ key: 'k', tab: 't', shown: built.facts, open: [...built.facts.values()], closedLately: [], source: '', language: item.input.language, agents: ['claude', item.input.name.toLowerCase()] }`. The plugin fills `agents` with the lane's agent and title; the eval uses `claude` and the task name.
+`built` is the value `reconcileInput` returns. `ground` is `{ key: 'k', scope: 't', shown: built.facts, open: [...built.facts.values()], closedLately: [], source: '', language: item.input.language, agents: ['claude', item.input.name.toLowerCase()] }`. The plugin fills `agents` with the lane's agent and title; the eval uses `claude` and the task name.
 
 `item.input` is `ReconcileMaterial` without `rubric`. The rubric is added at run time from `RUBRIC.items`, the value the daemon passes (`tab-recap/src/daemon/curate.ts`).
 

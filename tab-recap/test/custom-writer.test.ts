@@ -17,7 +17,7 @@ const textOf = brand<string, 'Text'>;
 const ground: Ground = {
     gates: LEDGER_GATES, now: instant(1), facts: new Map(),
     resolving: { tasks: [textOf('t1')], agents: [], taskOf: new Map(), turns: [], clock: { now: instant(1), zone: textOf('UTC') } },
-    grounds: [{ key: textOf('t1'), tab: textOf('w1:t1'), shown: new Map(), open: [], closedLately: [], source: textOf('go'), language: textOf('en'), agents: [] }],
+    grounds: [{ key: textOf('t1'), scope: textOf('w1:t1'), shown: new Map(), open: [], closedLately: [], source: textOf('go'), language: textOf('en'), agents: [] }],
 };
 
 async function through(script: string): Promise<Extracted> {

@@ -19,7 +19,7 @@ import { vetHandoffText } from '#src/recap/domain/handoff-vetting.ts';
 import type { Freshness } from '#src/recap/domain/freshness.ts';
 import type { WorksiteSnapshot } from '#src/recap/domain/worksite.ts';
 import { fact } from './fakes/fact-at.ts';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '#src/recap/domain/ids.ts';
 
 const NOW = Date.parse('2026-10-10T12:00:00Z');
 const TASK: TaskId = { scope: tabIdOf('w1:t1'), key: textOf('t1') };

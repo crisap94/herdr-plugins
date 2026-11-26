@@ -5,12 +5,11 @@ import type { Case } from '../run.ts';
 import type { StoreUnderTest } from '../memory-store.ts';
 import { cursor, factAt, isUnknownValue, runOf, shapeOf, typeIdAt } from './record-fixtures.ts';
 import { instant } from '@stateforge-labs/session-ledger';
-import { tabId } from '../values.ts';
 import { textOf } from '../../src/recap/domain/text.ts';
-import { tabIdOf, paneIdOf } from '../../src/recap/domain/followed-session-shape.ts';
+import { scopeIdOf, sessionKeyOf } from '../../src/recap/domain/followed-session-shape.ts';
 
-const TAB_1_A: TaskId = { scope: tabIdOf('tab-1'), key: textOf('a') };
-const TAB_1_B: TaskId = { scope: tabIdOf('tab-1'), key: textOf('b') };
+const TAB_1_A: TaskId = { scope: scopeIdOf('tab-1'), key: textOf('a') };
+const TAB_1_B: TaskId = { scope: scopeIdOf('tab-1'), key: textOf('b') };
 
 const knownFacts = (read: readonly Fact[] | Unknown, what: string): readonly Fact[] => {
     if (isUnknownValue(read)) {
@@ -30,9 +29,9 @@ const textsOf = (facts: readonly Fact[]): readonly string[] => facts.map((fact) 
 
 const isThenable = (value: unknown): boolean => typeof value === 'object' && value !== null && 'then' in value;
 
-const writeFacts = (store: StoreUnderTest, at: number, tab: string, facts: readonly Fact[]): void => {
+const writeFacts = (store: StoreUnderTest, at: number, scopeId: string, facts: readonly Fact[]): void => {
     const keys = [...new Set(facts.map((fact) => fact.task.key))];
-    store.records.recordRun(runOf({ scope: tabId(tab), at: instant(at), sessions: keys.map((k) => cursor(k)), tasks: keys.map((k) => shapeOf(k, [paneIdOf(k)])), changed: facts }));
+    store.records.recordRun(runOf({ scope: scopeIdOf(scopeId), at: instant(at), sessions: keys.map((k) => cursor(k)), tasks: keys.map((k) => shapeOf(k, [sessionKeyOf(k)])), changed: facts }));
 };
 
 const openAt = (id: number, text: string, firstAt: number, lastAt: number, task: TaskId = TAB_1_A): Fact =>
@@ -94,7 +93,7 @@ export const FCT_4: Case<null, StoreUnderTest> = {
     level: 'full',
     async run(_world, store) {
         writeFacts(store, 120, 'tab-1', [openAt(1, 'one', 100, 100), openAt(2, 'two', 110, 110, TAB_1_B)]);
-        writeFacts(store, 120, 'tab-2', [openAt(3, 'three', 120, 120, { scope: tabIdOf('tab-2'), key: textOf('c') })]);
+        writeFacts(store, 120, 'tab-2', [openAt(3, 'three', 120, 120, { scope: scopeIdOf('tab-2'), key: textOf('c') })]);
         assert.deepEqual(knownKeys(store.facts.keysOf(scope('tab-1'))).toSorted(), ['a', 'b']);
     },
 };
@@ -108,7 +107,7 @@ export const FCT_5: Case<null, StoreUnderTest> = {
         writeFacts(store, 100, 'tab-1', [openAt(1, 'kept', 100, 100)]);
         writeFacts(store, 110, 'tab-1', [openAt(2, 'other', 110, 110, TAB_1_B)]);
         assert.deepEqual(store.facts.historyOf(scope('tab-1'), key('a')).map((fact) => fact.text), ['kept']);
-        const many = Array.from({ length: 301 }, (_, index) => openAt(100 + index, `fact ${index}`, index, index, { scope: tabIdOf('tab-1'), key: textOf('c') }));
+        const many = Array.from({ length: 301 }, (_, index) => openAt(100 + index, `fact ${index}`, index, index, { scope: scopeIdOf('tab-1'), key: textOf('c') }));
         writeFacts(store, 200, 'tab-1', many);
         assert.equal(store.facts.historyOf(scope('tab-1'), key('c')).length, 300);
     },
@@ -120,7 +119,7 @@ export const FCT_8: Case<null, StoreUnderTest> = {
     title: 'a failed read on openOf, recentlyClosed, allOf or keysOf is Unknown, never an empty list',
     level: 'full',
     async run(_world, store) {
-        const task = { scope: tabIdOf('nowhere'), key: textOf('a') };
+        const task = { scope: scopeIdOf('nowhere'), key: textOf('a') };
         store.failReads?.('openOf', 1);
         assert.equal(isUnknownValue(store.facts.openOf(task)), true);
         store.failReads?.('recentlyClosed', 1);

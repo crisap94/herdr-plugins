@@ -6,7 +6,7 @@ import type { EngineWorld } from '../world.ts';
 import { cursorsOf } from './support.ts';
 import { cursorAt, grew, text } from '../values.ts';
 
-const TAB = scope('one');
+const SCOPE = scope('one');
 const CLAUDE = harness('claude');
 
 const lastLocated = (world: EngineWorld): FollowedSession | undefined => world.located().at(-1);
@@ -20,9 +20,9 @@ export const STA_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'sessionStarted rebinds the key to the new session, then refresh locates the new one',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
-            engine.sessionStarted(TAB, key('a'), { session: session('s2'), cwd: null });
-            await engine.refresh(TAB);
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
+            engine.sessionStarted(SCOPE, key('a'), { session: session('s2'), cwd: null });
+            await engine.refresh(SCOPE);
             assert.equal(lastLocated(world)?.session, session('s2'));
         },
     },
@@ -32,9 +32,9 @@ export const STA_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'after a rebind, followedBy finds the new id and not the old one',
         level: 'surface',
         run(_world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
-            engine.sessionStarted(TAB, key('a'), { session: session('s2'), cwd: null });
-            assert.deepEqual(engine.followedBy(CLAUDE, session('s2')), { scope: TAB, key: key('a') });
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
+            engine.sessionStarted(SCOPE, key('a'), { session: session('s2'), cwd: null });
+            assert.deepEqual(engine.followedBy(CLAUDE, session('s2')), { scope: SCOPE, key: key('a') });
             assert.equal(engine.followedBy(CLAUDE, session('s1')), null);
             return Promise.resolve();
         },
@@ -45,8 +45,8 @@ export const STA_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'sessionStarted schedules a read without a turn ended call',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
-            engine.sessionStarted(TAB, key('a'), { session: session('s2'), cwd: null });
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
+            engine.sessionStarted(SCOPE, key('a'), { session: session('s2'), cwd: null });
             await world.settle();
             assert.equal(lastLocated(world)?.session, session('s2'));
         },
@@ -57,8 +57,8 @@ export const STA_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'sessionStarted on a new empty session runs advance only',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
-            engine.sessionStarted(TAB, key('a'), { session: session('s2'), cwd: null });
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
+            engine.sessionStarted(SCOPE, key('a'), { session: session('s2'), cwd: null });
             await world.settle();
             assert.equal(countOf(world, 'beginRun'), 0);
             assert.equal(countOf(world, 'advance'), 1);
@@ -71,10 +71,10 @@ export const STA_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'sessionStarted with no session id unbinds the key',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
-            engine.sessionStarted(TAB, key('a'), { session: null, cwd: null });
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
+            engine.sessionStarted(SCOPE, key('a'), { session: null, cwd: null });
             assert.equal(engine.followedBy(CLAUDE, session('s1')), null);
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             assert.equal(lastLocated(world)?.session, null);
         },
     },
@@ -84,9 +84,9 @@ export const STA_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'sessionStarted with a new cwd replaces the cwd and keeps the session id',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1'), cwd: directory('/old') }));
-            engine.sessionStarted(TAB, key('a'), { session: session('s1'), cwd: directory('/new') });
-            await engine.refresh(TAB);
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1'), cwd: directory('/old') }));
+            engine.sessionStarted(SCOPE, key('a'), { session: session('s1'), cwd: directory('/new') });
+            await engine.refresh(SCOPE);
             assert.deepEqual(lastLocated(world), followed(key('a'), { session: session('s1'), cwd: directory('/new') }));
         },
     },
@@ -96,7 +96,7 @@ export const STA_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'sessionStarted for a key that is not followed',
         level: 'full',
         async run(world, engine) {
-            engine.sessionStarted(TAB, key('ghost'), { session: session('s2'), cwd: null });
+            engine.sessionStarted(SCOPE, key('ghost'), { session: session('s2'), cwd: null });
             await world.settle();
             assert.equal(world.lines().length, 1);
             assert.deepEqual(world.located(), []);
@@ -114,13 +114,13 @@ export const STA_CASES: readonly Case<EngineWorld, Engine>[] = [
                 kind: 'answer',
                 value: { kind: 'chunk', entries: [], title: null, lastPrompt: null, harnessRecap: null, notes: [], position: { cursor: cursorAt(5), tail: null }, grew: grew(true) },
             });
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
-            await engine.refresh(TAB);
-            engine.sessionStarted(TAB, key('a'), { session: session('s2'), cwd: null });
-            await engine.refresh(TAB);
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
+            await engine.refresh(SCOPE);
+            engine.sessionStarted(SCOPE, key('a'), { session: session('s2'), cwd: null });
+            await engine.refresh(SCOPE);
             assert.deepEqual(world.reads(), ['s1', 's2']);
             assert.deepEqual(world.positions().at(-1), UNREAD);
-            assert.ok(cursorsOf(world, TAB).some((cursor) => cursor.pane === 'a' && cursor.transcript === 's1' && cursor.cursor === 5));
+            assert.ok(cursorsOf(world, SCOPE).some((cursor) => cursor.key === 'a' && cursor.transcript === 's1' && cursor.cursor === 5));
         },
     },
     {
@@ -129,9 +129,9 @@ export const STA_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'the rebound key is still followed after a title is given at follow',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1'), title: text('kept') }));
-            engine.sessionStarted(TAB, key('a'), { session: session('s2'), cwd: null });
-            await engine.refresh(TAB);
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1'), title: text('kept') }));
+            engine.sessionStarted(SCOPE, key('a'), { session: session('s2'), cwd: null });
+            await engine.refresh(SCOPE);
             assert.equal(lastLocated(world)?.session, session('s2'));
             assert.equal(lastLocated(world)?.title, 'kept');
         },
@@ -142,8 +142,8 @@ export const STA_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a key followed then started with no turn ended or refresh counts as followed',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
-            engine.sessionStarted(TAB, key('a'), { session: session('s2'), cwd: null });
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
+            engine.sessionStarted(SCOPE, key('a'), { session: session('s2'), cwd: null });
             await world.settle();
             assert.equal(world.lines().some((line) => line.includes('not followed')), false);
             assert.equal(lastLocated(world)?.session, session('s2'));

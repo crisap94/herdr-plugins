@@ -4,7 +4,7 @@ import type { Case } from '../run.ts';
 import { directory, followed, harness, key, scope, session } from '../ids.ts';
 import type { EngineWorld } from '../world.ts';
 
-const TAB = scope('one');
+const SCOPE = scope('one');
 const OTHER = scope('two');
 const CLAUDE = harness('claude');
 
@@ -15,8 +15,8 @@ export const FBY_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a followed session with a known id',
         level: 'surface',
         run(_world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
-            assert.deepEqual(engine.followedBy(CLAUDE, session('s1')), { scope: TAB, key: key('a') });
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
+            assert.deepEqual(engine.followedBy(CLAUDE, session('s1')), { scope: SCOPE, key: key('a') });
             return Promise.resolve();
         },
     },
@@ -26,7 +26,7 @@ export const FBY_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'an id nobody follows',
         level: 'surface',
         run(_world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             assert.equal(engine.followedBy(CLAUDE, session('s9')), null);
             return Promise.resolve();
         },
@@ -37,7 +37,7 @@ export const FBY_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'the right id with another harness',
         level: 'surface',
         run(_world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             assert.equal(engine.followedBy(harness('codex'), session('s1')), null);
             return Promise.resolve();
         },
@@ -48,10 +48,10 @@ export const FBY_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'two sessions with the same cwd and different ids',
         level: 'surface',
         run(_world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1'), cwd: directory('/same') }));
-            engine.follow(TAB, followed(key('b'), { session: session('s2'), cwd: directory('/same') }));
-            assert.deepEqual(engine.followedBy(CLAUDE, session('s1')), { scope: TAB, key: key('a') });
-            assert.deepEqual(engine.followedBy(CLAUDE, session('s2')), { scope: TAB, key: key('b') });
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1'), cwd: directory('/same') }));
+            engine.follow(SCOPE, followed(key('b'), { session: session('s2'), cwd: directory('/same') }));
+            assert.deepEqual(engine.followedBy(CLAUDE, session('s1')), { scope: SCOPE, key: key('a') });
+            assert.deepEqual(engine.followedBy(CLAUDE, session('s2')), { scope: SCOPE, key: key('b') });
             return Promise.resolve();
         },
     },
@@ -61,8 +61,8 @@ export const FBY_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a session after unfollow',
         level: 'surface',
         run(_world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
-            engine.unfollow(TAB, key('a'));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
+            engine.unfollow(SCOPE, key('a'));
             assert.equal(engine.followedBy(CLAUDE, session('s1')), null);
             return Promise.resolve();
         },
@@ -73,9 +73,9 @@ export const FBY_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a follow that replaced the session id',
         level: 'surface',
         run(_world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
-            engine.follow(TAB, followed(key('a'), { session: session('s9') }));
-            assert.deepEqual(engine.followedBy(CLAUDE, session('s9')), { scope: TAB, key: key('a') });
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s9') }));
+            assert.deepEqual(engine.followedBy(CLAUDE, session('s9')), { scope: SCOPE, key: key('a') });
             assert.equal(engine.followedBy(CLAUDE, session('s1')), null);
             return Promise.resolve();
         },
@@ -86,7 +86,7 @@ export const FBY_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a followed session whose session is null',
         level: 'surface',
         run(_world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: null }));
+            engine.follow(SCOPE, followed(key('a'), { session: null }));
             assert.equal(engine.followedBy(CLAUDE, session('s1')), null);
             return Promise.resolve();
         },
@@ -97,7 +97,7 @@ export const FBY_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'the same harness and id followed in two scopes',
         level: 'surface',
         run(_world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             engine.follow(OTHER, followed(key('b'), { session: session('s1') }));
             assert.deepEqual(engine.followedBy(CLAUDE, session('s1')), { scope: OTHER, key: key('b') });
             return Promise.resolve();

@@ -19,7 +19,8 @@ import type { LegacyFollowedSession as FollowedSession } from '@stateforge-labs/
 import { cursorOf, grewOf, type Chunk, type Entry } from '@stateforge-labs/session-ledger';
 import type { SessionCursor } from '@stateforge-labs/session-ledger';
 import type { RecapInput } from '@stateforge-labs/session-ledger';
-import { agentKind, cursorAt, paneId, sourcePath } from '@stateforge-labs/session-ledger/testkit';
+import { agentKind, cursorAt, sourcePath } from '@stateforge-labs/session-ledger/testkit';
+import { sessionKeyOf } from '@stateforge-labs/session-ledger';
 
 const NOW = instant(1_000_000);
 const text = brand<string, 'Text'>;
@@ -80,19 +81,19 @@ test('a compacted mark becomes a lane mark, and an unknown time waits for the la
         position: { cursor: cursorOf(4), tail: null },
         marks: [{ kind: 'compacted', at: null, tokensBefore: brand<number, 'Count'>(10) }, { kind: 'compaction-failed', at: instant(5) }],
     };
-    const lane = { pane: brand<string, 'SessionKey'>('p1') };
+    const lane = { key: brand<string, 'SessionKey'>('p1') };
     assert.deepEqual(marksOf([{ lane, chunk }], NOW, ADVANCED), [{ key: 'p1', at: NOW, cursor: 4, tokensBefore: 10 }]);
     assert.deepEqual(marksOf([{ lane, chunk }], NOW, NOT_ADVANCED), []);
 });
 
-const laneOf = (pane: string): FollowedSession => ({ pane: brand<string, 'SessionKey'>(pane), tab: brand<string, 'ScopeId'>('tab-1'), workspace: brand<string, 'WorkspaceId'>('w1'), agent: brand<string, 'HarnessKind'>('claude'), status: 'working', session: null, cwd: null, title: null, since: null });
+const laneOf = (pane: string): FollowedSession => ({ key: brand<string, 'SessionKey'>(pane), scope: brand<string, 'ScopeId'>('tab-1'), workspace: brand<string, 'WorkspaceId'>('w1'), agent: brand<string, 'HarnessKind'>('claude'), status: 'working', session: null, cwd: null, title: null, since: null });
 
 test('the recap input numbers agents by index and keeps the newest note of each kind', async () => {
-    const cursor: SessionCursor = { key: paneId('p1'), agent: agentKind('claude'), transcript: sourcePath('t'), cursor: cursorAt(0), tail: null, title: null, lastPrompt: null, harnessRecap: text('Recap text') };
+    const cursor: SessionCursor = { key: sessionKeyOf('p1'), agent: agentKind('claude'), transcript: sourcePath('t'), cursor: cursorAt(0), tail: null, title: null, lastPrompt: null, harnessRecap: text('Recap text') };
     const chunk: Chunk = { kind: 'chunk', entries: [], title: null, lastPrompt: null, harnessRecap: null, grew: grewOf(false), position: { cursor: cursorOf(0), tail: null }, notes: [
         { kind: 'compaction', at: instant(1), text: textOf('first') }, { kind: 'compaction', at: instant(2), text: textOf('second') },
     ] };
-    const world = { tab: text('tab-1'), repos: {} as never, now: NOW, tasks: [], facts: [], writerView: FULL_WRITER_VIEW };
+    const world = { scope: text('tab-1'), repos: {} as never, now: NOW, tasks: [], facts: [], writerView: FULL_WRITER_VIEW };
     const built = await inputOf([{ lane: laneOf('p1'), cursor, chunk, fresh: FRESH }, { lane: laneOf('p2'), cursor, chunk, fresh: SEEN_BEFORE }], world);
     assert.deepEqual(built.input.agents.map((agent) => agent.id), ['a1', 'a2']);
     assert.deepEqual(built.input.transcripts.map((one) => one.agent), ['a1', 'a2']);
@@ -110,7 +111,7 @@ test('the section headings map to section ids in English and Spanish, and unknow
 test('the ground of a recap names each task and extracting over it returns an outcome', async () => {
     const numbering = numbered([], [], severalOf(false), FULL_WRITER_VIEW, NOW);
     const ground = groundOf({
-        tab: text('tab-1'), tasks: [{ id: textOf('task-1'), name: textOf('CI'), sessions: [] }], built: { input, numbering }, entries: [],
+        scope: text('tab-1'), tasks: [{ id: textOf('task-1'), name: textOf('CI'), sessions: [] }], built: { input, numbering }, entries: [],
         ledger: { openOf: () => [], recentlyClosed: () => [], allOf: () => [] } as never, now: NOW, language: text('en'),
     });
     assert.equal(ground.now, NOW);

@@ -82,7 +82,7 @@ export function worldOf(over: Partial<World> = {}): World {
 function transcriptsOf(world: World): SessionReader {
     return {
         agent: agentKind(world.agent),
-        locate: async (lane: FollowedSession): Promise<Located> => {
+        locate: async (lane): Promise<Located> => {
             world.locates += 1;
             if (world.faults.locate) {
                 throw new Error('locate failed');

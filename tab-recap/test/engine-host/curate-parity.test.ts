@@ -34,7 +34,7 @@ import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { writer as goldenWriter } from '#test/fakes/golden-writer.ts';
 import { NO_REPOS } from '#test/support.ts';
 import { usdOf } from '@stateforge-labs/session-ledger';
-import { paneIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '#src/recap/domain/ids.ts';
 
 const MIN = 60_000;
 const NOW = Date.parse('2026-10-07T16:30:00Z');
@@ -116,7 +116,7 @@ const stable = (text: string): string => {
 const readerOf = (lanes: readonly FollowedSession[]): SessionReader => ({
     agent: mustOf(parseHarnessKind('claude')),
     inFlight: { kind: 'unsupported', why: 'in-flight-unavailable' },
-    locate: (lane) => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
+    locate: (lane) => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.key}`) }),
     latestPrompt: () => Promise.resolve({ kind: 'prompt', text: null }),
     read: (source): Promise<ChunkResult> => {
         const lane = lanes.find((each) => `/t/${each.pane}` === source);
@@ -176,7 +176,7 @@ function baseSeam(world: World): Seam {
     return {
         request: () => tasks.run(tabId(T)),
         after: async (event) => {
-            try { await tasks.afterRun(event); } catch (error) { log(textOf(`curator ${event.tab}: ${error instanceof Error ? error.message : String(error)}`)); }
+            try { await tasks.afterRun(event); } catch (error) { log(textOf(`curator ${event.scope}: ${error instanceof Error ? error.message : String(error)}`)); }
         },
     };
 }
@@ -244,7 +244,7 @@ const SETTINGS = { TAB_RECAP_RECONCILE_EVERY: 'every', TAB_RECAP_CURATOR_REPAIR:
 async function applied(step: Step, world: World, driven: Seam): Promise<void> {
     switch (step.do) {
         case 'request': await driven.request(); break;
-        case 'after': await driven.after({ tab: tabId(T), turns: brand<number, 'Count'>(step.turns), boundary: brand<boolean, 'Boundary'>(step.boundary === true), cause: textOf('turn-ended') }); break;
+        case 'after': await driven.after({ scope: tabId(T), turns: brand<number, 'Count'>(step.turns), boundary: brand<boolean, 'Boundary'>(step.boundary === true), cause: textOf('turn-ended') }); break;
         case 'answers': world.queue.push(...step.queue); break;
         case 'later': world.clock.now += step.minutes * MIN; break;
         case 'curator': world.slot.present = step.is === 'present'; break;
@@ -403,7 +403,7 @@ function baseEngineOf(world: World): Head {
         board: emptyBoard, log,
         ledger: (event): void => {
             if (event.kind === 'recap-written') {
-                const run: RecapWritten = { tab: tabId(event.scope), turns: brand<number, 'Count'>(event.turns), boundary: brand<boolean, 'Boundary'>(event.boundary), ...(event.cause === undefined ? {} : { cause: textOf(event.cause) }) };
+                const run: RecapWritten = { scope: tabId(event.scope), turns: brand<number, 'Count'>(event.turns), boundary: brand<boolean, 'Boundary'>(event.boundary), ...(event.cause === undefined ? {} : { cause: textOf(event.cause) }) };
                 tasks.afterRun(run).catch((error: unknown) => { log(textOf(`curator ${event.scope}: ${error instanceof Error ? error.message : String(error)}`)); });
             }
         },

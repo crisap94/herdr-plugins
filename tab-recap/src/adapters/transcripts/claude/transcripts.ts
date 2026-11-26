@@ -4,7 +4,7 @@ import type { RegisteredKind } from '@stateforge-labs/session-ledger';
 import { UNREAD, type ChunkResult, type InFlightResult, type Located, type ObservedResult, type Position, type PromptResult, type SourcePath, grewOf, sourcePathOf } from '@stateforge-labs/session-ledger';
 import { type LegacySessionReader as SessionReader } from '@stateforge-labs/session-ledger';
 import { isUnknown, unknown } from '@stateforge-labs/session-ledger';
-import type { FollowedSession } from '#src/recap/domain/lane.ts';
+import type { LegacyFollowedSession } from '@stateforge-labs/session-ledger';
 import { parseAgentKind } from '#src/recap/domain/ids.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { must } from '@stateforge-labs/session-ledger';
@@ -83,13 +83,13 @@ export class ClaudeTranscripts implements SessionReader {
         this.root = root;
     }
 
-    locate(lane: FollowedSession): Promise<Located> {
+    locate(lane: LegacyFollowedSession): Promise<Located> {
         return Promise.resolve(this.find(lane));
     }
 
-    private find(lane: FollowedSession): Located {
+    private find(lane: LegacyFollowedSession): Located {
         if (lane.session === null) {
-            return unknown({ why: 'not-found', what: textOf(`a session id for ${lane.pane}`) });
+            return unknown({ why: 'not-found', what: textOf(`a session id for ${lane.key}`) });
         }
         const found = locateClaudeTranscript(lane.session, this.root);
         return found === null ? unknown({ why: 'not-found', what: textOf(`the transcript of ${lane.session}`) }) : { kind: 'located', source: sourcePathOf(found.path) };

@@ -5,7 +5,7 @@ import type { CompactLimits } from '#src/ports/compact-limits.ts';
 import type { ContextWindowLookup } from '#src/ports/context-windows.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
-import type { FollowedSession } from '#src/recap/domain/lane.ts';
+import { seatOf, type FollowedSession } from '#src/recap/domain/lane.ts';
 import { parseCount, countOf } from '@stateforge-labs/session-ledger';
 import type { Count } from '@stateforge-labs/session-ledger';
 import { parseText, textOf } from '@stateforge-labs/session-ledger';
@@ -54,7 +54,7 @@ export class LaneContexts {
     private async observedIn(lane: FollowedSession): Promise<ObservedOutcome> {
         const agent = lane.agent;
         const reader = this.transcripts.readerFor(agent);
-        const located = reader === undefined ? null : await reader.locate(lane);
+        const located = reader === undefined ? null : await reader.locate(seatOf(lane));
         return reader?.observed === undefined || located === null || isUnknown(located) ? null : reader.observed(located.source, TAIL_BYTES);
     }
 

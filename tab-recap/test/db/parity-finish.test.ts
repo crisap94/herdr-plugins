@@ -17,7 +17,7 @@ import { ids } from '#src/adapters/db/uuid7.ts';
 import { VerdictRowStore } from '#src/adapters/db/verdicts.ts';
 import { LedgerRepository } from '#src/adapters/db/ledger.ts';
 import { expectSameEffect, expectSameRows, withParity } from './parity.ts';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '#src/recap/domain/ids.ts';
 
 const hex = (bytes: Uint8Array): string => Buffer.from(bytes).toString('hex');
 const keyOf = (n: number): Uint8Array => Uint8Array.from({ length: 16 }, () => n);

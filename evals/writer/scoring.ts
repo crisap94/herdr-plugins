@@ -16,7 +16,7 @@ import type { Answer, Graded, JudgeView, Mark } from '../lib/types.ts';
 import { transcriptOf, type WriterItem } from './prompt.ts';
 import { brand } from '../../packages/session-ledger/src/recap/domain/brand.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
-import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
+import { scopeIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
 import { countOf } from '../../packages/session-ledger/src/recap/domain/count.ts';
 import { factIdOf } from '../lib/brands.ts';
 
@@ -31,7 +31,7 @@ export const CODE_CRITERIA: readonly string[] = ['W1', 'W1s', ...GATE_IDS.map((g
 
 function factOf(fact: InputFact, tab: string, language: string): Fact {
     return {
-        id: factIdOf(fact.id), task: { scope: tabIdOf(tab), key: textOf(TASK) }, section: fact.section, text: fact.text, why: fact.why, ref: fact.ref, agent: fact.agent, anchor: fact.anchor,
+        id: factIdOf(fact.id), task: { scope: scopeIdOf(tab), key: textOf(TASK) }, section: fact.section, text: fact.text, why: fact.why, ref: fact.ref, agent: fact.agent, anchor: fact.anchor,
         firstAt: fact.first, lastAt: fact.last, state: fact.state, closedWhy: fact.closed, closedAt: fact.state === 'closed' ? fact.last : null, language: textOf(language),
     };
 }
@@ -43,7 +43,7 @@ export function groundOf(request: RecapRequest): { readonly resolving: Resolving
     return {
         resolving: { tasks: [textOf(TASK)], agents: input.agents, taskOf: new Map(), turns: entries.flatMap((entry) => (entry.at === undefined ? [] : [instant(entry.at)])), clock: { now: instant(input.scope.now), zone: textOf(input.scope.zone) } },
         ground: {
-            key: textOf(TASK), tab: textOf(input.scope.id), shown: new Map(facts.map((fact) => [textOf(String(fact.id)), fact])), open: facts.filter((fact) => fact.state === 'open'),
+            key: textOf(TASK), scope: textOf(input.scope.id), shown: new Map(facts.map((fact) => [textOf(String(fact.id)), fact])), open: facts.filter((fact) => fact.state === 'open'),
             closedLately: facts.filter((fact) => fact.state === 'closed' && (fact.closedAt ?? 0) >= input.scope.now - DAY), source: textOf(anchorSource(input)), language: textOf(request.language),
             agents: input.agents.flatMap((agent) => [agent.id, agent.label, agent.kind]).filter((name) => name !== '').map((name) => textOf(name.toLowerCase())),
         },
@@ -78,7 +78,7 @@ export function outcomeOf(item: WriterItem, text: string, closeEvidence?: CloseE
         const judged = judge(closeEvidence === 'on' ? [...LEDGER_GATES, closeEvidenceGate] : LEDGER_GATES, given, ground, instant(now));
         const out = new Set(judged.refused.map((finding) => finding.at));
         let made = 0;
-        const folded = apply([...ground.shown.values()], judged.kept, { id: 'eval' as RunId, task: { scope: tabIdOf(ground.tab), key: textOf(TASK) }, at: now, language: item.input.language, mint: () => `eval-${(made += 1)}` as FactId });
+        const folded = apply([...ground.shown.values()], judged.kept, { id: 'eval' as RunId, task: { scope: scopeIdOf(ground.scope), key: textOf(TASK) }, at: now, language: item.input.language, mint: () => `eval-${(made += 1)}` as FactId });
         found = { kind: 'ops', why: '', problems: answer.problems, given, refused: judged.refused, kept: given.filter((_op, at) => !out.has(countOf(at))), ledger: folded.ledger, ground };
     }
     cache.set(key, found);

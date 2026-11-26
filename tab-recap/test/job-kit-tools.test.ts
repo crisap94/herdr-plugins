@@ -19,7 +19,7 @@ const f1 = factOf('next', 'Review the migration test');
 const ground: KitGround = {
     gates: LEDGER_GATES,
     at: instant(NOW),
-    task: { key: textOf('t1'), tab: textOf('w1:t1'), shown: new Map([[textOf('f1'), f1]]), open: [f1], closedLately: [], source: textOf('the pipeline went green and the release was tagged'), language: textOf('en'), agents: [] },
+    task: { key: textOf('t1'), scope: textOf('w1:t1'), shown: new Map([[textOf('f1'), f1]]), open: [f1], closedLately: [], source: textOf('the pipeline went green and the release was tagged'), language: textOf('en'), agents: [] },
 };
 const call = (op: Operation): Tasked => ({ task: textOf('t1'), op });
 const good = call({ op: 'add', section: 'next', text: textOf('Write the writer tools'), why: null, ref: null, at: null, agent: null, anchor: textOf('the pipeline went green') });

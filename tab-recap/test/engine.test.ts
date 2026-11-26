@@ -7,7 +7,7 @@ import { legacyCreateEngine as createEngine, type LegacyEngine as Engine, type L
 import { RecapJob, type RecapJobDeps } from '@stateforge-labs/session-ledger';
 import type { LegacyRecapWritten as RecapWritten } from '@stateforge-labs/session-ledger';
 import { tabId, agentKind, paneId } from '#test/support/ids.ts';
-import { laneFrom } from '#src/recap/domain/lane.ts';
+import { laneFrom, seatOf } from '#src/recap/domain/lane.ts';
 import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { instant } from '@stateforge-labs/session-ledger';
 import { FULL_WRITER_VIEW } from '@stateforge-labs/session-ledger';
@@ -34,7 +34,7 @@ const lanes: readonly FollowedSession[] = [
 const reader: SessionReader = {
     agent: agentKind('claude'),
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-    locate: (lane: FollowedSession): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
+    locate: (lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.key}`) }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
     read: (source: string): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf(`go ${source}`) }], title: null, lastPrompt: null, harnessRecap: null, notes: [], position: { cursor: cursorOf(7), tail: null }, grew: grewOf(true) }),
 };
@@ -95,16 +95,16 @@ async function both(byJob: (job: RecapJob) => Promise<void>, byEngine: (engine: 
 
 test('turnEnded asks the job for a recap of the same scope, sessions and cause, with the same result', async () => {
     const seen = await both(
-        async (job) => { job.request(tabId(TAB), lanes, 'requested'); await settled(); },
-        async (engine) => { engine.turnEnded(tabId(TAB), lanes, 'requested'); await settled(); },
+        async (job) => { job.request(tabId(TAB), lanes.map(seatOf), 'requested'); await settled(); },
+        async (engine) => { engine.turnEnded(tabId(TAB), lanes.map(seatOf), 'requested'); await settled(); },
     );
     assert.deepEqual(seen.engine, seen.job);
     assert.notDeepEqual((seen.job as { asked: unknown[] }).asked, []);
 });
 
 test('refresh and compacted resolve once the recap is written, as refreshNow does, with the same result', async () => {
-    const refreshed = await both((job) => job.refreshNow(tabId(TAB), lanes), (engine) => engine.refresh(tabId(TAB), lanes));
-    const compacted = await both((job) => job.refreshNow(tabId(TAB), lanes), (engine) => engine.compacted(tabId(TAB), lanes));
+    const refreshed = await both((job) => job.refreshNow(tabId(TAB), lanes.map(seatOf)), (engine) => engine.refresh(tabId(TAB), lanes.map(seatOf)));
+    const compacted = await both((job) => job.refreshNow(tabId(TAB), lanes.map(seatOf)), (engine) => engine.compacted(tabId(TAB), lanes.map(seatOf)));
     assert.deepEqual(refreshed.engine, refreshed.job);
     assert.deepEqual(compacted.engine, compacted.job);
     assert.deepEqual((refreshed.job as { ran: RecapWritten[] }).ran.map((event) => event.cause), ['requested']);
@@ -113,7 +113,7 @@ test('refresh and compacted resolve once the recap is written, as refreshNow doe
 test('sessionStarted has no effect in this slice: no run, no record', async () => {
     const at = world();
     const engine = createEngine(at.plugs);
-    engine.sessionStarted(tabId(TAB), lanes);
+    engine.sessionStarted(tabId(TAB), lanes.map(seatOf));
     await settled();
     assert.deepEqual(at.asked, []);
     assert.deepEqual(at.ran, []);
@@ -123,10 +123,10 @@ test('sessionStarted has no effect in this slice: no run, no record', async () =
 test('history returns the ledger\'s facts of the scope and the session, not text', async () => {
     const at = world();
     const engine = createEngine(at.plugs);
-    await engine.refresh(tabId(TAB), lanes);
+    await engine.refresh(tabId(TAB), lanes.map(seatOf));
     const [first] = lanes;
     assert.ok(first !== undefined);
-    const history = engine.history(tabId(TAB), first);
+    const history = engine.history(tabId(TAB), seatOf(first));
     assert.deepEqual(history, at.store.ledger.historyOf(tabId(TAB), paneId(String(first.pane))));
     assert.deepEqual(history.map((fact) => [fact.section, fact.text, fact.state]), [['goal', 'ship it', 'open']]);
 });

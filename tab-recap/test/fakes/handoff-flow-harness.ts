@@ -26,7 +26,7 @@ import { paneId, tabId } from '#test/support/ids.ts';
 import { MemoryLedger } from './memory-ledger.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { countOf } from '@stateforge-labs/session-ledger';
-import { paneIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '#src/recap/domain/ids.ts';
 import { seenLane } from '#test/support/seen.ts';
 
 export const NOW = Date.parse('2026-10-11T10:00:00Z');

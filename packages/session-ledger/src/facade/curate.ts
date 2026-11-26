@@ -16,7 +16,7 @@ import { curationOf, type Curation } from './curation.ts';
 import type { CurateBridge, Reconcile, Reconciled, Round } from './reconcile-bridge.ts';
 import { reconcilingOver } from './reconcile-bridge.ts';
 import { acceptedRepair, storyRepair, type StoryReading } from './story-repair.ts';
-import { tabIdOf } from '#src/recap/domain/followed-session-shape.ts';
+import { scopeIdOf } from '#src/recap/domain/followed-session-shape.ts';
 
 const CURATE_GAP_MS = 5 * 60_000;
 
@@ -45,7 +45,7 @@ interface Asked extends Sent {
 
 const note = brand<string, 'Text'>;
 
-const taskOn = (scope: ScopeId, key: SessionKey): TaskId => ({ scope: tabIdOf(scope), key: textOf(key) });
+const taskOn = (scope: ScopeId, key: SessionKey): TaskId => ({ scope: scopeIdOf(scope), key: textOf(key) });
 
 const storiesOver = (stories: Stories): LedgerStories => ({
     read: (scope: ScopeId, task: Text): KeptStory | null => stories.read(taskOn(brand<string, 'ScopeId'>(scope), brand<string, 'SessionKey'>(task))),

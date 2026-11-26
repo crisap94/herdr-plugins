@@ -16,7 +16,7 @@ import { cursor, memoryStore, must as present, seed, storeRead } from '#test/db/
 import { fact } from '#test/fakes/fact-at.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { GUI_DIR, NOW, world } from './herdr.ts';
-import { tabIdOf, paneIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf, paneIdOf } from '#src/recap/domain/ids.ts';
 import { viewRecord } from '#test/support/tab-view-records.ts';
 
 export const MIN = 60_000;

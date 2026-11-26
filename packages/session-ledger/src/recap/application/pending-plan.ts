@@ -28,7 +28,7 @@ function stronger(previous: Pending | null, next: Pending): Pending {
     return previous !== null && previous.urge === 'forced' && next.urge === 'paced' ? { ...previous, lanes: next.lanes } : next;
 }
 
-const keyOf = (seat: LegacyFollowedSession): SessionKey => seat.pane;
+const keyOf = (seat: LegacyFollowedSession): SessionKey => seat.key;
 
 export function laneSet(lanes: readonly LegacyFollowedSession[]): ReadonlySet<SessionKey> {
     return new Set(lanes.map(keyOf));

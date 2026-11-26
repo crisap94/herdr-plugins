@@ -57,7 +57,7 @@ export interface WiredEngine {
 }
 
 function ranRun(events: EventStream, board: () => Board, event: RecapWritten): void {
-    recapWritten(events, lanesOf(board(), event.tab), event.cause);
+    recapWritten(events, lanesOf(board(), event.scope), event.cause);
 }
 
 export function wireEngine({ store, backends, transcripts, clock, repos, curation, events, board, ledger, log }: EngineParts): WiredEngine {
@@ -85,7 +85,7 @@ export function wireEngine({ store, backends, transcripts, clock, repos, curatio
         afterRun: curation.afterRun,
         on: (event): void => {
             if (event.kind === 'recap-written') {
-                ranRun(events, board, { tab: must(parseTabId(event.scope)), turns: event.turns, boundary: event.boundary, ...(event.cause === undefined ? {} : { cause: must(parseText(event.cause)) }) });
+                ranRun(events, board, { scope: must(parseTabId(event.scope)), turns: event.turns, boundary: event.boundary, ...(event.cause === undefined ? {} : { cause: must(parseText(event.cause)) }) });
             }
             ledger(event);
         },

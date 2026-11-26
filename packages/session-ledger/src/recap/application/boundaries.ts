@@ -11,7 +11,7 @@ export const ADVANCED = brand<boolean, 'Advanced'>(true);
 export const NOT_ADVANCED = brand<boolean, 'Advanced'>(false);
 
 export interface Read {
-    readonly lane: Pick<LegacyFollowedSession, 'pane'>;
+    readonly lane: Pick<LegacyFollowedSession, 'key'>;
     readonly chunk: Chunk | null;
 }
 
@@ -21,7 +21,7 @@ export function marksOf(reads: readonly Read[], now: Instant, advanced: Advanced
             return [];
         }
         return [{
-            key: read.lane.pane, at: mark.at ?? now, cursor: countOf(read.chunk.position.cursor),
+            key: read.lane.key, at: mark.at ?? now, cursor: countOf(read.chunk.position.cursor),
             ...(mark.tokensBefore === undefined ? {} : { tokensBefore: mark.tokensBefore }),
             ...(mark.tokensAfter === undefined ? {} : { tokensAfter: mark.tokensAfter }),
             ...(mark.tookMs === undefined ? {} : { tookMs: mark.tookMs }),

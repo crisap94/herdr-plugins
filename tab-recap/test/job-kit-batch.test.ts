@@ -19,7 +19,7 @@ const review = factOf('next', 'Review the migration test');
 const shut = factOf('done', 'Merged the lint fix', { state: 'closed', closedWhy: 'done', closedAt: instant(NOW - 3_600_000) });
 
 const task: TaskGround = {
-    key: textOf('t1'), tab: textOf('w1:t1'), shown: new Map([[textOf('1'), released], [textOf('2'), review]]), open: [released, review], closedLately: [shut], source: textOf('go'), language: textOf('en'), agents: [],
+    key: textOf('t1'), scope: textOf('w1:t1'), shown: new Map([[textOf('1'), released], [textOf('2'), review]]), open: [released, review], closedLately: [shut], source: textOf('go'), language: textOf('en'), agents: [],
 };
 const kit: KitGround = { gates: LEDGER_GATES, task, at: instant(NOW) };
 

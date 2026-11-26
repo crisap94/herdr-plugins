@@ -57,8 +57,8 @@ export const laneOf = (scope: ScopeId, session: FollowedSession): LegacyFollowed
         return null;
     }
     return {
-        pane,
-        tab,
+        key: pane,
+        scope: tab,
         workspace,
         agent,
         status: 'unknown',
@@ -70,7 +70,7 @@ export const laneOf = (scope: ScopeId, session: FollowedSession): LegacyFollowed
 };
 
 export const followedOf = (lane: LegacyFollowedSession): FollowedSession | null => {
-    const key = valueOf(parseSessionKey(lane.pane));
+    const key = valueOf(parseSessionKey(lane.key));
     const harness = valueOf(parseHarnessKind(lane.agent));
     if (key === null || harness === null) {
         return null;
@@ -114,7 +114,7 @@ export const historyOf = (facts: readonly StoredHistoryFact[]): readonly History
     });
 
 export const writtenOf = (event: ReconcileWritten): RecapWritten | null => {
-    const scope = valueOf(parseScopeId(event.tab));
+    const scope = valueOf(parseScopeId(event.scope));
     if (scope === null) {
         return null;
     }

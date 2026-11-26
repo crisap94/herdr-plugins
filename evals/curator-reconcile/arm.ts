@@ -15,7 +15,7 @@ import { checkedOf, wrongCloses } from './scoring.ts';
 import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
 import { causeOf } from '../../packages/session-ledger/src/recap/domain/failure-cause.ts';
-import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
+import { scopeIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
 
 // One job of the reconcile eval, driven through the plugin's own reconcileTask.
 // The writer sends each call through the runner's asker, so every call shares the job's pool slot, backoff and call cap.
@@ -43,7 +43,7 @@ export function reconcileRound(mode: RepairMode): (raw: Item, ask: Asker) => Pro
         };
         await reconcileTask(
             { writer, stories, language: textOf(item.input.language), rubric: RUBRIC.items, clock: { now: instant(item.input.clock.now), zone: textOf(item.input.clock.zone) }, repair: () => mode, log: (line: string): void => { lines.push(line); } },
-            { tab: tabIdOf('t'), key: textOf('k'), name: textOf(item.input.name), facts: item.input.open, tail: item.input.tail, agents: [textOf('claude'), textOf(item.input.name.toLowerCase())] },
+            { scope: scopeIdOf('t'), key: textOf('k'), name: textOf(item.input.name), facts: item.input.open, tail: item.input.tail, agents: [textOf('claude'), textOf(item.input.name.toLowerCase())] },
         );
         const repairs = lines.filter((line) => line.includes(': reconcile repair — ')).length;
         const repairFailed = lines.some((line) => line.includes('gave no repair (') || line.includes('reconcile repair refused — the answer is not JSON'));

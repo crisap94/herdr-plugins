@@ -4,9 +4,9 @@ import type { Case } from '../run.ts';
 import type { StoreUnderTest } from '../memory-store.ts';
 import { advanceOf, brokenFact, cursor, factAt, failedOf, isUnknownValue, lastOf, recapOf, runOf, shapeOf, shapesOf, typeIdAt } from './record-fixtures.ts';
 import { instant } from '@stateforge-labs/session-ledger';
-import { text, usd, tabId } from '../values.ts';
+import { text, usd } from '../values.ts';
 import { countOf } from '../../src/recap/domain/count.ts';
-import { paneIdOf, tabIdOf } from '../../src/recap/domain/followed-session-shape.ts';
+import { sessionKeyOf, scopeIdOf } from '../../src/recap/domain/followed-session-shape.ts';
 import { textOf } from '../../src/recap/domain/text.ts';
 
 export const REC_1: Case<null, StoreUnderTest> = {
@@ -32,7 +32,7 @@ export const REC_2: Case<null, StoreUnderTest> = {
             language: text('de'),
             costUsd: usd(0.25),
             sessions: [cursor('p1'), cursor('p2')],
-            tasks: [shapeOf('a', [paneIdOf('p1')]), shapeOf('b', [paneIdOf('p2')])],
+            tasks: [shapeOf('a', [sessionKeyOf('p1')]), shapeOf('b', [sessionKeyOf('p2')])],
         });
         store.records.recordRun(run);
         const recap = recapOf(store, 'tab-1');
@@ -105,16 +105,16 @@ export const REC_6: Case<null, StoreUnderTest> = {
         store.records.recordRun(runOf({ at: instant(100), cause: 'focused', language: text('de'), changed: [factAt(typeIdAt(1), { text: textOf('kept') })] }));
         const recap = store.records.readRecap(scope('tab-1'));
         const last = store.records.lastRunOf(scope('tab-1'));
-        const factsA = store.facts.allOf({ scope: tabIdOf('tab-1'), key: textOf('a') });
-        const factsB = store.facts.allOf({ scope: tabIdOf('tab-1'), key: textOf('b') });
+        const factsA = store.facts.allOf({ scope: scopeIdOf('tab-1'), key: textOf('a') });
+        const factsB = store.facts.allOf({ scope: scopeIdOf('tab-1'), key: textOf('b') });
         const broken = runOf({
             at: instant(900),
             cause: 'requested',
             language: text('fr'),
             backend: text('codex'),
             sessions: [cursor('p7'), cursor('p8')],
-            tasks: [shapeOf('a', [paneIdOf('p7')]), shapeOf('b', [paneIdOf('p8')])],
-            marks: [{ key: paneIdOf('p7'), at: instant(900), cursor: countOf(3) }],
+            tasks: [shapeOf('a', [sessionKeyOf('p7')]), shapeOf('b', [sessionKeyOf('p8')])],
+            marks: [{ key: sessionKeyOf('p7'), at: instant(900), cursor: countOf(3) }],
             changed: [factAt(typeIdAt(2), { text: textOf('first half') }), brokenFact()],
         });
         assert.throws(() => {
@@ -122,8 +122,8 @@ export const REC_6: Case<null, StoreUnderTest> = {
         }, /a broken fact/);
         assert.deepEqual(store.records.readRecap(scope('tab-1')), recap);
         assert.deepEqual(store.records.lastRunOf(scope('tab-1')), last);
-        assert.deepEqual(store.facts.allOf({ scope: tabIdOf('tab-1'), key: textOf('a') }), factsA);
-        assert.deepEqual(store.facts.allOf({ scope: tabIdOf('tab-1'), key: textOf('b') }), factsB);
+        assert.deepEqual(store.facts.allOf({ scope: scopeIdOf('tab-1'), key: textOf('a') }), factsA);
+        assert.deepEqual(store.facts.allOf({ scope: scopeIdOf('tab-1'), key: textOf('b') }), factsB);
     },
 };
 
@@ -181,10 +181,10 @@ export const REC_11: Case<null, StoreUnderTest> = {
     level: 'full',
     async run(_world, store) {
         const before = store.records.readRecap(scope('tab-2'));
-        store.records.recordRun(runOf({ scope: tabId('tab-1') }));
+        store.records.recordRun(runOf({ scope: scopeIdOf('tab-1') }));
         store.records.beginRun(scope('tab-1'), text('codex'), instant(150));
-        store.records.failRun(failedOf({ scope: tabId('tab-1') }));
-        store.records.advance(advanceOf({ scope: tabId('tab-1') }));
+        store.records.failRun(failedOf({ scope: scopeIdOf('tab-1') }));
+        store.records.advance(advanceOf({ scope: scopeIdOf('tab-1') }));
         assert.deepEqual(store.records.readRecap(scope('tab-2')), before);
     },
 };
@@ -206,7 +206,7 @@ export const REC_13: Case<null, StoreUnderTest> = {
     title: 'recordRun with marks',
     level: 'full',
     async run(_world, store) {
-        store.records.recordRun(runOf({ at: instant(100), marks: [{ key: paneIdOf('p1'), at: instant(90), cursor: countOf(3) }] }));
+        store.records.recordRun(runOf({ at: instant(100), marks: [{ key: sessionKeyOf('p1'), at: instant(90), cursor: countOf(3) }] }));
         const stored = store.marksOf(scope('tab-1'));
         assert.deepEqual(stored, [{ at: 90 }]);
         store.records.recordRun(runOf({ at: instant(200) }));

@@ -10,11 +10,11 @@ import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { text } from '@stateforge-labs/session-ledger/testkit';
 import { textOf, type Text } from '@stateforge-labs/session-ledger';
 import { factIdOf } from '@stateforge-labs/session-ledger';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { scopeIdOf } from '@stateforge-labs/session-ledger';
 
 const HOUR = 3_600_000;
 const AT = 100 * HOUR;
-const OWNER = { scope: tabIdOf('tab-1') };
+const OWNER = { scope: scopeIdOf('tab-1') };
 
 const factOf = (id: string, over: Partial<Fact> = {}): Fact => ({
     id: brand<string, 'FactId'>(id), task: { ...OWNER, key: textOf('a') }, section: 'now', text: textOf(id), why: null, ref: null, agent: null, anchor: null,

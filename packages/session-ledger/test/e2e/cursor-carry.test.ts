@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createEngine, parseSessionId, type SessionId } from '@stateforge-labs/session-ledger';
 import { createEngineWorld, cursorAt, followed, key, scope, session, agentKind, text } from '@stateforge-labs/session-ledger/testkit';
+import { sessionKeyOf } from '@stateforge-labs/session-ledger';
 import { CursorCarry } from '@stateforge-labs/session-ledger';
 import type { SessionCursor } from '@stateforge-labs/session-ledger';
 import { agentKindOf } from '@stateforge-labs/session-ledger';
 import { grewOf, UNREAD, type Located, type Position } from '@stateforge-labs/session-ledger';
 import { type LegacySessionReader as SessionReader } from '@stateforge-labs/session-ledger';
-import { paneId, sourcePath } from '@stateforge-labs/session-ledger/testkit';
+import { sourcePath } from '@stateforge-labs/session-ledger/testkit';
 
 const sessionOf = (id: string): SessionId => {
     const read = parseSessionId(id);
@@ -15,7 +16,7 @@ const sessionOf = (id: string): SessionId => {
     return read.value;
 };
 
-const cursorOf = (transcript: string, cursor = 0, agent = 'claude'): SessionCursor => ({ key: paneId('p1'), agent: agentKind(agent), transcript: sourcePath(transcript), cursor: cursorAt(cursor), tail: null, title: null, lastPrompt: null, harnessRecap: null });
+const cursorOf = (transcript: string, cursor = 0, agent = 'claude'): SessionCursor => ({ key: sessionKeyOf('p1'), agent: agentKind(agent), transcript: sourcePath(transcript), cursor: cursorAt(cursor), tail: null, title: null, lastPrompt: null, harnessRecap: null });
 
 const readerOf = (asked: string[], same: boolean): SessionReader => ({
     agent: agentKindOf('claude'),

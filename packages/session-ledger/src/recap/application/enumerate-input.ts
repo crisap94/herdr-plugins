@@ -18,7 +18,7 @@ export interface Question {
     readonly text: Text;
 }
 
-export interface MaterialTab {
+export interface MaterialScope {
     readonly id: Text;
     readonly now: Instant;
     readonly zone: Text;
@@ -31,7 +31,7 @@ export interface ChunkPosition {
 
 export interface EnumerateMaterial {
     readonly language: Text;
-    readonly tab: MaterialTab;
+    readonly scope: MaterialScope;
     readonly agent: Text;
     readonly chunk: TurnChunk;
     readonly position: ChunkPosition;
@@ -46,8 +46,8 @@ const SECTION_LINES = [...SECTIONS.map((section) => [section.id, section.hint] a
 const skeleton = (): Text => textOf(element('sections', {}, textOf(SECTION_LINES.map(([id, hint]) => `${NEST}${leaf('section', { id }, textOf(hint))}`).join('') + NEST)));
 
 function triggersOf(material: EnumerateMaterial): Text {
-    const { tab, stubs } = material;
-    const rows = stubs.map((stub, at) => `${NEST}${leaf('trigger', { id: stubId(count(at)), kind: stub.kind, section: stub.section, ref: stub.ref === null ? null : textOf(stub.ref), at: stub.at === null ? null : localTime(stub.at, tab.now, tab.zone) }, textOf(stub.anchor))}`);
+    const { scope, stubs } = material;
+    const rows = stubs.map((stub, at) => `${NEST}${leaf('trigger', { id: stubId(count(at)), kind: stub.kind, section: stub.section, ref: stub.ref === null ? null : textOf(stub.ref), at: stub.at === null ? null : localTime(stub.at, scope.now, scope.zone) }, textOf(stub.anchor))}`);
     return textOf(rows.length === 0 ? '' : `${NEST}${element('triggers', {}, textOf(rows.join('') + NEST))}`);
 }
 
@@ -56,9 +56,9 @@ function questionsOf(questions: readonly Question[]): Text {
 }
 
 export function enumerateInput(material: EnumerateMaterial): Text {
-    const { tab, chunk, position } = material;
+    const { scope, chunk, position } = material;
     const body = [
-        `${NEST}${element('tab', { id: tab.id, now: isoSecond(tab.now), zone: tab.zone })}`, `${NEST}${skeleton()}`, triggersOf(material), questionsOf(material.questions),
+        `${NEST}${element('tab', { id: scope.id, now: isoSecond(scope.now), zone: scope.zone })}`, `${NEST}${skeleton()}`, triggersOf(material), questionsOf(material.questions),
         `${NEST}${element('chunk', { agent: material.agent, index: count(position.index), of: count(position.of) }, chunk.markup)}${NEST}`,
     ].join('');
     return textOf(element('enumerate_input', { version: count(1), language: material.language }, textOf(body)));

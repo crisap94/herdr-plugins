@@ -48,9 +48,9 @@ test('a board with two lanes, published with no turn ended and no refresh, makes
     const reader: SessionReader = {
         agent: agentKind('claude'),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-        locate: (lane: FollowedSession): Promise<Located> => {
-            located.push(lane.pane);
-            return Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) });
+        locate: (lane): Promise<Located> => {
+            located.push(lane.key);
+            return Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.key}`) });
         },
         latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
         read: (source: string): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf(`go ${source}`) }], title: null, lastPrompt: null, harnessRecap: null, notes: [], position: { cursor: cursorOf(7), tail: null }, grew: grewOf(true) }),

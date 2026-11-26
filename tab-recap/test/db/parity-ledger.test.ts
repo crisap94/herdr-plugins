@@ -6,7 +6,7 @@ import { instant } from '@stateforge-labs/session-ledger';
 import { typeIdOf } from '#src/adapters/db/typeid.ts';
 import { expectSameRows, withParity } from './parity.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '#src/recap/domain/ids.ts';
 
 const keyOf = (n: number): Uint8Array => Uint8Array.from({ length: 16 }, () => n);
 const literal = (n: number): string => `X'${Buffer.from(keyOf(n)).toString('hex')}'`;

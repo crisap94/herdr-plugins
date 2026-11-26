@@ -20,7 +20,7 @@ import { instant } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
 import { usdOf } from '@stateforge-labs/session-ledger';
 import { factIdOf } from '@stateforge-labs/session-ledger';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '#src/recap/domain/ids.ts';
 
 const add = (section: 'done' | 'next', text: string): Operation => ({ op: 'add', section, text: textOf(text), why: null, ref: null, at: null, agent: null });
 const TAB = { scope: tabIdOf('w1:t1'), key: textOf('t1') };

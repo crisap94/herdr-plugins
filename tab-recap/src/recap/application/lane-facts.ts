@@ -5,7 +5,7 @@ import { shareOf } from '@stateforge-labs/session-ledger';
 import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { LaneTokenFacts } from '#src/recap/domain/lane-tokens.ts';
 import { type SessionKey, parseTabId } from '#src/recap/domain/ids.ts';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '#src/recap/domain/ids.ts';
 import { countOf } from '@stateforge-labs/session-ledger';
 
 interface ContextsOf {

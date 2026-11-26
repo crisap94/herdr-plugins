@@ -38,6 +38,7 @@ import { textOf } from '@stateforge-labs/session-ledger';
 import { fsPathOf } from './fakes/transcript-lines.ts';
 import { countOf } from '@stateforge-labs/session-ledger';
 import { seenLane } from '#test/support/seen.ts';
+import { seatOf } from '#src/recap/domain/lane.ts';
 
 const AT = Date.parse('2026-10-10T12:00:00Z');
 const MINUTE = 60_000;
@@ -179,14 +180,14 @@ test('the restore path runs on the engine\'s store and a scope and followed sess
             environment: { clock: { now: (): Instant => instant(clock.now) }, repos: NO_REPOS, mint: mintFactId, log: () => undefined },
             settings: { language: (): Text => brand<string, 'Text'>('en'), writerView: () => FULL_WRITER_VIEW },
         });
-        assert.equal(restoreTextOf(engine.restore(scope, session)), '', 'nothing is restored before the first run');
+        assert.equal(restoreTextOf(engine.restore(scope, seatOf(session))), '', 'nothing is restored before the first run');
         for (const turn of [0, 1, 2]) {
             const lines = turns.slice(turn * 2, turn * 2 + 2);
             appendFileSync(records, lines.map((line) => `${line}\n`).join(''));
             clock.now = Math.max(clock.now + 1, ...lines.map((line) => Date.parse((JSON.parse(line) as { timestamp: string }).timestamp)).filter((at) => !Number.isNaN(at)));
-            await engine.refresh(scope, [session]);
+            await engine.refresh(scope, [seatOf(session)]);
         }
-        const restored = engine.restore(scope, session);
+        const restored = engine.restore(scope, seatOf(session));
         const text = restoreTextOf(restored);
         assert.ok(text.startsWith('These are my notes on where my work stood'), text);
         for (const shown of restored.open) {
@@ -194,7 +195,7 @@ test('the restore path runs on the engine\'s store and a scope and followed sess
         }
         assert.ok(restored.open.length > 0);
         const other = laneFrom(seenLane({ paneId: 'someone-else', tabId: String(scope), workspaceId: 'plain', agent: reader.agent, session: 'other' }));
-        assert.equal(restoreTextOf(engine.restore(scope, other)), '', 'a session the scope never followed gets nothing back');
+        assert.equal(restoreTextOf(engine.restore(scope, seatOf(other))), '', 'a session the scope never followed gets nothing back');
     } finally {
         scratch.dispose();
         rmSync(dir, { recursive: true, force: true });

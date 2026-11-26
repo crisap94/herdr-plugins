@@ -23,7 +23,7 @@ import { cursor, memoryStore, must, openFixture, scratchDir, recordOps } from '.
 import { instant } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
 import { usdOf } from '@stateforge-labs/session-ledger';
-import { paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf, tabIdOf } from '#src/recap/domain/ids.ts';
 import { factIdOf } from '@stateforge-labs/session-ledger';
 
 const timeOf = (clock: string): number => Date.parse(`2026-10-07T${clock}:00Z`);

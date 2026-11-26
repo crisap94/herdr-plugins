@@ -19,7 +19,8 @@ import { blob, flag, maybeText, text, whole } from './rows.ts';
 import type { Row } from './rows.ts';
 import { typeIdOf } from './typeid.ts';
 import type { LedgerRows } from './ledger-rows.ts';
-import { paneIdOf, type SessionKey } from '@stateforge-labs/session-ledger';
+import { type SessionKey } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '#src/recap/domain/ids.ts';
 
 interface LatestRun {
     readonly run: Uint8Array | null;

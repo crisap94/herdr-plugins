@@ -11,7 +11,7 @@ import { instant, duration } from '@stateforge-labs/session-ledger';
 import { sourcePathOf } from '@stateforge-labs/session-ledger';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { usdOf } from '@stateforge-labs/session-ledger';
-import { paneIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '#src/recap/domain/ids.ts';
 
 const T0 = Date.parse('2026-10-07T14:00:00Z');
 const MIN = 60_000;

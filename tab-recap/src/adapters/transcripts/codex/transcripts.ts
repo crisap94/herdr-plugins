@@ -4,7 +4,7 @@ import type { CodexRow } from '@stateforge-labs/harness-adapters/codex';
 import { sourcePathOf, grewOf, type Chunk, type ChunkResult, type Entry, type InFlightResult, type Located, type ObservedResult, type Position, type PromptResult, type SourcePath } from '@stateforge-labs/session-ledger';
 import { type LegacySessionReader as SessionReader } from '@stateforge-labs/session-ledger';
 import { unknown } from '@stateforge-labs/session-ledger';
-import type { FollowedSession } from '#src/recap/domain/lane.ts';
+import type { LegacyFollowedSession } from '@stateforge-labs/session-ledger';
 import { parseAgentKind } from '#src/recap/domain/ids.ts';
 import { countOf, type Count } from '@stateforge-labs/session-ledger';
 import { fsPathOf, type FsPath } from '#src/recap/domain/fs-path.ts';
@@ -71,7 +71,7 @@ export class CodexTranscripts implements SessionReader {
         this.readTail = readTail;
     }
 
-    locate(lane: FollowedSession): Promise<Located> {
+    locate(lane: LegacyFollowedSession): Promise<Located> {
         return Promise.resolve(this.find(lane));
     }
 
@@ -92,9 +92,9 @@ export class CodexTranscripts implements SessionReader {
         }
     }
 
-    private find(lane: FollowedSession): Located {
+    private find(lane: LegacyFollowedSession): Located {
         if (lane.cwd === null) {
-            return unknown({ why: 'not-found', what: textOf(`a cwd for ${lane.pane}`) });
+            return unknown({ why: 'not-found', what: textOf(`a cwd for ${lane.key}`) });
         }
         const file = findRolloutByCwd(lane.cwd, { root: this.root });
         return file === null ? unknown({ why: 'not-found', what: textOf(`a codex rollout started in ${lane.cwd}`) }) : { kind: 'located', source: sourcePathOf(file.path) };

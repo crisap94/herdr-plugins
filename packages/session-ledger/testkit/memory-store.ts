@@ -17,8 +17,8 @@ import {
     type Unknown,
 } from '@stateforge-labs/session-ledger';
 import { emptyRecap, historyOf, sameTask } from './facts.ts';
-import { failure, running, tabId } from './values.ts';
-import { tabIdOf } from '../src/recap/domain/followed-session-shape.ts';
+import { failure, running } from './values.ts';
+import { scopeIdOf } from '../src/recap/domain/followed-session-shape.ts';
 import { textOf } from '../src/recap/domain/text.ts';
 
 export { factOf } from './facts.ts';
@@ -86,7 +86,7 @@ const keptOf = (stored: readonly Fact[], changed: readonly Fact[]): readonly Fac
 };
 
 const ensure = (state: State, scope: string, at: Instant | null): Recap => {
-    const current = state.recaps.get(scope) ?? { ...emptyRecap(tabId(scope)), at };
+    const current = state.recaps.get(scope) ?? { ...emptyRecap(scopeIdOf(scope)), at };
     state.recaps.set(scope, current);
     return current;
 };
@@ -160,12 +160,12 @@ const factsOf = (state: State): FactStore => ({
     allOf: (task: TaskId) => read(state, 'allOf', () => state.stored.filter((fact) => sameTask(fact.task, task)).toSorted((a, b) => a.firstAt - b.firstAt)),
     keysOf: (scope: ScopeId) =>
         read(state, 'keysOf', () =>
-            [...new Set(state.stored.filter((fact) => fact.task.scope === tabIdOf(scope)).map((fact) => fact.task.key))].toSorted(),
+            [...new Set(state.stored.filter((fact) => fact.task.scope === scopeIdOf(scope)).map((fact) => fact.task.key))].toSorted(),
         ),
     historyOf: (scope: ScopeId, key: SessionKey) => {
         state.log.push('historyOf');
         return state.stored
-            .filter((fact) => fact.task.scope === tabIdOf(scope) && fact.task.key === textOf(key))
+            .filter((fact) => fact.task.scope === scopeIdOf(scope) && fact.task.key === textOf(key))
             .toSorted((a, b) => b.lastAt - a.lastAt)
             .slice(0, HISTORY_LIMIT)
             .map(historyOf);

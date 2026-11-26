@@ -6,7 +6,7 @@ import type { EngineWorld } from '../world.ts';
 import { text } from '../values.ts';
 import { addOf, causeOf, chunkOf, countOf, NO_OPS, spoken, writtenOps } from './support.ts';
 
-const TAB = scope('one');
+const SCOPE = scope('one');
 
 const isKind = <K extends LedgerEvent['kind']>(kind: K) => (item: LedgerEvent): item is Extract<LedgerEvent, { kind: K }> => item.kind === kind;
 
@@ -35,14 +35,14 @@ export const EVT_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a written run emits one recap-written with its scope, turns, boundary and cause',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setRead(spoken('hello'));
             world.setWriter(NO_OPS);
-            engine.turnEnded(TAB, key('a'), 'requested');
+            engine.turnEnded(SCOPE, key('a'), 'requested');
             await world.settle();
             const written = writtenOf(world);
             assert.equal(written.length, 1);
-            assert.equal(firstOf(written).scope, TAB);
+            assert.equal(firstOf(written).scope, SCOPE);
             assert.equal(firstOf(written).turns, 1);
             assert.equal(typeof firstOf(written).boundary, 'boolean');
             assert.equal(firstOf(written).cause, 'requested');
@@ -54,13 +54,13 @@ export const EVT_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a failed run and an empty run emit no recap-written',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setWriter(NO_OPS);
-            engine.turnEnded(TAB, key('a'), 'requested');
+            engine.turnEnded(SCOPE, key('a'), 'requested');
             await world.settle();
             world.setRead(spoken('hello'));
             world.setWriter({ kind: 'throw', message: 'boom' });
-            engine.turnEnded(TAB, key('a'), 'requested');
+            engine.turnEnded(SCOPE, key('a'), 'requested');
             await world.settle();
             assert.equal(writtenOf(world).length, 0);
         },
@@ -71,10 +71,10 @@ export const EVT_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a written run with two user entries and one queued entry emits two turn-recorded for the key',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setRead(chunkOf(TWO_USER));
             world.setWriter(NO_OPS);
-            engine.turnEnded(TAB, key('a'), 'requested');
+            engine.turnEnded(SCOPE, key('a'), 'requested');
             await world.settle();
             const turns = turnsOf(world).filter((item) => item.key === key('a'));
             assert.equal(turns.length, 2);
@@ -90,10 +90,10 @@ export const EVT_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'the count of turn-recorded in a run equals the turns of its recap-written',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setRead(chunkOf(TWO_USER));
             world.setWriter(NO_OPS);
-            engine.turnEnded(TAB, key('a'), 'requested');
+            engine.turnEnded(SCOPE, key('a'), 'requested');
             await world.settle();
             const written = writtenOf(world);
             assert.equal(written.length, 1);
@@ -106,10 +106,10 @@ export const EVT_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a written run that adds a fact in section done emits one accomplishment-established',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setRead(spoken('hello'));
             world.setWriter(writtenOps([addOf('done', 'shipped the thing')]));
-            engine.turnEnded(TAB, key('a'), 'requested');
+            engine.turnEnded(SCOPE, key('a'), 'requested');
             await world.settle();
             const established = accomplishmentsOf(world);
             assert.equal(established.length, 1);
@@ -124,17 +124,17 @@ export const EVT_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'ops that update a done fact or add a fact in another section emit no accomplishment-established',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setRead(spoken('hello'));
             world.setWriter(writtenOps([addOf('done', 'shipped the thing'), addOf('now', 'working on it')]));
-            engine.turnEnded(TAB, key('a'), 'requested');
+            engine.turnEnded(SCOPE, key('a'), 'requested');
             await world.settle();
             const established = accomplishmentsOf(world);
             assert.equal(established.length, 1);
             assert.equal(firstOf(established).fact.text, 'shipped the thing');
             world.setRead(spoken('again'));
             world.setWriter(writtenOps([{ op: 'update', id: firstOf(established).fact.id, text: 'shipped the thing twice', why: null }, addOf('next', 'later work')]));
-            engine.turnEnded(TAB, key('a'), 'requested');
+            engine.turnEnded(SCOPE, key('a'), 'requested');
             await world.settle();
             assert.equal(writtenOf(world).length, 2);
             assert.equal(accomplishmentsOf(world).length, 1);
@@ -146,10 +146,10 @@ export const EVT_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a refused op emits no event, the accepted op still does',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setRead(spoken('hello'));
             world.setWriter(writtenOps([addOf('done', 'real'), { op: 'close', id: 'missing', why: 'done' }]));
-            engine.turnEnded(TAB, key('a'), 'requested');
+            engine.turnEnded(SCOPE, key('a'), 'requested');
             await world.settle();
             const established = accomplishmentsOf(world);
             assert.equal(established.length, 1);
@@ -162,10 +162,10 @@ export const EVT_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'the events of one run come in order: turn-recorded, accomplishment-established, recap-written',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setRead(spoken('hello'));
             world.setWriter(writtenOps([addOf('done', 'shipped')]));
-            engine.turnEnded(TAB, key('a'), 'requested');
+            engine.turnEnded(SCOPE, key('a'), 'requested');
             await world.settle();
             assert.deepEqual(
                 world.events().map((item) => item.kind),
@@ -187,10 +187,10 @@ export const EVT_CASES: readonly Case<EngineWorld, Engine>[] = [
                     throw new Error('listener boom');
                 }
             });
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setRead(chunkOf(TWO_USER));
             world.setWriter(NO_OPS);
-            engine.turnEnded(TAB, key('a'), 'requested');
+            engine.turnEnded(SCOPE, key('a'), 'requested');
             await world.settle();
             assert.ok(world.lines().some((line) => line.includes('listener boom')));
             assert.equal(turnsOf(world).length, 2);
@@ -204,14 +204,14 @@ export const EVT_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'without an on handler a written run behaves the same',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setRead(spoken('hello'));
             world.setWriter(NO_OPS);
-            engine.turnEnded(TAB, key('a'), 'requested');
+            engine.turnEnded(SCOPE, key('a'), 'requested');
             await world.settle();
             assert.equal(countOf(world, 'beginRun'), 1);
-            assert.equal(causeOf(world, TAB), 'requested');
-            assert.notEqual(world.store.records.readRecap(TAB), null);
+            assert.equal(causeOf(world, SCOPE), 'requested');
+            assert.notEqual(world.store.records.readRecap(SCOPE), null);
         },
     },
 ];

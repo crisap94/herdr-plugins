@@ -49,7 +49,7 @@ export interface RecapJobDeps {
     writerView(): WriterView;
     debounce?(): Debounce;
     pacing?(): Pacing;
-    visible?(tab: ScopeId): Shown;
+    visible?(scope: ScopeId): Shown;
     enumerator?(): Enumerator | null;
     ran?(event: RecapWritten): void;
     mint(): FactId;
@@ -60,7 +60,7 @@ const READ_BUDGET = 768 * 1024;
 async function placeOf(seat: LegacyFollowedSession, repos: Workplaces): Promise<PlacedLane> {
     const found = seat.cwd === null ? null : await repos.repoOf(seat.cwd);
     const place = found?.kind === 'repo' ? found.root : seat.cwd;
-    return { pane: seat.pane, place: place === null ? null : textOf(place) };
+    return { key: seat.key, place: place === null ? null : textOf(place) };
 }
 
 export class RecapJob {
@@ -70,15 +70,15 @@ export class RecapJob {
 
     constructor(deps: RecapJobDeps) { this.deps = deps; }
 
-    request(tab: ScopeId, lanes: readonly LegacyFollowedSession[], cause: RecapCause): void {
-        const key = String(tab);
-        const slot: Slot = this.slots.get(key) ?? { tab, timer: null, flight: 'idle', pending: null, lastStart: null, lastLanes: new Set(), waiting: [], deferred: 'none' };
+    request(scope: ScopeId, lanes: readonly LegacyFollowedSession[], cause: RecapCause): void {
+        const key = String(scope);
+        const slot: Slot = this.slots.get(key) ?? { scope, timer: null, flight: 'idle', pending: null, lastStart: null, lastLanes: new Set(), waiting: [], deferred: 'none' };
         this.slots.set(key, slot);
         const pacing = this.deps.pacing?.() ?? PACING_TURN;
-        if (pacing.kind === 'smart') this.paced(slot, tab, lanes, cause, pacing);
+        if (pacing.kind === 'smart') this.paced(slot, scope, lanes, cause, pacing);
         else slot.pending = pendingOf(slot, lanes, cause, this.deps.debounce?.() ?? DEBOUNCE_OFF, () => this.deps.clock.now());
         this.hurry(slot);
-        this.arm(slot, tab);
+        this.arm(slot, scope);
     }
 
     private paced(slot: Slot, scope: ScopeId, lanes: Pending['lanes'], cause: RecapCause, pacing: SmartPacing): void {
@@ -98,50 +98,50 @@ export class RecapJob {
     async flushAll(): Promise<void> {
         const slots = [...this.slots.values()];
         for (const slot of slots) this.release(slot, 'shutdown');
-        await Promise.all(slots.map((slot) => this.idle(slot.tab)));
+        await Promise.all(slots.map((slot) => this.idle(slot.scope)));
     }
 
     private release(slot: Slot, why: FlushWhy): void {
         if (slot.pending === null) return;
-        if (slot.pending.start.kind === 'at') this.deps.log(`recap ${String(slot.tab)}: flushed (${why})`);
+        if (slot.pending.start.kind === 'at') this.deps.log(`recap ${String(slot.scope)}: flushed (${why})`);
         slot.pending = { ...slot.pending, start: AT_ONCE };
-        this.arm(slot, slot.tab);
+        this.arm(slot, slot.scope);
     }
 
-    private arm(slot: Slot, tab: ScopeId): void {
+    private arm(slot: Slot, scope: ScopeId): void {
         if (slot.flight === 'flying') return;
         if (slot.timer !== null) clearTimeout(slot.timer);
         const pending = slot.pending;
         if (pending === null) return;
         slot.timer = setTimeout(() => {
             slot.pending = null;
-            void this.fly(slot, tab, pending);
+            void this.fly(slot, scope, pending);
         }, pending.start.kind === 'after' ? pending.start.delay : Math.max(0, pending.start.deadline - Number(this.deps.clock.now())));
     }
 
-    private async fly(slot: Slot, tab: ScopeId, pending: Pending): Promise<void> {
+    private async fly(slot: Slot, scope: ScopeId, pending: Pending): Promise<void> {
         slot.timer = null;
         slot.flight = 'flying';
         slot.deferred = 'none';
         const covered = pending.start.kind === 'at' ? slot.waiting.splice(0) : [];
         const run: Run = { started: (at) => { slot.lastStart = at; slot.lastLanes = laneSet(pending.lanes); }, advanced: (readings) => { if (readings.some((r) => r.chunk?.more === true) && slot.pending === null) slot.pending = { lanes: pending.lanes, cause: pending.cause, urge: 'forced', start: AT_ONCE, burst: null }; } };
         try {
-            await this.recap(tab, pending.lanes, pending.cause, run);
+            await this.recap(scope, pending.lanes, pending.cause, run);
         } catch (error) {
-            this.deps.log(`recap ${tab}: ${error instanceof Error ? error.message : String(error)}`);
+            this.deps.log(`recap ${scope}: ${error instanceof Error ? error.message : String(error)}`);
         }
         slot.flight = 'idle';
         const done = slot.pending === null ? [...covered, ...slot.waiting.splice(0)] : covered;
         for (const finish of done) finish();
         this.hurry(slot);
-        if (slot.pending !== null) this.arm(slot, tab);
+        if (slot.pending !== null) this.arm(slot, scope);
     }
 
     private hurry(slot: Slot): void {
         if (slot.pending !== null && slot.pending.burst !== null && slot.waiting.length > 0) slot.pending = { ...slot.pending, start: AT_ONCE };
     }
 
-    refreshNow(tab: ScopeId, lanes: readonly LegacyFollowedSession[]): Promise<void> { this.request(tab, lanes, 'requested'); return this.idle(tab); }
+    refreshNow(scope: ScopeId, lanes: readonly LegacyFollowedSession[]): Promise<void> { this.request(scope, lanes, 'requested'); return this.idle(scope); }
 
     idle(scope: ScopeId): Promise<void> {
         const slot = this.slots.get(String(scope));
@@ -157,7 +157,7 @@ export class RecapJob {
     }
 
     private async read(lane: LegacyFollowedSession, prior: Recap, budget: Count): Promise<Reading> {
-        const blank: SessionCursor = { key: lane.pane, agent: lane.agent, transcript: sourcePathOf(''), cursor: UNREAD.cursor, tail: UNREAD.tail, title: lane.title === null ? null : textOf(lane.title), lastPrompt: null, harnessRecap: null };
+        const blank: SessionCursor = { key: lane.key, agent: lane.agent, transcript: sourcePathOf(''), cursor: UNREAD.cursor, tail: UNREAD.tail, title: lane.title === null ? null : textOf(lane.title), lastPrompt: null, harnessRecap: null };
         const found = await this.locate(lane);
         if (typeof found === 'string') return { lane, cursor: blank, chunk: null, grew: grew(false), fresh: SEEN_BEFORE, error: found };
         const was = await this.carry.cursorFor({ session: lane.session, cursors: prior.sessions.filter((c) => c.key === blank.key), wanted: { ...blank, transcript: found.source }, reader: found.reader });
@@ -179,21 +179,21 @@ export class RecapJob {
         }
     }
 
-    private async recap(tab: ScopeId, lanes: readonly LegacyFollowedSession[], cause: RecapCause, run: Run): Promise<void> {
-        const prior = this.deps.records.readRecap(tab) ?? blankRecap(tab);
-        if ('kind' in prior) return this.skipped(tab, prior);
-        const found = this.deps.ledger.keysOf(tab);
-        if ('kind' in found) return this.skipped(tab, found);
+    private async recap(scope: ScopeId, lanes: readonly LegacyFollowedSession[], cause: RecapCause, run: Run): Promise<void> {
+        const prior = this.deps.records.readRecap(scope) ?? blankRecap(scope);
+        if ('kind' in prior) return this.skipped(scope, prior);
+        const found = this.deps.ledger.keysOf(scope);
+        if ('kind' in found) return this.skipped(scope, found);
         const keys = found.map(textOf);
         const want = this.deps.language();
         const moved = this.switchedOf(prior, keys, want, cause);
-        if (typeof moved !== 'boolean') return this.skipped(tab, moved);
+        if (typeof moved !== 'boolean') return this.skipped(scope, moved);
         const readings = await this.readAll(prior, lanes, cause);
         if (cause === 'focused' && hasRecap(prior) && !moved && !readings.some((r) => r.grew)) return;
         await this.summarize(prior, readings, { want, was: hasRecap(prior) ? textOf(prior.language) : want, switched: switched(moved), cause, keys }, run);
     }
 
-    private skipped(tab: ScopeId, failure: Unknown): void { this.deps.log(`recap ${String(tab)}: skipped, ${saying(failure.why)}`); }
+    private skipped(scope: ScopeId, failure: Unknown): void { this.deps.log(`recap ${String(scope)}: skipped, ${saying(failure.why)}`); }
 
     private switchedOf(prior: Recap, keys: readonly Text[], want: Text, cause: RecapCause): boolean | Unknown {
         if (!hasRecap(prior)) return false;
@@ -224,8 +224,8 @@ export class RecapJob {
         const tasks = keptGrouping(prior.tasks, await Promise.all(readings.map((r) => placeOf(r.lane, this.deps.repos))), plan.keys);
         const writerView = this.deps.writerView(); const facts = tasks.map((task) => taskFactsOf(ledger, { scope: prior.scope, key: task.id }, now));
         const stale = facts.flatMap((task) => task.open).find((fact) => fact.language !== plan.want);
-        const built = await inputOf(readings, { tab: brand<string, 'Text'>(prior.scope), repos: this.deps.repos, now, tasks, facts, writerView });
-        const ground = groundOf({ tab: brand<string, 'Text'>(prior.scope), tasks, built, entries: readings.flatMap((r) => r.chunk?.entries ?? []), ledger, now, language: brand<string, 'Text'>(plan.want) });
+        const built = await inputOf(readings, { scope: brand<string, 'Text'>(prior.scope), repos: this.deps.repos, now, tasks, facts, writerView });
+        const ground = groundOf({ scope: brand<string, 'Text'>(prior.scope), tasks, built, entries: readings.flatMap((r) => r.chunk?.entries ?? []), ledger, now, language: brand<string, 'Text'>(plan.want) });
         const notInLanguage = built.input.ledgers.flatMap((view) => view.facts).filter((fact) => fact.state === 'open' && (built.numbering.byId.get(fact.id)?.language ?? plan.want) !== plan.want);
         return { tasks, ground, request: { input: built.input, language: brand<string, 'Text'>(plan.want), previousLanguage: brand<string, 'Text'>(stale?.language ?? plan.was), ...(notInLanguage.length === 0 ? {} : { notInLanguage }) } };
     }
@@ -239,7 +239,7 @@ export class RecapJob {
     }
 
     private async summarize(prior: Recap, readings: readonly Reading[], plan: Plan, run: Run): Promise<void> {
-        const errors = readings.flatMap((r) => (r.error === null ? [] : [`${r.lane.pane}: ${r.error}`]));
+        const errors = readings.flatMap((r) => (r.error === null ? [] : [`${r.lane.key}: ${r.error}`]));
         const note = errors.length > 0 ? textOf(errors.join('; ')) : null;
         const unmoved = readings.map((r) => r.cursor);
         const advanced = readings.map((r) => (r.chunk === null ? r.cursor : { ...r.cursor, ...r.chunk.position }));
@@ -269,8 +269,8 @@ export class RecapJob {
     }
 
     private written(base: Omit<RecordedRun, 'tasks' | 'changed' | 'refused' | 'marks' | 'input' | 'gateStats'>, run: WrittenRun): void {
-        const owner = { scope: base.scope }, marks = marksOf(run.readings, base.at, ADVANCED), before = run.tasks.map((task) => ({ task, facts: this.deps.ledger.allOf({ ...owner, key: task.id }) })), entries = run.parts.flatMap((r) => (r.chunk?.entries ?? []).filter((entry) => entry.role === 'user' && entry.queued !== true).map((entry) => ({ key: r.lane.pane, at: entry.at ?? base.at })));
+        const owner = { scope: base.scope }, marks = marksOf(run.readings, base.at, ADVANCED), before = run.tasks.map((task) => ({ task, facts: this.deps.ledger.allOf({ ...owner, key: task.id }) })), entries = run.parts.flatMap((r) => (r.chunk?.entries ?? []).filter((entry) => entry.role === 'user' && entry.queued !== true).map((entry) => ({ key: r.lane.key, at: entry.at ?? base.at })));
         this.deps.records.recordRun({ ...base, tasks: run.tasks, ...foldedRun(throwingLedger(this.deps.ledger), run.asked.tasks, { owner, at: base.at, language: base.language, mint: () => this.deps.mint() }), gateStats: run.asked.stats, marks, ...(this.deps.keepInput?.() ?? true ? { input: writerContext(run.request) } : {}) });
-        this.deps.ran?.({ tab: brand<string, 'ScopeId'>(base.scope), turns: count(entries.length), boundary: brand<boolean, 'Boundary'>(marks.length > 0), cause: textOf(base.cause), entries, established: accomplishedOf(before, run.tasks.map((task) => ({ task, facts: this.deps.ledger.allOf({ ...owner, key: task.id }) })), base.at, (failure) => this.deps.log(`recap ${base.cause}: accomplishments not reported, ${saying(failure.why)}`)) });
+        this.deps.ran?.({ scope: brand<string, 'ScopeId'>(base.scope), turns: count(entries.length), boundary: brand<boolean, 'Boundary'>(marks.length > 0), cause: textOf(base.cause), entries, established: accomplishedOf(before, run.tasks.map((task) => ({ task, facts: this.deps.ledger.allOf({ ...owner, key: task.id }) })), base.at, (failure) => this.deps.log(`recap ${base.cause}: accomplishments not reported, ${saying(failure.why)}`)) });
     }
 }

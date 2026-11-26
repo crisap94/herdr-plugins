@@ -9,7 +9,7 @@ import { add, api, OTHER_TAB, seedOther, seedRun, seqOf, startWorld, TAB, TASK, 
 import { tabId } from '#test/support/ids.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { instant } from '@stateforge-labs/session-ledger';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '#src/recap/domain/ids.ts';
 
 interface Doc {
     readonly tasks: readonly { readonly regions: { readonly needs: readonly string[] }; readonly facts: readonly { readonly id: string; readonly section: string; readonly state: string; readonly closedWhy: string | null }[] }[];

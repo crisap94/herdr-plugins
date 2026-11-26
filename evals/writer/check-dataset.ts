@@ -21,7 +21,7 @@ import { FRESH_ITEMS, FRESH_SEED, guardOf, overlapOf } from '../lib/fresh.ts';
 import { PROJECTS } from './dataset-vocabulary.ts';
 import { brand } from '../../packages/session-ledger/src/recap/domain/brand.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
-import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
+import { scopeIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
 import { factIdOf } from '../lib/brands.ts';
 import { requestOfStored, type StoredRecapRequest } from '../lib/stored-input.ts';
 
@@ -75,7 +75,7 @@ const fail = (id: string, what: string): void => { failures.push(`${id}: ${what}
 
 function factOf(fact: InputFact, tab: string, language: string): Fact {
     return {
-        id: factIdOf(fact.id), task: { scope: tabIdOf(tab), key: textOf(TASK) }, section: fact.section, text: fact.text, why: fact.why, ref: fact.ref, agent: fact.agent, anchor: fact.anchor,
+        id: factIdOf(fact.id), task: { scope: scopeIdOf(tab), key: textOf(TASK) }, section: fact.section, text: fact.text, why: fact.why, ref: fact.ref, agent: fact.agent, anchor: fact.anchor,
         firstAt: fact.first, lastAt: fact.last, state: fact.state, closedWhy: fact.closed, closedAt: fact.state === 'closed' ? fact.last : null, language: textOf(language),
     };
 }
@@ -87,7 +87,7 @@ function groundOf(request: RecapRequest): { resolving: Resolving; ground: TaskGr
     return {
         resolving: { tasks: [textOf(TASK)], agents: input.agents, taskOf: new Map(), turns: entries.flatMap((entry) => (entry.at === undefined ? [] : [instant(entry.at)])), clock: { now: instant(input.scope.now), zone: textOf(input.scope.zone) } },
         ground: {
-            key: textOf(TASK), tab: textOf(input.scope.id), shown: new Map(facts.map((fact) => [textOf(String(fact.id)), fact])), open: facts.filter((fact) => fact.state === 'open'),
+            key: textOf(TASK), scope: textOf(input.scope.id), shown: new Map(facts.map((fact) => [textOf(String(fact.id)), fact])), open: facts.filter((fact) => fact.state === 'open'),
             closedLately: facts.filter((fact) => fact.state === 'closed' && (fact.closedAt ?? 0) >= input.scope.now - DAY), source: textOf(anchorSource(input)), language: textOf(request.language),
             agents: input.agents.flatMap((agent) => [agent.id, agent.label, agent.kind]).filter((name) => name !== '').map((name) => textOf(name.toLowerCase())),
         },

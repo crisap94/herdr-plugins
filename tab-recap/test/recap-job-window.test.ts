@@ -5,8 +5,7 @@ import assert from 'node:assert/strict';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { RecapJob } from '@stateforge-labs/session-ledger';
 import { tabId, agentKind } from '#test/support/ids.ts';
-import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { FollowedSession } from '#src/recap/domain/lane.ts';
+import { laneFrom, seatOf } from '#src/recap/domain/lane.ts';
 import { instant } from '@stateforge-labs/session-ledger';
 import type { Debounce } from '@stateforge-labs/session-ledger';
 import { FULL_WRITER_VIEW } from '@stateforge-labs/session-ledger';
@@ -49,7 +48,7 @@ function harness(settings: Settings, causes: string[], answer?: () => Promise<Wr
     const reader: SessionReader = {
         agent: agentKind('claude'),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-        locate: (lane: FollowedSession): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
+        locate: (lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.key}`) }),
         latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
         read: (source, from): Promise<ChunkResult> => {
             reads.push(from.cursor);
@@ -96,13 +95,13 @@ test('turn endings inside a run window join one run at the deadline, with the se
     const causes: string[] = [];
     const created = harness({ debounce: WINDOW_60S }, causes);
     const job = created.job;
-    job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     t.mock.timers.tick(0);
     await settle();
     assert.equal(causes.length, 1, 'the first run in the process is immediate');
     for (const at of [20_000, 30_000, 45_000]) {
         t.mock.timers.setTime(at);
-        job.request(tabId('w1:t1'), [lane], 'turn-ended');
+        job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     }
     t.mock.timers.tick(14_999);
     await settle();
@@ -113,7 +112,7 @@ test('turn endings inside a run window join one run at the deadline, with the se
     assert.equal(created.callCount(), 2);
     assert.deepEqual(created.reads, [0, 1], 'the deadline run reads from the cursor the first run left');
     t.mock.timers.setTime(119_000);
-    job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     t.mock.timers.tick(2_499);
     await settle();
     assert.equal(causes.length, 2);
@@ -132,11 +131,11 @@ test('a turn ending while a run is in progress waits the settle delay after its 
         answers += 1;
         return answers === 1 ? blocked : Promise.resolve(written);
     });
-    created.job.request(tabId('w1:t1'), [lane], 'requested');
+    created.job.request(tabId('w1:t1'), [seatOf(lane)], 'requested');
     t.mock.timers.tick(0);
     await settle();
     t.mock.timers.setTime(100_000);
-    created.job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    created.job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     release?.(written);
     await settle();
     t.mock.timers.tick(2_499);
@@ -158,12 +157,12 @@ test('forced causes start inside a window and stay forced in the again slot', as
         return answers === 1 ? blocked : Promise.resolve(written);
     });
     const job = created.job;
-    job.request(tabId('w1:t1'), [lane], 'requested');
+    job.request(tabId('w1:t1'), [seatOf(lane)], 'requested');
     t.mock.timers.tick(0);
     await settle();
     assert.equal(created.callCount(), 1);
-    job.request(tabId('w1:t1'), [lane], 'requested');
-    job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    job.request(tabId('w1:t1'), [seatOf(lane)], 'requested');
+    job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     release?.(written);
     await settle();
     t.mock.timers.tick(0);
@@ -177,13 +176,13 @@ test('a requested refresh replaces a pending turn-ended window and starts at onc
     const causes: string[] = [];
     const created = harness({ debounce: WINDOW_60S }, causes);
     const job = created.job;
-    job.request(tabId('w1:t1'), [lane], 'requested');
+    job.request(tabId('w1:t1'), [seatOf(lane)], 'requested');
     t.mock.timers.tick(0);
     await settle();
     t.mock.timers.setTime(20_000);
-    job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     t.mock.timers.setTime(20_001);
-    job.request(tabId('w1:t1'), [lane], 'requested');
+    job.request(tabId('w1:t1'), [seatOf(lane)], 'requested');
     t.mock.timers.tick(0);
     await settle();
     assert.deepEqual(causes, ['requested', 'requested']);
@@ -191,7 +190,7 @@ test('a requested refresh replaces a pending turn-ended window and starts at onc
     t.mock.timers.tick(0);
     await settle();
     assert.equal(created.callCount(), 2, 'the cancelled turn-ended timer does not launch another run');
-    job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     t.mock.timers.tick(19_999);
     await settle();
     assert.equal(created.callCount(), 2, 'a later ending waits for the window measured from the refresh start');
@@ -213,12 +212,12 @@ test('a refresh behind a run in progress runs next and resolves its caller after
         answers += 1;
         return answers === 1 ? blocked : Promise.resolve(written);
     });
-    created.job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    created.job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     t.mock.timers.tick(2_500);
     await settle();
     t.mock.timers.setTime(10_000);
     let refreshed = false;
-    void created.job.refreshNow(tabId('w1:t1'), [lane]).then(() => (refreshed = true));
+    void created.job.refreshNow(tabId('w1:t1'), [seatOf(lane)]).then(() => (refreshed = true));
     t.mock.timers.tick(0);
     await settle();
     assert.equal(created.callCount(), 1, 'the refresh waits for the run in progress');
@@ -242,17 +241,17 @@ test('a refresh caller is resolved when its own run ends, not behind a debounced
         return answers === 2 ? blocked : Promise.resolve(written);
     });
     const job = created.job;
-    job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     t.mock.timers.tick(0);
     await settle();
     t.mock.timers.setTime(10_000);
     let refreshed = false;
-    void job.refreshNow(tabId('w1:t1'), [lane]).then(() => (refreshed = true));
+    void job.refreshNow(tabId('w1:t1'), [seatOf(lane)]).then(() => (refreshed = true));
     t.mock.timers.tick(0);
     await settle();
     assert.equal(created.callCount(), 2, 'the refresh runs at once');
     t.mock.timers.setTime(11_000);
-    job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     release?.(written);
     await settle();
     assert.equal(refreshed, true, 'the caller is resolved when the refresh run ends');
@@ -278,12 +277,12 @@ test('with no window, a refresh caller waits for the turn ending that arrives du
         return new Promise<Written>((resolve) => { releases.push(resolve); });
     });
     const job = created.job;
-    job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     t.mock.timers.tick(2_500);
     await settle();
     t.mock.timers.setTime(10_000);
     let refreshed = false;
-    void job.refreshNow(tabId('w1:t1'), [lane]).then(() => (refreshed = true));
+    void job.refreshNow(tabId('w1:t1'), [seatOf(lane)]).then(() => (refreshed = true));
     t.mock.timers.tick(0);
     await settle();
     assert.equal(created.callCount(), 1, 'the refresh waits for the run in progress');
@@ -293,7 +292,7 @@ test('with no window, a refresh caller waits for the turn ending that arrives du
     await settle();
     assert.equal(created.callCount(), 2, 'the refresh runs at once after the run in progress');
     t.mock.timers.setTime(11_000);
-    job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     releases[1]?.(written);
     await settle();
     assert.equal(refreshed, false, 'the caller is not resolved when the refresh run ends while a turn ending waits behind it');
@@ -311,16 +310,16 @@ test('a lane joining or leaving the set inside a run window starts at once', asy
     const causes: string[] = [];
     const created = harness({ debounce: WINDOW_60S }, causes);
     const job = created.job;
-    job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     t.mock.timers.tick(0);
     await settle();
     t.mock.timers.setTime(20_000);
-    job.request(tabId('w1:t1'), [lane, second], 'turn-ended');
+    job.request(tabId('w1:t1'), [seatOf(lane), seatOf(second)], 'turn-ended');
     t.mock.timers.tick(0);
     await settle();
     assert.equal(causes.length, 2, 'a lane joining the set starts at once');
     t.mock.timers.setTime(40_000);
-    job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     t.mock.timers.tick(0);
     await settle();
     assert.equal(causes.length, 3, 'a lane leaving the set starts at once');
@@ -337,13 +336,13 @@ test('a forced request kept in the again slot runs the lanes of the turn ending 
         return answers === 1 ? blocked : Promise.resolve(written);
     });
     const job = created.job;
-    job.request(tabId('w1:t1'), [lane, second], 'turn-ended');
+    job.request(tabId('w1:t1'), [seatOf(lane), seatOf(second)], 'turn-ended');
     t.mock.timers.tick(0);
     await settle();
     t.mock.timers.setTime(10_000);
-    job.request(tabId('w1:t1'), [lane], 'requested');
+    job.request(tabId('w1:t1'), [seatOf(lane)], 'requested');
     t.mock.timers.setTime(11_000);
-    job.request(tabId('w1:t1'), [lane, second], 'turn-ended');
+    job.request(tabId('w1:t1'), [seatOf(lane), seatOf(second)], 'turn-ended');
     release?.(written);
     await settle();
     t.mock.timers.tick(0);
@@ -356,19 +355,19 @@ test('a focused request with no new turn does not consume the window', async (t)
     t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 0 });
     const causes: string[] = [];
     const created = harness({ debounce: WINDOW_60S }, causes);
-    created.job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    created.job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     t.mock.timers.tick(0);
     await settle();
     assert.equal(causes.length, 1);
     created.settings.grew = false;
     t.mock.timers.setTime(30_000);
-    created.job.request(tabId('w1:t1'), [lane], 'focused');
+    created.job.request(tabId('w1:t1'), [seatOf(lane)], 'focused');
     t.mock.timers.tick(0);
     await settle();
     assert.equal(causes.length, 1, 'a focused request that finds no new turn writes nothing');
     created.settings.grew = true;
     t.mock.timers.setTime(30_001);
-    created.job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    created.job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     t.mock.timers.setTime(59_999);
     t.mock.timers.tick(0);
     await settle();
@@ -382,13 +381,13 @@ test('a request whose turns hold no entries does not consume the window', async 
     t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 0 });
     const causes: string[] = [];
     const created = harness({ debounce: WINDOW_60S, entries: false }, causes);
-    created.job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    created.job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     t.mock.timers.tick(0);
     await settle();
     assert.equal(causes.length, 0, 'no writer run for a request with no entries');
     created.settings.entries = true;
     t.mock.timers.setTime(10_000);
-    created.job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    created.job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     t.mock.timers.tick(0);
     await settle();
     assert.equal(causes.length, 1, 'the window was not consumed, so this ending runs at once');
@@ -399,12 +398,12 @@ test('a changed lane set starts at once inside a run window', async (t) => {
     const causes: string[] = [];
     const created = harness({ debounce: WINDOW_60S }, causes);
     const job = created.job;
-    job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     t.mock.timers.tick(0);
     await settle();
     t.mock.timers.setTime(20_000);
     const changed = laneFrom(seenLane({ paneId: 'w1:p2', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's1' }));
-    job.request(tabId('w1:t1'), [changed], 'turn-ended');
+    job.request(tabId('w1:t1'), [seatOf(changed)], 'turn-ended');
     t.mock.timers.tick(0);
     await settle();
     assert.equal(causes.length, 2);
@@ -415,7 +414,7 @@ test('with no window, each turn ending starts its own run after the settle delay
     const causes: string[] = [];
     const created = harness({ debounce: debounceOf(undefined) }, causes);
     const clockBefore = created.clockReads();
-    created.job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    created.job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     assert.equal(created.clockReads(), clockBefore, 'with no window the clock is not read on a request');
     t.mock.timers.tick(2_499);
     await settle();
@@ -424,7 +423,7 @@ test('with no window, each turn ending starts its own run after the settle delay
     await settle();
     assert.equal(causes.length, 1);
     t.mock.timers.setTime(20_000);
-    created.job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    created.job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     t.mock.timers.tick(2_499);
     await settle();
     assert.equal(causes.length, 1);
@@ -437,13 +436,13 @@ test('the window is read on every request, so a change applies without a restart
     t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 0 });
     const causes: string[] = [];
     const created = harness({ debounce: debounceOf(undefined) }, causes);
-    created.job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    created.job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     t.mock.timers.tick(2_500);
     await settle();
     assert.equal(causes.length, 1);
     created.settings.debounce = WINDOW_60S;
     t.mock.timers.setTime(3_000);
-    created.job.request(tabId('w1:t1'), [lane], 'turn-ended');
+    created.job.request(tabId('w1:t1'), [seatOf(lane)], 'turn-ended');
     t.mock.timers.tick(59_499);
     await settle();
     assert.equal(causes.length, 1, 'the window is measured from the start of the run that ran with the window off');

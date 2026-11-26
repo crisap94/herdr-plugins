@@ -12,7 +12,7 @@ const text = brand<string, 'Text'>;
 const ground: Ground = {
     gates: [], now: instant(10 * 3_600_000), facts: new Map(),
     resolving: { tasks: [text('t1')], agents: [], taskOf: new Map(), turns: [], clock: { now: instant(10 * 3_600_000), zone: text('UTC') } },
-    grounds: [{ key: text('t1'), tab: text('w1:t1'), shown: new Map(), open: [], closedLately: [], source: text('go'), language: text('en'), agents: [] }],
+    grounds: [{ key: text('t1'), scope: text('w1:t1'), shown: new Map(), open: [], closedLately: [], source: text('go'), language: text('en'), agents: [] }],
 };
 
 const request: RecapRequest = { input: { scope: { id: textOf('w1:t1'), now: instant(10 * 3_600_000), zone: textOf('UTC') }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] }, language: textOf('en'), previousLanguage: textOf('en') };

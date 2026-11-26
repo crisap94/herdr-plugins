@@ -7,7 +7,8 @@ import type { Curated, Curators } from '@stateforge-labs/session-ledger';
 import type { Entry } from '@stateforge-labs/session-ledger';
 import { brand } from '@stateforge-labs/session-ledger';
 import { instant } from '@stateforge-labs/session-ledger';
-import { agentKind, cursorAt, paneId, sourcePath } from '@stateforge-labs/session-ledger/testkit';
+import { agentKind, cursorAt, sourcePath } from '@stateforge-labs/session-ledger/testkit';
+import { sessionKeyOf } from '@stateforge-labs/session-ledger';
 
 const textOf = brand<string, 'Text'>;
 const count = brand<number, 'Count'>;
@@ -46,7 +47,7 @@ const depsOf = (over: Partial<ReconcilingDeps>, logs: string[]): ReconcilingDeps
     ...over,
 });
 
-const event = (turns: number, boundary: boolean): RecapWritten => ({ tab: tabOf('w1:t1'), turns: count(turns), boundary: boundaryOf(boundary) });
+const event = (turns: number, boundary: boolean): RecapWritten => ({ scope: tabOf('w1:t1'), turns: count(turns), boundary: boundaryOf(boundary) });
 
 test('a reconcile is due every N turns or at once after a boundary, and settles back to zero', () => {
     const reconciling = new Reconciling(depsOf({ every: () => count(3) }, []));
@@ -61,7 +62,7 @@ test('a reconcile is due every N turns or at once after a boundary, and settles 
 });
 
 test('a task with no tail reader or no writer is not reconciled', async () => {
-    const lanes = [{ key: paneId('w1:p1'), agent: agentKind('claude'), transcript: sourcePath('t'), cursor: cursorAt(0), tail: null, title: null, lastPrompt: null, harnessRecap: null }];
+    const lanes = [{ key: sessionKeyOf('w1:p1'), agent: agentKind('claude'), transcript: sourcePath('t'), cursor: cursorAt(0), tail: null, title: null, lastPrompt: null, harnessRecap: null }];
     const target = { id: textOf('t1'), name: textOf('goal'), lanes: [] };
     const reconciling = new Reconciling(depsOf({}, []));
     assert.equal(await reconciling.task(tabOf('w1:t1'), target, lanes, 'open'), false);
@@ -70,7 +71,7 @@ test('a task with no tail reader or no writer is not reconciled', async () => {
 test('a reconcile with no open fact asks nothing, and an empty answer keeps nothing', async () => {
     const [logs, asked] = [[] as string[], [] as string[]];
     const parts = { writer: writer({ kind: 'curated', text: textOf('{"ops":[]}') }, asked), stories: depsOf({}, logs).stories, language: textOf('en'), rubric: textOf('r'), clock: { now: instant(1), zone: textOf('UTC') }, log: (line: string): void => { logs.push(line); } };
-    const task = { tab: tabOf('w1:t1'), key: textOf('t1'), name: textOf('goal'), facts: [], tail: entries, agents: [] };
+    const task = { scope: tabOf('w1:t1'), key: textOf('t1'), name: textOf('goal'), facts: [], tail: entries, agents: [] };
     await reconcileTask(parts, task);
     assert.deepEqual(asked, []);
     assert.deepEqual(logs, []);
