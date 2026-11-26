@@ -1,0 +1,2 @@
+{"type":"assistant","isSidechain":false,"message":{"model":"claude-opus-5-5","role":"assistant","content":[],"usage":{"input_tokens":3,"cache_read_input_tokens":431384}}}
+{"type":"system","subtype":"compact_boundary","compactMetadata":{"trigger":"manual","preTokens":431635,"postTokens":12332}}

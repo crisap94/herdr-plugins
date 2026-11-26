@@ -1,0 +1,4 @@
+{"type":"session_meta","payload":{"cwd":"/repo"}}
+{"type":"turn_context","payload":{"model":"gpt-6-luna"}}
+{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"total_tokens":41796},"last_token_usage":{"total_tokens":13932},"model_context_window":258400},"rate_limits":{}}}
+{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"total_tokens":348000},"last_token_usage":{"total_tokens":116000},"model_context_window":258400},"rate_limits":{}}}
