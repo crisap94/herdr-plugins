@@ -1,11 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { Database } from 'bun:sqlite';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { FORBIDDEN } from './support/words.ts';
 import { instant, type Instant } from '@stateforge-labs/session-ledger';
+import { ledgerPathOf } from '../src/compose.ts';
 import { answerOf, contextJson } from '../src/hook.ts';
 import { briefOf, CONTEXT_BUDGET_BYTES, restoreText } from '../src/plugs.ts';
 import type { HookAnswer, HookDeps } from '../src/hook.ts';
@@ -92,6 +94,42 @@ test('SessionStart after a compaction puts the facts back as additionalContext i
     }
 });
 
+test('SessionStart compact and resume write nothing to the host log, however many times they run', async () => {
+    const { host } = await keptLedger('fx-SessionStart-compact');
+    try {
+        const seen = recorder(host.stateDir, {}, host.clock.now);
+        assert.equal(answerOf('SessionStart', payloadOf('hand-SessionStart-compact'), seen.deps).kind, 'print');
+        assert.equal(answerOf('SessionStart', payloadOf('hand-SessionStart-compact'), seen.deps).kind, 'print');
+        assert.equal(answerOf('SessionStart', payloadOf('SessionStart-02-resume'), seen.deps).kind, 'silent');
+        assert.deepEqual(seen.logged, []);
+        assert.equal(existsSync(join(host.stateDir, LOG_FILE)), false);
+    } finally {
+        host.dispose();
+    }
+});
+
+test('a hook that reads an older ledger leaves the file at its version and takes no backup', () => {
+    const dir = scratch();
+    try {
+        const stateDir = join(dir, 'state');
+        mkdirSync(stateDir, { recursive: true });
+        const path = ledgerPathOf(stateDir);
+        const made = new Database(path);
+        made.exec('CREATE TABLE older (id INTEGER)');
+        made.close();
+        const seen = recorder(stateDir, { SESSION_LEDGER_PRECOMPACT: 'on' });
+        assert.deepEqual(answerOf('SessionStart', payloadOf('hand-SessionStart-compact'), seen.deps), SILENT);
+        assert.deepEqual(answerOf('PreCompact', payloadOf('PreCompact-01-manual'), seen.deps), SILENT);
+        const after = new Database(path, { readonly: true });
+        assert.equal(Number((after.prepare('PRAGMA user_version').get() as { user_version: number }).user_version), 0);
+        assert.deepEqual(after.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all(), [{ name: 'older' }]);
+        after.close();
+        assert.equal(readdirSync(stateDir).some((name) => name.endsWith('.bak')), false);
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
 test('a session the ledger never followed gets nothing back on resume', async () => {
     const { host } = await keptLedger('fx-another-session');
     try {
@@ -117,7 +155,7 @@ test('PreCompact does nothing unless SESSION_LEDGER_PRECOMPACT=on; then it print
         assert.deepEqual(answerOf('PreCompact', payloadOf('PreCompact-01-manual'), recorder(host.stateDir).deps), SILENT);
         const on = recorder(host.stateDir, { SESSION_LEDGER_PRECOMPACT: 'on' });
         const answer = answerOf('PreCompact', payloadOf('PreCompact-01-manual'), on.deps);
-        const expected = briefOf(history);
+        const expected = briefOf(history, {});
         assert.match(expected, /^When you summarize this conversation, keep these, most important first: \(1\) /u);
         assert.deepEqual(answer, { kind: 'print', text: expected });
         assert.equal(expected.includes('\n'), false);

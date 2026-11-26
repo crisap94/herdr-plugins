@@ -113,15 +113,15 @@ answers in `hook.ts`:
 
 - `Stop` and `PostCompact` start `src/run.ts` detached, which notes the session in `<state>/sessions/` and runs the C2 runner
   with the real writer. `PostCompact` calls `refresh`, the same call as `compacted`.
-- `SessionStart` `compact` or `resume` prints the context JSON from a read-only open of the ledger, or nothing.
+- `SessionStart` `compact` or `resume` prints the context JSON from a `reader` open of the ledger (`openLedgerStore(path, 'reader')`: the file is never created, migrated or backed up, and a missing or older ledger prints nothing), or nothing.
 - `PreCompact`, when on, prints `guidanceOf` over `sectionsOfOpen(restore.open)`, cleaned by the brief's forbidden-word
   filter. That is tab-recap's compaction template path, with no model call.
 
 The real harness runtime comes from a relative import of `tab-recap/node_modules/@stateforge-labs/harness-adapters/dist/src/runtime`,
 the same file tab-recap's bare import resolves to.
 
-`scripts/session-ledger show [--session <id>]` and `line` are for the human. They open the ledger read-only
-(`connectReadOnly`) and find a session in the sessions index by folder or id.
+`scripts/session-ledger show [--session <id>]` and `line` are for the human. They open the ledger as a `reader`
+(`openLedgerStore(path, 'reader')`, the same read-only open) and find a session in the sessions index by folder or id.
 
 ## Risks
 

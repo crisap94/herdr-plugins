@@ -121,7 +121,7 @@ const openFactsOf = (records: Records, facts: FactStore) => (scope: ScopeId, key
 
 export function composeEngine(plugs: HostPlugs, role: Role = 'writing'): Composed | Refused {
     const path = ledgerPathOf(plugs.stateDir);
-    const opened = openLedgerStore(path);
+    const opened = openLedgerStore(path, role === 'reading' ? 'reader' : 'owner');
     if (opened.kind !== 'ready') {
         opened.close();
         return { kind: 'refused', detail: `the ledger at ${path} is ${opened.kind === 'newer-store' ? 'newer' : 'older'} (version ${opened.found}, this host knows ${opened.known})` };

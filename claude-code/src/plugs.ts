@@ -122,7 +122,10 @@ export function restoreText(facts: RestoreFacts): RestoreText {
 
 const EMPTY = textOf('');
 
-export function briefOf(open: readonly Fact[]): string {
+export function briefOf(open: readonly Fact[], lastRun: object | null): string {
+    if (lastRun === null) {
+        return '';
+    }
     const sections = clean(sectionsOfOpen(open), EMPTY);
     return JSON.stringify(sections) === JSON.stringify(NO_SECTIONS) ? '' : guidanceOf({ sections, web: null, note: null });
 }

@@ -42,7 +42,7 @@ const compactedText = (event: HostEvent): ((reading: ReadEngine) => string) => (
 const briefText = (event: HostEvent): ((reading: ReadEngine) => string) => (reading) => {
     const followed = followedOf(event);
     reading.engine.follow(followed.scope, followed.session);
-    return briefOf(reading.openFacts(followed.scope, followed.session.key));
+    return briefOf(reading.openFacts(followed.scope, followed.session.key), reading.records.lastRunOf(followed.scope));
 };
 
 const printed = (text: string): HookAnswer => (text === '' ? SILENT : { kind: 'print', text });
