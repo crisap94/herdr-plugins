@@ -47,8 +47,8 @@ test('opening the tab over the API makes it watched', { timeout: 30_000 }, async
 test('the lease still holds 59 seconds on and ends at 60', () => {
     rig.clock.at += 59_999;
     assert.equal(watched('t1'), 'yes');
-    rig.clock.at += 2;
-    assert.equal(watched('t1'), 'no');
+    rig.clock.at += 1;
+    assert.equal(watched('t1'), 'no', 'the lease ends exactly 60 000 ms after it opened');
 });
 
 test('closing the tab over the API drops the lease at once', { timeout: 30_000 }, async () => {
