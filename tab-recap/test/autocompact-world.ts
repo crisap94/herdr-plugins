@@ -53,8 +53,7 @@ export interface LaneService {
 
 export interface World { breakAt: number | null; readonly service: LaneService; readonly watch: SafePointWatch; readonly claims: LaneClaims; readonly queued: Set<string>;readonly events: string[]; awaiting: string | null; lateAwaiting: string | null; awaitingUnknown: boolean; known: boolean; gate: Promise<void> | null; byPane: Record<string, number>; readonly store: ReturnType<typeof memoryStore>; readonly requests: CompactAsk[]; readonly logs: string[]; readonly asked: number[]; readonly refreshed: string[]; readonly flushed: string[]; readonly reads: number[]; readonly clock: { at: number }; idleHold: IdleHold; policy: Policy; inFlight: number | 'unknown'; background: readonly BackgroundItem[]; share: number; decide: () => DecidedAnswersResult }
 
-export function world(over: Partial<Policy> = {}, recap = true, startedAt = 0, tuning: Partial<CompactTuning> = {}): World {
-    const store = memoryStore();
+export function world(over: Partial<Policy> = {}, recap = true, startedAt = 0, tuning: Partial<CompactTuning> = {}, store: ReturnType<typeof memoryStore> = memoryStore()): World {
     store.db.prepare('INSERT INTO tab (id, first_seen, last_seen) VALUES (?, 1, 1)').run(SCOPE);
     const [requests, logs, asked, refreshed, reads, events] = [[] as CompactAsk[], [] as string[], [] as number[], [] as string[], [] as number[], [] as string[]];
     const flushed: string[] = [];
