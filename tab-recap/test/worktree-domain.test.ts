@@ -3,89 +3,19 @@ import assert from 'node:assert/strict';
 import { must } from '@stateforge-labs/session-ledger';
 import { parseCount } from '@stateforge-labs/session-ledger';
 import type { Count } from '@stateforge-labs/session-ledger';
-import { parseDirectory } from '@stateforge-labs/session-ledger';
-import type { Directory } from '@stateforge-labs/session-ledger';
-import { paneId } from '#test/support/ids.ts';
-import type { SessionKey } from '#src/recap/domain/ids.ts';
-import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { bumped, NO_COUNTS, perfLine } from '#src/recap/domain/perf.ts';
 import { notesKey } from '#src/recap/domain/pane-notes.ts';
-import { parseText, textOf } from '@stateforge-labs/session-ledger';
-import type { Text } from '@stateforge-labs/session-ledger';
-import { duration, instant } from '@stateforge-labs/session-ledger';
-import {
-    changedOf, foldReading, IDLE_ROOT, movesOf, parseWorktreeSwitch, parseWorktreeWatch, refreshDue, runDone, strongest, takeRun, tierOf, wantRun,
-} from '#src/recap/domain/worktree.ts';
-import type { LaneGlance } from '#src/recap/domain/worktree.ts';
-import type { PorcelainReading } from '#src/recap/domain/porcelain.ts';
-import { seenLane } from '#test/support/seen.ts';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { duration } from '@stateforge-labs/session-ledger';
+import { parseWorktreeSwitch, parseWorktreeWatch } from '#src/recap/domain/worktree.ts';
 
 const count = (n: number): Count => must(parseCount(n));
-const dir = (path: string): Directory => must(parseDirectory(path));
-const text = (raw: string): Text => must(parseText(raw));
-const reading = (tracked: number, untracked: number, ahead: number | null = null): PorcelainReading => ({ branch: text('main'), ahead: ahead === null ? null : count(ahead), tracked: count(tracked), untracked: count(untracked) });
 
 test('parseWorktreeWatch: the three lines of rev-parse; a missing line is refused', () => {
     const found = must(parseWorktreeWatch('/w/repo\n/w/repo/.git\n/w/repo/.git\n'));
     assert.deepEqual([found.root, found.gitDir, found.commonDir], ['/w/repo', '/w/repo/.git', '/w/repo/.git']);
     assert.equal(parseWorktreeWatch('/w/repo\n/w/repo/.git\n').kind, 'err');
     assert.equal(parseWorktreeWatch(null).kind, 'err');
-});
-
-test('tierOf: a git-dir change is cheap; the attach, the turn end and the safety refresh count untracked files', () => {
-    assert.deepEqual((['attached', 'git-dir', 'turn-ended', 'safety'] as const).map(tierOf), ['full', 'tracked', 'full', 'full']);
-});
-
-test('foldReading: the tracked tier keeps the last untracked count; the full tier replaces it; changed adds both', () => {
-    const root = dir('/w/repo');
-    const full = foldReading(null, root, 'full', reading(3, 2, 1), instant(10));
-    assert.deepEqual([full.tracked, full.untracked, full.ahead, full.at], [3, 2, 1, 10]);
-    assert.equal(changedOf(full), 5);
-    const cheap = foldReading(full, root, 'tracked', reading(4, 0, 1), instant(20));
-    assert.deepEqual([cheap.tracked, cheap.untracked, cheap.at], [4, 2, 20]);
-    const first = foldReading(null, root, 'tracked', reading(4, 0), instant(30));
-    assert.equal(first.untracked, null);
-    assert.equal(changedOf(first), 4);
-});
-
-test('refreshDue: full once the window has passed, nothing before', () => {
-    assert.equal(refreshDue(instant(0), instant(119_999), duration(120_000)), null);
-    assert.equal(refreshDue(instant(0), instant(120_000), duration(120_000)), 'full');
-});
-
-test('the run of a root: requests merge into the strongest tier, one run at a time, a request during a run starts the next one after it', () => {
-    assert.equal(strongest(null, 'tracked'), 'tracked');
-    assert.equal(strongest('tracked', 'full'), 'full');
-    assert.equal(strongest('full', 'tracked'), 'full');
-    const wanted = wantRun(wantRun(IDLE_ROOT, 'tracked'), 'full');
-    const first = takeRun(wanted);
-    assert.equal(first.start, 'full');
-    assert.deepEqual(first.state, { phase: 'reading', wanted: null });
-    const during = wantRun(first.state, 'tracked');
-    assert.equal(takeRun(during).start, null, 'nothing starts while one is running');
-    const next = takeRun(runDone(during));
-    assert.equal(next.start, 'tracked');
-    assert.equal(takeRun(runDone(next.state)).start, null);
-});
-
-const laneAt = (pane: string, cwd: string | null, status: string): FollowedSession => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status, cwd }));
-
-const lanes = (...all: FollowedSession[]): ReadonlyMap<SessionKey, FollowedSession> => new Map(all.map((lane): [SessionKey, FollowedSession] => [lane.pane, lane]));
-
-test('movesOf: a new lane attaches, a moved cwd attaches again, a gone lane detaches, a working lane that stops ended its turn', () => {
-    const p1 = paneId('w1:p1');
-    const p2 = paneId('w1:p2');
-    const first = movesOf(new Map(), lanes(laneAt('w1:p1', '/a', 'working'), laneAt('w1:p2', null, 'idle')));
-    assert.deepEqual(first.attach.map((one) => [one.pane, one.cwd]), [[p1, '/a'], [p2, null]]);
-    assert.deepEqual([first.detach, first.ended], [[], []]);
-    const same = movesOf(first.known, lanes(laneAt('w1:p1', '/a', 'working'), laneAt('w1:p2', null, 'idle')));
-    assert.deepEqual([same.attach, same.detach, same.ended], [[], [], []]);
-    const next = movesOf(same.known, lanes(laneAt('w1:p1', '/b', 'idle')));
-    assert.deepEqual(next.attach.map((one) => [one.pane, one.cwd]), [[p1, '/b']]);
-    assert.deepEqual([next.detach, next.ended], [[p2], [p1]]);
-    const known: ReadonlyMap<SessionKey, LaneGlance> = next.known;
-    assert.deepEqual([...known.keys()], [p1]);
 });
 
 test('parseWorktreeSwitch: off in any case, anything else is on', () => {

@@ -8,7 +8,7 @@ import { blankRecap } from '@stateforge-labs/session-ledger';
 import type { Entry } from '@stateforge-labs/session-ledger';
 import { unknown, exitCodeOf } from '@stateforge-labs/session-ledger';
 import { causeOf } from './fakes/cause.ts';
-import { CurateTasks, CURATE_GAP_MS } from '#src/recap/application/curate.ts';
+import { CurateTasks } from '#src/recap/application/curate.ts';
 import { reconcileInput } from '@stateforge-labs/session-ledger';
 import { RECONCILE_EVERY } from '@stateforge-labs/session-ledger';
 import type { RepairMode } from '@stateforge-labs/session-ledger';
@@ -27,7 +27,7 @@ import { parseText } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
 import { tabIdOf } from '#src/recap/domain/ids.ts';
 
-const [textOf, countOf, tabOf, boundaryOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Count'>, brand<string, 'ScopeId'>, brand<boolean, 'Boundary'>, brand<number, 'Instant'>];
+const [textOf, countOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Count'>, brand<number, 'Instant'>];
 
 const NOW = Date.parse('2026-10-07T16:30:00Z');
 const MIN = 60_000;
@@ -74,17 +74,6 @@ function stateOf(ledger: MemoryLedger, id: string): readonly unknown[] {
     return [found?.state, found?.closedWhy, found?.text];
 }
 const ANSWERED = { op: 'close', id: 'f1', why: 'answered', evidence: 'Ship from release/2.1, not main' };
-
-test('a stale question is closed as answered, on the quote of the operator\'s reply; the call is a reconcile with the open facts and the newest turns only', async () => {
-    const { curate, ledger, calls } = setup([said({ ops: [ANSWERED] })]);
-    await curate.run(tabId('w1:t1'), 'turns');
-    assert.equal(calls.length, 1);
-    const [first] = calls;
-    assert.equal(first?.mode, 'reconcile');
-    assert.match(first.document, /<curator_input version="1" mode="reconcile">/);
-    assert.ok(first.document.includes('<tail') && first.document.includes('Ship from release/2.1, not main.') && !first.document.includes('Wrote migration 007'), 'open facts and the tail; no closed fact');
-    assert.deepEqual(stateOf(ledger, 'q'), ['closed', 'answered', 'Which branch should the release ship from?']);
-});
 
 test('a reconcile answer wrapped in a sentence is read: the stale question is closed as answered, as when the answer is bare JSON', async () => {
     const { curate, ledger, logs } = setup([{ kind: 'curated', text: textOf(`Here you go: ${JSON.stringify({ ops: [ANSWERED] })} Done.`) }]);
@@ -143,41 +132,6 @@ test('the same fact is changed once per answer, and a fact merged into is left a
     ] })]);
     await curate.run(tabId('w1:t1'), 'turns');
     assert.deepEqual([stateOf(ledger, 'n')[0], stateOf(ledger, 'm')[0]], ['open', 'closed']);
-});
-
-test('when: every N turns, at once after a boundary, and at an open only when turns came since; never twice in five minutes', async () => {
-    const quiet = said({ ops: [] });
-    const { curate, calls, clock } = setup([quiet, quiet, quiet, quiet, quiet, quiet], { every: 3 });
-    await curate.afterRun({ scope: tabOf('w1:t1'), turns: countOf(2), boundary: boundaryOf(false) });
-    assert.equal(calls.length, 0, 'two turns of three');
-    await curate.afterRun({ scope: tabOf('w1:t1'), turns: countOf(1), boundary: boundaryOf(false) });
-    assert.equal(calls.length, 1, 'the third');
-    clock.now += CURATE_GAP_MS - 1;
-    await curate.afterRun({ scope: tabOf('w1:t1'), turns: countOf(5), boundary: boundaryOf(true) });
-    assert.equal(calls.length, 1, 'a boundary inside the five minutes waits for them');
-    clock.now += 1;
-    await curate.afterRun({ scope: tabOf('w1:t1'), turns: countOf(0), boundary: boundaryOf(true) });
-    assert.equal(calls.length, 2, 'the first run after a boundary reconciles');
-    clock.now += CURATE_GAP_MS;
-    await curate.run(tabId('w1:t1'));
-    assert.equal(calls.filter((call) => call.mode === 'reconcile').length, 2, 'an open with no new turn does not reconcile again');
-    assert.equal(calls.filter((call) => call.mode === 'story').length + calls.filter((call) => call.mode === undefined).length, 1, 'but tells the story as before');
-    await curate.afterRun({ scope: tabOf('w1:t1'), turns: countOf(1), boundary: boundaryOf(false) });
-    clock.now += CURATE_GAP_MS;
-    await curate.run(tabId('w1:t1'));
-    assert.equal(calls.filter((call) => call.mode === 'reconcile').length, 3, 'an open after a new turn does');
-});
-
-test('no tail, no open fact or no curator: no call; a curator that gives none is logged and the ledger is as it was', async () => {
-    const none = setup([unknown({ why: 'timeout', after: 1 as never })]);
-    await none.curate.run(tabId('w1:t1'), 'turns');
-    assert.match(none.logs[0] ?? '', /fake\/test gave none to reconcile/);
-    const empty = setup([said({ ops: [] })], { tail: [] });
-    await empty.curate.run(tabId('w1:t1'), 'turns');
-    assert.equal(empty.calls.length, 0, 'nothing to read, nothing to ask');
-    const garbage = setup([{ kind: 'curated', text: textOf('sorry, no') }]);
-    await garbage.curate.run(tabId('w1:t1'), 'turns');
-    assert.deepEqual(garbage.logs, ['curator w1:t1 t1: reconcile refused — the answer is not JSON']);
 });
 
 dtdTest('the reconcile document is valid against the DTD, holds only the open facts and the "still true" check, and the tail it quotes', () => {

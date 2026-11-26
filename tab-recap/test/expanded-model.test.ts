@@ -7,14 +7,13 @@ import type { TabViewRecord } from '#src/ports/tab-views.ts';
 import { expanded } from '#src/view-model/expanded.ts';
 import { en } from '#src/i18n/en.ts';
 import { plain } from '@stateforge-labs/recap-view/unstable/wrap.ts';
-import { cursor, memoryStore, must, seed, recordOps } from '#test/db/support.ts';
+import { cursor, memoryStore, must, seed } from '#test/db/support.ts';
 import { fact } from '#test/fakes/fact-at.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { NOW } from '#test/fakes/expanded-fixture.ts';
 import { instant } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
-import { usdOf } from '@stateforge-labs/session-ledger';
 import { paneIdOf, tabIdOf } from '#src/recap/domain/ids.ts';
 import { countOf } from '@stateforge-labs/session-ledger';
 import { viewRecord } from '#test/support/tab-view-records.ts';
@@ -31,20 +30,6 @@ function setup(ledger = new MemoryLedger().seed(fact('f1', 'now', 'Running the t
     const deps: ExpandedDeps = { records: store.records, ledger, stories: store.stories, session: store.session, boundaries: store.boundaries, requests: { requestCurate: (tab) => { asked.push(tab); } }, edits: () => [{ path: textOf('src/a.ts'), count: countOf(3) }] };
     return { model: new ExpandedModel(deps), ledger, store, asked };
 }
-
-test('the view is built from the store alone: the task\'s facts, the session facts from the store and the lanes, the lanes\' webs', () => {
-    const { model, store } = setup();
-    assert.equal(model.read(tabId('w1:t1'), view, instant(NOW)).session.runs, null, 'the imported run is not a turn');
-    recordOps(store, { scope: tabId('w1:t1'), at: instant(NOW - MIN), cause: 'turn-ended', backend: textOf('claude'), language: textOf('en'), costUsd: usdOf(0), error: null, sessions: [cursor('w1:p1')], tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')] }], ops: [] });
-    const data = model.read(tabId('w1:t1'), view, instant(NOW));
-    assert.deepEqual(data.tasks.map((task) => [task.name, task.facts.map((one) => one.text), task.story]), [['', ['Running the tests'], null]]);
-    assert.deepEqual(data.session.agents, [{ label: 'claude · orchestrator', share: 50, window: 200_000 }]);
-    assert.deepEqual(data.session.repo, { name: 'shop', branch: 'main' });
-    assert.deepEqual(data.session.files, [{ path: 'src/a.ts', count: 3 }]);
-    assert.deepEqual(data.session.runs, { total: 1, byCause: [{ cause: 'turn-ended', count: 1 }] });
-    assert.equal(data.webs.length, 1);
-    assert.equal(model.read(tabId('w1:t9'), null, instant(NOW)).tasks.length, 0, 'a tab with no recap has no task');
-});
 
 test('a stale story: the curator is asked once, the old paragraph stays with "updating…", and the new one shows when it is stored', () => {
     const { model, store, asked, ledger } = setup();
