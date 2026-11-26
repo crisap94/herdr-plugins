@@ -71,7 +71,6 @@ export {
     parseFilePath,
     parseFromScreen,
     parseInstant,
-    parsePaneId,
     parseSessionKey,
     parseProse,
     parseQueued,

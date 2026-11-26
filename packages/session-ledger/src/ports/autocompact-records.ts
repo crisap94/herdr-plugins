@@ -2,7 +2,7 @@ import { err, ok } from '#src/protocol/result.ts';
 import type { Result } from '#src/protocol/result.ts';
 import { parseLaneStatusAtDecision, SKIP_GATES } from '#src/recap/domain/autocompact.ts';
 import type { CheckedFact, LaneStatusAtDecision, SkipGate, UncheckedReason } from '#src/recap/domain/autocompact.ts';
-import { parseAgentKind, parseCompactionId, parseDecisionId, parsePaneId, parseTabId } from '#src/recap/domain/timing-ids.ts';
+import { parseCompactionId, parseDecisionId, parseHarnessKind, parseScopeId, parseSessionKey } from '#src/recap/domain/timing-ids.ts';
 import type { HarnessKind, CompactionId, DecisionId, SessionKey, ScopeId } from '#src/recap/domain/timing-ids.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import { parseCount } from '#src/recap/domain/count.ts';
@@ -179,11 +179,11 @@ export function parseCoverageRecord(input: unknown): Result<CoverageRecord, Pars
 }
 
 function placementOf(row: Row): Result<Placement, ParseFailure> {
-    const tab = parseTabId(row.tab);
+    const tab = parseScopeId(row.tab);
     if (tab.kind === 'err') return tab;
-    const pane = parsePaneId(row.pane);
+    const pane = parseSessionKey(row.pane);
     if (pane.kind === 'err') return pane;
-    const agent = parseAgentKind(row.agent);
+    const agent = parseHarnessKind(row.agent);
     if (agent.kind === 'err') return agent;
     const at = parseInstant(row.at);
     if (at.kind === 'err') return at;

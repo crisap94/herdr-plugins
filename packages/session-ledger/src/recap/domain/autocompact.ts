@@ -7,7 +7,7 @@ import { isSection, type Section } from '#src/recap/domain/fact.ts';
 import { holdsLane, type Flight, ceilingOf } from '#src/recap/domain/in-flight.ts';
 import type { Duration, Instant, Milliseconds } from '#src/recap/domain/time.ts';
 import { must } from '#src/protocol/result.ts';
-import { parseAgentKind, type HarnessKind } from './timing-ids.ts';
+import { parseHarnessKind, type HarnessKind } from './timing-ids.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import { textOf } from '#src/recap/domain/text.ts';
 
@@ -125,7 +125,7 @@ export type AutocompactKinds = readonly LaneKind[];
 export function parseAutocompactKinds(raw: unknown): AutocompactKinds {
     const text = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
     const kinds = [...new Set(text.split(',').map((kind) => kind.trim()).filter((kind) => kind !== ''))];
-    return kinds.length === 0 ? KINDS_DEFAULT : kinds.map((kind) => must(parseAgentKind(kind)));
+    return kinds.length === 0 ? KINDS_DEFAULT : kinds.map((kind) => must(parseHarnessKind(kind)));
 }
 
 export type ShadowKinds = readonly RegisteredKind[];

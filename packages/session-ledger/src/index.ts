@@ -125,7 +125,7 @@ export { capable, kindsWith, REGISTERED_KINDS, REGISTERED_NAMES, type Registered
 export { CAPS, type ListSection, MAX_WORDS, NO_SECTIONS } from './recap/domain/shape.ts';
 export { type NonEmptyText, parseNonEmptyText, parseText, parseTextOrNull, textOf, type TextOrNull } from './recap/domain/text.ts';
 export { duration, elapsed, type Milliseconds, parseDuration, parseInstant, parseMilliseconds } from './recap/domain/time.ts';
-export { type CompactionId, parseAgentKind, parseCompactionId, parseDecisionId, parsePaneId, parseTabId, placementOf } from './recap/domain/timing-ids.ts';
+export { type CompactionId, parseCompactionId, parseDecisionId, placementOf } from './recap/domain/timing-ids.ts';
 export { parseTokenAmount, type TokenAmount } from './recap/domain/token-amount.ts';
 export { parseUsd, usdOf } from './recap/domain/usd.ts';
 export { KEEP_NEWEST_RANGE, keepNewestOf, NEXT_HOURS_RANGE, nextHoursOf, positiveCount, prunedWriterView } from './recap/domain/writer-view.ts';

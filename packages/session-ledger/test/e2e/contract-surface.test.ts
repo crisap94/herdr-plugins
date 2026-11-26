@@ -247,7 +247,6 @@ const ROOT_VALUES = [
     'overridingDetail',
     'pacedOf',
     'paneIdOf',
-    'parseAgentKind',
     'parseAnswer',
     'parseAutocompactCeiling',
     'parseAutocompactKinds',
@@ -284,7 +283,6 @@ const ROOT_VALUES = [
     'parseNoteLimit',
     'parseOffer',
     'parsePacing',
-    'parsePaneId',
     'parsePipeline',
     'parsePositiveCount',
     'parseProbability',
@@ -297,7 +295,6 @@ const ROOT_VALUES = [
     'parseSkipRow',
     'parseStoredDecisionRow',
     'parseStory',
-    'parseTabId',
     'parseText',
     'parseTextOrNull',
     'parseThreshold',
@@ -412,7 +409,7 @@ function errorsOf(rootNames: readonly string[], seeded: ReadonlyMap<string, stri
     return ts.getPreEmitDiagnostics(program).map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'));
 }
 
-test('the root exports exactly the 373 values', () => {
+test('the root exports exactly the 370 values', () => {
     assert.deepEqual(Object.keys(root).toSorted(), ROOT_VALUES);
 });
 

@@ -6,7 +6,7 @@ import { parseIdleHold } from '@stateforge-labs/session-ledger';
 import { parseProbability } from '@stateforge-labs/session-ledger';
 import { parseNonEmptyText } from '@stateforge-labs/session-ledger';
 import { parseDuration, parseInstant, parseMilliseconds } from '@stateforge-labs/session-ledger';
-import { parseAgentKind, parseHarnessKind, parseScopeId, parseSessionKey, parseCompactionId, parseDecisionId, parsePaneId, parseTabId, placementOf } from '@stateforge-labs/session-ledger';
+import { parseHarnessKind, parseScopeId, parseSessionKey, parseCompactionId, parseDecisionId, placementOf } from '@stateforge-labs/session-ledger';
 import { parseTokenAmount } from '@stateforge-labs/session-ledger';
 import { parseUsd } from '@stateforge-labs/session-ledger';
 import { harness, key, scope } from '@stateforge-labs/session-ledger/testkit';
@@ -96,7 +96,7 @@ test('a non-empty text keeps its value untrimmed and refuses blank or non-string
 });
 
 test('pane, tab and agent ids refuse blank and non-string input', () => {
-    for (const parse of [parsePaneId, parseTabId, parseAgentKind, parseSessionKey, parseScopeId, parseHarnessKind]) {
+    for (const parse of [parseSessionKey, parseScopeId, parseHarnessKind]) {
         assert.deepEqual(parse('p1'), ok('p1'));
         assert.deepEqual(parse(''), err({ kind: 'empty' }));
         assert.deepEqual(parse('   '), err({ kind: 'empty' }));

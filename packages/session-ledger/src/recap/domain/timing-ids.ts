@@ -20,9 +20,9 @@ export interface Placement {
 export function placementOf(candidate: Candidate): Placement {
     return {
         candidate,
-        tab: must(parseTabId(candidate.scope)),
-        pane: must(parsePaneId(candidate.key)),
-        agent: must(parseAgentKind(candidate.harness)),
+        tab: must(parseScopeId(candidate.scope)),
+        pane: must(parseSessionKey(candidate.key)),
+        agent: must(parseHarnessKind(candidate.harness)),
     };
 }
 
@@ -65,7 +65,3 @@ export function parseCompactionId(input: unknown): Result<CompactionId, ParseFai
     }
     return ok(brand<string, 'CompactionId'>(text.value));
 }
-
-export const parsePaneId = parseSessionKey;
-export const parseTabId = parseScopeId;
-export const parseAgentKind = parseHarnessKind;
