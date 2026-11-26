@@ -93,20 +93,20 @@ const pluginUnknown = (value: sl.Unknown): Unknown => ({ kind: 'unknown', why: p
 const isLedgerUnknown = (value: unknown): value is sl.Unknown => typeof value === 'object' && value !== null && 'kind' in value && value.kind === 'unknown';
 
 
-const scopeOf = (tab: string): sl.ScopeId => must(parseScopeId(tab));
-const keyOf = (pane: string): sl.SessionKey => must(parseSessionKey(pane));
+const scopeOf = (scope: string): sl.ScopeId => must(parseScopeId(scope));
+const keyOf = (key: string): sl.SessionKey => must(parseSessionKey(key));
 
 const pluginRecords = (records: sl.Records): CheckedRecapRecords => ({
-    readRecap: (tab: ScopeId): Recap | null | Unknown => {
-        const found = records.readRecap(scopeOf(tab));
+    readRecap: (scope: ScopeId): Recap | null | Unknown => {
+        const found = records.readRecap(scopeOf(scope));
         return isLedgerUnknown(found) ? pluginUnknown(found) : found;
     },
-    lastRunOf: (tab: ScopeId): LastRun | null | Unknown => {
-        const found = records.lastRunOf(scopeOf(tab));
+    lastRunOf: (scope: ScopeId): LastRun | null | Unknown => {
+        const found = records.lastRunOf(scopeOf(scope));
         return isLedgerUnknown(found) ? pluginUnknown(found) : found;
     },
-    beginRun: (tab: ScopeId, backend: Text | null, at: Instant): void => {
-        records.beginRun(scopeOf(tab), backend, at);
+    beginRun: (scope: ScopeId, backend: Text | null, at: Instant): void => {
+        records.beginRun(scopeOf(scope), backend, at);
     },
     recordRun: (run: RecordedRun): void => {
         records.recordRun(ledgerRecorded(run));

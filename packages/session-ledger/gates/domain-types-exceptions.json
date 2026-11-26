@@ -269,15 +269,15 @@
     "class": "callback",
     "file": "src/facade/plugs.ts",
     "function": "scopeOf",
-    "parameter": "tab",
-    "reason": "EP 4.1, ENG-2: parameter tab of scopeOf keeps the plain type of the legacy port it bridges to (moved verbatim from tab-recap/test/conformance/subject.ts); the SW rename window deletes the bridge"
+    "parameter": "scope",
+    "reason": "EP 4.1, ENG-2: parameter scope of scopeOf keeps the plain type of the legacy port it bridges to (moved verbatim from tab-recap/test/conformance/subject.ts); the SW rename window deletes the bridge"
   },
   {
     "class": "callback",
     "file": "src/facade/plugs.ts",
     "function": "keyOf",
-    "parameter": "pane",
-    "reason": "EP 4.1, ENG-2: parameter pane of keyOf keeps the plain type of the legacy port it bridges to (moved verbatim from tab-recap/test/conformance/subject.ts); the SW rename window deletes the bridge"
+    "parameter": "key",
+    "reason": "EP 4.1, ENG-2: parameter key of keyOf keeps the plain type of the legacy port it bridges to (moved verbatim from tab-recap/test/conformance/subject.ts); the SW rename window deletes the bridge"
   },
   {
     "class": "callback",

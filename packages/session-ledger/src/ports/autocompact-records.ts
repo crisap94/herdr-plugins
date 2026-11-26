@@ -179,15 +179,15 @@ export function parseCoverageRecord(input: unknown): Result<CoverageRecord, Pars
 }
 
 function placementOf(row: Row): Result<Placement, ParseFailure> {
-    const tab = parseScopeId(row.tab);
-    if (tab.kind === 'err') return tab;
-    const pane = parseSessionKey(row.pane);
-    if (pane.kind === 'err') return pane;
+    const scope = parseScopeId(row.tab);
+    if (scope.kind === 'err') return scope;
+    const key = parseSessionKey(row.pane);
+    if (key.kind === 'err') return key;
     const agent = parseHarnessKind(row.agent);
     if (agent.kind === 'err') return agent;
     const at = parseInstant(row.at);
     if (at.kind === 'err') return at;
-    return ok({ scope: tab.value, key: pane.value, agent: agent.value, at: at.value });
+    return ok({ scope: scope.value, key: key.value, agent: agent.value, at: at.value });
 }
 
 export function parseSkipRow(input: unknown): Result<SkipRow, ParseFailure> {

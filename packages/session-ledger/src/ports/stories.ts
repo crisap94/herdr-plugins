@@ -23,6 +23,6 @@ export interface StoryChange {
 }
 
 export interface Stories {
-    read(tab: ScopeId, task: Text): Story | null;
+    read(scope: ScopeId, task: Text): Story | null;
     keep(run: CurationRun, change: StoryChange): Applied;
 }
