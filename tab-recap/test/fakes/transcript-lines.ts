@@ -15,7 +15,6 @@ import { codexMarksOf } from '#src/adapters/transcripts/codex/marks.ts';
 import { codexCallsOf } from '#src/adapters/transcripts/codex/tool-calls.ts';
 import { extractCodexOf } from '#src/adapters/transcripts/codex/transcripts.ts';
 import { readJsonlFrom, type Row } from '#src/adapters/transcripts/jsonl.ts';
-import { replayKindOfPath } from '#src/adapters/transcripts/registry.ts';
 import { isPlainReadText, namedCallOf, type HarnessKind } from '#src/adapters/transcripts/tool-calls.ts';
 
 export const fsPathOf = brand<string, 'FsPath'>;
@@ -45,8 +44,6 @@ export const namedCall = (harness: HarnessKind, name: string, input: Row): Retur
 export const isPlainRead = (command: string): boolean => isPlainReadText(textOf(command)) === 'present';
 
 export const readerKindOf = (raw: string): ReturnType<typeof registeredKindOf> => registeredKindOf(textOf(raw));
-
-export const replayKindOf = (flag: string | null, file: string): ReturnType<typeof replayKindOfPath> => replayKindOfPath(flag === null ? null : textOf(flag), fsPathOf(file));
 
 export function readJsonl(path: string, was: Position, budget: number): { readonly lines: readonly Text[]; readonly position: Position; readonly grew: boolean; readonly more: 'present' | 'absent' } {
     const read = readJsonlFrom(fsPathOf(path), was, countOf(budget));
