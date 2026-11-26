@@ -31,4 +31,4 @@ export interface WrittenRun { readonly tasks: readonly TaskShape[]; readonly req
 
 export interface Run { started(at: ReturnType<Clock['now']>): void; advanced(readings: readonly Reading[]): void }
 
-export interface Slot { readonly scope: ScopeId; timer: ReturnType<typeof setTimeout> | null; flight: Flight; pending: Pending | null; lastStart: Instant | null; lastLanes: ReadonlySet<LegacyFollowedSession['pane']>; waiting: (() => void)[]; deferred: 'none' | 'deferred' }
+export interface Slot { readonly scope: ScopeId; timer: ReturnType<typeof setTimeout> | null; flight: Flight; pending: Pending | null; lastStart: Instant | null; lastLanes: ReadonlySet<LegacyFollowedSession['key']>; waiting: (() => void)[]; deferred: 'none' | 'deferred' }

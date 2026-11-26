@@ -16,8 +16,14 @@ export interface SeenLane {
     readonly title?: Text | null | undefined;
 }
 
-import type { LegacyFollowedSession as FollowedSession } from '@stateforge-labs/session-ledger';
-export type { LegacyFollowedSession as FollowedSession } from '@stateforge-labs/session-ledger';
+import type { LegacyFollowedSession, ScopeId, SessionKey } from '@stateforge-labs/session-ledger';
+
+export type FollowedSession = Omit<LegacyFollowedSession, 'key' | 'scope'> & { readonly pane: SessionKey; readonly tab: ScopeId };
+
+export function seatOf(lane: FollowedSession): LegacyFollowedSession {
+    const { pane, tab, ...rest } = lane;
+    return { ...rest, key: pane, scope: tab };
+}
 
 export function laneFrom(seen: SeenLane): FollowedSession {
     const session = parseText(seen.session);

@@ -1,4 +1,4 @@
-import type { FollowedSession } from '#src/recap/domain/lane.ts';
+import { seatOf, type FollowedSession } from '#src/recap/domain/lane.ts';
 import { isUnknown } from '@stateforge-labs/session-ledger';
 import type { TranscriptRegistry } from '@stateforge-labs/session-ledger';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
@@ -27,7 +27,7 @@ export class LivePrompts {
         if (reader === undefined) {
             return 'absent';
         }
-        const located = await reader.locate(lane);
+        const located = await reader.locate(seatOf(lane));
         if (isUnknown(located)) {
             return 'absent';
         }

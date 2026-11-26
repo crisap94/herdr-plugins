@@ -28,13 +28,14 @@ import type { Text } from '@stateforge-labs/session-ledger';
 import { grewOf, cursorOf, sourcePathOf } from '@stateforge-labs/session-ledger';
 import { seenLane } from '#test/support/seen.ts';
 import { viewRecord } from '#test/support/tab-view-records.ts';
+import { seatOf } from '#src/recap/domain/lane.ts';
 
 function recording(agent: string, source: (pane: string) => string, tail: string | null = null): { reader: SessionReader; seen: Position[] } {
     const seen: Position[] = [];
     const reader: SessionReader = {
         agent: agentKind(agent),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-        locate: (lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(source(String(lane.pane))) }),
+        locate: (lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(source(String(lane.key))) }),
         latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
         read: (_source: string, was: Position): Promise<ChunkResult> => {
             seen.push(was);
@@ -54,7 +55,7 @@ async function recapOf(transcripts: TranscriptRegistry, agents: readonly string[
     const requests: RecapRequest[] = [];
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts, records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Writer => writer(requests), language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined });
     const lanes = agents.map((agent, at) => laneFrom(seenLane({ paneId: `w1:p${at + 1}`, tabId: 'w1:t1', workspaceId: 'w1', agent })));
-    job.request(tabId('w1:t1'), lanes, 'requested');
+    job.request(tabId('w1:t1'), lanes.map(seatOf), 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 30); });
     return { store, requests };
 }

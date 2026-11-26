@@ -43,7 +43,7 @@ import type { LocatedBy } from '#src/recap/domain/handoff-plan.ts';
 import { HANDOFF_OBSERVATIONS, HANDOFF_OBSERVE_MS } from '#src/recap/application/handoff-limits.ts';
 import type { ContextObserved as Observed } from '@stateforge-labs/session-ledger';
 import { tabId, agentKind, paneId } from '#test/support/ids.ts';
-import { laneFrom } from '#src/recap/domain/lane.ts';
+import { laneFrom, seatOf } from '#src/recap/domain/lane.ts';
 import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { TranscriptRegistry } from '@stateforge-labs/session-ledger';
 import type { InFlightWhy as InFlightReason } from '@stateforge-labs/session-ledger';
@@ -205,24 +205,24 @@ async function skipOf(readers: TranscriptRegistry, placed: FollowedSession, kind
 for (const row of ROWS) {
     test(`${row.kind}: locate places a lane, or says why it cannot, and never throws`, async () => {
         for (const each of [row.empty, row.recorded]) {
-            assert.equal((await row.reader.locate(each)).kind, 'located');
+            assert.equal((await row.reader.locate(seatOf(each))).kind, 'located');
         }
-        assert.equal((await row.reader.locate(row.unplaced)).kind, 'unknown');
+        assert.equal((await row.reader.locate(seatOf(row.unplaced))).kind, 'unknown');
     });
 
     test(`${row.kind}: a read from the start, then from its own position, finds nothing new the second time`, async () => {
         for (const each of [row.empty, row.recorded]) {
-            const source = sourceOf(await row.reader.locate(each));
+            const source = sourceOf(await row.reader.locate(seatOf(each)));
             const first = await chunkOf(row.reader.read(sourcePathOf(source), UNREAD, countOf(BUDGET)));
             const second = await chunkOf(row.reader.read(sourcePathOf(source), first.position, countOf(BUDGET)));
             assert.equal(second.grew, false);
         }
-        const empty = await chunkOf(row.reader.read(sourcePathOf(sourceOf(await row.reader.locate(row.empty))), UNREAD, countOf(BUDGET)));
+        const empty = await chunkOf(row.reader.read(sourcePathOf(sourceOf(await row.reader.locate(seatOf(row.empty)))), UNREAD, countOf(BUDGET)));
         assert.equal(empty.entries.length, 0, 'an empty source yields no entries');
     });
 
     test(`${row.kind}: latestPrompt finds the newest user prompt of the recorded source, and reading it moves no position${row.kind === 'gemini' ? '; pins today: a screen cannot say what the operator typed' : ''}`, async () => {
-        const source = sourceOf(await row.reader.locate(row.recorded));
+        const source = sourceOf(await row.reader.locate(seatOf(row.recorded)));
         const before = await chunkOf(row.reader.read(sourcePathOf(source), UNREAD, countOf(BUDGET)));
         assert.deepEqual(await row.reader.latestPrompt(sourcePathOf(source), countOf(BUDGET)), { kind: 'prompt', text: row.prompt });
         const later = await chunkOf(row.reader.read(sourcePathOf(source), UNREAD, countOf(BUDGET)));
@@ -235,14 +235,14 @@ for (const row of ROWS) {
             return;
         }
         assert.equal(typeof row.reader.observed, 'function');
-        const empty = await row.reader.observed?.(sourcePathOf(sourceOf(await row.reader.locate(row.empty))), countOf(BUDGET));
+        const empty = await row.reader.observed?.(sourcePathOf(sourceOf(await row.reader.locate(seatOf(row.empty)))), countOf(BUDGET));
         assert.deepEqual(empty, { kind: 'observed', observed: null });
-        const recorded = await row.reader.observed?.(sourcePathOf(sourceOf(await row.reader.locate(row.recorded))), countOf(BUDGET));
+        const recorded = await row.reader.observed?.(sourcePathOf(sourceOf(await row.reader.locate(seatOf(row.recorded)))), countOf(BUDGET));
         assert.deepEqual(recorded, { kind: 'observed', observed: row.observed });
     });
 
     test(`${row.kind}: the compaction marks of the recorded source are the ones the existing tests expect; a screen reports none${row.kind === 'gemini' ? '; pins today: screen has no marks, so a compaction would be unconfirmed but is not reachable today' : ''}`, async () => {
-        const chunk = await chunkOf(row.reader.read(sourcePathOf(sourceOf(await row.reader.locate(row.recorded))), UNREAD, countOf(BUDGET)));
+        const chunk = await chunkOf(row.reader.read(sourcePathOf(sourceOf(await row.reader.locate(seatOf(row.recorded)))), UNREAD, countOf(BUDGET)));
         if (row.marks === 'absent') {
             assert.equal(chunk.marks, undefined);
             return;
@@ -262,7 +262,7 @@ for (const row of ROWS) {
         if (capability.kind !== 'supported') throw new Error(`${row.kind} must support in-flight work`);
         const { split } = capability;
         if (split.kind === 'foreground-only') assert.ok(splitReason(split.why, must(parseText(row.kind))).includes(row.kind), `${row.kind} names its foreground-only split`);
-        const found = await capability.read(sourcePathOf(sourceOf(await row.reader.locate(row.recorded))), countOf(BUDGET));
+        const found = await capability.read(sourcePathOf(sourceOf(await row.reader.locate(seatOf(row.recorded)))), countOf(BUDGET));
         assert.deepEqual(found, { kind: 'in-flight', count: runningOf(0), background: [] });
     });
 
@@ -348,7 +348,7 @@ test('gemini refuses: not compactable, `no reader for gemini` in the recap, and 
         clock: { now: (): ReturnType<typeof instant> => instant(3) }, summarizer: (): Writer => writer,
         language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined,
     });
-    await job.refreshNow(tabId('w1:t1'), [gemini]);
+    await job.refreshNow(tabId('w1:t1'), [seatOf(gemini)]);
     assert.match(storeRead(store.records.readRecap(tabId('w1:t1')))?.error ?? '', /w1:p5: no reader for gemini/);
 
     assert.deepEqual(await skipOf(registryWith({}), gemini, 'gemini'), { gate: 'in-flight', detail: 'no transcript reader for gemini' });

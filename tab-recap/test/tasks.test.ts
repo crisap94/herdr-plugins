@@ -39,6 +39,7 @@ import { cursorOf, sourcePathOf, grewOf } from '@stateforge-labs/session-ledger'
 import { paneIdOf } from '#src/recap/domain/ids.ts';
 import { seenLane } from '#test/support/seen.ts';
 import { laneRecord, viewRecord } from '#test/support/tab-view-records.ts';
+import { seatOf } from '#src/recap/domain/lane.ts';
 
 const sections = (goal: string, rest: Partial<typeof NO_SECTIONS> = {}): typeof NO_SECTIONS => ({ ...NO_SECTIONS, goal: textOf(goal), ...rest });
 const taskOf = (id: string, name: string, lanes: readonly string[], goal = id): RecapTask => ({ id: textOf(id), name: textOf(name), sessions: lanes.map((lane) => paneIdOf(lane)), sections: sections(goal), markdown: textOf(`## Goal\n${goal}`) });
@@ -118,7 +119,7 @@ test('files touched are the distinct paths of the edit calls, the most recent la
 const transcripts: SessionReader = {
     agent: agentKind('claude'),
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-    locate: (lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
+    locate: (lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.key}`) }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
     read: (source: string): Promise<ChunkResult> => Promise.resolve({
         kind: 'chunk', entries: [{ role: 'tool', kind: 'edit', text: textOf(`${source.slice(3)}.ts`) }, { role: 'agent', text: textOf(`work in ${source.slice(3)}`) }],
@@ -132,7 +133,7 @@ async function run(answers: readonly string[], lanes: readonly string[], store =
     const requests: RecapRequest[] = [];
     const summarizer: Writer = { backend: textOf('fake'), contract: 'strict', write: (request): Promise<Written> => { requests.push(request); return Promise.resolve({ kind: 'written', text: textOf(answers[Math.min(requests.length - 1, answers.length - 1)] ?? ''), costUsd: brand<number, 'Usd'>(0) }); } };
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, transcripts: registryWith({ [transcripts.agent]: transcripts }), records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), repos, clock: { now: (): ReturnType<typeof instant> => instant(1) }, summarizer: (): Writer => summarizer, language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined });
-    job.request(tabId('w1:t1'), lanes.map((pane) => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd: pane === 'w1:p1' ? '/work/pay' : '/work/docs' }))), 'requested');
+    job.request(tabId('w1:t1'), lanes.map((pane) => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd: pane === 'w1:p1' ? '/work/pay' : '/work/docs' }))).map(seatOf), 'requested');
     await new Promise((resolve) => { setTimeout(resolve, 40); });
     return { store, requests };
 }

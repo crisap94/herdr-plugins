@@ -5,7 +5,7 @@ import type { TranscriptRegistry } from '@stateforge-labs/session-ledger';
 import { isUnknown } from '@stateforge-labs/session-ledger';
 import { saying } from '#src/recap/domain/saying.ts';
 import type { Unknown } from '@stateforge-labs/session-ledger';
-import type { FollowedSession } from '#src/recap/domain/lane.ts';
+import { seatOf, type FollowedSession } from '#src/recap/domain/lane.ts';
 import { registeredKindOf } from '@stateforge-labs/session-ledger';
 import type { Directory } from '@stateforge-labs/session-ledger';
 import type { SessionId } from '#src/recap/domain/ids.ts';
@@ -47,7 +47,7 @@ export class TranscriptInFlight implements InFlightReader {
         const exact = this.transcripts.exact(agent);
         const reader = exact ?? this.transcripts.readerFor(agent);
         if (reader === undefined) return { kind: 'unknown', why: inFlightReason('unregistered-reader', subject) };
-        const located = await reader.locate(lane);
+        const located = await reader.locate(seatOf(lane));
         if (isUnknown(located)) return exact === undefined ? { kind: 'unknown', why: inFlightReason('unregistered-reader', subject) } : unlocated(lane, registered, located);
         if (reader.inFlight.kind === 'unsupported') return { kind: 'unknown', why: inFlightReason(reader.inFlight.why, subject) };
         const found = await reader.inFlight.read(located.source, countOf(TAIL_BYTES));

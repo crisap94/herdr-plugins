@@ -12,7 +12,7 @@ import { paneIdOf } from '#src/recap/domain/ids.ts';
 
 const AT = Date.parse('2026-10-07T16:38:09.490Z');
 const read = (marks: readonly Mark[], pane = 'w1:p1'): Read => ({
-    lane: { pane: paneId(pane) },
+    lane: { key: paneId(pane) },
     chunk: { kind: 'chunk', entries: [], title: null, lastPrompt: null, harnessRecap: null, notes: [], marks, position: { cursor: cursorOf(900), tail: null }, grew: grewOf(true) } satisfies Chunk,
 });
 
@@ -30,7 +30,7 @@ test('each agent\'s own mark becomes one candidate with its time, tokens and the
 });
 
 test('a lane that could not be read, and an agent that left no mark, add nothing', () => {
-    assert.deepEqual(marksOf([{ lane: { pane: paneId('w1:p1') }, chunk: null }, read([])], instant(5), ADVANCED), []);
+    assert.deepEqual(marksOf([{ lane: { key: paneId('w1:p1') }, chunk: null }, read([])], instant(5), ADVANCED), []);
 });
 
 test('a record without a time is dated by the read, but only when the read moves on', () => {

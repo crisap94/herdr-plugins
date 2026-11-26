@@ -80,12 +80,12 @@ test('a compacted mark becomes a lane mark, and an unknown time waits for the la
         position: { cursor: cursorOf(4), tail: null },
         marks: [{ kind: 'compacted', at: null, tokensBefore: brand<number, 'Count'>(10) }, { kind: 'compaction-failed', at: instant(5) }],
     };
-    const lane = { pane: brand<string, 'SessionKey'>('p1') };
+    const lane = { key: brand<string, 'SessionKey'>('p1') };
     assert.deepEqual(marksOf([{ lane, chunk }], NOW, ADVANCED), [{ key: 'p1', at: NOW, cursor: 4, tokensBefore: 10 }]);
     assert.deepEqual(marksOf([{ lane, chunk }], NOW, NOT_ADVANCED), []);
 });
 
-const laneOf = (pane: string): FollowedSession => ({ pane: brand<string, 'SessionKey'>(pane), tab: brand<string, 'ScopeId'>('tab-1'), workspace: brand<string, 'WorkspaceId'>('w1'), agent: brand<string, 'HarnessKind'>('claude'), status: 'working', session: null, cwd: null, title: null, since: null });
+const laneOf = (pane: string): FollowedSession => ({ key: brand<string, 'SessionKey'>(pane), scope: brand<string, 'ScopeId'>('tab-1'), workspace: brand<string, 'WorkspaceId'>('w1'), agent: brand<string, 'HarnessKind'>('claude'), status: 'working', session: null, cwd: null, title: null, since: null });
 
 test('the recap input numbers agents by index and keeps the newest note of each kind', async () => {
     const cursor: SessionCursor = { key: paneId('p1'), agent: agentKind('claude'), transcript: sourcePath('t'), cursor: cursorAt(0), tail: null, title: null, lastPrompt: null, harnessRecap: text('Recap text') };

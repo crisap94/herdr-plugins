@@ -12,7 +12,7 @@ import { observe } from '#src/recap/domain/fold.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import { tabId, agentKind, paneId } from '#test/support/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
-import { laneFrom } from '#src/recap/domain/lane.ts';
+import { laneFrom, seatOf } from '#src/recap/domain/lane.ts';
 import type { FollowedSession, SeenLane } from '#src/recap/domain/lane.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
@@ -44,7 +44,7 @@ const said: Record<string, string> = { old: 'migrate victoria', new: 'write the 
 const transcripts: SessionReader = {
     agent: agentKind('claude'),
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-    locate: (lane: FollowedSession): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${String(lane.session)}`) }),
+    locate: (lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${String(lane.session)}`) }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
     read: (source: string): Promise<ChunkResult> => {
         const text = said[source.slice(3)] ?? '';
@@ -64,7 +64,7 @@ async function recapOnce(store: Store, lane: FollowedSession, at: number, ops: r
     const job = new RecapJob({ writerView: (): { readonly kind: 'full' } => ({ kind: 'full' }), mint: mintFactId, repos: NO_REPOS, transcripts: registryWith({ claude: transcripts }),
         records: checkedRecords(store.records), ledger: checkedLedger(store.ledger), clock: { now: (): ReturnType<typeof instant> => instant(at) }, summarizer: (): Writer => summarizer, language: (): Text => brand<string, 'Text'>('en'), log: (): void => undefined,
     });
-    await job.refreshNow(lane.tab, [lane]);
+    await job.refreshNow(lane.tab, [seatOf(lane)]);
     return requests;
 }
 

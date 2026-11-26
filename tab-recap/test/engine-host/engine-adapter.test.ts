@@ -4,10 +4,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Engine, FollowedSession as Followed, HistoryFact as LedgerHistoryFact, LedgerEvent, RestoreText, ScopeId, SessionKey } from '@stateforge-labs/session-ledger';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
-import { legacyCreateEngine as createEngine, type LegacyEngine, type LegacyEnginePlugs as EnginePlugs } from '@stateforge-labs/session-ledger';
+import { legacyCreateEngine as createEngine, type LegacyEnginePlugs as EnginePlugs } from '@stateforge-labs/session-ledger';
 import type { LegacyRecapWritten as RecapWritten } from '@stateforge-labs/session-ledger';
 import { tabId, agentKind, paneId } from '#test/support/ids.ts';
-import { laneFrom } from '#src/recap/domain/lane.ts';
+import { laneFrom, seatOf } from '#src/recap/domain/lane.ts';
 import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { HistoryFact } from '@stateforge-labs/session-ledger';
 import { instant } from '@stateforge-labs/session-ledger';
@@ -42,7 +42,7 @@ const reversed: readonly FollowedSession[] = [second, first];
 const reader: SessionReader = {
     agent: agentKind('claude'),
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-    locate: (lane: FollowedSession): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
+    locate: (lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.key}`) }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
     read: (source: string): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf(`go ${source}`) }], title: null, lastPrompt: null, harnessRecap: null, notes: [], position: { cursor: cursorOf(7), tail: null }, grew: grewOf(true) }),
 };
@@ -86,8 +86,13 @@ interface Driver {
     history(tab: ReturnType<typeof tabId>, session: FollowedSession): readonly HistoryFact[];
 }
 
-function legacyDriver(at: World): LegacyEngine {
-    return createEngine({ ...at.plugs, ran: (event: RecapWritten): void => { at.ran.push(event); } });
+function legacyDriver(at: World): Driver {
+    const engine = createEngine({ ...at.plugs, ran: (event: RecapWritten): void => { at.ran.push(event); } });
+    return {
+        turnEnded: (tab, sessions, cause) => { engine.turnEnded(tab, sessions.map(seatOf), cause); },
+        refresh: (tab, sessions) => engine.refresh(tab, sessions.map(seatOf)),
+        history: (tab, session) => engine.history(tab, seatOf(session)),
+    };
 }
 
 function adapterDriver(at: World): TabRecaps {

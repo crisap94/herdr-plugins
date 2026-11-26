@@ -44,7 +44,7 @@ export interface Engine {
     flushAll(): Promise<void>;
 }
 
-const heldBy = (session: LegacyFollowedSession): SessionKey => session.pane;
+const heldBy = (session: LegacyFollowedSession): SessionKey => session.key;
 
 function restoreFactsOf(store: EngineStore, environment: EngineEnvironment, at: Instant, scope: ScopeId, session: LegacyFollowedSession): RestoreFacts {
     const id = scopeIdOf(String(scope));

@@ -1,5 +1,5 @@
 import { must } from '@stateforge-labs/session-ledger';
-import type { FollowedSession } from '#src/recap/domain/lane.ts';
+import { seatOf, type FollowedSession } from '#src/recap/domain/lane.ts';
 import { type SessionKey, type SessionId, parseSessionId } from '#src/recap/domain/ids.ts';
 import { UNREAD, type Entry, type Mark } from '@stateforge-labs/session-ledger';
 import { isUnknown, type Unknown } from '@stateforge-labs/session-ledger';
@@ -33,7 +33,7 @@ export class LaneRecent {
         const agent = lane.agent;
         const reader = this.transcripts.readerFor(agent);
         const current = await this.now(lane);
-        const located = reader === undefined ? null : await reader.locate(current);
+        const located = reader === undefined ? null : await reader.locate(seatOf(current));
         if (reader === undefined || located === null || isUnknown(located)) {
             return { entries: [], marks: [] };
         }

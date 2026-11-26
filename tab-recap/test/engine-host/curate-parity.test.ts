@@ -116,7 +116,7 @@ const stable = (text: string): string => {
 const readerOf = (lanes: readonly FollowedSession[]): SessionReader => ({
     agent: mustOf(parseHarnessKind('claude')),
     inFlight: { kind: 'unsupported', why: 'in-flight-unavailable' },
-    locate: (lane) => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
+    locate: (lane) => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.key}`) }),
     latestPrompt: () => Promise.resolve({ kind: 'prompt', text: null }),
     read: (source): Promise<ChunkResult> => {
         const lane = lanes.find((each) => `/t/${each.pane}` === source);

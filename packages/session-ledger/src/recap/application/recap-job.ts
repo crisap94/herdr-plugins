@@ -60,7 +60,7 @@ const READ_BUDGET = 768 * 1024;
 async function placeOf(seat: LegacyFollowedSession, repos: Workplaces): Promise<PlacedLane> {
     const found = seat.cwd === null ? null : await repos.repoOf(seat.cwd);
     const place = found?.kind === 'repo' ? found.root : seat.cwd;
-    return { key: seat.pane, place: place === null ? null : textOf(place) };
+    return { key: seat.key, place: place === null ? null : textOf(place) };
 }
 
 export class RecapJob {
@@ -157,7 +157,7 @@ export class RecapJob {
     }
 
     private async read(lane: LegacyFollowedSession, prior: Recap, budget: Count): Promise<Reading> {
-        const blank: SessionCursor = { key: lane.pane, agent: lane.agent, transcript: sourcePathOf(''), cursor: UNREAD.cursor, tail: UNREAD.tail, title: lane.title === null ? null : textOf(lane.title), lastPrompt: null, harnessRecap: null };
+        const blank: SessionCursor = { key: lane.key, agent: lane.agent, transcript: sourcePathOf(''), cursor: UNREAD.cursor, tail: UNREAD.tail, title: lane.title === null ? null : textOf(lane.title), lastPrompt: null, harnessRecap: null };
         const found = await this.locate(lane);
         if (typeof found === 'string') return { lane, cursor: blank, chunk: null, grew: grew(false), fresh: SEEN_BEFORE, error: found };
         const was = await this.carry.cursorFor({ session: lane.session, cursors: prior.sessions.filter((c) => c.key === blank.key), wanted: { ...blank, transcript: found.source }, reader: found.reader });
@@ -239,7 +239,7 @@ export class RecapJob {
     }
 
     private async summarize(prior: Recap, readings: readonly Reading[], plan: Plan, run: Run): Promise<void> {
-        const errors = readings.flatMap((r) => (r.error === null ? [] : [`${r.lane.pane}: ${r.error}`]));
+        const errors = readings.flatMap((r) => (r.error === null ? [] : [`${r.lane.key}: ${r.error}`]));
         const note = errors.length > 0 ? textOf(errors.join('; ')) : null;
         const unmoved = readings.map((r) => r.cursor);
         const advanced = readings.map((r) => (r.chunk === null ? r.cursor : { ...r.cursor, ...r.chunk.position }));
@@ -269,7 +269,7 @@ export class RecapJob {
     }
 
     private written(base: Omit<RecordedRun, 'tasks' | 'changed' | 'refused' | 'marks' | 'input' | 'gateStats'>, run: WrittenRun): void {
-        const owner = { scope: base.scope }, marks = marksOf(run.readings, base.at, ADVANCED), before = run.tasks.map((task) => ({ task, facts: this.deps.ledger.allOf({ ...owner, key: task.id }) })), entries = run.parts.flatMap((r) => (r.chunk?.entries ?? []).filter((entry) => entry.role === 'user' && entry.queued !== true).map((entry) => ({ key: r.lane.pane, at: entry.at ?? base.at })));
+        const owner = { scope: base.scope }, marks = marksOf(run.readings, base.at, ADVANCED), before = run.tasks.map((task) => ({ task, facts: this.deps.ledger.allOf({ ...owner, key: task.id }) })), entries = run.parts.flatMap((r) => (r.chunk?.entries ?? []).filter((entry) => entry.role === 'user' && entry.queued !== true).map((entry) => ({ key: r.lane.key, at: entry.at ?? base.at })));
         this.deps.records.recordRun({ ...base, tasks: run.tasks, ...foldedRun(throwingLedger(this.deps.ledger), run.asked.tasks, { owner, at: base.at, language: base.language, mint: () => this.deps.mint() }), gateStats: run.asked.stats, marks, ...(this.deps.keepInput?.() ?? true ? { input: writerContext(run.request) } : {}) });
         this.deps.ran?.({ scope: brand<string, 'ScopeId'>(base.scope), turns: count(entries.length), boundary: brand<boolean, 'Boundary'>(marks.length > 0), cause: textOf(base.cause), entries, established: accomplishedOf(before, run.tasks.map((task) => ({ task, facts: this.deps.ledger.allOf({ ...owner, key: task.id }) })), base.at, (failure) => this.deps.log(`recap ${base.cause}: accomplishments not reported, ${saying(failure.why)}`)) });
     }

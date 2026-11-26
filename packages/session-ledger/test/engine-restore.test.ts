@@ -30,7 +30,7 @@ test('restore returns the open and recently closed facts of the task that holds 
     const lane = laneOf(scope(tab), followed(key('p1'), { session: session('s1') }));
     assert.ok(lane !== null);
 
-    const restored = engine.restore(lane.tab, lane);
+    const restored = engine.restore(lane.scope, lane);
 
     assert.equal(restored.at, 10_000);
     assert.deepEqual(restored.lastRun, { at: 5_000, cause: 'focused' });

@@ -16,6 +16,7 @@ import type { SessionKey } from '#src/recap/domain/ids.ts';
 import { countOf, type Count } from '@stateforge-labs/session-ledger';
 import { causeOf } from './fakes/cause.ts';
 import { seenLane } from '#test/support/seen.ts';
+import { seatOf } from '#src/recap/domain/lane.ts';
 
 const SCREEN = [
     '● I fixed the parser and the tests pass now.',
@@ -51,8 +52,8 @@ test('ScreenTranscripts: only for the kinds asked, one source per pane, the revi
     const screens = new FakeScreens();
     const reader = new ScreenTranscripts(screens, (agent) => (agent === 'gemini' ? 'present' : 'absent'));
     assert.equal(reader.agent, SCREEN_READER_ID);
-    assert.equal((await reader.locate(lane('qwen'))).kind, 'unknown');
-    const located = await reader.locate(lane('gemini'));
+    assert.equal((await reader.locate(seatOf(lane('qwen')))).kind, 'unknown');
+    const located = await reader.locate(seatOf(lane('gemini')));
     assert.deepEqual(located, { kind: 'located', source: sourcePathOf('screen:w1:p3') });
     const first = await reader.read('screen:w1:p3', UNREAD, 10_000) as Chunk;
     assert.deepEqual(screens.asked, [{ pane: 'w1:p3', lines: 200 }]);

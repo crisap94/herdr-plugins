@@ -13,6 +13,7 @@ import { cursorOf, sourcePathOf } from '@stateforge-labs/session-ledger';
 import { paneIdOf } from '#src/recap/domain/ids.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { seenLane } from '#test/support/seen.ts';
+import { seatOf } from '#src/recap/domain/lane.ts';
 
 const view = prunedWriterView(keepNewestOf(2), nextHoursOf(24));
 const wide = prunedWriterView(keepNewestOf(10), nextHoursOf(24));
@@ -62,7 +63,7 @@ test('the next window hides facts older than its hours, keeps a fact exactly at 
 });
 
 test('the writer input applies the next window at the tab clock, so an old next fact is neither shown nor numbered', async () => {
-    const built = await inputOf([{ lane, cursor, chunk: null, fresh: SEEN_BEFORE }], {
+    const built = await inputOf([{ lane: seatOf(lane), cursor, chunk: null, fresh: SEEN_BEFORE }], {
         scope: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(NOW), tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')] }],
         facts: [{ key: brand<string, 'Text'>('t1'), open: nextFacts, closed: [] }], writerView: wide,
     });

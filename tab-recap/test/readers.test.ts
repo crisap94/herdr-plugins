@@ -10,7 +10,7 @@ import { adapterEnv } from '@stateforge-labs/harness-adapters';
 import { opencodeDatabasePath } from '@stateforge-labs/harness-adapters/opencode/store';
 import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcripts.ts';
 import { opencodeFixture } from '#test/opencode-fixture.ts';
-import { laneFrom } from '#src/recap/domain/lane.ts';
+import { laneFrom, seatOf } from '#src/recap/domain/lane.ts';
 import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { UNREAD } from '@stateforge-labs/session-ledger';
 import type { Chunk, ChunkResult, Located } from '@stateforge-labs/session-ledger';
@@ -41,7 +41,7 @@ test('a JSONL reader owns its position: bytes after the last complete line; noth
         mkdirSync(join(dir, 'proj'));
         writeFileSync(join(dir, 'proj', 's1.jsonl'), `${userRow('first')}${userRow('second')}{"type":"user","message":{"content":"half a li`);
         const reader = new ClaudeTranscripts(fsPathOf(dir));
-        const source = sourceOf(await reader.locate(laneIn('claude', { session: 's1' })));
+        const source = sourceOf(await reader.locate(seatOf(laneIn('claude', { session: 's1' }))));
         const first = chunkOf(await reader.read(sourcePathOf(source), UNREAD, countOf(1 << 20)));
         assert.deepEqual(first.entries.map((entry) => entry.text), ['first', 'second']);
         assert.equal(first.grew, true);
@@ -65,7 +65,7 @@ test('the budget is the reader\'s: a long file is read from its end, never from 
         const rows = Array.from({ length: 200 }, (_, at) => userRow(`turn ${at} ${'x'.repeat(40)}`)).join('');
         writeFileSync(join(dir, 'proj', 's1.jsonl'), rows);
         const claude = new ClaudeTranscripts(fsPathOf(dir));
-        const got = chunkOf(await claude.read(sourcePathOf(sourceOf(await claude.locate(laneIn('claude', { session: 's1' })))), UNREAD, countOf(2000)));
+        const got = chunkOf(await claude.read(sourcePathOf(sourceOf(await claude.locate(seatOf(laneIn('claude', { session: 's1' }))))), UNREAD, countOf(2000)));
         assert.ok(got.entries.length > 0 && got.entries.length < 200);
         assert.ok(got.entries.some((entry) => entry.text.startsWith('turn 199 ')), 'the newest turn is read');
         assert.ok(!got.entries.some((entry) => entry.text.startsWith('turn 0 ')));
@@ -75,7 +75,7 @@ test('the budget is the reader\'s: a long file is read from its end, never from 
         const rollout = [{ type: 'session_meta', payload: { cwd: '/repo' } }, ...Array.from({ length: 100 }, (_, at) => ({ type: 'response_item', payload: { type: 'message', role: 'user', content: [{ text: textOf(`ask ${at} ${'y'.repeat(40)}`) }] } }))];
         writeFileSync(join(sessions, 'rollout-a.jsonl'), rollout.map((row) => `${JSON.stringify(row)}\n`).join(''));
         const codex = new CodexTranscripts(fsPathOf(join(dir, 'codex')));
-        const seen = chunkOf(await codex.read(sourcePathOf(sourceOf(await codex.locate(laneIn('codex', { cwd: '/repo' })))), UNREAD, countOf(1500)));
+        const seen = chunkOf(await codex.read(sourcePathOf(sourceOf(await codex.locate(seatOf(laneIn('codex', { cwd: '/repo' }))))), UNREAD, countOf(1500)));
         assert.ok(seen.entries.at(-1)?.text.startsWith('ask 99 '));
         assert.ok(seen.entries.length < 100);
     } finally {
@@ -98,7 +98,7 @@ test('opencode: the newest top-level, unarchived session of the lane\'s cwd; the
             rmSync(join(dir, leftover), { force: true });
         }
         const reader = new OpencodeTranscripts(fsPathOf(fixture.db));
-        const source = sourceOf(await reader.locate(laneIn('opencode', { cwd: '/repo' })));
+        const source = sourceOf(await reader.locate(seatOf(laneIn('opencode', { cwd: '/repo' }))));
         assert.equal(source, `${fixture.db}#ses_new`);
         const first = chunkOf(await reader.read(sourcePathOf(source), UNREAD, countOf(1 << 20)));
         assert.deepEqual(first.entries, [
@@ -107,8 +107,8 @@ test('opencode: the newest top-level, unarchived session of the lane\'s cwd; the
         assert.deepEqual([first.position, first.grew, first.title, first.lastPrompt], [{ cursor: 120, tail: null }, true, 'Fix the build', 'why does the build fail?']);
         const quiet = chunkOf(await reader.read(sourcePathOf(source), first.position, countOf(1 << 20)));
         assert.deepEqual([quiet.entries.length, quiet.grew, quiet.position.cursor], [0, false, 120]);
-        assert.equal((await reader.locate(laneIn('opencode', { cwd: '/nowhere' }))).kind, 'unknown');
-        assert.equal((await reader.locate(laneIn('opencode'))).kind, 'unknown', 'a lane with no cwd cannot be placed');
+        assert.equal((await reader.locate(seatOf(laneIn('opencode', { cwd: '/nowhere' })))).kind, 'unknown');
+        assert.equal((await reader.locate(seatOf(laneIn('opencode')))).kind, 'unknown', 'a lane with no cwd cannot be placed');
     } finally {
         rmSync(dir, { recursive: true });
     }
@@ -120,7 +120,7 @@ test('opencode: a message written after the cursor is the only thing read next; 
         const fixture = opencodeFixture(dir);
         fixture.add({ id: 'm1', session: 'ses_new', role: 'user', updated: 100, parts: [{ type: 'text', text: textOf('one') }] });
         const reader = new OpencodeTranscripts(fsPathOf(fixture.db));
-        const source = sourceOf(await reader.locate(laneIn('opencode', { cwd: '/repo' })));
+        const source = sourceOf(await reader.locate(seatOf(laneIn('opencode', { cwd: '/repo' }))));
         const first = chunkOf(await reader.read(sourcePathOf(source), UNREAD, countOf(1 << 20)));
         fixture.add({ id: 'm2', session: 'ses_new', role: 'user', updated: 130, parts: [{ type: 'text', text: textOf('two') }] });
         const next = chunkOf(await reader.read(sourcePathOf(source), first.position, countOf(1 << 20)));
@@ -128,7 +128,7 @@ test('opencode: a message written after the cursor is the only thing read next; 
         assert.equal(next.position.cursor, 130);
         fixture.close();
         const missing = new OpencodeTranscripts(fsPathOf(join(dir, 'nope.db')));
-        assert.equal((await missing.locate(laneIn('opencode', { cwd: '/repo' }))).kind, 'unknown');
+        assert.equal((await missing.locate(seatOf(laneIn('opencode', { cwd: '/repo' })))).kind, 'unknown');
         assert.equal((await missing.read(sourcePathOf(`${join(dir, 'nope.db')}#x`), UNREAD, countOf(100))).kind, 'unknown');
     } finally {
         rmSync(dir, { recursive: true });
@@ -165,7 +165,7 @@ test('latestPrompt (claude): only the newest user prompt, from the tail of the f
         const filler = assistantRow('x'.repeat(300)).repeat(200);
         writeFileSync(join(dir, 'proj', 's1.jsonl'), `${userRow('very old prompt')}${filler}${userRow('first of the turn')}${assistantRow('ok')}${userRow('the newest prompt')}${assistantRow('on it')}`);
         const reader = new ClaudeTranscripts(fsPathOf(dir));
-        const source = sourceOf(await reader.locate(laneIn('claude', { session: 's1' })));
+        const source = sourceOf(await reader.locate(seatOf(laneIn('claude', { session: 's1' }))));
         assert.deepEqual(await reader.latestPrompt(sourcePathOf(source), countOf(4000)), { kind: 'prompt', text: 'the newest prompt' });
         assert.deepEqual(await reader.latestPrompt(sourcePathOf(source), countOf(100)), { kind: 'prompt', text: null }, 'nothing within the budget: none, not the old one');
         const chunk = chunkOf(await reader.read(sourcePathOf(source), UNREAD, countOf(1 << 20)));

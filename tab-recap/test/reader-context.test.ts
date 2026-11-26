@@ -12,6 +12,7 @@ import { textOf } from '@stateforge-labs/session-ledger';
 import { extractClaude, extractCodex, codexCalls, isPlainRead, namedCall as callOf, fsPathOf, sourcePathOf } from './fakes/transcript-lines.ts';
 import { countOf } from '@stateforge-labs/session-ledger';
 import { seenLane } from '#test/support/seen.ts';
+import { seatOf } from '#src/recap/domain/lane.ts';
 
 const rows = (list: readonly object[]): string[] => list.map((row) => JSON.stringify(row));
 const at = (iso: string): number => Date.parse(iso);
@@ -123,7 +124,7 @@ test('opencode: parts carry their time, tools their kind, and the compaction ans
         fixture.add({ id: 'm3', session: 'ses_new', role: 'assistant', updated: 120, data: { 'summary': true, mode: 'compaction', time: { created: 1_790_000_009_000 } }, parts: [{ type: 'text', text: '## Goal\nRename the table.' }] });
         fixture.close();
         const reader = new OpencodeTranscripts(fsPathOf(fixture.db));
-        const located = await reader.locate(laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'opencode', cwd: '/repo' })));
+        const located = await reader.locate(seatOf(laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'opencode', cwd: '/repo' }))));
         assert.equal(located.kind, 'located');
         const chunk = await reader.read(sourcePathOf((located as { source: string }).source), UNREAD, countOf(1 << 20));
         assert.equal(chunk.kind, 'chunk');

@@ -54,7 +54,7 @@ export interface Built {
 
 export async function inputOf(seen: readonly Observed[], world: InputWorld): Promise<Built> {
     const agents: InputAgent[] = await Promise.all(seen.map(async (one, index) => ({
-        id: idOf(count(index)), kind: one.lane.agent, label: textOf(one.cursor.title ?? ''), key: one.lane.pane,
+        id: idOf(count(index)), kind: one.lane.agent, label: textOf(one.cursor.title ?? ''), key: one.lane.key,
         source: isScreenSource(sourcePathOf(one.cursor.transcript)) ? 'screen' as const : 'transcript' as const,
         ...(await hintOf(one.lane, one.chunk?.entries ?? [], world.repos)),
     })));

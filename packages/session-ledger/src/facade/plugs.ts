@@ -168,7 +168,7 @@ const transcriptsOf = (reader: sl.SessionReader): SessionReader => ({
     locate: async (lane: LegacyFollowedSession): Promise<Located> => {
         const session = followedOf(lane);
         if (session === null) {
-            return { kind: 'unknown', why: { why: 'not-found', what: textOf(`a followed session for ${lane.pane}`) } };
+            return { kind: 'unknown', why: { why: 'not-found', what: textOf(`a followed session for ${lane.key}`) } };
         }
         return pluginLocated(await reader.locate(session));
     },
