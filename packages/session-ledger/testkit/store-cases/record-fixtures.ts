@@ -5,7 +5,7 @@ import { factOf } from '../facts.ts';
 import type { StoreUnderTest } from '../memory-store.ts';
 import { agentKind, cursorAt, paneId, sourcePath, tabId, text, usd } from '../values.ts';
 import { textOf } from '../../src/recap/domain/text.ts';
-import { tabIdOf, type SessionKey, paneIdOf } from '../../src/recap/domain/followed-session-shape.ts';
+import { scopeIdOf, type SessionKey, sessionKeyOf } from '../../src/recap/domain/followed-session-shape.ts';
 
 export const isUnknownValue = (value: unknown): value is Unknown =>
     typeof value === 'object' && value !== null && 'kind' in value && value.kind === 'unknown';
@@ -32,7 +32,7 @@ export const runOf = (over: Partial<RecordedRun> = {}): RecordedRun => ({
     costUsd: usd(0.5),
     error: null,
     sessions: [cursor('p1')],
-    tasks: [shapeOf('a', [paneIdOf('p1')])],
+    tasks: [shapeOf('a', [sessionKeyOf('p1')])],
     changed: [],
     refused: [],
     ...over,
@@ -82,7 +82,7 @@ export const brokenFact = (): Fact => ({
     get id(): Fact['id'] {
         throw new Error('a broken fact');
     },
-    task: { scope: tabIdOf('tab-1'), key: textOf('b') },
+    task: { scope: scopeIdOf('tab-1'), key: textOf('b') },
     section: 'now',
     text: textOf(''),
     why: null,

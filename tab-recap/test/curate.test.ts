@@ -27,7 +27,7 @@ import { brand } from '@stateforge-labs/session-ledger';
 import { must } from '@stateforge-labs/session-ledger';
 import { instant } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '#src/recap/domain/ids.ts';
 
 const [textOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Instant'>];
 

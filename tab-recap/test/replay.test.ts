@@ -28,7 +28,7 @@ import { runIdOf, runsOf, scratchDir, storeRead } from '#test/db/support.ts';
 import { NO_REPOS } from '#test/support.ts';
 import { factOf } from './fakes/facts.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '#src/recap/domain/ids.ts';
 import { must } from '@stateforge-labs/session-ledger';
 import { countOf, parsePositiveCount } from '@stateforge-labs/session-ledger';
 import { bornOf } from '#src/recap/domain/run-ids.ts';

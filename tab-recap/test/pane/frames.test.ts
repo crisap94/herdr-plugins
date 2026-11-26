@@ -26,7 +26,7 @@ import type { Role } from '#src/wire/view/protocol.ts';
 import { recapRunningOf, type Recap } from '@stateforge-labs/session-ledger';
 import { cursor, memoryStore, storeRead } from '#test/db/support.ts';
 import { usdOf } from '@stateforge-labs/session-ledger';
-import { paneIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '#src/recap/domain/ids.ts';
 import { viewRecord } from '#test/support/tab-view-records.ts';
 import { wordingOf } from '#src/view-model/wording.ts';
 

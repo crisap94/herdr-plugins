@@ -18,7 +18,7 @@ import { instant } from '@stateforge-labs/session-ledger';
 import { sourcePathOf, cursorOf } from '@stateforge-labs/session-ledger';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { usdOf } from '@stateforge-labs/session-ledger';
-import { paneIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '#src/recap/domain/ids.ts';
 import { laneRecord, viewRecord } from '#test/support/tab-view-records.ts';
 
 const lane = (pane: string, status: string): TabLaneRecord => laneRecord({ pane, agent: 'claude', status, title: `title ${pane}`, cwd: '/repo', web: { base: 'https://gitlab.example/repo', forge: 'gitlab', branch: 'main' } });

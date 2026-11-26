@@ -16,7 +16,7 @@ import { ANCHOR_LEADS, DECISIONS, DONE, MIX, NEEDS, NEXT, PROJECTS, RULES } from
 import type { Project } from './dataset-vocabulary.ts';
 import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
-import { agentKindOf, paneIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
+import { agentKindOf, sessionKeyOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
 import { directoryOf } from '../lib/brands.ts';
 import { requestToStored } from '../lib/stored-input.ts';
 
@@ -160,7 +160,7 @@ function build(scenario: Scenario, position: number): unknown {
     const tab = `w${(position % 8) + 1}${String.fromCharCode(65 + (position % 26))}`;
     const input: RecapInput = {
         scope: { id: textOf(`${tab}:t${(position % 4) + 1}`), now: instant(now), zone: textOf(zone) },
-        agents: [{ id: textOf('a1'), kind: agentKindOf(scenario.agent.kind), label: textOf(scenario.agent.label), key: paneIdOf(`${tab}:p1`), source: 'transcript', cwd: directoryOf(repo), repo: directoryOf(repo), branch: scenario.agent.branch === null ? null : textOf(scenario.agent.branch), files: [] }],
+        agents: [{ id: textOf('a1'), kind: agentKindOf(scenario.agent.kind), label: textOf(scenario.agent.label), key: sessionKeyOf(`${tab}:p1`), source: 'transcript', cwd: directoryOf(repo), repo: directoryOf(repo), branch: scenario.agent.branch === null ? null : textOf(scenario.agent.branch), files: [] }],
         tasks: [],
         ledgers: [{ task: null, facts }],
         notes: [],

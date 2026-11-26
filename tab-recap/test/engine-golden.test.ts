@@ -19,7 +19,7 @@ import { answer, scripted as scriptedEnumerator } from '#test/fakes/enumerator.t
 import { writer } from '#test/fakes/golden-writer.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { tabId } from '#test/support/ids.ts';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '#src/recap/domain/ids.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { must } from '@stateforge-labs/session-ledger';
 import { countOf, parsePositiveCount } from '@stateforge-labs/session-ledger';

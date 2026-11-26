@@ -22,6 +22,7 @@ export interface AgentSessionPath {
 export type AgentSession = AgentSessionId | AgentSessionPath;
 
 export type { HarnessKind, CompactionId, DecisionId, SessionKey, ScopeId } from '@stateforge-labs/session-ledger';
+export { sessionKeyOf as paneIdOf, scopeIdOf as tabIdOf } from '@stateforge-labs/session-ledger';
 export function workspaceOfTab(tab: ScopeId): WorkspaceId | null {
     const raw = String(tab);
     const colon = raw.indexOf(':');

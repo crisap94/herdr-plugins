@@ -19,7 +19,7 @@ import { cursor } from '#test/db/support.ts';
 import { apiProblems } from '#test/gui-schema-support.ts';
 import { add, api, OTHER_PANE, PANE, seedOther, seedRun, startWorld, TAB, type World } from '#test/desktop-engine-world.ts';
 import { BUN_CACHE_OFF } from './support/bun-env.ts';
-import { paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf, tabIdOf } from '#src/recap/domain/ids.ts';
 import { laneRecord } from '#test/support/tab-view-records.ts';
 
 const compactPath = (query: string): string => `/v1/tabs/${encodeURIComponent(TAB)}/compact-message?${query}`;

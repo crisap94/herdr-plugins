@@ -12,7 +12,7 @@ import { instant } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { usdOf } from '@stateforge-labs/session-ledger';
-import { paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf, tabIdOf } from '#src/recap/domain/ids.ts';
 import { viewRecord } from '#test/support/tab-view-records.ts';
 
 export const OTHER_TAB = 'w2:t9';

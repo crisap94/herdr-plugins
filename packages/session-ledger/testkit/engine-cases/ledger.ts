@@ -5,10 +5,10 @@ import { followed, key, scope, session } from '../ids.ts';
 import type { EngineWorld } from '../world.ts';
 import { addOf, recapOf, spoken, writtenOps } from './support.ts';
 import { textOf } from '../../src/recap/domain/text.ts';
-import { tabIdOf } from '../../src/recap/domain/followed-session-shape.ts';
+import { scopeIdOf } from '../../src/recap/domain/followed-session-shape.ts';
 
 const TAB = scope('one');
-const TASK = { scope: tabIdOf(TAB), key: textOf('t1') };
+const TASK = { scope: scopeIdOf(TAB), key: textOf('t1') };
 
 const factsOf = (world: EngineWorld): readonly Fact[] => {
     const found = world.store.facts.allOf(TASK);

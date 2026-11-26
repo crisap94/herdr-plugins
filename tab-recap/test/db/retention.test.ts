@@ -11,7 +11,7 @@ import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { cursor, memoryStore, recordOps } from './support.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { usdOf } from '@stateforge-labs/session-ledger';
-import { paneIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '#src/recap/domain/ids.ts';
 import { countOf } from '@stateforge-labs/session-ledger';
 
 const DAY = 86_400_000;

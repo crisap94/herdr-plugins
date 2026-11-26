@@ -10,7 +10,7 @@ import { agentOf, NO_REPOS } from '#test/support.ts';
 import { brand } from '@stateforge-labs/session-ledger';
 import { agentKind, paneId } from '#test/support/ids.ts';
 import { cursorOf, sourcePathOf } from '@stateforge-labs/session-ledger';
-import { paneIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '#src/recap/domain/ids.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { seenLane } from '#test/support/seen.ts';
 

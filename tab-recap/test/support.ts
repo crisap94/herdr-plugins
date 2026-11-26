@@ -12,7 +12,7 @@ import type { RecapSections } from '@stateforge-labs/session-ledger';
 import type { RecapTask } from '@stateforge-labs/session-ledger';
 import { opsOfSections } from '#src/adapters/db/import/sections-to-ops.ts';
 import type { TaskOps } from '@stateforge-labs/session-ledger';
-import { paneIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '#src/recap/domain/ids.ts';
 
 export const NO_REPOS: Workplaces = { repoOf: () => Promise.resolve({ kind: 'no-repo' }) };
 

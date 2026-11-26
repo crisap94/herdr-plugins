@@ -23,7 +23,7 @@ import { brand } from '@stateforge-labs/session-ledger';
 import type { Text } from '@stateforge-labs/session-ledger';
 import { cursorOf, grewOf, sourcePathOf } from '@stateforge-labs/session-ledger';
 import { exitCodeOf } from '@stateforge-labs/session-ledger';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '#src/recap/domain/ids.ts';
 import { seenLane } from '#test/support/seen.ts';
 
 const add = (section: string, text: string): Record<string, unknown> => ({ op: 'add', section, text, anchor: 'migrate victoria' });

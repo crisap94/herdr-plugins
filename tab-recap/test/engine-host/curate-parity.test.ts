@@ -34,7 +34,7 @@ import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { writer as goldenWriter } from '#test/fakes/golden-writer.ts';
 import { NO_REPOS } from '#test/support.ts';
 import { usdOf } from '@stateforge-labs/session-ledger';
-import { paneIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '#src/recap/domain/ids.ts';
 
 const MIN = 60_000;
 const NOW = Date.parse('2026-10-07T16:30:00Z');

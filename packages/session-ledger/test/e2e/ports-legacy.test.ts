@@ -10,7 +10,7 @@ import { countOf } from '@stateforge-labs/session-ledger';
 import { NO_RUNNING, runningOf } from '@stateforge-labs/session-ledger';
 import { sourcePathOf } from '@stateforge-labs/session-ledger';
 import { type LegacySessionReader as SessionReader } from '@stateforge-labs/session-ledger';
-import { agentKindOf, paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger';
+import { agentKindOf, sessionKeyOf, scopeIdOf } from '@stateforge-labs/session-ledger';
 import { causeOf } from '@stateforge-labs/session-ledger';
 import { exitCodeOf, isUnknown, saying, unknown } from '@stateforge-labs/session-ledger';
 import { text, tabId, paneId, running } from '@stateforge-labs/session-ledger/testkit';
@@ -35,12 +35,12 @@ test('a blank recap holds no recap until a task has markdown', () => {
     assert.equal(hasRecap(blank), recappedOf(false));
     assert.equal(blank.running, recapRunningOf(false));
     assert.equal(blank.running, running(false));
-    assert.equal(blank.scope, tabIdOf('tab-1'));
+    assert.equal(blank.scope, scopeIdOf('tab-1'));
 });
 
 test('a pane id and a tab id keep the text they are made of', () => {
-    assert.equal(paneIdOf('w1:p1'), paneId('w1:p1'));
-    assert.equal(tabIdOf('w1:t1'), tabId('w1:t1'));
+    assert.equal(sessionKeyOf('w1:p1'), paneId('w1:p1'));
+    assert.equal(scopeIdOf('w1:t1'), tabId('w1:t1'));
 });
 
 test('the transcript registry picks the exact reader, then the fallback, and words what is missing', () => {

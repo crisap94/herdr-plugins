@@ -11,7 +11,7 @@ import { instant } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { usdOf } from '@stateforge-labs/session-ledger';
-import { paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf, tabIdOf } from '#src/recap/domain/ids.ts';
 
 const TASK = { scope: tabIdOf('w1:t1'), key: textOf('t1') };
 const add = (text: string): Operation => ({ op: 'add', section: 'done', text: textOf(text), why: null, ref: null, at: null, agent: null });

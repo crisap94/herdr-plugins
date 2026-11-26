@@ -26,7 +26,7 @@ import { brand } from '@stateforge-labs/session-ledger';
 import type { Text } from '@stateforge-labs/session-ledger';
 import { parseText } from '@stateforge-labs/session-ledger';
 import { must } from '@stateforge-labs/session-ledger';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '#src/recap/domain/ids.ts';
 import { fsPathOf } from './fakes/transcript-lines.ts';
 import { seenLane } from '#test/support/seen.ts';
 

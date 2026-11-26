@@ -17,7 +17,7 @@ import { blankRecap, type Recap } from '@stateforge-labs/session-ledger';
 import { type LegacyRecords as Records } from '@stateforge-labs/session-ledger';
 import type { TabViewRecord, TabViewStore } from '#src/ports/tab-views.ts';
 import { v2Problems } from '#test/gui-schema-support.ts';
-import { paneIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '#src/recap/domain/ids.ts';
 import { viewRecord } from '#test/support/tab-view-records.ts';
 
 const wire = (document: GuiTab): unknown => JSON.parse(JSON.stringify(document));

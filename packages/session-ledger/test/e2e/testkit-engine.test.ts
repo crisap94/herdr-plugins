@@ -26,7 +26,7 @@ import {
     type Subject,
 } from '@stateforge-labs/session-ledger/testkit';
 import { tabId, usd } from '@stateforge-labs/session-ledger/testkit';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { scopeIdOf } from '@stateforge-labs/session-ledger';
 
 const request = (): RecapRequest => ({
     input: { scope: { id: textOf('tab-1'), now: instant(0), zone: textOf('UTC') }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] },
@@ -41,7 +41,7 @@ const listed = (value: readonly Fact[] | Unknown): readonly Fact[] => {
     throw new Error('the read was unknown');
 };
 
-const taskA = { scope: tabIdOf('tab-1'), key: textOf('a') };
+const taskA = { scope: scopeIdOf('tab-1'), key: textOf('a') };
 
 test('a directory is the path it was given', () => {
     assert.equal(String(directory('/work')), '/work');

@@ -8,10 +8,10 @@ import { addOf, blockedOps, chunkOf, countOf, spoken, writtenOps } from './suppo
 import { failure } from '../values.ts';
 import { instant } from '../../src/recap/domain/time.ts';
 import { textOf } from '../../src/recap/domain/text.ts';
-import { tabIdOf } from '../../src/recap/domain/followed-session-shape.ts';
+import { scopeIdOf } from '../../src/recap/domain/followed-session-shape.ts';
 
 export const TAB = scope('one');
-const TASK = { scope: tabIdOf(TAB), key: textOf(key('a')) };
+const TASK = { scope: scopeIdOf(TAB), key: textOf(key('a')) };
 const WRITES: readonly string[] = ['beginRun', 'recordRun', 'failRun', 'advance', 'apply'];
 
 const CURATED: Behaviour<CuratedAnswer> = { kind: 'answer', value: { kind: 'curated', text: 'curated story' } };
@@ -28,7 +28,7 @@ const factsOf = (world: EngineWorld): readonly Fact[] => {
 const scopeFactsOf = (world: EngineWorld): readonly Fact[] => {
     const keys = world.store.facts.keysOf(TAB);
     return 'kind' in keys ? [] : keys.flatMap((one) => {
-        const found = world.store.facts.allOf({ scope: tabIdOf(TAB), key: textOf(one) });
+        const found = world.store.facts.allOf({ scope: scopeIdOf(TAB), key: textOf(one) });
         return 'kind' in found ? [] : found;
     });
 };

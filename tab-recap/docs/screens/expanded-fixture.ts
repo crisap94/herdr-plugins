@@ -10,7 +10,7 @@ import { viewBreakOf, webOf } from '#src/view-model/column.ts';
 import { countOf } from '@stateforge-labs/session-ledger';
 import { duration, instant } from '@stateforge-labs/session-ledger';
 import { textOf } from '@stateforge-labs/session-ledger';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '#src/recap/domain/ids.ts';
 
 const NOW = 1_760_000_000_000;
 const MIN = 60_000;

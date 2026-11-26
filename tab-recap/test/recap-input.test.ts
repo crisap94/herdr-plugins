@@ -12,7 +12,7 @@ import { grewOf, cursorOf, sourcePathOf } from '@stateforge-labs/session-ledger'
 import { textOf } from '@stateforge-labs/session-ledger';
 import { instant } from '@stateforge-labs/session-ledger';
 import { agentKind, paneId } from '#test/support/ids.ts';
-import { paneIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '#src/recap/domain/ids.ts';
 import { seenLane } from '#test/support/seen.ts';
 
 const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude' }));

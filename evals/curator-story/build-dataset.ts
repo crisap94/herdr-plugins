@@ -8,7 +8,7 @@ import { FRESH_ITEMS, FRESH_SEED, rngOf, sampleOf } from '../lib/fresh.ts';
 import { FRESH_PLANS, FRESH_PROJECTS, type Trap } from './fresh-plans.ts';
 import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
-import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
+import { scopeIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
 import { inputToStored } from './prompt.ts';
 
 const NOW = Date.parse('2026-11-10T16:30:00Z');
@@ -595,7 +595,7 @@ function build(plan: Plan, index: number): Built {
         taken.add(one.minute);
     }
     const all = [...written, ...fillerOf(plan, taken, rng)];
-    const task = { scope: tabIdOf(`tab-${String(index + 1).padStart(2, '0')}`), key: textOf(`t${(index % 7) + 1}`) };
+    const task = { scope: scopeIdOf(`tab-${String(index + 1).padStart(2, '0')}`), key: textOf(`t${(index % 7) + 1}`) };
     const keyed = all.map((draft) => {
         const firstAt = start + draft.minute * MINUTE;
         const closedAt = draft.closed === undefined ? null : Math.min(NOW - MINUTE, Math.max(firstAt + MINUTE, start + minuteOf(draft.closed[1]) * MINUTE));

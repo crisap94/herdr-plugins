@@ -21,7 +21,7 @@ import { FRESH_ITEMS, FRESH_SEED, guardOf, overlapOf } from '../lib/fresh.ts';
 import { PROJECTS } from './dataset-vocabulary.ts';
 import { brand } from '../../packages/session-ledger/src/recap/domain/brand.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
-import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
+import { scopeIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
 import { factIdOf } from '../lib/brands.ts';
 import { requestOfStored, type StoredRecapRequest } from '../lib/stored-input.ts';
 
@@ -75,7 +75,7 @@ const fail = (id: string, what: string): void => { failures.push(`${id}: ${what}
 
 function factOf(fact: InputFact, tab: string, language: string): Fact {
     return {
-        id: factIdOf(fact.id), task: { scope: tabIdOf(tab), key: textOf(TASK) }, section: fact.section, text: fact.text, why: fact.why, ref: fact.ref, agent: fact.agent, anchor: fact.anchor,
+        id: factIdOf(fact.id), task: { scope: scopeIdOf(tab), key: textOf(TASK) }, section: fact.section, text: fact.text, why: fact.why, ref: fact.ref, agent: fact.agent, anchor: fact.anchor,
         firstAt: fact.first, lastAt: fact.last, state: fact.state, closedWhy: fact.closed, closedAt: fact.state === 'closed' ? fact.last : null, language: textOf(language),
     };
 }

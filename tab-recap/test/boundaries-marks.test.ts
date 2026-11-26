@@ -8,7 +8,7 @@ import type { Chunk, Mark } from '@stateforge-labs/session-ledger';
 import { instant, duration } from '@stateforge-labs/session-ledger';
 import { grewOf, cursorOf } from '@stateforge-labs/session-ledger';
 import { countOf } from '@stateforge-labs/session-ledger';
-import { paneIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '#src/recap/domain/ids.ts';
 
 const AT = Date.parse('2026-10-07T16:38:09.490Z');
 const read = (marks: readonly Mark[], pane = 'w1:p1'): Read => ({

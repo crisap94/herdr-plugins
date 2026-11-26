@@ -21,7 +21,7 @@ import { MemoryClosedLanes } from '#test/fakes/closed-lanes-memory.ts';
 import { fact } from '#test/fakes/fact-at.ts';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '#src/recap/domain/ids.ts';
 
 const DAY = 86_400_000;
 const NOW = instant(Date.parse('2026-10-11T10:00:00Z'));

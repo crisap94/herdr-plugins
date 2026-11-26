@@ -1,5 +1,5 @@
 import type { FlushWhy } from '#src/contract/engine.ts';
-import { tabIdOf, type LegacyFollowedSession, type SessionKey, type ScopeId } from '#src/recap/domain/followed-session-shape.ts';
+import { scopeIdOf, type LegacyFollowedSession, type SessionKey, type ScopeId } from '#src/recap/domain/followed-session-shape.ts';
 import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import type { LastRun } from '#src/ports/recap-records.ts';
@@ -47,7 +47,7 @@ export interface Engine {
 const heldBy = (session: LegacyFollowedSession): SessionKey => session.pane;
 
 function restoreFactsOf(store: EngineStore, environment: EngineEnvironment, at: Instant, scope: ScopeId, session: LegacyFollowedSession): RestoreFacts {
-    const id = tabIdOf(String(scope));
+    const id = scopeIdOf(String(scope));
     const recap = store.records.readRecap(id);
     if (recap !== null && 'kind' in recap) {
         environment.log(`restore ${id}: skipped, ${saying(recap.why)}`);
@@ -76,7 +76,7 @@ export function createEngine(plugs: EnginePlugs): Engine {
         refresh: (scope, sessions): Promise<void> => job.refreshNow(scope, sessions),
         sessionStarted: (): void => undefined,
         compacted: (scope, sessions): Promise<void> => job.refreshNow(scope, sessions),
-        history: (scope, session): readonly HistoryFact[] => store.ledger.historyOf(tabIdOf(String(scope)), heldBy(session)),
+        history: (scope, session): readonly HistoryFact[] => store.ledger.historyOf(scopeIdOf(String(scope)), heldBy(session)),
         restore: (scope, session): RestoreFacts => restoreFactsOf(store, environment, environment.clock.now(), scope, session),
         idle: (scope): Promise<void> => job.idle(scope),
         flush: (scope, why): Promise<void> => job.flush(scope, why),

@@ -36,7 +36,7 @@ import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import { brand } from '@stateforge-labs/session-ledger';
 import type { Text } from '@stateforge-labs/session-ledger';
 import { cursorOf, sourcePathOf, grewOf } from '@stateforge-labs/session-ledger';
-import { paneIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '#src/recap/domain/ids.ts';
 import { seenLane } from '#test/support/seen.ts';
 import { laneRecord, viewRecord } from '#test/support/tab-view-records.ts';
 

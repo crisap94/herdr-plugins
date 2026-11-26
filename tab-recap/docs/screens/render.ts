@@ -23,7 +23,7 @@ import { expandedLines } from './expanded-fixture.ts';
 import { uncheckedAgentKind, parseAgentKind, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
 import { instant } from '@stateforge-labs/session-ledger';
 import { textOf, parseTextOrNull } from '@stateforge-labs/session-ledger';
-import { paneIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '#src/recap/domain/ids.ts';
 import { countOf } from '@stateforge-labs/session-ledger';
 
 export interface Page {

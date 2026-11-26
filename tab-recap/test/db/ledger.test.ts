@@ -14,7 +14,7 @@ import { instant } from '@stateforge-labs/session-ledger';
 import { paneId, tabId } from '#test/support/ids.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { usdOf } from '@stateforge-labs/session-ledger';
-import { paneIdOf, tabIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf, tabIdOf } from '#src/recap/domain/ids.ts';
 import { factIdOf } from '@stateforge-labs/session-ledger';
 
 const TASK = { scope: tabIdOf('w1:t1'), key: textOf('t1') };

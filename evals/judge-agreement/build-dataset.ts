@@ -9,7 +9,7 @@ import { CASES_B } from './cases-b.ts';
 import type { Beat, Case, Planted, Section } from './cases-types.ts';
 import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
-import { agentKindOf, paneIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
+import { agentKindOf, sessionKeyOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
 import { directoryOf } from '../lib/brands.ts';
 import { requestToStored } from '../lib/stored-input.ts';
 
@@ -139,7 +139,7 @@ function requestOf(one: Case, beats: readonly Beat[], now: number): RecapRequest
         previousLanguage: textOf(one.language),
         input: {
             scope: { id: textOf(`w${one.n}:t1`), now: instant(now), zone: textOf('UTC') },
-            agents: [{ id: textOf('a1'), kind: agentKindOf(one.kind), label: textOf(one.label), key: paneIdOf(`w${one.n}-1`), source: 'transcript', cwd: directoryOf(one.repo), repo: directoryOf(one.repo), branch: textOf(one.branch), files: [] }],
+            agents: [{ id: textOf('a1'), kind: agentKindOf(one.kind), label: textOf(one.label), key: sessionKeyOf(`w${one.n}-1`), source: 'transcript', cwd: directoryOf(one.repo), repo: directoryOf(one.repo), branch: textOf(one.branch), files: [] }],
             tasks: [],
             ledgers: [{ task: null, facts: priorFacts(one, now) }],
             notes: [],

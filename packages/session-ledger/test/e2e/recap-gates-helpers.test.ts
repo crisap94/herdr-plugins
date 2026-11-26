@@ -17,12 +17,12 @@ import { foldedOf, wordsOf } from '@stateforge-labs/session-ledger';
 import { wordJaccard as setJaccard, wordTokensOf } from '@stateforge-labs/session-ledger';
 import { factIdOf } from '@stateforge-labs/session-ledger';
 import { instant } from '@stateforge-labs/session-ledger';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { scopeIdOf } from '@stateforge-labs/session-ledger';
 
 const count = brand<number, 'Count'>;
 
 const fact: Fact = {
-    id: brand<string, 'FactId'>('f1'), task: { scope: tabIdOf('tab-1'), key: textOf('t1') }, section: 'decisions', text: textOf('use sqlite'), why: textOf('it is local'), ref: null, agent: null, anchor: null,
+    id: brand<string, 'FactId'>('f1'), task: { scope: scopeIdOf('tab-1'), key: textOf('t1') }, section: 'decisions', text: textOf('use sqlite'), why: textOf('it is local'), ref: null, agent: null, anchor: null,
     firstAt: instant(1), lastAt: instant(1), state: 'open', closedWhy: null, closedAt: null, language: textOf('en'),
 };
 

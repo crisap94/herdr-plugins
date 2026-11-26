@@ -21,7 +21,7 @@ import { NOW } from '#test/fakes/expanded-fixture.ts';
 import { v2Problems } from '#test/gui-schema-support.ts';
 import { parseCurating, parseTaskName } from '@stateforge-labs/recap-view';
 import { tabId } from '#test/support/ids.ts';
-import { paneIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '#src/recap/domain/ids.ts';
 import { viewRecord } from '#test/support/tab-view-records.ts';
 
 const MIN = 60_000;

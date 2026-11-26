@@ -9,7 +9,7 @@ import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { instant } from '@stateforge-labs/session-ledger';
 import { usdOf } from '@stateforge-labs/session-ledger';
-import { paneIdOf } from '@stateforge-labs/session-ledger';
+import { paneIdOf } from '#src/recap/domain/ids.ts';
 import { hiddenStateOf } from '#test/support/seen.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
 import { cursor, filterOf, memoryStore, recordOps, storeRead, type RunInput } from './support.ts';

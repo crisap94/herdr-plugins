@@ -6,9 +6,9 @@ import type { StoreUnderTest } from '../memory-store.ts';
 import { cursor, factAt, isUnknownValue, runOf, shapeOf, typeIdAt } from './record-fixtures.ts';
 import { instant } from '@stateforge-labs/session-ledger';
 import { textOf } from '../../src/recap/domain/text.ts';
-import { tabIdOf, paneIdOf } from '../../src/recap/domain/followed-session-shape.ts';
+import { scopeIdOf, sessionKeyOf } from '../../src/recap/domain/followed-session-shape.ts';
 
-const TASK: TaskId = { scope: tabIdOf('tab-1'), key: textOf('a') };
+const TASK: TaskId = { scope: scopeIdOf('tab-1'), key: textOf('a') };
 
 const knownFacts = (read: readonly Fact[] | Unknown, what: string): readonly Fact[] => {
     if (isUnknownValue(read)) {
@@ -25,7 +25,7 @@ export const REC_14: Case<null, StoreUnderTest> = {
     async run(_world, store) {
         const goal = factAt(typeIdAt(11), { task: TASK, section: 'goal', text: textOf('goal'), firstAt: instant(90), lastAt: instant(100) });
         const now = factAt(typeIdAt(12), { task: TASK, section: 'now', text: textOf('now'), firstAt: instant(95), lastAt: instant(100) });
-        store.records.recordRun(runOf({ at: instant(100), sessions: [cursor('p1')], tasks: [shapeOf('a', [paneIdOf('p1')])], changed: [goal, now] }));
+        store.records.recordRun(runOf({ at: instant(100), sessions: [cursor('p1')], tasks: [shapeOf('a', [sessionKeyOf('p1')])], changed: [goal, now] }));
         const nowClosed = factAt(typeIdAt(12), {
             task: TASK,
             section: 'now',
@@ -41,7 +41,7 @@ export const REC_14: Case<null, StoreUnderTest> = {
             runOf({
                 at: instant(200),
                 sessions: [cursor('p1')],
-                tasks: [shapeOf('a', [paneIdOf('p1')])],
+                tasks: [shapeOf('a', [sessionKeyOf('p1')])],
                 changed: [nowClosed, added],
                 refused: [{ op: { op: 'close', id: factIdOf(typeIdAt(99)), why: 'done' }, reason: 'unknown-id' }],
             }),

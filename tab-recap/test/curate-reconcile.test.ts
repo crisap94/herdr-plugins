@@ -25,7 +25,7 @@ import type { Count } from '@stateforge-labs/session-ledger';
 import { must } from '@stateforge-labs/session-ledger';
 import { parseText } from '@stateforge-labs/session-ledger';
 import { tabId } from '#test/support/ids.ts';
-import { tabIdOf } from '@stateforge-labs/session-ledger';
+import { tabIdOf } from '#src/recap/domain/ids.ts';
 
 const [textOf, countOf, tabOf, boundaryOf, instantOf] = [brand<string, 'Text'>, brand<number, 'Count'>, brand<string, 'ScopeId'>, brand<boolean, 'Boundary'>, brand<number, 'Instant'>];
 
