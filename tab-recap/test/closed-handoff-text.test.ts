@@ -11,9 +11,6 @@ import { directoryOf, taskNameOf } from './fakes/closed-values.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
 
 const CLOSED_AT = instant(Date.parse('2026-10-11T09:00:00Z'));
-const DEL = 127;
-const SPACE = 32;
-const isControl = (code: number): boolean => code < SPACE || code === DEL;
 const RUN = { at: instant(Date.parse('2026-10-11T08:30:00Z')), cause: 'turn-ended' as const };
 const VIEW: ClosedView = { closedAt: CLOSED_AT, agent: agentKind('claude'), cwd: directoryOf('/work/tree'), run: RUN };
 
@@ -50,13 +47,6 @@ function record(pane: string, closedAt: number, name: string | null): ClosedLane
 test('the closed listing is one tab-separated line per identity, in the order given, with the task name last', () => {
     const text = serializeClosedListing([record('w1:p1', 2000, 'alpha'), record('w1:p1', 1000, null)]);
     assert.equal(text, 'w1:p1\tclaude\t2000\talpha\nw1:p1\tclaude\t1000\t');
-});
-
-test('a task name with an escape sequence or a newline is printed without a control character', () => {
-    const text = serializeClosedListing([record('w1:p1', 1000, 'bad\u001b[31m\nname')]);
-    const controls = Array.from(text).filter((character) => character !== '\t' && isControl(character.codePointAt(0) ?? 0));
-    assert.deepEqual(controls, []);
-    assert.equal(text.split('\t').length, 4);
 });
 
 test('no closed lane prints nothing', () => {

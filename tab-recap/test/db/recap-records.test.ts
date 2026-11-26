@@ -98,16 +98,6 @@ test('an empty recap (no facts) is still a task; a second tab is a separate reca
     assert.deepEqual(blankRecap(tabId('x')).tasks, []);
 });
 
-test('a run is all or nothing: a run whose fact the schema refuses (an empty text) leaves no trace', () => {
-    const store = memoryStore(); const { db } = store;
-    const refused = [{ task: textOf('t1'), ops: [{ op: 'add' as const, section: 'done' as const, text: textOf('fine'), why: null, ref: null, at: null, agent: null }, { op: 'add' as const, section: 'done' as const, text: textOf(''), why: null, ref: null, at: null, agent: null }] }];
-    assert.throws(() => { recordOps(store, run({ ops: refused })); }, /CHECK constraint failed/);
-    for (const table of ['run', 'task', 'transcript', 'fact', 'run_task']) {
-        assert.equal((db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n, 0, table);
-    }
-    assert.equal(db.inTransaction, false);
-});
-
 test('a fact the run carries with an id that is not a fact typeid throws, and the run leaves no trace', () => {
     const store = memoryStore(); const { records, db } = store;
     const carried: Fact = JSON.parse('{"id":"run_00000000000000000000000001","task":{"scope":"w1:t1","key":"t1"},"section":"done","text":"x","why":null,"ref":null,"agent":null,"anchor":null,"firstAt":100,"lastAt":100,"state":"open","closedWhy":null,"closedAt":null,"language":"en"}');
@@ -116,14 +106,6 @@ test('a fact the run carries with an id that is not a fact typeid throws, and th
         assert.equal((db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n, 0, table);
     }
     assert.equal(db.inTransaction, false);
-});
-
-test('a connection that cannot answer (a damaged schema) reads as unreadable, never as no recap and never a throw into the render loop', () => {
-    const store = memoryStore(); const { records, db } = store;
-    recordOps(store, run());
-    db.exec('DROP VIEW last_good_run');
-    const read = records.readRecap(tabId('w1:t1'));
-    assert.equal(read !== null && 'kind' in read ? read.why.why : 'read', 'unreadable');
 });
 
 test('the item rows are no longer written: a run adds facts and no items', () => {

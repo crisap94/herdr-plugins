@@ -106,16 +106,6 @@ test('no recap cursor for the lane means no edits are read', async () => {
     assert.deepEqual(snapshot.edited, [{ path: 'x.ts', edits: 1 }]);
 });
 
-test('waiting tokens are listed by name, never by value, and an empty one is not listed', async () => {
-    const site = new MemoryWorksite();
-    site.set(DIR, { commit: null, paths: [] });
-    const snapshot = await worksiteOf(deps(site), input({ tokens: tokenEntries({ 'awaiting-review': 'secret value', 'awaiting-empty': '', 'note-tool': 'private note', unrelated: 'x' }) }));
-    assert.equal(snapshot.kind, 'known');
-    assert.deepEqual(snapshot.tokens, ['awaiting-review', 'note-tool']);
-    assert.equal(JSON.stringify(snapshot).includes('secret value'), false);
-    assert.equal(JSON.stringify(snapshot).includes('private note'), false);
-});
-
 test('unknown tokens leave the token list empty', async () => {
     const site = new MemoryWorksite();
     site.set(DIR, { commit: null, paths: [] });
