@@ -1,17 +1,16 @@
 import type { Advance, Fact, FailedRun, LastRun, Recap, RecordedRun, SessionCursor, TaskShape, Unknown } from '@stateforge-labs/session-ledger';
 import { instant } from '@stateforge-labs/session-ledger';
-import { scope } from '../ids.ts';
 import { factOf } from '../facts.ts';
 import type { StoreUnderTest } from '../memory-store.ts';
-import { agentKind, cursorAt, paneId, sourcePath, tabId, text, usd } from '../values.ts';
+import { agentKind, cursorAt, sourcePath, text, usd } from '../values.ts';
 import { textOf } from '../../src/recap/domain/text.ts';
 import { scopeIdOf, type SessionKey, sessionKeyOf } from '../../src/recap/domain/followed-session-shape.ts';
 
 export const isUnknownValue = (value: unknown): value is Unknown =>
     typeof value === 'object' && value !== null && 'kind' in value && value.kind === 'unknown';
 
-export const cursor = (pane: string, transcript = `/transcripts/${pane}.jsonl`): SessionCursor => ({
-    key: paneId(pane),
+export const cursor = (key: string, transcript = `/transcripts/${key}.jsonl`): SessionCursor => ({
+    key: sessionKeyOf(key),
     agent: agentKind('claude'),
     transcript: sourcePath(transcript),
     cursor: cursorAt(1),
@@ -24,7 +23,7 @@ export const cursor = (pane: string, transcript = `/transcripts/${pane}.jsonl`):
 export const shapeOf = (id: string, lanes: readonly SessionKey[]): TaskShape => ({ id: textOf(id), name: textOf(`Task ${id}`), sessions: lanes });
 
 export const runOf = (over: Partial<RecordedRun> = {}): RecordedRun => ({
-    scope: tabId('tab-1'),
+    scope: scopeIdOf('tab-1'),
     at: instant(100),
     cause: 'requested',
     backend: text('claude'),
@@ -39,7 +38,7 @@ export const runOf = (over: Partial<RecordedRun> = {}): RecordedRun => ({
 });
 
 export const failedOf = (over: Partial<FailedRun> = {}): FailedRun => ({
-    scope: tabId('tab-1'),
+    scope: scopeIdOf('tab-1'),
     at: instant(200),
     cause: 'requested',
     backend: text('codex'),
@@ -51,25 +50,25 @@ export const failedOf = (over: Partial<FailedRun> = {}): FailedRun => ({
 });
 
 export const advanceOf = (over: Partial<Advance> = {}): Advance => ({
-    scope: tabId('tab-1'),
+    scope: scopeIdOf('tab-1'),
     at: instant(300),
     error: text('stale'),
     sessions: [cursor('p3')],
     ...over,
 });
 
-export const recapOf = (store: StoreUnderTest, tab: string): Recap => {
-    const read = store.records.readRecap(scope(tab));
+export const recapOf = (store: StoreUnderTest, scope: string): Recap => {
+    const read = store.records.readRecap(scopeIdOf(scope));
     if (read === null || isUnknownValue(read)) {
-        throw new Error(`no recap for ${tab}`);
+        throw new Error(`no recap for ${scope}`);
     }
     return read;
 };
 
-export const lastOf = (store: StoreUnderTest, tab: string): LastRun | null => {
-    const read = store.records.lastRunOf(scope(tab));
+export const lastOf = (store: StoreUnderTest, scope: string): LastRun | null => {
+    const read = store.records.lastRunOf(scopeIdOf(scope));
     if (isUnknownValue(read)) {
-        throw new Error(`the last run of ${tab} is Unknown`);
+        throw new Error(`the last run of ${scope} is Unknown`);
     }
     return read;
 };

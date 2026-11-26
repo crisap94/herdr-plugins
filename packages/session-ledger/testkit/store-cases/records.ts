@@ -4,7 +4,7 @@ import type { Case } from '../run.ts';
 import type { StoreUnderTest } from '../memory-store.ts';
 import { advanceOf, brokenFact, cursor, factAt, failedOf, isUnknownValue, lastOf, recapOf, runOf, shapeOf, shapesOf, typeIdAt } from './record-fixtures.ts';
 import { instant } from '@stateforge-labs/session-ledger';
-import { text, usd, tabId } from '../values.ts';
+import { text, usd } from '../values.ts';
 import { countOf } from '../../src/recap/domain/count.ts';
 import { sessionKeyOf, scopeIdOf } from '../../src/recap/domain/followed-session-shape.ts';
 import { textOf } from '../../src/recap/domain/text.ts';
@@ -181,10 +181,10 @@ export const REC_11: Case<null, StoreUnderTest> = {
     level: 'full',
     async run(_world, store) {
         const before = store.records.readRecap(scope('tab-2'));
-        store.records.recordRun(runOf({ scope: tabId('tab-1') }));
+        store.records.recordRun(runOf({ scope: scopeIdOf('tab-1') }));
         store.records.beginRun(scope('tab-1'), text('codex'), instant(150));
-        store.records.failRun(failedOf({ scope: tabId('tab-1') }));
-        store.records.advance(advanceOf({ scope: tabId('tab-1') }));
+        store.records.failRun(failedOf({ scope: scopeIdOf('tab-1') }));
+        store.records.advance(advanceOf({ scope: scopeIdOf('tab-1') }));
         assert.deepEqual(store.records.readRecap(scope('tab-2')), before);
     },
 };

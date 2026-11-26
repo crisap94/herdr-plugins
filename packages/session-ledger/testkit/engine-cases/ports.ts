@@ -6,7 +6,7 @@ import type { Behaviour, EngineWorld } from '../world.ts';
 import { NO_OPS, spoken } from './support.ts';
 import { grew, text } from '../values.ts';
 
-const TAB = scope('one');
+const SCOPE = scope('one');
 const BUDGET = Math.floor(786432 / 3);
 
 const HELD_READ: Behaviour<Chunk> = {
@@ -18,9 +18,9 @@ const HELD_READ: Behaviour<Chunk> = {
 };
 
 const followThree = (engine: Engine): void => {
-    engine.follow(TAB, followed(key('a'), { session: session('s1') }));
-    engine.follow(TAB, followed(key('b'), { session: session('s2') }));
-    engine.follow(TAB, followed(key('c'), { session: session('s3') }));
+    engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
+    engine.follow(SCOPE, followed(key('b'), { session: session('s2') }));
+    engine.follow(SCOPE, followed(key('c'), { session: session('s3') }));
 };
 
 export const PRT_CASES: readonly Case<EngineWorld, Engine>[] = [
@@ -33,7 +33,7 @@ export const PRT_CASES: readonly Case<EngineWorld, Engine>[] = [
             followThree(engine);
             world.setRead(spoken('hello'));
             world.setWriter(NO_OPS);
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             assert.deepEqual(world.budgets(), [BUDGET, BUDGET, BUDGET]);
         },
     },
@@ -43,10 +43,10 @@ export const PRT_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'one run: read is called once per session and models.writer() is resolved once',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setRead(spoken('hello'));
             world.setWriter(NO_OPS);
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             assert.equal(world.reads().length, 1);
             assert.equal(world.writerResolutions(), 1);
         },
@@ -60,7 +60,7 @@ export const PRT_CASES: readonly Case<EngineWorld, Engine>[] = [
             followThree(engine);
             world.setReadBySource(() => HELD_READ);
             world.setWriter(NO_OPS);
-            const pending = engine.refresh(TAB);
+            const pending = engine.refresh(SCOPE);
             await world.settle();
             assert.equal(world.reads().length, 3);
             world.release();
@@ -74,10 +74,10 @@ export const PRT_CASES: readonly Case<EngineWorld, Engine>[] = [
         level: 'full',
         async run(world, engine) {
             world.setKeepInput(() => false);
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setRead(spoken('hello'));
             world.setWriter(NO_OPS);
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             const runs = world.store.recorded();
             assert.ok(runs.length >= 1);
             assert.ok(runs.every((run) => run.input === undefined));
@@ -89,12 +89,12 @@ export const PRT_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a session in a git repository and one outside: repoOf is called with each cwd, and a session with cwd null is not asked',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1'), cwd: directory('/work/repo') }));
-            engine.follow(TAB, followed(key('b'), { session: session('s2'), cwd: directory('/work/outside') }));
-            engine.follow(TAB, followed(key('c'), { session: session('s3'), cwd: null }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1'), cwd: directory('/work/repo') }));
+            engine.follow(SCOPE, followed(key('b'), { session: session('s2'), cwd: directory('/work/outside') }));
+            engine.follow(SCOPE, followed(key('c'), { session: session('s3'), cwd: null }));
             world.setRead(spoken('hello'));
             world.setWriter(NO_OPS);
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             assert.deepEqual([...new Set(world.repoCalls())].toSorted(), ['/work/outside', '/work/repo']);
         },
     },
@@ -105,17 +105,17 @@ export const PRT_CASES: readonly Case<EngineWorld, Engine>[] = [
         level: 'full',
         async run(world, engine) {
             world.clock.set(7000);
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setRead(spoken('hello'));
             world.setWriter(NO_OPS);
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             const runs = world.store.recorded();
             assert.ok(runs.length >= 1);
             assert.ok(runs.every((run) => run.at === 7000));
-            const recap = world.store.records.readRecap(TAB);
+            const recap = world.store.records.readRecap(SCOPE);
             assert.ok(recap !== null && !('kind' in recap));
             assert.equal(recap.at, 7000);
-            assert.ok(world.store.marksOf(TAB).every((mark) => mark.at === 7000));
+            assert.ok(world.store.marksOf(SCOPE).every((mark) => mark.at === 7000));
         },
     },
 ];

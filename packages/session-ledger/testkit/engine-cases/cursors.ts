@@ -6,15 +6,15 @@ import type { Behaviour, EngineWorld, LocatedAnswer, WrittenAnswer } from '../wo
 import { chunkAt, countOf, cursorsOf, NO_OPS, quietAt, recapOf } from './support.ts';
 import { failure, notFound, text } from '../values.ts';
 
-const TAB = scope('one');
+const SCOPE = scope('one');
 const FAILED = failure(1, 'scripted writer failure');
 const READ_FAILED = failure(1, 'scripted read failure');
 
 const failWriter: Behaviour<WrittenAnswer> = { kind: 'fail', why: FAILED };
 
-const cursorOf = (world: EngineWorld, pane: string): number | undefined => cursorsOf(world, TAB).find((lane) => lane.pane === pane)?.cursor;
+const cursorOf = (world: EngineWorld, sessionKey: string): number | undefined => cursorsOf(world, SCOPE).find((lane) => lane.key === sessionKey)?.cursor;
 
-const laneOf = (world: EngineWorld, pane: string): Recap['sessions'][number] | undefined => recapOf(world, TAB)?.sessions.find((lane) => lane.key === pane);
+const laneOf = (world: EngineWorld, sessionKey: string): Recap['sessions'][number] | undefined => recapOf(world, SCOPE)?.sessions.find((lane) => lane.key === sessionKey);
 
 export const CSR_CASES: readonly Case<EngineWorld, Engine>[] = [
     {
@@ -23,11 +23,11 @@ export const CSR_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a written run stores the cursor of the chunk position',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setRead(chunkAt(7));
             world.setWriter(NO_OPS);
-            await engine.refresh(TAB);
-            assert.deepEqual(cursorsOf(world, TAB), [{ pane: 'a', transcript: 'a', cursor: 7 }]);
+            await engine.refresh(SCOPE);
+            assert.deepEqual(cursorsOf(world, SCOPE), [{ key: 'a', transcript: 'a', cursor: 7 }]);
         },
     },
     {
@@ -36,10 +36,10 @@ export const CSR_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a quiet run stores the positions and starts no run',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setRead(quietAt(4));
             world.setWriter(NO_OPS);
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             assert.equal(cursorOf(world, 'a'), 4);
             assert.equal(countOf(world, 'beginRun'), 0);
         },
@@ -50,13 +50,13 @@ export const CSR_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a failed run keeps the cursor of the last written run',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setRead(chunkAt(5));
             world.setWriter(NO_OPS);
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             world.setRead(chunkAt(9));
             world.setWriter(failWriter);
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             assert.equal(cursorOf(world, 'a'), 5);
         },
     },
@@ -66,16 +66,16 @@ export const CSR_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'after a failed run the next run reads from the kept cursor and the writer sees the new entries',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setRead(chunkAt(5));
             world.setWriter(NO_OPS);
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             world.setRead(chunkAt(9));
             world.setWriter(failWriter);
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             world.setRead(chunkAt(9));
             world.setWriter(NO_OPS);
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             assert.deepEqual(world.positions().at(-1), { cursor: 5, tail: null });
             assert.ok(JSON.stringify(world.requests().at(-1)).includes('hello'));
         },
@@ -86,14 +86,14 @@ export const CSR_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'one source fails to read: its cursor stays, the other source advances, and the error names the failed pane',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
-            engine.follow(TAB, followed(key('b'), { session: session('s2') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('b'), { session: session('s2') }));
             world.setReadBySource((source) => (source === 'b' ? { kind: 'fail', why: READ_FAILED } : chunkAt(3)));
             world.setWriter(NO_OPS);
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             assert.equal(cursorOf(world, 'a'), 3);
             assert.equal(cursorOf(world, 'b') ?? 0, 0);
-            assert.equal(recapOf(world, TAB)?.error, 'b: exited 1: scripted read failure');
+            assert.equal(recapOf(world, SCOPE)?.error, 'b: exited 1: scripted read failure');
         },
     },
     {
@@ -102,9 +102,9 @@ export const CSR_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a source that cannot be located and a harness with no reader each name their pane in the error',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
-            engine.follow(TAB, followed(key('b'), { session: session('s2') }));
-            engine.follow(TAB, followed(key('c'), { session: session('s3'), harness: harness('codex') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('b'), { session: session('s2') }));
+            engine.follow(SCOPE, followed(key('c'), { session: session('s3'), harness: harness('codex') }));
             world.setLocate((target) => {
                 const answer: Behaviour<LocatedAnswer> =
                     target.key === key('b')
@@ -114,11 +114,11 @@ export const CSR_CASES: readonly Case<EngineWorld, Engine>[] = [
             });
             world.setRead(chunkAt(2));
             world.setWriter(NO_OPS);
-            await engine.refresh(TAB);
-            assert.equal(recapOf(world, TAB)?.error, 'b: transcript not found');
+            await engine.refresh(SCOPE);
+            assert.equal(recapOf(world, SCOPE)?.error, 'b: transcript not found');
             world.setNoReader(harness('codex'));
-            await engine.refresh(TAB);
-            assert.ok(recapOf(world, TAB)?.error?.includes('c: no scripted reader for codex'));
+            await engine.refresh(SCOPE);
+            assert.ok(recapOf(world, SCOPE)?.error?.includes('c: no scripted reader for codex'));
         },
     },
     {
@@ -127,10 +127,10 @@ export const CSR_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a new source for the same key continues the old cursor only when the reader confirms it holds exactly the bytes already read from the old source; otherwise, or when the old source can no longer be read, it starts at UNREAD and the old cursor is kept',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('moved'), { session: session('s1') }));
-            engine.follow(TAB, followed(key('other'), { session: session('s2') }));
-            engine.follow(TAB, followed(key('agent'), { session: session('s3') }));
-            engine.follow(TAB, followed(key('nosession')));
+            engine.follow(SCOPE, followed(key('moved'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('other'), { session: session('s2') }));
+            engine.follow(SCOPE, followed(key('agent'), { session: session('s3') }));
+            engine.follow(SCOPE, followed(key('nosession')));
             const sources = new Map([['moved', 'm1'], ['other', 'o1'], ['agent', 'a1'], ['nosession', 'n1']]);
             const carried: string[] = [];
             world.setLocate((target) => ({ kind: 'answer', value: { kind: 'located', source: sources.get(target.key) ?? target.key } }));
@@ -140,17 +140,17 @@ export const CSR_CASES: readonly Case<EngineWorld, Engine>[] = [
                 return from === 'm1' && to === 'm2' ? at : UNREAD;
             });
             world.setWriter(NO_OPS);
-            await engine.refresh(TAB);
-            engine.follow(TAB, followed(key('agent'), { session: session('s3'), harness: harness('codex') }));
+            await engine.refresh(SCOPE);
+            engine.follow(SCOPE, followed(key('agent'), { session: session('s3'), harness: harness('codex') }));
             for (const [name, next] of [['moved', 'm2'], ['other', 'o2'], ['agent', 'a2'], ['nosession', 'n2']] as const) sources.set(name, next);
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             const readFrom = (): Map<string, Position | undefined> => new Map(world.reads().map((source, at) => [source, world.positions()[at]]));
             assert.deepEqual(['m2', 'o2', 'a2', 'n2'].map((source) => readFrom().get(source)), [{ cursor: 5, tail: null }, UNREAD, UNREAD, UNREAD]);
             assert.deepEqual(carried.toSorted(), ['m1>m2', 'o1>o2']);
             sources.set('other', 'o1');
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             assert.deepEqual(readFrom().get('o1'), { cursor: 5, tail: null });
-            assert.ok(cursorsOf(world, TAB).some((cursor) => cursor.pane === 'other' && cursor.transcript === 'o2' && cursor.cursor === 9));
+            assert.ok(cursorsOf(world, SCOPE).some((cursor) => cursor.key === 'other' && cursor.transcript === 'o2' && cursor.cursor === 9));
         },
     },
     {
@@ -159,17 +159,17 @@ export const CSR_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'title, last prompt and claude recap are stored, and a null in a later read keeps the stored value',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setRead(chunkAt(1, { title: text('T1'), lastPrompt: text('P1'), harnessRecap: text('R1') }));
             world.setWriter(NO_OPS);
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             const first = laneOf(world, 'a');
             assert.ok(first);
             assert.equal(first.title, 'T1');
             assert.equal(first.lastPrompt, 'P1');
             assert.equal(first.harnessRecap, 'R1');
             world.setRead(chunkAt(2, { title: null, lastPrompt: null, harnessRecap: null }));
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             const second = laneOf(world, 'a');
             assert.ok(second);
             assert.equal(second.title, 'T1');
@@ -183,14 +183,14 @@ export const CSR_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a read that reports more left runs the tab again at once from the stored cursor, until a read reports nothing left',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             let reads = 0;
             world.setReadBySource(() => {
                 reads += 1;
                 return reads === 1 ? chunkAt(5, { more: true }) : chunkAt(9);
             });
             world.setWriter(NO_OPS);
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             assert.equal(reads, 2);
             assert.deepEqual(world.positions(), [UNREAD, { cursor: 5, tail: null }]);
             assert.equal(cursorOf(world, 'a'), 9);

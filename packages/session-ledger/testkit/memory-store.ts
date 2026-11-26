@@ -17,7 +17,7 @@ import {
     type Unknown,
 } from '@stateforge-labs/session-ledger';
 import { emptyRecap, historyOf, sameTask } from './facts.ts';
-import { failure, running, tabId } from './values.ts';
+import { failure, running } from './values.ts';
 import { scopeIdOf } from '../src/recap/domain/followed-session-shape.ts';
 import { textOf } from '../src/recap/domain/text.ts';
 
@@ -86,7 +86,7 @@ const keptOf = (stored: readonly Fact[], changed: readonly Fact[]): readonly Fac
 };
 
 const ensure = (state: State, scope: string, at: Instant | null): Recap => {
-    const current = state.recaps.get(scope) ?? { ...emptyRecap(tabId(scope)), at };
+    const current = state.recaps.get(scope) ?? { ...emptyRecap(scopeIdOf(scope)), at };
     state.recaps.set(scope, current);
     return current;
 };

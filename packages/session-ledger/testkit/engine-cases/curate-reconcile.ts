@@ -6,7 +6,7 @@ import { key } from '../ids.ts';
 import { grew, text as textOf } from '../values.ts';
 import type { Behaviour, CuratedAnswer, CuratorCall, EngineWorld } from '../world.ts';
 import { NO_OPS, recapOf, spoken } from './support.ts';
-import { TAB, seedOpen } from './curate.ts';
+import { SCOPE, seedOpen } from './curate.ts';
 import { scopeIdOf } from '../../src/recap/domain/followed-session-shape.ts';
 
 const MINUTES = 60_000;
@@ -16,9 +16,9 @@ const answered = (text: string): Behaviour<CuratedAnswer> => ({ kind: 'answer', 
 const RECONCILE_DONE = JSON.stringify({ ops: [{ op: 'close', id: 'f1', why: 'done', evidence: 'the open work is finished' }] });
 
 const taskOf = (world: EngineWorld): TaskId => {
-    const [only] = recapOf(world, TAB)?.tasks ?? [];
+    const [only] = recapOf(world, SCOPE)?.tasks ?? [];
     assert.ok(only);
-    return { scope: scopeIdOf(TAB), key: textOf(key(only.id)) };
+    return { scope: scopeIdOf(SCOPE), key: textOf(key(only.id)) };
 };
 
 const openOf = (world: EngineWorld, id: string, firstAt: number, lastAt: number): Fact => factOf(id, { task: taskOf(world), text: textOf(`open work ${id}`), firstAt: instant(firstAt), lastAt: instant(lastAt) });
@@ -45,7 +45,7 @@ const scriptReconcile = (world: EngineWorld): void => {
 };
 
 const runOnce = async (world: EngineWorld, engine: Engine): Promise<void> => {
-    engine.turnEnded(TAB, key('a'), 'requested');
+    engine.turnEnded(SCOPE, key('a'), 'requested');
     await world.settle();
 };
 
@@ -64,7 +64,7 @@ export const CUR_RECONCILE_CASES: readonly Case<EngineWorld, Engine>[] = [
             await seedTwoOpen(world, engine);
             world.setRead(spoken('the open work is finished'));
             world.setCuratorBy((call) => (call.mode === 'reconcile' ? answered(RECONCILE_DONE) : answered('{"story":"the work is finished"}')));
-            await engine.curate(TAB);
+            await engine.curate(SCOPE);
             await world.settle();
             assert.deepEqual(world.curatorCalls().map((call) => call.mode), ['reconcile', 'story']);
             const [reconciled, told] = [changeAt(world, 0), changeAt(world, 1)];
@@ -82,7 +82,7 @@ export const CUR_RECONCILE_CASES: readonly Case<EngineWorld, Engine>[] = [
         async run(world, engine) {
             await seedTwoOpen(world, engine);
             world.setCurator(answered('{"story":"two facts became one","ops":[{"op":"close","id":"f1","why":"merged","into":"f2"}]}'));
-            await engine.curate(TAB);
+            await engine.curate(SCOPE);
             await world.settle();
             const merged = changeAt(world, 0);
             assert.equal(merged.story, 'two facts became one');
@@ -91,7 +91,7 @@ export const CUR_RECONCILE_CASES: readonly Case<EngineWorld, Engine>[] = [
             world.store.seed(null, [openOf(world, 'fct_1', 1, 1), openOf(world, 'fct_2', 2, 20 * MINUTES)]);
             world.setCurator(answered('{"story":"still one story","ops":[{"op":"close","id":"f9","why":"merged","into":"f2"}]}'));
             const lines = world.lines().length;
-            await engine.curate(TAB);
+            await engine.curate(SCOPE);
             await world.settle();
             const refused = changeAt(world, 1);
             assert.deepEqual(refused.merges, []);
@@ -108,7 +108,7 @@ export const CUR_RECONCILE_CASES: readonly Case<EngineWorld, Engine>[] = [
             await seedTwoOpen(world, engine);
             world.setStoryRepair('once');
             world.setCuratorBy((call) => answered(call.document.includes('<previous-answer>') ? '{"story":"the second story"}' : '{"ops":[]}'));
-            await engine.curate(TAB);
+            await engine.curate(SCOPE);
             await world.settle();
             const calls = world.curatorCalls();
             assert.equal(calls.length, 2);
@@ -119,7 +119,7 @@ export const CUR_RECONCILE_CASES: readonly Case<EngineWorld, Engine>[] = [
             world.setStoryRepair('off');
             world.clock.set(10 * MINUTES);
             world.store.seed(null, [openOf(world, 'fct_1', 1, 20 * MINUTES)]);
-            await engine.curate(TAB);
+            await engine.curate(SCOPE);
             await world.settle();
             assert.equal(world.curatorCalls().length, 3);
             assert.deepEqual(world.changes().map((change) => change.story), ['the second story', null]);
@@ -134,7 +134,7 @@ export const CUR_RECONCILE_CASES: readonly Case<EngineWorld, Engine>[] = [
             await seedTwoOpen(world, engine);
             world.setStoryRepair('once');
             world.setCuratorBy((call) => answered(call.document.includes('<previous-answer>') ? 'sorry, no JSON here' : '{"story":"first story is kept","ops":[{"op":"close","id":"f9","why":"merged","into":"f2"}]}'));
-            await engine.curate(TAB);
+            await engine.curate(SCOPE);
             await world.settle();
             assert.equal(world.curatorCalls().length, 2);
             assert.deepEqual(world.changes().map((change) => change.story), ['first story is kept']);
@@ -150,16 +150,16 @@ export const CUR_RECONCILE_CASES: readonly Case<EngineWorld, Engine>[] = [
             await seedTwoOpen(world, engine);
             world.setRead(spoken('the open work is finished'));
             world.setCuratorBy((call) => (call.mode === 'reconcile' ? answered(RECONCILE_DONE) : answered('{"story":"the work is finished"}')));
-            await engine.curate(TAB);
+            await engine.curate(SCOPE);
             await world.settle();
             assert.equal(world.curatorCalls().length, 2);
             world.clock.set(4 * MINUTES);
             world.store.seed(null, [openOf(world, 'fct_1', 1, 1), openOf(world, 'fct_2', 2, 3 * MINUTES)]);
-            await engine.curate(TAB);
+            await engine.curate(SCOPE);
             await world.settle();
             assert.equal(world.curatorCalls().length, 2);
             world.clock.set(6 * MINUTES);
-            await engine.curate(TAB);
+            await engine.curate(SCOPE);
             await world.settle();
             assert.deepEqual(world.curatorCalls().map((call) => call.mode), ['reconcile', 'story', 'story']);
         },
@@ -237,7 +237,7 @@ export const CUR_RECONCILE_CASES: readonly Case<EngineWorld, Engine>[] = [
             await runOnce(world, engine);
             assert.deepEqual(modesOf(world), ['reconcile']);
             world.clock.set(MINUTES);
-            await engine.curate(TAB);
+            await engine.curate(SCOPE);
             await world.settle();
             assert.deepEqual(modesOf(world), ['reconcile', 'story']);
         },

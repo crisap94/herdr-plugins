@@ -25,7 +25,7 @@ import {
     type FakeEngine,
     type Subject,
 } from '@stateforge-labs/session-ledger/testkit';
-import { tabId, usd } from '@stateforge-labs/session-ledger/testkit';
+import { usd } from '@stateforge-labs/session-ledger/testkit';
 import { scopeIdOf } from '@stateforge-labs/session-ledger';
 
 const request = (): RecapRequest => ({
@@ -166,7 +166,7 @@ test('the world hands out a manual clock, counter ids, and captures the log and 
     assert.deepEqual(world.events(), [event]);
 });
 
-const recordedOf = (changed: readonly Fact[]): RecordedRun => ({ scope: tabId('tab-1'), at: instant(9), cause: 'requested', backend: null, language: text('en'), costUsd: usd(0), error: null, sessions: [], tasks: [], changed, refused: [] });
+const recordedOf = (changed: readonly Fact[]): RecordedRun => ({ scope: scopeIdOf('tab-1'), at: instant(9), cause: 'requested', backend: null, language: text('en'), costUsd: usd(0), error: null, sessions: [], tasks: [], changed, refused: [] });
 
 test('recordRun keeps the changed facts it is given, and allOf returns them', () => {
     const store = createMemoryStore();

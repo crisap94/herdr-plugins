@@ -7,8 +7,8 @@ import { addOf, recapOf, spoken, writtenOps } from './support.ts';
 import { textOf } from '../../src/recap/domain/text.ts';
 import { scopeIdOf } from '../../src/recap/domain/followed-session-shape.ts';
 
-const TAB = scope('one');
-const TASK = { scope: scopeIdOf(TAB), key: textOf('t1') };
+const SCOPE = scope('one');
+const TASK = { scope: scopeIdOf(SCOPE), key: textOf('t1') };
 
 const factsOf = (world: EngineWorld): readonly Fact[] => {
     const found = world.store.facts.allOf(TASK);
@@ -45,7 +45,7 @@ const runWith = async (world: EngineWorld, engine: Engine, ops: readonly object[
     const asked = world.requests().length;
     world.setRead(spoken(text));
     world.setWriter(writtenOps(ops));
-    engine.turnEnded(TAB, key('a'), 'requested');
+    engine.turnEnded(SCOPE, key('a'), 'requested');
     await world.settle();
     assert.ok(world.requests().length > asked);
 };
@@ -58,7 +58,7 @@ const shownId = async (world: EngineWorld, engine: Engine, text: string): Promis
 };
 
 const followA = (engine: Engine): void => {
-    engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+    engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
 };
 
 export const LED_CASES: readonly Case<EngineWorld, Engine>[] = [
@@ -149,7 +149,7 @@ export const LED_CASES: readonly Case<EngineWorld, Engine>[] = [
             followA(engine);
             await runWith(world, engine, [addOf('now', 'alpha')], 'one');
             assert.equal(openOf(world)[0]?.language, 'pt');
-            assert.equal(recapOf(world, TAB)?.language, 'pt');
+            assert.equal(recapOf(world, SCOPE)?.language, 'pt');
         },
     },
     {
@@ -176,7 +176,7 @@ export const LED_CASES: readonly Case<EngineWorld, Engine>[] = [
             const id = await shownId(world, engine, 'alpha');
             await runWith(world, engine, [closeOp(id, 'done'), addOf('now', 'beta')], 'two');
             assert.ok(!('apply' in world.store.facts));
-            const markdown = recapOf(world, TAB)?.tasks[0]?.markdown ?? '';
+            const markdown = recapOf(world, SCOPE)?.tasks[0]?.markdown ?? '';
             assert.ok(markdown.includes('beta'));
             assert.ok(!markdown.includes('alpha'));
             const alpha = factsOf(world).find((fact) => fact.text === 'alpha');

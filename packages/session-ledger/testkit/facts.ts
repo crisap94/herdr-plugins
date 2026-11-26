@@ -51,6 +51,6 @@ export const historyOf = ({ section, text, why, state, closedWhy, closedAt, firs
     lastAt: lastAt,
 });
 
-export const emptyRecap = (tab: ScopeId): Recap => ({
-    scope: tab, sessions: [], tasks: [], at: null, running: running(false), backend: null, error: null, costUsd: usd(0), language: textOf(''),
+export const emptyRecap = (scope: ScopeId): Recap => ({
+    scope, sessions: [], tasks: [], at: null, running: running(false), backend: null, error: null, costUsd: usd(0), language: textOf(''),
 });

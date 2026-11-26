@@ -5,12 +5,12 @@ import { factOf } from '../facts.ts';
 import { followed, key, scope, session } from '../ids.ts';
 import type { Behaviour, EngineWorld, WrittenAnswer } from '../world.ts';
 import { countOf, NO_OPS, quietAt, recapOf, spoken } from './support.ts';
-import { failure, running, usd, text, tabId } from '../values.ts';
+import { failure, running, usd, text } from '../values.ts';
 import { instant } from '@stateforge-labs/session-ledger';
 import { textOf } from '../../src/recap/domain/text.ts';
 import { scopeIdOf, sessionKeyOf } from '../../src/recap/domain/followed-session-shape.ts';
 
-const TAB = scope('one');
+const SCOPE = scope('one');
 const FAILED = failure(1, 'scripted writer failure');
 const WRITE_CALLS = new Set<string>(['beginRun', 'recordRun', 'failRun', 'advance', 'apply']);
 
@@ -20,7 +20,7 @@ const writesOf = (world: EngineWorld): readonly string[] => world.store.calls().
 
 const written = (world: EngineWorld, factLanguage: string): void => {
     const recap: Recap = {
-        scope: tabId('one'),
+        scope: scopeIdOf('one'),
         sessions: [],
         tasks: [{ id: textOf('t1'), name: textOf('work'), sessions: [sessionKeyOf(key('a'))], sections: null, markdown: textOf('editing src/app.ts v2') }],
         at: instant(0),
@@ -30,7 +30,7 @@ const written = (world: EngineWorld, factLanguage: string): void => {
         costUsd: usd(0),
         language: text('en'),
     };
-    world.store.seed(recap, [factOf('fct_1', { task: { scope: scopeIdOf(TAB), key: textOf('t1') }, text: textOf('editing src/app.ts v2'), language: textOf(factLanguage) })]);
+    world.store.seed(recap, [factOf('fct_1', { task: { scope: scopeIdOf(SCOPE), key: textOf('t1') }, text: textOf('editing src/app.ts v2'), language: textOf(factLanguage) })]);
 };
 
 export const LNG_CASES: readonly Case<EngineWorld, Engine>[] = [
@@ -40,12 +40,12 @@ export const LNG_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a written run stores the language setting',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setLanguage('es');
             world.setRead(spoken('hello'));
             world.setWriter(NO_OPS);
-            await engine.refresh(TAB);
-            assert.equal(recapOf(world, TAB)?.language, 'es');
+            await engine.refresh(SCOPE);
+            assert.equal(recapOf(world, SCOPE)?.language, 'es');
         },
     },
     {
@@ -54,15 +54,15 @@ export const LNG_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a failed run keeps the language of the last written run',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setRead(spoken('one'));
             world.setWriter(NO_OPS);
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             world.setLanguage('es');
             world.setRead(spoken('two'));
             world.setWriter(failWriter);
-            await engine.refresh(TAB);
-            assert.equal(recapOf(world, TAB)?.language, 'en');
+            await engine.refresh(SCOPE);
+            assert.equal(recapOf(world, SCOPE)?.language, 'en');
         },
     },
     {
@@ -71,14 +71,14 @@ export const LNG_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a language switch with a quiet chunk still starts a run',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             written(world, 'en');
             world.setLanguage('es');
             world.setRead(quietAt(0));
             world.setWriter(NO_OPS);
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             assert.equal(countOf(world, 'beginRun'), 1);
-            assert.equal(recapOf(world, TAB)?.language, 'es');
+            assert.equal(recapOf(world, SCOPE)?.language, 'es');
         },
     },
     {
@@ -87,11 +87,11 @@ export const LNG_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a focused turn end with nothing grown and no language switch writes nothing',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             written(world, 'en');
             world.setRead(quietAt(0));
             world.setWriter(NO_OPS);
-            engine.turnEnded(TAB, key('a'), 'focused');
+            engine.turnEnded(SCOPE, key('a'), 'focused');
             await world.settle();
             assert.deepEqual(writesOf(world), []);
             assert.equal(world.requests().length, 0);
@@ -103,11 +103,11 @@ export const LNG_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a focused turn end with an open fact in an old language and the recap language current does not rewrite the recap',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             written(world, 'es');
             world.setRead(quietAt(0));
             world.setWriter(NO_OPS);
-            engine.turnEnded(TAB, key('a'), 'focused');
+            engine.turnEnded(SCOPE, key('a'), 'focused');
             await world.settle();
             assert.equal(countOf(world, 'beginRun'), 0);
             assert.equal(world.requests().length, 0);
@@ -119,11 +119,11 @@ export const LNG_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'a requested turn end with an open fact in a stale language rewrites it, naming the previous language',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             written(world, 'es');
             world.setRead(quietAt(0));
             world.setWriter(NO_OPS);
-            engine.turnEnded(TAB, key('a'), 'requested');
+            engine.turnEnded(SCOPE, key('a'), 'requested');
             await world.settle();
             assert.equal(countOf(world, 'beginRun'), 1);
             assert.equal(world.requests().at(-1)?.previousLanguage, 'es');
@@ -135,13 +135,13 @@ export const LNG_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'runs before and after a language change send each language to the writer',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setRead(spoken('one'));
             world.setWriter(NO_OPS);
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             world.setLanguage('es');
             world.setRead(spoken('two'));
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             assert.deepEqual(world.requests().map((request) => request.language), ['en', 'es']);
         },
     },

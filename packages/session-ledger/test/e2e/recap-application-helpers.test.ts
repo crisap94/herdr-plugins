@@ -19,7 +19,8 @@ import type { LegacyFollowedSession as FollowedSession } from '@stateforge-labs/
 import { cursorOf, grewOf, type Chunk, type Entry } from '@stateforge-labs/session-ledger';
 import type { SessionCursor } from '@stateforge-labs/session-ledger';
 import type { RecapInput } from '@stateforge-labs/session-ledger';
-import { agentKind, cursorAt, paneId, sourcePath } from '@stateforge-labs/session-ledger/testkit';
+import { agentKind, cursorAt, sourcePath } from '@stateforge-labs/session-ledger/testkit';
+import { sessionKeyOf } from '@stateforge-labs/session-ledger';
 
 const NOW = instant(1_000_000);
 const text = brand<string, 'Text'>;
@@ -88,7 +89,7 @@ test('a compacted mark becomes a lane mark, and an unknown time waits for the la
 const laneOf = (pane: string): FollowedSession => ({ key: brand<string, 'SessionKey'>(pane), scope: brand<string, 'ScopeId'>('tab-1'), workspace: brand<string, 'WorkspaceId'>('w1'), agent: brand<string, 'HarnessKind'>('claude'), status: 'working', session: null, cwd: null, title: null, since: null });
 
 test('the recap input numbers agents by index and keeps the newest note of each kind', async () => {
-    const cursor: SessionCursor = { key: paneId('p1'), agent: agentKind('claude'), transcript: sourcePath('t'), cursor: cursorAt(0), tail: null, title: null, lastPrompt: null, harnessRecap: text('Recap text') };
+    const cursor: SessionCursor = { key: sessionKeyOf('p1'), agent: agentKind('claude'), transcript: sourcePath('t'), cursor: cursorAt(0), tail: null, title: null, lastPrompt: null, harnessRecap: text('Recap text') };
     const chunk: Chunk = { kind: 'chunk', entries: [], title: null, lastPrompt: null, harnessRecap: null, grew: grewOf(false), position: { cursor: cursorOf(0), tail: null }, notes: [
         { kind: 'compaction', at: instant(1), text: textOf('first') }, { kind: 'compaction', at: instant(2), text: textOf('second') },
     ] };

@@ -5,7 +5,6 @@ import type { Case } from '../run.ts';
 import type { StoreUnderTest } from '../memory-store.ts';
 import { cursor, factAt, isUnknownValue, runOf, shapeOf, typeIdAt } from './record-fixtures.ts';
 import { instant } from '@stateforge-labs/session-ledger';
-import { tabId } from '../values.ts';
 import { textOf } from '../../src/recap/domain/text.ts';
 import { scopeIdOf, sessionKeyOf } from '../../src/recap/domain/followed-session-shape.ts';
 
@@ -30,9 +29,9 @@ const textsOf = (facts: readonly Fact[]): readonly string[] => facts.map((fact) 
 
 const isThenable = (value: unknown): boolean => typeof value === 'object' && value !== null && 'then' in value;
 
-const writeFacts = (store: StoreUnderTest, at: number, tab: string, facts: readonly Fact[]): void => {
+const writeFacts = (store: StoreUnderTest, at: number, scopeId: string, facts: readonly Fact[]): void => {
     const keys = [...new Set(facts.map((fact) => fact.task.key))];
-    store.records.recordRun(runOf({ scope: tabId(tab), at: instant(at), sessions: keys.map((k) => cursor(k)), tasks: keys.map((k) => shapeOf(k, [sessionKeyOf(k)])), changed: facts }));
+    store.records.recordRun(runOf({ scope: scopeIdOf(scopeId), at: instant(at), sessions: keys.map((k) => cursor(k)), tasks: keys.map((k) => shapeOf(k, [sessionKeyOf(k)])), changed: facts }));
 };
 
 const openAt = (id: number, text: string, firstAt: number, lastAt: number, task: TaskId = TAB_1_A): Fact =>

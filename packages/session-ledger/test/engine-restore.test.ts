@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { legacyCreateEngine as createEngine } from '@stateforge-labs/session-ledger';
 import { legacyPlugsOf } from '@stateforge-labs/session-ledger';
 import { laneOf } from '@stateforge-labs/session-ledger';
-import { createEngineWorld, createMemoryStore, factOf, followed, key, running, scope, session, tabId, text, usd } from '@stateforge-labs/session-ledger/testkit';
+import { createEngineWorld, createMemoryStore, factOf, followed, key, running, scope, session, text, usd } from '@stateforge-labs/session-ledger/testkit';
 import { instant } from '@stateforge-labs/session-ledger';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { scopeIdOf, sessionKeyOf } from '@stateforge-labs/session-ledger';
@@ -17,7 +17,7 @@ test('restore returns the open and recently closed facts of the task that holds 
     const world = createEngineWorld();
     world.clock.set(10_000);
     const store = createMemoryStore({
-        recap: { scope: tabId(tab), sessions: [], tasks: [recapTask('a', ['p1']), recapTask('b', ['p2'])], at: instant(5_000), running: running(false), backend: null, error: null, costUsd: usd(0), language: text('en') },
+        recap: { scope: scopeIdOf(tab), sessions: [], tasks: [recapTask('a', ['p1']), recapTask('b', ['p2'])], at: instant(5_000), running: running(false), backend: null, error: null, costUsd: usd(0), language: text('en') },
         lastRun: { at: instant(5_000), cause: 'focused' },
         facts: [
             factOf('open-a', { task: { scope: scopeIdOf(tab), key: textOf('a') }, text: textOf('open in a') }),

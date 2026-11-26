@@ -9,24 +9,24 @@ import { instant } from '../../src/recap/domain/time.ts';
 import { textOf } from '../../src/recap/domain/text.ts';
 import { scopeIdOf } from '../../src/recap/domain/followed-session-shape.ts';
 
-const TAB = scope('one');
+const SCOPE = scope('one');
 const OTHER = scope('two');
 const WRITES: readonly string[] = ['beginRun', 'recordRun', 'failRun', 'advance', 'apply'];
 
 const writesOf = (world: EngineWorld): number => WRITES.reduce((sum, name) => sum + countOf(world, name), 0);
 
 const runWritten = async (world: EngineWorld, engine: Engine, text: string): Promise<void> => {
-    engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+    engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
     world.setRead(spoken('hello'));
     world.setWriter(writtenOps([addOf('now', text)]));
-    engine.turnEnded(TAB, key('a'), 'requested');
+    engine.turnEnded(SCOPE, key('a'), 'requested');
     await world.settle();
 };
 
 const seedHistory = (world: EngineWorld): void => {
     world.store.seed(null, [
-        factOf('fct_1', { task: { scope: scopeIdOf(TAB), key: textOf(key('a')) }, text: textOf('stored fact'), firstAt: instant(1), lastAt: instant(1) }),
-        factOf('fct_2', { task: { scope: scopeIdOf(TAB), key: textOf(key('a')) }, text: textOf('closed fact'), state: 'closed', closedWhy: 'done', closedAt: instant(2), firstAt: instant(1), lastAt: instant(2) }),
+        factOf('fct_1', { task: { scope: scopeIdOf(SCOPE), key: textOf(key('a')) }, text: textOf('stored fact'), firstAt: instant(1), lastAt: instant(1) }),
+        factOf('fct_2', { task: { scope: scopeIdOf(SCOPE), key: textOf(key('a')) }, text: textOf('closed fact'), state: 'closed', closedWhy: 'done', closedAt: instant(2), firstAt: instant(1), lastAt: instant(2) }),
     ]);
 };
 
@@ -41,9 +41,9 @@ export const HIS_CASES: readonly Case<EngineWorld, Engine>[] = [
         async run(world, engine) {
             seedHistory(world);
             await runWritten(world, engine, 'history fact');
-            const stored = world.store.facts.historyOf(TAB, key('a'));
+            const stored = world.store.facts.historyOf(SCOPE, key('a'));
             assert.ok(stored.length > 0);
-            assert.deepEqual(engine.history(TAB, key('a')), stored);
+            assert.deepEqual(engine.history(SCOPE, key('a')), stored);
         },
     },
     {
@@ -54,10 +54,10 @@ export const HIS_CASES: readonly Case<EngineWorld, Engine>[] = [
         async run(world, engine) {
             seedHistory(world);
             await runWritten(world, engine, 'history fact');
-            const before = engine.history(TAB, key('a'));
+            const before = engine.history(SCOPE, key('a'));
             assert.ok(before.length > 0);
-            engine.unfollow(TAB, key('a'));
-            assert.deepEqual(engine.history(TAB, key('a')), before);
+            engine.unfollow(SCOPE, key('a'));
+            assert.deepEqual(engine.history(SCOPE, key('a')), before);
         },
     },
     {
@@ -66,8 +66,8 @@ export const HIS_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'history for an unknown scope or key is empty',
         level: 'surface',
         run(_world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
-            assert.deepEqual(engine.history(TAB, key('zz')), []);
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
+            assert.deepEqual(engine.history(SCOPE, key('zz')), []);
             assert.deepEqual(engine.history(OTHER, key('a')), []);
             return Promise.resolve();
         },
@@ -78,13 +78,13 @@ export const HIS_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'history alone is synchronous and calls no reader, no writer and no store write',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             await world.settle();
             const located = world.located().length;
             const reads = world.reads().length;
             const requests = world.requests().length;
             const writes = writesOf(world);
-            const result = engine.history(TAB, key('a'));
+            const result = engine.history(SCOPE, key('a'));
             assert.equal(Array.isArray(result), true);
             assert.equal(world.located().length, located);
             assert.equal(world.reads().length, reads);
@@ -100,12 +100,12 @@ export const HIS_CASES: readonly Case<EngineWorld, Engine>[] = [
         async run(world, engine) {
             seedHistory(world);
             await runWritten(world, engine, 'old session fact');
-            assert.ok(hasText(engine.history(TAB, key('a')), 'stored fact'));
-            engine.sessionStarted(TAB, key('a'), { session: session('s2'), cwd: null });
+            assert.ok(hasText(engine.history(SCOPE, key('a')), 'stored fact'));
+            engine.sessionStarted(SCOPE, key('a'), { session: session('s2'), cwd: null });
             world.setWriter(NO_OPS);
-            await engine.refresh(TAB);
+            await engine.refresh(SCOPE);
             assert.equal(world.located().at(-1)?.session, session('s2'));
-            assert.ok(hasText(engine.history(TAB, key('a')), 'stored fact'));
+            assert.ok(hasText(engine.history(SCOPE, key('a')), 'stored fact'));
         },
     },
 ];

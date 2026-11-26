@@ -10,8 +10,8 @@ import { instant } from '../../src/recap/domain/time.ts';
 import { textOf } from '../../src/recap/domain/text.ts';
 import { scopeIdOf } from '../../src/recap/domain/followed-session-shape.ts';
 
-export const TAB = scope('one');
-const TASK = { scope: scopeIdOf(TAB), key: textOf(key('a')) };
+export const SCOPE = scope('one');
+const TASK = { scope: scopeIdOf(SCOPE), key: textOf(key('a')) };
 const WRITES: readonly string[] = ['beginRun', 'recordRun', 'failRun', 'advance', 'apply'];
 
 const CURATED: Behaviour<CuratedAnswer> = { kind: 'answer', value: { kind: 'curated', text: 'curated story' } };
@@ -26,9 +26,9 @@ const factsOf = (world: EngineWorld): readonly Fact[] => {
 };
 
 const scopeFactsOf = (world: EngineWorld): readonly Fact[] => {
-    const keys = world.store.facts.keysOf(TAB);
+    const keys = world.store.facts.keysOf(SCOPE);
     return 'kind' in keys ? [] : keys.flatMap((one) => {
-        const found = world.store.facts.allOf({ scope: scopeIdOf(TAB), key: textOf(one) });
+        const found = world.store.facts.allOf({ scope: scopeIdOf(SCOPE), key: textOf(one) });
         return 'kind' in found ? [] : found;
     });
 };
@@ -39,10 +39,10 @@ const seedFacts = (world: EngineWorld): void => {
 
 export const seedOpen = async (world: EngineWorld, engine: Engine): Promise<void> => {
     seedFacts(world);
-    engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+    engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
     world.setRead(spoken('hello'));
     world.setWriter(writtenOps([addOf('now', 'open work')]));
-    engine.turnEnded(TAB, key('a'), 'requested');
+    engine.turnEnded(SCOPE, key('a'), 'requested');
     await world.settle();
     world.setRead(chunkOf([]));
 };
@@ -56,7 +56,7 @@ export const CUR_CASES: readonly Case<EngineWorld, Engine>[] = [
         async run(world, engine) {
             await seedOpen(world, engine);
             const writes = writesOf(world);
-            await engine.curate(TAB);
+            await engine.curate(SCOPE);
             await world.settle();
             assert.equal(writesOf(world), writes);
         },
@@ -67,9 +67,9 @@ export const CUR_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'curate on a scope with no recap does not call the curator',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setCurator(CURATED);
-            await engine.curate(TAB);
+            await engine.curate(SCOPE);
             await world.settle();
             assert.equal(world.curated().length, 0);
         },
@@ -83,7 +83,7 @@ export const CUR_CASES: readonly Case<EngineWorld, Engine>[] = [
             await seedOpen(world, engine);
             world.setCurator(CURATED);
             const before = world.curated().length;
-            await engine.curate(TAB);
+            await engine.curate(SCOPE);
             await world.settle();
             assert.ok(world.curated().length > before);
         },
@@ -99,7 +99,7 @@ export const CUR_CASES: readonly Case<EngineWorld, Engine>[] = [
             const before = world.curated().length;
             const lines = world.lines().length;
             const facts = factsOf(world);
-            await engine.curate(TAB);
+            await engine.curate(SCOPE);
             await world.settle();
             assert.equal(world.curated().length, before + 1);
             assert.equal(world.lines().length, lines + 1);
@@ -116,7 +116,7 @@ export const CUR_CASES: readonly Case<EngineWorld, Engine>[] = [
             world.setCurator(THROWS);
             const before = world.curated().length;
             const lines = world.lines().length;
-            await engine.curate(TAB);
+            await engine.curate(SCOPE);
             await world.settle();
             assert.equal(world.curated().length, before + 1);
             assert.equal(world.lines().length, lines + 1);
@@ -128,10 +128,10 @@ export const CUR_CASES: readonly Case<EngineWorld, Engine>[] = [
         title: 'curate while a run is in flight: both finish and the facts the run writes are kept',
         level: 'full',
         async run(world, engine) {
-            engine.follow(TAB, followed(key('a'), { session: session('s1') }));
+            engine.follow(SCOPE, followed(key('a'), { session: session('s1') }));
             world.setRead(spoken('hello'));
             world.setWriter(blockedOps([addOf('now', 'late work')]));
-            engine.turnEnded(TAB, key('a'), 'requested');
+            engine.turnEnded(SCOPE, key('a'), 'requested');
             await world.settle();
             assert.equal(countOf(world, 'beginRun'), 1);
             world.setRead(chunkOf([]));
@@ -139,7 +139,7 @@ export const CUR_CASES: readonly Case<EngineWorld, Engine>[] = [
             const facts = scopeFactsOf(world);
             world.setCurator(CURATED);
             const before = world.curated().length;
-            const curating = engine.curate(TAB);
+            const curating = engine.curate(SCOPE);
             world.release();
             await curating;
             await world.settle();
@@ -159,12 +159,12 @@ export const CUR_CASES: readonly Case<EngineWorld, Engine>[] = [
             await seedOpen(world, engine);
             world.setCurator(CURATED);
             const before = world.curated().length;
-            await engine.curate(TAB);
+            await engine.curate(SCOPE);
             await world.settle();
             assert.equal(world.curated().length, before + 1);
             world.store.failReads('readRecap', 1);
             const failed = world.curated().length;
-            await engine.curate(TAB);
+            await engine.curate(SCOPE);
             await world.settle();
             assert.equal(world.curated().length, failed);
         },

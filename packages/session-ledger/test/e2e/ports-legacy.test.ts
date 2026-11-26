@@ -13,7 +13,7 @@ import { type LegacySessionReader as SessionReader } from '@stateforge-labs/sess
 import { agentKindOf, sessionKeyOf, scopeIdOf } from '@stateforge-labs/session-ledger';
 import { causeOf } from '@stateforge-labs/session-ledger';
 import { exitCodeOf, isUnknown, saying, unknown } from '@stateforge-labs/session-ledger';
-import { text, tabId, paneId, running } from '@stateforge-labs/session-ledger/testkit';
+import { key, scope, text, running } from '@stateforge-labs/session-ledger/testkit';
 
 const readerOf = (agent: string): SessionReader => ({
     agent: agentKindOf(agent),
@@ -30,7 +30,7 @@ test('the capability reasons word each missing capability for its agent', () => 
 });
 
 test('a blank recap holds no recap until a task has markdown', () => {
-    const blank = blankRecap(tabId('tab-1'));
+    const blank = blankRecap(scopeIdOf('tab-1'));
     assert.deepEqual(blank, { scope: 'tab-1', sessions: [], tasks: [], at: null, running: false, backend: null, error: null, costUsd: 0, language: 'en' });
     assert.equal(hasRecap(blank), recappedOf(false));
     assert.equal(blank.running, recapRunningOf(false));
@@ -38,9 +38,9 @@ test('a blank recap holds no recap until a task has markdown', () => {
     assert.equal(blank.scope, scopeIdOf('tab-1'));
 });
 
-test('a pane id and a tab id keep the text they are made of', () => {
-    assert.equal(sessionKeyOf('w1:p1'), paneId('w1:p1'));
-    assert.equal(scopeIdOf('w1:t1'), tabId('w1:t1'));
+test('a session key and a scope id keep the text they are made of', () => {
+    assert.equal(sessionKeyOf('w1:p1'), key('w1:p1'));
+    assert.equal(scopeIdOf('w1:t1'), scope('w1:t1'));
 });
 
 test('the transcript registry picks the exact reader, then the fallback, and words what is missing', () => {
