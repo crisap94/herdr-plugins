@@ -5,7 +5,8 @@ import { loadSettings, messagesOf, stateDirectory } from '#src/daemon/config.ts'
 import { beginCompact, noteFromRequest, opensAskPopup } from '#src/recap/application/compact-start.ts';
 import type { Done } from '#src/ports/columns.ts';
 import type { CompactAsk } from '#src/ports/requests.ts';
-import { isUnknown, saying, unknown } from '@stateforge-labs/session-ledger';
+import { isUnknown, unknown } from '@stateforge-labs/session-ledger';
+import { saying } from '#src/recap/domain/saying.ts';
 import { must } from '@stateforge-labs/session-ledger';
 import { causeOf } from '@stateforge-labs/session-ledger';
 import { parseText } from '@stateforge-labs/session-ledger';

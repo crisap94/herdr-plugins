@@ -22,7 +22,8 @@ import type { Effect, SaveEffect, Setup, TestEffect } from '#src/recap/applicati
 import { coloured } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import { harnessLabels } from '@stateforge-labs/session-ledger';
 import { setupFooterLine, setupLines } from '#src/recap/render/setup.ts';
-import { isUnknown, saying } from '@stateforge-labs/session-ledger';
+import { isUnknown } from '@stateforge-labs/session-ledger';
+import { saying } from '#src/recap/domain/saying.ts';
 import { join } from 'node:path';
 import { createRuntime } from '@stateforge-labs/harness-adapters/runtime';
 import { stripVTControlCharacters } from 'node:util';

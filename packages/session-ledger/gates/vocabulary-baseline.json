@@ -13,7 +13,6 @@
   "src/ports/stories.ts": 2,
   "src/ports/transcript-registry.ts": 2,
   "src/ports/transcripts.ts": 4,
-  "src/ports/unknowable.ts": 1,
   "src/recap/application/anchor-source.ts": 2,
   "src/recap/application/autocompact-gates.ts": 9,
   "src/recap/application/autocompact.ts": 45,

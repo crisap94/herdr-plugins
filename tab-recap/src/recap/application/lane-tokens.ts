@@ -12,7 +12,8 @@ import { backoffMs } from '#src/recap/domain/backoff.ts';
 import { countOf, type Count } from '@stateforge-labs/session-ledger';
 import type { LaneTokenMap, LaneTokenReporter } from '#src/ports/lane-tokens.ts';
 import type { TokenName, TokenValue } from '#src/protocol/primitives.ts';
-import { isUnknown, saying } from '@stateforge-labs/session-ledger';
+import { isUnknown } from '@stateforge-labs/session-ledger';
+import { saying } from '#src/recap/domain/saying.ts';
 import type { LaneEvents } from './lane-events.ts';
 
 export const TICK_MS = 2_000;

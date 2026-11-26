@@ -7,7 +7,7 @@ import type { EnvironmentName } from '@stateforge-labs/session-ledger';
 import { parseJevModel, parseJevUrl } from '@stateforge-labs/session-ledger';
 import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import { instant, type Instant, duration } from '@stateforge-labs/session-ledger';
-import { saying } from '@stateforge-labs/session-ledger';
+import { saying } from '#src/recap/domain/saying.ts';
 import type { Text } from '@stateforge-labs/session-ledger';
 import { documentOf, noulOf, textOf } from './fakes/decider-fixtures.ts';
 

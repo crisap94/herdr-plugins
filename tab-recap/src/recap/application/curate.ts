@@ -1,5 +1,6 @@
 import { fallbackLedger, isUnknownRead, type GuardedLedger, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
-import { isUnknown, saying } from '@stateforge-labs/session-ledger';
+import { isUnknown } from '@stateforge-labs/session-ledger';
+import { saying } from '#src/recap/domain/saying.ts';
 import type { SessionCursor } from '@stateforge-labs/session-ledger';
 import type { CurationRun } from '@stateforge-labs/session-ledger';
 import { curationOf } from '#src/recap/domain/curation.ts';

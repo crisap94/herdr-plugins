@@ -7,7 +7,8 @@ import type { ChunkResult, Entry, InFlightCapability, Located, PromptResult } fr
 import type { LegacySessionReader as SessionReader } from '@stateforge-labs/session-ledger';
 import { TranscriptRegistry } from '@stateforge-labs/session-ledger';
 import { capabilityWording } from '@stateforge-labs/session-ledger';
-import { isUnknown, saying } from '@stateforge-labs/session-ledger';
+import { isUnknown } from '@stateforge-labs/session-ledger';
+import { saying } from '#src/recap/domain/saying.ts';
 import { must } from '@stateforge-labs/session-ledger';
 import type { Count } from '@stateforge-labs/session-ledger';
 import { parseCount } from '@stateforge-labs/session-ledger';

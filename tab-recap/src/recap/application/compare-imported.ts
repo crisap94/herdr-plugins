@@ -1,6 +1,7 @@
 import type { ImportedChapterItem, ImportedChapterRecord } from '#src/ports/imported-recaps.ts';
 import type { JudgeEntry, RunInputReader, RunRecord } from '#src/ports/run-inputs.ts';
-import { isUnknown, saying } from '@stateforge-labs/session-ledger';
+import { isUnknown } from '@stateforge-labs/session-ledger';
+import { saying } from '#src/recap/domain/saying.ts';
 import { must } from '@stateforge-labs/session-ledger';
 import { countOf, parseCount, type Count } from '@stateforge-labs/session-ledger';
 import type { ScopeId } from '#src/recap/domain/ids.ts';

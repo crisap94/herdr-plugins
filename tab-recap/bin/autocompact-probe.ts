@@ -4,7 +4,7 @@ import { deciderOf, isArm } from '#src/adapters/experiment/arms.ts';
 import { readPoints } from '#src/adapters/experiment/data.ts';
 import { appendJsonl, doneKeys, jsonLines } from '#src/adapters/experiment/io.ts';
 import type { DeciderPort, DecidedAnswersResult, Question } from '@stateforge-labs/session-ledger';
-import { saying } from '@stateforge-labs/session-ledger';
+import { saying } from '#src/recap/domain/saying.ts';
 import { must } from '@stateforge-labs/session-ledger';
 import { QUESTIONS } from '@stateforge-labs/session-ledger/compaction-timing';
 import { questionsOf } from '#src/recap/application/brief-coverage.ts';

@@ -1,7 +1,8 @@
 import type { JudgePort } from '#src/ports/judge.ts';
 import type { RunInputReader, RunRecord } from '#src/ports/run-inputs.ts';
 import type { VerdictRecord, VerdictStore } from '#src/ports/verdicts.ts';
-import { isUnknown, saying } from '@stateforge-labs/session-ledger';
+import { isUnknown } from '@stateforge-labs/session-ledger';
+import { saying } from '#src/recap/domain/saying.ts';
 import { must } from '@stateforge-labs/session-ledger';
 import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import { parseText, textOf, type Text } from '@stateforge-labs/session-ledger';

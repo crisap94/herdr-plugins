@@ -10,7 +10,8 @@ import { parseTokenName, parseTokenValue } from '#src/protocol/primitives.ts';
 import { must } from '@stateforge-labs/session-ledger';
 import { uncheckedMilliseconds, uncheckedTokenValue, type SessionKey, type WorkspaceId } from '#src/recap/domain/ids.ts';
 import { parseMilliseconds } from '@stateforge-labs/session-ledger';
-import { isUnknown, saying } from '@stateforge-labs/session-ledger';
+import { isUnknown } from '@stateforge-labs/session-ledger';
+import { saying } from '#src/recap/domain/saying.ts';
 
 export interface LaneEvents {
     lane(pane: SessionKey, kind: EventKind, detail?: Text | null): void;

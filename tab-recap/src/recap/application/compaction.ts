@@ -1,6 +1,7 @@
 import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { Messages } from '#src/i18n/index.ts';
-import { isUnknown, saying } from '@stateforge-labs/session-ledger';
+import { isUnknown } from '@stateforge-labs/session-ledger';
+import { saying } from '#src/recap/domain/saying.ts';
 import { READY } from '#src/recap/domain/status.ts';
 import type { CompactionFinish } from '#src/ports/compaction-records.ts';
 import type { CompactAsk } from '#src/ports/requests.ts';

@@ -43,7 +43,7 @@ export function saying(unknowable: Unknowable): Text {
         case 'failed':
             return textOf(`exited ${unknowable.code}: ${unknowable.detail}`);
         case 'lease':
-            return textOf(`another tool is typing into the pane (waited ${unknowable.after} ms for its lease)`);
+            return textOf(`another tool is typing into the session (waited ${unknowable.after} ms for its lease)`);
         default: {
             const exhaustive: never = unknowable;
             return textOf(String(exhaustive));

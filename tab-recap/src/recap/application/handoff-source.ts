@@ -9,7 +9,8 @@ import { HANDOFF_CLOSED_WINDOW_MS } from './handoff-limits.ts';
 import { resolveClosedLane } from './closed-lane-source.ts';
 import type { ClosedSourceDeps } from './closed-lane-source.ts';
 import type { ClosedView } from './closed-view.ts';
-import { saying, type Unknown } from '@stateforge-labs/session-ledger';
+import { type Unknown } from '@stateforge-labs/session-ledger';
+import { saying } from '#src/recap/domain/saying.ts';
 import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { textOf, type Text } from '@stateforge-labs/session-ledger';
 
