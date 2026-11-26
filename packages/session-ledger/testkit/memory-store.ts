@@ -18,7 +18,7 @@ import {
 } from '@stateforge-labs/session-ledger';
 import { emptyRecap, historyOf, sameTask } from './facts.ts';
 import { failure, running, tabId } from './values.ts';
-import { tabIdOf } from '../src/recap/domain/lane-shape.ts';
+import { tabIdOf } from '../src/recap/domain/followed-session-shape.ts';
 import { textOf } from '../src/recap/domain/text.ts';
 
 export { factOf } from './facts.ts';

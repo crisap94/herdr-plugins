@@ -17,7 +17,7 @@ import { ormOf, type Orm } from './orm.ts';
 import { TabStore } from './tab-row.ts';
 
 type RestoredRow = RestoredLane;
-type Lane = TabViewRecord['lanes'][number];
+type StoredLane = TabViewRecord['lanes'][number];
 
 const columnOf = <T, K extends keyof T>(source: T | null | undefined, key: K): T[K] | null => source?.[key] ?? null;
 
@@ -121,7 +121,7 @@ export class TabViewRowStore implements TabViewStore, LiveLanes {
         });
     }
 
-    private insertLanes(tab: ScopeId, lanes: readonly Lane[]): void {
+    private insertLanes(tab: ScopeId, lanes: readonly StoredLane[]): void {
         lanes.forEach((lane, position) => {
             const webBase = columnOf(lane.web, 'base');
             const webForge = columnOf(lane.web, 'forge');

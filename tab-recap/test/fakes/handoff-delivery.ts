@@ -14,7 +14,7 @@ import type { HandoffEvidence, HandoffPlan, LocatedBy } from '#src/recap/domain/
 import { HandoffConfirmation } from '#src/recap/application/handoff-confirmation.ts';
 import { HandoffSender } from '#src/recap/application/handoff-sender.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { registryWith } from './transcript-registry.ts';
 import { agentKind } from '#test/support/ids.ts';
 import { type SessionId, parseSessionId } from '#src/recap/domain/ids.ts';
@@ -82,7 +82,7 @@ export function worldOf(over: Partial<World> = {}): World {
 function transcriptsOf(world: World): SessionReader {
     return {
         agent: agentKind(world.agent),
-        locate: async (lane: Lane): Promise<Located> => {
+        locate: async (lane: FollowedSession): Promise<Located> => {
             world.locates += 1;
             if (world.faults.locate) {
                 throw new Error('locate failed');
@@ -179,11 +179,11 @@ export function planWith(evidence: HandoffEvidence): HandoffPlan {
     return { ...CLAUDE_PLAN, evidence };
 }
 
-export function laneWith(over: Partial<BareLane> = {}): Lane {
+export function laneWith(over: Partial<BareLane> = {}): FollowedSession {
     return laneFrom(seenLane({ paneId: PANE, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle', session: 'sess-1', cwd: '/repo', ...over }));
 }
 
-export function readyOf(lane: Lane, plan: HandoffPlan, transcript: TranscriptHold = 'own'): Ready {
+export function readyOf(lane: FollowedSession, plan: HandoffPlan, transcript: TranscriptHold = 'own'): Ready {
     return { kind: 'ready', lane, plan, transcript };
 }
 

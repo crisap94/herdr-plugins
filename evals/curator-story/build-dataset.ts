@@ -8,7 +8,7 @@ import { FRESH_ITEMS, FRESH_SEED, rngOf, sampleOf } from '../lib/fresh.ts';
 import { FRESH_PLANS, FRESH_PROJECTS, type Trap } from './fresh-plans.ts';
 import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
-import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/lane-shape.ts';
+import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
 import { inputToStored } from './prompt.ts';
 
 const NOW = Date.parse('2026-11-10T16:30:00Z');

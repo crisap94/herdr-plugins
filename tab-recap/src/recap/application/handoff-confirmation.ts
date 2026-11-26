@@ -6,7 +6,7 @@ import { parseSessionId } from '#src/recap/domain/ids.ts';
 import { duration, type Duration } from '@stateforge-labs/session-ledger';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffEvidence } from '#src/recap/domain/handoff-plan.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { failureCauseOf, parseThrown } from '@stateforge-labs/session-ledger';
 import { collapsedText } from '#src/recap/domain/text-collapse.ts';
 import { textOf, type Text } from '@stateforge-labs/session-ledger';
@@ -17,7 +17,7 @@ import { HANDOFF_OBSERVATIONS, HANDOFF_OBSERVE_MS, HANDOFF_PREFIX_CODE_POINTS, H
 export type Before = { readonly kind: 'prompt'; readonly text: Text | null } | { readonly kind: 'none' };
 
 export interface Baseline {
-    readonly lane: Lane;
+    readonly lane: FollowedSession;
     readonly before: Before;
 }
 
@@ -31,12 +31,12 @@ interface Evidence {
 }
 
 interface LatestOf {
-    readonly lane: Lane;
+    readonly lane: FollowedSession;
     readonly latest: Latest;
 }
 
 interface Observed {
-    readonly lane: Lane;
+    readonly lane: FollowedSession;
     readonly confirmed: Confirmation;
 }
 
@@ -82,12 +82,12 @@ export class HandoffConfirmation {
         this.deps = deps;
     }
 
-    private async sessionOf(lane: Lane): Promise<Lane> {
+    private async sessionOf(lane: FollowedSession): Promise<FollowedSession> {
         const current = await this.deps.session(lane.pane);
         return typeof current === 'string' && current.trim() !== '' ? { ...lane, session: must(parseSessionId(current)) } : lane;
     }
 
-    private async latestOf(lane: Lane): Promise<LatestOf> {
+    private async latestOf(lane: FollowedSession): Promise<LatestOf> {
         const current = await this.sessionOf(lane);
         const reader = this.deps.transcripts.readerFor(lane.agent);
         const located = reader === undefined ? null : await reader.locate(current);
@@ -106,7 +106,7 @@ export class HandoffConfirmation {
         return { lane: read.lane, before: read.latest.kind === 'prompt' ? { kind: 'prompt', text: read.latest.text } : { kind: 'none' } };
     }
 
-    private async observe(lane: Lane, evidence: Evidence, prefix: Text): Promise<Observed> {
+    private async observe(lane: FollowedSession, evidence: Evidence, prefix: Text): Promise<Observed> {
         let current = lane;
         if (evidence.transcript !== null) {
             const read = await this.latestOf(lane);

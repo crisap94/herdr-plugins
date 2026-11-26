@@ -4,7 +4,7 @@ import type { RegisteredKind } from '@stateforge-labs/session-ledger';
 import { UNREAD, type ChunkResult, type InFlightResult, type Located, type ObservedResult, type Position, type PromptResult, type SourcePath, grewOf, sourcePathOf } from '@stateforge-labs/session-ledger';
 import { type LegacySessionReader as SessionReader } from '@stateforge-labs/session-ledger';
 import { isUnknown, unknown } from '@stateforge-labs/session-ledger';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { parseAgentKind } from '#src/recap/domain/ids.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { must } from '@stateforge-labs/session-ledger';
@@ -83,11 +83,11 @@ export class ClaudeTranscripts implements SessionReader {
         this.root = root;
     }
 
-    locate(lane: Lane): Promise<Located> {
+    locate(lane: FollowedSession): Promise<Located> {
         return Promise.resolve(this.find(lane));
     }
 
-    private find(lane: Lane): Located {
+    private find(lane: FollowedSession): Located {
         if (lane.session === null) {
             return unknown({ why: 'not-found', what: textOf(`a session id for ${lane.pane}`) });
         }

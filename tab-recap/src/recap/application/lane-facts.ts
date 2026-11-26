@@ -2,7 +2,7 @@ import { must } from '@stateforge-labs/session-ledger';
 import { knownOr, type GuardedLedger, type GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import type { ContextUse } from '@stateforge-labs/session-ledger';
 import { shareOf } from '@stateforge-labs/session-ledger';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { LaneTokenFacts } from '#src/recap/domain/lane-tokens.ts';
 import { type SessionKey, parseTabId } from '#src/recap/domain/ids.ts';
 import { tabIdOf } from '@stateforge-labs/session-ledger';
@@ -18,7 +18,7 @@ export interface FactsDeps {
     readonly ledger: Pick<GuardedLedger, 'openOf'>;
 }
 
-export function factsOf(lane: Lane, deps: FactsDeps): LaneTokenFacts {
+export function factsOf(lane: FollowedSession, deps: FactsDeps): LaneTokenFacts {
     const tab = String(lane.tab);
     const use = deps.contexts.of(lane.pane);
     const recap = knownOr(deps.records.readRecap(must(parseTabId(tab))), null);

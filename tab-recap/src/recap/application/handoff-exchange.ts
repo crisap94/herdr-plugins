@@ -14,7 +14,7 @@ import type { HandoffOffer, HandoffRefusal, RefreshAsk } from '#src/recap/domain
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
 import { parseHandoffId, parsePaneId } from '#src/recap/domain/ids.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { REGISTRY } from '#src/recap/domain/token-registry.ts';
 import type { Instant } from '@stateforge-labs/session-ledger';
 import { parseText } from '@stateforge-labs/session-ledger';
@@ -124,7 +124,7 @@ export class HandoffExchangeResponder {
         this.queue(source, request.target, tool, id, request.refresh);
     }
 
-    private queue(source: Lane, target: SessionKey, tool: Text, id: Text, refresh: RefreshAsk): void {
+    private queue(source: FollowedSession, target: SessionKey, tool: Text, id: Text, refresh: RefreshAsk): void {
         const key = { exchange: HANDOFF_EXCHANGE, id: must(parseRequestId(id, GRAMMAR)), pane: source.pane };
         const requester = must(parseToolName(tool));
         const route: Route = { source: source.pane, target, id };

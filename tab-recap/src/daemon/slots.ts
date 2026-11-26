@@ -11,7 +11,7 @@ import type { LaneStatus } from '#src/recap/domain/status.ts';
 import type { Clock } from '@stateforge-labs/session-ledger';
 import type { PreCompacts } from '#src/adapters/hooks/pre-compacts.ts';
 import type { IdleClaim } from '@stateforge-labs/session-ledger';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { Candidate } from '@stateforge-labs/session-ledger/compaction-timing';
 import type { Viewers } from './view/viewers.ts';
 import { brand, type Brand } from '@stateforge-labs/session-ledger';
@@ -48,7 +48,7 @@ export interface SlotContext {
     readonly clock: Clock;
     readonly viewers: Viewers;
     readonly preCompacts: PreCompacts;
-    readonly claimIdle: (lane: Lane) => IdleClaim;
+    readonly claimIdle: (lane: FollowedSession) => IdleClaim;
     readonly setting: (key: SlotKey) => Switch;
     readonly log: (line: Line) => void;
 }

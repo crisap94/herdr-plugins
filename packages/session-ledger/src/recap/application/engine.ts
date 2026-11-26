@@ -1,5 +1,5 @@
 import type { FlushWhy } from '#src/contract/engine.ts';
-import { tabIdOf, type Lane, type SessionKey, type ScopeId } from '#src/recap/domain/lane-shape.ts';
+import { tabIdOf, type LegacyFollowedSession, type SessionKey, type ScopeId } from '#src/recap/domain/followed-session-shape.ts';
 import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { HistoryFact } from '#src/ports/ledger.ts';
 import type { LastRun } from '#src/ports/recap-records.ts';
@@ -9,8 +9,7 @@ import { CLOSED_SHOWN_MS } from './ledger-input.ts';
 import { RecapJob, type RecapJobDeps } from './recap-job.ts';
 import { saying } from '#src/ports/unknowable.ts';
 
-export type { ScopeId };
-export type FollowedSession = Lane;
+export type { ScopeId, LegacyFollowedSession };
 
 export type EngineSource = Pick<RecapJobDeps, 'transcripts'>;
 export type EngineStore = Pick<RecapJobDeps, 'records' | 'ledger'>;
@@ -34,20 +33,20 @@ export interface RestoreFacts {
 }
 
 export interface Engine {
-    turnEnded(scope: ScopeId, sessions: readonly FollowedSession[], cause: RecapCause): void;
-    refresh(scope: ScopeId, sessions: readonly FollowedSession[]): Promise<void>;
-    sessionStarted(scope: ScopeId, sessions: readonly FollowedSession[]): void;
-    compacted(scope: ScopeId, sessions: readonly FollowedSession[]): Promise<void>;
-    history(scope: ScopeId, session: FollowedSession): readonly HistoryFact[];
-    restore(scope: ScopeId, session: FollowedSession): RestoreFacts;
+    turnEnded(scope: ScopeId, sessions: readonly LegacyFollowedSession[], cause: RecapCause): void;
+    refresh(scope: ScopeId, sessions: readonly LegacyFollowedSession[]): Promise<void>;
+    sessionStarted(scope: ScopeId, sessions: readonly LegacyFollowedSession[]): void;
+    compacted(scope: ScopeId, sessions: readonly LegacyFollowedSession[]): Promise<void>;
+    history(scope: ScopeId, session: LegacyFollowedSession): readonly HistoryFact[];
+    restore(scope: ScopeId, session: LegacyFollowedSession): RestoreFacts;
     idle(scope: ScopeId): Promise<void>;
     flush(scope: ScopeId, why?: FlushWhy): Promise<void>;
     flushAll(): Promise<void>;
 }
 
-const heldBy = (session: FollowedSession): SessionKey => session.pane;
+const heldBy = (session: LegacyFollowedSession): SessionKey => session.pane;
 
-function restoreFactsOf(store: EngineStore, environment: EngineEnvironment, at: Instant, scope: ScopeId, session: FollowedSession): RestoreFacts {
+function restoreFactsOf(store: EngineStore, environment: EngineEnvironment, at: Instant, scope: ScopeId, session: LegacyFollowedSession): RestoreFacts {
     const id = tabIdOf(String(scope));
     const recap = store.records.readRecap(id);
     if (recap !== null && 'kind' in recap) {

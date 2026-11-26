@@ -14,7 +14,7 @@ import { joinedCalled, type ArmedAnswer, type ArmRecord, type Asker, type Rounde
 import type { Called, Item } from '../lib/types.ts';
 import { built, type StoryItem } from './prompt.ts';
 import { joins, readAnswer } from './scoring.ts';
-import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/lane-shape.ts';
+import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
 import { causeOf } from '../../packages/session-ledger/src/recap/domain/failure-cause.ts';
 
 // One job of the story eval, driven through the plugin's own storyAnswerOf.

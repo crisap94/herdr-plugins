@@ -1,6 +1,6 @@
 import { brand, type Brand } from '#src/recap/domain/brand.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
-import type { Lane } from '#src/recap/domain/lane-shape.ts';
+import type { LegacyFollowedSession } from '#src/recap/domain/followed-session-shape.ts';
 import type { SessionMark } from '#src/recap/domain/boundary.ts';
 import type { Chunk } from '#src/ports/transcripts.ts';
 import { countOf } from '#src/recap/domain/count.ts';
@@ -11,7 +11,7 @@ export const ADVANCED = brand<boolean, 'Advanced'>(true);
 export const NOT_ADVANCED = brand<boolean, 'Advanced'>(false);
 
 export interface Read {
-    readonly lane: Pick<Lane, 'pane'>;
+    readonly lane: Pick<LegacyFollowedSession, 'pane'>;
     readonly chunk: Chunk | null;
 }
 

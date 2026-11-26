@@ -6,7 +6,7 @@ import { isUnknown, saying } from '#src/ports/unknowable.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
-import type { SessionKey } from '#src/recap/domain/lane-shape.ts';
+import type { SessionKey } from '#src/recap/domain/followed-session-shape.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { LEDGER_GATES } from '#src/recap/domain/gates/ledger-gates.ts';
 import type { CloseOp, Operation, UpdateOp } from '#src/recap/domain/ops.ts';

@@ -3,7 +3,7 @@ import { failureCauseOf, parseThrown } from '@stateforge-labs/session-ledger';
 import type { ClosedLaneIdentity } from '#src/recap/domain/closures.ts';
 import type { Fact, TaskId } from '@stateforge-labs/session-ledger';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import { HANDOFF_CLOSED_WINDOW_MS } from './handoff-limits.ts';
 import { resolveClosedLane } from './closed-lane-source.ts';
@@ -18,7 +18,7 @@ export interface SourceRequest {
     readonly pane: SessionKey;
 }
 
-export type SourceLane = Pick<Lane, 'pane' | 'tab'>;
+export type SourceLane = Pick<FollowedSession, 'pane' | 'tab'>;
 
 export interface SourceDeps {
     readonly lanes: readonly SourceLane[];

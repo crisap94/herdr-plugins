@@ -9,7 +9,7 @@ import { closuresBetween } from '#src/recap/domain/closures.ts';
 import type { ClosedLane, RestoredLane } from '#src/recap/domain/closures.ts';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { LaneTokenFacts } from '#src/recap/domain/lane-tokens.ts';
 import { countOf } from '@stateforge-labs/session-ledger';
 import { closedDaysOf as closedLaneDaysOf } from './fakes/closed-days.ts';
@@ -75,7 +75,7 @@ test('a restart closure, built from a persisted lane, announces lane-closed exac
 
 test('a closure seen by dispatch and by the token publisher announces lane-closed once, from dispatch', async () => {
     const { lines, port } = eventsOf();
-    const lane: Lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
+    const lane: FollowedSession = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
     const board: { current: Board } = { current: { ...emptyBoard(), lanes: new Map([[lane.pane, lane]]) } };
     let now = 0;
     const publisher = new LaneTokenPublisher({

@@ -7,7 +7,7 @@ import { cursor, factAt, isUnknownValue, runOf, shapeOf, typeIdAt } from './reco
 import { instant } from '@stateforge-labs/session-ledger';
 import { tabId } from '../values.ts';
 import { textOf } from '../../src/recap/domain/text.ts';
-import { tabIdOf, paneIdOf } from '../../src/recap/domain/lane-shape.ts';
+import { tabIdOf, paneIdOf } from '../../src/recap/domain/followed-session-shape.ts';
 
 const TAB_1_A: TaskId = { scope: tabIdOf('tab-1'), key: textOf('a') };
 const TAB_1_B: TaskId = { scope: tabIdOf('tab-1'), key: textOf('b') };

@@ -13,15 +13,15 @@ import type { Considers } from '@stateforge-labs/session-ledger';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { DecidedAnswersResult } from '@stateforge-labs/session-ledger';
 import { unknown } from '@stateforge-labs/session-ledger';
 import { NOW, SAFE, lane, rows, world } from './autocompact-world.ts';
 import { decidedOf } from './fakes/decider-fixtures.ts';
 import { seenLane } from '#test/support/seen.ts';
 
-const at = (pane: string, status = 'idle', agent = 'claude'): Lane => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, status }));
-const boardOf = (lanes: readonly Lane[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((found) => [found.pane, found])) });
+const at = (pane: string, status = 'idle', agent = 'claude'): FollowedSession => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, status }));
+const boardOf = (lanes: readonly FollowedSession[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((found) => [found.pane, found])) });
 const settle = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
 const SAFE_DECISION: DecidedAnswersResult = decidedOf(SAFE);
 

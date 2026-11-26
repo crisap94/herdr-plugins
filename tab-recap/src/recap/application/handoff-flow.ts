@@ -5,7 +5,7 @@ import type { HandoffAskRecord } from '#src/ports/requests.ts';
 import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import { type SessionKey, type ScopeId, parseTabId } from '#src/recap/domain/ids.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
 import { instant, type Duration, type Instant } from '@stateforge-labs/session-ledger';
 import { failureCauseOf, parseThrown } from '@stateforge-labs/session-ledger';
@@ -29,7 +29,7 @@ export interface ClosedFlowDeps {
 }
 
 export interface HandoffFlowDeps {
-    readonly lanes: () => readonly Lane[];
+    readonly lanes: () => readonly FollowedSession[];
     readonly records: SourceDeps['records'];
     readonly ledger: SourceDeps['ledger'];
     readonly closed: ClosedFlowDeps;

@@ -1,11 +1,8 @@
 import { must } from '@stateforge-labs/session-ledger';
 import { parseAgentKind, parsePaneId, parseSessionId, parseTabId, parseWorkspaceId } from './ids.ts';
-import type { HarnessKind, SessionKey, SessionId, ScopeId, WorkspaceId } from './ids.ts';
 import { laneStatus } from './status.ts';
 import type { LaneStatus } from './status.ts';
-import type { Instant } from '@stateforge-labs/session-ledger';
 import { parseDirectory } from '@stateforge-labs/session-ledger';
-import type { Directory } from '@stateforge-labs/session-ledger';
 import { parseText, type Text } from '@stateforge-labs/session-ledger';
 
 export interface SeenLane {
@@ -19,19 +16,10 @@ export interface SeenLane {
     readonly title?: Text | null | undefined;
 }
 
-export interface Lane {
-    readonly pane: SessionKey;
-    readonly tab: ScopeId;
-    readonly workspace: WorkspaceId;
-    readonly agent: HarnessKind;
-    readonly status: LaneStatus;
-    readonly session: SessionId | null;
-    readonly cwd: Directory | null;
-    readonly title: Text | null;
-    readonly since: Instant | null;
-}
+import type { LegacyFollowedSession as FollowedSession } from '@stateforge-labs/session-ledger';
+export type { LegacyFollowedSession as FollowedSession } from '@stateforge-labs/session-ledger';
 
-export function laneFrom(seen: SeenLane): Lane {
+export function laneFrom(seen: SeenLane): FollowedSession {
     const session = parseText(seen.session);
     const cwd = parseDirectory(seen.cwd);
     const title = parseText(seen.title);
@@ -48,6 +36,6 @@ export function laneFrom(seen: SeenLane): Lane {
     };
 }
 
-export function withStatus(lane: Lane, status: LaneStatus): Lane {
+export function withStatus(lane: FollowedSession, status: LaneStatus): FollowedSession {
     return { ...lane, status };
 }

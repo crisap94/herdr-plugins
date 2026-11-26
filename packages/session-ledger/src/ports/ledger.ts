@@ -1,5 +1,5 @@
 import type { ClosedWhy, Fact, Section, TaskId } from '#src/recap/domain/fact.ts';
-import type { SessionKey, ScopeId } from '#src/recap/domain/lane-shape.ts';
+import type { SessionKey, ScopeId } from '#src/recap/domain/followed-session-shape.ts';
 import type { Refusal } from '#src/recap/domain/ops.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';

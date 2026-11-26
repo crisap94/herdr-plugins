@@ -1,6 +1,6 @@
 import { brand, type Brand } from './brand.ts';
 import type { Count } from './count.ts';
-import type { SessionKey } from './lane-shape.ts';
+import type { SessionKey } from './followed-session-shape.ts';
 import { instant, type Duration, type Instant } from './time.ts';
 
 export const PLUGIN_WITHIN_MS = 10 * 60_000;

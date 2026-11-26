@@ -2,13 +2,13 @@ import { textOf } from '@stateforge-labs/session-ledger';
 import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { Engine, FollowedSession, HistoryFact as LedgerHistoryFact, LedgerEvent, RestoreText, ScopeId, SessionKey } from '@stateforge-labs/session-ledger';
+import type { Engine, FollowedSession as Followed, HistoryFact as LedgerHistoryFact, LedgerEvent, RestoreText, ScopeId, SessionKey } from '@stateforge-labs/session-ledger';
 import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { legacyCreateEngine as createEngine, type LegacyEngine, type LegacyEnginePlugs as EnginePlugs } from '@stateforge-labs/session-ledger';
 import type { LegacyRecapWritten as RecapWritten } from '@stateforge-labs/session-ledger';
 import { tabId, agentKind, paneId } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { HistoryFact } from '@stateforge-labs/session-ledger';
 import { instant } from '@stateforge-labs/session-ledger';
 import { FULL_WRITER_VIEW } from '@stateforge-labs/session-ledger';
@@ -29,7 +29,7 @@ import { cursorOf, grewOf, sourcePathOf } from '@stateforge-labs/session-ledger'
 import { seenLane } from '#test/support/seen.ts';
 
 const TAB = 'w1:t1';
-const lanes: readonly Lane[] = [
+const lanes: readonly FollowedSession[] = [
     laneFrom(seenLane({ paneId: 'w1:p1', tabId: TAB, workspaceId: 'w1', agent: 'claude', session: 's1' })),
     laneFrom(seenLane({ paneId: 'w1:p2', tabId: TAB, workspaceId: 'w1', agent: 'claude', session: 's2' })),
 ];
@@ -37,12 +37,12 @@ const [first, second] = lanes;
 if (first === undefined || second === undefined) {
     throw new Error('two lanes are needed');
 }
-const reversed: readonly Lane[] = [second, first];
+const reversed: readonly FollowedSession[] = [second, first];
 
 const reader: SessionReader = {
     agent: agentKind('claude'),
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-    locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
+    locate: (lane: FollowedSession): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
     read: (source: string): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf(`go ${source}`) }], title: null, lastPrompt: null, harnessRecap: null, notes: [], position: { cursor: cursorOf(7), tail: null }, grew: grewOf(true) }),
 };
@@ -81,9 +81,9 @@ function world(): World {
 const settled = (): Promise<void> => new Promise((resolve) => { setTimeout(resolve, 30); });
 
 interface Driver {
-    turnEnded(tab: ReturnType<typeof tabId>, sessions: readonly Lane[], cause: 'requested'): void;
-    refresh(tab: ReturnType<typeof tabId>, sessions: readonly Lane[]): Promise<void>;
-    history(tab: ReturnType<typeof tabId>, session: Lane): readonly HistoryFact[];
+    turnEnded(tab: ReturnType<typeof tabId>, sessions: readonly FollowedSession[], cause: 'requested'): void;
+    refresh(tab: ReturnType<typeof tabId>, sessions: readonly FollowedSession[]): Promise<void>;
+    history(tab: ReturnType<typeof tabId>, session: FollowedSession): readonly HistoryFact[];
 }
 
 function legacyDriver(at: World): LegacyEngine {
@@ -95,7 +95,7 @@ function adapterDriver(at: World): TabRecaps {
     return tabRecaps(pluginEngine(plugs));
 }
 
-function outcome(at: World, history: readonly Lane[]): unknown {
+function outcome(at: World, history: readonly FollowedSession[]): unknown {
     const recap = storeRead(at.store.records.readRecap(tabId(TAB)));
     return {
         asked: at.asked.map((request) => request.input),
@@ -107,7 +107,7 @@ function outcome(at: World, history: readonly Lane[]): unknown {
     };
 }
 
-async function both(byLegacy: (driver: Driver) => Promise<void>, byAdapter: (driver: Driver) => Promise<void>, read: readonly Lane[]): Promise<{ legacy: unknown; adapter: unknown }> {
+async function both(byLegacy: (driver: Driver) => Promise<void>, byAdapter: (driver: Driver) => Promise<void>, read: readonly FollowedSession[]): Promise<{ legacy: unknown; adapter: unknown }> {
     const [direct, faced] = [world(), world()];
     await byLegacy(legacyDriver(direct));
     await byAdapter(adapterDriver(faced));
@@ -167,7 +167,7 @@ interface Spy {
 function spy(): Spy {
     const calls: string[] = [];
     const engine: Engine = {
-        follow: (scope: ScopeId, session: FollowedSession): void => { calls.push(`follow ${scope} ${session.key}`); },
+        follow: (scope: ScopeId, session: Followed): void => { calls.push(`follow ${scope} ${session.key}`); },
         unfollow: (scope: ScopeId, key: SessionKey): void => { calls.push(`unfollow ${scope} ${key}`); },
         followedBy: (): null => null,
         turnEnded: (): void => undefined,

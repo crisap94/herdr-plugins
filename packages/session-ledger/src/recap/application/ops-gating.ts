@@ -11,7 +11,7 @@ import type { Finding, Gate } from '#src/recap/domain/gates/gate.ts';
 import { apply } from '#src/recap/domain/ops.ts';
 import type { Operation } from '#src/recap/domain/ops.ts';
 import type { Tasked } from './ops-answer.ts';
-import { tabIdOf } from '#src/recap/domain/lane-shape.ts';
+import { tabIdOf } from '#src/recap/domain/followed-session-shape.ts';
 
 const textOf = brand<string, 'Text'>;
 const count = brand<number, 'Count'>;

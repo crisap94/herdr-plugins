@@ -7,7 +7,7 @@ import { grew, text as textOf } from '../values.ts';
 import type { Behaviour, CuratedAnswer, CuratorCall, EngineWorld } from '../world.ts';
 import { NO_OPS, recapOf, spoken } from './support.ts';
 import { TAB, seedOpen } from './curate.ts';
-import { tabIdOf } from '../../src/recap/domain/lane-shape.ts';
+import { tabIdOf } from '../../src/recap/domain/followed-session-shape.ts';
 
 const MINUTES = 60_000;
 

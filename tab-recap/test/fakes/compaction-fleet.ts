@@ -7,7 +7,7 @@ import type { CompactionPorts } from '#src/recap/application/compaction-deps.ts'
 import { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import { targetOf } from '@stateforge-labs/session-ledger';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '@stateforge-labs/session-ledger';
 import type { Mark } from '@stateforge-labs/session-ledger';
 import type { AgentPanes, AgentLookup, LineBehavior, PromptStance, PromptWaitFor, Prompted } from '#src/ports/agents.ts';
@@ -21,7 +21,7 @@ import { instant } from '@stateforge-labs/session-ledger';
 import { tabId, paneId, agentKind } from '#test/support/ids.ts';
 import { seenLane } from '#test/support/seen.ts';
 
-export const lane = (pane: string, agent: string): Lane => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent }));
+export const lane = (pane: string, agent: string): FollowedSession => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent }));
 export const CLAUDE_CODEX_GEMINI = [lane('w1:p1', 'claude'), lane('w1:p2', 'codex'), lane('w1:p3', 'gemini')];
 
 export interface Typed { readonly pane: string; readonly text: string; readonly pieces?: readonly string[]; readonly wait?: PromptWaitFor | undefined; readonly lineBehavior?: LineBehavior; readonly promptBehavior?: PromptStance; readonly typed?: boolean }
@@ -73,7 +73,7 @@ export const NOW = Date.parse('2026-10-07T10:00:00Z');
 export const compacted: Mark = { kind: 'compacted', at: instant(NOW + 5000) };
 export const failed: Mark = { kind: 'compaction-failed', at: instant(NOW + 5000) };
 
-export function compactionDeps(world: Fleet, setting = 'focused', focused: string | null = 'w1:p1', reads: readonly (readonly Mark[])[] = [[]], lanes: readonly Lane[] = CLAUDE_CODEX_GEMINI): CompactionPorts {
+export function compactionDeps(world: Fleet, setting = 'focused', focused: string | null = 'w1:p1', reads: readonly (readonly Mark[])[] = [[]], lanes: readonly FollowedSession[] = CLAUDE_CODEX_GEMINI): CompactionPorts {
     let looked = 0;
     const recap = { ...blankRecap(tabId('w1:t1')), tasks: oneTask('x', { ...NO_SECTIONS, goal: textOf('Ship the cart rewrite'), decisions: [textOf('The recap column shows three lines')], rules: [textOf('Never push to main')] }, ['w1:p1', 'w1:p2']) };
     return {
@@ -106,6 +106,6 @@ export function compactionDeps(world: Fleet, setting = 'focused', focused: strin
     };
 }
 
-export function compactionFlow(world: Fleet, setting = 'focused', focused: string | null = 'w1:p1', reads: readonly (readonly Mark[])[] = [[]], lanes: readonly Lane[] = CLAUDE_CODEX_GEMINI): Compaction {
+export function compactionFlow(world: Fleet, setting = 'focused', focused: string | null = 'w1:p1', reads: readonly (readonly Mark[])[] = [[]], lanes: readonly FollowedSession[] = CLAUDE_CODEX_GEMINI): Compaction {
     return new Compaction(compactionDeps(world, setting, focused, reads, lanes));
 }

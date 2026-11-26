@@ -1,5 +1,5 @@
 import { brand, type Brand } from './brand.ts';
-import type { ScopeId } from './lane-shape.ts';
+import type { ScopeId } from './followed-session-shape.ts';
 import type { Text } from './text.ts';
 import type { Instant } from './time.ts';
 

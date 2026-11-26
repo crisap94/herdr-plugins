@@ -11,7 +11,7 @@ import type { Intent, RecapCause } from './intent.ts';
 import { parsePaneId, parseTabId, parseSessionId } from './ids.ts';
 import type { ColumnOpenedObservation, Reconciliation, SessionObservation, StatusObservation, SwitchedObservation } from './seen.ts';
 import { laneFrom, withStatus } from './lane.ts';
-import type { Lane, SeenLane } from './lane.ts';
+import type { FollowedSession, SeenLane } from './lane.ts';
 import { lingering, settle, spend, wantsKind } from './policy.ts';
 import type { Policy } from './policy.ts';
 import { endsTurn, laneStatus } from './status.ts';
@@ -97,7 +97,7 @@ function onClosed(board: Board, pane: SessionKey, now: Instant, policy: Policy):
     return step(spent, intents);
 }
 
-function keepingSession(lane: Lane, held: Lane | undefined): Lane {
+function keepingSession(lane: FollowedSession, held: FollowedSession | undefined): FollowedSession {
     return lane.session === null && held?.session && held.agent === lane.agent ? { ...lane, session: held.session } : lane;
 }
 
@@ -178,7 +178,7 @@ function seenTabs(board: Board, seen: Reconciliation): Pick<Board, 'widths' | 'f
 }
 
 function onReconciled(board: Board, seen: Reconciliation, now: Instant, policy: Policy): Step {
-    const lanes = new Map<SessionKey, Lane>();
+    const lanes = new Map<SessionKey, FollowedSession>();
     for (const raw of seen.lanes.filter((lane) => wantsKind(policy, lane.agent) === 'present')) {
         const fresh = laneFrom(raw);
         const prior = board.lanes.get(fresh.pane) ?? board.persisted?.find((lane) => lane.pane === fresh.pane);

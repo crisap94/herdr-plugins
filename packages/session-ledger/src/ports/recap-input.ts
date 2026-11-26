@@ -1,4 +1,4 @@
-import type { HarnessKind, SessionKey } from '#src/recap/domain/lane-shape.ts';
+import type { HarnessKind, SessionKey } from '#src/recap/domain/followed-session-shape.ts';
 import type { ClosedWhy, Section } from '#src/recap/domain/fact.ts';
 import type { Directory } from '#src/recap/domain/directory.ts';
 import type { Text } from '#src/recap/domain/text.ts';

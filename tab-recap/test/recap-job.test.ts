@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { RecapJob } from '@stateforge-labs/session-ledger';
 import { tabId, agentKind, paneId } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { instant } from '@stateforge-labs/session-ledger';
 import type { CloseEvidence } from '@stateforge-labs/session-ledger';
 import { memoryStore, seed, storeRead } from '#test/db/support.ts';
@@ -35,7 +35,7 @@ function transcriptsOf(agent: string): SessionReader {
     return {
         agent: agentKind(agent),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-        locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
+        locate: (lane: FollowedSession): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
         latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
         read: (source: string): Promise<ChunkResult> => {
             const pane = source.slice(3);
@@ -77,7 +77,7 @@ test('one recap for the tab, written from every lane, advancing every cursor', a
 const quiet: SessionReader = {
     agent: agentKind('claude'),
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-    locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
+    locate: (lane: FollowedSession): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
     read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [], title: null, lastPrompt: null, harnessRecap: null, notes: [], position: { cursor: cursorOf(100), tail: null }, grew: grewOf(false) }),
 };

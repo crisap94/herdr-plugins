@@ -1,4 +1,4 @@
-import type { SessionKey } from './lane-shape.ts';
+import type { SessionKey } from './followed-session-shape.ts';
 import type { RecapTask } from './tasks.ts';
 import { textOf, type Text } from './text.ts';
 

@@ -9,7 +9,7 @@ import { CASES_B } from './cases-b.ts';
 import type { Beat, Case, Planted, Section } from './cases-types.ts';
 import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
-import { agentKindOf, paneIdOf } from '../../packages/session-ledger/src/recap/domain/lane-shape.ts';
+import { agentKindOf, paneIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
 import { directoryOf } from '../lib/brands.ts';
 
 const SECTIONS: readonly Section[] = ['goal', 'now', 'needs', 'done', 'decisions', 'next', 'links', 'rules'];

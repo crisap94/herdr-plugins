@@ -5,7 +5,7 @@ import type { CompactLimits } from '#src/ports/compact-limits.ts';
 import type { ContextWindowLookup } from '#src/ports/context-windows.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { parseCount, countOf } from '@stateforge-labs/session-ledger';
 import type { Count } from '@stateforge-labs/session-ledger';
 import { parseText, textOf } from '@stateforge-labs/session-ledger';
@@ -51,14 +51,14 @@ export class LaneContexts {
         return this.known.get(pane) ?? null;
     }
 
-    private async observedIn(lane: Lane): Promise<ObservedOutcome> {
+    private async observedIn(lane: FollowedSession): Promise<ObservedOutcome> {
         const agent = lane.agent;
         const reader = this.transcripts.readerFor(agent);
         const located = reader === undefined ? null : await reader.locate(lane);
         return reader?.observed === undefined || located === null || isUnknown(located) ? null : reader.observed(located.source, TAIL_BYTES);
     }
 
-    private async read(lane: Lane): Promise<ContextUse | null | undefined> {
+    private async read(lane: FollowedSession): Promise<ContextUse | null | undefined> {
         const found = await this.observedIn(lane);
         if (found === null || isUnknown(found)) {
             return undefined;
@@ -71,7 +71,7 @@ export class LaneContexts {
         return use === null || use.source === 'setting' ? use : this.capped(use, lane, observed);
     }
 
-    private capped(use: ContextUse, lane: Lane, observed: Observed): ContextUse {
+    private capped(use: ContextUse, lane: FollowedSession, observed: Observed): ContextUse {
         const model = parseText(observed.model);
         const limit = this.limits.limitOf(lane.agent, model.kind === 'ok' ? model.value : null, lane.cwd, lane.session);
         const measured = parseCount(use.window);
@@ -83,7 +83,7 @@ export class LaneContexts {
         return cap < measured.value ? { tokens: use.tokens, window: cap, source: 'agent' } : use;
     }
 
-    async refresh(lane: Lane): Promise<Presence> {
+    async refresh(lane: FollowedSession): Promise<Presence> {
         const use = await this.read(lane);
         const pane = lane.pane;
         if (use === undefined || keyOf(use) === keyOf(this.known.get(pane))) {

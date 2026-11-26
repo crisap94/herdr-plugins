@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { clearing, OWNED_TOKENS, STATE_TOKENS, tokenValuesOf, writeDueOf } from '#src/recap/domain/lane-tokens.ts';
 import type { LaneTokenFacts } from '#src/recap/domain/lane-tokens.ts';
 import { CAPABILITY_TOKEN } from '#src/protocol/capability.ts';
@@ -21,8 +21,8 @@ import { seenLane } from '#test/support/seen.ts';
 const facts = (over: Partial<LaneTokenFacts> = {}): LaneTokenFacts => ({ share: countOf(40), recapAt: instant(1000), needs: countOf(0), ...over });
 const TTL = must(parseMilliseconds(TTL_MS));
 const OWNED_NAMES = OWNED_TOKENS.map(uncheckedTokenName);
-const laneOf = (pane: string): Lane => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
-const boardOf = (...lanes: Lane[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((lane) => [lane.pane, lane])) });
+const laneOf = (pane: string): FollowedSession => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
+const boardOf = (...lanes: FollowedSession[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((lane) => [lane.pane, lane])) });
 
 test('a lane carries the protocol version, its share, the last recap and the open needs; a fact unknown is left out', () => {
     assert.deepEqual(Object.fromEntries(tokenValuesOf(facts())), { 'tab-recap-api': '1', 'tab-recap-share': '40', 'tab-recap-recap': '1000', 'tab-recap-needs': '0', 'tab-recap-x': 'compact1,kinds2' });

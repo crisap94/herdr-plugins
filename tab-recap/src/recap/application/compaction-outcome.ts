@@ -1,4 +1,4 @@
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { LaneSettler, Settling } from '#src/ports/lane-settling.ts';
 import type { Mark } from '@stateforge-labs/session-ledger';
 import { parseCount, type Count } from '@stateforge-labs/session-ledger';
@@ -48,16 +48,16 @@ function verdictFrom(marks: readonly Mark[], since: Instant): Verdict {
 
 export interface OutcomeDeps {
     readonly settling: LaneSettler;
-    marks(lane: Lane): Promise<readonly Mark[]>;
+    marks(lane: FollowedSession): Promise<readonly Mark[]>;
     pause(ms: Duration): Promise<void>;
 }
 
-export async function outcomeOf(deps: OutcomeDeps, lane: Lane, since: Instant): Promise<Verdict> {
+export async function outcomeOf(deps: OutcomeDeps, lane: FollowedSession, since: Instant): Promise<Verdict> {
     await deps.settling.settled(lane.pane, since, uncheckedMilliseconds(WAIT_MS));
     return confirmedOutcomeOf(deps, lane, since);
 }
 
-export async function confirmedOutcomeOf(deps: OutcomeDeps, lane: Lane, since: Instant): Promise<Verdict> {
+export async function confirmedOutcomeOf(deps: OutcomeDeps, lane: FollowedSession, since: Instant): Promise<Verdict> {
     let verdict = verdictFrom(await deps.marks(lane), since);
     for (let read = 0; read < REREADS && verdict.outcome === 'unconfirmed'; read += 1) {
         await deps.pause(duration(REREAD_MS));
@@ -77,7 +77,7 @@ type Turn = 'ended' | 'running';
 
 const turnOf = (settled: Settling): Turn => (settled.kind === 'settled' && TURN_ENDS.has(settled.status) ? 'ended' : 'running');
 
-export async function queuedOutcomeOf(deps: QueuedDeps, lane: Lane, typedAt: Instant, onTurnEnd: () => void): Promise<Verdict> {
+export async function queuedOutcomeOf(deps: QueuedDeps, lane: FollowedSession, typedAt: Instant, onTurnEnd: () => void): Promise<Verdict> {
     const deadline = typedAt + WAIT_MS;
     let since = typedAt;
     let turnEnded = false;

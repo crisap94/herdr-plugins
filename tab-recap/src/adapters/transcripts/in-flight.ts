@@ -4,7 +4,7 @@ import type { InFlightReader, InFlightRead } from '#src/ports/in-flight.ts';
 import type { TranscriptRegistry } from '@stateforge-labs/session-ledger';
 import { isUnknown, saying } from '@stateforge-labs/session-ledger';
 import type { Unknown } from '@stateforge-labs/session-ledger';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { registeredKindOf } from '@stateforge-labs/session-ledger';
 import type { Directory } from '@stateforge-labs/session-ledger';
 import type { SessionId } from '#src/recap/domain/ids.ts';
@@ -17,12 +17,12 @@ import { countOf } from '@stateforge-labs/session-ledger';
 const TAIL_BYTES = 512 * 1024;
 
 const LOCATING_KEYS = {
-    claude: (lane: Lane): SessionId | null => lane.session,
-    codex: (lane: Lane): Directory | null => lane.cwd,
-    opencode: (lane: Lane): Directory | null => lane.cwd,
-} satisfies Readonly<Record<RegisteredKind, (lane: Lane) => SessionId | Directory | null>>;
+    claude: (lane: FollowedSession): SessionId | null => lane.session,
+    codex: (lane: FollowedSession): Directory | null => lane.cwd,
+    opencode: (lane: FollowedSession): Directory | null => lane.cwd,
+} satisfies Readonly<Record<RegisteredKind, (lane: FollowedSession) => SessionId | Directory | null>>;
 
-function unlocated(lane: Lane, registered: RegisteredKind | null, located: Unknown): InFlightRead {
+function unlocated(lane: FollowedSession, registered: RegisteredKind | null, located: Unknown): InFlightRead {
     const why = saying(located.why);
     const fresh = located.why.why === 'not-found' && registered !== null && LOCATING_KEYS[registered](lane) !== null;
     return fresh ? { kind: 'not-started', why } : { kind: 'unknown', why };
@@ -35,7 +35,7 @@ export class TranscriptInFlight implements InFlightReader {
         this.transcripts = transcripts;
     }
 
-    async read(lane: Lane): Promise<InFlightRead> {
+    async read(lane: FollowedSession): Promise<InFlightRead> {
         const agent = lane.agent;
         const subject = must(parseText(agent));
         const registered = registeredKindOf(textOf(agent));

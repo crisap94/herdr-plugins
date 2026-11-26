@@ -1,4 +1,4 @@
-import type { Lane } from '#src/recap/domain/lane-shape.ts';
+import type { LegacyFollowedSession } from '#src/recap/domain/followed-session-shape.ts';
 import type { Workplaces } from '#src/ports/lane-repo.ts';
 import type { LaneHint } from '#src/ports/recap-input.ts';
 import type { Entry } from '#src/ports/transcripts.ts';
@@ -17,7 +17,7 @@ export function touchedFiles(entries: readonly Entry[]): readonly Text[] {
     return seen.slice(-FILES_SHOWN);
 }
 
-export async function hintOf(lane: Lane, entries: readonly Entry[], repos: Workplaces): Promise<LaneHint> {
+export async function hintOf(lane: LegacyFollowedSession, entries: readonly Entry[], repos: Workplaces): Promise<LaneHint> {
     const found = lane.cwd === null ? null : await repos.repoOf(lane.cwd);
     return {
         cwd: lane.cwd,

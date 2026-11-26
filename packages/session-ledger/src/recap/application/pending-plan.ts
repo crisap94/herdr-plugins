@@ -1,4 +1,4 @@
-import type { Lane as Seat, SessionKey } from '#src/recap/domain/lane-shape.ts';
+import type { LegacyFollowedSession, SessionKey } from '#src/recap/domain/followed-session-shape.ts';
 import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { Debounce } from '#src/recap/domain/debounce.ts';
 import type { Shown, SmartPacing } from '#src/recap/domain/pacing.ts';
@@ -14,7 +14,7 @@ export interface AtStart { readonly kind: 'at'; readonly deadline: Instant }
 
 export type Start = AfterStart | AtStart;
 
-export interface Pending { readonly lanes: readonly Seat[]; readonly cause: RecapCause; readonly urge: Urge; readonly start: Start; readonly burst: Instant | null }
+export interface Pending { readonly lanes: readonly LegacyFollowedSession[]; readonly cause: RecapCause; readonly urge: Urge; readonly start: Start; readonly burst: Instant | null }
 
 export interface PlanSlot { pending: Pending | null; lastStart: Instant | null; lastLanes: ReadonlySet<SessionKey> }
 
@@ -28,13 +28,13 @@ function stronger(previous: Pending | null, next: Pending): Pending {
     return previous !== null && previous.urge === 'forced' && next.urge === 'paced' ? { ...previous, lanes: next.lanes } : next;
 }
 
-const keyOf = (seat: Seat): SessionKey => seat.pane;
+const keyOf = (seat: LegacyFollowedSession): SessionKey => seat.pane;
 
-export function laneSet(lanes: readonly Seat[]): ReadonlySet<SessionKey> {
+export function laneSet(lanes: readonly LegacyFollowedSession[]): ReadonlySet<SessionKey> {
     return new Set(lanes.map(keyOf));
 }
 
-export function pendingOf(slot: PlanSlot, lanes: readonly Seat[], cause: RecapCause, debounce: Debounce, clock: () => Instant): Pending {
+export function pendingOf(slot: PlanSlot, lanes: readonly LegacyFollowedSession[], cause: RecapCause, debounce: Debounce, clock: () => Instant): Pending {
     switch (debounce.kind) {
         case 'off':
             return { lanes, cause, urge: urgeOf(cause), start: { kind: 'after', delay: duration(cause === 'turn-ended' ? TURN_SETTLE_MS : 0) }, burst: null };
@@ -54,12 +54,12 @@ export function pendingOf(slot: PlanSlot, lanes: readonly Seat[], cause: RecapCa
     }
 }
 
-function unionOf(previous: readonly Seat[], next: readonly Seat[]): readonly Seat[] {
+function unionOf(previous: readonly LegacyFollowedSession[], next: readonly LegacyFollowedSession[]): readonly LegacyFollowedSession[] {
     const fresh = laneSet(next);
     return [...previous.filter((seat) => !fresh.has(keyOf(seat))), ...next];
 }
 
-export function pacedOf(slot: PlanSlot, lanes: readonly Seat[], cause: RecapCause, plan: PacePlan): Pending {
+export function pacedOf(slot: PlanSlot, lanes: readonly LegacyFollowedSession[], cause: RecapCause, plan: PacePlan): Pending {
     const { pacing, shown, now } = plan;
     const previous = slot.pending;
     const union = previous === null ? lanes : unionOf(previous.lanes, lanes);

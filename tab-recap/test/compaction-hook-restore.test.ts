@@ -6,7 +6,7 @@ import { createReceiver, type RestoreMode } from '#src/adapters/hooks/receiver.t
 import { createTurnEnds } from '#src/adapters/hooks/turn-ends.ts';
 import { NOT_QUEUED, Sender } from '#src/recap/application/compaction-send.ts';
 import { Trail } from '#src/recap/application/compaction-trail.ts';
-import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
+import { laneFrom, type FollowedSession } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '@stateforge-labs/session-ledger';
 import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { parseText } from '@stateforge-labs/session-ledger';
@@ -23,7 +23,7 @@ const isRestoreText = (text: string): text is RestoreText => typeof text === 'st
 
 const trailOf = (): Trail => new Trail({ begin: () => must(parseCompactionId('cmp_t0')), advance: () => undefined, finish: () => undefined }, must(parseCompactionId('cmp_t0')), () => instant(NOW));
 
-const LANE: Lane = laneFrom(seenLane({ paneId: 'w1:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: 'codex', session: 'sess-1' }));
+const LANE: FollowedSession = laneFrom(seenLane({ paneId: 'w1:p9', tabId: 'w1:t1', workspaceId: 'w1', agent: 'codex', session: 'sess-1' }));
 
 const COMPACT_START: HookCall = { harness: 'codex', kind: 'session-start', native: 'SessionStart', session: 'sess-1', source: 'compact', cwd: null };
 
@@ -69,7 +69,7 @@ async function compactWith(mode: RestoreMode, hookAt: 'during-confirm' | 'after-
     const fleet = typingFleet({ 'w1:p9': 'idle' });
     const base = compactionDeps(fleet, 'focused', 'w1:p9', LOOKS);
     let looks = 0;
-    const marks = (lane: Lane): Promise<readonly Mark[]> => {
+    const marks = (lane: FollowedSession): Promise<readonly Mark[]> => {
         looks += 1;
         if (hookAt === 'during-confirm' && looks === 3) {
             hooked.push(hook(COMPACT_START));

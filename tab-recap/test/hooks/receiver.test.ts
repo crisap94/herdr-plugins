@@ -10,7 +10,7 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import { type SessionKey } from '#src/recap/domain/ids.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
-import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
+import { laneFrom, type FollowedSession } from '#src/recap/domain/lane.ts';
 import { laneStatus, type LaneStatus } from '#src/recap/domain/status.ts';
 import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import type { HookAnswer, HookCall, HookSource } from '#src/wire/hooks/contract.ts';
@@ -24,7 +24,7 @@ const NOTHING: HookAnswer = { kind: 'nothing' };
 
 const isRestoreText = (text: string): text is RestoreText => typeof text === 'string';
 
-const laneWith = (status: LaneStatus): Lane =>
+const laneWith = (status: LaneStatus): FollowedSession =>
     laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status, session: 's-lane', cwd: '/work/repo' }));
 
 const EFFECT_NAMES: Record<HookEffect, string> = {

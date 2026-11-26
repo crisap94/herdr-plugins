@@ -6,7 +6,6 @@
   "src/facade/plugs.ts": 24,
   "src/facade/reconcile-bridge.ts": 2,
   "src/facade/translate.ts": 31,
-  "src/index.ts": 2,
   "src/ports/autocompact-records.ts": 22,
   "src/ports/ledger.ts": 4,
   "src/ports/recap-input.ts": 3,
@@ -25,7 +24,7 @@
   "src/recap/application/enumerate.ts": 8,
   "src/recap/application/extract-ground.ts": 7,
   "src/recap/application/extract-pipeline.ts": 6,
-  "src/recap/application/lane-hints.ts": 8,
+  "src/recap/application/followed-session-hints.ts": 8,
   "src/recap/application/ledger-reconcile.ts": 22,
   "src/recap/application/ops-gating.ts": 3,
   "src/recap/application/pending-plan.ts": 3,
@@ -39,7 +38,7 @@
   "src/recap/domain/boundary.ts": 3,
   "src/recap/domain/fact.ts": 1,
   "src/recap/domain/grouping.ts": 24,
-  "src/recap/domain/lane-shape.ts": 4,
+  "src/recap/domain/followed-session-shape.ts": 4,
   "src/recap/domain/tasks.ts": 1,
   "src/recap/domain/timing-ids.ts": 4
 }

@@ -12,7 +12,7 @@ import type { Workplaces, RepoResult } from '#src/ports/lane-repo.ts';
 import type { Unknown, Unknowable } from '#src/ports/unknowable.ts';
 import type { Fact, FactId, Section } from '#src/recap/domain/fact.ts';
 import type { Operation, Refusal } from '#src/recap/domain/ops.ts';
-import type { Lane, ScopeId } from '#src/recap/domain/lane-shape.ts';
+import type { LegacyFollowedSession, ScopeId } from '#src/recap/domain/followed-session-shape.ts';
 import { parseText, textOf, type Text } from '#src/recap/domain/text.ts';
 import { parseDuration, parseInstant, type Duration, type Instant } from '#src/recap/domain/time.ts';
 import { parseFailureCause, type FailureCause } from '#src/recap/domain/failure-cause.ts';
@@ -165,7 +165,7 @@ const ledgerPosition = (position: Position): sl.Position => ({
 const transcriptsOf = (reader: sl.SessionReader): SessionReader => ({
     agent: brand<string, 'HarnessKind'>(reader.harness),
     inFlight: { kind: 'unsupported', why: 'in-flight-unavailable' },
-    locate: async (lane: Lane): Promise<Located> => {
+    locate: async (lane: LegacyFollowedSession): Promise<Located> => {
         const session = followedOf(lane);
         if (session === null) {
             return { kind: 'unknown', why: { why: 'not-found', what: textOf(`a followed session for ${lane.pane}`) } };

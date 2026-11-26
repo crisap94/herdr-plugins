@@ -1,4 +1,4 @@
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { Messages } from '#src/i18n/index.ts';
 import { isUnknown, saying } from '@stateforge-labs/session-ledger';
 import { READY } from '#src/recap/domain/status.ts';
@@ -39,9 +39,9 @@ interface Start {
     readonly writer: Text | null;
 }
 
-interface TypedAt { readonly lane: Lane; readonly tab: ScopeId; readonly request: CompactAsk; readonly trail: Trail }
+interface TypedAt { readonly lane: FollowedSession; readonly tab: ScopeId; readonly request: CompactAsk; readonly trail: Trail }
 
-interface CoverageStop { readonly lane: Lane; readonly checked: Checked; readonly flow: CoverageFlow; readonly trail: Trail; readonly said: (text: Text) => Text; readonly messages: Messages['compaction'] }
+interface CoverageStop { readonly lane: FollowedSession; readonly checked: Checked; readonly flow: CoverageFlow; readonly trail: Trail; readonly said: (text: Text) => Text; readonly messages: Messages['compaction'] }
 
 
 export class Compactor {
@@ -67,7 +67,7 @@ export class Compactor {
         return plan.kind === 'supported' && plan.plan.whileWorking.kind === 'queues' ? 'queues' : 'waits';
     }
 
-    private async gateOf(lane: Lane, point: ClosePoint): Promise<Gate> {
+    private async gateOf(lane: FollowedSession, point: ClosePoint): Promise<Gate> {
         const { compaction, badge } = this.deps.messages();
         const agent = lane.agent;
         const state = await this.deps.agents.status(lane.pane);
@@ -96,7 +96,7 @@ export class Compactor {
         }
     }
 
-    private joinRunning(lane: Lane, request: CompactAsk): void {
+    private joinRunning(lane: FollowedSession, request: CompactAsk): void {
         const [pane, agent] = [lane.pane, lane.agent];
         const { compaction } = this.deps.messages();
         this.deps.claims.join(pane, request);
@@ -106,7 +106,7 @@ export class Compactor {
         }
     }
 
-    private claimed(lane: Lane, request: CompactAsk): Presence {
+    private claimed(lane: FollowedSession, request: CompactAsk): Presence {
         if (this.deps.claims.claim(lane.pane, 'compaction') === 'claimed') {
             return 'present';
         }
@@ -114,7 +114,7 @@ export class Compactor {
         return 'absent';
     }
 
-    private async refuse(lane: Lane, tab: ScopeId, trail: Trail | null, refusal: Refusal, asked: Asked): Promise<void> {
+    private async refuse(lane: FollowedSession, tab: ScopeId, trail: Trail | null, refusal: Refusal, asked: Asked): Promise<void> {
         const { origin, request } = asked;
         if (trail === null) {
             const pane = lane.pane;
@@ -129,16 +129,16 @@ export class Compactor {
         if (refusal.toast !== null) await this.tell(must(parseText(this.deps.messages().compaction.title(must(parseText(lane.agent))))), must(parseText(refusal.toast)));
     }
 
-    private logClosed(lane: Lane, point: ClosePoint | undefined): void {
+    private logClosed(lane: FollowedSession, point: ClosePoint | undefined): void {
         if (point !== undefined) this.deps.log(must(parseText(this.deps.messages().compaction.laneClosed(must(parseText(lane.agent)), must(parseText(lane.pane)), point))));
     }
 
-    private endClosed(lane: Lane, trail: Trail, point: ClosePoint): void {
+    private endClosed(lane: FollowedSession, trail: Trail, point: ClosePoint): void {
         trail.end('skipped', { why: textOf(LANE_CLOSED) }, COMPACT_FAILURES.skipped);
         this.logClosed(lane, point);
     }
 
-    private async gated(lane: Lane, tab: ScopeId, trail: Trail | null, point: ClosePoint, asked: Asked = { origin: 'operator', request: null }): Promise<Gate> {
+    private async gated(lane: FollowedSession, tab: ScopeId, trail: Trail | null, point: ClosePoint, asked: Asked = { origin: 'operator', request: null }): Promise<Gate> {
         const gate = await this.gateOf(lane, point);
         if (gate.kind === 'refused') {
             await this.refuse(lane, tab, trail, gate.refusal, asked);
@@ -159,7 +159,7 @@ export class Compactor {
         this.deps.events?.lane(pane, end.stage === 'compacted' ? COMPACT_EVENTS.done : COMPACT_EVENTS.failed, textOf(end.stage === 'compacted' ? id : `${id}:${end.why ?? end.stage}`));
     }
 
-    private opened(lane: Lane, tab: ScopeId, request: CompactAsk): Trail {
+    private opened(lane: FollowedSession, tab: ScopeId, request: CompactAsk): Trail {
         const pane = lane.pane;
         const id = this.begun(request, { tab, pane, agent: lane.agent, stage: this.deps.brief.enabled() === 'present' ? 'briefing' : 'compacting', writer: this.deps.brief.job() });
         this.answer(request, pane, must(parseAnswerStage(COMPACT_STAGES.running)));
@@ -173,7 +173,7 @@ export class Compactor {
         return must(parseText(this.deps.brief.enabled() === 'present' ? compaction.writing(must(parseText(agent))) : compaction.started(must(parseText(agent)))));
     }
 
-    private async compact(lane: Lane, tab: ScopeId, request: CompactAsk, placement: Placement): Promise<void> {
+    private async compact(lane: FollowedSession, tab: ScopeId, request: CompactAsk, placement: Placement): Promise<void> {
         const { compaction } = this.deps.messages();
         const [pane, agent, auto] = [lane.pane, lane.agent, request.origin === 'auto'];
         const trail = this.opened(lane, tab, request);

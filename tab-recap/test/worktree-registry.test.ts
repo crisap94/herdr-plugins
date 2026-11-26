@@ -12,7 +12,7 @@ import type { Directory } from '@stateforge-labs/session-ledger';
 import { paneId, tabId } from '#test/support/ids.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { PerfCounter } from '#src/recap/domain/perf.ts';
 import { parseText } from '@stateforge-labs/session-ledger';
 import { duration, instant } from '@stateforge-labs/session-ledger';
@@ -101,8 +101,8 @@ function rig(): Rig {
     return { registry, located, reads, watching, rows, bound, counts, clock, mode, gone };
 }
 
-const laneAt = (pane: string, cwd: string | null, status: string, tab = 'w1:t1'): Lane => laneFrom(seenLane({ paneId: pane, tabId: tab, workspaceId: 'w1', agent: 'claude', status, cwd }));
-const boardOf = (...lanes: Lane[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((lane): [SessionKey, Lane] => [lane.pane, lane])) });
+const laneAt = (pane: string, cwd: string | null, status: string, tab = 'w1:t1'): FollowedSession => laneFrom(seenLane({ paneId: pane, tabId: tab, workspaceId: 'w1', agent: 'claude', status, cwd }));
+const boardOf = (...lanes: FollowedSession[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((lane): [SessionKey, FollowedSession] => [lane.pane, lane])) });
 
 test('two lanes of one repository share one watch and one first read; each pane is bound to the root', async () => {
     const { registry, located, reads, watching, bound, rows } = rig();

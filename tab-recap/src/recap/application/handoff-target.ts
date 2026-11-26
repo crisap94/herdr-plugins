@@ -1,5 +1,5 @@
 import { READY } from '#src/recap/domain/status.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffPlan } from '#src/recap/domain/handoff-plan.ts';
@@ -18,7 +18,7 @@ export type Readiness = { readonly kind: 'ready'; readonly transcript: Transcrip
 
 export interface Ready {
     readonly kind: 'ready';
-    readonly lane: Lane;
+    readonly lane: FollowedSession;
     readonly plan: HandoffPlan;
     readonly transcript: TranscriptHold;
 }
@@ -26,7 +26,7 @@ export interface Ready {
 export type TargetResolution = Ready | TargetRefusal | Unsupported;
 
 export interface TargetDeps {
-    readonly lanes: readonly Lane[];
+    readonly lanes: readonly FollowedSession[];
     readonly plans: HandoffPlanCatalogue;
     readonly inFlight: InFlightReader;
     readonly awaiting: (pane: SessionKey) => Promise<Waiting>;
@@ -36,22 +36,22 @@ export type TranscriptHold = 'own' | 'shared';
 
 type Flight = 'idle' | 'busy';
 
-function keyOf(plan: HandoffPlan, lane: Lane): Text | null {
+function keyOf(plan: HandoffPlan, lane: FollowedSession): Text | null {
     const key = plan.locatedBy === 'session' ? lane.session : lane.cwd;
     return key === null ? null : textOf(key);
 }
 
-function ownTranscriptOf(lanes: readonly Lane[], lane: Lane, plan: HandoffPlan): TranscriptHold {
+function ownTranscriptOf(lanes: readonly FollowedSession[], lane: FollowedSession, plan: HandoffPlan): TranscriptHold {
     const key = keyOf(plan, lane);
     return key !== null && !lanes.some((other) => other.pane !== lane.pane && other.agent === lane.agent && keyOf(plan, other) === key) ? 'own' : 'shared';
 }
 
-async function flightOf(port: InFlightReader, lane: Lane): Promise<Flight> {
+async function flightOf(port: InFlightReader, lane: FollowedSession): Promise<Flight> {
     const reading = await port.read(lane);
     return reading.kind === 'not-started' || (reading.kind === 'count' && reading.count === 0) ? 'idle' : 'busy';
 }
 
-export async function readinessOf(lane: Lane, plan: HandoffPlan, deps: Pick<TargetDeps, 'lanes' | 'inFlight' | 'awaiting'>): Promise<Readiness> {
+export async function readinessOf(lane: FollowedSession, plan: HandoffPlan, deps: Pick<TargetDeps, 'lanes' | 'inFlight' | 'awaiting'>): Promise<Readiness> {
     if (!READY.has(lane.status)) {
         return { kind: 'refused', reason: 'status-not-ready' };
     }

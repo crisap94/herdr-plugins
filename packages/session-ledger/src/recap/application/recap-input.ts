@@ -1,4 +1,4 @@
-import type { Lane } from '#src/recap/domain/lane-shape.ts';
+import type { LegacyFollowedSession } from '#src/recap/domain/followed-session-shape.ts';
 import type { Workplaces } from '#src/ports/lane-repo.ts';
 import type { RecapInput, InputAgent, InputNote } from '#src/ports/recap-input.ts';
 import type { Count } from '#src/contract/kernel.ts';
@@ -12,7 +12,7 @@ import type { TaskShape } from '#src/recap/domain/grouping.ts';
 import type { WriterView } from '#src/recap/domain/writer-view.ts';
 import { numbered, severalOf } from './ledger-input.ts';
 import type { Numbering, TaskFacts } from './ledger-input.ts';
-import { hintOf } from './lane-hints.ts';
+import { hintOf } from './followed-session-hints.ts';
 
 export type Fresh = Brand<boolean, 'Fresh'>;
 
@@ -20,7 +20,7 @@ export const FRESH = brand<boolean, 'Fresh'>(true);
 export const SEEN_BEFORE = brand<boolean, 'Fresh'>(false);
 
 export interface Observed {
-    readonly lane: Lane;
+    readonly lane: LegacyFollowedSession;
     readonly cursor: SessionCursor;
     readonly chunk: Chunk | null;
     readonly fresh: Fresh;

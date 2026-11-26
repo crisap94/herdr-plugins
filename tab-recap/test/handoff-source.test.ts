@@ -7,7 +7,7 @@ import { blankRecap } from '@stateforge-labs/session-ledger';
 import type { Recap } from '@stateforge-labs/session-ledger';
 import type { LegacyRecords as Records } from '@stateforge-labs/session-ledger';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { RecapTask } from '@stateforge-labs/session-ledger';
 import type { Fact, TaskId } from '@stateforge-labs/session-ledger';
 import { MemoryLedger } from '#test/fakes/memory-ledger.ts';
@@ -36,7 +36,7 @@ const recapWith = (...tasks: readonly RecapTask[]): Recap => ({ ...blankRecap(ta
 const readingOf = (recap: Recap | null): Pick<Records, 'readRecap'> => ({ readRecap: () => recap });
 
 interface Parts {
-    readonly lanes?: readonly Lane[];
+    readonly lanes?: readonly FollowedSession[];
     readonly recap?: Recap | null;
     readonly records?: SourceDeps['records'];
     readonly facts?: readonly Fact[];

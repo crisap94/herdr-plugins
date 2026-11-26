@@ -3,7 +3,7 @@ import type { SessionMark } from '#src/recap/domain/boundary.ts';
 import type { Fact } from '#src/recap/domain/fact.ts';
 import type { GateStats } from '#src/recap/domain/gates/index.ts';
 import type { TaskShape } from '#src/recap/domain/grouping.ts';
-import type { HarnessKind, SessionKey, ScopeId } from '#src/recap/domain/lane-shape.ts';
+import type { HarnessKind, SessionKey, ScopeId } from '#src/recap/domain/followed-session-shape.ts';
 import type { Refusal } from '#src/recap/domain/ops.ts';
 import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { RecapTask } from '#src/recap/domain/tasks.ts';

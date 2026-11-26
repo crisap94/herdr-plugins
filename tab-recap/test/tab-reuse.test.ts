@@ -13,7 +13,7 @@ import type { Observation } from '#src/recap/domain/fold.ts';
 import { tabId, agentKind, paneId } from '#test/support/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane, SeenLane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession, SeenLane } from '#src/recap/domain/lane.ts';
 import type { Sizing } from '#src/recap/domain/layout.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import type { ClosedLaneDays } from '#src/recap/domain/retention.ts';
@@ -44,7 +44,7 @@ const said: Record<string, string> = { old: 'migrate victoria', new: 'write the 
 const transcripts: SessionReader = {
     agent: agentKind('claude'),
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-    locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${String(lane.session)}`) }),
+    locate: (lane: FollowedSession): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${String(lane.session)}`) }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
     read: (source: string): Promise<ChunkResult> => {
         const text = said[source.slice(3)] ?? '';
@@ -54,7 +54,7 @@ const transcripts: SessionReader = {
 
 const add = (section: string, text: string, anchor: string): Record<string, unknown> => ({ op: 'add', section, text, anchor });
 
-async function recapOnce(store: Store, lane: Lane, at: number, ops: readonly Record<string, unknown>[]): Promise<readonly RecapRequest[]> {
+async function recapOnce(store: Store, lane: FollowedSession, at: number, ops: readonly Record<string, unknown>[]): Promise<readonly RecapRequest[]> {
     const requests: RecapRequest[] = [];
     const summarizer: Writer = {
         backend: textOf('fake'),

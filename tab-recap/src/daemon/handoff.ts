@@ -30,7 +30,7 @@ import type { AskOutcome } from '#src/recap/domain/ask-outcome.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { HANDOFF_EXCHANGE } from '#src/recap/domain/handoff.ts';
 import { storedOf, type HandoffOutcome, type StoredHandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { failureCauseOf, parseThrown } from '@stateforge-labs/session-ledger';
 import { parseHandoffId, type HandoffId, parseSessionId } from '#src/recap/domain/ids.ts';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
@@ -253,7 +253,7 @@ export function wireHandoffs(parts: HandoffWiring): HandoffRunner {
     const { store, fleet, transcripts, repos, claims, recaps, board, mirror } = parts;
     const { pause, log } = parts;
     const flow = new HandoffFlow({
-        lanes: (): readonly Lane[] => [...board().lanes.values()], records: store.records, ledger: store.ledger,
+        lanes: (): readonly FollowedSession[] => [...board().lanes.values()], records: store.records, ledger: store.ledger,
         closed: { closures: store.closedLanes, ledger: store.ledger, runs: store.closedLanes, closedDays: (): ClosedLaneDays => store.closedDays },
         target: { plans: handoffPlanner, inFlight: new TranscriptInFlight(transcripts), awaiting: awaitingPane },
         claims, refresh: refreshVia(recaps, store.records), flush: (tab, why): Promise<void> => recaps.flush(tab, why),

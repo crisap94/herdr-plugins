@@ -1,5 +1,5 @@
 import { brand, type Brand } from '@stateforge-labs/session-ledger';
-import type { Lane } from './lane.ts';
+import type { FollowedSession } from './lane.ts';
 import type { SessionKey, ScopeId } from './ids.ts';
 import type { Count } from '@stateforge-labs/session-ledger';
 import type { RestoredLane } from './closures.ts';
@@ -25,7 +25,7 @@ export interface Placement { readonly pane: SessionKey; readonly shape: Shape; r
 export interface HiddenState { readonly all: AllHidden; readonly hidden: readonly Text[]; readonly shown: readonly Text[]; }
 
 export interface Board {
-    readonly lanes: ReadonlyMap<SessionKey, Lane>;
+    readonly lanes: ReadonlyMap<SessionKey, FollowedSession>;
     readonly columns: ReadonlyMap<ScopeId, Placement>;
     readonly closing: ReadonlyMap<SessionKey, Instant>;
     readonly opening: ReadonlySet<ScopeId>;
@@ -64,7 +64,7 @@ export function emptyBoard(): Board {
     };
 }
 
-export function lanesOf(board: Board, tab: ScopeId): readonly Lane[] {
+export function lanesOf(board: Board, tab: ScopeId): readonly FollowedSession[] {
     return [...board.lanes.values()].filter((lane) => lane.tab === tab);
 }
 
@@ -85,7 +85,7 @@ export function watchSet(board: Board): readonly SessionKey[] {
     return [...board.lanes.keys()].toSorted();
 }
 
-export function withLanes(board: Board, lanes: ReadonlyMap<SessionKey, Lane>): Board {
+export function withLanes(board: Board, lanes: ReadonlyMap<SessionKey, FollowedSession>): Board {
     return { ...board, lanes };
 }
 
