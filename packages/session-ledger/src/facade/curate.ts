@@ -22,7 +22,6 @@ const CURATE_GAP_MS = 5 * 60_000;
 
 interface ScopeRound {
     readonly plugs: EnginePlugs;
-    readonly curator: Curator;
     readonly stories: Stories;
     readonly scope: ScopeId;
 }
@@ -40,6 +39,7 @@ interface Sent {
 }
 
 interface Asked extends Sent {
+    readonly curator: Curator;
     readonly first: Curated;
 }
 
@@ -81,7 +81,7 @@ const keep = (round: Round, run: CurationRun, answer: Text, named: Named): void 
 };
 
 const repaired = async (round: Round, asked: Asked): Promise<Curated> => {
-    const { first, document, named } = asked;
+    const { curator, first, document, named } = asked;
     if (round.plugs.settings.storyRepair?.() !== 'once' || first.kind !== 'curated') {
         return first;
     }
@@ -91,23 +91,22 @@ const repaired = async (round: Round, asked: Asked): Promise<Curated> => {
     if (checked.refused.length === 0 && checked.story !== null) {
         return first;
     }
-    round.plugs.environment.log(lineOf(round, note(`story repair — ${checked.refused.length} refused`)));
     const said = parseText(first.text);
-    return said.kind === 'err' ? first : acceptedRepair(first, await round.curator.write(storyRepair(document, said.value, checked), 'story'), reading);
+    if (said.kind === 'err') {
+        return first;
+    }
+    round.plugs.environment.log(lineOf(round, note(`story repair — ${checked.refused.length} refused`)));
+    return acceptedRepair(first, await curator.write(storyRepair(document, said.value, checked), 'story'), reading);
 };
 
-const ask = async (round: Round, run: CurationRun, sent: Sent): Promise<void> => {
-    try {
-        const answered = await round.curator.write(sent.document, 'story');
-        if (isUnknown(answered)) {
-            round.plugs.environment.log(lineOf(round, note(`${round.curator.backend} gave none (${saying(answered.why)})`)));
-            return;
-        }
-        const kept = await repaired(round, { ...sent, first: answered });
-        keep(round, run, must(parseText(kept.kind === 'curated' ? kept.text : answered.text)), sent.named);
-    } catch (error) {
-        round.plugs.environment.log(lineOf(round, note(error instanceof Error ? error.message : String(error))));
+const ask = async (round: Round, curator: Curator, run: CurationRun, sent: Sent): Promise<void> => {
+    const answered = await curator.write(sent.document, 'story');
+    if (isUnknown(answered)) {
+        round.plugs.environment.log(lineOf(round, note(`${curator.backend} gave none (${saying(answered.why)})`)));
+        return;
     }
+    const kept = await repaired(round, { ...sent, curator, first: answered });
+    keep(round, run, must(parseText(kept.kind === 'curated' ? kept.text : answered.text)), sent.named);
 };
 
 const changedTask = (round: Round, facts: readonly Fact[]): TaskId | null => {
@@ -124,28 +123,43 @@ const dueTask = (round: Round, marks: Marks, facts: readonly Fact[], now: Instan
     return waiting ? null : changedTask(round, facts);
 };
 
-const curateTask = async (round: Round, marks: Marks): Promise<void> => {
+interface Due {
+    readonly curator: Curator;
+    readonly task: TaskId;
+    readonly key: Text;
+    readonly facts: readonly Fact[];
+    readonly now: Instant;
+}
+
+const dueOf = (round: Round, marks: Marks): Due | null => {
     const { plugs } = round;
     const now = plugs.environment.clock.now();
     const facts = plugs.store.facts.allOf(taskIdOf(round));
-    const language = parseText(plugs.settings.language());
-    if ('kind' in facts || language.kind === 'err') {
-        plugs.environment.log(lineOf(round, note('the facts could not be read')));
-        return;
+    if ('kind' in facts) {
+        return null;
     }
-    const task = dueTask(round, marks, facts, now);
+    const curator = plugs.models.curator?.() ?? null;
+    const task = curator === null ? null : dueTask(round, marks, facts, now);
     const key = markOf(round);
-    if (task === null || key === null) {
+    return curator === null || task === null || key === null ? null : { curator, task, key, facts, now };
+};
+
+const curateTask = async (round: Round, marks: Marks): Promise<void> => {
+    const due = dueOf(round, marks);
+    if (due === null) {
         return;
     }
+    const { plugs } = round;
+    const { curator, task, key, facts, now } = due;
     marks.lastRun.set(key, now);
     marks.running.add(key);
     try {
+        const language = must(parseText(plugs.settings.language()));
         const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const { document, facts: described } = curatorInput({ name: note(round.task.name), language: note(language.value), rubric: note(plugs.settings.rubric?.() ?? ''), facts, clock: { now, zone: note(zone) } });
+        const { document, facts: described } = curatorInput({ name: note(round.task.name), language: note(language), rubric: note(plugs.settings.rubric?.() ?? ''), facts, clock: { now, zone: note(zone) } });
         const sent = parseText(document);
         if (sent.kind === 'ok') {
-            await ask(round, { task, at: now, language: language.value }, { document: sent.value, named: new Map([...described].map(([id, fact]) => [note(id), fact] as const)) });
+            await ask(round, curator, { task, at: now, language }, { document: sent.value, named: new Map([...described].map(([id, fact]) => [note(id), fact] as const)) });
         }
     } finally {
         marks.running.delete(key);
@@ -164,15 +178,14 @@ const oneTask = async (round: Round, marks: Marks, reconciling: Reconcile, lanes
 };
 
 const curateScope = async (round: ScopeRound, marks: Marks, reconciling: Reconcile): Promise<void> => {
-    const { plugs, curator, stories, scope } = round;
+    const { plugs, stories, scope } = round;
     const recap = plugs.store.records.readRecap(scope);
     if (recap !== null && 'kind' in recap) {
-        plugs.environment.log(note(`curator ${scope}: the recap could not be read`));
         return;
     }
     const done: Reconciled[] = [];
     for (const task of recap?.tasks ?? []) {
-        done.push(await oneTask({ plugs, curator, stories, scope, task }, marks, reconciling, recap?.sessions ?? []));
+        done.push(await oneTask({ plugs, stories, scope, task }, marks, reconciling, recap?.sessions ?? []));
     }
     if (done.includes('reconciled')) {
         reconciling.settle(scope);
@@ -209,18 +222,16 @@ export function curate(plugs: EnginePlugs, bridge: CurateBridge): Curating {
     const reconciling = stories === undefined ? null : reconcilingOver(plugs, bridge, storiesOver(stories));
     return {
         request: async (scope) => {
-            const curator = plugs.models.curator?.() ?? null;
-            if (curator !== null && stories !== undefined && reconciling !== null) {
-                await curateScope({ plugs, curator, stories, scope }, marks, reconciling);
+            if (stories !== undefined && reconciling !== null) {
+                await curateScope({ plugs, stories, scope }, marks, reconciling);
             }
         },
         afterRun: async (scope, event) => {
-            const curator = plugs.models.curator?.() ?? null;
-            if (plugs.settings.reconcileEvery === undefined || curator === null || stories === undefined || reconciling === null) {
+            if (plugs.settings.reconcileEvery === undefined || stories === undefined || reconciling === null) {
                 return;
             }
             if (reconciling.due(event) === 'due') {
-                await reconcileScope({ plugs, curator, stories, scope }, event.boundary ? 'boundary' : 'turns', reconciling);
+                await reconcileScope({ plugs, stories, scope }, event.boundary ? 'boundary' : 'turns', reconciling);
             }
         },
     };

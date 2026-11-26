@@ -29,7 +29,6 @@ export interface CurateBridge {
 
 export interface Round {
     readonly plugs: EnginePlugs;
-    readonly curator: Curator;
     readonly stories: Stories;
     readonly scope: ScopeId;
     readonly task: RecapTask;
@@ -53,7 +52,7 @@ const tailOf = (readers: TranscriptRegistry) => async (lanes: readonly SessionCu
         const chunk = reader === undefined ? null : await reader.read(sourcePathOf(seat.transcript), UNREAD, count(TAIL_BYTES));
         return chunk === null || isUnknown(chunk) ? [] : chunk.entries;
     }));
-    return read.flat().toSorted(byTime);
+    return read.length < 2 ? read.flat() : read.flat().toSorted(byTime);
 };
 
 const plainLedger = (ledger: CheckedLedger, log: (line: Text) => void): FactStore => {

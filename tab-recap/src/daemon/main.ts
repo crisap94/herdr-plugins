@@ -51,8 +51,7 @@ import { AutocompactSweep } from '@stateforge-labs/session-ledger';
 import { wireCompaction } from './compaction.ts';
 import { createPreCompacts } from '#src/adapters/hooks/pre-compacts.ts';
 import { advertisedCapability, herdrEventsPresence, screenWanted, settingGetter, loadSettings, messagesOf, stateDirectory } from './config.ts';
-import { wireCurate } from './curate.ts';
-import type { CurateTasks } from '#src/recap/application/curate.ts';
+import { curated, curationOf } from './curate.ts';
 import { InputRetention } from '#src/recap/application/input-retention.ts';
 import { forgetClosedTabs } from './retention.ts';
 import { bootObservations } from './restored-lanes.ts';
@@ -97,7 +96,6 @@ interface Wired {
     readonly store: Store;
     readonly compaction: Compaction;
     readonly retention: InputRetention;
-    readonly curate: CurateTasks;
     readonly sweep: AutocompactSweep;
     readonly laneTokens: LaneTokenPublisher;
     readonly answers: CompactRequestQueue;
@@ -120,10 +118,10 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
     const backends = new Backends(root, { herdr: fleet, path: new PathHarnessDirectory(AUTO_PATH_KINDS) }, fleet, log, lazyRuntime());
     const transcripts = daemonTranscriptRegistry(fleet, screenWanted);
     const repos = new GitLaneRepo(clock);
-    const curate = wireCurate({ store, curator: () => backends.curator(), transcripts, log });
+    const curation = curationOf({ store, curator: () => backends.curator(), transcripts, clock, log });
     const box: Box = { informer: null, autocompact: null };
     const board = (): Board => box.informer?.current ?? emptyBoard();
-    const { engine, recaps, viewers } = wireEngine({ store, backends, transcripts, clock, repos, curate, events, board, ledger: ledgerTaps.emit, log });
+    const { engine, recaps, viewers } = wireEngine({ store, backends, transcripts, clock, repos, curation, events, board, ledger: ledgerTaps.emit, log });
     const worktrees = wireWorktrees(store, log);
     const answers = new CompactRequestQueue({ enabled: herdrEventsPresence, board, requests: store.requests, asks: store.asks, tokens: fleet, now: nowInstant, log });
     const exchange = handoffExchangeOf({ store, tokens: fleet, events, board, sharing: (): HerdrEvents => loadSettings().herdrEvents, requests: handoffRequestsOn, log });
@@ -158,13 +156,13 @@ function wire(root: Directory, { fleet, session }: Frontend, store: Store): Wire
         briefs: () => backends.brief(), recent, coverageDecider: () => backends.coverageDecider(), decisions: store.decisions, checkedBriefs: store.autocompactBriefs, answers, asks: store.asks, events, claims, preCompacts,
         typing: new PaneTypingLease({ tokens: fleet, panes: fleet, now: nowInstant, pause: sleep, log }),
     });
-    return { informer, fleet, backends, store, engine, recaps, transcripts, clock, viewers, autocompact, statuses: statusTaps.tap, ledger: ledgerTaps.tap, compaction, retention: new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: () => loadSettings().keepInputDays, briefRetention: (): BriefRetention => loadSettings().keepBrief, log }), curate, sweep: new AutocompactSweep({ candidates: () => candidatesOf(informer.current, log), autocompact: (): SafePointWatch | null => box.autocompact, log }), laneTokens, answers, events, worktrees, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror: exchange.mirror, pause: sleep, log }) };
+    return { informer, fleet, backends, store, engine, recaps, transcripts, clock, viewers, autocompact, statuses: statusTaps.tap, ledger: ledgerTaps.tap, compaction, retention: new InputRetention({ inputs: store.inputs, briefs: store.autocompactBriefs, clock, days: () => loadSettings().keepInputDays, briefRetention: (): BriefRetention => loadSettings().keepBrief, log }), sweep: new AutocompactSweep({ candidates: () => candidatesOf(informer.current, log), autocompact: (): SafePointWatch | null => box.autocompact, log }), laneTokens, answers, events, worktrees, handoffs: wireHandoffs({ store, fleet, transcripts, repos, claims, recaps, board, mirror: exchange.mirror, pause: sleep, log }) };
 }
 
 function versionOf(): Version | null { const version = codeVersion(); return version === null ? null : parseVersion(version); }
 
-function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compaction' | 'curate' | 'laneTokens' | 'answers' | 'events' | 'handoffs'>): void {
-    const { store, informer, compaction, curate, laneTokens, answers, events, handoffs } = wired;
+function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compaction' | 'engine' | 'laneTokens' | 'answers' | 'events' | 'handoffs'>): void {
+    const { store, informer, compaction, engine, laneTokens, answers, events, handoffs } = wired;
     pidfile.beat();
     laneTokens.tick();
     answers.tick();
@@ -175,7 +173,7 @@ function poll(pidfile: Pidfile, wired: Pick<Wired, 'store' | 'informer' | 'compa
     }
     pollHandoffs({ runner: handoffs, requests: store.requests, log });
     for (const tab of store.requests.takeCurations()) {
-        void failureLog(log, textOf(`curator ${tab}`), curate.run(tab));
+        void failureLog(log, textOf(`curator ${tab}`), curated(engine, tab, log));
     }
     for (const asked of store.requests.takeVisibility()) {
         informer.push({ kind: 'visibility', target: asked.target === 'all' ? 'all' : { tab: must(parseTabId(asked.target)) }, hidden: asked.visibility === 'toggle' ? 'toggle' : asked.visibility === 'hidden' });

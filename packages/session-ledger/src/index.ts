@@ -15,6 +15,7 @@ export { SECTIONS, sectionOf } from './i18n/sections.ts';
 export { FULL_WRITER_VIEW } from './recap/domain/writer-view.ts';
 export { AutocompactSweep, type Considers } from './daemon/autocompact-sweep.ts';
 export { engineOver, type FacadePlugs } from './facade/create-engine.ts';
+export { curate, type Curating } from './facade/curate.ts';
 export { type Curation, curationOf, parseOffer, parseStory, STORY_TOO_LONG, STORY_WORDS } from './facade/curation.ts';
 export { legacyPlugsOf } from './facade/plugs.ts';
 export { acceptedRepair, storyRepair } from './facade/story-repair.ts';
