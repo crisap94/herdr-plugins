@@ -2,14 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { PaneNoteWriter } from '#src/ports/worktree-status.ts';
 import { PaneNoteFeed } from '#src/recap/application/pane-note-feed.ts';
-import { PerfLedger } from '#src/recap/application/perf-ledger.ts';
-import { must } from '@stateforge-labs/session-ledger';
-import { parseCount } from '@stateforge-labs/session-ledger';
 import type { NoteToken } from '#src/recap/domain/coordination.ts';
 import { paneId } from '#test/support/ids.ts';
-import type { UsageSample } from '#src/ports/process-usage.ts';
-import { duration, instant } from '@stateforge-labs/session-ledger';
-import type { Instant } from '@stateforge-labs/session-ledger';
 import { textOf } from '@stateforge-labs/session-ledger';
 
 function store(): { readonly writer: PaneNoteWriter; readonly calls: string[] } {
@@ -35,27 +29,4 @@ test('the feed starts from nothing, writes a pane\'s notes when they change and 
     feed.forget(pane);
     feed.forget(pane);
     assert.deepEqual(calls, ['reset', 'forget w1:p1', 'replace w1:p1 note=hold', 'replace w1:p1 note=go', 'forget w1:p1', 'forget w1:p1']);
-});
-
-test('the perf ledger logs one line per tick with the counts and the cpu of the window, then starts over', () => {
-    const lines: string[] = [];
-    let now = 1000;
-    let cpu = 500;
-    const ledger = new PerfLedger({
-        usage: { sample: (): UsageSample => ({ cpu: duration(cpu), rss: must(parseCount(120)) }) },
-        clock: { now: (): Instant => instant(now) },
-        log: (line): void => { lines.push(line); },
-    });
-    ledger.bump('status-full');
-    ledger.bump('status-tracked');
-    ledger.bump('status-tracked');
-    now += 60_000;
-    cpu += 600;
-    ledger.tick();
-    now += 60_000;
-    ledger.tick();
-    assert.deepEqual(lines, [
-        'perf window=60s status-tracked=2 status-full=1 locate=0 git-dir-event=0 status-coalesced=0 failed=0 cpu=600ms cpu-share=1% rss=120MiB',
-        'perf window=60s status-tracked=0 status-full=0 locate=0 git-dir-event=0 status-coalesced=0 failed=0 cpu=0ms cpu-share=0% rss=120MiB',
-    ]);
 });

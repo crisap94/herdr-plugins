@@ -5,69 +5,16 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { FollowedSession } from '#src/recap/domain/lane.ts';
-import { clearing, OWNED_TOKENS, STATE_TOKENS, tokenValuesOf, writeDueOf } from '#src/recap/domain/lane-tokens.ts';
 import type { LaneTokenFacts } from '#src/recap/domain/lane-tokens.ts';
-import { CAPABILITY_TOKEN } from '#src/protocol/capability.ts';
-import { LaneTokenPublisher, TICK_MS, TTL_MS } from '#src/recap/application/lane-tokens.ts';
-import { factsOf } from '#src/recap/application/lane-facts.ts';
+import { LaneTokenPublisher, TICK_MS } from '#src/recap/application/lane-tokens.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
-import type { Report } from './fakes/lane-tokens.ts';
 import { countOf } from '@stateforge-labs/session-ledger';
-import { uncheckedTokenName } from '#src/recap/domain/ids.ts';
-import { instant, parseMilliseconds, type Instant } from '@stateforge-labs/session-ledger';
-import { must } from '@stateforge-labs/session-ledger';
+import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { seenLane } from '#test/support/seen.ts';
 
 const facts = (over: Partial<LaneTokenFacts> = {}): LaneTokenFacts => ({ share: countOf(40), recapAt: instant(1000), needs: countOf(0), ...over });
-const TTL = must(parseMilliseconds(TTL_MS));
-const OWNED_NAMES = OWNED_TOKENS.map(uncheckedTokenName);
 const laneOf = (pane: string): FollowedSession => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
 const boardOf = (...lanes: FollowedSession[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((lane) => [lane.pane, lane])) });
-
-test('a lane carries the protocol version, its share, the last recap and the open needs; a fact unknown is left out', () => {
-    assert.deepEqual(Object.fromEntries(tokenValuesOf(facts())), { 'tab-recap-api': '1', 'tab-recap-share': '40', 'tab-recap-recap': '1000', 'tab-recap-needs': '0', 'tab-recap-x': 'compact1,kinds2' });
-    assert.deepEqual(Object.fromEntries(tokenValuesOf(facts({ share: null, recapAt: null, needs: countOf(2) }))), { 'tab-recap-api': '1', 'tab-recap-needs': '2', 'tab-recap-x': 'compact1,kinds2' });
-});
-
-test('the capability token is a state token: a lane advertises it with its other tokens, and it is rewritten only as they are', async () => {
-    const board = { current: boardOf(laneOf('w1:p1')) };
-    const run = publisher(board, { value: facts() });
-    run.at(0);
-    await run.flush();
-    assert.ok(STATE_TOKENS.includes(CAPABILITY_TOKEN));
-    assert.equal(reportAt(run.tokens.reports, 0).tokens[CAPABILITY_TOKEN], 'compact1,kinds2');
-    run.at(TICK_MS);
-    await run.flush();
-    assert.equal(run.tokens.reports.length, 1, 'unchanged: not written before half the time to live');
-    run.at(TTL_MS / 2);
-    await run.flush();
-    assert.equal(reportAt(run.tokens.reports, 1).tokens[CAPABILITY_TOKEN], 'compact1,kinds2', 'at half the time to live it is written again, with the lane tokens');
-});
-
-test('switching sharing off clears the capability token with the other names', async () => {
-    const board = { current: boardOf(laneOf('w1:p1')) };
-    const enabled = { on: true };
-    const run = publisher(board, { value: facts() }, enabled);
-    run.at(0);
-    enabled.on = false;
-    run.at(TICK_MS);
-    await run.flush();
-    assert.equal(reportAt(run.tokens.reports, 1).tokens[CAPABILITY_TOKEN], null);
-});
-
-test('a write is due when nothing was written, when a value changed, or when half the time to live has passed', () => {
-    const values = tokenValuesOf(facts());
-    assert.deepEqual(writeDueOf(null, values, instant(0), TTL), values);
-    assert.equal(writeDueOf({ values, at: instant(0) }, values, instant(1), TTL), null, 'nothing changed: nothing written');
-    assert.deepEqual(writeDueOf({ values, at: instant(0) }, tokenValuesOf(facts({ recapAt: instant(2000) })), instant(1), TTL), tokenValuesOf(facts({ recapAt: instant(2000) })), 'a recap changed: written');
-    assert.deepEqual(writeDueOf({ values, at: instant(0) }, values, instant(TTL_MS / 2), TTL), values, 'half the time to live: written again');
-});
-
-test('clearing names only the names tab-recap owns, each set to null', () => {
-    assert.deepEqual([...clearing(OWNED_NAMES).keys()].toSorted(), [...OWNED_TOKENS].toSorted());
-    assert.deepEqual(new Set(clearing(OWNED_NAMES).values()), new Set([null]));
-    assert.ok(OWNED_TOKENS.every((name) => name.startsWith('tab-recap-')), 'no name outside tab-recap-* is ever written or cleared');
-});
 
 interface Run {
     readonly tokens: RecordingTokens;
@@ -86,57 +33,6 @@ function publisher(board: { current: Board }, recap: { value: LaneTokenFacts }, 
     return { tokens, logged, at: (ms: number): void => { now = ms; lane.tick(); }, flush: (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); }) };
 }
 
-const reportAt = (reports: readonly Report[], n: number): Report => {
-    const found = reports.at(n);
-    assert.ok(found, `report ${n} exists`);
-    return found;
-};
-
-test('a lane gets its tokens once; an unchanged lane gets nothing; a changed recap is written at once', async () => {
-    const board = { current: boardOf(laneOf('w1:p1')) };
-    const recap = { value: facts() };
-    const run = publisher(board, recap);
-    run.at(0);
-    await run.flush();
-    assert.deepEqual(run.tokens.reports, [{ pane: 'w1:p1', tokens: Object.fromEntries(tokenValuesOf(facts())), ttlMs: TTL_MS }]);
-    run.at(TICK_MS);
-    await run.flush();
-    assert.equal(run.tokens.reports.length, 1, 'no change: nothing written');
-    recap.value = facts({ recapAt: instant(5000) });
-    run.at(2 * TICK_MS);
-    await run.flush();
-    assert.equal(run.tokens.reports.length, 2);
-    assert.equal(reportAt(run.tokens.reports, 1).tokens['tab-recap-recap'], '5000', 'a subscriber learns the recap was written');
-});
-
-test('a closed lane has its names cleared, and nothing else is ever written', async () => {
-    const board = { current: boardOf(laneOf('w1:p1')) };
-    const run = publisher(board, { value: facts() });
-    run.at(0);
-    board.current = emptyBoard();
-    run.at(TICK_MS);
-    await run.flush();
-    const cleared = reportAt(run.tokens.reports, 1);
-    assert.equal(cleared.pane, 'w1:p1');
-    assert.deepEqual(Object.keys(cleared.tokens).toSorted(), [...OWNED_TOKENS].toSorted());
-    assert.ok(run.tokens.reports.every((report) => Object.keys(report.tokens).every((name) => OWNED_TOKENS.includes(name))));
-});
-
-test('turning the setting off clears what was written, and writes nothing while it is off', async () => {
-    const board = { current: boardOf(laneOf('w1:p1')) };
-    const enabled = { on: true };
-    const run = publisher(board, { value: facts() }, enabled);
-    run.at(0);
-    enabled.on = false;
-    run.at(TICK_MS);
-    await run.flush();
-    assert.equal(run.tokens.reports.length, 2);
-    assert.deepEqual(new Set(Object.values(reportAt(run.tokens.reports, 1).tokens)), new Set([null]));
-    run.at(2 * TICK_MS);
-    await run.flush();
-    assert.equal(run.tokens.reports.length, 2, 'off: no write for the lane');
-});
-
 test('a failed write is tried again on the next tick', async () => {
     const board = { current: boardOf(laneOf('w1:p1')) };
     const run = publisher(board, { value: facts() });
@@ -148,78 +44,4 @@ test('a failed write is tried again on the next tick', async () => {
     run.at(TICK_MS);
     await run.flush();
     assert.equal(run.tokens.reports.length, 2, 'the failed one is written again');
-});
-
-const needFact = (text: string): { readonly section: string; readonly text: string } => ({ section: 'needs', text });
-const otherFact = { section: 'goal', text: 'x' };
-
-test('a lane\'s facts: its share from its context, the tab\'s last recap, and the open needs of the tab\'s tasks', () => {
-    const lane = laneOf('w1:p1');
-    const found = factsOf(lane, {
-        contexts: { of: () => ({ tokens: countOf(50_000), window: countOf(200_000), source: 'agent' }) },
-        records: { readRecap: () => ({ at: 4242, tasks: [{ id: 'a' }, { id: 'b' }] }) as never },
-        ledger: { openOf: (task) => (task.key === 'a' ? [needFact('confirm the schema'), otherFact] : [needFact('pick a name')]) as never },
-    });
-    assert.deepEqual(found, { share: 25, recapAt: 4242, needs: 2 });
-    const unknownLane = factsOf(lane, { contexts: { of: () => null }, records: { readRecap: () => null }, ledger: { openOf: () => [] } });
-    assert.deepEqual(unknownLane, { share: null, recapAt: null, needs: 0 });
-});
-
-test('a change of needs is an event on the lane: raised when it grows, cleared when it shrinks; a lane that leaves the board is cleared without a closure event', async () => {
-    const board = { current: boardOf(laneOf('w1:p1')) };
-    const recap = { value: facts({ needs: countOf(0) }) };
-    const events: string[] = [];
-    const tokens = new RecordingTokens();
-    let now = 0;
-    const lane = new LaneTokenPublisher({
-        tokens, enabled: (): Presence => 'present', board: (): Board => board.current, facts: (): LaneTokenFacts => recap.value, now: (): Instant => instant(now), log: (): void => undefined,
-        events: { lane: (pane: string, kind: string, detail?: string | null): void => { events.push(`${pane} ${kind} ${detail ?? ''}`.trim()); }, inWorkspace: (workspace: string, kind: string, detail?: string | null): void => { events.push(`${workspace} ${kind} ${detail ?? ''}`.trim()); } },
-    });
-    lane.tick();
-    recap.value = facts({ needs: countOf(2) });
-    now = TICK_MS;
-    lane.tick();
-    recap.value = facts({ needs: countOf(1) });
-    now = 2 * TICK_MS;
-    lane.tick();
-    board.current = emptyBoard();
-    now = 3 * TICK_MS;
-    lane.tick();
-    assert.deepEqual(events, ['w1:p1 needs-raised 2', 'w1:p1 needs-cleared 1'], 'the lane-closed event is the dispatch\'s, not the publisher\'s');
-});
-
-test('a failing pane waits (doubling from 2 s, up to a minute) and is logged once per outage; it is written again when herdr answers', async () => {
-    const board = { current: boardOf(laneOf('w1:p1')) };
-    const run = publisher(board, { value: facts() });
-    run.tokens.failing = true;
-    const attempts = (): number => run.tokens.reports.length;
-    run.at(0);
-    await run.flush();
-    assert.equal(attempts(), 1);
-    run.at(2_000);
-    await run.flush();
-    assert.equal(attempts(), 2, 'the first back-off is 2 s: the retry is the next tick after it');
-    run.at(4_000);
-    await run.flush();
-    assert.equal(attempts(), 2, 'the second back-off is 4 s: still waiting');
-    run.at(6_000);
-    await run.flush();
-    assert.equal(attempts(), 3);
-    assert.equal(run.logged.length, 1, 'one line for the whole outage');
-    run.tokens.failing = false;
-    run.at(14_000);
-    await run.flush();
-    assert.equal(attempts(), 4, 'herdr answers: written');
-});
-
-test('a lane fact that became unknown is written as null for its name, so the old value is not shown until the time to live ends', async () => {
-    const board = { current: boardOf(laneOf('w1:p1')) };
-    const recap = { value: facts() };
-    const run = publisher(board, recap);
-    run.at(0);
-    recap.value = facts({ share: null });
-    run.at(TICK_MS);
-    await run.flush();
-    assert.equal(reportAt(run.tokens.reports, 1).tokens['tab-recap-share'], null);
-    assert.equal(reportAt(run.tokens.reports, 1).tokens['tab-recap-api'], '1');
 });

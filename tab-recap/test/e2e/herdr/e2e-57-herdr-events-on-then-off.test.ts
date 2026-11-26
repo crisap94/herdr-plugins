@@ -127,14 +127,14 @@ describe('herdr events turned on, then off, then a restart', () => {
         await world.until(() => eventsOf(world, 'workspace.report_metadata', 'w1').find((value) => kindOf(value) === 'lane-closed:w1:p1'), 'the closure told to the workspace');
     });
 
-    test('a stopping daemon says so on every workspace before it exits', { timeout: 60_000 }, async () => {
+    test('a stopping daemon says so on every workspace before it exits', { timeout: 30_000 }, async () => {
         await world.world.stop();
         for (const space of ['w1', 'w2']) {
             assert.ok(eventsOf(world, 'workspace.report_metadata', space).some((value) => kindOf(value).startsWith('daemon-stopping')), space);
         }
     });
 
-    test('a restarted daemon announces its start on every workspace, above every number written before', { timeout: 60_000 }, async () => {
+    test('a restarted daemon announces its start on every workspace, above every number written before', { timeout: 30_000 }, async () => {
         const top = Math.max(...writes(world).flatMap((each) => (typeof each.tokens[EVENT] === 'string' ? [seq(each.tokens[EVENT])] : [])));
         const had = eventsOf(world, 'workspace.report_metadata', 'w1').length;
         await world.start();
