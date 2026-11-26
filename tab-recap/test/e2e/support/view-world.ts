@@ -176,7 +176,7 @@ function toolsDirectory(root: string, agents: readonly string[]): string {
     return bin;
 }
 
-function paneOver(spawned: Spawned, chunks: { text: string }): Pane {
+function paneOver(spawned: Spawned, chunks: { text: string }, keyed: 'redraws' | 'may-not-redraw'): Pane {
     let closed = false;
     return {
         pid: spawned.pid,
@@ -187,7 +187,12 @@ function paneOver(spawned: Spawned, chunks: { text: string }): Pane {
             return screen !== null && predicate(screen) ? screen : undefined;
         }, within, () => `${describe}; the screen reads: ${JSON.stringify(screenOf(chunks.text)?.plain ?? null)}`),
         press: async (key) => {
+            const before = chunks.text.length;
             spawned.terminal.write(key);
+            if (keyed === 'redraws') {
+                await until(() => (chunks.text.length > before ? true : undefined), WITHIN, () => `no repaint after the key ${JSON.stringify(key)}`);
+                return;
+            }
             await nap(EVERY);
         },
         resize: (cols, rows) => { spawned.terminal.resize(cols, rows); },
@@ -260,7 +265,7 @@ export async function viewWorld(options: WorldOptions): Promise<ViewWorld> {
     const socketPath = join(stateDir, 'view', 'view.sock');
     await until(() => (existsSync(socketPath) ? true : undefined), WITHIN, () => 'the view socket was not bound');
     const panes: Pane[] = [];
-    const spawnPane = async (entry: string, opened: PaneOptions, extra: Readonly<Record<string, string>>): Promise<Pane> => {
+    const spawnPane = async (entry: string, opened: PaneOptions, extra: Readonly<Record<string, string>>, keyed: 'redraws' | 'may-not-redraw'): Promise<Pane> => {
         const chunks = { text: '' };
         const childEnvironment: Record<string, string> = {
             ...environment,
@@ -279,7 +284,7 @@ export async function viewWorld(options: WorldOptions): Promise<ViewWorld> {
                 data: (_terminal, data) => { chunks.text += Buffer.from(data).toString(); },
             },
         });
-        const pane = paneOver(spawned, chunks);
+        const pane = paneOver(spawned, chunks, keyed);
         panes.push(pane);
         return pane;
     };
@@ -295,8 +300,8 @@ export async function viewWorld(options: WorldOptions): Promise<ViewWorld> {
         setLocale: (locale) => { process.env['TAB_RECAP_LOCALE'] = locale; },
         plugin: PLUGIN,
         childEnv: (extra = {}) => ({ ...environment, TERM: 'xterm-256color', TAB_RECAP_TAB: 'w1:t1', ...BUN_CACHE_OFF, ...extra }),
-        pane: (opened) => spawnPane(PANE_ENTRY, opened, ROLE_ENV[opened.role ?? 'column']),
-        settings: (opened) => spawnPane(SETUP_ENTRY, opened, { TAB_RECAP_AUTOCOMPACT: '' }),
+        pane: (opened) => spawnPane(PANE_ENTRY, opened, ROLE_ENV[opened.role ?? 'column'], 'may-not-redraw'),
+        settings: (opened) => spawnPane(SETUP_ENTRY, opened, { TAB_RECAP_AUTOCOMPACT: '' }, 'redraws'),
         refresh: () => { running.poll?.(); },
         close: async () => {
             for (const pane of panes) {
