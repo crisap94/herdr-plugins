@@ -47,8 +47,6 @@ export function parseSessionKey(input: unknown): SessionKey {
     throw new TypeError('PaneId is a string');
 }
 
-export const parsePaneId = parseSessionKey;
-
 const isAgentName = (input: unknown): input is AgentName => typeof input === 'string';
 
 export function parseAgentName(input: unknown): AgentName {

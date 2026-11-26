@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Break, CompactionRow, Row, SessionRecap } from '@stateforge-labs/recap-view';
-import { parseAgentLabel, parseAgentName, parseBranchName, parseCurating, parseDirectory, parseDuration, parseFilePath, parseFromScreen, parseInstant, parsePaneId, parseSessionKey, parseProse, parseQueued, parseRepoName, parseRunning, parseTaskName, parseTitle, parseTokens, parseWebBase } from '@stateforge-labs/recap-view';
+import { parseAgentLabel, parseAgentName, parseBranchName, parseCurating, parseDirectory, parseDuration, parseFilePath, parseFromScreen, parseInstant, parseSessionKey, parseProse, parseQueued, parseRepoName, parseRunning, parseTaskName, parseTitle, parseTokens, parseWebBase } from '@stateforge-labs/recap-view';
 import type { TextColumnView, TextExpandedView } from '@stateforge-labs/recap-view/unstable/model.ts';
 import { figuresOf, stageClockOf, stageLine } from '@stateforge-labs/recap-view/unstable/compaction-stage.ts';
 import { EXPANDED_TWO_COLUMNS, columnWidth, expanded } from '@stateforge-labs/recap-view/unstable/expanded.ts';
@@ -77,12 +77,12 @@ const wording: TextWording = {
     },
 };
 
-const row = (id: string, extra: Partial<Row> = {}): Row => ({ id: parsePaneId(id), agent: parseAgentName('claude'), state: 'working', title: null, cwd: null, fromScreen: parseFromScreen(false), harnessRecap: null, ...extra });
+const row = (id: string, extra: Partial<Row> = {}): Row => ({ id: parseSessionKey(id), agent: parseAgentName('claude'), state: 'working', title: null, cwd: null, fromScreen: parseFromScreen(false), harnessRecap: null, ...extra });
 
 const view = (extra: Partial<TextColumnView> = {}): TextColumnView => ({
     rows: [row('p1', { title: parseTitle('Build'), lastPrompt: parseProse('ship it'), fromScreen: parseFromScreen(true) })],
     daemonVersion: '1.0.0',
-    recap: { tasks: [{ name: parseTaskName('build'), members: [parsePaneId('p1')], sections: null, markdown: parseProse('## Now\n- writing tests') }], at: parseInstant(0), running: parseRunning(false), backend: null, error: null },
+    recap: { tasks: [{ name: parseTaskName('build'), members: [parseSessionKey('p1')], sections: null, markdown: parseProse('## Now\n- writing tests') }], at: parseInstant(0), running: parseRunning(false), backend: null, error: null },
     notes: new Map(),
     warnings: [],
     now: 60_000,
@@ -92,7 +92,7 @@ const view = (extra: Partial<TextColumnView> = {}): TextColumnView => ({
     ...extra,
 });
 
-const record: CompactionRow = { pane: parsePaneId('p1'), stage: 'compacted', brief: 'written', writer: null, why: null, stageAt: parseInstant(0), queued: parseQueued(false), tokensBefore: parseTokens(150_000), tokensAfter: parseTokens(30_000), tookMs: parseDuration(65_000) };
+const record: CompactionRow = { pane: parseSessionKey('p1'), stage: 'compacted', brief: 'written', writer: null, why: null, stageAt: parseInstant(0), queued: parseQueued(false), tokensBefore: parseTokens(150_000), tokensAfter: parseTokens(30_000), tookMs: parseDuration(65_000) };
 
 const facts: SessionRecap = {
     started: { at: parseInstant(0), forMs: parseDuration(90 * 60_000) },
@@ -125,7 +125,7 @@ test('each view-model parser passes its carrier and refuses another', () => {
         assert.equal(parse(2), 2);
         assert.throws(() => parse('2'), TypeError);
     }
-    for (const parse of [parsePaneId, parseSessionKey, parseAgentLabel, parseAgentName, parseTitle, parseProse, parseTaskName, parseDirectory, parseFilePath, parseRepoName, parseBranchName, parseWebBase, parseWords]) {
+    for (const parse of [parseSessionKey, parseAgentLabel, parseAgentName, parseTitle, parseProse, parseTaskName, parseDirectory, parseFilePath, parseRepoName, parseBranchName, parseWebBase, parseWords]) {
         assert.equal(parse('a'), 'a');
         assert.throws(() => parse(2), TypeError);
     }
@@ -157,7 +157,7 @@ test('badge, footer and firstItem read the wording and the markdown', () => {
 
 test('groupsOf splits the rows by the members of each task', () => {
     const rows = [row('p1'), row('p2')];
-    assert.deepEqual(groupsOf(rows, [{ name: parseTaskName('a'), members: [parsePaneId('p1')], sections: null, markdown: parseProse('') }, { name: parseTaskName('b'), members: [parsePaneId('p2')], sections: null, markdown: parseProse('') }]).map((group) => group.lanes.map((each) => each.id)), [['p1'], ['p2']]);
+    assert.deepEqual(groupsOf(rows, [{ name: parseTaskName('a'), members: [parseSessionKey('p1')], sections: null, markdown: parseProse('') }, { name: parseTaskName('b'), members: [parseSessionKey('p2')], sections: null, markdown: parseProse('') }]).map((group) => group.lanes.map((each) => each.id)), [['p1'], ['p2']]);
 });
 
 test('the compaction stage draws its clock, its figures and its line', () => {

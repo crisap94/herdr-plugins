@@ -2,7 +2,7 @@ import { ok, type Result } from '@stateforge-labs/session-ledger';
 import type { BackendId } from '@stateforge-labs/session-ledger';
 import type { ScopeId } from '@stateforge-labs/session-ledger';
 import { brand, type Brand } from '@stateforge-labs/session-ledger';
-import { parseNonEmptyText } from '@stateforge-labs/session-ledger';
+import { parseHarnessKind, parseNonEmptyText, parseScopeId, parseSessionKey } from '@stateforge-labs/session-ledger';
 import type { ParseFailure } from '@stateforge-labs/session-ledger';
 
 export type HandoffId = Brand<string, 'HandoffId'>;
@@ -88,4 +88,7 @@ export const uncheckedTokenName = brand<string, 'TokenName'>;
 
 export const uncheckedTokenValue = brand<string, 'TokenValue'>;
 
-export { parseAgentKind, parseCompactionId, parseDecisionId, parsePaneId, parseTabId } from '@stateforge-labs/session-ledger';
+export { parseCompactionId, parseDecisionId } from '@stateforge-labs/session-ledger';
+export const parsePaneId = parseSessionKey;
+export const parseTabId = parseScopeId;
+export const parseAgentKind = parseHarnessKind;

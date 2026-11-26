@@ -1,6 +1,6 @@
 import { textOf } from '@stateforge-labs/session-ledger';
 import type { Break, ColumnTask, ColumnView, CompactionRow, RecapColumn, Row, Style, Web, Wording } from '@stateforge-labs/recap-view';
-import { parseAgentName, parseBranchName, parseDirectory, parseDuration, parseFromScreen, parseInstant, parsePaneId, parseProse, parseQueued, parseRunning, parseTaskName, parseTitle, parseTokens, parseWebBase } from '@stateforge-labs/recap-view';
+import { parseAgentName, parseBranchName, parseDirectory, parseDuration, parseFromScreen, parseInstant, parseProse, parseSessionKey, parseQueued, parseRunning, parseTaskName, parseTitle, parseTokens, parseWebBase } from '@stateforge-labs/recap-view';
 import type { CompactionRow as LoggedCompaction } from '#src/ports/compaction-records.ts';
 import type { BoundaryBreak } from '#src/ports/boundaries.ts';
 import type { SessionCursor, Recap } from '@stateforge-labs/session-ledger';
@@ -44,7 +44,7 @@ function laneExtras(lane: TabLaneRecord): Partial<Row> {
 export function rowOf(lane: TabLaneRecord, cursor: SessionCursor | undefined): Row {
     return {
         ...laneExtras(lane),
-        id: parsePaneId(lane.pane),
+        id: parseSessionKey(lane.pane),
         agent: parseAgentName(lane.agent),
         state: laneStatus(textOf(lane.status)),
         title: maybe(lane.title, parseTitle),
@@ -59,7 +59,7 @@ function columnRowOf(lane: TabLaneRecord, cursor: SessionCursor | undefined): Ro
 }
 
 export function columnTaskOf(task: RecapTask): ColumnTask {
-    return { name: parseTaskName(task.name), members: task.sessions.map(parsePaneId), sections: task.sections, markdown: parseProse(task.markdown) };
+    return { name: parseTaskName(task.name), members: task.sessions.map(parseSessionKey), sections: task.sections, markdown: parseProse(task.markdown) };
 }
 
 export function recapColumnOf(recap: Recap): RecapColumn {
@@ -72,7 +72,7 @@ export function viewBreakOf(found: BoundaryBreak): Break {
 
 export function compactionRowOf(record: LoggedCompaction): CompactionRow {
     return {
-        pane: parsePaneId(record.pane),
+        pane: parseSessionKey(record.pane),
         stage: record.stage,
         brief: record.brief,
         writer: maybe(record.writer, parseAgentName),
