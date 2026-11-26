@@ -51,7 +51,7 @@ for (const row of readJsonl<Answer>(file)) {
     const { resolving, ground } = groundOf(item.input);
     const parsed = parseAnswer(unfencedText(textOf(row.text)), resolving);
     if (parsed.kind !== 'ops') continue;
-    const now = item.input.input.tab.now;
+    const now = item.input.input.scope.now;
     const ops = forTask(parsed.ops, ground.key);
     const direct = judge(LEDGER_GATES, ops, ground, instant(now));
     const kit = batch('writer', { gates: LEDGER_GATES, task: ground, at: instant(now) }, ops);

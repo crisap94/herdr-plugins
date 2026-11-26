@@ -18,6 +18,7 @@ import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
 import { agentKindOf, paneIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
 import { directoryOf } from '../lib/brands.ts';
+import { requestToStored } from '../lib/stored-input.ts';
 
 const MINUTE = 60_000;
 const G2_ALIKE = 0.6;
@@ -158,8 +159,8 @@ function build(scenario: Scenario, position: number): unknown {
     const repo = `/work/${scenario.project}`;
     const tab = `w${(position % 8) + 1}${String.fromCharCode(65 + (position % 26))}`;
     const input: RecapInput = {
-        tab: { id: textOf(`${tab}:t${(position % 4) + 1}`), now: instant(now), zone: textOf(zone) },
-        agents: [{ id: textOf('a1'), kind: agentKindOf(scenario.agent.kind), label: textOf(scenario.agent.label), pane: paneIdOf(`${tab}:p1`), source: 'transcript', cwd: directoryOf(repo), repo: directoryOf(repo), branch: scenario.agent.branch === null ? null : textOf(scenario.agent.branch), files: [] }],
+        scope: { id: textOf(`${tab}:t${(position % 4) + 1}`), now: instant(now), zone: textOf(zone) },
+        agents: [{ id: textOf('a1'), kind: agentKindOf(scenario.agent.kind), label: textOf(scenario.agent.label), key: paneIdOf(`${tab}:p1`), source: 'transcript', cwd: directoryOf(repo), repo: directoryOf(repo), branch: scenario.agent.branch === null ? null : textOf(scenario.agent.branch), files: [] }],
         tasks: [],
         ledgers: [{ task: null, facts }],
         notes: [],
@@ -202,7 +203,7 @@ function build(scenario: Scenario, position: number): unknown {
         reference_complete: scenario.rewriteTo === undefined,
     };
     const meta = { project: scenario.project, size: scenario.size, ledger_facts: facts.length, open_facts: open.length, entries: entries.length, document_bytes: Buffer.byteLength(writerContext(request)) };
-    const row = { id: scenario.id, plants: scenario.plants, tags: [`size:${scenario.size}`, `project:${scenario.project}`, ...scenario.tags], meta, input: request, expected };
+    const row = { id: scenario.id, plants: scenario.plants, tags: [`size:${scenario.size}`, `project:${scenario.project}`, ...scenario.tags], meta, input: requestToStored(request), expected };
     if (!FRESH) return row;
     const traps = (scenario as FreshScenario).traps.map((trap) => ({ ...trap, ops: trap.ops.map((op) => ({ ...op, id: idOf(op.id) })) }));
     return { ...row, fresh: { seed: FRESH_SEED, traps } };

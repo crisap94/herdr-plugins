@@ -26,7 +26,7 @@ const text = brand<string, 'Text'>;
 const ZONE = 'UTC';
 
 const input: RecapInput = {
-    tab: { id: textOf('tab-1'), now: NOW, zone: textOf(ZONE) },
+    scope: { id: textOf('tab-1'), now: NOW, zone: textOf(ZONE) },
     agents: [],
     tasks: [],
     ledgers: [],

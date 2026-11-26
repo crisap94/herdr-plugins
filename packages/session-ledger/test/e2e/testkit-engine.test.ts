@@ -29,7 +29,7 @@ import { tabId, usd } from '@stateforge-labs/session-ledger/testkit';
 import { tabIdOf } from '@stateforge-labs/session-ledger';
 
 const request = (): RecapRequest => ({
-    input: { tab: { id: textOf('tab-1'), now: instant(0), zone: textOf('UTC') }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] },
+    input: { scope: { id: textOf('tab-1'), now: instant(0), zone: textOf('UTC') }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] },
     language: textOf('en'),
     previousLanguage: textOf('en'),
 });

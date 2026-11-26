@@ -144,7 +144,7 @@ test('a tab with two lanes in two places: the request carries each lane\'s hints
     const { store, requests } = await run([answer], ['w1:p1', 'w1:p2']);
     const [request] = requests;
     assert.ok(request !== undefined);
-    assert.deepEqual(request.input.agents.map((hint) => [hint.pane, hint.cwd, hint.repo, hint.branch, hint.files]), [
+    assert.deepEqual(request.input.agents.map((hint) => [hint.key, hint.cwd, hint.repo, hint.branch, hint.files]), [
         ['w1:p1', '/work/pay', '/work/pay', 'feat/v2', ['w1:p1.ts']], ['w1:p2', '/work/docs', null, null, ['w1:p2.ts']],
     ]);
     const recap = storeRead(store.records.readRecap(tabId('w1:t1')));

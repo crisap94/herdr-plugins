@@ -15,7 +15,7 @@ const ground: Ground = {
     grounds: [{ key: text('t1'), tab: text('w1:t1'), shown: new Map(), open: [], closedLately: [], source: text('go'), language: text('en'), agents: [] }],
 };
 
-const request: RecapRequest = { input: { tab: { id: textOf('w1:t1'), now: instant(10 * 3_600_000), zone: textOf('UTC') }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] }, language: textOf('en'), previousLanguage: textOf('en') };
+const request: RecapRequest = { input: { scope: { id: textOf('w1:t1'), now: instant(10 * 3_600_000), zone: textOf('UTC') }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] }, language: textOf('en'), previousLanguage: textOf('en') };
 
 const writing = (answers: readonly string[], contract: Writer['contract'] = 'strict'): { summarizer: Writer; calls: RecapRequest[] } => {
     const calls: RecapRequest[] = [];

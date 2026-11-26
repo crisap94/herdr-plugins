@@ -35,8 +35,8 @@ const TITLE = 'tab-recap:setup';
 const TINY: RecapRequest = {
     language: must(parseText('en')), previousLanguage: must(parseText('en')),
     input: {
-        tab: { id: must(parseText('test')), now: must(parseInstant(Date.now())), zone: must(parseText('UTC')) },
-        agents: [{ id: must(parseText('a1')), kind: must(parseAgentKind('test')), label: must(parseText('')), pane: must(parsePaneId('test')), source: 'transcript', cwd: null, repo: null, branch: null, files: [] }],
+        scope: { id: must(parseText('test')), now: must(parseInstant(Date.now())), zone: must(parseText('UTC')) },
+        agents: [{ id: must(parseText('a1')), kind: must(parseAgentKind('test')), label: must(parseText('')), key: must(parsePaneId('test')), source: 'transcript', cwd: null, repo: null, branch: null, files: [] }],
         tasks: [], ledgers: [{ task: null, facts: [] }], notes: [],
         transcripts: [{ agent: must(parseText('a1')), entries: [{ role: 'user', text: textOf('say hello') }] }],
     },

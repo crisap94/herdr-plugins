@@ -25,20 +25,20 @@ const basename = (path: Text): Text => textOf(path.split('/').findLast((part) =>
 
 function agentOf(agent: InputAgent): Text {
     const files = agent.files.map((file) => `\n ${leaf('file', {}, textOf(file))}`).join('');
-    const attrs: Attributes = { id: textOf(agent.id), kind: textOf(agent.kind), label: textOf(agent.label.length > LABEL_CHARS ? `${agent.label.slice(0, LABEL_CHARS - 1)}…` : agent.label), pane: textOf(agent.pane), source: agent.source === 'screen' ? 'screen' : null, cwd: agent.cwd === agent.repo || agent.cwd === null ? null : textOf(agent.cwd), repo: agent.repo === null ? null : basename(textOf(agent.repo)), branch: agent.branch === null ? null : textOf(agent.branch) };
+    const attrs: Attributes = { id: textOf(agent.id), kind: textOf(agent.kind), label: textOf(agent.label.length > LABEL_CHARS ? `${agent.label.slice(0, LABEL_CHARS - 1)}…` : agent.label), pane: textOf(agent.key), source: agent.source === 'screen' ? 'screen' : null, cwd: agent.cwd === agent.repo || agent.cwd === null ? null : textOf(agent.cwd), repo: agent.repo === null ? null : basename(textOf(agent.repo)), branch: agent.branch === null ? null : textOf(agent.branch) };
     return textOf(`\n${element('agent', attrs, textOf(files === '' ? '' : `${files}\n`))}`);
 }
 
 function tasksOf(input: RecapInput): Text {
-    const idOf = new Map(input.agents.map((agent) => [agent.pane, agent.id]));
+    const idOf = new Map(input.agents.map((agent) => [agent.key, agent.id]));
     const tasks = input.tasks.flatMap((task) => {
-        const agents = task.lanes.flatMap((pane) => idOf.get(pane) ?? []);
+        const agents = task.lanes.flatMap((key) => idOf.get(key) ?? []);
         return agents.length === 0 ? [] : [`\n${element('task', { id: textOf(task.id), name: task.name === '' ? null : textOf(task.name), agents: textOf(agents.join(' ')) })}`];
     });
     return textOf(input.agents.length < 2 || tasks.length === 0 ? '' : `${NEST}${element('current_tasks', {}, textOf(`${tasks.join('')}${NEST}`))}`);
 }
 
-const turnClockOf = (input: RecapInput): Clock => ({ now: instant(input.tab.now), zone: textOf(input.tab.zone) });
+const turnClockOf = (input: RecapInput): Clock => ({ now: instant(input.scope.now), zone: textOf(input.scope.zone) });
 
 const clockOf = (input: RecapInput): LocalClock => {
     const { now, zone } = turnClockOf(input);
@@ -76,7 +76,7 @@ export function writerContext(request: RecapRequest, budget: Count = TRANSCRIPT_
         return correctionDocument({ ...request, retry: request.retry });
     }
     const { input } = request;
-    const tab = element('tab', { id: textOf(input.tab.id), now: isoSecond(instant(input.tab.now)), zone: textOf(input.tab.zone) }, textOf(`${input.agents.map(agentOf).join('')}${NEST}`));
+    const tab = element('tab', { id: textOf(input.scope.id), now: isoSecond(instant(input.scope.now)), zone: textOf(input.scope.zone) }, textOf(`${input.agents.map(agentOf).join('')}${NEST}`));
     const correction = request.correction === undefined ? '' : `${NEST}${leaf('correction', {}, textOf(request.correction))}`;
     const body = `${NEST}${tab}${tasksOf(input)}${ledgersOf(input)}${candidatesOf(input)}${notesOf(input)}${transcriptsOf(input, budget)}${correction}\n`;
     return textOf(element('recap_input', { version: count(2) }, textOf(body)));

@@ -25,7 +25,7 @@ interface Site {
     readonly call: (config: Settings, available: Available, work: Directory, runtime: PolicedRuntime) => Promise<unknown>;
 }
 
-const EMPTY_INPUT: RecapInput = { tab: { id: textOf('tab'), now: instant(0), zone: textOf('UTC') }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] };
+const EMPTY_INPUT: RecapInput = { scope: { id: textOf('tab'), now: instant(0), zone: textOf('UTC') }, agents: [], tasks: [], ledgers: [], notes: [], transcripts: [] };
 
 const WRITE: Site = { name: 'summarizerFor', tag: 'recap-writer', call: (config, available, work, runtime) => summarizerFor(config, available, work, runtime).write({ input: EMPTY_INPUT, language: textOf('en'), previousLanguage: textOf('en') }) };
 

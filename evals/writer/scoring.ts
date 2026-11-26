@@ -38,13 +38,13 @@ function factOf(fact: InputFact, tab: string, language: string): Fact {
 
 export function groundOf(request: RecapRequest): { readonly resolving: Resolving; readonly ground: TaskGround } {
     const { input } = request;
-    const facts = input.ledgers.flatMap((ledger) => ledger.facts).map((fact) => factOf(fact, input.tab.id, request.previousLanguage));
+    const facts = input.ledgers.flatMap((ledger) => ledger.facts).map((fact) => factOf(fact, input.scope.id, request.previousLanguage));
     const entries = input.transcripts.flatMap((lane) => lane.entries);
     return {
-        resolving: { tasks: [textOf(TASK)], agents: input.agents, taskOf: new Map(), turns: entries.flatMap((entry) => (entry.at === undefined ? [] : [instant(entry.at)])), clock: { now: instant(input.tab.now), zone: textOf(input.tab.zone) } },
+        resolving: { tasks: [textOf(TASK)], agents: input.agents, taskOf: new Map(), turns: entries.flatMap((entry) => (entry.at === undefined ? [] : [instant(entry.at)])), clock: { now: instant(input.scope.now), zone: textOf(input.scope.zone) } },
         ground: {
-            key: textOf(TASK), tab: textOf(input.tab.id), shown: new Map(facts.map((fact) => [textOf(String(fact.id)), fact])), open: facts.filter((fact) => fact.state === 'open'),
-            closedLately: facts.filter((fact) => fact.state === 'closed' && (fact.closedAt ?? 0) >= input.tab.now - DAY), source: textOf(anchorSource(input)), language: textOf(request.language),
+            key: textOf(TASK), tab: textOf(input.scope.id), shown: new Map(facts.map((fact) => [textOf(String(fact.id)), fact])), open: facts.filter((fact) => fact.state === 'open'),
+            closedLately: facts.filter((fact) => fact.state === 'closed' && (fact.closedAt ?? 0) >= input.scope.now - DAY), source: textOf(anchorSource(input)), language: textOf(request.language),
             agents: input.agents.flatMap((agent) => [agent.id, agent.label, agent.kind]).filter((name) => name !== '').map((name) => textOf(name.toLowerCase())),
         },
     };
@@ -73,7 +73,7 @@ export function outcomeOf(item: WriterItem, text: string, closeEvidence?: CloseE
     if (answer.kind !== 'ops') {
         found = { kind: answer.kind, why: answer.kind === 'invalid' ? answer.why : 'the answer has the old recap shape', problems: [], given: [], refused: [], kept: [], ledger: [...ground.shown.values()], ground };
     } else {
-        const now = item.input.input.tab.now;
+        const now = item.input.input.scope.now;
         const given = forTask(answer.ops, textOf(TASK));
         const judged = judge(closeEvidence === 'on' ? [...LEDGER_GATES, closeEvidenceGate] : LEDGER_GATES, given, ground, instant(now));
         const out = new Set(judged.refused.map((finding) => finding.at));

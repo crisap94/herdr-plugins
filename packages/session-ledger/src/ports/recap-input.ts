@@ -11,7 +11,7 @@ export type Flagged = Brand<boolean, 'Flagged'>;
 
 export type Several = Brand<boolean, 'Several'>;
 
-export interface InputAgent extends LaneHint { readonly id: Text; readonly kind: HarnessKind; readonly label: Text; readonly pane: SessionKey; readonly source: 'transcript' | 'screen'; }
+export interface InputAgent extends LaneHint { readonly id: Text; readonly kind: HarnessKind; readonly label: Text; readonly key: SessionKey; readonly source: 'transcript' | 'screen'; }
 
 export interface LaneHint { readonly cwd: Directory | null; readonly repo: Directory | null; readonly branch: Text | null; readonly files: readonly Text[]; }
 
@@ -27,6 +27,6 @@ export interface InputLedger { readonly task: Text | null; readonly facts: reado
 
 export interface InputCandidate { readonly section: Section; readonly text: Text; readonly why: Text | null; readonly ref: Text | null; readonly at: Instant | null; readonly anchor: Text; readonly agent: Text | null; readonly flagged: Flagged; }
 
-export interface InputTab { readonly id: Text; readonly now: Instant; readonly zone: Text; }
+export interface InputScope { readonly id: Text; readonly now: Instant; readonly zone: Text; }
 
-export interface RecapInput { readonly tab: InputTab; readonly agents: readonly InputAgent[]; readonly tasks: readonly TaskGroup[]; readonly ledgers: readonly InputLedger[]; readonly notes: readonly InputNote[]; readonly transcripts: readonly InputTranscript[]; readonly candidates?: readonly InputCandidate[]; }
+export interface RecapInput { readonly scope: InputScope; readonly agents: readonly InputAgent[]; readonly tasks: readonly TaskGroup[]; readonly ledgers: readonly InputLedger[]; readonly notes: readonly InputNote[]; readonly transcripts: readonly InputTranscript[]; readonly candidates?: readonly InputCandidate[]; }
