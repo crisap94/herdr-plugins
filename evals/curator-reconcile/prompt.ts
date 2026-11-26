@@ -66,7 +66,7 @@ export function builtOf(item: ReconcileItem): Built {
 
 export function groundOf(item: ReconcileItem): TaskGround {
     const built = builtOf(item);
-    return { key: textOf('k'), tab: textOf('t'), shown: new Map([...built.facts].map(([id, fact]) => [textOf(id), fact])), open: [...built.facts.values()], closedLately: [], source: textOf(''), language: textOf(item.input.language), agents: [textOf('claude'), textOf(item.input.name.toLowerCase())] };
+    return { key: textOf('k'), scope: textOf('t'), shown: new Map([...built.facts].map(([id, fact]) => [textOf(id), fact])), open: [...built.facts.values()], closedLately: [], source: textOf(''), language: textOf(item.input.language), agents: [textOf('claude'), textOf(item.input.name.toLowerCase())] };
 }
 
 export function prompt(item: ReconcileItem): Prompt {

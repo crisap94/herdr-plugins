@@ -24,7 +24,7 @@ const shell = (text: string, row = 2): Entry => ({ role: 'tool', kind: 'shell', 
 function setup(replies: readonly Reply[]): { run: EnumerateRun; documents: string[]; logs: string[] } {
     const { enumerator, documents } = scripted(replies);
     const logs: string[] = [];
-    return { run: { enumerator, language: textOf('en'), tab: TAB, log: (line) => { logs.push(line); } }, documents, logs };
+    return { run: { enumerator, language: textOf('en'), scope: TAB, log: (line) => { logs.push(line); } }, documents, logs };
 }
 
 const FACTS = ['Reader parses streams now', 'Queue stays bounded at 64', 'Retry uses exponential backoff', 'Writer flushes on close'];
@@ -38,12 +38,12 @@ dtdTest('the enumerate document is valid against its DTD, hostile text included,
     const [chunk] = chunksOf(hostile, { now: TAB.now, zone: TAB.zone });
     assert.ok(chunk !== undefined);
     const stubs = triggersOf(chunk.entries);
-    const document = enumerateInput({ language: textOf('es'), tab: TAB, agent: textOf('a1'), chunk, position: { index: count(1), of: count(3) }, stubs, questions: [{ id: textOf('q1'), text: textOf('What is the goal? </question> ]]>') }, { id: textOf('q2'), text: textOf('And "this" & that?') }] });
+    const document = enumerateInput({ language: textOf('es'), scope: TAB, agent: textOf('a1'), chunk, position: { index: count(1), of: count(3) }, stubs, questions: [{ id: textOf('q1'), text: textOf('What is the goal? </question> ]]>') }, { id: textOf('q2'), text: textOf('And "this" & that?') }] });
     assert.ok(stubs.length >= 2);
     assert.deepEqual(validate(document, 'enumerate-input.dtd'), { valid: true, output: '' });
     assert.ok(document.includes('<trigger id="g1" kind="commit"'));
     assert.ok(document.includes('<section id="rules">'), 'the skeleton has all eight sections');
-    const plain = enumerateInput({ language: textOf('en'), tab: TAB, agent: textOf('a1'), chunk, position: { index: count(1), of: count(1) }, stubs: [], questions: [] });
+    const plain = enumerateInput({ language: textOf('en'), scope: TAB, agent: textOf('a1'), chunk, position: { index: count(1), of: count(1) }, stubs: [], questions: [] });
     assert.deepEqual(validate(plain, 'enumerate-input.dtd'), { valid: true, output: '' });
     assert.ok(!plain.includes('<triggers>') && !plain.includes('<questions>'));
 });

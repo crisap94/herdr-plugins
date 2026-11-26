@@ -8,7 +8,7 @@ import type { Text } from '#src/recap/domain/text.ts';
 import { jaccard } from '#src/recap/domain/gates/jaccard.ts';
 import { answeredBy } from './enumerate-answer.ts';
 import { enumerateInput, stubId } from './enumerate-input.ts';
-import type { EnumerateMaterial, MaterialTab, Question } from './enumerate-input.ts';
+import type { EnumerateMaterial, MaterialScope, Question } from './enumerate-input.ts';
 import { chunksOf, newestOf } from './chunking.ts';
 import type { TurnChunk, TurnClock } from './chunking.ts';
 import { capStubs, triggersOf } from './triggers.ts';
@@ -24,7 +24,7 @@ const SAME = 0.6;
 export interface EnumerateRun {
     readonly enumerator: Enumerator;
     readonly language: Text;
-    readonly tab: MaterialTab;
+    readonly scope: MaterialScope;
     log(line: Text): void;
 }
 
@@ -68,7 +68,7 @@ async function called(run: EnumerateRun, material: EnumerateMaterial): Promise<C
     if (isUnknown(written)) {
         return { candidates: [], cost: usd(0), failed: textOf(`${run.enumerator.backend} gave none (${saying(written.why)})`) };
     }
-    const answer = answeredBy(textOf(written.text), { agent: material.agent, entries: material.chunk.entries, stubs: material.stubs, clock: material.tab });
+    const answer = answeredBy(textOf(written.text), { agent: material.agent, entries: material.chunk.entries, stubs: material.stubs, clock: material.scope });
     if (answer === null) {
         return { candidates: [], cost: usd(written.costUsd), failed: textOf('the enumeration answer is not a JSON object with "candidates"') };
     }
@@ -79,13 +79,13 @@ async function called(run: EnumerateRun, material: EnumerateMaterial): Promise<C
 
 export async function enumerate(run: EnumerateRun, agents: readonly AgentTurns[]): Promise<Enumeration> {
     const all: InputCandidate[] = [];
-    const { now, zone } = run.tab;
+    const { now, zone } = run.scope;
     const clock: TurnClock = { now, zone };
     let [cost, chunks, chars] = [0, 0, 0];
     for (const { agent, entries } of agents) {
         const parts: readonly TurnChunk[] = chunksOf(entries, clock);
         for (const [at, chunk] of parts.entries()) {
-            const done = await called(run, { language: run.language, tab: run.tab, agent, chunk, position: { index: count(at + 1), of: count(parts.length) }, stubs: capStubs(triggersOf(chunk.entries)), questions: [] });
+            const done = await called(run, { language: run.language, scope: run.scope, agent, chunk, position: { index: count(at + 1), of: count(parts.length) }, stubs: capStubs(triggersOf(chunk.entries)), questions: [] });
             [cost, chunks, chars] = [cost + done.cost, chunks + 1, chars + chunk.markup.length];
             if (done.failed !== null) {
                 return { candidates: [], cost: usd(cost), chunks: count(chunks), chars: count(chars), failed: done.failed };
@@ -100,7 +100,7 @@ export const ASK_BACK_CHARS = count(24_000);
 
 export async function enumerateAsked(run: EnumerateRun, agents: readonly AgentTurns[], questions: readonly Question[]): Promise<Enumeration> {
     const all: InputCandidate[] = [];
-    const { now, zone } = run.tab;
+    const { now, zone } = run.scope;
     const clock: TurnClock = { now, zone };
     let [cost, chars] = [0, 0];
     for (const { agent, entries } of agents) {
@@ -108,7 +108,7 @@ export async function enumerateAsked(run: EnumerateRun, agents: readonly AgentTu
         if (chunk === null) {
             continue;
         }
-        const done = await called(run, { language: run.language, tab: run.tab, agent, chunk, position: { index: count(1), of: count(1) }, stubs: [], questions });
+        const done = await called(run, { language: run.language, scope: run.scope, agent, chunk, position: { index: count(1), of: count(1) }, stubs: [], questions });
         [cost, chars] = [cost + done.cost, chars + chunk.markup.length];
         if (done.failed !== null) {
             return { candidates: [], cost: usd(cost), chunks: count(0), chars: count(chars), failed: done.failed };

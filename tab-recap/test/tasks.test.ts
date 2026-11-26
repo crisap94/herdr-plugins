@@ -44,7 +44,7 @@ const sections = (goal: string, rest: Partial<typeof NO_SECTIONS> = {}): typeof 
 const taskOf = (id: string, name: string, lanes: readonly string[], goal = id): RecapTask => ({ id: textOf(id), name: textOf(name), sessions: lanes.map((lane) => paneIdOf(lane)), sections: sections(goal), markdown: textOf(`## Goal\n${goal}`) });
 const shape = (id: string, name: string, lanes: readonly string[]): TaskShape => ({ id: textOf(id), name: textOf(name), sessions: lanes.map((lane) => paneIdOf(lane)) });
 
-const lanesIn = (place: string | null, ...panes: readonly string[]): PlacedLane[] => panes.map((pane) => ({ pane: paneIdOf(pane), place: place === null ? null : textOf(place) }));
+const lanesIn = (place: string | null, ...panes: readonly string[]): PlacedLane[] => panes.map((pane) => ({ key: paneIdOf(pane), place: place === null ? null : textOf(place) }));
 const PAY = '/work/pay';
 const DOCS = '/work/docs';
 

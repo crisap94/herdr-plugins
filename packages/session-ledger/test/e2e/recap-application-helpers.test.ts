@@ -92,7 +92,7 @@ test('the recap input numbers agents by index and keeps the newest note of each 
     const chunk: Chunk = { kind: 'chunk', entries: [], title: null, lastPrompt: null, harnessRecap: null, grew: grewOf(false), position: { cursor: cursorOf(0), tail: null }, notes: [
         { kind: 'compaction', at: instant(1), text: textOf('first') }, { kind: 'compaction', at: instant(2), text: textOf('second') },
     ] };
-    const world = { tab: text('tab-1'), repos: {} as never, now: NOW, tasks: [], facts: [], writerView: FULL_WRITER_VIEW };
+    const world = { scope: text('tab-1'), repos: {} as never, now: NOW, tasks: [], facts: [], writerView: FULL_WRITER_VIEW };
     const built = await inputOf([{ lane: laneOf('p1'), cursor, chunk, fresh: FRESH }, { lane: laneOf('p2'), cursor, chunk, fresh: SEEN_BEFORE }], world);
     assert.deepEqual(built.input.agents.map((agent) => agent.id), ['a1', 'a2']);
     assert.deepEqual(built.input.transcripts.map((one) => one.agent), ['a1', 'a2']);
@@ -110,7 +110,7 @@ test('the section headings map to section ids in English and Spanish, and unknow
 test('the ground of a recap names each task and extracting over it returns an outcome', async () => {
     const numbering = numbered([], [], severalOf(false), FULL_WRITER_VIEW, NOW);
     const ground = groundOf({
-        tab: text('tab-1'), tasks: [{ id: textOf('task-1'), name: textOf('CI'), sessions: [] }], built: { input, numbering }, entries: [],
+        scope: text('tab-1'), tasks: [{ id: textOf('task-1'), name: textOf('CI'), sessions: [] }], built: { input, numbering }, entries: [],
         ledger: { openOf: () => [], recentlyClosed: () => [], allOf: () => [] } as never, now: NOW, language: text('en'),
     });
     assert.equal(ground.now, NOW);

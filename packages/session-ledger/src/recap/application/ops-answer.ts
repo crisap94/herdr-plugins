@@ -8,7 +8,7 @@ import type { Operation } from '#src/recap/domain/ops.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import { parseFields } from './enumerate-answer.ts';
-import type { MaterialTab } from './enumerate-input.ts';
+import type { MaterialScope } from './enumerate-input.ts';
 import { localTime } from './local-time.ts';
 import { objectIn, tidy } from './recap-shape.ts';
 import type { ParsedObject } from './recap-shape.ts';
@@ -38,7 +38,7 @@ export interface Resolving {
     readonly agents: readonly InputAgent[];
     readonly taskOf: ReadonlyMap<Text, Text>;
     readonly turns: readonly Instant[];
-    readonly clock: Pick<MaterialTab, 'now' | 'zone'>;
+    readonly clock: Pick<MaterialScope, 'now' | 'zone'>;
 }
 
 function rawField(fields: ParsedObject, name: FieldName): Text | null {

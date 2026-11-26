@@ -63,7 +63,7 @@ test('the next window hides facts older than its hours, keeps a fact exactly at 
 
 test('the writer input applies the next window at the tab clock, so an old next fact is neither shown nor numbered', async () => {
     const built = await inputOf([{ lane, cursor, chunk: null, fresh: SEEN_BEFORE }], {
-        tab: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(NOW), tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')] }],
+        scope: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(NOW), tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')] }],
         facts: [{ key: brand<string, 'Text'>('t1'), open: nextFacts, closed: [] }], writerView: wide,
     });
     const ledger = built.input.ledgers.at(0);

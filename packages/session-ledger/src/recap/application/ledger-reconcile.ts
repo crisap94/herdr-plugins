@@ -127,7 +127,7 @@ export async function reconcileTask(parts: ReconcileParts, task: ReconcileTask):
     const checked = reading(answered);
     checked.refused.forEach((why) => { parts.log(textOf(`${where}: reconcile refused — ${why}`)); });
     const openFacts = [...input.facts.values()].filter((fact) => fact.state === 'open');
-    const ground: TaskGround = { key: task.key, tab: textOf(task.tab), shown: input.facts, open: openFacts, closedLately: [], source: textOf(''), language: parts.language, agents: task.agents };
+    const ground: TaskGround = { key: task.key, scope: textOf(task.tab), shown: input.facts, open: openFacts, closedLately: [], source: textOf(''), language: parts.language, agents: task.agents };
     const first = batch('reconcile', { gates: LEDGER_GATES, task: ground, at: clock.now }, checked.ops.map(operationOf));
     first.refused.forEach((finding) => { parts.log(textOf(`${where}: reconcile refused — ${finding.gate} ${finding.reason}`)); });
     const gated = await repairedOf(parts, task, { sent: parseText(input.document), said: parseText(answered.text), reading, ground, checked, first });

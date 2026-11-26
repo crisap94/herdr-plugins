@@ -113,7 +113,7 @@ test('the fact vocabulary and the failure cause', () => {
 });
 
 test('grouping keeps the tasks and seats a new lane by its place', () => {
-    const kept = keptGrouping([{ id: textOf('t1'), name: textOf(''), sessions: [sessionKeyOf('a')] }], [{ pane: sessionKeyOf('a'), place: textOf('/x/one') }, { pane: sessionKeyOf('b'), place: textOf('/y/two') }]);
+    const kept = keptGrouping([{ id: textOf('t1'), name: textOf(''), sessions: [sessionKeyOf('a')] }], [{ key: sessionKeyOf('a'), place: textOf('/x/one') }, { key: sessionKeyOf('b'), place: textOf('/y/two') }]);
     assert.deepEqual(kept, [{ id: 't1', sessions: ['a'], name: 'one' }, { id: 't2', sessions: ['b'], name: 'two' }]);
 });
 

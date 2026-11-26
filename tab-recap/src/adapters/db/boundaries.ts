@@ -55,7 +55,7 @@ export class BoundaryRows {
 
     private switched(found: Found): readonly Row[] {
         return found.moved.flatMap((moved) => (moved.replaces === null ? [] : [{
-            kind: 'switched' as const, pane: moved.pane, at: found.at, trigger: null, cursor: countOf(moved.to),
+            kind: 'switched' as const, key: moved.pane, at: found.at, trigger: null, cursor: countOf(moved.to),
             tokensBefore: null, tokensAfter: null, tookMs: null, transcript: moved.id, replaces: moved.replaces,
         }]));
     }

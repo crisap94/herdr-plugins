@@ -14,7 +14,7 @@ import { scopeIdOf } from '#src/recap/domain/followed-session-shape.ts';
 const REPEAT_WINDOW_MS = 24 * 3_600_000;
 
 export interface GroundWorld {
-    readonly tab: Text;
+    readonly scope: Text;
     readonly tasks: readonly TaskShape[];
     readonly built: Built;
     readonly entries: readonly Entry[];
@@ -24,7 +24,7 @@ export interface GroundWorld {
 }
 
 export function groundOf(world: GroundWorld): Ground {
-    const { tab, tasks, built, now } = world;
+    const { scope, tasks, built, now } = world;
     const source = anchorSource(built.input);
     const agents = built.input.agents.flatMap((agent) => [agent.id, agent.label, agent.kind]).filter((name) => name !== '').map((name) => brand<string, 'Text'>(name.toLowerCase()));
     return {
@@ -34,9 +34,9 @@ export function groundOf(world: GroundWorld): Ground {
             turns: world.entries.flatMap((entry) => (entry.at === undefined ? [] : [entry.at])), clock: { now, zone: brand<string, 'Text'>(built.input.scope.zone) },
         },
         grounds: tasks.map((task) => ({
-            key: brand<string, 'Text'>(task.id), tab, shown: built.numbering.shown.get(brand<string, 'Text'>(task.id)) ?? new Map(),
-            open: world.ledger.openOf({ scope: scopeIdOf(tab), key: task.id }),
-            closedLately: world.ledger.recentlyClosed({ scope: scopeIdOf(tab), key: task.id }, instant(now - REPEAT_WINDOW_MS)), source, language: world.language, agents,
+            key: brand<string, 'Text'>(task.id), scope, shown: built.numbering.shown.get(brand<string, 'Text'>(task.id)) ?? new Map(),
+            open: world.ledger.openOf({ scope: scopeIdOf(scope), key: task.id }),
+            closedLately: world.ledger.recentlyClosed({ scope: scopeIdOf(scope), key: task.id }, instant(now - REPEAT_WINDOW_MS)), source, language: world.language, agents,
         })),
     };
 }

@@ -160,7 +160,7 @@ for (const row of rows) {
     if (row.plants.includes('update') !== (update.length > 0)) fail('update plant and expected updates disagree');
     if (row.tags.includes('no-op-expected') !== (close.length + update.length + twins.length === 0)) fail('no-op tag is wrong');
 
-    const ground = { key: textOf('k'), tab: textOf('t'), shown: new Map([...built.facts].map(([id, fact]) => [textOf(id), fact])), open: [...built.facts.values()], closedLately: [], source: textOf(''), language: textOf(row.input.language), agents: [textOf('claude'), textOf(row.input.name.toLowerCase())] };
+    const ground = { key: textOf('k'), scope: textOf('t'), shown: new Map([...built.facts].map(([id, fact]) => [textOf(id), fact])), open: [...built.facts.values()], closedLately: [], source: textOf(''), language: textOf(row.input.language), agents: [textOf('claude'), textOf(row.input.name.toLowerCase())] };
     const gatedOf = (answer: object): { refused: readonly string[]; gates: number; kept: number } => {
         const checked = reconciliationOf(textOf(JSON.stringify(answer)), built.facts, built.tail);
         const ops: Operation[] = checked.ops.map((one) => (one.op === 'close' ? { op: 'close', id: factIdOf(one.id), why: one.why } : { op: 'update', id: factIdOf(one.id), text: one.text, why: one.why }));

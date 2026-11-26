@@ -23,7 +23,7 @@ const numbering = numbered([{ key: brand<string, 'Text'>('t1'), open: [released,
 const ground: Ground = {
     gates: LEDGER_GATES, now: instant(NOW), facts: new Map(numbering.ledgers.flatMap((ledger) => ledger.facts.map((fact) => [brand<string, 'Text'>(fact.id), fact] as const))),
     resolving: { tasks: [textOf('t1')], agents: [], taskOf: numbering.taskOf, turns: [], clock: { now: instant(NOW), zone: textOf('UTC') } },
-    grounds: [{ key: textOf('t1'), tab: textOf('w1:t1'), shown: numbering.shown.get(textOf('t1')) ?? new Map(), open: [released, review], closedLately: [shut], source: textOf('go'), language: textOf('en'), agents: [] }],
+    grounds: [{ key: textOf('t1'), scope: textOf('w1:t1'), shown: numbering.shown.get(textOf('t1')) ?? new Map(), open: [released, review], closedLately: [shut], source: textOf('go'), language: textOf('en'), agents: [] }],
 };
 const add = (section: string, text: string): Record<string, unknown> => ({ op: 'add', section, text, anchor: 'go' });
 const ops = (...list: readonly Record<string, unknown>[]): string => JSON.stringify({ ops: list });

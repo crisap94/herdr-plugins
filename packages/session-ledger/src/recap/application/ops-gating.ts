@@ -21,7 +21,7 @@ type Grouped = readonly [Count, readonly Reasoned[]];
 
 export interface TaskGround {
     readonly key: Text;
-    readonly tab: Text;
+    readonly scope: Text;
     readonly shown: ReadonlyMap<Text, Fact>;
     readonly open: readonly Fact[];
     readonly closedLately: readonly Fact[];
@@ -55,7 +55,7 @@ export function judge(gates: readonly Gate[], ops: readonly Operation[], ground:
     const gated = gatekeeper(gates, ops, { now, shown: ground.shown, open: ground.open, closedLately: ground.closedLately, source: ground.source, language: ground.language, agents: ground.agents });
     const resolved = gated.kept.map((op) => asFact(op, ground.shown));
     let made = 0;
-    const folded = apply([...ground.shown.values()], resolved, { ...DRY, task: { scope: scopeIdOf(ground.tab), key: ground.key }, at: now, mint: () => brand<string, 'FactId'>(`dry-${(made += 1)}`) });
+    const folded = apply([...ground.shown.values()], resolved, { ...DRY, task: { scope: scopeIdOf(ground.scope), key: ground.key }, at: now, mint: () => brand<string, 'FactId'>(`dry-${(made += 1)}`) });
     const late: Finding[] = folded.refused.map((refusal) => {
         const source = gated.kept[resolved.indexOf(refusal.op)];
         return { at: count(source === undefined ? -1 : ops.indexOf(source)), gate: 'L', outcome: 'refuse', reason: textOf(`refused by the ledger: ${refusal.reason}`) };

@@ -46,7 +46,7 @@ export async function extractPiped(summarizer: Writer, request: RecapRequest, ju
         return extract(summarizer, request, ground);
     }
     const { id, now, zone } = request.input.scope;
-    const run: EnumerateRun = { enumerator, language: text(request.language), tab: { id: text(id), now: instant(now), zone: text(zone) }, log: (line: Text) => { parts.log(line); } };
+    const run: EnumerateRun = { enumerator, language: text(request.language), scope: { id: text(id), now: instant(now), zone: text(zone) }, log: (line: Text) => { parts.log(line); } };
     const first = await enumerate(run, turnsOf(lanes));
     if (first.failed !== null) {
         parts.log(text(`enumeration failed, the run takes the single call: ${first.failed}`));

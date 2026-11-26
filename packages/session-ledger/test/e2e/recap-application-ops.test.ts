@@ -41,7 +41,7 @@ test('an answer without a JSON object or an ops list is invalid, and an old-shap
 
 const fact: Fact = { id: brand<string, 'FactId'>('fact-1'), task: { scope: scopeIdOf('w1:t1'), key: textOf('t1') }, section: 'next', text: textOf('ship the uploader'), why: null, ref: null, agent: null, anchor: null, firstAt: instant(1), lastAt: instant(1), state: 'open', closedWhy: null, closedAt: null, language: textOf('en'), };
 
-const ground: TaskGround = { key: text('t1'), tab: text('w1:t1'), shown: new Map([[text('f1'), fact]]), open: [fact], closedLately: [], source: text('ship the uploader'), language: text('en'), agents: [] };
+const ground: TaskGround = { key: text('t1'), scope: text('w1:t1'), shown: new Map([[text('f1'), fact]]), open: [fact], closedLately: [], source: text('ship the uploader'), language: text('en'), agents: [] };
 
 const closeUnknown: Operation = { op: 'close', id: factIdOf('f9'), why: 'done' };
 const closeKnown: Operation = { op: 'close', id: factIdOf('f1'), why: 'done' };

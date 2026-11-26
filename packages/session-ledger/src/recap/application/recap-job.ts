@@ -60,7 +60,7 @@ const READ_BUDGET = 768 * 1024;
 async function placeOf(seat: LegacyFollowedSession, repos: Workplaces): Promise<PlacedLane> {
     const found = seat.cwd === null ? null : await repos.repoOf(seat.cwd);
     const place = found?.kind === 'repo' ? found.root : seat.cwd;
-    return { pane: seat.pane, place: place === null ? null : textOf(place) };
+    return { key: seat.pane, place: place === null ? null : textOf(place) };
 }
 
 export class RecapJob {
@@ -224,8 +224,8 @@ export class RecapJob {
         const tasks = keptGrouping(prior.tasks, await Promise.all(readings.map((r) => placeOf(r.lane, this.deps.repos))), plan.keys);
         const writerView = this.deps.writerView(); const facts = tasks.map((task) => taskFactsOf(ledger, { scope: prior.scope, key: task.id }, now));
         const stale = facts.flatMap((task) => task.open).find((fact) => fact.language !== plan.want);
-        const built = await inputOf(readings, { tab: brand<string, 'Text'>(prior.scope), repos: this.deps.repos, now, tasks, facts, writerView });
-        const ground = groundOf({ tab: brand<string, 'Text'>(prior.scope), tasks, built, entries: readings.flatMap((r) => r.chunk?.entries ?? []), ledger, now, language: brand<string, 'Text'>(plan.want) });
+        const built = await inputOf(readings, { scope: brand<string, 'Text'>(prior.scope), repos: this.deps.repos, now, tasks, facts, writerView });
+        const ground = groundOf({ scope: brand<string, 'Text'>(prior.scope), tasks, built, entries: readings.flatMap((r) => r.chunk?.entries ?? []), ledger, now, language: brand<string, 'Text'>(plan.want) });
         const notInLanguage = built.input.ledgers.flatMap((view) => view.facts).filter((fact) => fact.state === 'open' && (built.numbering.byId.get(fact.id)?.language ?? plan.want) !== plan.want);
         return { tasks, ground, request: { input: built.input, language: brand<string, 'Text'>(plan.want), previousLanguage: brand<string, 'Text'>(stale?.language ?? plan.was), ...(notInLanguage.length === 0 ? {} : { notInLanguage }) } };
     }

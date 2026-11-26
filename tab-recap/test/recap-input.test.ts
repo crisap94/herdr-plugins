@@ -22,7 +22,7 @@ const at = (clock: string): number => Date.parse(`2026-10-06T${clock}:00Z`);
 
 test('only the newest note of each kind is sent; a first read adds the stored away summary only when the chunk has none', async () => {
     const notes = [{ kind: 'away_summary' as const, at: instant(1), text: textOf('old away') }, { kind: 'compaction' as const, at: instant(2), text: textOf('compacted') }, { kind: 'away_summary' as const, at: instant(3), text: textOf('new away') }];
-    const world = { tab: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(10), tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')] }], facts: [], writerView: FULL_WRITER_VIEW };
+    const world = { scope: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(10), tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')] }], facts: [], writerView: FULL_WRITER_VIEW };
     const seen = await inputOf([{ lane, cursor, chunk: chunk(notes), fresh: SEEN_BEFORE }], world);
     assert.deepEqual(seen.input.notes.map((note) => [note.kind, note.text]), [['compaction', 'compacted'], ['away_summary', 'new away']]);
     const first = await inputOf([{ lane, cursor, chunk: chunk([]), fresh: FRESH }], world);
@@ -33,7 +33,7 @@ test('only the newest note of each kind is sent; a first read adds the stored aw
 
 test('full writer view matches the stored ledger output for a fixture with several sections and closed facts', async () => {
     const world = {
-        tab: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(at('03:05')), tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')] }], writerView: FULL_WRITER_VIEW,
+        scope: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(at('03:05')), tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')] }], writerView: FULL_WRITER_VIEW,
         facts: [{ key: brand<string, 'Text'>('t1'), open: [
             factOf('goal', 'Ship the release', { firstAt: instant(at('02:40')), lastAt: instant(at('03:00')) }),
             factOf('decisions', 'Keep SQLite', { why: textOf('one file to back up'), firstAt: instant(at('02:42')), lastAt: instant(at('03:02')) }),
@@ -60,7 +60,7 @@ test('full writer view matches the stored ledger output for a fixture with sever
 test('full writer view sends forty open done facts without a hidden element', async () => {
     const open = Array.from({ length: 40 }, (_, index) => factOf('done', `Completed change ${index + 1}`, { firstAt: instant(index + 1), lastAt: instant(index + 1) }));
     const built = await inputOf([{ lane, cursor, chunk: chunk([]), fresh: SEEN_BEFORE }], {
-        tab: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(10), tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')] }], facts: [{ key: brand<string, 'Text'>('t1'), open, closed: [] }], writerView: FULL_WRITER_VIEW,
+        scope: brand<string, 'Text'>('w1:t1'), repos: NO_REPOS, now: brand<number, 'Instant'>(10), tasks: [{ id: textOf('t1'), name: textOf(''), sessions: [paneIdOf('w1:p1')] }], facts: [{ key: brand<string, 'Text'>('t1'), open, closed: [] }], writerView: FULL_WRITER_VIEW,
     });
     const document = writerContext({ ...requestOf(), input: built.input });
     assert.equal((document.match(/<fact /gu) ?? []).length, 40);

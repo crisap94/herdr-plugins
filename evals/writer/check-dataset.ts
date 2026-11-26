@@ -87,7 +87,7 @@ function groundOf(request: RecapRequest): { resolving: Resolving; ground: TaskGr
     return {
         resolving: { tasks: [textOf(TASK)], agents: input.agents, taskOf: new Map(), turns: entries.flatMap((entry) => (entry.at === undefined ? [] : [instant(entry.at)])), clock: { now: instant(input.scope.now), zone: textOf(input.scope.zone) } },
         ground: {
-            key: textOf(TASK), tab: textOf(input.scope.id), shown: new Map(facts.map((fact) => [textOf(String(fact.id)), fact])), open: facts.filter((fact) => fact.state === 'open'),
+            key: textOf(TASK), scope: textOf(input.scope.id), shown: new Map(facts.map((fact) => [textOf(String(fact.id)), fact])), open: facts.filter((fact) => fact.state === 'open'),
             closedLately: facts.filter((fact) => fact.state === 'closed' && (fact.closedAt ?? 0) >= input.scope.now - DAY), source: textOf(anchorSource(input)), language: textOf(request.language),
             agents: input.agents.flatMap((agent) => [agent.id, agent.label, agent.kind]).filter((name) => name !== '').map((name) => textOf(name.toLowerCase())),
         },
