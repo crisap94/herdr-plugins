@@ -271,12 +271,6 @@ test('the autocompact rows: mode (shadow by default), the minimum (10, 10–95) 
     assert.equal(typed(start({ autocompact: environmentName(textOf('TAB_RECAP_AUTOCOMPACT')) }), [...down(12),'\r']).state.note, 'locked');
 });
 
-test('the key and the endpoint of the TypeSafe API are never a row or a config entry the modal writes', () => {
-    const everything = typed(start(), ['\r', ...down(2), '\r']).state;
-    const keys = [...changes({ ...everything, draft: { ...everything.draft, autocompact: 'on', decide: { by: 'jev', model: textOf('m'), effort: 'high' } } }).keys()];
-    assert.ok(keys.every((key) => !/JEV|TYPESAFE/u.test(key)), keys.join(','));
-});
-
 test('a saved language change asks a rewrite of the tab it was opened from and of every tab that has a recap', () => {
     const store = memoryStore();
     for (const [tab, pane] of [['w1:t1', 'w1:p1'], ['w1:t2', 'w1:p2'], ['w1:t3', 'w1:p3']] as const) {

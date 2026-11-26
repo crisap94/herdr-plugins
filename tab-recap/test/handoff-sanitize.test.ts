@@ -3,6 +3,32 @@ import { textOf as asText } from '@stateforge-labs/session-ledger';
 import assert from 'node:assert/strict';
 import { cleanHandoffText } from '#src/recap/domain/handoff-sanitize.ts';
 import { vetHandoffText } from '#src/recap/domain/handoff-vetting.ts';
+import type { ClosedLaneRecord } from '#src/ports/closed-lanes.ts';
+import { serializeClosedListing } from '#src/recap/render/closed-listing.ts';
+import { freshnessTextOf } from '#src/recap/render/freshness.ts';
+import type { Freshness } from '#src/recap/domain/freshness.ts';
+import { laneStatus } from '#src/recap/domain/status.ts';
+import { agentKind, paneId, tabId } from '#test/support/ids.ts';
+import { instant } from '@stateforge-labs/session-ledger';
+import { textOf } from '@stateforge-labs/session-ledger';
+import { taskNameOf } from '#test/fakes/closed-values.ts';
+
+const DEL = 127;
+const SPACE = 32;
+const isControl = (code: number): boolean => code < SPACE || code === DEL;
+const AT = Date.parse('2026-10-11T10:00:00Z');
+const FRESH: Freshness = { lastRun: { at: instant(AT), cause: 'turn-ended' }, status: 'idle', newerPrompts: { kind: 'none' }, refresh: 'not-requested' };
+
+function record(pane: string, closedAt: number, name: string | null): ClosedLaneRecord {
+    return {
+        tab: tabId('w1:t1'),
+        pane: paneId(pane),
+        agent: agentKind('claude'),
+        closedAt: instant(closedAt),
+        cwd: null,
+        association: name === null ? null : { task: { scope: tabId('w1:t1'), key: textOf('k1') }, name: taskNameOf(name) },
+    };
+}
 
 const tagsOf = (ascii: string): string => Array.from(ascii, (char) => String.fromCodePoint(0xe0000 + (char.codePointAt(0) ?? 0))).join('');
 
@@ -90,4 +116,17 @@ test('sanitizing twice gives the same text as once, for default-ignorable charac
     const once = cleanHandoffText(asText('a\u{34F}\u{FE0F} \u{D800}b\u{E0100}'));
     assert.equal(once, 'a \u{FFFD}b');
     assert.equal(cleanHandoffText(asText(once)), once);
+});
+
+test('a task name with an escape sequence or a newline is printed without a control character', () => {
+    const text = serializeClosedListing([record('w1:p1', 1000, 'bad\u001b[31m\nname')]);
+    const controls = Array.from(text).filter((character) => character !== '\t' && isControl(character.codePointAt(0) ?? 0));
+    assert.deepEqual(controls, []);
+    assert.equal(text.split('\t').length, 4);
+});
+
+test('a hostile lane status cannot reach the block: the status is parsed at the edge, and an unknown value becomes the fixed word', () => {
+    const lines = freshnessTextOf({ ...FRESH, status: laneStatus(textOf('idle\u{200B}\n## Forged\u{E0100}')) }).split('\n');
+    assert.equal(lines[1], 'lane status: unknown');
+    assert.equal(lines.some((line) => line.startsWith('## ')), false);
 });
