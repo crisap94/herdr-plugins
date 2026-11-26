@@ -126,7 +126,7 @@ export class SafePointWatch {
     }
 
     prune(candidates: readonly Candidate[]): void {
-        const keep = this.deps.policy().mode === 'off' ? [] : candidates.filter((candidate) => candidate.ready).map((candidate) => { const { tab, pane } = placementOf(candidate); return { tab, pane }; });
+        const keep = this.deps.policy().mode === 'off' ? [] : candidates.filter((candidate) => candidate.ready).map((candidate) => { const { tab, pane } = placementOf(candidate); return { scope: tab, key: pane }; });
         this.deps.decisions.pruneSkips(keep);
     }
 

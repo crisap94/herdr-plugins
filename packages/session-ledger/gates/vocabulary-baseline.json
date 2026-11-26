@@ -6,7 +6,7 @@
   "src/facade/plugs.ts": 24,
   "src/facade/reconcile-bridge.ts": 2,
   "src/facade/translate.ts": 31,
-  "src/ports/autocompact-records.ts": 22,
+  "src/ports/autocompact-records.ts": 10,
   "src/ports/ledger.ts": 4,
   "src/ports/recap-input.ts": 3,
   "src/ports/recap-records.ts": 6,
