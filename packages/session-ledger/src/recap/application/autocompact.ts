@@ -26,7 +26,7 @@ import { busyDetailOf, coverageBackoffActive, idleEligibility, idleMsOf, policyF
 
 export type Waiting = { readonly kind: 'clear' } | { readonly kind: 'waiting'; readonly value: Text } | Unknown;
 
-interface ContextsOf { of(pane: SessionKey): ContextUse | null; }
+interface ContextsOf { of(key: SessionKey): ContextUse | null; }
 
 export interface AutocompactDeps {
     policy(): Policy;
@@ -35,7 +35,7 @@ export interface AutocompactDeps {
     decider(): DeciderPort | null;
     readonly contexts: ContextsOf;
     inFlight(candidate: Candidate): Promise<Observed>;
-    awaiting?(pane: SessionKey): Promise<Waiting>;
+    awaiting?(key: SessionKey): Promise<Waiting>;
     emit?(event: SafePointEvent): void;
     recent(candidate: Candidate): Promise<readonly Entry[]>;
     statusOf(candidate: Candidate): LaneStatusAtDecision | null;
@@ -96,11 +96,11 @@ function decisionWhy(judged: Judged, flight: Flight, atCeiling: CeilingReach): T
 }
 
 function marksOf(deps: AutocompactDeps, placed: Placement): Marks {
-    const { tab, pane, candidate } = placed;
-    const decidedAt = deps.decisions.lastDecisionAt(tab, pane);
+    const { scope, key, candidate } = placed;
+    const decidedAt = deps.decisions.lastDecisionAt(scope, key);
     const brokeAt = deps.sessions.lastBreakAt(candidate.scope, candidate.key);
     return {
-        last: deps.decisions.lastDecision(tab, pane),
+        last: deps.decisions.lastDecision(scope, key),
         lastBreakAt: brokeAt === null ? null : instant(brokeAt),
         lastDecisionAt: decidedAt === null ? null : decidedAt,
     };
@@ -126,28 +126,28 @@ export class SafePointWatch {
     }
 
     prune(candidates: readonly Candidate[]): void {
-        const keep = this.deps.policy().mode === 'off' ? [] : candidates.filter((candidate) => candidate.ready).map((candidate) => { const { tab, pane } = placementOf(candidate); return { tab, pane }; });
+        const keep = this.deps.policy().mode === 'off' ? [] : candidates.filter((candidate) => candidate.ready).map((candidate) => { const { scope, key } = placementOf(candidate); return { scope, key }; });
         this.deps.decisions.pruneSkips(keep);
     }
 
     async consider(candidate: Candidate): Promise<void> {
         const placed = placementOf(candidate);
-        const { pane } = placed;
-        if (!candidate.ready || this.considering.has(pane)) return;
-        this.considering.add(pane);
-        const forced: Forcing = this.held.delete(pane) ? 'forced' : 'scheduled';
+        const { key } = placed;
+        if (!candidate.ready || this.considering.has(key)) return;
+        this.considering.add(key);
+        const forced: Forcing = this.held.delete(key) ? 'forced' : 'scheduled';
         try {
             await this.run(placed, this.deps.statusOf(candidate), forced);
         } catch (error) {
-            this.deps.log(must(parseText(`autocompact ${pane}: ${error instanceof Error ? error.message : String(error)}`)));
+            this.deps.log(must(parseText(`autocompact ${key}: ${error instanceof Error ? error.message : String(error)}`)));
         } finally {
-            this.considering.delete(pane);
+            this.considering.delete(key);
         }
     }
 
     private async gated(placed: Placement, policy: Policy, use: ContextUse, tuning: CompactTuning, forced: Forcing): Promise<Stop> {
         const { deps } = this;
-        const { pane } = placed;
+        const { key } = placed;
         const now = deps.now();
         const busy = busyOf(deps, this.asked, placed, now);
         const marks = marksOf(deps, placed);
@@ -167,29 +167,29 @@ export class SafePointWatch {
         if (cheap.gate !== 'ask' && cheap.gate !== 'ceiling') return { gate: cheap.gate, effect: cheap.recordOnly, detail: detailOf(cheap.gate, { ...context, flight: null, atCeiling: 'below-ceiling' }), recheck, flight: NOTHING, atCeiling: reach };
         const flight = await this.flightOf(placed, reach);
         const full = gateFrom({ ...facts, flight });
-        if (recheck === 'due' && (full.gate === 'ask' || full.gate === 'ceiling')) deps.log(must(parseText(`autocompact ${pane}: unchanged → recheck`)));
+        if (recheck === 'due' && (full.gate === 'ask' || full.gate === 'ceiling')) deps.log(must(parseText(`autocompact ${key}: unchanged → recheck`)));
         return { gate: full.gate, effect: full.recordOnly, detail: detailOf(full.gate, { ...context, flight, atCeiling: reach }), recheck, flight, atCeiling: reach };
     }
 
     private skip(placed: Placement, gate: SkipGate, share: Count | null, detail: Text | null): void {
-        const { pane } = placed;
-        this.deps.decisions.skip({ scope: placed.tab, key: pane, agent: placed.agent, at: this.deps.now(), gate, share, detail });
-        if (this.skipped.get(pane) === gate) return;
-        this.skipped.set(pane, gate);
+        const { key } = placed;
+        this.deps.decisions.skip({ scope: placed.scope, key, agent: placed.agent, at: this.deps.now(), gate, share, detail });
+        if (this.skipped.get(key) === gate) return;
+        this.skipped.set(key, gate);
         this.deps.emit?.({ kind: 'session-skipped', key: placed.candidate.key, gate });
-        this.deps.log(must(parseText(`autocompact ${pane}: ${share === null ? '? %' : `${share} %`} → skip ${gate}${detail === null ? '' : ` (${detail})`}`)));
+        this.deps.log(must(parseText(`autocompact ${key}: ${share === null ? '? %' : `${share} %`} → skip ${gate}${detail === null ? '' : ` (${detail})`}`)));
     }
 
     claimIdle(candidate: Candidate): IdleClaim {
         const { deps } = this;
         const placed = placementOf(candidate);
-        const { pane } = placed;
+        const { key } = placed;
         if (deps.idleHold?.() === 'off') return 'declined';
-        if (idleEligibility(policyForLane(deps.policy(), placed.agent), placed, deps.contexts.of(pane)) === 'ineligible') return 'declined';
+        if (idleEligibility(policyForLane(deps.policy(), placed.agent), placed, deps.contexts.of(key)) === 'ineligible') return 'declined';
         const busy = busyOf(deps, this.asked, placed, deps.now());
         if (busy.kind === 'busy' && busy.detail === 'this lane') return 'declined';
-        this.held.add(pane);
-        deps.log(must(parseText(`autocompact ${pane}: held Claude's idle compaction`)));
+        this.held.add(key);
+        deps.log(must(parseText(`autocompact ${key}: held Claude's idle compaction`)));
         void this.consider(candidate);
         return 'claimed';
     }
@@ -199,8 +199,8 @@ export class SafePointWatch {
         const policy = policyForLane(deps.policy(), placed.agent);
         if (policy === null) return;
         const tuning = this.tuning();
-        const { pane } = placed;
-        const use = deps.contexts.of(pane);
+        const { key } = placed;
+        const use = deps.contexts.of(key);
         if (use === null) { this.skip(placed, 'no-context', null, NO_CONTEXT); return; }
         const { gate, effect, detail, flight, atCeiling } = await this.gated(placed, policy, use, tuning, forced);
         if (gate !== 'ask' && gate !== 'ceiling') { this.skip(placed, gate, shareCount(use), detail); return; }
@@ -218,47 +218,47 @@ export class SafePointWatch {
     }
 
     private async lateFlight(placed: Placement, use: ContextUse, flight: Flight, atCeiling: CeilingReach): Promise<Flight | null> {
-        const seen = lateFlightOf(flight, await this.waitingOf(placed.pane));
+        const seen = lateFlightOf(flight, await this.waitingOf(placed.key));
         if (!holdsLane(seen, ceilingOf(atCeiling === 'at-ceiling'))) return seen;
         this.skip(placed, 'in-flight', shareCount(use), flightTextOf(seen, atCeiling));
         return null;
     }
 
     private async flightOf(placed: Placement, atCeiling: CeilingReach): Promise<Flight> {
-        const waiting = await this.waitingOf(placed.pane);
+        const waiting = await this.waitingOf(placed.key);
         if (waiting.kind === 'clear') return flightOf(await this.deps.inFlight(placed.candidate), NOT_AWAITING);
         if (waiting.kind === 'waiting') return flightOf(atCeiling === 'at-ceiling' ? await this.deps.inFlight(placed.candidate) : NOTHING_IN_FLIGHT, { kind: 'on', names: awaitedNames(waiting.value) });
         return flightOf(unreadable(flightReason(saying(waiting.why))), NOT_AWAITING);
     }
 
-    private async waitingOf(pane: SessionKey): Promise<Waiting> {
-        return this.deps.awaiting === undefined ? { kind: 'clear' } : this.deps.awaiting(pane);
+    private async waitingOf(key: SessionKey): Promise<Waiting> {
+        return this.deps.awaiting === undefined ? { kind: 'clear' } : this.deps.awaiting(key);
     }
 
     private record(placed: Placement, status: LaneStatusAtDecision | null, use: ContextUse, found: Found): void {
         const { deps } = this;
-        const { tab, pane } = placed;
+        const { scope, key } = placed;
         const { judged, effect, flight, atCeiling } = found;
         const made: DecisionDraft = {
-            scope: tab, key: pane, agent: placed.agent, at: deps.now(), mode: found.mode, share: shareCount(use), tokens: must(parseCount(use.tokens)), window: must(parseCount(use.window)), gate: found.gate, verdict: judged.verdict, askedVerdict: judged.verdict,
+            scope, key, agent: placed.agent, at: deps.now(), mode: found.mode, share: shareCount(use), tokens: must(parseCount(use.tokens)), window: must(parseCount(use.window)), gate: found.gate, verdict: judged.verdict, askedVerdict: judged.verdict,
             answers: judged.answers, coverage: null, decider: judged.decider, costUsd: judged.costUsd, tookMs: judged.tookMs, why: decisionWhy(judged, flight, atCeiling), coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: status,
         };
         const id = deps.decisions.record(made);
-        this.skipped.delete(pane);
+        this.skipped.delete(key);
         deps.emit?.({ kind: 'safe-point-decided', key: placed.candidate.key, verdict: judged.verdict, share: shareCount(use) });
         deps.log(must(parseText(lineOf(made, effect))));
         if (asksForCompaction(found.mode, judged.verdict, effect) === 'asks') this.request(placed, id, continuationNote(flight.awaiting, flight.background));
     }
 
     private request(placed: Placement, id: DecisionId, note: ContinuationNote | null): void {
-        this.asked.set(placed.pane, this.deps.now());
+        this.asked.set(placed.key, this.deps.now());
         this.deps.request({ scope: placed.candidate.scope, key: placed.candidate.key, decisionId: id, note });
         this.deps.decisions.markRequested(id);
     }
 
     private async asking(placed: Placement, tuning: CompactTuning): Promise<Judged> {
         const decider = this.deps.decider();
-        const state = autocompactState(await this.deps.recent(placed.candidate), this.deps.ledger.historyOf(placed.tab, placed.pane));
+        const state = autocompactState(await this.deps.recent(placed.candidate), this.deps.ledger.historyOf(placed.scope, placed.key));
         const answered = decider === null ? null : await decider.ask(must(parseText(JSON.stringify(state))), QUESTIONS);
         if (answered === null || isUnknown(answered)) {
             const why = answered === null ? 'no decider is set up' : saying(answered.why);

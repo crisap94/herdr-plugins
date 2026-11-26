@@ -65,9 +65,9 @@ function ledgerOf(facts: readonly InputFact[], clock: LocalClock): Text {
 
 export function correctionDocument(request: CorrectionRequest): Text {
     const { input, retry } = request;
-    const clock: LocalClock = (at) => localTime(at, instant(input.tab.now), textOf(input.tab.zone));
+    const clock: LocalClock = (at) => localTime(at, instant(input.scope.now), textOf(input.scope.zone));
     const agents = new Map(input.agents.flatMap((agent) => (agent.label === '' ? [] : [[textOf(agent.label), textOf(agent.id)] as const])));
-    const tab = element('tab', { id: textOf(input.tab.id), now: isoSecond(instant(input.tab.now)), zone: textOf(input.tab.zone) });
+    const tab = element('tab', { id: textOf(input.scope.id), now: isoSecond(instant(input.scope.now)), zone: textOf(input.scope.zone) });
     const refused = retry.refused.map((each) => refusedOf(each, clock, agents, severalOf(retry.tasks))).join('');
     const problems = retry.problems.map((problem) => `${NEST}${leaf('problem', {}, textOf(problem))}`).join('');
     return textOf(element('correction_input', { version: count(1) }, textOf(`${NEST}${tab}${ledgerOf(retry.facts, clock)}${refused}${problems}${NEST}`)));

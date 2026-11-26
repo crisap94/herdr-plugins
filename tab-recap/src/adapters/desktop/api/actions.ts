@@ -1,5 +1,6 @@
 import { must } from '@stateforge-labs/session-ledger';
-import { saying, type Unknown } from '@stateforge-labs/session-ledger';
+import { type Unknown } from '@stateforge-labs/session-ledger';
+import { saying } from '#src/recap/domain/saying.ts';
 import { MESSAGE_LIMIT, NOTE_LIMIT } from '#src/recap/application/compaction-message.ts';
 import { parsePaneId, type SessionKey } from '#src/recap/domain/ids.ts';
 import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '@stateforge-labs/session-ledger';

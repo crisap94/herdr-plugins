@@ -3,6 +3,7 @@ import { instructions } from '../../tab-recap/src/adapters/job/prompts/recap-ins
 import { TRANSCRIPT_BUDGET, writerContext } from '../../packages/session-ledger/src/recap/application/writer-context.ts';
 import type { RecapRequest } from '../../packages/session-ledger/src/ports/summarizer.ts';
 import type { CloseEvidence } from '../../packages/session-ledger/src/recap/domain/pipeline.ts';
+import { requestOfStored, type StoredRecapRequest } from '../lib/stored-input.ts';
 import type { Item, Prompt } from '../lib/types.ts';
 
 export interface KeyFact {
@@ -35,6 +36,8 @@ export interface Expected {
 
 export type WriterItem = Item<RecapRequest, Expected>;
 
+export type StoredWriterItem = Item<StoredRecapRequest, Expected>;
+
 export const documentOf = (item: WriterItem): string => writerContext(item.input, TRANSCRIPT_BUDGET);
 
 // With a close-evidence setting, the system is the one the daemon sends for it; without, it is unchanged.
@@ -51,5 +54,5 @@ export function transcriptOf(item: WriterItem): string {
 }
 
 export function loadItems(file: string): WriterItem[] {
-    return readFileSync(file, 'utf8').split('\n').filter((line) => line.trim() !== '').map((line) => JSON.parse(line) as WriterItem);
+    return readFileSync(file, 'utf8').split('\n').filter((line) => line.trim() !== '').map((line) => { const stored = JSON.parse(line) as StoredWriterItem; return { ...stored, input: requestOfStored(stored.input) }; });
 }

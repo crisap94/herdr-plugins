@@ -11,6 +11,7 @@ import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
 import { agentKindOf, paneIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
 import { directoryOf } from '../lib/brands.ts';
+import { requestToStored } from '../lib/stored-input.ts';
 
 const SECTIONS: readonly Section[] = ['goal', 'now', 'needs', 'done', 'decisions', 'next', 'links', 'rules'];
 const ITEM_CHECKS = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7'] as const;
@@ -137,8 +138,8 @@ function requestOf(one: Case, beats: readonly Beat[], now: number): RecapRequest
         language: textOf(one.language),
         previousLanguage: textOf(one.language),
         input: {
-            tab: { id: textOf(`w${one.n}:t1`), now: instant(now), zone: textOf('UTC') },
-            agents: [{ id: textOf('a1'), kind: agentKindOf(one.kind), label: textOf(one.label), pane: paneIdOf(`w${one.n}-1`), source: 'transcript', cwd: directoryOf(one.repo), repo: directoryOf(one.repo), branch: textOf(one.branch), files: [] }],
+            scope: { id: textOf(`w${one.n}:t1`), now: instant(now), zone: textOf('UTC') },
+            agents: [{ id: textOf('a1'), kind: agentKindOf(one.kind), label: textOf(one.label), key: paneIdOf(`w${one.n}-1`), source: 'transcript', cwd: directoryOf(one.repo), repo: directoryOf(one.repo), branch: textOf(one.branch), files: [] }],
             tasks: [],
             ledgers: [{ task: null, facts: priorFacts(one, now) }],
             notes: [],
@@ -239,7 +240,7 @@ function itemOf(one: Case): { readonly line: string; readonly chars: number } {
         id: `ja-${two(one.n)}-${one.project}-${one.size}`,
         tags: [one.project, one.size, one.language, one.kind],
         plants: plantsOf(one),
-        input: { request, items, state },
+        input: { request: requestToStored(request), items, state },
         expected: expectedOf(one, added),
     });
     return { line, chars };

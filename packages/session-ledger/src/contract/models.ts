@@ -12,7 +12,7 @@ export interface InputAgent extends LaneHint {
     readonly id: Text;
     readonly kind: HarnessKind;
     readonly label: Text;
-    readonly pane: SessionKey;
+    readonly key: SessionKey;
     readonly source: 'transcript' | 'screen';
 }
 
@@ -69,14 +69,14 @@ export interface InputCandidate {
     readonly flagged: Flagged;
 }
 
-export interface InputTab {
+export interface InputScope {
     readonly id: Text;
     readonly now: Instant;
     readonly zone: Text;
 }
 
 export interface RecapInput {
-    readonly tab: InputTab;
+    readonly scope: InputScope;
     readonly agents: readonly InputAgent[];
     readonly tasks: readonly TaskGroup[];
     readonly ledgers: readonly InputLedger[];

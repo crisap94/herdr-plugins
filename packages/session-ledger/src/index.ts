@@ -21,7 +21,7 @@ export { legacyPlugsOf } from './facade/plugs.ts';
 export { acceptedRepair, storyRepair } from './facade/story-repair.ts';
 export { historyOf, laneOf } from './facade/translate.ts';
 export { type Section as I18nSection, type SectionId as I18nSectionId } from './i18n/sections.ts';
-export { type AnswerTally, type CoverageRevision, type CoverageVerdict, type DecisionCounts, type DecisionDraft, type DecisionGate, type DecisionLedger, type DecisionMode, type LastDecisionRow, type LinkedDecision, type PaneKey, parseCoverageRecord, parseSkipRow, parseStoredDecisionRow, type SkipRow, type StoredDecisionRow, type UnlinkedCompact, type Verdict as RecordedVerdict } from './ports/autocompact-records.ts';
+export { type AnswerTally, type CoverageRevision, type CoverageVerdict, type DecisionCounts, type DecisionDraft, type DecisionGate, type DecisionLedger, type DecisionMode, type LastDecisionRow, type LinkedDecision, parseCoverageRecord, parseSkipRow, parseStoredDecisionRow, type ScopedKey, type SkipRow, type StoredDecisionRow, type UnlinkedCompact, type Verdict as RecordedVerdict } from './ports/autocompact-records.ts';
 export { capabilityWording, type CompactionWhy, type ContextWindowWhy, type HistoryWhy, inFlightReason, type InFlightWhy, splitReason } from './ports/capability-reasons.ts';
 export { type Curators } from './ports/curators.ts';
 export { type DecidedAnswers, type DecidedAnswersResult, type DeciderPort, type Question } from './ports/decider.ts';

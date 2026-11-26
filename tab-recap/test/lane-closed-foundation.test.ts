@@ -12,7 +12,8 @@ import { LANE_STATUSES, parseLaneStatusAtDecision } from '@stateforge-labs/sessi
 import { en } from '#src/i18n/en.ts';
 import { es } from '#src/i18n/es.ts';
 import { CLOSE_POINTS } from '#src/recap/domain/lane-closed.ts';
-import { isUnknown, saying } from '@stateforge-labs/session-ledger';
+import { isUnknown } from '@stateforge-labs/session-ledger';
+import { saying } from '#src/recap/domain/saying.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { reconciliation, seenLane } from '#test/support/seen.ts';
 

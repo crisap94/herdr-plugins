@@ -42,7 +42,7 @@ test('full writer view matches the stored ledger output for a fixture with sever
     };
     const seen = [{ lane, cursor, chunk: chunk([]), fresh: SEEN_BEFORE }];
     const full = await inputOf(seen, world);
-    const request = { ...requestOf(), input: { ...full.input, tab: { ...full.input.tab, zone: brand<string, 'Text'>('UTC') } } };
+    const request = { ...requestOf(), input: { ...full.input, scope: { ...full.input.scope, zone: brand<string, 'Text'>('UTC') } } };
     assert.equal(writerContext(request), `<recap_input version="2">
 <tab id="w1:t1" now="2026-10-06T03:05:00Z" zone="UTC">
 <agent id="a1" kind="claude" label="" pane="w1:p1"/>

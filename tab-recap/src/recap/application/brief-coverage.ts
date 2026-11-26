@@ -1,7 +1,8 @@
 import type { AnswerTally } from '@stateforge-labs/session-ledger';
 import type { DeciderPort, Question } from '@stateforge-labs/session-ledger';
 import type { HistoryFact } from '@stateforge-labs/session-ledger';
-import { isUnknown, saying } from '@stateforge-labs/session-ledger';
+import { isUnknown } from '@stateforge-labs/session-ledger';
+import { saying } from '#src/recap/domain/saying.ts';
 import { must } from '@stateforge-labs/session-ledger';
 import { parseCheckedFact, type CheckedFact } from '@stateforge-labs/session-ledger';
 import { parseCount, type Count } from '@stateforge-labs/session-ledger';

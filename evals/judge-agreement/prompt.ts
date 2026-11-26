@@ -5,6 +5,7 @@ import { scoringDocument } from '../../tab-recap/src/recap/application/judge-con
 import { writerContext } from '../../packages/session-ledger/src/recap/application/writer-context.ts';
 import type { RecapRequest } from '../../packages/session-ledger/src/ports/summarizer.ts';
 import { entryOf, type DatasetRow } from './row.ts';
+import { requestOfStored, type StoredRecapRequest } from '../lib/stored-input.ts';
 import type { Item, Prompt } from '../lib/types.ts';
 import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import type { Text } from '../../packages/session-ledger/src/recap/domain/text.ts';
@@ -35,6 +36,8 @@ export interface Expected {
 
 export type JudgeItem = Item<Input, Expected>;
 
+export type StoredJudgeItem = Item<Omit<Input, 'request'> & { readonly request: StoredRecapRequest }, Expected>;
+
 export const CHECKS: readonly string[] = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7', 'S'];
 
 export const pooled = (check: string): string => (check.startsWith('S-') ? 'S' : check);
@@ -54,5 +57,5 @@ export function prompt(item: JudgeItem): Prompt {
 }
 
 export function loadItems(file: string): JudgeItem[] {
-    return readFileSync(file, 'utf8').split('\n').filter((line) => line.trim() !== '').map((line) => JSON.parse(line) as JudgeItem);
+    return readFileSync(file, 'utf8').split('\n').filter((line) => line.trim() !== '').map((line) => { const stored = JSON.parse(line) as StoredJudgeItem; return { ...stored, input: { ...stored.input, request: requestOfStored(stored.input.request) } }; });
 }

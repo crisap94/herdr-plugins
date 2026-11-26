@@ -65,7 +65,7 @@ test('one recap for the tab, written from every lane, advancing every cursor', a
     const [only] = requests;
     assert.equal(requests.length, 1, 'one summarizer call for the whole tab');
     assert.ok(only !== undefined);
-    assert.deepEqual(only.input.agents.map((agent) => [agent.id, agent.kind, agent.pane]), [['a1', 'claude', 'w1:p1'], ['a2', 'codex', 'w1:p2']], 'every lane is described, hints included');
+    assert.deepEqual(only.input.agents.map((agent) => [agent.id, agent.kind, agent.key]), [['a1', 'claude', 'w1:p1'], ['a2', 'codex', 'w1:p2']], 'every lane is described, hints included');
     assert.deepEqual(only.input.transcripts.map((lane) => [lane.agent, lane.entries.map((entry) => entry.text)]), [['a1', ['migrate victoria']], ['a2', ['run the tests']]]);
     const recap = storeRead(store.records.readRecap(tabId('w1:t1')));
     assert.ok(recap !== null);

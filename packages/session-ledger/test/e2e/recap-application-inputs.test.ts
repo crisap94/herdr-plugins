@@ -16,7 +16,7 @@ const count = brand<number, 'Count'>;
 const NOW = 1_700_000_000_000;
 
 const input: RecapInput = {
-    tab: { id: textOf('tab-1'), now: instant(NOW), zone: textOf('UTC') },
+    scope: { id: textOf('tab-1'), now: instant(NOW), zone: textOf('UTC') },
     agents: [],
     tasks: [],
     ledgers: [],

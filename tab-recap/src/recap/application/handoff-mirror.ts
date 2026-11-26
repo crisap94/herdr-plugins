@@ -1,7 +1,8 @@
 import type { AskKey, AskBook } from '#src/ports/ask-ledger.ts';
 import type { HandoffAskRecord } from '#src/ports/requests.ts';
 import type { LaneTokenReporter } from '#src/ports/lane-tokens.ts';
-import { isUnknown, saying } from '@stateforge-labs/session-ledger';
+import { isUnknown } from '@stateforge-labs/session-ledger';
+import { saying } from '#src/recap/domain/saying.ts';
 import { handoff, HANDOFF_EVENTS, HANDOFF_STAGES } from '#src/protocol/exchanges/handoff.ts';
 import { failureStage, terminalStage } from '#src/protocol/exchange.ts';
 import { parseRequestId, parseWireText, refuse } from '#src/protocol/primitives.ts';

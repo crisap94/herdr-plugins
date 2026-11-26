@@ -1,5 +1,6 @@
 import type { BriefWriter } from '#src/ports/compaction-briefs.ts';
-import { isUnknown, saying } from '@stateforge-labs/session-ledger';
+import { isUnknown } from '@stateforge-labs/session-ledger';
+import { saying } from '#src/recap/domain/saying.ts';
 import type { RecapSections } from '@stateforge-labs/session-ledger';
 import { FORBIDDEN, FORBIDDEN_PHRASE_PATTERN as PHRASES, FORBIDDEN_WORD_PATTERN as WORDS } from '#src/recap/domain/forbidden-words.ts';
 import { MESSAGE_LIMIT as BRIEF_LIMIT } from './compaction-message.ts';

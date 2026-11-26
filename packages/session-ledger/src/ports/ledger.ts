@@ -20,8 +20,8 @@ export interface FactStore {
     openOf(task: TaskId): readonly Fact[];
     recentlyClosed(task: TaskId, sinceMs: Instant): readonly Fact[];
     allOf(task: TaskId): readonly Fact[];
-    keysOf(tab: ScopeId): readonly Text[];
-    historyOf(tab: ScopeId, pane: SessionKey): readonly HistoryFact[];
+    keysOf(scope: ScopeId): readonly Text[];
+    historyOf(scope: ScopeId, key: SessionKey): readonly HistoryFact[];
 }
 
 export interface Applied {

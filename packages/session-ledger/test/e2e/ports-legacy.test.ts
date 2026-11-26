@@ -65,6 +65,7 @@ test('an unknown result is told apart and said in words', () => {
     assert.equal(isUnknown({ kind: 'chunk' }), false);
     assert.equal(saying(missing.why), 'the transcript not found');
     assert.equal(saying({ why: 'failed', code: exitCodeOf(2), detail: causeOf(textOf('boom')) }), 'exited 2: boom');
+    assert.equal(saying({ why: 'lease', after: 60_000 as never }), 'another tool is typing into the session (waited 60000 ms for its lease)');
 });
 
 test('an in-flight capability answers with a running count read from a source within a budget', async () => {

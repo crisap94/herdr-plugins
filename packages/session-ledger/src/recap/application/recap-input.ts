@@ -54,13 +54,13 @@ export interface Built {
 
 export async function inputOf(seen: readonly Observed[], world: InputWorld): Promise<Built> {
     const agents: InputAgent[] = await Promise.all(seen.map(async (one, index) => ({
-        id: idOf(count(index)), kind: one.lane.agent, label: textOf(one.cursor.title ?? ''), pane: one.lane.pane,
+        id: idOf(count(index)), kind: one.lane.agent, label: textOf(one.cursor.title ?? ''), key: one.lane.pane,
         source: isScreenSource(sourcePathOf(one.cursor.transcript)) ? 'screen' as const : 'transcript' as const,
         ...(await hintOf(one.lane, one.chunk?.entries ?? [], world.repos)),
     })));
     const numbering = numbered(world.facts, agents, severalOf(world.facts.length > 1), world.writerView, world.now);
     const input: RecapInput = {
-        tab: { id: world.tab, now: world.now, zone: textOf(Intl.DateTimeFormat().resolvedOptions().timeZone) },
+        scope: { id: world.tab, now: world.now, zone: textOf(Intl.DateTimeFormat().resolvedOptions().timeZone) },
         agents,
         tasks: seen.length > 1 ? world.tasks.map(({ id, name, sessions }) => ({ id: textOf(id), name: textOf(name), lanes: sessions.map(brand<string, 'SessionKey'>) })) : [],
         ledgers: numbering.ledgers,

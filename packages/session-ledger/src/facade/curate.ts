@@ -48,7 +48,7 @@ const note = brand<string, 'Text'>;
 const taskOn = (scope: ScopeId, key: SessionKey): TaskId => ({ scope: tabIdOf(scope), key: textOf(key) });
 
 const storiesOver = (stories: Stories): LedgerStories => ({
-    read: (tab: ScopeId, task: Text): KeptStory | null => stories.read(taskOn(brand<string, 'ScopeId'>(tab), brand<string, 'SessionKey'>(task))),
+    read: (scope: ScopeId, task: Text): KeptStory | null => stories.read(taskOn(brand<string, 'ScopeId'>(scope), brand<string, 'SessionKey'>(task))),
     keep: (run: CurationRun, change: StoryChange): Applied => stories.keep(run, change),
 });
 

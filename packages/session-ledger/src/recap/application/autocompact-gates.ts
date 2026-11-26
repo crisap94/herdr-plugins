@@ -24,9 +24,9 @@ export type Recheck = 'due' | 'not-due';
 export type CeilingReach = 'at-ceiling' | 'below-ceiling';
 
 export function busyOf(reads: BusyReads, asked: ReadonlyMap<SessionKey, Instant>, placed: Placement, now: Instant): Busy {
-    const { tab, pane, candidate } = placed;
-    const since = asked.get(pane);
-    const own = reads.activity.activeFor(candidate.scope, candidate.key) || (since !== undefined && now - since < ASKED_FOR_MS) || reads.decisions.unlinkedCompactSince(tab, pane, instant(now - ASKED_FOR_MS)) === 'unlinked';
+    const { scope, key, candidate } = placed;
+    const since = asked.get(key);
+    const own = reads.activity.activeFor(candidate.scope, candidate.key) || (since !== undefined && now - since < ASKED_FOR_MS) || reads.decisions.unlinkedCompactSince(scope, key, instant(now - ASKED_FOR_MS)) === 'unlinked';
     if (own) return { kind: 'busy', detail: 'this lane' };
     const other = reads.activity.automaticInProgress() || reads.decisions.unlinkedCompactAny(instant(now - ASKED_FOR_MS)) === 'unlinked';
     return other ? { kind: 'busy', detail: 'another lane' } : { kind: 'free' };

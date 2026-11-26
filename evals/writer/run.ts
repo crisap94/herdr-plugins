@@ -18,6 +18,7 @@ import type { CloseEvidence } from '../../packages/session-ledger/src/recap/doma
 import { closeEvidenceFlag, writerArmMarkdown, writerCounters } from './arm.ts';
 import { JUDGE_CRITERIA, JUDGE_IDS } from './judge-criteria.ts';
 import { loadItems, prompt, type Expected, type WriterItem } from './prompt.ts';
+import { requestToStored } from '../lib/stored-input.ts';
 import { CODE_CRITERIA, extras, extrasMarkdown, grade, judgeApplies, stubAnswer, view } from './scoring.ts';
 
 const NAME = 'writer';
@@ -137,7 +138,7 @@ async function runWriter(argv: readonly string[], mode: CloseEvidence | null): P
     const criteria = criteriaOf(used, options.judgeCheck).map((criterion) => criterion.id);
     writeText(join(dir, 'results.csv'), resultsCsv(scored, criteria));
     const keys = new Set(answers.map((answer) => answer.key));
-    const summary = summarize({ spec: used, label: options.label, stub: options.stub, configs: picked, items: chosen.length, repetitions: options.repetitions, scored, judged: judgedRows.filter((row) => keys.has(row.key)), judgeCheck: options.judgeCheck, datasetSha: sha256(JSON.stringify(chosen)), promptSha });
+    const summary = summarize({ spec: used, label: options.label, stub: options.stub, configs: picked, items: chosen.length, repetitions: options.repetitions, scored, judged: judgedRows.filter((row) => keys.has(row.key)), judgeCheck: options.judgeCheck, datasetSha: sha256(JSON.stringify(chosen.map((item) => ({ ...item, input: requestToStored(item.input) })))), promptSha });
     writeJson(join(dir, 'summary.json'), summary);
     writeText(join(dir, 'report.md'), report(summary));
     options.log(`wrote ${join(dir, 'report.md')}`);

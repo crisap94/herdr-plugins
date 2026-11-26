@@ -68,7 +68,7 @@ const plainLedger = (ledger: CheckedLedger, log: (line: Text) => void): FactStor
         openOf: (task: TaskId) => { const found = ledger.openOf(task); return 'kind' in found ? [] : found; },
         recentlyClosed: (task: TaskId, sinceMs: Instant) => { const found = ledger.recentlyClosed(task, sinceMs); return 'kind' in found ? [] : found; },
         allOf: (task: TaskId) => skipped(ledger.allOf(task)),
-        keysOf: (tab: ScopeId): readonly Text[] => { const found = ledger.keysOf(tab); return 'kind' in found ? [] : found.map((key) => note(key)); },
+        keysOf: (scope: ScopeId): readonly Text[] => { const found = ledger.keysOf(scope); return 'kind' in found ? [] : found.map((key) => note(key)); },
     };
 };
 

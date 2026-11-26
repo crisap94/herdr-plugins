@@ -111,7 +111,7 @@ test('DTD section values match SECTION_IDS', () => {
 
 test('the tab states the time now (UTC) and the zone; turns carry HH:MM in that zone, with the date when it is not today', () => {
     const request = requestOf();
-    const zoned = { ...request, input: { ...request.input, tab: { id: textOf('w1:t1'), now: instant(NOW), zone: textOf('America/Bogota') }, transcripts: [{ agent: textOf('a1'), entries: [{ role: 'agent' as const, text: textOf('earlier'), at: instant(Date.parse('2026-10-04T14:10:00Z')) }, { role: 'user' as const, text: textOf('now-ish'), at: instant(at('02:51')) }] }] } };
+    const zoned = { ...request, input: { ...request.input, scope: { id: textOf('w1:t1'), now: instant(NOW), zone: textOf('America/Bogota') }, transcripts: [{ agent: textOf('a1'), entries: [{ role: 'agent' as const, text: textOf('earlier'), at: instant(Date.parse('2026-10-04T14:10:00Z')) }, { role: 'user' as const, text: textOf('now-ish'), at: instant(at('02:51')) }] }] } };
     const document = writerContext(zoned);
     assert.match(document, /<tab id="w1:t1" now="2026-10-06T03:05:00Z" zone="America\/Bogota">/);
     assert.match(document, /<turn role="user" at="21:51">now-ish<\/turn>/);

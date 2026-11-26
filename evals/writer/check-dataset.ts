@@ -23,6 +23,7 @@ import { brand } from '../../packages/session-ledger/src/recap/domain/brand.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
 import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
 import { factIdOf } from '../lib/brands.ts';
+import { requestOfStored, type StoredRecapRequest } from '../lib/stored-input.ts';
 
 const textOf = brand<string, 'Text'>;
 
@@ -53,6 +54,10 @@ interface Row {
     readonly fresh?: { readonly seed: string; readonly traps: readonly Trap[] };
 }
 
+interface StoredRow extends Omit<Row, 'input'> {
+    readonly input: StoredRecapRequest;
+}
+
 interface Trap {
     readonly kind: string;
     readonly ops: readonly { readonly op: string; readonly id: string; readonly why: string; readonly anchor: string }[];
@@ -77,13 +82,13 @@ function factOf(fact: InputFact, tab: string, language: string): Fact {
 
 function groundOf(request: RecapRequest): { resolving: Resolving; ground: TaskGround } {
     const { input } = request;
-    const facts = input.ledgers.flatMap((ledger) => ledger.facts).map((fact) => factOf(fact, input.tab.id, request.previousLanguage));
+    const facts = input.ledgers.flatMap((ledger) => ledger.facts).map((fact) => factOf(fact, input.scope.id, request.previousLanguage));
     const entries = input.transcripts.flatMap((lane) => lane.entries);
     return {
-        resolving: { tasks: [textOf(TASK)], agents: input.agents, taskOf: new Map(), turns: entries.flatMap((entry) => (entry.at === undefined ? [] : [instant(entry.at)])), clock: { now: instant(input.tab.now), zone: textOf(input.tab.zone) } },
+        resolving: { tasks: [textOf(TASK)], agents: input.agents, taskOf: new Map(), turns: entries.flatMap((entry) => (entry.at === undefined ? [] : [instant(entry.at)])), clock: { now: instant(input.scope.now), zone: textOf(input.scope.zone) } },
         ground: {
-            key: textOf(TASK), tab: textOf(input.tab.id), shown: new Map(facts.map((fact) => [textOf(String(fact.id)), fact])), open: facts.filter((fact) => fact.state === 'open'),
-            closedLately: facts.filter((fact) => fact.state === 'closed' && (fact.closedAt ?? 0) >= input.tab.now - DAY), source: textOf(anchorSource(input)), language: textOf(request.language),
+            key: textOf(TASK), tab: textOf(input.scope.id), shown: new Map(facts.map((fact) => [textOf(String(fact.id)), fact])), open: facts.filter((fact) => fact.state === 'open'),
+            closedLately: facts.filter((fact) => fact.state === 'closed' && (fact.closedAt ?? 0) >= input.scope.now - DAY), source: textOf(anchorSource(input)), language: textOf(request.language),
             agents: input.agents.flatMap((agent) => [agent.id, agent.label, agent.kind]).filter((name) => name !== '').map((name) => textOf(name.toLowerCase())),
         },
     };
@@ -93,8 +98,8 @@ function gated(request: RecapRequest, text: string): { kind: string; problems: r
     const { resolving, ground } = groundOf(request);
     const answer = parseAnswer(textOf(text), resolving);
     if (answer.kind !== 'ops') return { kind: answer.kind, problems: [], refused: [], flagged: 0, kept: 0 };
-    const judged = judge(LEDGER_GATES, forTask(answer.ops, textOf(TASK)), ground, instant(request.input.tab.now));
-    const flaggedAll = LEDGER_GATES.flatMap((gate) => gate.check(forTask(answer.ops, textOf(TASK)), { now: request.input.tab.now, shown: ground.shown, open: ground.open, closedLately: ground.closedLately, source: ground.source, language: ground.language, agents: ground.agents })).filter((finding) => finding.outcome === 'flag');
+    const judged = judge(LEDGER_GATES, forTask(answer.ops, textOf(TASK)), ground, instant(request.input.scope.now));
+    const flaggedAll = LEDGER_GATES.flatMap((gate) => gate.check(forTask(answer.ops, textOf(TASK)), { now: request.input.scope.now, shown: ground.shown, open: ground.open, closedLately: ground.closedLately, source: ground.source, language: ground.language, agents: ground.agents })).filter((finding) => finding.outcome === 'flag');
     const flagged = flaggedAll.length;
     if (process.env['SHOW_FLAGS'] === '1') for (const finding of flaggedAll) process.stdout.write(`flag ${finding.gate}: ${finding.reason}\n`);
     return { kind: 'ops', problems: answer.problems, refused: judged.refused.map((finding) => `${finding.gate} op ${finding.at}: ${finding.reason}`), flagged, kept: judged.kept.length };
@@ -107,7 +112,7 @@ function refusalsOf(request: RecapRequest, text: string, gates: Gates): readonly
     const { resolving, ground } = groundOf(request);
     const answer = parseAnswer(textOf(text), resolving);
     if (answer.kind !== 'ops') return [];
-    return judge(gates, forTask(answer.ops, textOf(TASK)), ground, instant(request.input.tab.now)).refused.map((finding) => `${finding.gate} op ${finding.at}: ${finding.reason}`);
+    return judge(gates, forTask(answer.ops, textOf(TASK)), ground, instant(request.input.scope.now)).refused.map((finding) => `${finding.gate} op ${finding.at}: ${finding.reason}`);
 }
 
 // The file to check: argv[2], or the committed dataset. A copy named dataset-fresh.jsonl gets the fresh checks.
@@ -115,13 +120,14 @@ function closeEvidenceRefuses(request: RecapRequest, text: string): boolean {
     const { resolving, ground } = groundOf(request);
     const answer = parseAnswer(textOf(text), resolving);
     if (answer.kind !== 'ops') return false;
-    return judge([closeEvidenceGate], forTask(answer.ops, textOf(TASK)), ground, instant(request.input.tab.now)).refused.length > 0;
+    return judge([closeEvidenceGate], forTask(answer.ops, textOf(TASK)), ground, instant(request.input.scope.now)).refused.length > 0;
 }
 
 const target = process.argv[2] ?? fileURLToPath(new URL('./dataset.jsonl', import.meta.url));
 const FRESH_CHECK = basename(target) === 'dataset-fresh.jsonl';
 const raw = readFileSync(target, 'utf8').split('\n').filter((line) => line !== '');
-const rows: Row[] = raw.map((line) => JSON.parse(line) as Row);
+const rowOfStored = (line: string): Row => { const stored = JSON.parse(line) as StoredRow; return { ...stored, input: requestOfStored(stored.input) }; };
+const rows: Row[] = raw.map(rowOfStored);
 const ids = new Set(rows.map((row) => row.id));
 if (ids.size !== rows.length) failures.push('ids are not unique');
 
@@ -161,7 +167,7 @@ for (const row of rows) {
         if (!document.includes(span)) fail(row.id, `${what} span is not in the built document: ${span}`);
         if (!quotedIn(textOf(span), source)) fail(row.id, `${what} span is not in the anchor source: ${span}`);
     };
-    const labels = new Set(entries.flatMap((entry) => (entry.at === undefined ? [] : [localTime(entry.at, input.tab.now, input.tab.zone)])));
+    const labels = new Set(entries.flatMap((entry) => (entry.at === undefined ? [] : [localTime(entry.at, input.scope.now, input.scope.zone)])));
 
     for (const fact of expected.key_facts) {
         shown(fact.span, fact.k);
@@ -312,7 +318,7 @@ if (FRESH_CHECK) {
         ...row.input.input.ledgers.flatMap((ledger) => ledger.facts.flatMap((fact) => [fact.text, fact.anchor ?? '', fact.why ?? '', fact.ref ?? ''])),
         ...row.input.input.transcripts.flatMap((lane) => lane.entries.flatMap((entry) => [entry.text, entry.what ?? ''])),
     ]);
-    const base = readFileSync(fileURLToPath(new URL('./dataset.jsonl', import.meta.url)), 'utf8').split('\n').filter((line) => line !== '').map((line) => JSON.parse(line) as Row);
+    const base = readFileSync(fileURLToPath(new URL('./dataset.jsonl', import.meta.url)), 'utf8').split('\n').filter((line) => line !== '').map(rowOfStored);
     const baseTexts = textsOf(base);
     const baseNames = Object.values(PROJECTS).map((project) => project.name);
     for (const row of rows) {

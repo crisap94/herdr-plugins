@@ -2,7 +2,7 @@ import { uncheckedTypeId } from '#src/recap/domain/type-id.ts';
 import type { Database } from 'bun:sqlite';
 import { and, asc, count, desc, eq, gte, isNull, sql } from 'drizzle-orm';
 import { parseSkipRow, parseStoredDecisionRow } from '@stateforge-labs/session-ledger';
-import type { AnswerTally, CoverageRevision, CoverageVerdict, DecisionCounts, DecisionDraft, DecisionGate, DecisionLedger, LastDecisionRow, LinkedDecision, PaneKey, SkipRow, StoredDecisionRow, UnlinkedCompact } from '@stateforge-labs/session-ledger';
+import type { AnswerTally, CoverageRevision, CoverageVerdict, DecisionCounts, DecisionDraft, DecisionGate, DecisionLedger, LastDecisionRow, LinkedDecision, ScopedKey, SkipRow, StoredDecisionRow, UnlinkedCompact } from '@stateforge-labs/session-ledger';
 import { unreachable } from '@stateforge-labs/session-ledger';
 import { must } from '@stateforge-labs/session-ledger';
 import { parseDecisionId, type CompactionId, type DecisionId, type SessionKey, type ScopeId } from '#src/recap/domain/ids.ts';
@@ -78,9 +78,9 @@ export class DecisionLedgerRepository implements DecisionLedger {
         if (key !== null && target !== null) writeTransaction(this.db, () => { this.attachTo(key, target); });
     }
 
-    linkLatest(tab: ScopeId, pane: SessionKey, compactionId: CompactionId): LinkedDecision | null {
+    linkLatest(scope: ScopeId, key: SessionKey, compactionId: CompactionId): LinkedDecision | null {
         const [row, target] = [guarded((): LatestDecision | null => this.orm.select({ id: autocompactDecision.id, gate: autocompactDecision.gate }).from(autocompactDecision)
-            .where(and(eq(autocompactDecision.tabId, tab), eq(autocompactDecision.pane, pane), eq(autocompactDecision.verdict, COMPACT), isNull(autocompactDecision.compactionId)))
+            .where(and(eq(autocompactDecision.tabId, scope), eq(autocompactDecision.pane, key), eq(autocompactDecision.verdict, COMPACT), isNull(autocompactDecision.compactionId)))
             .orderBy(desc(autocompactDecision.at), desc(autocompactDecision.id)).limit(1).get() ?? null, null), idOf('compaction', uncheckedTypeId(compactionId))];
         if (row === null || target === null) return null;
         writeTransaction(this.db, () => { this.attachTo(row.id, target); });
@@ -107,25 +107,25 @@ export class DecisionLedgerRepository implements DecisionLedger {
         }
     }
 
-    lastDecisionAt(tab: ScopeId, pane: SessionKey): Instant | null {
+    lastDecisionAt(scope: ScopeId, key: SessionKey): Instant | null {
         return guarded(() => {
             const at = this.orm.select({ at: sql<number | null>`MAX(${autocompactDecision.at})` }).from(autocompactDecision)
-                .where(and(eq(autocompactDecision.tabId, tab), eq(autocompactDecision.pane, pane))).get()?.at ?? null;
+                .where(and(eq(autocompactDecision.tabId, scope), eq(autocompactDecision.pane, key))).get()?.at ?? null;
             return at === null ? null : instant(at);
         }, null);
     }
 
-    lastDecision(tab: ScopeId, pane: SessionKey): LastDecisionRow | null {
+    lastDecision(scope: ScopeId, key: SessionKey): LastDecisionRow | null {
         return guarded((): LastDecisionRow | null => {
             const row = this.orm.select({ at: autocompactDecision.at, tokens: autocompactDecision.tokens, mode: autocompactDecision.mode, verdict: autocompactDecision.verdict, gate: autocompactDecision.gate })
-                .from(autocompactDecision).where(and(eq(autocompactDecision.tabId, tab), eq(autocompactDecision.pane, pane)))
+                .from(autocompactDecision).where(and(eq(autocompactDecision.tabId, scope), eq(autocompactDecision.pane, key)))
                 .orderBy(desc(autocompactDecision.at), desc(autocompactDecision.id)).limit(1).get() ?? null;
             return row === null ? null : { at: instant(row.at), tokens: must(parseCount(row.tokens)), mode: row.mode, verdict: row.verdict, gate: row.gate };
         }, null);
     }
 
-    unlinkedCompactSince(tab: ScopeId, pane: SessionKey, at: Instant): UnlinkedCompact {
-        return guarded(() => (this.orm.select({ found: sql`1` }).from(autocompactDecision).where(and(eq(autocompactDecision.tabId, tab), eq(autocompactDecision.pane, pane),
+    unlinkedCompactSince(scope: ScopeId, key: SessionKey, at: Instant): UnlinkedCompact {
+        return guarded(() => (this.orm.select({ found: sql`1` }).from(autocompactDecision).where(and(eq(autocompactDecision.tabId, scope), eq(autocompactDecision.pane, key),
             eq(autocompactDecision.mode, ON), eq(autocompactDecision.verdict, COMPACT), eq(autocompactDecision.requested, 1), isNull(autocompactDecision.compactionId), gte(autocompactDecision.at, at)))
             .limit(1).get() === undefined ? NONE : UNLINKED), NONE);
     }
@@ -140,8 +140,8 @@ export class DecisionLedgerRepository implements DecisionLedger {
         if (key !== null) writeTransaction(this.db, () => { this.orm.update(autocompactDecision).set({ requested: 1 }).where(eq(autocompactDecision.id, key)).run(); });
     }
 
-    pruneSkips(keep: readonly PaneKey[]): void {
-        const kept = new Set(keep.map((lane) => `${lane.tab}\u0000${lane.pane}`));
+    pruneSkips(keep: readonly ScopedKey[]): void {
+        const kept = new Set(keep.map((lane) => `${lane.scope}\u0000${lane.key}`));
         writeTransaction(this.db, () => {
             for (const skip of this.skips()) {
                 if (!kept.has(`${skip.scope}\u0000${skip.key}`)) {
@@ -172,9 +172,9 @@ export class DecisionLedgerRepository implements DecisionLedger {
         }), []);
     }
 
-    newest(limit: Count, tab?: ScopeId): readonly StoredDecisionRow[] {
+    newest(limit: Count, scope?: ScopeId): readonly StoredDecisionRow[] {
         return guarded(() => this.orm.select(NEWEST_COLUMNS).from(autocompactDecision)
-            .where(tab === undefined ? undefined : eq(autocompactDecision.tabId, tab))
+            .where(scope === undefined ? undefined : eq(autocompactDecision.tabId, scope))
             .orderBy(desc(autocompactDecision.at), desc(autocompactDecision.id)).limit(limit).all().flatMap((row) => {
                 let answers: unknown = null;
                 let coverage: unknown = null;
@@ -194,12 +194,12 @@ export class DecisionLedgerRepository implements DecisionLedger {
             }), []);
     }
 
-    countsFor(tab: ScopeId): DecisionCounts {
+    countsFor(scope: ScopeId): DecisionCounts {
         return guarded((): DecisionCounts => {
             const row = this.orm.select({
                 decisions: count(), compacted: count(autocompactDecision.compactionId),
                 waited: sql<number>`COALESCE(SUM(${autocompactDecision.verdict} <> ${COMPACT}), 0)`,
-            }).from(autocompactDecision).where(eq(autocompactDecision.tabId, tab)).get() ?? NO_COUNTS;
+            }).from(autocompactDecision).where(eq(autocompactDecision.tabId, scope)).get() ?? NO_COUNTS;
             return { decisions: must(parseCount(row.decisions)), compacted: must(parseCount(row.compacted)), waited: must(parseCount(row.waited)) };
         }, NO_COUNTS);
     }

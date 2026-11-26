@@ -1,6 +1,7 @@
 import type { Text } from '@stateforge-labs/session-ledger';
 import { byteBudgetOf } from '#src/recap/domain/byte-budget.ts';
-import { isUnknown, saying } from '@stateforge-labs/session-ledger';
+import { isUnknown } from '@stateforge-labs/session-ledger';
+import { saying } from '#src/recap/domain/saying.ts';
 import type { PaneTokens } from '#src/ports/pane-tokens.ts';
 import type { HandoffReference } from '#src/recap/render/handoff-markdown.ts';
 import { omittedTotal } from '#src/recap/render/handoff-markdown.ts';

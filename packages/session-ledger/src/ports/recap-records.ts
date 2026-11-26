@@ -44,8 +44,8 @@ export interface Recap {
     readonly language: Text;
 }
 
-export function blankRecap(tab: ScopeId): Recap {
-    return { scope: tab, sessions: [], tasks: [], at: null, running: recapRunningOf(false), backend: null, error: null, costUsd: brand<number, 'Usd'>(0), language: brand<string, 'Text'>('en') };
+export function blankRecap(scope: ScopeId): Recap {
+    return { scope, sessions: [], tasks: [], at: null, running: recapRunningOf(false), backend: null, error: null, costUsd: brand<number, 'Usd'>(0), language: brand<string, 'Text'>('en') };
 }
 
 export const hasRecap = (recap: Recap): Recapped => recappedOf(recap.tasks.some((task) => task.markdown !== ''));
@@ -90,9 +90,9 @@ export interface LastRun {
 }
 
 export interface Records {
-    readRecap(tab: ScopeId): Recap | null;
-    lastRunOf(tab: ScopeId): LastRun | null;
-    beginRun(tab: ScopeId, backend: Text | null, at: Instant): void;
+    readRecap(scope: ScopeId): Recap | null;
+    lastRunOf(scope: ScopeId): LastRun | null;
+    beginRun(scope: ScopeId, backend: Text | null, at: Instant): void;
     recordRun(run: RecordedRun): void;
     failRun(run: FailedRun): void;
     advance(move: Advance): void;

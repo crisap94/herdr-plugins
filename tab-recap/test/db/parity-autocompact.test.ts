@@ -84,7 +84,7 @@ describe('parity: autocompact records', () => {
             raw: (db) => {
                 db.prepare("DELETE FROM autocompact_skip WHERE NOT (tab_id = 't1' AND pane = 'p2')").run();
             },
-            builder: (db) => { new DecisionLedgerRepository(db).pruneSkips([{ tab: tabId('t1'), pane: paneId('p2')}]); },
+            builder: (db) => { new DecisionLedgerRepository(db).pruneSkips([{ scope: tabId('t1'), key: paneId('p2') }]); },
             dump: dumpBoth,
         });
     });

@@ -67,7 +67,7 @@ test('enumerateAsked reports a failed backend on the newest turns', async () => 
 
 test('the correction document names the tab, the problems and the refused operations', () => {
     const input: RecapInput = {
-        tab: { id: textOf('tab-1'), now: instant(NOW), zone: textOf('UTC') },
+        scope: { id: textOf('tab-1'), now: instant(NOW), zone: textOf('UTC') },
         agents: [],
         tasks: [],
         ledgers: [],
