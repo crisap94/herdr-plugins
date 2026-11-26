@@ -141,6 +141,7 @@ const ROOT_VALUES = [
     'correctionOf',
     'countOf',
     'createEngine',
+    'curate',
     'curationOf',
     'curatorInput',
     'cursorOf',
@@ -411,7 +412,7 @@ function errorsOf(rootNames: readonly string[], seeded: ReadonlyMap<string, stri
     return ts.getPreEmitDiagnostics(program).map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'));
 }
 
-test('the root exports exactly the 372 values', () => {
+test('the root exports exactly the 373 values', () => {
     assert.deepEqual(Object.keys(root).toSorted(), ROOT_VALUES);
 });
 

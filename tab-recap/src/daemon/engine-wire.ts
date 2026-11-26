@@ -3,7 +3,7 @@ import { pluginEngine } from '#src/engine/engine-adapter.ts';
 import { tabRecaps, type TabRecaps } from '#src/engine/tab-recaps.ts';
 import type { LegacyRecapWritten as RecapWritten } from '@stateforge-labs/session-ledger';
 import { recapWritten, type EventStream } from '#src/recap/application/lane-events.ts';
-import type { CurateTasks } from '#src/recap/application/curate.ts';
+import type { Curating } from '@stateforge-labs/session-ledger';
 import type { Store } from '#src/adapters/db/database.ts';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
 import type { Clock } from '@stateforge-labs/session-ledger';
@@ -19,7 +19,6 @@ import { lanesOf, type Board } from '#src/recap/domain/board.ts';
 import { parseTabId } from '#src/recap/domain/ids.ts';
 import type { Backends } from './backends.ts';
 import { loadSettings } from './config.ts';
-import { parseLine, parseMessage } from './slots.ts';
 import { brand, type Brand } from '@stateforge-labs/session-ledger';
 import { checkedLedger, checkedRecords } from '#src/ports/guarded-reads.ts';
 import { restoreTextOf } from '#src/recap/application/restore-text.ts';
@@ -40,11 +39,11 @@ function parseKeepInput(): KeepInput {
 
 export interface EngineParts {
     readonly store: Store;
-    readonly backends: Backends;
+    readonly backends: Pick<Backends, 'summarizer' | 'enumerator'>;
     readonly transcripts: TranscriptRegistry;
     readonly clock: Clock;
     readonly repos: EngineRepos;
-    readonly curate: CurateTasks;
+    readonly curation: Curating;
     readonly events: EventStream;
     readonly board: () => Board;
     readonly ledger: (event: LedgerEvent) => void;
@@ -57,20 +56,11 @@ export interface WiredEngine {
     readonly viewers: Viewers;
 }
 
-async function runCurator(curate: CurateTasks, event: RecapWritten, say: EngineLog): Promise<void> {
-    try {
-        await curate.afterRun(event);
-    } catch (error) {
-        say(parseLine(`curator ${event.tab}: ${parseMessage(error)}`));
-    }
-}
-
-function ranRun(curate: CurateTasks, events: EventStream, board: () => Board, event: RecapWritten, say: EngineLog): void {
-    void runCurator(curate, event, say);
+function ranRun(events: EventStream, board: () => Board, event: RecapWritten): void {
     recapWritten(events, lanesOf(board(), event.tab), event.cause);
 }
 
-export function wireEngine({ store, backends, transcripts, clock, repos, curate, events, board, ledger, log }: EngineParts): WiredEngine {
+export function wireEngine({ store, backends, transcripts, clock, repos, curation, events, board, ledger, log }: EngineParts): WiredEngine {
     const viewers = viewersOf();
     const engine = pluginEngine({
         source: { transcripts },
@@ -91,9 +81,11 @@ export function wireEngine({ store, backends, transcripts, clock, repos, curate,
             bytes: (): undefined => undefined,
             render: (facts): RestoreText => must(parseRestoreText(restoreTextOf(facts))),
         },
+        curate: curation.request,
+        afterRun: curation.afterRun,
         on: (event): void => {
             if (event.kind === 'recap-written') {
-                ranRun(curate, events, board, { tab: must(parseTabId(event.scope)), turns: event.turns, boundary: event.boundary, ...(event.cause === undefined ? {} : { cause: must(parseText(event.cause)) }) }, log);
+                ranRun(events, board, { tab: must(parseTabId(event.scope)), turns: event.turns, boundary: event.boundary, ...(event.cause === undefined ? {} : { cause: must(parseText(event.cause)) }) });
             }
             ledger(event);
         },
