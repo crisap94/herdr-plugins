@@ -15,7 +15,7 @@ import { type SessionKey } from '#src/recap/domain/ids.ts';
 import { paneId, tabId, agentKind } from '#test/support/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane, SeenLane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession, SeenLane } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { instant } from '@stateforge-labs/session-ledger';
 import type { ColumnPanes } from '#src/ports/columns.ts';
@@ -31,14 +31,14 @@ import { SIZING } from './fakes/layout-values.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { reconciliation, seenLane as laneOf, statusObservation } from '#test/support/seen.ts';
 
-const lane = (pane: string, agent = 'claude'): Lane => laneFrom(laneOf({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, session: `s-${pane}` }));
+const lane = (pane: string, agent = 'claude'): FollowedSession => laneFrom(laneOf({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, session: `s-${pane}` }));
 
 function reader(agent: string, prompts: Record<string, PromptResult>): { transcripts: SessionReader; asked: { source: string; budget: number }[] } {
     const asked: { source: string; budget: number }[] = [];
     const transcripts: SessionReader = {
         agent: agentKind(agent),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-        locate: (found: Lane): Promise<Located> => Promise.resolve(found.pane === 'w9:p9' ? unknown({ why: 'not-found', what: textOf('it') }) : { kind: 'located', source: sourcePathOf(`/t/${found.pane}`) }),
+        locate: (found: FollowedSession): Promise<Located> => Promise.resolve(found.pane === 'w9:p9' ? unknown({ why: 'not-found', what: textOf('it') }) : { kind: 'located', source: sourcePathOf(`/t/${found.pane}`) }),
         read: () => Promise.reject(new Error('the live prompt never reads a chunk')),
         latestPrompt: (source, budget) => { asked.push({ source, budget }); return Promise.resolve(prompts[source] ?? { kind: 'prompt', text: null }); },
     };

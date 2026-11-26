@@ -6,7 +6,7 @@ import { advanceOf, brokenFact, cursor, factAt, failedOf, isUnknownValue, lastOf
 import { instant } from '@stateforge-labs/session-ledger';
 import { text, usd, tabId } from '../values.ts';
 import { countOf } from '../../src/recap/domain/count.ts';
-import { paneIdOf, tabIdOf } from '../../src/recap/domain/lane-shape.ts';
+import { paneIdOf, tabIdOf } from '../../src/recap/domain/followed-session-shape.ts';
 import { textOf } from '../../src/recap/domain/text.ts';
 
 export const REC_1: Case<null, StoreUnderTest> = {

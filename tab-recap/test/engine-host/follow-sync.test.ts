@@ -16,7 +16,7 @@ import { PACING_TURN, type Pacing } from '@stateforge-labs/session-ledger';
 import { createFakeEngine, duration } from '@stateforge-labs/session-ledger/testkit';
 import { emptyBoard, type Board } from '#src/recap/domain/board.ts';
 import { tabId, agentKind } from '#test/support/ids.ts';
-import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
+import { laneFrom, type FollowedSession } from '#src/recap/domain/lane.ts';
 import { instant } from '@stateforge-labs/session-ledger';
 import { FULL_WRITER_VIEW } from '@stateforge-labs/session-ledger';
 import { mintFactId } from '#src/adapters/db/ledger-rows.ts';
@@ -27,7 +27,7 @@ import { cursorOf, grewOf, sourcePathOf } from '@stateforge-labs/session-ledger'
 import { seenLane } from '#test/support/seen.ts';
 
 const TAB = 'w1:t1';
-const lanes: readonly Lane[] = [
+const lanes: readonly FollowedSession[] = [
     laneFrom(seenLane({ paneId: 'w1:p1', tabId: TAB, workspaceId: 'w1', agent: 'claude', session: 's1' })),
     laneFrom(seenLane({ paneId: 'w1:p2', tabId: TAB, workspaceId: 'w1', agent: 'claude', session: 's2' })),
 ];
@@ -38,7 +38,7 @@ if (first === undefined) {
 
 const settled = (): Promise<void> => new Promise((resolve) => { setTimeout(resolve, 30); });
 
-function boardWith(published: readonly Lane[]): Board {
+function boardWith(published: readonly FollowedSession[]): Board {
     return { ...emptyBoard(), lanes: new Map(published.map((lane) => [lane.pane, lane])) };
 }
 
@@ -48,7 +48,7 @@ test('a board with two lanes, published with no turn ended and no refresh, makes
     const reader: SessionReader = {
         agent: agentKind('claude'),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-        locate: (lane: Lane): Promise<Located> => {
+        locate: (lane: FollowedSession): Promise<Located> => {
             located.push(lane.pane);
             return Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) });
         },

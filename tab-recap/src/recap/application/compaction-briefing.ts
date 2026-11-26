@@ -1,6 +1,6 @@
 import { parseFactIndex } from '#src/recap/domain/fact-index.ts';
 import { knownOr } from '#src/ports/guarded-reads.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { NO_SECTIONS } from '@stateforge-labs/session-ledger';
 import type { LegacyFactStore as FactStore } from '@stateforge-labs/session-ledger';
 import type { LinkedDecision } from '@stateforge-labs/session-ledger';
@@ -51,7 +51,7 @@ export class Briefing {
         return { sections: task?.sections ?? NO_SECTIONS, web: this.deps.webs.of(pane), note };
     }
 
-    private async briefOf(lane: Lane, tab: ScopeId, material: Material, correction?: Text): Promise<Drafted> {
+    private async briefOf(lane: FollowedSession, tab: ScopeId, material: Material, correction?: Text): Promise<Drafted> {
         const { brief, records, ledger } = this.deps;
         const [pane, agent] = [String(lane.pane), String(lane.agent)];
         const [recent, history]: [readonly Entry[], History] = [await this.deps.recent(lane), ledger.historyOf(tab, must(parsePaneId(pane)))];
@@ -66,7 +66,7 @@ export class Briefing {
         return { ...(await brief.write(document, own, correction)), own, history };
     }
 
-    async verified(lane: Lane, tab: ScopeId, material: Material, link: Link): Promise<Verified> {
+    async verified(lane: FollowedSession, tab: ScopeId, material: Material, link: Link): Promise<Verified> {
         const { trigger, decision, flow } = link;
         const first = await this.briefOf(lane, tab, material);
         if (trigger === 'operator') return { kind: 'checked', checked: { brief: first, coverage: null, outcome: { kind: 'passed' }, coverageMs: duration(0), coverageCostUsd: null, why: null } };
@@ -113,7 +113,7 @@ export class Briefing {
         return { atCeiling: atCeiling ? 'present' : 'absent', appends: appends ? 'present' : 'absent' };
     }
 
-    listed(lane: Lane): Presence {
+    listed(lane: FollowedSession): Presence {
         return this.deps.listsPane(lane.pane);
     }
 }

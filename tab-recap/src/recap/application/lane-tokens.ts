@@ -1,5 +1,5 @@
 import type { Board } from '#src/recap/domain/board.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { CAPABILITY_VALUE, OWNED_TOKENS, STATE_TOKENS, clearing, tokenValuesOf, writeDueOf } from '#src/recap/domain/lane-tokens.ts';
 import { NEEDS_TOKEN } from '#src/recap/domain/lane-token-names.ts';
 import type { LaneTokenFacts, LaneWrite, TokenMap } from '#src/recap/domain/lane-tokens.ts';
@@ -27,7 +27,7 @@ export interface LaneTokenDeps {
     readonly tokens: LaneTokenReporter;
     readonly enabled: () => Presence;
     readonly board: () => Board;
-    readonly facts: (lane: Lane) => LaneTokenFacts;
+    readonly facts: (lane: FollowedSession) => LaneTokenFacts;
     readonly capability?: () => TokenValue;
     readonly now: () => Instant;
     readonly log: (line: Text) => void;
@@ -67,7 +67,7 @@ export class LaneTokenPublisher {
         }
     }
 
-    private publish(lane: Lane, now: Instant): void {
+    private publish(lane: FollowedSession, now: Instant): void {
         const pane = lane.pane;
         if ((this.failing.get(pane)?.until ?? 0) > now) {
             return;
@@ -83,7 +83,7 @@ export class LaneTokenPublisher {
         void this.send(pane, new Map([...due, ...clearing(STATE_NAMES.filter((name) => !due.has(name)))]), now);
     }
 
-    private announceNeeds(lane: Lane, was: TokenMap | undefined, now: TokenMap): void {
+    private announceNeeds(lane: FollowedSession, was: TokenMap | undefined, now: TokenMap): void {
         const before = was?.get(NEEDS);
         const count = now.get(NEEDS);
         if (before !== undefined && count !== undefined && before !== count) {

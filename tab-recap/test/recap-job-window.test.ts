@@ -6,7 +6,7 @@ import { registryWith } from '#test/fakes/transcript-registry.ts';
 import { RecapJob } from '@stateforge-labs/session-ledger';
 import { tabId, agentKind } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { instant } from '@stateforge-labs/session-ledger';
 import type { Debounce } from '@stateforge-labs/session-ledger';
 import { FULL_WRITER_VIEW } from '@stateforge-labs/session-ledger';
@@ -49,7 +49,7 @@ function harness(settings: Settings, causes: string[], answer?: () => Promise<Wr
     const reader: SessionReader = {
         agent: agentKind('claude'),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-        locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
+        locate: (lane: FollowedSession): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
         latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
         read: (source, from): Promise<ChunkResult> => {
             reads.push(from.cursor);

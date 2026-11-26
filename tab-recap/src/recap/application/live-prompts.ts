@@ -1,4 +1,4 @@
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { isUnknown } from '@stateforge-labs/session-ledger';
 import type { TranscriptRegistry } from '@stateforge-labs/session-ledger';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
@@ -21,7 +21,7 @@ export class LivePrompts {
         return this.known.get(pane) ?? null;
     }
 
-    async refresh(lane: Lane): Promise<Presence> {
+    async refresh(lane: FollowedSession): Promise<Presence> {
         const agent = lane.agent;
         const reader = this.transcripts.readerFor(agent);
         if (reader === undefined) {

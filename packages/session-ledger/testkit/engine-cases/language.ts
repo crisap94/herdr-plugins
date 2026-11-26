@@ -8,7 +8,7 @@ import { countOf, NO_OPS, quietAt, recapOf, spoken } from './support.ts';
 import { failure, running, usd, text, tabId } from '../values.ts';
 import { instant } from '@stateforge-labs/session-ledger';
 import { textOf } from '../../src/recap/domain/text.ts';
-import { tabIdOf, paneIdOf } from '../../src/recap/domain/lane-shape.ts';
+import { tabIdOf, paneIdOf } from '../../src/recap/domain/followed-session-shape.ts';
 
 const TAB = scope('one');
 const FAILED = failure(1, 'scripted writer failure');

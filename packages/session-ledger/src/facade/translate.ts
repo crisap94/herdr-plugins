@@ -7,7 +7,7 @@ import { isClosedWhy, isSection, type ClosedWhy, type Section } from '#src/recap
 import type { RecapWritten as ReconcileWritten } from '#src/recap/application/ledger-reconcile.ts';
 import { brand } from '#src/recap/domain/brand.ts';
 import { parseDirectory, type Directory } from '#src/recap/domain/directory.ts';
-import type { Lane, SessionId, WorkspaceId } from '#src/recap/domain/lane-shape.ts';
+import type { LegacyFollowedSession, SessionId, WorkspaceId } from '#src/recap/domain/followed-session-shape.ts';
 import { RECAP_CAUSES } from '#src/recap/domain/recap-cause.ts';
 import { parseNonEmptyText, parseText, type NonEmptyText, type Text } from '#src/recap/domain/text.ts';
 import type { ParseFailure } from '#src/recap/domain/parse-failure.ts';
@@ -48,7 +48,7 @@ const workspaceOf = (tab: ScopeId): WorkspaceId | null => {
     return brand<string, 'WorkspaceId'>(tab.slice(0, colon));
 };
 
-export const laneOf = (scope: ScopeId, session: FollowedSession): Lane | null => {
+export const laneOf = (scope: ScopeId, session: FollowedSession): LegacyFollowedSession | null => {
     const tab = tabOf(scope);
     const pane = paneOf(session.key);
     const agent = agentOf(session.harness);
@@ -69,7 +69,7 @@ export const laneOf = (scope: ScopeId, session: FollowedSession): Lane | null =>
     };
 };
 
-export const followedOf = (lane: Lane): FollowedSession | null => {
+export const followedOf = (lane: LegacyFollowedSession): FollowedSession | null => {
     const key = valueOf(parseSessionKey(lane.pane));
     const harness = valueOf(parseHarnessKind(lane.agent));
     if (key === null || harness === null) {

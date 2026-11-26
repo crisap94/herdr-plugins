@@ -1,4 +1,4 @@
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { Workplaces } from '@stateforge-labs/session-ledger';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
@@ -21,7 +21,7 @@ export class LaneWebs {
         return this.known.get(pane) ?? null;
     }
 
-    async refresh(lane: Lane): Promise<Presence> {
+    async refresh(lane: FollowedSession): Promise<Presence> {
         const found = lane.cwd === null ? null : await this.repos.repoOf(lane.cwd);
         if (found?.kind === 'unknown') {
             return 'absent';

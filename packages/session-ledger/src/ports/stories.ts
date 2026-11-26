@@ -1,6 +1,6 @@
 import type { TaskId } from '#src/recap/domain/fact.ts';
 import type { CloseOp, UpdateOp } from '#src/recap/domain/ops.ts';
-import type { ScopeId } from '#src/recap/domain/lane-shape.ts';
+import type { ScopeId } from '#src/recap/domain/followed-session-shape.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Instant } from '#src/recap/domain/time.ts';
 import type { Applied } from './ledger.ts';

@@ -1,6 +1,6 @@
 import type { Count } from '@stateforge-labs/session-ledger';
 import type { BackgroundItem } from '@stateforge-labs/session-ledger';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { Text } from '@stateforge-labs/session-ledger';
 
 export interface InFlightNotStarted {
@@ -22,5 +22,5 @@ export interface InFlightUnknown {
 export type InFlightRead = InFlightNotStarted | InFlightCount | InFlightUnknown;
 
 export interface InFlightReader {
-    read(lane: Lane): Promise<InFlightRead>;
+    read(lane: FollowedSession): Promise<InFlightRead>;
 }

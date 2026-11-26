@@ -14,7 +14,7 @@ import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import { parseText } from '@stateforge-labs/session-ledger';
 import { parseSessionId } from '#src/recap/domain/ids.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
-import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
+import { laneFrom, type FollowedSession } from '#src/recap/domain/lane.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
 import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import type { HookReceiver } from '#src/wire/hooks/contract.ts';
@@ -25,16 +25,16 @@ const TAB = tabId('w1:t1');
 const PANE = paneId('w1:p1');
 const SESSION = must(parseSessionId('s-lane'));
 const SESSION_TEXT = must(parseText('s-lane'));
-const lane: Lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: laneStatus('idle'), session: 's-lane', cwd: '/work/repo' }));
+const lane: FollowedSession = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: laneStatus('idle'), session: 's-lane', cwd: '/work/repo' }));
 
 interface Fixture {
     readonly receiver: HookReceiver & PreCompactReceiver;
-    readonly claimed: Lane[];
+    readonly claimed: FollowedSession[];
     readonly marked: number[];
 }
 
 function fixture(claim: IdleClaim, followed = true): Fixture {
-    const claimed: Lane[] = [];
+    const claimed: FollowedSession[] = [];
     const marked: number[] = [];
     const preCompacts = createPreCompacts();
     const clock = { now: (): Instant => instant(NOW) };

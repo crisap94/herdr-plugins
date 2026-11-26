@@ -16,7 +16,7 @@ import type { Answer, Graded, JudgeView, Mark } from '../lib/types.ts';
 import { transcriptOf, type WriterItem } from './prompt.ts';
 import { brand } from '../../packages/session-ledger/src/recap/domain/brand.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
-import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/lane-shape.ts';
+import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
 import { countOf } from '../../packages/session-ledger/src/recap/domain/count.ts';
 import { factIdOf } from '../lib/brands.ts';
 

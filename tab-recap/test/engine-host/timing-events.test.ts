@@ -7,13 +7,13 @@ import { AutocompactSweep } from '@stateforge-labs/session-ledger';
 import { SLOT_TABLE } from '#src/daemon/slot-table.ts';
 import { parseSwitch, startSlots, taps, type Line, type SlotContext, type SlotKey, type Slots, type Switch } from '#src/daemon/slots.ts';
 import { emptyBoard, type Board } from '#src/recap/domain/board.ts';
-import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
+import { laneFrom, type FollowedSession } from '#src/recap/domain/lane.ts';
 import type { SafePointWatch } from '@stateforge-labs/session-ledger';
 import { rows, world, type World } from '../autocompact-world.ts';
 import { seenLane } from '#test/support/seen.ts';
 
-const at = (pane: string, tab: string): Lane => laneFrom(seenLane({ paneId: pane, tabId: tab, workspaceId: 'w1', agent: 'claude', status: 'idle' }));
-const boardOf = (lanes: readonly Lane[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((found) => [found.pane, found])) });
+const at = (pane: string, tab: string): FollowedSession => laneFrom(seenLane({ paneId: pane, tabId: tab, workspaceId: 'w1', agent: 'claude', status: 'idle' }));
+const boardOf = (lanes: readonly FollowedSession[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((found) => [found.pane, found])) });
 const settle = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
 const accomplished = (scope: string): LedgerEvent => ({ kind: 'accomplishment-established', scope, task: { id: 't' }, sessions: [], fact: {}, at: 0 }) as unknown as LedgerEvent;
 
@@ -24,7 +24,7 @@ interface Daemon {
     readonly sweep: AutocompactSweep;
 }
 
-const LANES: readonly Lane[] = [at('w1:p1', 'w1:t1'), at('w1:p2', 'w1:t1'), at('w1:p3', 'w1:t2')];
+const LANES: readonly FollowedSession[] = [at('w1:p1', 'w1:t1'), at('w1:p2', 'w1:t1'), at('w1:p3', 'w1:t2')];
 
 const candidates = (): readonly Candidate[] => candidatesOf(boardOf(LANES), (): void => undefined);
 

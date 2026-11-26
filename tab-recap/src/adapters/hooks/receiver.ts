@@ -5,7 +5,7 @@ import { parseLine, parseMessage, type Line } from '#src/daemon/slots.ts';
 import type { Clock } from '@stateforge-labs/session-ledger';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import { parseDirectory } from '@stateforge-labs/session-ledger';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { parseSessionId, type SessionKey, type SessionId, type ScopeId } from '#src/recap/domain/ids.ts';
 import type { HookAnswer, HookCall, HookHarness, HookReceiver, PreCompactAnswer } from '#src/wire/hooks/contract.ts';
@@ -20,20 +20,20 @@ import type { Rebind, RebindMode } from '#src/adapters/hooks/rebind.ts';
 export interface Followed {
     readonly tab: ScopeId;
     readonly pane: SessionKey;
-    readonly lane: Lane;
+    readonly lane: FollowedSession;
 }
 
 export type RestoreMode = 'on' | 'off';
 
 export interface ReceiverDeps {
     followed(harness: HookHarness, session: SessionId): Followed | null;
-    lanesOf(tab: ScopeId): readonly Lane[];
+    lanesOf(tab: ScopeId): readonly FollowedSession[];
     observe(observation: Observation): void;
     recaps: Pick<TabRecaps, 'turnEnded'>;
     engine: Pick<Engine, 'sessionStarted' | 'compacted'>;
     turnEnds: TurnEnds;
     preCompacts: PreCompacts;
-    claimIdle(lane: Lane): IdleClaim;
+    claimIdle(lane: FollowedSession): IdleClaim;
     restoreMode(): RestoreMode;
     rebindMode(): RebindMode;
     rebind: Rebind;

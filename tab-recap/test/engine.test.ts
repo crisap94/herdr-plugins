@@ -8,7 +8,7 @@ import { RecapJob, type RecapJobDeps } from '@stateforge-labs/session-ledger';
 import type { LegacyRecapWritten as RecapWritten } from '@stateforge-labs/session-ledger';
 import { tabId, agentKind, paneId } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { instant } from '@stateforge-labs/session-ledger';
 import { FULL_WRITER_VIEW } from '@stateforge-labs/session-ledger';
 import { memoryStore, storeRead } from '#test/db/support.ts';
@@ -26,7 +26,7 @@ import { cursorOf, grewOf, sourcePathOf } from '@stateforge-labs/session-ledger'
 import { seenLane } from '#test/support/seen.ts';
 
 const TAB = 'w1:t1';
-const lanes: readonly Lane[] = [
+const lanes: readonly FollowedSession[] = [
     laneFrom(seenLane({ paneId: 'w1:p1', tabId: TAB, workspaceId: 'w1', agent: 'claude', session: 's1' })),
     laneFrom(seenLane({ paneId: 'w1:p2', tabId: TAB, workspaceId: 'w1', agent: 'claude', session: 's2' })),
 ];
@@ -34,7 +34,7 @@ const lanes: readonly Lane[] = [
 const reader: SessionReader = {
     agent: agentKind('claude'),
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-    locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
+    locate: (lane: FollowedSession): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
     read: (source: string): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf(`go ${source}`) }], title: null, lastPrompt: null, harnessRecap: null, notes: [], position: { cursor: cursorOf(7), tail: null }, grew: grewOf(true) }),
 };

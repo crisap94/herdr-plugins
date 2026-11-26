@@ -1,7 +1,7 @@
 import { brand } from '#src/recap/domain/brand.ts';
 import type { Count } from '#src/contract/kernel.ts';
 import type { Text } from '#src/recap/domain/text.ts';
-import type { Lane, ScopeId } from '#src/recap/domain/lane-shape.ts';
+import type { LegacyFollowedSession, ScopeId } from '#src/recap/domain/followed-session-shape.ts';
 import type { RecapCause } from '#src/recap/domain/recap-cause.ts';
 import type { TranscriptRegistry } from '#src/ports/transcript-registry.ts';
 import type { Clock } from '#src/ports/clock.ts';
@@ -57,7 +57,7 @@ export interface RecapJobDeps {
 }
 
 const READ_BUDGET = 768 * 1024;
-async function placeOf(seat: Lane, repos: Workplaces): Promise<PlacedLane> {
+async function placeOf(seat: LegacyFollowedSession, repos: Workplaces): Promise<PlacedLane> {
     const found = seat.cwd === null ? null : await repos.repoOf(seat.cwd);
     const place = found?.kind === 'repo' ? found.root : seat.cwd;
     return { pane: seat.pane, place: place === null ? null : textOf(place) };
@@ -70,7 +70,7 @@ export class RecapJob {
 
     constructor(deps: RecapJobDeps) { this.deps = deps; }
 
-    request(tab: ScopeId, lanes: readonly Lane[], cause: RecapCause): void {
+    request(tab: ScopeId, lanes: readonly LegacyFollowedSession[], cause: RecapCause): void {
         const key = String(tab);
         const slot: Slot = this.slots.get(key) ?? { tab, timer: null, flight: 'idle', pending: null, lastStart: null, lastLanes: new Set(), waiting: [], deferred: 'none' };
         this.slots.set(key, slot);
@@ -141,14 +141,14 @@ export class RecapJob {
         if (slot.pending !== null && slot.pending.burst !== null && slot.waiting.length > 0) slot.pending = { ...slot.pending, start: AT_ONCE };
     }
 
-    refreshNow(tab: ScopeId, lanes: readonly Lane[]): Promise<void> { this.request(tab, lanes, 'requested'); return this.idle(tab); }
+    refreshNow(tab: ScopeId, lanes: readonly LegacyFollowedSession[]): Promise<void> { this.request(tab, lanes, 'requested'); return this.idle(tab); }
 
     idle(scope: ScopeId): Promise<void> {
         const slot = this.slots.get(String(scope));
         return slot === undefined || (slot.flight === 'idle' && slot.timer === null) ? Promise.resolve() : new Promise((resolve) => { slot.waiting.push(resolve); });
     }
 
-    private async locate(lane: Lane): Promise<Located | Text> {
+    private async locate(lane: LegacyFollowedSession): Promise<Located | Text> {
         const agent = lane.agent;
         const reader = this.deps.transcripts.readerFor(agent);
         if (reader === undefined) return this.deps.transcripts.unavailableReason(agent);
@@ -156,7 +156,7 @@ export class RecapJob {
         return isUnknown(located) ? saying(located.why) : { reader, source: located.source };
     }
 
-    private async read(lane: Lane, prior: Recap, budget: Count): Promise<Reading> {
+    private async read(lane: LegacyFollowedSession, prior: Recap, budget: Count): Promise<Reading> {
         const blank: SessionCursor = { key: lane.pane, agent: lane.agent, transcript: sourcePathOf(''), cursor: UNREAD.cursor, tail: UNREAD.tail, title: lane.title === null ? null : textOf(lane.title), lastPrompt: null, harnessRecap: null };
         const found = await this.locate(lane);
         if (typeof found === 'string') return { lane, cursor: blank, chunk: null, grew: grew(false), fresh: SEEN_BEFORE, error: found };
@@ -167,7 +167,7 @@ export class RecapJob {
         return { lane, cursor, chunk, grew: chunk.grew, fresh: was.cursor === UNREAD.cursor ? FRESH : SEEN_BEFORE, error: null };
     }
 
-    private async readAll(prior: Recap, lanes: readonly Lane[], cause: RecapCause): Promise<readonly Reading[]> {
+    private async readAll(prior: Recap, lanes: readonly LegacyFollowedSession[], cause: RecapCause): Promise<readonly Reading[]> {
         const budget = count(Math.floor(READ_BUDGET / Math.max(1, lanes.length)));
         try {
             return await Promise.all(lanes.map((each) => this.read(each, prior, budget)));
@@ -179,7 +179,7 @@ export class RecapJob {
         }
     }
 
-    private async recap(tab: ScopeId, lanes: readonly Lane[], cause: RecapCause, run: Run): Promise<void> {
+    private async recap(tab: ScopeId, lanes: readonly LegacyFollowedSession[], cause: RecapCause, run: Run): Promise<void> {
         const prior = this.deps.records.readRecap(tab) ?? blankRecap(tab);
         if ('kind' in prior) return this.skipped(tab, prior);
         const found = this.deps.ledger.keysOf(tab);

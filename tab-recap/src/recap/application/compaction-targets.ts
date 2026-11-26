@@ -1,6 +1,6 @@
 import { COMPACTABLE } from '@stateforge-labs/session-ledger';
 import type { CompactTarget } from '@stateforge-labs/session-ledger';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
 import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import type { CompactAsk } from '#src/ports/requests.ts';
@@ -12,9 +12,9 @@ export interface TargetWhere {
     readonly focused: SessionKey | null;
 }
 
-export const compactable = (lanes: readonly Lane[]): readonly Lane[] => lanes.filter((lane) => COMPACTABLE.some((kind) => kind === String(lane.agent)));
+export const compactable = (lanes: readonly FollowedSession[]): readonly FollowedSession[] => lanes.filter((lane) => COMPACTABLE.some((kind) => kind === String(lane.agent)));
 
-export function targetsOf(lanes: readonly Lane[], setting: CompactTarget, where: TargetWhere): readonly Lane[] {
+export function targetsOf(lanes: readonly FollowedSession[], setting: CompactTarget, where: TargetWhere): readonly FollowedSession[] {
     const eligible = compactable(lanes);
     const named = eligible.filter((lane) => lane.pane === where.pane);
     if (named.length > 0) {
@@ -32,13 +32,13 @@ export function targetsOf(lanes: readonly Lane[], setting: CompactTarget, where:
 
 export interface Scope {
     readonly tab: ScopeId;
-    readonly lanes: readonly Lane[];
-    readonly targets: readonly Lane[];
+    readonly lanes: readonly FollowedSession[];
+    readonly targets: readonly FollowedSession[];
 }
 
 type Targeting = Pick<CompactionPorts, 'lanes' | 'focused' | 'target'>;
 
-async function targetsFor(deps: Targeting, request: CompactAsk, tab: ScopeId, lanes: readonly Lane[]): Promise<readonly Lane[]> {
+async function targetsFor(deps: Targeting, request: CompactAsk, tab: ScopeId, lanes: readonly FollowedSession[]): Promise<readonly FollowedSession[]> {
     const asked = request.pane === null ? null : parsePaneId(request.pane);
     if (asked !== null && asked.kind === 'err') return [];
     const focused = await deps.focused(tab);

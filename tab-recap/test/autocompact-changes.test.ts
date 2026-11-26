@@ -9,12 +9,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { paneId, tabId } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { NOW, lane, rows, world } from './autocompact-world.ts';
 import type { World } from './autocompact-world.ts';
 import { seenLane } from '#test/support/seen.ts';
 
-const laneAt = (pane: string): Lane => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
+const laneAt = (pane: string): FollowedSession => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: 'idle' }));
 const waitAt = (w: World, at: number, mode: 'shadow' | 'on'): void => {
     w.store.decisions.record({ scope: tabId('w1:t1'), key: paneId('w1:p1'), agent: agentKind('claude'), at: instant(at), mode, share: countOf(12), tokens: mustParsed(parseCount(120_000)), window: mustParsed(parseCount(1_000_000)), gate: 'ask', verdict: 'wait', askedVerdict: 'wait', answers: new Map(), coverage: null, coverageOutcome: null, coverageMs: null, coverageCostUsd: null, laneStatus: null, decider: null, costUsd: mustParsed(parseUsd(0)), tookMs: null, why: null });
 };

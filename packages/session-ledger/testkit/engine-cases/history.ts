@@ -7,7 +7,7 @@ import type { EngineWorld } from '../world.ts';
 import { addOf, countOf, NO_OPS, spoken, writtenOps } from './support.ts';
 import { instant } from '../../src/recap/domain/time.ts';
 import { textOf } from '../../src/recap/domain/text.ts';
-import { tabIdOf } from '../../src/recap/domain/lane-shape.ts';
+import { tabIdOf } from '../../src/recap/domain/followed-session-shape.ts';
 
 const TAB = scope('one');
 const OTHER = scope('two');

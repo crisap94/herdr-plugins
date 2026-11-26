@@ -46,7 +46,7 @@ export { CHUNK_CHARS, chunksOf, newestOf } from './recap/application/chunking.ts
 export { correctionDocument } from './recap/application/correction-input.ts';
 export { curatorInput, documentId, reconcileInput, stillTrueOf, TAIL_CHARS } from './recap/application/curator-input.ts';
 export { CursorCarry } from './recap/application/cursor-carry.ts';
-export { createEngine as legacyCreateEngine, type Engine as LegacyEngine, type EngineModels, type EnginePlugs as LegacyEnginePlugs, type EngineSettings, type FollowedSession as LegacyFollowedSession } from './recap/application/engine.ts';
+export { createEngine as legacyCreateEngine, type Engine as LegacyEngine, type EngineModels, type EnginePlugs as LegacyEnginePlugs, type EngineSettings, type LegacyFollowedSession } from './recap/application/engine.ts';
 export { answeredBy, type AnswerGround, parseFields } from './recap/application/enumerate-answer.ts';
 export { enumerateInput, type EnumerateMaterial, stubId } from './recap/application/enumerate-input.ts';
 export { type AgentTurns, ASK_BACK_CHARS, deduplicated, enumerate, enumerateAsked, type EnumerateRun } from './recap/application/enumerate.ts';
@@ -58,7 +58,7 @@ export { batch } from './recap/application/job-kit/batch.ts';
 export { parseRepairMode, type RepairMode, repairModeOr } from './recap/application/job-kit/repair.ts';
 export { listedIn, live, type Stage, staged, stageFor, type Staging, submittedStage, toolOf } from './recap/application/job-kit/stage.ts';
 export { callOf, type CallVerdict, type KitGround, submitted } from './recap/application/job-kit/writer-tools.ts';
-export { touchedFiles } from './recap/application/lane-hints.ts';
+export { touchedFiles } from './recap/application/followed-session-hints.ts';
 export { CLOSED_SHOWN_MS, numbered, severalOf, type TaskFacts, taskFactsOf, writerFacts } from './recap/application/ledger-input.ts';
 export { type CurateWhy, type RecapWritten as LegacyRecapWritten, RECONCILE_EVERY, reconcileTask, Reconciling, type ReconcilingDeps } from './recap/application/ledger-reconcile.ts';
 export { isoSecond, localTime } from './recap/application/local-time.ts';
@@ -112,7 +112,7 @@ export { foldedOf, jaccard as wordJaccard, tokensOf as wordTokensOf, wordsOf } f
 export { keptGrouping, type PlacedLane } from './recap/domain/grouping.ts';
 export { type IdleHold, parseIdleHold } from './recap/domain/idle-hold.ts';
 export { awaitedNames, backgroundItem, backgroundLabel, backgroundTool, ceilingOf, flightDetail, flightOf, flightReason, foregroundOf, holdingDetail, holdsLane, joinedDetail, keptDetail, NO_RUNNING, NOT_AWAITING, NOTHING_IN_FLIGHT, observedFrom, overridingDetail, runningCount, runningOf, unreadable } from './recap/domain/in-flight.ts';
-export { agentKindOf, paneIdOf, tabIdOf } from './recap/domain/lane-shape.ts';
+export { agentKindOf, paneIdOf, tabIdOf } from './recap/domain/followed-session-shape.ts';
 export { apply, fold, foldSwept, sweepOf } from './recap/domain/ops.ts';
 export { PACING_TURN, parsePacing } from './recap/domain/pacing.ts';
 export { closeEvidenceOr, DEFAULT_PIPELINE, gatesOf, parseCloseEvidence, parsePipeline, pipelineOf, PIPELINES, retriesTargeted } from './recap/domain/pipeline.ts';

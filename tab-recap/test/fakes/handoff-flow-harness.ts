@@ -16,7 +16,7 @@ import { handoffPlanner } from '#src/adapters/capability/handoff-plans.ts';
 import { handoffIdOf } from '#src/adapters/db/handoff-ids.ts';
 import { ids } from '#src/adapters/db/uuid7.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { RefreshStatus } from '#src/recap/domain/freshness.ts';
 import type { RecapTask } from '@stateforge-labs/session-ledger';
@@ -102,7 +102,7 @@ export function harness(over: Partial<FlowWorld> = {}, sender: Pick<HandoffSende
     const logs: string[] = [];
     const flushes: string[] = [];
     const targetKey = world.targetKeyKnown ? { session: 'sess-2', cwd: '/other' } : { session: null, cwd: null };
-    const lanes = (): readonly Lane[] => [
+    const lanes = (): readonly FollowedSession[] => [
         laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: world.sourceStatus, session: 'sess-1', cwd: '/repo' })),
         ...(world.targetPresent ? [laneFrom(seenLane({ paneId: 'w1:p2', tabId: 'w1:t2', workspaceId: 'w1', agent: world.targetAgent, status: world.targetStatus, ...targetKey }))] : []),
         ...(world.targetPresent && world.peer ? [laneFrom(seenLane({ paneId: 'w1:p3', tabId: 'w1:t2', workspaceId: 'w1', agent: world.targetAgent, status: 'idle', session: 'sess-3', cwd: '/other' }))] : []),

@@ -15,7 +15,7 @@ import { numbered, severalOf } from '@stateforge-labs/session-ledger';
 import { FULL_WRITER_VIEW, positiveCount } from '@stateforge-labs/session-ledger';
 import { brand } from '@stateforge-labs/session-ledger';
 import { instant } from '@stateforge-labs/session-ledger';
-import type { LegacyFollowedSession as Lane } from '@stateforge-labs/session-ledger';
+import type { LegacyFollowedSession as FollowedSession } from '@stateforge-labs/session-ledger';
 import { cursorOf, grewOf, type Chunk, type Entry } from '@stateforge-labs/session-ledger';
 import type { SessionCursor } from '@stateforge-labs/session-ledger';
 import type { RecapInput } from '@stateforge-labs/session-ledger';
@@ -85,7 +85,7 @@ test('a compacted mark becomes a lane mark, and an unknown time waits for the la
     assert.deepEqual(marksOf([{ lane, chunk }], NOW, NOT_ADVANCED), []);
 });
 
-const laneOf = (pane: string): Lane => ({ pane: brand<string, 'SessionKey'>(pane), tab: brand<string, 'ScopeId'>('tab-1'), workspace: brand<string, 'WorkspaceId'>('w1'), agent: brand<string, 'HarnessKind'>('claude'), status: 'working', session: null, cwd: null, title: null, since: null });
+const laneOf = (pane: string): FollowedSession => ({ pane: brand<string, 'SessionKey'>(pane), tab: brand<string, 'ScopeId'>('tab-1'), workspace: brand<string, 'WorkspaceId'>('w1'), agent: brand<string, 'HarnessKind'>('claude'), status: 'working', session: null, cwd: null, title: null, since: null });
 
 test('the recap input numbers agents by index and keeps the newest note of each kind', async () => {
     const cursor: SessionCursor = { key: paneId('p1'), agent: agentKind('claude'), transcript: sourcePath('t'), cursor: cursorAt(0), tail: null, title: null, lastPrompt: null, harnessRecap: text('Recap text') };

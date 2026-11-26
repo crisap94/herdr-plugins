@@ -1,5 +1,5 @@
 import { countOf } from '@stateforge-labs/session-ledger';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { CompactionPlan, CompactionPlanResult, Unsupported } from '#src/recap/domain/compaction-plan.ts';
 import type { Prompted } from '#src/ports/agents.ts';
 import { saying, unknown } from '@stateforge-labs/session-ledger';
@@ -77,7 +77,7 @@ export class Sender {
         return leased.kind === 'busy' ? unknown({ why: 'lease', after: duration(LEASE_TTL_MS) }) : leased.value;
     }
 
-    private async attempt(lane: Lane, plan: CompactionPlan, trail: Trail, placement: Placement): Promise<Tried> {
+    private async attempt(lane: FollowedSession, plan: CompactionPlan, trail: Trail, placement: Placement): Promise<Tried> {
         const since = this.now();
         const pane = lane.pane;
         const sent = await this.typed(pane, async (): Promise<Prompted> => {
@@ -95,7 +95,7 @@ export class Sender {
         return { sent, verdict: await this.confirmed(lane, since, plan, trail, placement) };
     }
 
-    private async confirmed(lane: Lane, since: Instant, plan: CompactionPlan, trail: Trail, placement: Placement): Promise<Verdict> {
+    private async confirmed(lane: FollowedSession, since: Instant, plan: CompactionPlan, trail: Trail, placement: Placement): Promise<Verdict> {
         const deps: QueuedDeps = { settling: this.deps.settling, marks: (each) => this.deps.marks(each), pause: (ms) => this.deps.pause(ms), now: () => this.now() };
         switch (plan.confirm.kind) {
             case 'turn-end':
@@ -122,14 +122,14 @@ export class Sender {
         }
     }
 
-    private async refused(lane: Lane, trail: Trail, sent: Unsent): Promise<void> {
+    private async refused(lane: FollowedSession, trail: Trail, sent: Unsent): Promise<void> {
         const { compaction, badge } = this.deps.messages();
         const why = sent.kind === 'blocked' ? badge.blocked : saying(sent.why);
         trail.end('failed', { why: textOf(why) }, sent.kind === 'blocked' ? COMPACT_FAILURES.skipped : COMPACT_FAILURES.error);
         await this.tell(must(parseText(compaction.title(must(parseText(lane.agent))))), must(parseText(compaction.failed(must(parseText(lane.agent)), why))));
     }
 
-    private handoff(lane: Lane, plan: CompactionPlan, text: Text): () => Prose | null {
+    private handoff(lane: FollowedSession, plan: CompactionPlan, text: Text): () => Prose | null {
         const message = text.brief === null ? restoreOf(text.material) : restoreFrom(text.brief);
         const restores = this.deps.restores;
         const session = lane.session;
@@ -140,7 +140,7 @@ export class Sender {
         return () => restores.take(session);
     }
 
-    private async restore(lane: Lane, message: Prose | null, plan: CompactionPlan, trail: Trail): Promise<void> {
+    private async restore(lane: FollowedSession, message: Prose | null, plan: CompactionPlan, trail: Trail): Promise<void> {
         const followUp = plan.followUp;
         if (followUp.kind === 'none' || message === null) {
             return;
@@ -155,7 +155,7 @@ export class Sender {
         }
     }
 
-    private async conclude(lane: Lane, trail: Trail, ended: Ended): Promise<void> {
+    private async conclude(lane: FollowedSession, trail: Trail, ended: Ended): Promise<void> {
         const { verdict, retry } = ended;
         const retried = retry === 'retried';
         const { compaction } = this.deps.messages();
@@ -165,7 +165,7 @@ export class Sender {
         await this.tell(must(parseText(compaction.title(must(parseText(lane.agent))))), must(parseText(compaction.outcome(must(parseText(lane.agent)), verdict.outcome, retried ? 'present' : 'absent', { tokens: must(parseText(said.tokens)), took: must(parseText(said.took)) }))));
     }
 
-    private async attemptedOnce(lane: Lane, plan: CompactionPlan, trail: Trail, placement: Placement): Promise<OnceAttempt> {
+    private async attemptedOnce(lane: FollowedSession, plan: CompactionPlan, trail: Trail, placement: Placement): Promise<OnceAttempt> {
         const first = await this.attempt(lane, plan, trail, placement);
         const retry = plan.retryOnSelfFailure && first.verdict?.outcome === 'failed';
         if (!retry) {
@@ -175,7 +175,7 @@ export class Sender {
         return { tried: await this.attempt(lane, plan, trail, 'immediate'), retry: 'retried' };
     }
 
-    async send(lane: Lane, text: Text, trail: Trail, placed: Placed): Promise<Unsupported | undefined> {
+    async send(lane: FollowedSession, text: Text, trail: Trail, placed: Placed): Promise<Unsupported | undefined> {
         const resolved: CompactionPlanResult = this.deps.compactionPlans.forKind(lane.agent, text.brief ?? guidanceOf(text.material));
         if (resolved.kind === 'unsupported') {
             trail.end('failed', { why: textOf(resolved.why) });

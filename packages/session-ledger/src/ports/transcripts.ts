@@ -2,7 +2,7 @@ import type { Observed } from '#src/recap/domain/compaction.ts';
 import { brand, type Brand } from '#src/recap/domain/brand.ts';
 import type { Count } from '#src/recap/domain/count.ts';
 import type { BackgroundItem, RunningCount } from '#src/recap/domain/in-flight.ts';
-import type { HarnessKind, Lane } from '#src/recap/domain/lane-shape.ts';
+import type { HarnessKind, LegacyFollowedSession } from '#src/recap/domain/followed-session-shape.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { Duration, Instant } from '#src/recap/domain/time.ts';
 import type { InFlightWhy, SplitWhy } from './capability-reasons.ts';
@@ -54,7 +54,7 @@ export type SupportedInFlight = Extract<InFlightCapability, { readonly kind: 'su
 
 export interface SessionReader {
     readonly agent: HarnessKind;
-    locate(lane: Lane): Promise<Located>;
+    locate(lane: LegacyFollowedSession): Promise<Located>;
     read(source: SourcePath, was: Position, budget: Count): Promise<ChunkResult>;
     carry?(from: Located, to: Located, at: Position): Promise<Position>;
     latestPrompt(source: SourcePath, budget: Count): Promise<PromptResult>;

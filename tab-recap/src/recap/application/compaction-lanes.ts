@@ -1,5 +1,5 @@
 import type { CompactAsk } from '#src/ports/requests.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { Origin } from '#src/recap/domain/origin.ts';
 import type { Messages } from '#src/i18n/index.ts';
 import { COMPACT_FAILURES } from '#src/protocol/exchanges/compact.ts';
@@ -26,7 +26,7 @@ export interface Asked {
 
 const LANE_BUSY_WHY = must(parseText('lane busy'));
 
-export function laneBusyRefusal(messages: Messages, lane: Lane): Refusal {
+export function laneBusyRefusal(messages: Messages, lane: FollowedSession): Refusal {
     return { stage: 'failed', reason: COMPACT_FAILURES.laneBusy, why: LANE_BUSY_WHY, toast: must(parseText(messages.compaction.failed(must(parseText(lane.agent)), LANE_BUSY_WHY))) };
 }
 
@@ -35,13 +35,13 @@ export function laneClosedRefusal(point: ClosePoint): Refusal {
 }
 
 interface ClaimSplit {
-    readonly owned: Lane[];
-    readonly held: Lane[];
+    readonly owned: FollowedSession[];
+    readonly held: FollowedSession[];
 }
 
-export function splitByClaim(claims: Pick<LaneClaims, 'kindOf'>, lanes: readonly Lane[], claim: (lane: Lane) => Presence): ClaimSplit {
-    const owned: Lane[] = [];
-    const held: Lane[] = [];
+export function splitByClaim(claims: Pick<LaneClaims, 'kindOf'>, lanes: readonly FollowedSession[], claim: (lane: FollowedSession) => Presence): ClaimSplit {
+    const owned: FollowedSession[] = [];
+    const held: FollowedSession[] = [];
     for (const lane of lanes) {
         if (claims.kindOf(lane.pane) === 'handoff') {
             held.push(lane);

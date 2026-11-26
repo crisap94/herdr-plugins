@@ -8,7 +8,7 @@ import { addOf, blockedOps, chunkOf, countOf, spoken, writtenOps } from './suppo
 import { failure } from '../values.ts';
 import { instant } from '../../src/recap/domain/time.ts';
 import { textOf } from '../../src/recap/domain/text.ts';
-import { tabIdOf } from '../../src/recap/domain/lane-shape.ts';
+import { tabIdOf } from '../../src/recap/domain/followed-session-shape.ts';
 
 export const TAB = scope('one');
 const TASK = { scope: tabIdOf(TAB), key: textOf(key('a')) };

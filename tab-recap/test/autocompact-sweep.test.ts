@@ -6,13 +6,13 @@ import type { Considers } from '@stateforge-labs/session-ledger';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { Candidate } from '@stateforge-labs/session-ledger/compaction-timing';
 import { candidatesOf } from '#src/daemon/autocompact.ts';
 import { seenLane } from '#test/support/seen.ts';
 
-const lane = (pane: string, status: string): Lane => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status }));
-const boardOf = (lanes: readonly Lane[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((found) => [found.pane, found])) });
+const lane = (pane: string, status: string): FollowedSession => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status }));
+const boardOf = (lanes: readonly FollowedSession[]): Board => ({ ...emptyBoard(), lanes: new Map(lanes.map((found) => [found.pane, found])) });
 const idle = [lane('w1:p1', 'idle'), lane('w1:p2', 'working'), lane('w1:p3', 'done'), lane('w1:p4', 'idle')];
 const settle = (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); });
 
@@ -109,7 +109,7 @@ test('candidatesOf gives one candidate per listed lane, ready exactly for the re
 
 test('a lane whose pane is not a valid session key is skipped and logged, never thrown', () => {
     const logs: string[] = [];
-    const odd = { ...lane('w1:p1', 'idle'), pane: ' ' as Lane['pane'] };
+    const odd = { ...lane('w1:p1', 'idle'), pane: ' ' as FollowedSession['pane'] };
     const board = { ...emptyBoard(), lanes: new Map([[odd.pane, odd], [lane('w1:p2', 'idle').pane, lane('w1:p2', 'idle')]]) };
     const found = candidatesOf(board, (line: string): void => { logs.push(line); });
     assert.deepEqual(found.map((candidate) => candidate.key), ['w1:p2']);

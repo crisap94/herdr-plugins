@@ -13,7 +13,7 @@ import type { Line } from '#src/daemon/slots.ts';
 import { must } from '@stateforge-labs/session-ledger';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
-import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
+import { laneFrom, type FollowedSession } from '#src/recap/domain/lane.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
 import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import { SOCKET_PATH_MAX } from '#src/wire/socket-claim.ts';
@@ -37,7 +37,7 @@ const restoreOf = (text: string): RestoreText => {
 
 type LaneStatusName = NonNullable<HookCase['lane']>['status'];
 
-const laneOf = (status: LaneStatusName): Lane =>
+const laneOf = (status: LaneStatusName): FollowedSession =>
     laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status: laneStatus(status), session: 's-lane', cwd: '/work/repo' }));
 
 function receiverFor(c: HookCase | null): ReturnType<typeof createReceiver> {

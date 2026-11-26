@@ -6,7 +6,7 @@ import type { StoreUnderTest } from '../memory-store.ts';
 import { cursor, factAt, isUnknownValue, runOf, shapeOf, typeIdAt } from './record-fixtures.ts';
 import { instant } from '@stateforge-labs/session-ledger';
 import { textOf } from '../../src/recap/domain/text.ts';
-import { tabIdOf, paneIdOf } from '../../src/recap/domain/lane-shape.ts';
+import { tabIdOf, paneIdOf } from '../../src/recap/domain/followed-session-shape.ts';
 
 const TASK: TaskId = { scope: tabIdOf('tab-1'), key: textOf('a') };
 

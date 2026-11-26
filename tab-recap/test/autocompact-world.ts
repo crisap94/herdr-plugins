@@ -9,7 +9,7 @@ import { candidateOf } from '#src/daemon/autocompact.ts';
 import { ACTIVE } from '@stateforge-labs/session-ledger';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { parseLaneStatusAtDecision } from '@stateforge-labs/session-ledger';
 import type { Policy } from '@stateforge-labs/session-ledger';
 import { tuningFrom } from '@stateforge-labs/session-ledger/compaction-timing';
@@ -34,21 +34,21 @@ export const NOW = 10_000_000;
 const SCOPE = must(parseScopeId('w1:t1'));
 const KEY = must(parseSessionKey('w1:p1'));
 const candidateWith = (harness: string): Candidate => ({ scope: SCOPE, key: KEY, harness: must(parseHarnessKind(harness)), ready: true });
-const laneOf = (from: Candidate, status: string): Lane => laneFrom(seenLane({ paneId: from.key, tabId: from.scope, workspaceId: 'w1', agent: from.harness, status }));
-export const lane = (agent = 'claude', status = 'idle'): Lane => laneOf(candidateWith(agent), status);
+const laneOf = (from: Candidate, status: string): FollowedSession => laneFrom(seenLane({ paneId: from.key, tabId: from.scope, workspaceId: 'w1', agent: from.harness, status }));
+export const lane = (agent = 'claude', status = 'idle'): FollowedSession => laneOf(candidateWith(agent), status);
 export const tuningOfKeys = (keys: Readonly<Record<string, string>>): CompactTuning => tuningFrom((key) => { const value = keys[key]; return value === undefined ? undefined : textOf(value); });
 export const SAFE = { closes_request: 0.95, announces_continuation: 0.05, asks_detailed_choice: 0.02, needs_verbatim: 0.10, changes_subject: 0.03, stuck: 0.01 };
 
-export function candidateFor(found: Lane): Candidate {
+export function candidateFor(found: FollowedSession): Candidate {
     const candidate = candidateOf(found);
     if (candidate === null) throw new Error(`no candidate for lane ${found.pane}`);
     return candidate;
 }
 
 export interface LaneService {
-    consider(seen: Lane): Promise<void>;
-    prune(seen: readonly Lane[]): void;
-    claimIdle(seen: Lane): IdleClaim;
+    consider(seen: FollowedSession): Promise<void>;
+    prune(seen: readonly FollowedSession[]): void;
+    claimIdle(seen: FollowedSession): IdleClaim;
 }
 
 export interface World { breakAt: number | null; readonly service: LaneService; readonly watch: SafePointWatch; readonly claims: LaneClaims; readonly queued: Set<string>;readonly events: string[]; awaiting: string | null; lateAwaiting: string | null; awaitingUnknown: boolean; known: boolean; gate: Promise<void> | null; byPane: Record<string, number>; readonly store: ReturnType<typeof memoryStore>; readonly requests: CompactAsk[]; readonly logs: string[]; readonly asked: number[]; readonly refreshed: string[]; readonly flushed: string[]; readonly reads: number[]; readonly clock: { at: number }; idleHold: IdleHold; policy: Policy; inFlight: number | 'unknown'; background: readonly BackgroundItem[]; share: number; decide: () => DecidedAnswersResult }
@@ -72,7 +72,7 @@ export function world(over: Partial<Policy> = {}, recap = true, startedAt = 0, t
         emit: (event) => { if (event.kind === 'session-skipped') events.push(`${event.key} autocompact-skipped ${event.gate}`); else if (event.kind === 'safe-point-decided') events.push(`${event.key} autocompact-decided ${event.verdict}-${event.share}`); },
     };
     const watch = new SafePointWatch(deps);
-    const seen = (found: Lane): Candidate => { const candidate = candidateFor(found); statuses.set(candidate, found.status); return candidate; };
+    const seen = (found: FollowedSession): Candidate => { const candidate = candidateFor(found); statuses.set(candidate, found.status); return candidate; };
     const service: LaneService = { consider: (found) => watch.consider(seen(found)), prune: (found) => { watch.prune(found.map(seen)); }, claimIdle: (found) => watch.claimIdle(seen(found)) };
     const self: World = { get breakAt() { return state.breakAt; }, set breakAt(value: number | null) { state.breakAt = value; }, service, watch, claims, queued, store, requests, logs, asked, refreshed, flushed, reads, clock, events,
         get awaiting() { return state.awaiting; }, set awaiting(value) { state.awaiting = value; }, get lateAwaiting() { return state.lateAwaiting; }, set lateAwaiting(value) { state.lateAwaiting = value; },get awaitingUnknown() { return state.awaitingUnknown; }, set awaitingUnknown(value) { state.awaitingUnknown = value; }, get policy() { return state.policy; }, set policy(value) { state.policy = value; }, get inFlight() { return state.inFlight; }, set inFlight(value) { state.inFlight = value; }, get background() { return state.background; }, set background(value) { state.background = value; }, get share() { return state.share; }, set share(value) { state.share = value; }, get known() { return state.known; }, set known(value) { state.known = value; }, get gate() { return state.gate; }, set gate(value) { state.gate = value; }, get byPane() { return state.byPane; }, set byPane(value) { state.byPane = value; }, get decide() { return state.decide; }, set decide(value) { state.decide = value; }, get idleHold() { return state.idleHold; }, set idleHold(value: IdleHold) { state.idleHold = value; } };

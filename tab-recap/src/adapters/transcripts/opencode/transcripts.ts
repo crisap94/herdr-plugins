@@ -4,7 +4,7 @@ import { openOpencodeStore, opencodeDatabasePath } from '@stateforge-labs/harnes
 import type { OpenCodeStore } from '@stateforge-labs/harness-adapters/opencode/store';
 import { TranscriptPath, sessionIdOfTranscriptPath } from '@stateforge-labs/harness-adapters';
 import type { Directory } from '@stateforge-labs/session-ledger';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { parseCount, type Count } from '@stateforge-labs/session-ledger';
 import { parseFsPath, type FsPath } from '#src/recap/domain/fs-path.ts';
 import type { Chunk, ChunkResult, Entry, InFlightResult, Located, ObservedResult, Position, PromptResult, SourcePath } from '@stateforge-labs/session-ledger';
@@ -45,7 +45,7 @@ export class OpencodeTranscripts implements SessionReader {
         this.database = database;
     }
 
-    locate(lane: Lane): Promise<Located> {
+    locate(lane: FollowedSession): Promise<Located> {
         const cwd = lane.cwd;
         if (cwd === null) {
             return Promise.resolve(unknown({ why: 'not-found', what: textOf(`a cwd for ${lane.pane}`) }));

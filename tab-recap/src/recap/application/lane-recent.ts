@@ -1,5 +1,5 @@
 import { must } from '@stateforge-labs/session-ledger';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { type SessionKey, type SessionId, parseSessionId } from '#src/recap/domain/ids.ts';
 import { UNREAD, type Entry, type Mark } from '@stateforge-labs/session-ledger';
 import { isUnknown, type Unknown } from '@stateforge-labs/session-ledger';
@@ -24,12 +24,12 @@ export class LaneRecent {
         this.session = session;
     }
 
-    private async now(lane: Lane): Promise<Lane> {
+    private async now(lane: FollowedSession): Promise<FollowedSession> {
         const current = await this.session(lane.pane);
         return typeof current === 'string' ? { ...lane, session: must(parseSessionId(current)) } : lane;
     }
 
-    private async tail(lane: Lane): Promise<RecentTail> {
+    private async tail(lane: FollowedSession): Promise<RecentTail> {
         const agent = lane.agent;
         const reader = this.transcripts.readerFor(agent);
         const current = await this.now(lane);
@@ -41,11 +41,11 @@ export class LaneRecent {
         return isUnknown(chunk) ? { entries: [], marks: [] } : { entries: chunk.entries, marks: chunk.marks ?? [] };
     }
 
-    async of(lane: Lane): Promise<readonly Entry[]> {
+    async of(lane: FollowedSession): Promise<readonly Entry[]> {
         return (await this.tail(lane)).entries;
     }
 
-    async marks(lane: Lane): Promise<readonly Mark[]> {
+    async marks(lane: FollowedSession): Promise<readonly Mark[]> {
         return (await this.tail(lane)).marks;
     }
 }

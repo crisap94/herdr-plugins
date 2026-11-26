@@ -8,7 +8,7 @@ import type { Directory } from '@stateforge-labs/session-ledger';
 import { paneId } from '#test/support/ids.ts';
 import type { SessionKey } from '#src/recap/domain/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { bumped, NO_COUNTS, perfLine } from '#src/recap/domain/perf.ts';
 import { notesKey } from '#src/recap/domain/pane-notes.ts';
 import { parseText, textOf } from '@stateforge-labs/session-ledger';
@@ -69,9 +69,9 @@ test('the run of a root: requests merge into the strongest tier, one run at a ti
     assert.equal(takeRun(runDone(next.state)).start, null);
 });
 
-const laneAt = (pane: string, cwd: string | null, status: string): Lane => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status, cwd }));
+const laneAt = (pane: string, cwd: string | null, status: string): FollowedSession => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status, cwd }));
 
-const lanes = (...all: Lane[]): ReadonlyMap<SessionKey, Lane> => new Map(all.map((lane): [SessionKey, Lane] => [lane.pane, lane]));
+const lanes = (...all: FollowedSession[]): ReadonlyMap<SessionKey, FollowedSession> => new Map(all.map((lane): [SessionKey, FollowedSession] => [lane.pane, lane]));
 
 test('movesOf: a new lane attaches, a moved cwd attaches again, a gone lane detaches, a working lane that stops ended its turn', () => {
     const p1 = paneId('w1:p1');

@@ -7,7 +7,7 @@ import { outcomeOf } from '#src/recap/application/compaction-outcome.ts';
 import type { OutcomeDeps } from '#src/recap/application/compaction-outcome.ts';
 import { instant, duration } from '@stateforge-labs/session-ledger';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { Mark } from '@stateforge-labs/session-ledger';
 import type { LegacySessionReader as SessionReader } from '@stateforge-labs/session-ledger';
 import { UNREAD, grewOf, sourcePathOf } from '@stateforge-labs/session-ledger';
@@ -26,13 +26,13 @@ function claude(files: ReadonlyMap<string, readonly Mark[]>): SessionReader {
     return {
         agent: agentKind('claude'),
         inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-        locate: (lane: Lane) => Promise.resolve(lane.session === null ? unknown({ why: 'not-found', what: textOf('a session id') }) : { kind: 'located' as const, source: sourcePathOf(`/projects/x/${lane.session}.jsonl`) }),
+        locate: (lane: FollowedSession) => Promise.resolve(lane.session === null ? unknown({ why: 'not-found', what: textOf('a session id') }) : { kind: 'located' as const, source: sourcePathOf(`/projects/x/${lane.session}.jsonl`) }),
         read: (source) => Promise.resolve({ kind: 'chunk', entries: [], title: null, lastPrompt: null, harnessRecap: null, notes: [], marks: files.get(source) ?? [], position: UNREAD, grew: grewOf(false) }),
         latestPrompt: () => Promise.resolve({ kind: 'prompt', text: null }),
     };
 }
 
-function confirm(recent: LaneRecent, lane: Lane): Promise<string> {
+function confirm(recent: LaneRecent, lane: FollowedSession): Promise<string> {
     const deps: OutcomeDeps = {
         settling: { settled: () => Promise.resolve({ kind: 'settled', status: 'done' }) },
         marks: (each) => recent.marks(each),

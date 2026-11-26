@@ -11,7 +11,7 @@ import { opencodeDatabasePath } from '@stateforge-labs/harness-adapters/opencode
 import { OpencodeTranscripts } from '#src/adapters/transcripts/opencode/transcripts.ts';
 import { opencodeFixture } from '#test/opencode-fixture.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { UNREAD } from '@stateforge-labs/session-ledger';
 import type { Chunk, ChunkResult, Located } from '@stateforge-labs/session-ledger';
 import { textOf } from '@stateforge-labs/session-ledger';
@@ -20,7 +20,7 @@ import { countOf } from '@stateforge-labs/session-ledger';
 import { seenLane } from '#test/support/seen.ts';
 
 const scratch = (): string => mkdtempSync(join(tmpdir(), 'recap-readers-'));
-const laneIn = (agent: string, extra: { session?: string; cwd?: string } = {}): Lane =>
+const laneIn = (agent: string, extra: { session?: string; cwd?: string } = {}): FollowedSession =>
     laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent, ...extra }));
 
 function chunkOf(result: ChunkResult): Chunk {

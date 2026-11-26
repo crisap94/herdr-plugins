@@ -11,7 +11,7 @@ import { createTurnEnds } from '#src/adapters/hooks/turn-ends.ts';
 import { must } from '@stateforge-labs/session-ledger';
 import { parseFsPath } from '#src/recap/domain/fs-path.ts';
 import { paneId, tabId } from '#test/support/ids.ts';
-import { laneFrom, type Lane } from '#src/recap/domain/lane.ts';
+import { laneFrom, type FollowedSession } from '#src/recap/domain/lane.ts';
 import { laneStatus } from '#src/recap/domain/status.ts';
 import { instant, type Instant } from '@stateforge-labs/session-ledger';
 import type { HookCase } from '#test/contracts/wire/fakes/fake-harness.ts';
@@ -35,7 +35,7 @@ const restoreOf = (text: string): RestoreText => {
     throw new Error('every string is a restore text in the fake');
 };
 
-const laneOf = (status: NonNullable<HookCase['lane']>['status']): Lane =>
+const laneOf = (status: NonNullable<HookCase['lane']>['status']): FollowedSession =>
     laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: 'w1', agent: 'codex', status: laneStatus(status), session: 'cx-lane', cwd: '/work/repo' }));
 
 function receiverFor(c: HookCase): ReturnType<typeof createReceiver> {

@@ -1,8 +1,8 @@
-import type { HarnessKind } from '#src/recap/domain/lane-shape.ts';
+import type { HarnessKind } from '#src/recap/domain/followed-session-shape.ts';
 import type { Text } from '#src/recap/domain/text.ts';
 import type { SessionReader } from './transcripts.ts';
 
-export { agentKindOf, type HarnessKind } from '#src/recap/domain/lane-shape.ts';
+export { agentKindOf, type HarnessKind } from '#src/recap/domain/followed-session-shape.ts';
 
 export type TranscriptReaders = ReadonlyMap<HarnessKind, SessionReader>;
 

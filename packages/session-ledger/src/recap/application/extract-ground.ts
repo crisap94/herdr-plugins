@@ -9,7 +9,7 @@ import type { TaskShape } from '#src/recap/domain/grouping.ts';
 import type { Ground } from './extract-job.ts';
 import { anchorSource } from './anchor-source.ts';
 import type { Built } from './recap-input.ts';
-import { tabIdOf } from '#src/recap/domain/lane-shape.ts';
+import { tabIdOf } from '#src/recap/domain/followed-session-shape.ts';
 
 const REPEAT_WINDOW_MS = 24 * 3_600_000;
 

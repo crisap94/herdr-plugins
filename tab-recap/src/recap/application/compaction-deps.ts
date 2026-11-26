@@ -1,7 +1,7 @@
 import type { GuardedLedger, GuardedRecapRecords } from '#src/ports/guarded-reads.ts';
 import type { Messages } from '#src/i18n/index.ts';
 import type { CompactTarget } from '@stateforge-labs/session-ledger';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { AgentPanes } from '#src/ports/agents.ts';
 import type { LaneSettler } from '#src/ports/lane-settling.ts';
 import type { NotifierPort } from '#src/ports/notifier.ts';
@@ -57,12 +57,12 @@ export interface CompactionPorts {
     readonly events?: LaneEvents;
     readonly claims: LaneClaims;
     readonly restores?: RestoreHandoff;
-    recent(lane: Lane): Promise<readonly Entry[]>;
-    marks(lane: Lane): Promise<readonly Mark[]>;
+    recent(lane: FollowedSession): Promise<readonly Entry[]>;
+    marks(lane: FollowedSession): Promise<readonly Mark[]>;
     pause(ms: Duration): Promise<void>;
     now(): Instant;
     readonly webs: LaneWebs;
-    lanes(tab: ScopeId): readonly Lane[];
+    lanes(tab: ScopeId): readonly FollowedSession[];
     listsPane(pane: SessionKey): Presence;
     focused(tab: ScopeId): Promise<SessionKey | null>;
     refresh: RecapRefresh;

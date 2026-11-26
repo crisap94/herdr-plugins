@@ -16,7 +16,7 @@ import { ANCHOR_LEADS, DECISIONS, DONE, MIX, NEEDS, NEXT, PROJECTS, RULES } from
 import type { Project } from './dataset-vocabulary.ts';
 import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
-import { agentKindOf, paneIdOf } from '../../packages/session-ledger/src/recap/domain/lane-shape.ts';
+import { agentKindOf, paneIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
 import { directoryOf } from '../lib/brands.ts';
 
 const MINUTE = 60_000;

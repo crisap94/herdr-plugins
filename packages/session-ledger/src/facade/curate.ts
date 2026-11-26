@@ -16,7 +16,7 @@ import { curationOf, type Curation } from './curation.ts';
 import type { CurateBridge, Reconcile, Reconciled, Round } from './reconcile-bridge.ts';
 import { reconcilingOver } from './reconcile-bridge.ts';
 import { acceptedRepair, storyRepair, type StoryReading } from './story-repair.ts';
-import { tabIdOf } from '#src/recap/domain/lane-shape.ts';
+import { tabIdOf } from '#src/recap/domain/followed-session-shape.ts';
 
 const CURATE_GAP_MS = 5 * 60_000;
 

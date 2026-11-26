@@ -6,7 +6,7 @@ import { emptyBoard } from '#src/recap/domain/board.ts';
 import { observe } from '#src/recap/domain/fold.ts';
 import { tabId } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
 import { duration, instant } from '@stateforge-labs/session-ledger';
 import type { Workplaces, RepoResult } from '@stateforge-labs/session-ledger';
@@ -21,7 +21,7 @@ import type { SeenLane } from '#src/recap/domain/lane.ts';
 const WEB = { base: must(parseText('https://gitlab.example/acme/shop')), forge: 'gitlab' } as const;
 const dir = (path: string): Directory => must(parseDirectory(path));
 const branch = (name: string): Text => must(parseText(name));
-const lane = (pane: string, cwd: string | null): Lane => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd }));
+const lane = (pane: string, cwd: string | null): FollowedSession => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', session: 's', cwd }));
 
 function repos(answers: Record<string, RepoResult>): Workplaces {
     return { repoOf: (cwd) => Promise.resolve(answers[cwd] ?? { kind: 'no-repo' }) };

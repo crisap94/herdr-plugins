@@ -15,7 +15,7 @@ import { checkedOf, wrongCloses } from './scoring.ts';
 import { textOf } from '../../packages/session-ledger/src/recap/domain/text.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
 import { causeOf } from '../../packages/session-ledger/src/recap/domain/failure-cause.ts';
-import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/lane-shape.ts';
+import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
 
 // One job of the reconcile eval, driven through the plugin's own reconcileTask.
 // The writer sends each call through the runner's asker, so every call shares the job's pool slot, backoff and call cap.

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { RecapJob } from '@stateforge-labs/session-ledger';
 import { tabId, agentKind } from '#test/support/ids.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { instant } from '@stateforge-labs/session-ledger';
 import type { RecapRequest, Written } from '@stateforge-labs/session-ledger';
 import type { LegacyWriter as Writer } from '@stateforge-labs/session-ledger';
@@ -24,7 +24,7 @@ import { seenLane } from '#test/support/seen.ts';
 const transcripts: SessionReader = {
     agent: agentKind('claude'),
     inFlight: { kind: 'unsupported', why: 'unregistered-reader' },
-    locate: (lane: Lane): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
+    locate: (lane: FollowedSession): Promise<Located> => Promise.resolve({ kind: 'located', source: sourcePathOf(`/t/${lane.pane}`) }),
     latestPrompt: (): Promise<PromptResult> => Promise.resolve({ kind: 'prompt', text: null }),
     read: (): Promise<ChunkResult> => Promise.resolve({ kind: 'chunk', entries: [{ role: 'user', text: textOf('migrate victoria') }], title: null, lastPrompt: null, harnessRecap: null, notes: [], position: { cursor: cursorOf(100), tail: null }, grew: grewOf(true) }),
 };

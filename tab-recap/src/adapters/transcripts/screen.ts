@@ -6,7 +6,7 @@ import { cleanScreen, screenEntries, steady } from '#src/recap/application/scree
 import type { ScreenChrome } from '#src/recap/application/screen-text.ts';
 import { parsePaneId, type HarnessKind, parseAgentKind } from '#src/recap/domain/ids.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { parseText, type Text, textOf } from '@stateforge-labs/session-ledger';
 import { SCREEN_PREFIX } from '#src/ports/screens.ts';
 import type { ScreenReader } from '#src/ports/screens.ts';
@@ -34,7 +34,7 @@ export class ScreenTranscripts implements SessionReader {
         this.wants = wants;
     }
 
-    locate(lane: Lane): Promise<Located> {
+    locate(lane: FollowedSession): Promise<Located> {
         const agent = lane.agent;
         return Promise.resolve(this.wants(agent) === 'present'
             ? { kind: 'located', source: sourcePathOf(`${SCREEN_PREFIX}${lane.pane}`) }

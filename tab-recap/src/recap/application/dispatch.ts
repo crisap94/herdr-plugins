@@ -5,7 +5,7 @@ import type { Observation } from '#src/recap/domain/fold.ts';
 import type { SessionKey, ScopeId } from '#src/recap/domain/ids.ts';
 import { workspaceOfTab } from '#src/recap/domain/ids.ts';
 import type { Intent } from '#src/recap/domain/intent.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import type { ClosedLane } from '#src/recap/domain/closures.ts';
 import { edgePane, moveFor, parentSplit, targetCols } from '#src/recap/domain/layout.ts';
 import type { Axis } from '#src/recap/domain/layout.ts';
@@ -44,7 +44,7 @@ export interface LaneDispatchDeps {
     readonly events: LaneEvents;
     readonly sharing: () => Sharing;
     closedDays(): ClosedLaneDays;
-    settled?(lane: Lane): void;
+    settled?(lane: FollowedSession): void;
     sizing(): Sizing;
     board(): Board;
     feedback(observation: Observation): void;
@@ -53,7 +53,7 @@ export interface LaneDispatchDeps {
 
 export interface PaneSource<Found> {
     of(pane: SessionKey): Found | null;
-    refresh(lane: Lane): Promise<Presence>;
+    refresh(lane: FollowedSession): Promise<Presence>;
 }
 
 export type ReadPane<Found> = (pane: SessionKey) => Found | null;
@@ -162,7 +162,7 @@ export class LaneDispatch {
         }
     }
 
-    private async look(lane: Lane): Promise<void> {
+    private async look(lane: FollowedSession): Promise<void> {
         const changed = await Promise.all([this.deps.prompts.refresh(lane), this.deps.webs.refresh(lane), this.deps.contexts?.refresh(lane) ?? 'absent']);
         if (changed.includes('present')) {
             this.publish(lane.tab);

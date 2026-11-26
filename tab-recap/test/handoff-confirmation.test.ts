@@ -8,7 +8,7 @@ import type { HandoffOutcome } from '#src/recap/domain/handoff-outcome.ts';
 import type { HandoffEvidence } from '#src/recap/domain/handoff-plan.ts';
 import type { TranscriptHold } from '#src/recap/application/handoff-target.ts';
 import { duration } from '@stateforge-labs/session-ledger';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { confirmationOf, laneWith, planWith, readyOf, worldOf } from './fakes/handoff-delivery.ts';
 import type { World } from './fakes/handoff-delivery.ts';
 import { agentKind } from '#test/support/ids.ts';
@@ -17,7 +17,7 @@ const TEXT = 'Handoff of the parser refactor.\n\nNext steps:\n  - finish the lex
 const FAILED: HandoffOutcome = { kind: 'failed', reason: 'unconfirmed' };
 const DELIVERED: HandoffOutcome = { kind: 'delivered' };
 
-async function run(world: World, evidence: HandoffEvidence = 'either', lane: Lane = laneWith({ session: null }), transcript: TranscriptHold = 'own', text = TEXT): Promise<HandoffOutcome> {
+async function run(world: World, evidence: HandoffEvidence = 'either', lane: FollowedSession = laneWith({ session: null }), transcript: TranscriptHold = 'own', text = TEXT): Promise<HandoffOutcome> {
     const confirmer = confirmationOf(world);
     const target = readyOf(lane, planWith(evidence), transcript);
     const baseline = await confirmer.baseline(target);

@@ -12,4 +12,4 @@ export type SessionId = Brand<string, 'SessionId'>;
 export type HarnessKind = Brand<string, 'HarnessKind'>;
 export const agentKindOf = brand<string, 'HarnessKind'>;
 export type LaneStatus = 'working' | 'blocked' | 'idle' | 'done' | 'unknown';
-export interface Lane { readonly pane: SessionKey; readonly tab: ScopeId; readonly workspace: WorkspaceId; readonly agent: HarnessKind; readonly status: LaneStatus; readonly session: SessionId | null; readonly cwd: Directory | null; readonly title: Text | null; readonly since: Instant | null; }
+export interface LegacyFollowedSession { readonly pane: SessionKey; readonly tab: ScopeId; readonly workspace: WorkspaceId; readonly agent: HarnessKind; readonly status: LaneStatus; readonly session: SessionId | null; readonly cwd: Directory | null; readonly title: Text | null; readonly since: Instant | null; }

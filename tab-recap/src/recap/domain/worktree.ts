@@ -4,7 +4,7 @@ import type { Count } from '@stateforge-labs/session-ledger';
 import { parseDirectory } from '@stateforge-labs/session-ledger';
 import type { Directory } from '@stateforge-labs/session-ledger';
 import type { SessionKey } from './ids.ts';
-import type { Lane } from './lane.ts';
+import type { FollowedSession } from './lane.ts';
 import type { ParseFailure } from '@stateforge-labs/session-ledger';
 import type { PorcelainReading } from './porcelain.ts';
 import { endsTurn } from './status.ts';
@@ -127,7 +127,7 @@ export interface WorktreeMoves {
     readonly ended: readonly SessionKey[];
 }
 
-export function movesOf(known: ReadonlyMap<SessionKey, LaneGlance>, lanes: ReadonlyMap<SessionKey, Lane>): WorktreeMoves {
+export function movesOf(known: ReadonlyMap<SessionKey, LaneGlance>, lanes: ReadonlyMap<SessionKey, FollowedSession>): WorktreeMoves {
     const attach: PaneAttach[] = [];
     const ended: SessionKey[] = [];
     const next = new Map<SessionKey, LaneGlance>();

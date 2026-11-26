@@ -4,7 +4,7 @@ import type { CodexRow } from '@stateforge-labs/harness-adapters/codex';
 import { sourcePathOf, grewOf, type Chunk, type ChunkResult, type Entry, type InFlightResult, type Located, type ObservedResult, type Position, type PromptResult, type SourcePath } from '@stateforge-labs/session-ledger';
 import { type LegacySessionReader as SessionReader } from '@stateforge-labs/session-ledger';
 import { unknown } from '@stateforge-labs/session-ledger';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { parseAgentKind } from '#src/recap/domain/ids.ts';
 import { countOf, type Count } from '@stateforge-labs/session-ledger';
 import { fsPathOf, type FsPath } from '#src/recap/domain/fs-path.ts';
@@ -71,7 +71,7 @@ export class CodexTranscripts implements SessionReader {
         this.readTail = readTail;
     }
 
-    locate(lane: Lane): Promise<Located> {
+    locate(lane: FollowedSession): Promise<Located> {
         return Promise.resolve(this.find(lane));
     }
 
@@ -92,7 +92,7 @@ export class CodexTranscripts implements SessionReader {
         }
     }
 
-    private find(lane: Lane): Located {
+    private find(lane: FollowedSession): Located {
         if (lane.cwd === null) {
             return unknown({ why: 'not-found', what: textOf(`a cwd for ${lane.pane}`) });
         }

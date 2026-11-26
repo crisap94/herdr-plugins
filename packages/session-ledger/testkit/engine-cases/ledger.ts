@@ -5,7 +5,7 @@ import { followed, key, scope, session } from '../ids.ts';
 import type { EngineWorld } from '../world.ts';
 import { addOf, recapOf, spoken, writtenOps } from './support.ts';
 import { textOf } from '../../src/recap/domain/text.ts';
-import { tabIdOf } from '../../src/recap/domain/lane-shape.ts';
+import { tabIdOf } from '../../src/recap/domain/followed-session-shape.ts';
 
 const TAB = scope('one');
 const TASK = { scope: tabIdOf(TAB), key: textOf('t1') };

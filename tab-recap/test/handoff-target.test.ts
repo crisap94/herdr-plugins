@@ -8,7 +8,7 @@ import type { Waiting } from '@stateforge-labs/session-ledger';
 import { unknown } from '@stateforge-labs/session-ledger';
 import { causeOf } from './fakes/cause.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { paneId } from '#test/support/ids.ts';
 import { textOf } from '@stateforge-labs/session-ledger';
 import { countOf } from '@stateforge-labs/session-ledger';
@@ -20,14 +20,14 @@ const SOURCE = paneId('w1:p9');
 const TARGET = paneId('w1:p1');
 const clear: Waiting = { kind: 'clear' };
 
-const seen = (pane: string, agent: string, over: Partial<BareLane> = {}): Lane => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, status: 'idle', ...over }));
+const seen = (pane: string, agent: string, over: Partial<BareLane> = {}): FollowedSession => laneFrom(seenLane({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, status: 'idle', ...over }));
 
 function probeOf(reading: InFlightRead): { readonly port: InFlightReader; readonly reads: () => number } {
     let reads = 0;
     return { port: { read: () => { reads += 1; return Promise.resolve(reading); } }, reads: () => reads };
 }
 
-function depsOf(lanes: readonly Lane[], reading: InFlightRead, awaiting: Waiting = clear): TargetDeps & { readonly reads: () => number } {
+function depsOf(lanes: readonly FollowedSession[], reading: InFlightRead, awaiting: Waiting = clear): TargetDeps & { readonly reads: () => number } {
     const probe = probeOf(reading);
     return { lanes, plans: handoffPlanner, inFlight: probe.port, awaiting: () => Promise.resolve(awaiting), reads: probe.reads };
 }

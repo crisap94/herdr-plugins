@@ -5,7 +5,7 @@ import { factOf } from '../facts.ts';
 import type { StoreUnderTest } from '../memory-store.ts';
 import { agentKind, cursorAt, paneId, sourcePath, tabId, text, usd } from '../values.ts';
 import { textOf } from '../../src/recap/domain/text.ts';
-import { tabIdOf, type SessionKey, paneIdOf } from '../../src/recap/domain/lane-shape.ts';
+import { tabIdOf, type SessionKey, paneIdOf } from '../../src/recap/domain/followed-session-shape.ts';
 
 export const isUnknownValue = (value: unknown): value is Unknown =>
     typeof value === 'object' && value !== null && 'kind' in value && value.kind === 'unknown';

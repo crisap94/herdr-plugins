@@ -8,7 +8,7 @@ import type { LaneClaims } from '#src/recap/application/lane-claims.ts';
 import type { LaneRecent } from '#src/recap/application/lane-recent.ts';
 import { lanesOf, type Board } from '#src/recap/domain/board.ts';
 import { type ScopeId, type SessionKey, parsePaneId, parseTabId } from '#src/recap/domain/ids.ts';
-import type { Lane } from '#src/recap/domain/lane.ts';
+import type { FollowedSession } from '#src/recap/domain/lane.ts';
 import { READY } from '#src/recap/domain/status.ts';
 import { parseLaneStatusAtDecision } from '@stateforge-labs/session-ledger';
 import { parseHarnessKind, parseScopeId, parseSessionKey } from '@stateforge-labs/session-ledger';
@@ -52,9 +52,9 @@ interface AutocompactParts {
     log(line: Text): void;
 }
 
-const lanesBehind = new WeakMap<Candidate, Lane>();
+const lanesBehind = new WeakMap<Candidate, FollowedSession>();
 
-export function candidateOf(lane: Lane): Candidate | null {
+export function candidateOf(lane: FollowedSession): Candidate | null {
     const scope = parseScopeId(lane.tab);
     const key = parseSessionKey(lane.pane);
     const harness = parseHarnessKind(lane.agent);

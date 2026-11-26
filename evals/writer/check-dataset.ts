@@ -21,7 +21,7 @@ import { FRESH_ITEMS, FRESH_SEED, guardOf, overlapOf } from '../lib/fresh.ts';
 import { PROJECTS } from './dataset-vocabulary.ts';
 import { brand } from '../../packages/session-ledger/src/recap/domain/brand.ts';
 import { instant } from '../../packages/session-ledger/src/recap/domain/time.ts';
-import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/lane-shape.ts';
+import { tabIdOf } from '../../packages/session-ledger/src/recap/domain/followed-session-shape.ts';
 import { factIdOf } from '../lib/brands.ts';
 
 const textOf = brand<string, 'Text'>;
