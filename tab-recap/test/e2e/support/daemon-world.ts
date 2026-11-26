@@ -41,6 +41,9 @@ export interface Child {
 export interface DaemonWorld {
     readonly herdr: FakeHerdr;
     readonly stateDir: string;
+    readonly home: string;
+    readonly configDir: string;
+    readonly env: Readonly<Record<string, string>>;
     command(...args: readonly string[]): Promise<Ran>;
     daemon(): Child;
     awaitLog(pattern: RegExp, waiting?: Waiting): Promise<{ readonly line: string; readonly cursor: number }>;
@@ -122,7 +125,11 @@ function isThisWorldsDaemon(pid: number, stateDir: string): boolean {
     }
 }
 
-export async function daemonWorld(): Promise<DaemonWorld> {
+export interface WorldOptions {
+    readonly env?: Readonly<Record<string, string>>;
+}
+
+export async function daemonWorld(options: WorldOptions = {}): Promise<DaemonWorld> {
     const fixture = scratch('tab-recap-e2e-');
     const root = fixture.root;
     const stateDir = join(root, 'state');
@@ -140,6 +147,7 @@ export async function daemonWorld(): Promise<DaemonWorld> {
     const env: Record<string, string> = {
         PATH: toolsDirectory(root),
         HOME: home,
+        TZ: 'UTC',
         XDG_CONFIG_HOME: join(home, 'config'),
         XDG_STATE_HOME: join(home, 'state'),
         XDG_DATA_HOME: join(home, 'data'),
@@ -155,6 +163,7 @@ export async function daemonWorld(): Promise<DaemonWorld> {
         TAB_RECAP_LOCALE: 'en',
         HERDR_PLUGIN_CONTEXT_JSON: JSON.stringify({ tab_id: 'w1:t1', pane_id: 'w1:p2' }),
         ...BUN_CACHE_OFF,
+        ...options.env,
     };
     const logPath = join(stateDir, 'daemon.log');
     const pidPath = join(stateDir, 'daemon.pid');
@@ -244,5 +253,5 @@ export async function daemonWorld(): Promise<DaemonWorld> {
         }
     };
 
-    return { herdr, stateDir, command, daemon, awaitLog, log, pidfile, awaitGone, stop, alive: isAlive, close };
+    return { herdr, stateDir, home, configDir, env, command, daemon, awaitLog, log, pidfile, awaitGone, stop, alive: isAlive, close };
 }
