@@ -348,7 +348,6 @@
       "tab-recap/test/compaction-refusal-ask.test.ts",
       "tab-recap/test/compaction-stage.test.ts",
       "tab-recap/test/compaction.test.ts",
-      "tab-recap/test/coordination-names.test.ts",
       "tab-recap/test/curation.test.ts",
       "tab-recap/test/curator-setup.test.ts",
       "tab-recap/test/daemon-handoff-wiring.test.ts",
