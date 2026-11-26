@@ -114,7 +114,7 @@ export const historyOf = (facts: readonly StoredHistoryFact[]): readonly History
     });
 
 export const writtenOf = (event: ReconcileWritten): RecapWritten | null => {
-    const scope = valueOf(parseScopeId(event.tab));
+    const scope = valueOf(parseScopeId(event.scope));
     if (scope === null) {
         return null;
     }

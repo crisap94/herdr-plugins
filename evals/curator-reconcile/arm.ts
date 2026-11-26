@@ -43,7 +43,7 @@ export function reconcileRound(mode: RepairMode): (raw: Item, ask: Asker) => Pro
         };
         await reconcileTask(
             { writer, stories, language: textOf(item.input.language), rubric: RUBRIC.items, clock: { now: instant(item.input.clock.now), zone: textOf(item.input.clock.zone) }, repair: () => mode, log: (line: string): void => { lines.push(line); } },
-            { tab: scopeIdOf('t'), key: textOf('k'), name: textOf(item.input.name), facts: item.input.open, tail: item.input.tail, agents: [textOf('claude'), textOf(item.input.name.toLowerCase())] },
+            { scope: scopeIdOf('t'), key: textOf('k'), name: textOf(item.input.name), facts: item.input.open, tail: item.input.tail, agents: [textOf('claude'), textOf(item.input.name.toLowerCase())] },
         );
         const repairs = lines.filter((line) => line.includes(': reconcile repair — ')).length;
         const repairFailed = lines.some((line) => line.includes('gave no repair (') || line.includes('reconcile repair refused — the answer is not JSON'));

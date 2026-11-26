@@ -49,7 +49,7 @@ export class CurateTasks {
     }
 
     async afterRun(event: RecapWritten): Promise<void> {
-        const tab = parseTabId(event.tab);
+        const tab = parseTabId(event.scope);
         if (tab.kind === 'ok' && this.reconciling.due(event)) {
             await this.run(tab.value, event.boundary ? 'boundary' : 'turns');
         }

@@ -56,7 +56,7 @@ export interface ReconcileParts {
 }
 
 export interface ReconcileTask {
-    readonly tab: ScopeId;
+    readonly scope: ScopeId;
     readonly key: Text;
     readonly name: Text;
     readonly facts: readonly Fact[];
@@ -84,7 +84,7 @@ async function repairedOf(parts: ReconcileParts, task: ReconcileTask, round: Rou
         return round.first;
     }
     const { writer } = parts;
-    const where = `curator ${task.tab} ${task.key}`;
+    const where = `curator ${task.scope} ${task.key}`;
     parts.log(textOf(`${where}: reconcile repair — ${refusals} refused`));
     const repair = await writer.write(reconcileRepair(round.sent.value, round.said.value, round.checked, round.first), 'reconcile');
     if (isUnknown(repair)) {
@@ -108,7 +108,7 @@ async function repairedOf(parts: ReconcileParts, task: ReconcileTask, round: Rou
 
 export async function reconcileTask(parts: ReconcileParts, task: ReconcileTask): Promise<void> {
     const { writer, clock } = parts;
-    const where = `curator ${task.tab} ${task.key}`;
+    const where = `curator ${task.scope} ${task.key}`;
     const open = task.facts.filter((fact) => fact.state === 'open');
     if (open.length === 0 || task.tail.length === 0) {
         return;
@@ -127,14 +127,14 @@ export async function reconcileTask(parts: ReconcileParts, task: ReconcileTask):
     const checked = reading(answered);
     checked.refused.forEach((why) => { parts.log(textOf(`${where}: reconcile refused — ${why}`)); });
     const openFacts = [...input.facts.values()].filter((fact) => fact.state === 'open');
-    const ground: TaskGround = { key: task.key, scope: textOf(task.tab), shown: input.facts, open: openFacts, closedLately: [], source: textOf(''), language: parts.language, agents: task.agents };
+    const ground: TaskGround = { key: task.key, scope: textOf(task.scope), shown: input.facts, open: openFacts, closedLately: [], source: textOf(''), language: parts.language, agents: task.agents };
     const first = batch('reconcile', { gates: LEDGER_GATES, task: ground, at: clock.now }, checked.ops.map(operationOf));
     first.refused.forEach((finding) => { parts.log(textOf(`${where}: reconcile refused — ${finding.gate} ${finding.reason}`)); });
     const gated = await repairedOf(parts, task, { sent: parseText(input.document), said: parseText(answered.text), reading, ground, checked, first });
     if (gated.kept.length === 0) {
         return;
     }
-    const applied = parts.stories.keep({ task: { scope: task.tab, key: task.key }, at: clock.now, language: parts.language }, { story: null, merges: [], reconciled: changes(gated.kept) });
+    const applied = parts.stories.keep({ task: { scope: task.scope, key: task.key }, at: clock.now, language: parts.language }, { story: null, merges: [], reconciled: changes(gated.kept) });
     applied.refused.forEach((one) => { parts.log(textOf(`${where}: the ledger refused ${one.op.op} — ${one.reason}`)); });
     parts.log(textOf(`${where}: reconciled ${applied.changed.length} facts`));
 }
@@ -157,7 +157,7 @@ export interface RunAccomplishment {
 }
 
 export interface RecapWritten {
-    readonly tab: ScopeId;
+    readonly scope: ScopeId;
     readonly turns: Count;
     readonly boundary: Boundary;
     readonly cause?: Text;
@@ -190,27 +190,27 @@ export class Reconciling {
     }
 
     due(event: RecapWritten): Due {
-        const turns = count((this.turns.get(event.tab) ?? 0) + event.turns);
-        this.turns.set(event.tab, turns);
+        const turns = count((this.turns.get(event.scope) ?? 0) + event.turns);
+        this.turns.set(event.scope, turns);
         return brand<boolean, 'Due'>(event.boundary || turns >= (this.deps.every?.() ?? RECONCILE_EVERY));
     }
 
-    settle(tab: ScopeId): void {
-        this.turns.set(tab, count(0));
+    settle(scope: ScopeId): void {
+        this.turns.set(scope, count(0));
     }
 
-    private wanted(key: Text, why: CurateWhy, tab: ScopeId, now: Instant): Wanted {
+    private wanted(key: Text, why: CurateWhy, scope: ScopeId, now: Instant): Wanted {
         const last = this.lastRun.get(key);
-        const fresh = why !== 'open' || last === undefined || (this.turns.get(tab) ?? 0) > 0;
+        const fresh = why !== 'open' || last === undefined || (this.turns.get(scope) ?? 0) > 0;
         return brand<boolean, 'Wanted'>(fresh && !this.running.has(key) && (last === undefined || now - last >= GAP_MS));
     }
 
-    async task(tab: ScopeId, task: CurateTarget, lanes: readonly SessionCursor[], why: CurateWhy): Promise<Ran> {
+    async task(scope: ScopeId, task: CurateTarget, lanes: readonly SessionCursor[], why: CurateWhy): Promise<Ran> {
         const { deps } = this;
-        const [key, now] = [textOf(`${tab}\u0000${task.id}`), deps.clock()];
+        const [key, now] = [textOf(`${scope}\u0000${task.id}`), deps.clock()];
         const writer = deps.writer();
-        const facts = deps.ledger.allOf({ scope: tab, key: task.id });
-        if (deps.tail === undefined || writer === null || !facts.some((fact) => fact.state === 'open') || !this.wanted(key, why, tab, now)) {
+        const facts = deps.ledger.allOf({ scope, key: task.id });
+        if (deps.tail === undefined || writer === null || !facts.some((fact) => fact.state === 'open') || !this.wanted(key, why, scope, now)) {
             return brand<boolean, 'Ran'>(false);
         }
         this.lastRun.set(key, now);
@@ -219,7 +219,7 @@ export class Reconciling {
             const mine = lanes.filter((seat) => task.lanes.length === 0 || task.lanes.some((member) => member === seat.key));
             const tail = await deps.tail(mine);
             const parts = { writer, stories: deps.stories, language: deps.language(), rubric: deps.rubric, clock: { now, zone: deps.zone() }, ...(deps.repair === undefined ? {} : { repair: deps.repair }), log: (line: Text): void => { deps.log(line); } };
-            await reconcileTask(parts, { tab, key: task.id, name: task.name, facts, tail, agents: mine.flatMap((lane) => [lane.agent, lane.title ?? '']).filter((name) => name !== '').map((name) => textOf(name.toLowerCase())) });
+            await reconcileTask(parts, { scope, key: task.id, name: task.name, facts, tail, agents: mine.flatMap((lane) => [lane.agent, lane.title ?? '']).filter((name) => name !== '').map((name) => textOf(name.toLowerCase())) });
             return brand<boolean, 'Ran'>(true);
         } finally {
             this.running.delete(key);

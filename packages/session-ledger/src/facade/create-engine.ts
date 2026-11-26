@@ -60,7 +60,7 @@ const startedAfterRun = (plugs: FacadePlugs, scope: ScopeId, event: RecapWritten
 const reportRun = (plugs: FacadePlugs) => (event: RecapWritten): void => {
     const written = writtenOf(event);
     if (written === null) {
-        plugs.environment.log(`engine-adapter: run events skipped, the tab id is empty: ${event.tab}`);
+        plugs.environment.log(`engine-adapter: run events skipped, the tab id is empty: ${event.scope}`);
         return;
     }
     const { scope } = written;
