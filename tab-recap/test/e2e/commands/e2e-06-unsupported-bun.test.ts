@@ -1,7 +1,7 @@
 import { after, before, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { renderRefusal, supportOf } from '#src/host/policy.mjs';
 import { scratch } from '#test/fixtures/git-repo.ts';
@@ -215,7 +215,7 @@ describe('the daemon a command spawns', () => {
         await world.close();
     });
 
-    test('start launches it as the Bun that ran the command and its launcher alone, with no flag and no warning switch', { timeout: 30_000 }, async () => {
+    test('start launches it as the Bun that ran the command and its launcher alone, with no flag and no warning switch', { timeout: 30_000, skip: !existsSync('/proc/self/cmdline') }, async () => {
         const started = await world.command('start');
         assert.equal(started.code, 0, started.stderr);
         await world.awaitLog(/daemon \d+ up, state in /);
