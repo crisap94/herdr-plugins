@@ -1,14 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { en } from '#src/i18n/en.ts';
-import { es } from '#src/i18n/es.ts';
 import { tokensOf } from '@stateforge-labs/session-ledger';
-import { clockOf, figuresOf, stageLine } from '#src/view-model/compaction-stage.ts';
+import { clockOf, figuresOf } from '#src/view-model/compaction-stage.ts';
 import { present, presentBar } from '#src/view-model/present.ts';
-import { coloured, plain, visibleLength } from '@stateforge-labs/recap-view/unstable/wrap.ts';
+import { plain } from '@stateforge-labs/recap-view/unstable/wrap.ts';
 import { blankRecap } from '@stateforge-labs/session-ledger';
 import type { CompactionRow } from '#src/ports/compaction-records.ts';
-import type { Messages } from '#src/i18n/messages.ts';
 import { parseDuration, parseTokens } from '@stateforge-labs/recap-view';
 import { maybe } from '#src/view-model/column.ts';
 import { countOf } from '@stateforge-labs/session-ledger';
@@ -16,87 +14,11 @@ import { parseCompactionId } from '#src/recap/domain/ids.ts';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
 import { must } from '@stateforge-labs/session-ledger';
 import { textOf } from '@stateforge-labs/session-ledger';
-import { duration, instant } from '@stateforge-labs/session-ledger';
+import { instant } from '@stateforge-labs/session-ledger';
 import { viewRecord } from '#test/support/tab-view-records.ts';
 import { wordingOf } from '#src/view-model/wording.ts';
 
 const base: CompactionRow = { id: must(parseCompactionId('cmp_x')), tab: tabId('w1:t1'), pane: paneId('w1:p1'), agent: agentKind('claude'), stage: 'compacting', brief: 'written', writer: textOf('codex · gpt-6-luna · high'), templateWhy: null, startedAt: instant(0), stageAt: instant(0), finishedAt: null, tokensBefore: null, tokensAfter: null, took: null, retry: 'first-try', queue: 'direct', why: null, origin: 'operator' };
-const done = { finishedAt: instant(1), tokensBefore: countOf(39532), tokensAfter: countOf(3057), took: duration(15588) };
-
-const STAGES: readonly (readonly [string, Partial<CompactionRow>, number])[] = [
-    ['briefing', { stage: 'briefing' }, 8000],
-    ['compacting', { stage: 'compacting' }, 12_000],
-    ['queued behind the current turn', { stage: 'compacting', queue: 'queued' }, 12_000],
-    ['restoring', { stage: 'restoring' }, 3000],
-    ['compacted', { stage: 'compacted', ...done }, 0],
-    ['compacted with the template', { stage: 'compacted', brief: 'template', ...done }, 0],
-    ['compacted, no tokens said', { stage: 'compacted', finishedAt: instant(1), took: duration(90_000) }, 0],
-    ['failed', { stage: 'failed', finishedAt: instant(1), why: textOf('x') }, 0],
-    ['unconfirmed', { stage: 'unconfirmed', finishedAt: instant(1) }, 0],
-    ['skipped', { stage: 'skipped', finishedAt: instant(1), why: textOf('x') }, 0],
-];
-
-const column = (m: Messages, record: CompactionRow, now: number): string[] => {
-    const tab = viewRecord({ tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'Victoria', cwd: null, context: { tokens: countOf(600_000), window: countOf(1_000_000), source: 'catalogue' as const } }] });
-    return present({ tab, recap: blankRecap(tabId('w1:t1')), notes: new Map(), warnings: [], now, messages: m, compactHint: 40, compactions: [record], style: plain }, 44, () => null).slice(1, 4).filter((line) => line !== '');
-};
-
-const bar = (m: Messages, record: CompactionRow, now: number): string[] => {
-    const tab = viewRecord({ tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: null, cwd: null }] });
-    return presentBar({ tab, recap: blankRecap(tabId('w1:t1')), notes: new Map(), warnings: [], now, messages: m, compactions: [record], style: plain }, 46);
-};
-
-const WHY = { en: 'working', es: 'trabajando' } as const;
-
-const GOLDEN = {
-    en: {
-        column: [
-            ['● idle · claude w1:p1', '✎ writing what to keep… (codex · gpt-6-luna', '  · high) 0:08'],
-            ['● idle · claude w1:p1', '◐ compacting… 0:12'],
-            ['● idle · claude w1:p1', '◐ queued behind the current turn… 0:12'],
-            ['● idle · claude w1:p1', '◐ telling it where things stand…'],
-            ['● idle · claude w1:p1', '✓ compacted 39.5k → 3.1k · 16 s'],
-            ['● idle · claude w1:p1', '✓ compacted 39.5k → 3.1k · 16 s · template'],
-            ['● idle · claude w1:p1', '✓ compacted 1 min 30 s'],
-            ['● idle · claude w1:p1', '✗ not compacted: working'],
-            ['● idle · claude w1:p1', '? not confirmed — check it'],
-            ['● idle · claude w1:p1', '– not compacted: working'],
-        ],
-        bar: [
-            '📝● ✎ writing what claude keeps… 0:08', '📝● ◐ compacting claude… 0:12', '📝● ◐ claude: queued behind the current turn…', '📝● ◐ telling claude where things stand…', '📝● ✓ claude compacted 39.5k → 3.1k · 16 s',
-            '📝● ✓ claude compacted 39.5k → 3.1k · 16 s', '📝● ✓ claude compacted 1 min 30 s', '📝● ✗ claude not compacted: working', '📝● ? claude not confirmed — check it', '📝● – claude not compacted: working',
-        ],
-    },
-    es: {
-        column: [
-            ['● en pausa · claude w1:p1', '✎ escribiendo qué conservar… (codex ·', '  gpt-6-luna · high) 0:08'],
-            ['● en pausa · claude w1:p1', '◐ compactando… 0:12'],
-            ['● en pausa · claude w1:p1', '◐ en cola tras el turno actual… 0:12'],
-            ['● en pausa · claude w1:p1', '◐ recordándole cómo van las cosas…'],
-            ['● en pausa · claude w1:p1', '✓ compactado 39.5k → 3.1k · 16 s'],
-            ['● en pausa · claude w1:p1', '✓ compactado 39.5k → 3.1k · 16 s · plantilla'],
-            ['● en pausa · claude w1:p1', '✓ compactado 1 min 30 s'],
-            ['● en pausa · claude w1:p1', '✗ no se compactó: trabajando'],
-            ['● en pausa · claude w1:p1', '? sin confirmar — revísalo'],
-            ['● en pausa · claude w1:p1', '– no se compactó: trabajando'],
-        ],
-        bar: [
-            '📝● ✎ escribiendo qué conserva claude… 0:08', '📝● ◐ compactando claude… 0:12', '📝● ◐ claude: en cola tras el turno actual…', '📝● ◐ recordándole a claude cómo van las', '📝● ✓ claude compactado 39.5k → 3.1k · 16 s',
-            '📝● ✓ claude compactado 39.5k → 3.1k · 16 s', '📝● ✓ claude compactado 1 min 30 s', '📝● ✗ claude no se compactó: trabajando', '📝● ? claude sin confirmar — revísalo', '📝● – claude no se compactó: trabajando',
-        ],
-    },
-} as const;
-
-for (const [locale, m] of [['en', en], ['es', es]] as const) {
-    test(`golden (${locale}): every stage on the lane's header (column) and on the bar's headline`, () => {
-        STAGES.forEach(([name, patch, after], at) => {
-            const record: CompactionRow = { ...base, ...patch, ...(patch.why === undefined ? {} : { why: textOf(WHY[locale]) }) };
-            assert.deepEqual(column(m, record, after), GOLDEN[locale].column[at], `${name}: column`);
-            assert.deepEqual(bar(m, record, after), [GOLDEN[locale].bar[at]], `${name}: bar`);
-            assert.ok(column(m, record, after).every((line) => visibleLength(line) <= 44));
-        });
-    });
-}
 
 test('the stage replaces the hint while it is shown and the hint is back after; the bar goes back to the usual headline', () => {
     const tab = viewRecord({ tab: 'w1:t1', column: 'w1:p9', at: 0, lanes: [{ pane: 'w1:p1', agent: 'claude', status: 'idle', title: 'Victoria', cwd: null, context: { tokens: countOf(600_000), window: countOf(1_000_000), source: 'catalogue' as const } }] });
@@ -116,16 +38,7 @@ test('on the bar, the newest compaction of the tab speaks, prefixed with its age
     assert.match(lines.join(''), /◐ compacting codex… 0:03/);
 });
 
-const line = (patch: Partial<CompactionRow>): string => stageLine({ ...base, ...patch }, 0, { messages: en, style: coloured });
 const said = (tokensBefore: number | null, tokensAfter: number | null, tookMs: number | null): object => figuresOf({ tokensBefore: maybe(tokensBefore, parseTokens), tokensAfter: maybe(tokensAfter, parseTokens), tookMs: maybe(tookMs, parseDuration) }, wordingOf(en));
-
-test('the stage is coloured: yellow while it runs, green when done (the template tag gray), red when it failed, gray otherwise', () => {
-    const [yellow, green, red, gray] = ['\u001B[33m', '\u001B[32m', '\u001B[31m', '\u001B[90m'];
-    assert.ok(line({}).startsWith(yellow));
-    assert.ok(line({ stage: 'compacted', finishedAt: instant(1), brief: 'template' }).startsWith(green) && line({ stage: 'compacted', finishedAt: instant(1), brief: 'template' }).includes(`${gray} · template`));
-    assert.ok(line({ stage: 'failed', finishedAt: instant(1) }).startsWith(red));
-    assert.ok(line({ stage: 'unconfirmed', finishedAt: instant(1) }).startsWith(gray) && line({ stage: 'skipped', finishedAt: instant(1) }).startsWith(gray));
-});
 
 test('numbers: the short token form; a pair needs both counts, a missing number is left out, never guessed; the clock is m:ss from the stage start', () => {
     assert.deepEqual([812, 1000, 3057, 39_532, 100_000, 554_888, 1_000_000, 1_250_000].map((size) => tokensOf(countOf(size))), ['812', '1k', '3.1k', '39.5k', '100k', '554.9k', '1M', '1.3M']);

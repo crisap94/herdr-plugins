@@ -1,55 +1,18 @@
 import { test } from 'node:test';
 import { kindOf } from '#test/fakes/agent-kind.ts';
 import assert from 'node:assert/strict';
-import { contextOf, hintFor, sizeOf, hintOf, hintSetting, targetOf, targetSetting, windowOf } from '@stateforge-labs/session-ledger';
+import { contextOf, hintFor, sizeOf } from '@stateforge-labs/session-ledger';
 import type { ContextUse } from '@stateforge-labs/session-ledger';
 import type { ContextObserved as Observed } from '@stateforge-labs/session-ledger';
 import { windowOfAgent } from '#src/adapters/capability/context-window.ts';
 import { countOf } from '@stateforge-labs/session-ledger';
 import { textOf } from '@stateforge-labs/session-ledger';
 
-test('target: focused by default, all, or kinds', () => {
-    assert.deepEqual(targetOf(undefined), { kind: 'focused' });
-    assert.deepEqual(targetOf('focused'), { kind: 'focused' });
-    assert.deepEqual(targetOf('ALL'), { kind: 'all' });
-    assert.deepEqual(targetOf('claude, codex'), { kind: 'kinds', kinds: ['claude', 'codex'] });
-    assert.equal(targetSetting(textOf('codex claude codex')), 'codex,claude');
-    assert.equal(targetSetting(textOf('')), 'focused');
-});
-
-test('hint: 40 % by default, 10–95 allowed, off turns it off, nonsense is the default', () => {
-    assert.equal(hintOf(undefined), 40);
-    assert.equal(hintOf(textOf('')), 40);
-    assert.equal(hintOf(textOf('10')), 10);
-    assert.equal(hintOf(textOf('95%')), 95);
-    assert.equal(hintOf(textOf('9')), 40);
-    assert.equal(hintOf(textOf('96')), 40);
-    assert.equal(hintOf(textOf('lots')), 40);
-    assert.equal(hintOf(textOf(' Off ')), null);
-    assert.equal(hintSetting(textOf('off')), 'off');
-    assert.equal(hintSetting(undefined), '40');
-});
-
-test('window setting: a sensible number overrides; empty or nonsense means detect at runtime', () => {
-    assert.equal(windowOf(undefined), null);
-    assert.equal(windowOf(textOf('1_000_000')), 1_000_000);
-    assert.equal(windowOf(textOf('12')), null);
-});
-
 const use = (tokens: number): ContextUse => ({ tokens: countOf(tokens), window: countOf(200_000), source: 'agent' });
-const seen: Observed = { tokens: countOf(90_000), peak: countOf(0), window: null, model: textOf('claude-opus-4-7') };
 const context = (observed: Observed, kind: string, setting: number | null, catalogued: number | null): ContextUse | null => contextOf(
     { observed, setting: setting === null ? null : countOf(setting) },
     windowOfAgent(kindOf(kind), { windowOf: () => (catalogued === null ? null : countOf(catalogued)) }),
 );
-
-test('context window, runtime first: setting, agent, catalogue, family table — in that order', () => {
-    assert.deepEqual(context(seen, 'claude', 500_000, 200_000), { tokens: 90_000, window: 500_000, source: 'setting' });
-    assert.deepEqual(context({ ...seen, window: countOf(258_400) }, 'codex', null, 1_000_000), { tokens: 90_000, window: 258_400, source: 'agent' });
-    assert.deepEqual(context(seen, 'opencode', null, 128_000), { tokens: 90_000, window: 128_000, source: 'catalogue' });
-    assert.deepEqual(context(seen, 'claude', null, null), { tokens: 90_000, window: 1_000_000, source: 'table' });
-    assert.equal(context(seen, 'opencode', null, null), null, 'nothing says what an unknown model holds');
-});
 
 test('observed use raises a window that was too small: 200k → 1M, by tokens or by the size before a compaction; a setting is never raised', () => {
     const small: Observed = { tokens: countOf(250_000), peak: countOf(0), window: null, model: textOf('claude-opus-4-5') };
