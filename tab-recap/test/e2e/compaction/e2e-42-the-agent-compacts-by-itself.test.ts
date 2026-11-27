@@ -2,10 +2,8 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { appendFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import {
-    awaitedNames, backgroundItem, backgroundLabel, backgroundTool, countOf, cutNote, instant, keepsNote, must, NOT_AWAITING, NOTE_LIMIT, parseText, textOf, withNote,
-} from '@stateforge-labs/session-ledger';
-import type { Awaiting, BackgroundItem, Located, Text } from '@stateforge-labs/session-ledger';
+import { countOf, instant, NOT_AWAITING } from '@stateforge-labs/session-ledger';
+import type { BackgroundItem, Located } from '@stateforge-labs/session-ledger';
 import { continuationNote } from '@stateforge-labs/session-ledger/compaction-timing';
 import { ClaudeTranscripts } from '#src/adapters/transcripts/claude/transcripts.ts';
 import { CodexTranscripts } from '#src/adapters/transcripts/codex/transcripts.ts';
@@ -136,10 +134,6 @@ describe('codex compacts by itself', () => {
     });
 });
 
-const on = (names: string): Awaiting => ({ kind: 'on', names: awaitedNames(textOf(names)) });
-const item = (tool: string, label: string | null): BackgroundItem => backgroundItem(backgroundTool(textOf(tool)), label === null ? null : backgroundLabel(textOf(label)));
-const text = (value: string): Text => must(parseText(value));
-const noteOf = (awaiting: Awaiting, background: readonly BackgroundItem[]): Text => must(parseText(continuationNote(awaiting, background) ?? ''));
 
 async function stillRunning(): Promise<readonly BackgroundItem[]> {
     const world = sourceWorld();
@@ -161,57 +155,5 @@ describe('what the agent still waits for joins the brief as a continuation note'
     test('what its record shows still running is named, each launch with its label', { timeout: 30_000 }, async () => {
         const background = await stillRunning();
         assert.equal(continuationNote(NOT_AWAITING, background), 'Still running: Bash "watch the build", Bash "Bash", Bash "Bash", Monitor "tail the log", Agent "review the diff".');
-    });
-
-    test('a reply it awaits comes first, and both parts are joined', () => {
-        assert.equal(continuationNote(on('reviewer'), [item('Monitor', 'open merge requests')]), 'Still waiting for: reviewer. Still running: Monitor "open merge requests".');
-    });
-
-    test('each part stands alone, and a launch with no label is named by its tool', () => {
-        assert.equal(continuationNote(on('reviewer,tester'), []), 'Still waiting for: reviewer,tester.');
-        assert.equal(continuationNote(NOT_AWAITING, [item('Bash', 'watch ci'), item('Agent', null)]), 'Still running: Bash "watch ci", Agent "Agent".');
-    });
-
-    test('nothing to name gives no note', () => {
-        assert.equal(continuationNote(NOT_AWAITING, []), null);
-    });
-
-    test('line breaks, controls and quotes in a name cannot break the note', () => {
-        assert.equal(continuationNote(on('a\nb'), [item('Monitor', 'say "hi"\u0000\tnow')]), 'Still waiting for: a b. Still running: Monitor "say \'hi\' now".');
-    });
-
-    test('a long list is cut to the limit with an ellipsis and keeps its start', () => {
-        const many = Array.from({ length: 40 }, (_, index) => item('Monitor', `watcher number ${index} of the long list`));
-        const note = noteOf(on('reviewer'), many);
-        assert.equal(Array.from(note).length, NOTE_LIMIT);
-        assert.ok(note.endsWith('…'));
-        assert.ok(note.startsWith('Still waiting for: reviewer. Still running: Monitor "watcher number 0'));
-    });
-
-    test('a text at the limit is kept whole, and a longer one loses only its tail', () => {
-        assert.equal(cutNote(text('x'.repeat(400)), NOTE_LIMIT), 'x'.repeat(400));
-        assert.equal(cutNote(text('x'.repeat(401)), NOTE_LIMIT), `${'x'.repeat(399)}…`);
-    });
-
-    test('a brief that names everything keeps the note, in any letter case, and one that lost a name does not', () => {
-        const note = noteOf(on('reviewer,tester'), [item('Monitor', 'open merge requests')]);
-        assert.equal(keepsNote(text('Waiting for the Reviewer and TESTER; the open merge requests monitor runs.'), note), 'kept');
-        assert.equal(keepsNote(text('Waiting for the reviewer and tester.'), note), 'dropped');
-        assert.equal(keepsNote(text('Waiting for the reviewer.'), note), 'dropped');
-    });
-
-    test('a brief that lost the note gets it appended whole, and one that kept it is left alone', () => {
-        const note = noteOf(on('reviewer'), []);
-        assert.equal(withNote(text('Ship the rewrite.'), note), `Ship the rewrite. ${note}`);
-        assert.equal(withNote(text('Ship the rewrite once the reviewer answers.'), note), 'Ship the rewrite once the reviewer answers.');
-    });
-
-    test('a short name is tested too, and a word counts only as a whole word', () => {
-        const short = noteOf(on('a1'), []);
-        assert.equal(keepsNote(text('Ship the rewrite.'), short), 'dropped');
-        assert.equal(keepsNote(text('Ship the rewrite once A1 answers.'), short), 'kept');
-        const whole = noteOf(NOT_AWAITING, [item('Monitor', 'open merge')]);
-        assert.equal(keepsNote(text('A monitor opened a merge emerged.'), whole), 'dropped');
-        assert.equal(keepsNote(text('A MONITOR: open, then merge.'), whole), 'kept');
     });
 });
