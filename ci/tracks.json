@@ -207,8 +207,6 @@
       "tab-recap/test/closed-handoff-text.test.ts",
       "tab-recap/test/config-paths.test.ts",
       "tab-recap/test/curate-unknown.test.ts",
-      "tab-recap/test/daemon-restored-lanes.test.ts",
-      "tab-recap/test/db/column-visibility.test.ts",
       "tab-recap/test/db/daemon-state.test.ts",
       "tab-recap/test/desktop-api-messages.test.ts",
       "tab-recap/test/eval-rig.ts",
@@ -421,7 +419,6 @@
       "tab-recap/test/herdr-agents.test.ts",
       "tab-recap/test/herdr-coordination.test.ts",
       "tab-recap/test/herdr-events.test.ts",
-      "tab-recap/test/id-parsers.test.ts",
       "tab-recap/test/imported-fixture.ts",
       "tab-recap/test/informer-pane-updated.test.ts",
       "tab-recap/test/informer-reconcile.test.ts",
@@ -466,7 +463,6 @@
       "tab-recap/test/visibility.test.ts",
       "tab-recap/test/watchdog.test.ts",
       "tab-recap/test/worksite-text.test.ts",
-      "tab-recap/test/workspace-of-tab.test.ts",
       "tab-recap/test/worktree-domain.test.ts",
       "tab-recap/test/worktree-feeds.test.ts"
     ],
@@ -611,7 +607,6 @@
       "tab-recap/test/session-relocation.test.ts",
       "tab-recap/test/settle-hub.test.ts",
       "tab-recap/test/transcript-tail.test.ts",
-      "tab-recap/test/watch-set.test.ts",
       "tab-recap/test/worktree-registry.test.ts"
     ],
     "B4": [
