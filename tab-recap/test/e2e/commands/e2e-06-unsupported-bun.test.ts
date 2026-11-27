@@ -204,6 +204,10 @@ describe('the commands the manifest launches, run as the manifest says', () => {
     });
 });
 
+const commandWords = (pid: number): string[] => (existsSync(`/proc/${pid}/cmdline`)
+    ? readFileSync(`/proc/${pid}/cmdline`, 'utf8').split('\0').filter((word) => word !== '')
+    : execFileSync('ps', ['-ww', '-o', 'args=', '-p', String(pid)], { encoding: 'utf8' }).trim().split(/\s+/));
+
 describe('the daemon a command spawns', () => {
     let world: DaemonWorld;
 
@@ -220,7 +224,7 @@ describe('the daemon a command spawns', () => {
         assert.equal(started.code, 0, started.stderr);
         await world.awaitLog(/daemon \d+ up, state in /);
         const pid = Number(world.pidfile().pid);
-        const words = execFileSync('ps', ['-ww', '-o', 'args=', '-p', String(pid)], { encoding: 'utf8' }).trim().split(/\s+/);
+        const words = commandWords(pid);
         assert.equal(words.length, 2);
         assert.equal(words[0], process.execPath);
         assert.equal(words[1], join(PLUGIN, 'src', 'daemon', 'launch.mjs'));
