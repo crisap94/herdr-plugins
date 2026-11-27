@@ -337,7 +337,6 @@
       "tab-recap/test/compact-note.test.ts",
       "tab-recap/test/compact-requests-enqueue.test.ts",
       "tab-recap/test/compact-requests-take.test.ts",
-      "tab-recap/test/compaction-confirm.test.ts",
       "tab-recap/test/compaction-hook-restore.test.ts",
       "tab-recap/test/compaction-lane-closed.test.ts",
       "tab-recap/test/compaction-plans.test.ts",
@@ -378,7 +377,6 @@
       "tab-recap/test/desktop-engine-world.ts",
       "tab-recap/test/dispatch-bar.test.ts",
       "tab-recap/test/duplicate-columns.test.ts",
-      "tab-recap/test/eligibility.test.ts",
       "tab-recap/test/engine-golden.test.ts",
       "tab-recap/test/engine-plain-session.test.ts",
       "tab-recap/test/event-kinds.test.ts",
@@ -936,8 +934,7 @@
       "tab-recap/src/setup/main.ts",
       "tab-recap/test/config.test.ts",
       "tab-recap/test/decider-port-wiring.test.ts",
-      "tab-recap/test/gui/settings.test.ts",
-      "tab-recap/test/lane-turns.test.ts"
+      "tab-recap/test/gui/settings.test.ts"
     ],
     "B8": [
       "tab-recap/src/experiment/coverage.ts",
