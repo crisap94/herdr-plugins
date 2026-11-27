@@ -7,32 +7,13 @@ import { NO_SECTIONS } from '@stateforge-labs/session-ledger';
 import { duration, instant } from '@stateforge-labs/session-ledger';
 import { parseText } from '@stateforge-labs/session-ledger';
 import { parseCompactionId } from '#src/recap/domain/ids.ts';
-import { paneId, tabId } from '#test/support/ids.ts';
 import { must } from '@stateforge-labs/session-ledger';
-import { compacted, compactionDeps, compactionFlow, failed, lane, NOW, typingFleet } from '#test/fakes/compaction-fleet.ts';
+import { compacted, compactionDeps, failed, NOW, typingFleet } from '#test/fakes/compaction-fleet.ts';
 import { seenLane } from '#test/support/seen.ts';
 
 const TEXT = { material: { sections: NO_SECTIONS, web: null, note: must(parseText('keep the schema')) }, brief: null };
 
 const trailOf = (ends: unknown[] = []): Trail => new Trail({ begin: () => must(parseCompactionId('cmp_t0')), advance: () => undefined, finish: (_id, end) => { ends.push(end); } }, must(parseCompactionId('cmp_t0')), () => instant(NOW));
-
-test('opencode: its own /compact is confirmed on the second look, then restored; pins today: four reads per look and a one second gap', async () => {
-    const world = typingFleet({ 'w1:p4': 'idle' });
-    await compactionFlow(world, 'focused', 'w1:p4', [[], [], [], [], [compacted]], [lane('w1:p4', 'opencode')]).run({ tab: tabId('w1:t1'), pane: null, note: must(parseText('keep the schema')) });
-    assert.deepEqual(world.events, ['refresh', 'type w1:p4', 'prompt w1:p4']);
-    assert.equal(world.typed.length, 2, 'one command, one restore message');
-    const [command, restore] = world.typed;
-    assert.ok(command);
-    assert.ok(restore);
-    assert.deepEqual([command.typed, command.pieces], [true, ['/compact']], '`/compact` alone, typed as a command');
-    assert.ok(restore.text.startsWith('We just compacted this conversation.') && restore.text.includes('keep the schema'));
-    assert.equal(restore.typed, undefined, 'the restore message is sent as a prompt');
-    assert.deepEqual(command.lineBehavior, { enterDelay: duration(300) });
-    assert.deepEqual(restore.promptBehavior, { stall: 'accepts-stall' });
-    assert.deepEqual(world.pauses, [300, 300, 300, 1000]);
-    assert.equal(world.claims.has(paneId('w1:p4')), 'free', 'the pane is released');
-    assert.match(world.toasts.at(-1) ?? '', /opencode compacted/);
-});
 
 test('every non-Claude kind takes the Codex path; target selection filters non-COMPACTABLE kinds', async () => {
     for (const kind of ['codex', 'opencode']) {

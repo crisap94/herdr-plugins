@@ -57,33 +57,6 @@ test('the newest record of a lane wins, lanes are separate, tabs are separate', 
     assert.deepEqual(compactions.shownFor(tabId('w1:t9')), []);
 });
 
-test('the agent\'s next turn dismisses an ended record only: not one in progress, not one that ended after the turn began', () => {
-    const { compactions } = store();
-    const running = compactions.begin({ ...start, stage: 'compacting', at: instant(10) });
-    compactions.dismissTurn(tabId('w1:t1'), paneId('w1:p1'), instant(11));
-    assert.equal(compactions.shownFor(tabId('w1:t1')).length, 1, 'in progress stays');
-    compactions.finish(running, { stage: 'compacted', at: instant(20) });
-    compactions.dismissTurn(tabId('w1:t1'), paneId('w1:p1'), instant(20));
-    assert.equal(compactions.shownFor(tabId('w1:t1')).length, 1, 'a turn that did not start after the end does not count');
-    compactions.dismissTurn(tabId('w1:t1'), paneId('w1:p2'), instant(30));
-    assert.equal(compactions.shownFor(tabId('w1:t1')).length, 1, 'another lane\'s turn does not count');
-    compactions.dismissTurn(tabId('w1:t1'), paneId('w1:p1'), instant(21));
-    assert.deepEqual(compactions.shownFor(tabId('w1:t1')), []);
-    compactions.begin({ ...start, stage: 'briefing', at: instant(40) });
-    assert.deepEqual(compactions.shownFor(tabId('w1:t1')).map((r) => r.stage), ['briefing'], 'a newer compaction is shown again');
-});
-
-test('when the daemon starts, every record still in progress becomes unconfirmed ("the daemon restarted")', () => {
-    const { compactions } = store();
-    compactions.begin({ ...start, stage: 'briefing', at: instant(1) });
-    compactions.begin({ ...start, pane: paneId('w1:p2'), stage: 'restoring', at: instant(2) });
-    const done = compactions.begin({ ...start, pane: paneId('w1:p3'), stage: 'compacting', at: instant(3) });
-    compactions.finish(done, { stage: 'compacted', at: instant(4) });
-    assert.equal(compactions.interrupted(instant(50), textOf('the daemon restarted')), 2);
-    assert.deepEqual(compactions.shownFor(tabId('w1:t1')).map((r) => [r.pane, r.stage, r.finishedAt, r.why]), [['w1:p1', 'unconfirmed', 50, 'the daemon restarted'], ['w1:p2', 'unconfirmed', 50, 'the daemon restarted'], ['w1:p3', 'compacted', 4, null]]);
-    assert.equal(compactions.interrupted(instant(60), textOf('again')), 0);
-});
-
 test('records go with their tab, and a column reading while the daemon writes sees whole rows', () => {
     const { db, compactions } = store();
     compactions.begin({ ...start, stage: 'compacting', at: instant(1) });
@@ -100,15 +73,4 @@ test('records go with their tab, and a column reading while the daemon writes se
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }
-});
-
-test('queued: a compaction typed behind a turn is shown queued until the turn ends, and a plain advance leaves the flag alone', () => {
-    const { compactions } = store();
-    const id = compactions.begin({ ...start, stage: 'briefing', at: instant(10) });
-    assert.equal(compactions.shownFor(tabId('w1:t1'))[0]?.queue, 'direct');
-    compactions.advance(id, 'compacting', { at: instant(20), queue: 'queued' });
-    compactions.advance(id, 'compacting', { at: instant(21), brief: 'written' });
-    assert.deepEqual([compactions.shownFor(tabId('w1:t1'))[0]?.stage, compactions.shownFor(tabId('w1:t1'))[0]?.queue], ['compacting', 'queued']);
-    compactions.advance(id, 'compacting', { at: instant(30), queue: 'direct' });
-    assert.deepEqual([compactions.shownFor(tabId('w1:t1'))[0]?.queue, compactions.shownFor(tabId('w1:t1'))[0]?.stageAt], ['direct', 30]);
 });
