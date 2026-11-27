@@ -119,6 +119,30 @@ test('a pipe, not a terminal, gets no colour from the settings screen, drawn at 
     });
 });
 
+test('a pipe, not a terminal, gets the recap from the column, in no colour, never the protocol mismatch screen', { timeout: 30_000 }, async () => {
+    await inWorld(async (world) => {
+        seeded(world);
+        const child = spawn(process.execPath, [join(world.plugin, 'src', 'pane', 'launch.mjs')], { cwd: world.plugin, env: world.childEnv(), stdio: ['pipe', 'pipe', 'ignore'] });
+        const closed = new Promise((resolve) => { child.once('close', resolve); });
+        let bytes = '';
+        child.stdout.on('data', (chunk: Buffer) => { bytes += chunk.toString(); });
+        try {
+            const deadline = Date.now() + 15_000;
+            while (screenOf(bytes)?.text.includes('Ship the uploader') !== true && Date.now() < deadline) {
+                await new Promise((resolve) => { setTimeout(resolve, 20); });
+            }
+            const screen = screenOf(bytes);
+            assert.ok(screen !== null && screen.text.includes('Ship the uploader'), `the column paints the recap into a pipe: ${JSON.stringify(bytes.slice(-300))}`);
+            assert.ok(screen.text.includes('Ship the uploader'));
+            assert.doesNotMatch(screen.text, /protocol/iu);
+            assert.ok(screen.lines.every((line) => !SGR.test(line)));
+        } finally {
+            child.kill('SIGTERM');
+            await closed;
+        }
+    });
+});
+
 test('the settings screen takes the colour switches too: colour on a colour terminal, none under NO_COLOR, FORCE_COLOR=0 and NODE_DISABLE_COLORS', { timeout: 60_000 }, async () => {
     await inWorld(async (world) => {
         const coloured = await world.settings({ cols: 80, rows: 30 });
