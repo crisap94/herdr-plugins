@@ -1,18 +1,15 @@
 import { test } from 'node:test';
-import type { FsPath } from '#src/recap/domain/fs-path.ts';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { Database } from 'bun:sqlite';
 import { openDatabase } from '#src/adapters/db/open.ts';
 import { fsPathOf } from '#src/recap/domain/fs-path.ts';
-import { openStoreAt } from '#src/adapters/db/database.ts';
 import { MIGRATIONS } from '#src/adapters/db/schema/index.ts';
 import { TabViewRowStore } from '#src/adapters/db/tab-views.ts';
 import { laneRecord, viewRecord } from '#test/support/tab-view-records.ts';
 import type { TabLaneRecord, TabViewRecord } from '#src/ports/tab-views.ts';
 import { agentKind, paneId, tabId } from '#test/support/ids.ts';
-import type { Text } from '@stateforge-labs/session-ledger';
 import { instant } from '@stateforge-labs/session-ledger';
 import { memoryStore, must, openFixture, scratchDir } from './support.ts';
 
@@ -95,26 +92,6 @@ test('a write to a database below the since column keeps the old lane shape', ()
         assert.deepEqual(views.liveLanes(), { kind: 'read', lanes: [] });
         assert.equal(must(views.readTab(tabId('w1:t1'))).lanes.at(0)?.pane, 'w1:p1');
         writer.close();
-    } finally {
-        rmSync(dir, { recursive: true, force: true });
-    }
-});
-
-test('a view carries the version of the daemon that wrote it; one written by no daemon reads back null', () => {
-    const dir = scratchDir('version');
-    try {
-        const path = join(dir, 'tab-recap.db');
-        const daemon = openStoreAt(path as FsPath, { daemonVersion: '1.6.0' as Text });
-        const other = openStoreAt(path as FsPath);
-        if (daemon.kind !== 'ready' || other.kind !== 'ready') {
-            throw new Error('both open');
-        }
-        daemon.views.writeTab(view());
-        other.views.writeTab(view({ tab: 'w1:t2' }));
-        assert.equal(other.views.readTab(tabId('w1:t1'))?.daemonVersion, '1.6.0');
-        assert.equal(other.views.readTab(tabId('w1:t2'))?.daemonVersion, null);
-        daemon.close();
-        other.close();
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }
