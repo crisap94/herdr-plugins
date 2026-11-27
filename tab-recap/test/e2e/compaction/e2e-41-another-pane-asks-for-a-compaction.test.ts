@@ -224,6 +224,7 @@ describe('a compaction asked by another pane when the setting goes off before it
         await cleared(made);
         await made.compacts();
         await made.awaitStage('compacted');
+        await made.world.until(() => (made.world.rows("SELECT outcome FROM ask WHERE id = 'r5'").some((row) => row['outcome'] !== null) ? true : undefined), 'the ask r5 is settled');
         setting(made, 'on');
         await advertises(made, known + 1);
         assert.deepEqual(answers(made), ['r5:queued', 'r5:running']);
