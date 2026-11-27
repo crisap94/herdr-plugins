@@ -125,7 +125,7 @@ describe('the daemon restarts while a handoff asked by another pane is under way
     test('an ask taken while sharing was off is settled at once, so a restart writes nothing for it', { timeout: 30_000 }, async () => {
         const had = written(world).length;
         settings(world, 'off', 'on');
-        await world.recap.until(() => (written(world).slice(had).some((each) => each.pane === SOURCE && Object.values(each.tokens).every((value) => value === null)) ? true : undefined), 'the lane tokens cleared');
+        await world.recap.until(() => (written(world).slice(had).some((each) => each.pane === SOURCE && 'tab-recap-api' in each.tokens && Object.values(each.tokens).every((value) => value === null)) ? true : undefined), 'the lane tokens cleared');
         ask(world, 'h0');
         await world.recap.until(() => (world.recap.rows("SELECT outcome FROM ask WHERE id = 'h0'").length === 1 ? true : undefined), 'the ask h0 was seen while sharing was off');
         await sharingOn(world);

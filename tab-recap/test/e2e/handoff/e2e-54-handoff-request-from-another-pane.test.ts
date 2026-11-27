@@ -133,7 +133,7 @@ INSERT INTO request (id, at, kind, target, pane, to_pane, origin, refresh_first,
     test('while sharing on herdr is off, the ask is neither answered nor queued, even with the setting on', { timeout: 30_000 }, async () => {
         const had = written().length;
         settings('off', 'on');
-        await world.recap.until(() => (written().slice(had).some((each) => each.pane === SOURCE && Object.values(each.tokens).every((value) => value === null)) ? true : undefined), 'the lane tokens cleared');
+        await world.recap.until(() => (written().slice(had).some((each) => each.pane === SOURCE && 'tab-recap-api' in each.tokens && Object.values(each.tokens).every((value) => value === null)) ? true : undefined), 'the lane tokens cleared');
         ask('h6');
         await world.recap.until(() => (stored("SELECT id FROM ask WHERE id = 'h6'").length === 1 ? true : undefined), 'the ask h6 was seen while sharing was off');
         const mark = written().length;
