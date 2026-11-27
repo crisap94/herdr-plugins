@@ -1,6 +1,6 @@
 import { after, before, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { renderRefusal, supportOf } from '#src/host/policy.mjs';
@@ -215,16 +215,17 @@ describe('the daemon a command spawns', () => {
         await world.close();
     });
 
-    test('start launches it as the Bun that ran the command and its launcher alone, with no flag and no warning switch', { timeout: 30_000, skip: !existsSync('/proc/self/cmdline') }, async () => {
+    test('start launches it as the Bun that ran the command and its launcher alone, with no flag and no warning switch', { timeout: 30_000 }, async () => {
         const started = await world.command('start');
         assert.equal(started.code, 0, started.stderr);
         await world.awaitLog(/daemon \d+ up, state in /);
         const pid = Number(world.pidfile().pid);
-        const words = readFileSync(`/proc/${pid}/cmdline`, 'utf8').split('\0').filter((word) => word !== '');
+        const words = execFileSync('ps', ['-ww', '-o', 'args=', '-p', String(pid)], { encoding: 'utf8' }).trim().split(/\s+/);
         assert.equal(words.length, 2);
         assert.equal(words[0], process.execPath);
         assert.equal(words[1], join(PLUGIN, 'src', 'daemon', 'launch.mjs'));
-        const environment = readFileSync(`/proc/${pid}/environ`, 'utf8');
-        assert.doesNotMatch(environment, /disable-warning/);
+        if (existsSync(`/proc/${pid}/environ`)) {
+            assert.doesNotMatch(readFileSync(`/proc/${pid}/environ`, 'utf8'), /disable-warning/);
+        }
     });
 });
