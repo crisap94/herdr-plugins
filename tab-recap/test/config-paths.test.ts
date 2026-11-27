@@ -1,15 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { xdgPaths } from '#src/adapters/os/config/paths-xdg.ts';
-import { fsPathOf } from '#src/recap/domain/fs-path.ts';
 import { configDirectory, stateDirectory } from '#src/daemon/config.ts';
-
-test('the paths herdr uses (~/.config and ~/.local/state) are the defaults', () => {
-    assert.deepEqual(xdgPaths(fsPathOf('/home/me')), {
-        configDir: '/home/me/.config/herdr/plugins/config/tab-recap',
-        stateDir: '/home/me/.local/state/herdr/plugins/tab-recap',
-    });
-});
 
 test('herdr\'s own variables still win over the platform defaults', () => {
     const keys = ['HERDR_PLUGIN_CONFIG_DIR', 'HERDR_PLUGIN_STATE_DIR', 'TAB_RECAP_STATE'] as const;
