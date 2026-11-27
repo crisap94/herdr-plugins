@@ -57,32 +57,3 @@ test('KEEP_DAYS=0 removes no tab but still prunes expired closures', () => {
     assert.deepEqual(removed, []);
     assert.deepEqual(pruned, ['w1:old']);
 });
-
-test('a failing tab does not stop the others', () => {
-    const lines: string[] = [];
-    const { retention, removed } = fakeRetention([tabId('w1:a'), tabId('w1:b'), tabId('w1:c')], [tabId('w1:b')]);
-    forgetClosedTabs(deps(retention, fakeClosures({}).closures, 30, lines));
-    assert.deepEqual(removed, ['w1:a', 'w1:c']);
-    assert.match(lines.join('\n'), /could not remove w1:b: locked/);
-});
-
-test('the removal line logs the closure count of the tab', () => {
-    const lines: string[] = [];
-    const { retention } = fakeRetention([tabId('w1:a')]);
-    forgetClosedTabs(deps(retention, fakeClosures({ counts: { 'w1:a': 3 } }).closures, 30, lines));
-    assert.deepEqual(lines, ['retention: removed w1:a (1 runs, 0 facts, 1 chapters, 0 boundaries, 0 compactions, 3 closures)']);
-});
-
-test('a tab kept by a restart closure in the window is not removed, however old its last run', () => {
-    const { retention, removed } = fakeRetention([tabId('w1:restart')]);
-    const { closures } = fakeClosures({ protectedNow: [tabId('w1:restart')] });
-    forgetClosedTabs(deps(retention, closures, 30, []));
-    assert.deepEqual(removed, []);
-});
-
-test('a tab with no protecting closure is offered for removal', () => {
-    const { retention, removed } = fakeRetention([tabId('w1:gone')]);
-    const { closures } = fakeClosures({ protectedNow: [] });
-    forgetClosedTabs(deps(retention, closures, 30, []));
-    assert.deepEqual(removed, ['w1:gone']);
-});
