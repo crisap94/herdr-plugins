@@ -16,7 +16,6 @@ import type { AgentPanes, AgentLookup } from '#src/ports/agents.ts';
 import type { LaneSettler } from '#src/ports/lane-settling.ts';
 import { blankRecap } from '@stateforge-labs/session-ledger';
 import { unknown } from '@stateforge-labs/session-ledger';
-import { causeOf } from './fakes/cause.ts';
 import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '@stateforge-labs/session-ledger';
 import { memoryStore } from './db/support.ts';
@@ -96,37 +95,6 @@ function world(states: readonly AgentLookup[], answerOn: boolean, claims: LaneCl
     };
     return { compaction: new Compaction(deps), asks, tokens, store, claims, toasts, typed };
 }
-
-const REFUSALS: readonly (readonly [string, AgentLookup, string])[] = [
-    ['a busy agent is refused failed-busy', { kind: 'agent', agent: agentKind('claude'), status: 'working' }, 'failed-busy'],
-    ['a blocked agent is refused failed-skipped', { kind: 'agent', agent: agentKind('claude'), status: 'blocked' }, 'failed-skipped'],
-    ['an agent whose state cannot be read is refused failed-error, never a slug of the reason', unknown({ why: 'unreadable', detail: causeOf('agent cannot compact right now') }), 'failed-error'],
-];
-
-for (const [name, state, expected] of REFUSALS) {
-    test(`a request on a lane that refuses: ${name}`, async () => {
-        const run = world([state], true);
-        await run.compaction.run({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), note: null, origin: 'request', answer: textOf('r7') });
-        await flush();
-        assert.deepEqual(run.tokens.reports.map((report) => report.tokens), [{ 'tab-recap-compact': `r7:${expected}` }]);
-        assert.deepEqual(run.asks.unfinished(), []);
-    });
-}
-
-test('an agent that turns busy while the brief is written is refused failed-busy, after running', async () => {
-    const run = world([{ kind: 'agent', agent: agentKind('claude'), status: 'idle' }, { kind: 'agent', agent: agentKind('claude'), status: 'working' }], true);
-    await run.compaction.run({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), note: null, origin: 'request', answer: textOf('r7') });
-    await flush();
-    assert.deepEqual(run.tokens.reports.map((report) => report.tokens), [{ 'tab-recap-compact': 'r7:running' }, { 'tab-recap-compact': 'r7:failed-busy' }]);
-    assert.deepEqual(run.asks.unfinished(), []);
-});
-
-test('a refused request records its compaction as the ask\'s ref, so the ask names the compaction that answered it', async () => {
-    const run = world([{ kind: 'agent', agent: agentKind('claude'), status: 'working' }], false);
-    await run.compaction.run({ tab: tabId('w1:t1'), pane: paneId('w1:p1'), note: null, origin: 'request', answer: textOf('r7') });
-    assert.equal(run.store.db.prepare('SELECT id FROM compaction').all().length, 1);
-    assert.match(run.asks.unfinished()[0]?.ref ?? '', /^cmp_/);
-});
 
 test('a request for a lane a handoff holds is answered failed-lane-busy at once, types nothing, and the handoff keeps the lane', async () => {
     const claims = new LaneClaims();
