@@ -14,7 +14,7 @@ process.on('exit', () => { process.stdout.write(LEAVE); });
 await runRelay(relayEnvOf(process.env, PLUGIN_ROOT), {
     connect: createConnection,
     out: process.stdout,
-    colour: { colour: process.stdout.isTTY && process.stdout.hasColors() },
+    colour: { colour: process.stdout.isTTY ? process.stdout.hasColors() : false },
     input: process.stdin,
     setTimeout,
     clearTimeout,
