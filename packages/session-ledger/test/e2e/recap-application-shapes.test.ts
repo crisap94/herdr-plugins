@@ -94,6 +94,32 @@ test('the transcript splits into chunks within a limit, and the newest chunk fit
     assert.ok(newestOf(entries, clock, count(10_000))?.markup.includes('second answer'));
 });
 
+test('the newest pieces that fit are whole pieces, never one cut in half', () => {
+    const entries: Entry[] = [];
+    for (let turn = 0; turn < 6; turn += 1) {
+        entries.push({ role: 'user', text: textOf(`question ${turn}`), at: instant(1_000_000 + turn) }, { role: 'agent', text: textOf(`answer ${turn} ${'word '.repeat(40)}`) });
+    }
+    const whole = chunksOf(entries, clock, count(1_000_000))[0];
+    assert.ok(whole !== undefined);
+    const limit = count(Math.floor(whole.markup.length / 2) + 40);
+    const tail = newestOf(entries, clock, limit);
+    assert.ok(tail !== null && tail.markup.length <= limit + 1);
+    assert.ok(tail.entries.length >= 1 && tail.entries.length < entries.length);
+    assert.deepEqual(tail.entries, entries.slice(entries.length - tail.entries.length));
+    assert.equal(tail.markup.match(/<turn /g)?.length, tail.entries.length);
+    assert.equal(tail.markup.match(/<\/turn>/g)?.length, tail.entries.length);
+    assert.ok(tail.markup.includes('answer 5 '));
+    assert.ok(tail.markup.includes('word '.repeat(39)));
+});
+
+test('the newest piece is kept even when it alone is bigger than the limit', () => {
+    const huge = newestOf([{ role: 'agent', text: textOf('x'.repeat(5_000)) }], clock, count(10));
+    assert.equal(huge?.entries.length, 1);
+    const older: Entry[] = [{ role: 'user', text: textOf('earlier question') }, { role: 'agent', text: textOf('x'.repeat(5_000)) }];
+    const last = newestOf(older, clock, count(10));
+    assert.deepEqual(last?.entries, older.slice(1));
+});
+
 test('the clip helpers keep the head and tail of a long turn and the head of a long value', () => {
     assert.deepEqual(clipTurn('agent', textOf('short')), { text: 'short', clipped: false });
     const long = `${'a'.repeat(900)}${'b'.repeat(900)}`;
