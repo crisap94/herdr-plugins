@@ -45,12 +45,12 @@ test('ensure starts a new daemon when the old one was killed', { timeout: 30_000
     assert.equal(world.alive(second), true);
 });
 
-test('start kills a daemon whose beat went stale and says so', { timeout: 30_000 }, async () => {
+test('ensure kills a daemon whose beat went stale and says so', { timeout: 30_000 }, async () => {
     process.kill(second, 'SIGSTOP');
     const old = new Date(Date.now() - TEN_MINUTES);
     utimesSync(join(world.stateDir, 'daemon.beat'), old, old);
     assert.ok(Date.now() - statSync(join(world.stateDir, 'daemon.beat')).mtimeMs > TEN_MINUTES / 2);
-    const ran = await world.command('start');
+    const ran = await world.command('ensure');
     replacement = ran.stdout;
     assert.equal(ran.code, 0, ran.stderr);
     assert.match(ran.stdout, new RegExp(`daemon ${second} was stuck \\(no beat for 3 minutes\\): stopped it, starting a new one`));
@@ -65,3 +65,20 @@ test('the replacement is a new daemon that owns the pidfile', { timeout: 30_000 
     assert.equal(world.pidfile().pid, third);
     assert.equal(world.alive(third), true);
 });
+
+test('start also kills a daemon whose beat went stale and says so', { timeout: 30_000 }, async () => {
+    const stuck = pidOf(replacement);
+    process.kill(stuck, 'SIGSTOP');
+    const old = new Date(Date.now() - TEN_MINUTES);
+    utimesSync(join(world.stateDir, 'daemon.beat'), old, old);
+    assert.ok(Date.now() - statSync(join(world.stateDir, 'daemon.beat')).mtimeMs > TEN_MINUTES / 2);
+    const ran = await world.command('start');
+    assert.equal(ran.code, 0, ran.stderr);
+    assert.match(ran.stdout, new RegExp(`daemon ${stuck} was stuck \\(no beat for 3 minutes\\): stopped it, starting a new one`));
+    await world.awaitGone(stuck);
+    assert.equal(world.alive(stuck), false);
+    const fourth = pidOf(ran.stdout);
+    await world.awaitLog(new RegExp(`daemon ${fourth} up, state in `));
+    assert.equal(world.pidfile().pid, fourth);
+});
+

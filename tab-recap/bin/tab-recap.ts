@@ -175,7 +175,7 @@ const commands: Readonly<Record<string, (arg: string | undefined) => number | Pr
     configure,
     start: () => { pidfile.disabled = 'enabled'; return launch(); },
     startup: () => (pidfile.disabled === 'disabled' ? OK : launch()),
-    ensure: () => (pidfile.disabled === 'disabled' || pidfile.alive() !== null ? OK : launch()),
+    ensure: () => (pidfile.disabled === 'disabled' || (pidfile.alive() !== null && pidfile.wedged(WEDGED_MS) !== 'wedged') ? OK : launch()),
     stop,
     toggle: () => (pidfile.disabled === 'disabled' || pidfile.alive() === null ? commands['start']?.(undefined) ?? FAILED : stop()),
     status: () => statusCommand(pidfile, m().cli),
