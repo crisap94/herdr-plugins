@@ -17,6 +17,7 @@ import { BUN_CACHE_OFF } from '#test/support/bun-env.ts';
 const PLUGIN = join(import.meta.dirname, '..', '..', '..');
 const PANE_ENTRY = join(PLUGIN, 'src', 'pane', 'launch.mjs');
 const SETUP_ENTRY = join(PLUGIN, 'src', 'setup', 'launch.mjs');
+const COMPACT_ENTRY = join(PLUGIN, 'src', 'compact', 'launch.mjs');
 const TOOLS = ['sh', 'git'];
 const FRAME_HOME = '\u001B[H';
 const FRAME_END = '\u001B[J';
@@ -107,6 +108,7 @@ export interface ViewWorld {
     setLocale(locale: 'en' | 'es'): void;
     pane(options: PaneOptions): Promise<Pane>;
     settings(options: PaneOptions): Promise<Pane>;
+    popup(options: PaneOptions): Promise<Pane>;
     childEnv(extra?: Readonly<Record<string, string>>): Record<string, string>;
     readonly plugin: string;
     refresh(): void;
@@ -302,6 +304,7 @@ export async function viewWorld(options: WorldOptions): Promise<ViewWorld> {
         childEnv: (extra = {}) => ({ ...environment, TERM: 'xterm-256color', TAB_RECAP_TAB: 'w1:t1', ...BUN_CACHE_OFF, ...extra }),
         pane: (opened) => spawnPane(PANE_ENTRY, opened, ROLE_ENV[opened.role ?? 'column'], 'may-not-redraw'),
         settings: (opened) => spawnPane(SETUP_ENTRY, opened, { TAB_RECAP_AUTOCOMPACT: '' }, 'redraws'),
+        popup: (opened) => spawnPane(COMPACT_ENTRY, opened, {}, 'may-not-redraw'),
         refresh: () => { running.poll?.(); },
         close: async () => {
             for (const pane of panes) {

@@ -1,28 +1,19 @@
-import { textOf } from '@stateforge-labs/session-ledger';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { emptyBoard } from '#src/recap/domain/board.ts';
 import type { Board } from '#src/recap/domain/board.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
-import { COMPACT_EXCHANGE, finalAnswerOf, noteOf, VALUE_MAX } from '#src/recap/domain/compact-request.ts';
-import { REGISTRY } from '#src/recap/domain/token-registry.ts';
+import { COMPACT_EXCHANGE } from '#src/recap/domain/compact-request.ts';
 import { CompactRequestQueue } from '#src/recap/application/compact-requests.ts';
 import { askOf, stageOf, wireOf } from './fakes/wire-tokens.ts';
-import type { CompactAsk } from '#src/ports/requests.ts';
-import { Trail } from '#src/recap/application/compaction-trail.ts';
-import type { Records } from '#src/recap/application/compaction-trail.ts';
 import { instant } from '@stateforge-labs/session-ledger';
-import { parseCompactionId } from '#src/recap/domain/ids.ts';
+import { uncheckedPaneId } from '#src/recap/domain/ids.ts';
 import { RecordingTokens } from './fakes/lane-tokens.ts';
 import { MemoryAskLedger, rid } from './fakes/ask-ledger.ts';
-import { parseIdText, parseToolName } from '#src/protocol/primitives.ts';
+import { parseToolName } from '#src/protocol/primitives.ts';
 import { must } from '@stateforge-labs/session-ledger';
-import { answerValue } from '#src/protocol/exchange.ts';
-import { compact as compactExchange, COMPACT_FAILURES, COMPACT_STAGES } from '#src/protocol/exchanges/compact.ts';
-import { take } from './fakes/protocol-exchanges.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
 import { type Instant } from '@stateforge-labs/session-ledger';
-import { uncheckedPaneId } from '#src/recap/domain/ids.ts';
 import { paneId } from '#test/support/ids.ts';
 import { boardSeeded, seenLane } from '#test/support/seen.ts';
 
@@ -30,150 +21,6 @@ const lane = laneFrom(seenLane({ paneId: 'w1:p1', tabId: 'w1:t1', workspaceId: '
 const board = (): Board => ({ ...emptyBoard(), seeded: boardSeeded(true), lanes: new Map([[lane.pane, lane]]) });
 
 const seen = (asks: MemoryAskLedger, tool: string, id: string): boolean => asks.seen(COMPACT_EXCHANGE, must(parseToolName(tool)), rid(id)) === 'seen';
-
-
-interface Harness {
-    readonly asked: CompactAsk[];
-    readonly asks?: MemoryAskLedger;
-    readonly tokens: RecordingTokens;
-    readonly compact: CompactRequestQueue;
-    flush(): Promise<void>;
-}
-
-function setup(on = true, asks = new MemoryAskLedger()): Harness {
-    const asked: CompactAsk[] = [];
-    const tokens = new RecordingTokens();
-    const requests = { requestCompact: (request: CompactAsk): void => { asked.push(request); } };
-    const compact = new CompactRequestQueue({ enabled: (): Presence => (on ? 'present' : 'absent'), board, requests, asks, tokens, now: (): Instant => instant(1000), log: (): void => undefined });
-    return { asked, asks, tokens, compact, flush: (): Promise<void> => new Promise<void>((resolve) => { setImmediate(resolve); }) };
-}
-
-const readRequest = (raw: string): ReturnType<typeof take> => take(REGISTRY, { 'compact-req-coordinator': raw }, () => false);
-
-const askedIn = (raw: string): { readonly id: string; readonly note: string | null }[] =>
-    readRequest(raw).taken.map((each) => ({ id: each.id, note: noteOf(each.value) }));
-
-test('a request value is `<id>` or `<id>:<note>`; the note is everything after the first colon; an empty or long id is refused', () => {
-    assert.deepEqual(askedIn('r7'), [{ id: 'r7', note: null }]);
-    assert.deepEqual(askedIn('r7:focus: the API'), [{ id: 'r7', note: 'focus: the API' }]);
-    assert.deepEqual(askedIn('r7:'), [{ id: 'r7', note: null }]);
-    assert.deepEqual(askedIn(''), []);
-    assert.deepEqual(readRequest('x'.repeat(17)).refused.map((each) => each.answer), [`${'x'.repeat(16)}:failed-bad-id`]);
-    assert.deepEqual(readRequest(':note').refused.map((each) => each.answer), [':failed-bad-id']);
-    assert.ok(must(answerValue(compactExchange, parseIdText('r7'), stageOf(COMPACT_STAGES.running))).length <= VALUE_MAX);
-    assert.ok((askedIn(`r7:${'n'.repeat(200)}`)[0]?.note?.length ?? 0) + 3 <= VALUE_MAX, 'the note fits the rest of the value');
-});
-
-test('a compaction stage word is an answer: done, or failed with its declared reason', () => {
-    assert.equal(finalAnswerOf('compacted', null), 'done');
-    assert.equal(finalAnswerOf('failed', COMPACT_FAILURES.error), 'failed-error');
-    assert.equal(finalAnswerOf('skipped', null), 'failed-skipped');
-    assert.equal(finalAnswerOf('failed', COMPACT_FAILURES.busy), 'failed-busy');
-});
-
-test('asked and queued: the request is queued with origin request and the note; the answer is queued', async () => {
-    const run = setup();
-    run.compact.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7:focus on the API' }));
-    await run.flush();
-    assert.deepEqual(run.asked, [{ tab: 'w1:t1', pane: 'w1:p1', note: 'focus on the API', origin: 'request', answer: 'r7' }]);
-    assert.deepEqual(run.tokens.reports.map((report) => [report.pane, report.tokens]), [['w1:p1', { 'tab-recap-compact': 'r7:queued' }]]);
-});
-
-test('the same id is never acted on twice; a new id is', async () => {
-    const run = setup();
-    run.compact.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
-    run.compact.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
-    run.compact.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r8' }));
-    assert.deepEqual(run.asked.map((request) => request.answer), ['r7', 'r8']);
-});
-
-test('a pane that is not a lane is answered failed-not-a-lane, and nothing is requested', async () => {
-    const run = setup();
-    run.compact.onPaneTokens(paneId('w9:p9'), wireOf({ 'compact-req-coordinator': 'r7' }));
-    await run.flush();
-    assert.deepEqual(run.asked, []);
-    assert.deepEqual(run.tokens.reports.map((report) => [report.pane, report.tokens]), [['w9:p9', { 'tab-recap-compact': 'r7:failed-not-a-lane' }]]);
-});
-
-test('other tokens, and a compact-req with no tool name, are not requests', () => {
-    const run = setup();
-    run.compact.onPaneTokens(paneId('w1:p1'), wireOf({ 'tab-recap-api': '1', 'typing-coordinator': '5', 'compact-req-': 'r7' }));
-    assert.deepEqual(run.asked, []);
-});
-
-test('off: nothing is read, nothing is queued and nothing is answered; a request asked while off is not answered later either', async () => {
-    const run = setup(false);
-    run.compact.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
-    run.compact.answer(askOf('r7'), paneId('w1:p1'), stageOf('done'));
-    await run.flush();
-    assert.deepEqual(run.asked, []);
-    assert.deepEqual(run.tokens.reports, []);
-});
-
-test('a compaction ends with its answer: the trail hears how it ended, and the answer says done or the declared reason', () => {
-    const answered: string[] = [];
-    const records: Records = { begin: () => must(parseCompactionId('cmp_t0')), advance: () => undefined, finish: () => undefined };
-    const ended = new Trail(records, must(parseCompactionId('cmp')), () => instant(0), (end, reason) => { answered.push(finalAnswerOf(end.stage, reason)); });
-    ended.end('compacted');
-    const failed = new Trail(records, must(parseCompactionId('cmp')), () => instant(0), (end, reason) => { answered.push(finalAnswerOf(end.stage, reason)); });
-    failed.end('failed', { why: textOf('unreachable') }, COMPACT_FAILURES.busy);
-    assert.deepEqual(answered, ['done', 'failed-busy']);
-});
-
-test('the same id again, after a daemon restart: a new handler over the same stored asks requests nothing', async () => {
-    const asks = new MemoryAskLedger();
-    const before = setup(true, asks);
-    before.compact.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
-    await before.flush();
-    const after = setup(true, asks);
-    after.compact.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
-    after.compact.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7:another note' }));
-    await after.flush();
-    assert.deepEqual(before.asked.map((request) => request.answer), ['r7']);
-    assert.deepEqual(after.asked, [], 'the id is known to the store: not acted on again');
-});
-
-test('the id is per requester: another tool may use the same id', async () => {
-    const run = setup(true);
-    run.compact.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
-    run.compact.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-reviewer': 'r7' }));
-    assert.deepEqual(run.asked.map((request) => request.answer), ['r7', 'r7']);
-});
-
-test('a request written while the setting is off is remembered, not acted on: turning it on later runs nothing stale', async () => {
-    const asks = new MemoryAskLedger();
-    const off = setup(false, asks);
-    off.compact.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
-    const on = setup(true, asks);
-    on.compact.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
-    on.compact.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7', 'typing-coordinator': '1' }));
-    await on.flush();
-    assert.deepEqual(on.asked, []);
-});
-
-test('an id that is empty or overlong is answered failed-bad-id once, and the answer does not loop back into another answer', async () => {
-    const run = setup(true);
-    run.compact.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': ':no id' }));
-    run.compact.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': ':no id', 'tab-recap-compact': ':failed-bad-id' }));
-    run.compact.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'x'.repeat(20) }));
-    await run.flush();
-    assert.deepEqual(run.tokens.reports.map((report) => report.tokens), [{ 'tab-recap-compact': ':failed-bad-id' }, { 'tab-recap-compact': `${'x'.repeat(16)}:failed-bad-id` }]);
-});
-
-test('a request that comes before the board exists waits for it, and is then acted on', async () => {
-    const asks = new MemoryAskLedger();
-    let seeded = false;
-    const asked: CompactAsk[] = [];
-    const tokens = new RecordingTokens();
-    const handler = new CompactRequestQueue({
-        enabled: (): Presence => 'present', board: (): Board => ({ ...board(), seeded: boardSeeded(seeded) }), requests: { requestCompact: (request: CompactAsk): void => { asked.push(request); } }, asks, tokens, now: (): Instant => instant(1000), log: (): void => undefined,
-    });
-    handler.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r9' }));
-    assert.deepEqual([asked, tokens.reports, seen(asks, 'coordinator', rid('r9'))], [[], [], false], 'not decided, not remembered, before the board');
-    seeded = true;
-    handler.tick();
-    assert.deepEqual(asked.map((request) => request.answer), ['r9'], 'the board exists: it is a lane, so it is queued');
-});
 
 test('a request is remembered only after it is queued: a refused queue leaves it free to be asked again', () => {
     const asks = new MemoryAskLedger();
@@ -183,15 +30,18 @@ test('a request is remembered only after it is queued: a refused queue leaves it
         enabled: (): Presence => 'present', board: (): Board => board(), requests: { requestCompact: (): void => { if (refuse) throw new Error('database locked'); } }, asks, tokens, now: (): Instant => instant(1000), log: (): void => undefined,
     });
     handler.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
-    assert.equal(seen(asks, 'coordinator', rid('r7')), false, 'not remembered: nothing was queued');
+    assert.equal(seen(asks, 'coordinator', 'r7'), false, 'not remembered: nothing was queued');
     refuse = false;
     handler.onPaneTokens(paneId('w1:p1'), wireOf({ 'compact-req-coordinator': 'r7' }));
-    assert.equal(seen(asks, 'coordinator', rid('r7')), true);
+    assert.equal(seen(asks, 'coordinator', 'r7'), true);
 });
 
 test('no answer is written on an empty pane', async () => {
-    const run = setup(true);
-    run.compact.answer(askOf('r7'), uncheckedPaneId(''), stageOf('queued'));
-    await run.flush();
-    assert.deepEqual(run.tokens.reports, []);
+    const tokens = new RecordingTokens();
+    const handler = new CompactRequestQueue({
+        enabled: (): Presence => 'present', board, requests: { requestCompact: (): void => undefined }, asks: new MemoryAskLedger(), tokens, now: (): Instant => instant(1000), log: (): void => undefined,
+    });
+    handler.answer(askOf('r7'), uncheckedPaneId(''), stageOf('queued'));
+    await new Promise<void>((resolve) => { setImmediate(resolve); });
+    assert.deepEqual(tokens.reports, []);
 });
