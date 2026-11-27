@@ -42,6 +42,11 @@ export function laneFrom(seen: SeenLane): FollowedSession {
     };
 }
 
+export function tryLaneFrom(seen: SeenLane): FollowedSession | null {
+    const parsed = [parsePaneId(seen.paneId), parseTabId(seen.tabId), parseWorkspaceId(seen.workspaceId), parseAgentKind(seen.agent)];
+    return parsed.every((each) => each.kind === 'ok') ? laneFrom(seen) : null;
+}
+
 export function withStatus(lane: FollowedSession, status: LaneStatus): FollowedSession {
     return { ...lane, status };
 }

@@ -106,6 +106,7 @@ describe('herdr drops the socket while a turn ends', () => {
         for (const id of ['', '   ', 7, null]) {
             world.world.herdr.push({ event: 'pane_closed', data: { type: 'pane_closed', pane_id: id } });
             world.world.herdr.push({ event: 'pane_updated', data: { type: 'pane_updated', pane: { ...agentInfo(id, TAB), tokens: {} } } });
+            world.world.herdr.push({ event: 'pane_agent_detected', data: { type: 'pane_agent_detected', pane: agentInfo(id, TAB) } });
         }
         world.world.herdr.push({ event: 'layout_updated', data: { type: 'layout_updated', tab_id: '' } });
         const asked = snapshots();

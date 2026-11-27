@@ -10,7 +10,7 @@ import type { SessionKey, ScopeId } from './ids.ts';
 import type { Intent, RecapCause } from './intent.ts';
 import { parsePaneId, parseTabId, parseSessionId } from './ids.ts';
 import type { ColumnOpenedObservation, Reconciliation, SessionObservation, StatusObservation, SwitchedObservation } from './seen.ts';
-import { laneFrom, withStatus } from './lane.ts';
+import { laneFrom, tryLaneFrom, withStatus } from './lane.ts';
 import type { FollowedSession, SeenLane } from './lane.ts';
 import { lingering, settle, spend, wantsKind } from './policy.ts';
 import type { Policy } from './policy.ts';
@@ -64,11 +64,11 @@ function withoutColumnAt(board: Board, seen: SeenLane): Board {
 }
 
 function onDetected(held: Board, seen: SeenLane, now: Instant, policy: Policy): Step {
+    const fresh = tryLaneFrom(seen);
     const board = withoutColumnAt(held, seen);
-    if (wantsKind(policy, seen.agent) === 'absent') {
+    if (fresh === null || wantsKind(policy, seen.agent) === 'absent') {
         return step(board);
     }
-    const fresh = laneFrom(seen);
     const prior = board.lanes.get(fresh.pane);
     const lane = incarnating(keepingSession(fresh, prior), prior, now);
     const isNew = !board.lanes.has(lane.pane);
