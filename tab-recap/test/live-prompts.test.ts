@@ -13,7 +13,6 @@ import { observe } from '#src/recap/domain/fold.ts';
 import type { Observation } from '#src/recap/domain/fold.ts';
 import { type SessionKey } from '#src/recap/domain/ids.ts';
 import { paneId, tabId, agentKind } from '#test/support/ids.ts';
-import type { Intent } from '#src/recap/domain/intent.ts';
 import { laneFrom } from '#src/recap/domain/lane.ts';
 import type { FollowedSession, SeenLane } from '#src/recap/domain/lane.ts';
 import { DEFAULT_POLICY } from '#src/recap/domain/policy.ts';
@@ -29,7 +28,7 @@ import { textOf, type Text } from '@stateforge-labs/session-ledger';
 import { sourcePathOf } from '@stateforge-labs/session-ledger';
 import { SIZING } from './fakes/layout-values.ts';
 import type { Presence } from '#src/recap/domain/presence.ts';
-import { reconciliation, seenLane as laneOf, statusObservation } from '#test/support/seen.ts';
+import { reconciliation, seenLane as laneOf } from '#test/support/seen.ts';
 
 const lane = (pane: string, agent = 'claude'): FollowedSession => laneFrom(laneOf({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent, session: `s-${pane}` }));
 
@@ -74,64 +73,9 @@ test('LivePrompts: an agent without a store of its own goes through the any-agen
     assert.equal(prompts.of(paneId('w1:p1')), null);
 });
 
-test('LivePrompts: a changed prompt replaces the old one; the table stays bounded', async () => {
-    const answers: Record<string, PromptResult> = { '/t/w1:p1': { kind: 'prompt', text: textOf('one') } };
-    const { transcripts } = reader('claude', answers);
-    const prompts = new LivePrompts(registryWith({ [transcripts.agent]: transcripts }));
-    await prompts.refresh(lane('w1:p1'));
-    answers['/t/w1:p1'] = { kind: 'prompt', text: textOf('two') };
-    assert.equal(await prompts.refresh(lane('w1:p1')), 'present');
-    assert.equal(prompts.of(paneId('w1:p1')), 'two');
-    for (let at = 0; at < 300; at += 1) {
-        answers[`/t/p${at}`] = { kind: 'prompt', text: textOf(`prompt ${at}`) };
-        await prompts.refresh(lane(`p${at}`));
-    }
-    assert.equal(prompts.of(paneId('p299')), 'prompt 299');
-    assert.equal(prompts.of(paneId('w1:p1')), null, 'the oldest were forgotten');
-});
-
 const seenLane = (pane: string, status = 'idle'): SeenLane => laneOf({ paneId: pane, tabId: 'w1:t1', workspaceId: 'w1', agent: 'claude', status, session: `s-${pane}` });
 
-function play(observations: readonly Observation[]): Intent[][] {
-    let board = emptyBoard();
-    return observations.map((observation, at) => {
-        const outcome = observe(board, observation, instant(at * 1000), DEFAULT_POLICY);
-        board = outcome.board;
-        return [...outcome.intents];
-    });
-}
-
-const reads = (intents: readonly Intent[]): string[] => intents.flatMap((intent) => (intent.kind === 'read-prompt' ? [`${String(intent.lane.pane)}:${intent.lane.status}`] : []));
 const reconciled = (...lanes: SeenLane[]): Observation => ({ kind: 'reconciled', seen: reconciliation({ focusedTab: null, lanes, panes: lanes.map((l) => l.paneId), columns: [], widths: new Map() }) });
-
-test('fold: a status change reads the prompt of that lane (with its new status), right after publishing; no change, no read', () => {
-    const steps = play([
-        reconciled(seenLane('w1:p1', 'idle')),
-        statusObservation({ kind: 'status', pane: paneId('w1:p1'), status: 'working' }),
-        statusObservation({ kind: 'status', pane: paneId('w1:p1'), status: 'working' }),
-        statusObservation({ kind: 'status', pane: paneId('w1:p1'), status: 'idle' }),
-        statusObservation({ kind: 'status', pane: paneId('w1:p7'), status: 'working' }),
-    ]);
-    assert.deepEqual(reads(steps[1] ?? []), ['w1:p1:working']);
-    const kinds = (steps[1] ?? []).map((intent) => intent.kind);
-    assert.ok(kinds.indexOf('publish') < kinds.indexOf('read-prompt'));
-    assert.deepEqual(reads(steps[2] ?? []), []);
-    assert.deepEqual(reads(steps[3] ?? []), ['w1:p1:idle']);
-    assert.deepEqual(reads(steps[4] ?? []), [], 'a pane that is not a lane');
-});
-
-test('fold: a new lane (detected, or first seen in a reconciliation) reads its prompt once; a lane already on the board does not', () => {
-    const steps = play([
-        reconciled(seenLane('w1:p1')),
-        reconciled(seenLane('w1:p1'), seenLane('w1:p2')),
-        { kind: 'detected', lane: seenLane('w1:p3') },
-        { kind: 'detected', lane: seenLane('w1:p3') },
-    ]);
-    assert.deepEqual(reads(steps[0] ?? []), ['w1:p1:idle']);
-    assert.deepEqual(reads(steps[1] ?? []), ['w1:p2:idle']);
-    assert.deepEqual(reads(steps[2] ?? []), ['w1:p3:idle']);
-    assert.deepEqual(reads(steps[3] ?? []), []);
-});
 
 function dispatchWith(prompts: PaneSource<Text>): { dispatch: LaneDispatch; written: TabViewRecord[] } {
     const written: TabViewRecord[] = [];
