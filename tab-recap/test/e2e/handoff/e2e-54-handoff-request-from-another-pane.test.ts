@@ -80,8 +80,9 @@ INSERT INTO request (id, at, kind, target, pane, to_pane, origin, refresh_first,
         assert.deepEqual(answers().filter((each) => each.includes(' h4:')), [`${SOURCE} h4:queued`, `${SOURCE} h4:running`, `${SOURCE} h4:delivered`]);
     });
 
-    test('both panes are told each stage by an event with the request id', () => {
+    test('both panes are told each stage by an event with the request id', { timeout: 30_000 }, async () => {
         const stages = ['handoff-queued:h4', 'handoff-running:h4', 'handoff-delivered:h4'];
+        await world.recap.until(() => ([SOURCE, TARGET].every((pane) => events(pane).includes('handoff-delivered:h4')) ? true : undefined), `the delivered event on both panes; the events read ${JSON.stringify([events(SOURCE), events(TARGET)])}`);
         assert.deepEqual(events(SOURCE).filter((each) => each.endsWith(':h4')), stages);
         assert.deepEqual(events(TARGET).filter((each) => each.endsWith(':h4')), stages);
     });
